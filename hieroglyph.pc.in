@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: HieroGlyph
+Description: Printing Library
+Version: @VERSION@
+Requires: glib-2.0 gmodule-2.0
+Libs: -L${libdir} -lhieroglyph

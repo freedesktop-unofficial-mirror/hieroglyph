@@ -1,0 +1,61 @@
+%!PS-Adobe-2.0
+
+%% NOTE: don't use "end" operator until initialization is finished
+%% NOTE: and push userdict into the dictionary stack.
+%% NOTE: otherwise all initialization will fails due to invalid
+%% NOTE: dictionary stack. at this time, systemdict is only in
+%% NOTE: the dictionary stack.
+
+% change an allocation mode to global.
+true .setglobal
+
+% create globaldict if it's not defined
+/globaldict known not {
+    /globaldict 200 dict def
+} if
+
+% - currentglobal bool
+/currentglobal {
+    .currentglobal
+} bind odef
+% key font|cidfont definefont font|cidfont
+/definefont {
+    /Font defineresource
+} bind odef
+% key findfont -dict-
+/findfont {
+    /Font findresource
+} bind odef
+/product {
+    .product
+} bind odef
+/revision {
+    .revision
+} bind odef
+% bool setglobal -
+/setglobal {
+    .setglobal
+} bind odef
+% key undefinefont -
+/undefinefont {
+    /Font undefineresource
+} bind odef
+
+%%
+%% Initialize error procedures on PS Level2
+%%
+mark /configurationerror /undefinedresource
+counttomark {
+    dup [exch {.defaulterrorhandler} /exec cvx] cvx bind errordict 3 1 roll put
+} repeat
+cleartomark
+
+% initialize $error dictionary
+$error /recordstacks true put % this parameter are available on PS2 or later.
+
+% initialize PostScript Level specific things
+languagelevel 3 gt {
+    (hg_init_lv3.ps) run
+} if
+
+globaldict begin

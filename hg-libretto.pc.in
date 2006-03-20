@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: Libretto
+Description: PostScript Library on HieroGlyph
+Version: @VERSION@
+Requires: hieroglyph
+Libs: -L${libdir} -lretto

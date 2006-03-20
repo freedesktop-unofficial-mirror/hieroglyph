@@ -1,0 +1,249 @@
+%!PS-Adobe-1.0
+
+%% NOTE: don't use "end" operator until initialization is finished
+%% NOTE: and push userdict into the dictionary stack.
+%% NOTE: otherwise all initialization will fails due to invalid
+%% NOTE: dictionary stack. at this time, systemdict is only in
+%% NOTE: the dictionary stack.
+
+% create userdict if it's not defined
+false .setglobal
+systemdict /userdict known not {
+    systemdict /userdict 200 dict put % FIXME: it has to be put forcibly?
+} if
+
+% change an allocation mode to global
+true .setglobal
+
+%%
+%% Define procedures
+%%
+
+%%%
+%%% pre-required operators
+% key any odef -
+/odef {
+    [exch /stopped cvx [$error 5 index /command /exch cvx /put cvx /stop cvx] cvx /if cvx] cvx bind def
+} bind def
+
+%%%
+%%% these aren't official operators/procedures
+% -file- any write=only -
+/write=only {
+    .stringcvs writestring
+} bind odef
+% -file- any write==only -
+/write==only {
+    .write==only
+} bind odef
+% any =only -
+/=only {
+    (%stdout) (w) file exch write=only
+} bind odef
+% any ==only -
+/==only {
+    (%stdout) (w) file exch write==only
+} bind odef
+% string string .concatstring string
+/.concatstring {
+    exch dup length 2 index length add string
+    dup dup 4 2 roll copy
+    length 4 -1 roll putinterval
+} bind def
+% - .printversion -
+/.printversion {
+    .product print .revision dup 1000000 idiv exch 1000000 mod dup 1000 idiv exch 1000 mod
+    ( ) print 3 -1 roll ==only (.) print exch ==only (.) print ==only
+    ( \(r) print .hgrevision ==only (\)\n\n) print
+} bind def
+% - .promptmsg string
+/.promptmsg {
+    count mark (PS) 3 -1 roll dup 0 ne {
+	([) exch 4 string cvs (])
+	counttomark 1 sub {
+	    .concatstring
+	} repeat
+    } {
+	pop
+    } ifelse
+    (>) .concatstring
+    exch pop
+} bind def
+
+%%%
+%%% Level 1 operators
+% any string cvs substring
+/cvs {
+    exch .stringcvs exch copy
+} bind odef
+% key font|cidfont definefont font|cidfont
+/definefont {
+    .definefont
+} bind odef
+% - executive -
+/executive {
+    {
+	{
+	    systemdict /.statementedit known {
+		% this is a workaround to get libedit working
+		% with keep the prompt during deletion of the previous character.
+		.promptmsg .statementedit cvx exec
+	    } {
+		prompt (%statementedit) (r) file cvx exec
+	    } ifelse
+	} stopped {
+	    $error /newerror get {
+		$error /errorname get /undefinedfilename eq {pop pop .clearerror exit} if
+		errordict /handleerror get exec
+		.clearerror
+	    } if
+	} if
+    } loop
+} bind def
+% key findfont -dict-
+/findfont {
+    .findfont
+} bind odef
+% pstack -
+/pstack {
+    0 1 count 3 sub {index ==} for
+} bind odef
+% - prompt -
+/prompt {
+    (PS) print count 0 ne {([) print count =only (]) print} if (>) print flush
+} bind odef
+% array index array putinterval -
+% string index string putinterval -
+/putinterval {
+    dup length
+    2 index add
+    3 index length gt {
+	/putinterval cvx
+	errordict /rangecheck get exec
+    } if
+    {
+	2 index 2 index 3 -1 roll put 1 add
+    } forall
+    pop pop
+} bind def
+% stack -
+/stack {
+    0 1 count 3 sub {index =} for
+} bind odef
+% key undefinefont -
+/undefinefont {
+    .undefinefont
+} bind odef
+% version string
+/version {
+    (1000)
+} odef
+% any = -
+/= {
+    =only (\n) print
+} bind odef
+% any == -
+/== {
+    ==only (\n) print
+} bind odef
+
+%% Initialize error procedures
+% <command> <error> .seterror -
+/.seterror {
+    $error begin
+	/newerror true def
+	/errorname exch def
+	/command exch 1 .sleep def
+	/.isstop true def
+    end
+    $error /recordstacks known {
+	$error /recordstacks get
+    } {
+	true
+    } ifelse {
+	% record stacks
+%	$error begin
+%	    count copy count 2 idiv array astore /ostack exch def
+%	end
+    } if
+} bind def
+% <command> <error> .defaulterrorhandler -
+/.defaulterrorhandler {
+    .seterror
+    false .setglobal
+    stop
+} bind def
+% - handleerror -
+/handleerror {
+    errordict /handleerror get exec
+} bind odef
+% - .printerror -
+/.printerror {
+    % stacking $error and evaluate the value doesn't work.
+    % because the executable object may be in the dictionary.
+    % it will does into the estack directly then.
+    $error /newerror get {
+	(Error: ) print $error /errorname get ==only
+	( in ) print $error /command get ==only
+	(\n) print
+	(Operand Stack[) print count =only (]:\n) print
+	0 1 count 3 sub {index (  ) print ==only} for
+	(\n) print
+	(Execution Stack[) print countexecstack dup =only (]:\n) print
+	array execstack dup length 1 sub 0 1 3 -1 roll {1 index exch get (  ) print ==only} for
+	(\n) print pop
+	(Dictionary stack[) print countdictstack =only (]:\n) print
+    } if
+} bind def
+
+mark /dictfull /dictstackoverflow /dictstackunderflow /execstackoverflow
+/interrupt /invalidaccess /invalidexit /invalidfileaccess /invalidfont
+/invalidrestore /ioerror /limitcheck /nocurrentpoint /rangecheck
+/stackoverflow /stackunderflow /syntaxerror /timeout /typecheck /undefined
+/undefinedfilename /undefinedresult /unmatchedmark /unregistered /VMerror
+counttomark {
+    dup [exch {.defaulterrorhandler} /exec cvx] cvx bind errordict 3 1 roll put
+} repeat
+cleartomark
+
+% initialize PostScript Level specific things.
+systemdict /languagelevel known {
+    languagelevel 2 gt {
+	(hg_init_lv2.ps) run
+    } if
+} if
+
+false .setglobal
+userdict begin
+
+%%
+%% almost initialization finished here
+%%
+
+%% initialize $error dictionary
+%   $error is a built-in dictionary on hieroglyph.
+$error begin
+    /newerror false def
+    /command null def
+end
+%% initialize handleerror in errordict
+errordict begin
+    /handleerror {
+	.printerror
+    } bind def
+end
+%% initialize serverdict
+serverdict begin
+    /exitserver { } def
+end
+
+%%
+%% ready to go
+%%
+.printversion
+
+% if JOBSERVER isn't true, it means one gives the initializer to libretto_vm_startjob().
+% so no need to read PS from stdin.
+serverdict /JOBSERVER get {
+    .startjobserver executive
+} if
