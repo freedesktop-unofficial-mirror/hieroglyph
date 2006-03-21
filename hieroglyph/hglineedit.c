@@ -82,7 +82,6 @@ hg_line_edit_get_statement(HgFileObject *stdin, const gchar *prompt)
 		if (line == NULL)
 			return retval;
 		len = strlen(line);
-		total_len += len;
 		for (i = 0; i < len; i++) {
 			if (line[i] == '(')
 				string_nest++;
@@ -99,7 +98,12 @@ hg_line_edit_get_statement(HgFileObject *stdin, const gchar *prompt)
 			if (array_nest < 0)
 				array_nest = 0;
 		}
-		p = g_strconcat(retval, line, "\n", NULL);
+		if (total_len > 0) {
+			p = g_strconcat(retval, "\n", line, NULL);
+		} else {
+			p = g_strconcat(retval, line, NULL);
+		}
+		total_len += len;
 		g_free(retval);
 		free(line);
 		retval = p;
@@ -114,4 +118,32 @@ hg_line_edit_get_statement(HgFileObject *stdin, const gchar *prompt)
 #endif /* USE_LINEEDIT */
 
 	return retval;
+}
+
+gboolean
+hg_line_edit_load_history(const gchar *filename)
+{
+	g_return_val_if_fail (filename != NULL, FALSE);
+
+#ifdef USE_LIBEDIT
+	read_history(filename);
+#else
+#error FIXME: implement me!
+#endif
+
+	return TRUE;
+}
+
+gboolean
+hg_line_edit_save_history(const gchar *filename)
+{
+	g_return_val_if_fail (filename != NULL, FALSE);
+
+#ifdef USE_LIBEDIT
+	write_history(filename);
+#else
+#error FIXME: implement me!
+#endif
+
+	return TRUE;
 }

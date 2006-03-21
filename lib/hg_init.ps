@@ -84,16 +84,33 @@ true .setglobal
 /executive {
     {
 	{
-	    systemdict /.statementedit known {
-		% this is a workaround to get libedit working
-		% with keep the prompt during deletion of the previous character.
-		.promptmsg .statementedit cvx exec
-	    } {
-		prompt (%statementedit) (r) file cvx exec
-	    } ifelse
+	    {
+		systemdict /.statementedit known {
+		    % this is a workaround to get libedit working
+		    % with keep the prompt during deletion of the previous character.
+
+		    % stacking null is actually meaningless.
+		    % but it needs to keep the same depth of stack with (%statementedit) stuff.
+		    .promptmsg null exch .statementedit exch pop
+		} {
+		    prompt (%statementedit) (r) file
+		} ifelse
+	    } stopped {
+		% need to detect an empty line separately to take care of /undefinedfilename.
+		$error /newerror get {
+		    $error /errorname get /undefinedfilename eq {
+			pop pop .clearerror exit
+		    } {
+			% we don't care of this error here.
+			stop
+		    } ifelse
+		} if
+	    } if
+	    dup type /filetype eq {
+		cvx exec
+	    } if
 	} stopped {
 	    $error /newerror get {
-		$error /errorname get /undefinedfilename eq {pop pop .clearerror exit} if
 		errordict /handleerror get exec
 		.clearerror
 	    } if
@@ -245,5 +262,7 @@ end
 % if JOBSERVER isn't true, it means one gives the initializer to libretto_vm_startjob().
 % so no need to read PS from stdin.
 serverdict /JOBSERVER get {
+    (.hghistory) .loadhistory
     .startjobserver executive
+    (.hghistory) .savehistory
 } if

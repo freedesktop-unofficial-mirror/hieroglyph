@@ -5726,6 +5726,43 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
+DEFUNC_OP (private_hg_loadhistory)
+G_STMT_START
+{
+	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = libretto_stack_depth(ostack);
+	HgValueNode *node;
+	HgString *hs;
+	gchar *filename, *histfile;
+	const gchar *env;
+
+	while (1) {
+		if (depth < 1) {
+			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
+			break;
+		}
+		node = libretto_stack_index(ostack, 0);
+		if (!HG_IS_VALUE_STRING (node)) {
+			_libretto_operator_set_error(vm, op, LB_e_typecheck);
+			break;
+		}
+		hs = HG_VALUE_GET_STRING (node);
+		env = g_getenv("HOME");
+		filename = g_path_get_basename(hg_string_get_string(hs));
+		if (env != NULL) {
+			histfile = g_build_filename(env, filename, NULL);
+		} else {
+			histfile = g_strdup(filename);
+		}
+		retval = hg_line_edit_load_history(histfile);
+		g_free(histfile);
+		g_free(filename);
+		libretto_stack_pop(ostack);
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
+
 DEFUNC_OP (private_hg_product)
 G_STMT_START
 {
@@ -5757,6 +5794,43 @@ G_STMT_START
 	retval = libretto_stack_push(ostack, node);
 	if (!retval)
 		_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
+} G_STMT_END;
+DEFUNC_OP_END
+
+DEFUNC_OP (private_hg_savehistory)
+G_STMT_START
+{
+	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = libretto_stack_depth(ostack);
+	HgValueNode *node;
+	HgString *hs;
+	gchar *filename, *histfile;
+	const gchar *env;
+
+	while (1) {
+		if (depth < 1) {
+			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
+			break;
+		}
+		node = libretto_stack_index(ostack, 0);
+		if (!HG_IS_VALUE_STRING (node)) {
+			_libretto_operator_set_error(vm, op, LB_e_typecheck);
+			break;
+		}
+		hs = HG_VALUE_GET_STRING (node);
+		env = g_getenv("HOME");
+		filename = g_path_get_basename(hg_string_get_string(hs));
+		if (env != NULL) {
+			histfile = g_build_filename(env, filename, NULL);
+		} else {
+			histfile = g_strdup(filename);
+		}
+		retval = hg_line_edit_save_history(histfile);
+		g_free(histfile);
+		g_free(filename);
+		libretto_stack_pop(ostack);
+		break;
+	}
 } G_STMT_END;
 DEFUNC_OP_END
 
@@ -5855,14 +5929,17 @@ G_STMT_START
 		line = hg_line_edit_get_statement(libretto_vm_get_io(vm, LB_IO_STDIN),
 						  prompt);
 		g_free(prompt);
-		if (line == NULL) {
+		if (line == NULL || line[0] == 0) {
 			_libretto_operator_set_error(vm, op, LB_e_undefinedfilename);
+			if (line)
+				g_free(line);
 			break;
 		}
 		file = hg_file_object_new(pool, HG_FILE_TYPE_BUFFER,
 					  HG_FILE_MODE_READ,
 					  "%statementedit",
 					  line, -1);
+		g_free(line);
 		if (file == NULL) {
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
@@ -6371,8 +6448,10 @@ libretto_operator_hieroglyph_init(LibrettoVM *vm,
 	BUILD_OP_ (vm, pool, dict, .currentglobal, private_hg_currentglobal);
 	BUILD_OP_ (vm, pool, dict, .execn, private_hg_execn);
 	BUILD_OP_ (vm, pool, dict, .hgrevision, private_hg_hgrevision);
+	BUILD_OP_ (vm, pool, dict, .loadhistory, private_hg_loadhistory);
 	BUILD_OP_ (vm, pool, dict, .product, private_hg_product);
 	BUILD_OP_ (vm, pool, dict, .revision, private_hg_revision);
+	BUILD_OP_ (vm, pool, dict, .savehistory, private_hg_savehistory);
 	BUILD_OP_ (vm, pool, dict, .setglobal, private_hg_setglobal);
 	BUILD_OP_ (vm, pool, dict, .sleep, private_hg_sleep);
 	BUILD_OP_ (vm, pool, dict, .startjobserver, private_hg_startjobserver);

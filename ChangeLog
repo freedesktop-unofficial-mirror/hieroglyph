@@ -1,5 +1,18 @@
 2006-03-21  Akira TAGOH  <at@gclab.org>
 
+	* lib/hg_init.ps (executive): take care of the real /undefinedfilename
+	from interactive shell.
+	load/save history.
+
+	* libretto/operator.c (_libretto_operator_op_private_hg_loadhistory):
+	implemented.
+	(_libretto_operator_op_private_hg_savehistory): implemented.
+	(_libretto_operator_op_private_hg_statementedit): fixed a memory leak
+	and detect EOL.
+
+	* hieroglyph/hglineedit.c (hg_line_edit_load_history): new function.
+	(hg_line_edit_save_history): new function.
+
 	* lib/hg_init.ps (prompt): use .promptmsg to get a prompt string.
 
 	* hieroglyph/hglineedit.c (hg_line_edit_get_line):

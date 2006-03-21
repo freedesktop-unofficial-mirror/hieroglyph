@@ -30,11 +30,13 @@
 G_BEGIN_DECLS
 
 
-gchar *hg_line_edit_get_line     (HgFileObject *stdin,
-				  const gchar  *prompt,
-				  gboolean      history);
-gchar *hg_line_edit_get_statement(HgFileObject *stdin,
-				  const gchar  *prompt);
+gchar    *hg_line_edit_get_line     (HgFileObject *stdin,
+				     const gchar  *prompt,
+				     gboolean      history);
+gchar    *hg_line_edit_get_statement(HgFileObject *stdin,
+                                     const gchar  *prompt);
+gboolean  hg_line_edit_load_history (const gchar  *filename);
+gboolean  hg_line_edit_save_history (const gchar  *filename);
 
 
 G_END_DECLS
