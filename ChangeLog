@@ -2,6 +2,7 @@
 
 	* hieroglyph/hglineedit.c (hg_line_edit_get_line):
 	support the use of own prompt.
+	(hg_line_edit_get_statement): don't add an empty line to the history.
 
 	* hieroglyph/hgmem.c (hg_mem_pool_use_garbage_collection):
 	new function.

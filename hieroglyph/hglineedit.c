@@ -72,7 +72,7 @@ hg_line_edit_get_statement(HgFileObject *stdin, const gchar *prompt)
 {
 	gchar *line, *retval, *p;
 	gint array_nest = 0, string_nest = 0;
-	size_t len, i;
+	size_t len, i, total_len = 0;
 
 	g_return_val_if_fail (stdin != NULL, NULL);
 
@@ -82,6 +82,7 @@ hg_line_edit_get_statement(HgFileObject *stdin, const gchar *prompt)
 		if (line == NULL)
 			return retval;
 		len = strlen(line);
+		total_len += len;
 		for (i = 0; i < len; i++) {
 			if (line[i] == '(')
 				string_nest++;
@@ -106,7 +107,8 @@ hg_line_edit_get_statement(HgFileObject *stdin, const gchar *prompt)
 			break;
 	}
 #ifdef USE_LIBEDIT
-	add_history(retval);
+	if (total_len > 0)
+		add_history(retval);
 #else
 #error FIXME: implement me!
 #endif /* USE_LINEEDIT */
