@@ -1,5 +1,8 @@
 2006-03-21  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hglineedit.c (hg_line_edit_get_statement):
+	show a prompt at only first.
+
 	* lib/hg_init.ps (executive): take care of the real /undefinedfilename
 	from interactive shell.
 	load/save history.

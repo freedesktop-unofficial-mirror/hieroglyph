@@ -77,10 +77,10 @@ hg_line_edit_get_statement(HgFileObject *stdin, const gchar *prompt)
 	g_return_val_if_fail (stdin != NULL, NULL);
 
 	retval = g_strdup("");
+	line = hg_line_edit_get_line(stdin, prompt, FALSE);
+	if (line == NULL)
+		return retval;
 	while (1) {
-		line = hg_line_edit_get_line(stdin, prompt, FALSE);
-		if (line == NULL)
-			return retval;
 		len = strlen(line);
 		for (i = 0; i < len; i++) {
 			if (line[i] == '(')
@@ -104,6 +104,9 @@ hg_line_edit_get_statement(HgFileObject *stdin, const gchar *prompt)
 		retval = p;
 		if (string_nest == 0 && array_nest == 0)
 			break;
+		line = hg_line_edit_get_line(stdin, "", FALSE);
+		if (line == NULL)
+			return retval;
 	}
 	p = g_strdup(retval);
 	g_strchomp(p);
