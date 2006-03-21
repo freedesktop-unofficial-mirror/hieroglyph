@@ -110,7 +110,7 @@ true .setglobal
 } bind odef
 % - prompt -
 /prompt {
-    (PS) print count 0 ne {([) print count =only (]) print} if (>) print flush
+    .promptmsg print flush
 } bind odef
 % array index array putinterval -
 % string index string putinterval -

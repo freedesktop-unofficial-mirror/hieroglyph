@@ -1,5 +1,7 @@
 2006-03-21  Akira TAGOH  <at@gclab.org>
 
+	* lib/hg_init.ps (prompt): use .promptmsg to get a prompt string.
+
 	* hieroglyph/hglineedit.c (hg_line_edit_get_line):
 	support the use of own prompt.
 	(hg_line_edit_get_statement): don't add an empty line to the history.
