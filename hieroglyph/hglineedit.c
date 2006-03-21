@@ -72,7 +72,7 @@ hg_line_edit_get_statement(HgFileObject *stdin, const gchar *prompt)
 {
 	gchar *line, *retval, *p;
 	gint array_nest = 0, string_nest = 0;
-	size_t len, i, total_len = 0;
+	size_t len, i;
 
 	g_return_val_if_fail (stdin != NULL, NULL);
 
@@ -98,24 +98,24 @@ hg_line_edit_get_statement(HgFileObject *stdin, const gchar *prompt)
 			if (array_nest < 0)
 				array_nest = 0;
 		}
-		if (total_len > 0) {
-			p = g_strconcat(retval, "\n", line, NULL);
-		} else {
-			p = g_strconcat(retval, line, NULL);
-		}
-		total_len += len;
+		p = g_strconcat(retval, line, "\n", NULL);
 		g_free(retval);
 		free(line);
 		retval = p;
 		if (string_nest == 0 && array_nest == 0)
 			break;
 	}
+	p = g_strdup(retval);
+	g_strchomp(p);
+	len = strlen(p);
 #ifdef USE_LIBEDIT
-	if (total_len > 0)
-		add_history(retval);
+	if (len > 0) {
+		add_history(p);
+	}
 #else
 #error FIXME: implement me!
 #endif /* USE_LINEEDIT */
+	g_free(p);
 
 	return retval;
 }
