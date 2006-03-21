@@ -3,6 +3,7 @@
 	* lib/hg_init.ps (executive): take care of the real /undefinedfilename
 	from interactive shell.
 	load/save history.
+	(..statementedit): defined.
 
 	* libretto/operator.c (_libretto_operator_op_private_hg_loadhistory):
 	implemented.

@@ -69,6 +69,15 @@ true .setglobal
     (>) .concatstring
     exch pop
 } bind def
+systemdict /.statementedit known {
+    /..statementedit {
+	.promptmsg null exch .statementedit exch pop
+    } bind def
+} {
+    /..statementedit {
+	prompt (%statementedit) (r) file
+    } bind def
+} ifelse
 
 %%%
 %%% Level 1 operators
@@ -84,18 +93,7 @@ true .setglobal
 /executive {
     {
 	{
-	    {
-		systemdict /.statementedit known {
-		    % this is a workaround to get libedit working
-		    % with keep the prompt during deletion of the previous character.
-
-		    % stacking null is actually meaningless.
-		    % but it needs to keep the same depth of stack with (%statementedit) stuff.
-		    .promptmsg null exch .statementedit exch pop
-		} {
-		    prompt (%statementedit) (r) file
-		} ifelse
-	    } stopped {
+	    {..statementedit} stopped {
 		% need to detect an empty line separately to take care of /undefinedfilename.
 		$error /newerror get {
 		    $error /errorname get /undefinedfilename eq {
@@ -106,9 +104,7 @@ true .setglobal
 		    } ifelse
 		} if
 	    } if
-	    dup type /filetype eq {
-		cvx exec
-	    } if
+	    dup type /filetype eq {cvx exec} if
 	} stopped {
 	    $error /newerror get {
 		errordict /handleerror get exec
@@ -138,9 +134,7 @@ true .setglobal
 	/putinterval cvx
 	errordict /rangecheck get exec
     } if
-    {
-	2 index 2 index 3 -1 roll put 1 add
-    } forall
+    {2 index 2 index 3 -1 roll put 1 add} forall
     pop pop
 } bind def
 % stack -
