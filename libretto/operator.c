@@ -2356,6 +2356,9 @@ G_STMT_START
 				libretto_stack_pop(estack);
 			retval = TRUE;
 			break;
+		} else if (HG_IS_VALUE_FILE (node)) {
+			_libretto_operator_set_error(vm, op, LB_e_invalidexit);
+			break;
 		}
 	}
 	if (i == depth)

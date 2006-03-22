@@ -1,3 +1,8 @@
+2006-03-23  Akira TAGOH  <at@gclab.org>
+
+	* libretto/operator.c (_libretto_operator_op_exit): makes /invalidexit
+	when file object appears on the estack.
+
 2006-03-21  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hglineedit.c (hg_line_edit_get_statement):
