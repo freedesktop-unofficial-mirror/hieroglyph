@@ -23,7 +23,7 @@ true .setglobal
 %%% pre-required operators
 % key any odef -
 /odef {
-    [exch /stopped cvx [$error 5 index /command /exch cvx /put cvx /stop cvx] cvx /if cvx] cvx bind def
+    [exch /stopped load [$error 5 index /command /exch load /put load /stop load] cvx /if load] cvx bind def
 } bind def
 
 %%%
@@ -44,7 +44,7 @@ true .setglobal
 /==only {
     (%stdout) (w) file exch write==only
 } bind odef
-% string string .concatstring string
+% -string- -string- .concatstring -string-
 /.concatstring {
     exch dup length 2 index length add string
     dup dup 4 2 roll copy
@@ -56,7 +56,7 @@ true .setglobal
     ( ) print 3 -1 roll ==only (.) print exch ==only (.) print ==only
     ( \(r) print .hgrevision ==only (\)\n\n) print
 } bind def
-% - .promptmsg string
+% - .promptmsg -string-
 /.promptmsg {
     count mark (PS) 3 -1 roll dup 0 ne {
 	([) exch 4 string cvs (])
@@ -71,7 +71,8 @@ true .setglobal
 } bind def
 systemdict /.statementedit known {
     /..statementedit {
-	.promptmsg null exch .statementedit exch pop
+	% null isn't exactly used. it's just pushed to align the depth of the stack.
+	.promptmsg //null exch .statementedit exch pop
     } bind def
 } {
     /..statementedit {
@@ -81,7 +82,7 @@ systemdict /.statementedit known {
 
 %%%
 %%% Level 1 operators
-% any string cvs substring
+% any -string- cvs -substring-
 /cvs {
     exch .stringcvs exch copy
 } bind odef
@@ -125,8 +126,8 @@ systemdict /.statementedit known {
 /prompt {
     .promptmsg print flush
 } bind odef
-% array index array putinterval -
-% string index string putinterval -
+% -array- index -array- putinterval -
+% -string- index -string- putinterval -
 /putinterval {
     dup length
     2 index add
@@ -145,7 +146,7 @@ systemdict /.statementedit known {
 /undefinefont {
     .undefinefont
 } bind odef
-% version string
+% - version -string-
 /version {
     (1000)
 } odef
@@ -213,7 +214,7 @@ mark /dictfull /dictstackoverflow /dictstackunderflow /execstackoverflow
 /stackoverflow /stackunderflow /syntaxerror /timeout /typecheck /undefined
 /undefinedfilename /undefinedresult /unmatchedmark /unregistered /VMerror
 counttomark {
-    dup [exch {.defaulterrorhandler} /exec cvx] cvx bind errordict 3 1 roll put
+    dup [exch {.defaulterrorhandler} /exec load] cvx bind errordict 3 1 roll put
 } repeat
 cleartomark
 
@@ -239,9 +240,7 @@ $error begin
 end
 %% initialize handleerror in errordict
 errordict begin
-    /handleerror {
-	.printerror
-    } bind def
+    /handleerror /.printerror load def
 end
 %% initialize serverdict
 serverdict begin
