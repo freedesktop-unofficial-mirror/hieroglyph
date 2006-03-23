@@ -1,5 +1,7 @@
 2006-03-23  Akira TAGOH  <at@gclab.org>
 
+	* lib/hg_init.ps (run): defined.
+
 	* libretto/operator.c (_libretto_operator_op_exit): makes /invalidexit
 	when file object appears on the estack.
 

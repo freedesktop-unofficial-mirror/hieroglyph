@@ -27,7 +27,7 @@ true .setglobal
 } bind def
 
 %%%
-%%% these aren't official operators/procedures
+%%% these aren't official operators/procedures for PostScript
 % -file- any write=only -
 /write=only {
     .stringcvs writestring
@@ -137,6 +137,10 @@ systemdict /.statementedit known {
     } if
     {2 index 2 index 3 -1 roll put 1 add} forall
     pop pop
+} bind def
+% -string- run -
+/run {
+    (r) file cvx exec
 } bind def
 % stack -
 /stack {
