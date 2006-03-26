@@ -2896,7 +2896,67 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_UNIMPLEMENTED_OP (getinterval);
+DEFUNC_OP (getinterval)
+G_STMT_START
+{
+	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = libretto_stack_depth(ostack);
+	HgValueNode *n1, *n2, *n3;
+	HgMemObject *obj;
+	gint32 index, count;
+
+	while (1) {
+		if (depth < 3) {
+			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
+			break;
+		}
+		n3 = libretto_stack_index(ostack, 0);
+		n2 = libretto_stack_index(ostack, 1);
+		n1 = libretto_stack_index(ostack, 2);
+		if (!HG_IS_VALUE_INTEGER (n2) ||
+		    !HG_IS_VALUE_INTEGER (n3)) {
+			_libretto_operator_set_error(vm, op, LB_e_typecheck);
+			break;
+		}
+		index = HG_VALUE_GET_INTEGER (n2);
+		count = HG_VALUE_GET_INTEGER (n3);
+		if (HG_IS_VALUE_ARRAY (n1)) {
+			HgArray *array = HG_VALUE_GET_ARRAY (n1), *subarray;
+			guint len = hg_array_length(array);
+
+			if (index >= len ||
+			    (len - index) < count) {
+				_libretto_operator_set_error(vm, op, LB_e_rangecheck);
+				break;
+			}
+			hg_mem_get_object__inline(array, obj);
+			subarray = hg_array_make_subarray(obj->pool, array, index, index + count - 1);
+			HG_VALUE_MAKE_ARRAY (obj->pool, n1, subarray);
+		} else if (HG_IS_VALUE_STRING (n1)) {
+			HgString *string = HG_VALUE_GET_STRING (n1), *substring;
+			guint len = hg_string_maxlength(string);
+
+			if (index >= len ||
+			    (len - index) < count) {
+				_libretto_operator_set_error(vm, op, LB_e_rangecheck);
+				break;
+			}
+			hg_mem_get_object__inline(string, obj);
+			substring = hg_string_make_substring(obj->pool, string, index, index + count - 1);
+			HG_VALUE_MAKE_STRING (obj->pool, n1, substring);
+		} else {
+			_libretto_operator_set_error(vm, op, LB_e_typecheck);
+			break;
+		}
+		libretto_stack_pop(ostack);
+		libretto_stack_pop(ostack);
+		libretto_stack_pop(ostack);
+		retval = libretto_stack_push(ostack, n1);
+		/* it must be true */
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
 
 DEFUNC_OP (grestore)
 G_STMT_START
