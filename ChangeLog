@@ -1,5 +1,7 @@
 2006-03-27  Akira TAGOH  <at@gclab.org>
 
+	* commit.sh: don't commit if there are no changes.
+
 	* lib/hg_init.ps (.seterror): modify /estack in $error to indicate
 	a correct stack where an error actually happened.
 
