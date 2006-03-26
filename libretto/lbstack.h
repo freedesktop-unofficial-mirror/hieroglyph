@@ -42,6 +42,8 @@ HgValueNode   *libretto_stack_index(LibrettoStack *stack,
 void           libretto_stack_roll (LibrettoStack *stack,
 				    guint          n_block,
 				    gint32         n_times);
+void           libretto_stack_dump (LibrettoStack *stack,
+				    HgFileObject  *file);
 
 /* internal use */
 void     _libretto_stack_use_stack_validator(LibrettoStack *stack,

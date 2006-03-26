@@ -195,7 +195,7 @@ _hg_file_object_real_to_string(gpointer data)
 		/* it shows as string to evaluate it */
 		hg_string_append_c(retval, '(');
 		hg_string_append(retval, file->is.buf.buffer + file->is.buf.pos, file->is.buf.bufsize - file->is.buf.pos);
-		hg_string_append_c(retval, ')');
+		hg_string_append(retval, ")/-file-", -1);
 	} else {
 		hg_string_append(retval, "-file-", -1);
 	}

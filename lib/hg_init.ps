@@ -178,9 +178,9 @@ systemdict /.statementedit known {
 	true
     } ifelse {
 	% record stacks
-%	$error begin
-%	    count copy count 2 idiv array astore /ostack exch def
-%	end
+	count copy count 2 idiv array astore $error /ostack 3 -1 roll put
+	countexecstack array execstack $error /estack 3 -1 roll put
+	countdictstack array dictstack $error /dstack 3 -1 roll put
     } if
 } bind def
 % <command> <error> .defaulterrorhandler -
@@ -202,13 +202,28 @@ systemdict /.statementedit known {
 	(Error: ) print $error /errorname get ==only
 	( in ) print $error /command get ==only
 	(\n) print
-	(Operand Stack[) print count =only (]:\n) print
-	0 1 count 3 sub {index (  ) print ==only} for
-	(\n) print
-	(Execution Stack[) print countexecstack dup =only (]:\n) print
-	array execstack dup length 1 sub 0 1 3 -1 roll {1 index exch get (  ) print ==only} for
-	(\n) print pop
-	(Dictionary stack[) print countdictstack =only (]:\n) print
+	% save objects in current ostack
+	count array astore
+	$error /ostack known {
+	    $error /ostack get dup length
+	    (Operand Stack[) print =only (]:\n) print
+	    {(  ) print ==only} forall
+	    (\n) print
+	} if
+	$error /estack known {
+	    $error /estack get dup length
+	    (Execution Stack[) print =only (]:\n) print
+	    {(  ) print ==only} forall
+	    (\n) print
+	} if
+	$error /dstack known {
+	    $error /dstack get dup length
+	    (Dictionary stack[) print =only (]:\n) print
+	    {(  ) print ==only} forall
+	    (\n) print
+	} if
+	% restore objects
+	aload pop
     } if
 } bind def
 

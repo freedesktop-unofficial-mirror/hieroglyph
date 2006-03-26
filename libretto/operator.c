@@ -1422,6 +1422,8 @@ G_STMT_START
 					break;
 				}
 			}
+			if (n == 0)
+				retval = TRUE;
 		} else {
 			if (depth < 2) {
 				_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
@@ -2016,7 +2018,62 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_UNIMPLEMENTED_OP (dictstack);
+DEFUNC_OP (dictstack)
+G_STMT_START
+{
+	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	LibrettoStack *dstack = libretto_vm_get_dstack(vm);
+	guint depth = libretto_stack_depth(ostack);
+	guint ddepth = libretto_stack_depth(dstack);
+	guint len, i;
+	HgValueNode *node, *dup_node;
+	HgArray *array;
+
+	while (1) {
+		if (depth < 1) {
+			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
+			break;
+		}
+		node = libretto_stack_index(ostack, 0);
+		if (!HG_IS_VALUE_ARRAY (node)) {
+			_libretto_operator_set_error(vm, op, LB_e_typecheck);
+			break;
+		}
+		if (!hg_object_is_writable((HgObject *)node)) {
+			_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
+			break;
+		}
+		array = HG_VALUE_GET_ARRAY (node);
+		len = hg_array_length(array);
+		if (ddepth > len) {
+			_libretto_operator_set_error(vm, op, LB_e_rangecheck);
+			break;
+		}
+		for (i = 0; i < ddepth; i++) {
+			node = libretto_stack_index(dstack, ddepth - i - 1);
+			dup_node = hg_object_dup((HgObject *)node);
+			hg_array_replace(array, dup_node, i);
+		}
+		if (ddepth != len) {
+			HgMemObject *obj;
+
+			hg_mem_get_object__inline(array, obj);
+			if (obj == NULL) {
+				_libretto_operator_set_error(vm, op, LB_e_VMerror);
+				break;
+			}
+			array = hg_array_make_subarray(obj->pool, array, 0, ddepth - 1);
+			HG_VALUE_MAKE_ARRAY (obj->pool, node, array);
+			libretto_stack_pop(ostack);
+			retval = libretto_stack_push(ostack, node);
+			/* it must be true */
+		} else {
+			retval = TRUE;
+		}
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
 
 DEFUNC_OP (div)
 G_STMT_START
@@ -2289,7 +2346,7 @@ G_STMT_START
 			dup_node = hg_object_dup((HgObject *)node);
 			hg_array_replace(array, dup_node, i);
 		}
-		if (depth != len) {
+		if (edepth != (len + 1)) {
 			HgMemObject *obj;
 
 			hg_mem_get_object__inline(array, obj);
@@ -4950,7 +5007,7 @@ G_STMT_START
 	}
 	if (i == edepth) {
 		hg_stderr_printf("No /stopped operator found. exiting...\n");
-		node = hg_dict_lookup_with_string(libretto_vm_get_dict_systemdict(vm), "quit");
+		node = hg_dict_lookup_with_string(libretto_vm_get_dict_systemdict(vm), ".abort");
 		self = libretto_stack_pop(estack);
 		libretto_stack_push(estack, node);
 		retval = libretto_stack_push(estack, self);
@@ -5647,6 +5704,24 @@ DEFUNC_UNIMPLEMENTED_OP (usecmap);
 DEFUNC_UNIMPLEMENTED_OP (usefont);
 
 /* hieroglyph specific operators */
+DEFUNC_OP (private_hg_abort)
+G_STMT_START
+{
+	HgFileObject *file = libretto_vm_get_io(vm, LB_IO_STDERR);
+	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	LibrettoStack *estack = libretto_vm_get_estack(vm);
+	LibrettoStack *dstack = libretto_vm_get_dstack(vm);
+
+	hg_file_object_printf(file, "\nOperand stack:\n");
+	libretto_stack_dump(ostack, file);
+	hg_file_object_printf(file, "\nExecution stack:\n");
+	libretto_stack_dump(estack, file);
+	hg_file_object_printf(file, "\nDictionary stack:\n");
+	libretto_stack_dump(dstack, file);
+	abort();
+} G_STMT_END;
+DEFUNC_OP_END
+
 DEFUNC_OP (private_hg_clearerror)
 G_STMT_START
 {
@@ -6447,6 +6522,7 @@ libretto_operator_hieroglyph_init(LibrettoVM *vm,
 				  HgMemPool  *pool,
 				  HgDict     *dict)
 {
+	BUILD_OP_ (vm, pool, dict, .abort, private_hg_abort);
 	BUILD_OP_ (vm, pool, dict, .clearerror, private_hg_clearerror);
 	BUILD_OP_ (vm, pool, dict, .currentglobal, private_hg_currentglobal);
 	BUILD_OP_ (vm, pool, dict, .execn, private_hg_execn);

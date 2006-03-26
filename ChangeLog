@@ -1,3 +1,23 @@
+2006-03-27  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgfile.c (_hg_file_object_real_to_string): makes
+	a difference to not confuse for string.
+
+	* lib/hg_init.ps (.seterror): save ostack, estack and dstack into $error.
+	(.printerror): show the stack in $error instead.
+
+	* libretto/operator.c (_libretto_operator_op_dictstack): implemented.
+	(_libretto_operator_op_execstack): fixed a typo.
+	(_libretto_operator_op_stop): invoke /.abort instead of /quit.
+	(_libretto_operator_op_private_hg_abort): implemented.
+
+	* libretto/lbstack.c (libretto_stack_dump): new function.
+
+2006-03-24  Akira TAGOH  <at@gclab.org>
+
+	* libretto/operator.c (_libretto_operator_op_copy): always set TRUE to
+	retval when the amount of copy object is 0.
+
 2006-03-23  Akira TAGOH  <at@gclab.org>
 
 	* lib/hg_init.ps (run): defined.

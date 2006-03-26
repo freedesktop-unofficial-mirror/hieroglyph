@@ -27,6 +27,8 @@
 
 #include <stdlib.h>
 #include <hieroglyph/hgmem.h>
+#include <hieroglyph/hgfile.h>
+#include <hieroglyph/hgstring.h>
 #include "lbstack.h"
 
 
@@ -307,5 +309,25 @@ libretto_stack_roll(LibrettoStack *stack,
 				iroll->prev = oroll;
 			}
 		}
+	}
+}
+
+void
+libretto_stack_dump(LibrettoStack *stack,
+		    HgFileObject  *file)
+{
+	GList *l;
+	HgValueNode *node;
+	HgString *hs;
+
+	g_return_if_fail (stack != NULL);
+
+	hg_file_object_printf(file, "   address|type|content\n");
+	hg_file_object_printf(file, "----------+----+-------------------------------\n");
+	for (l = stack->stack; l != NULL; l = g_list_next(l)) {
+		node = l->data;
+		hs = hg_object_to_string((HgObject *)node);
+		hg_file_object_printf(file, "%p|%4d|%s\n", node, node->type, hg_string_get_string(hs));
+		hg_mem_free(hs);
 	}
 }
