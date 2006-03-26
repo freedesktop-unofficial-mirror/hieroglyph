@@ -323,6 +323,7 @@ _hg_value_node_real_to_string(gpointer data)
 		    g_warning("Unknown node type %d to be converted to string.", node->type);
 		    break;
 	}
+	hg_string_fix_string_size(retval);
 
 	return retval;
 }
