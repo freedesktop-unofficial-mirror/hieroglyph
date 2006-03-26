@@ -1,5 +1,8 @@
 2006-03-27  Akira TAGOH  <at@gclab.org>
 
+	* lib/hg_init.ps (.seterror): modify /estack in $error to indicate
+	a correct stack where an error actually happened.
+
 	* libretto/operator.c (_libretto_operator_op_getinterval): implemented.
 
 2006-03-26  Akira TAGOH  <at@gclab.org>

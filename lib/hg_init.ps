@@ -169,7 +169,7 @@ systemdict /.statementedit known {
     $error begin
 	/newerror true def
 	/errorname exch def
-	/command exch 1 .sleep def
+	/command exch def
 	/.isstop true def
     end
     $error /recordstacks known {
@@ -179,7 +179,11 @@ systemdict /.statementedit known {
     } ifelse {
 	% record stacks
 	count copy count 2 idiv array astore $error /ostack 3 -1 roll put
-	countexecstack array execstack $error /estack 3 -1 roll put
+	countexecstack array execstack $error /estack 3 -1 roll % -dict- /estack -array-
+	% modify estack to make a correct stack when an error actually happened
+	dup length 1 sub 0 exch getinterval % -dict- /estack -array-
+	dup length array copy               % -dict- /estack -array-
+	dup dup length 1 sub $error /command get put put
 	countdictstack array dictstack $error /dstack 3 -1 roll put
     } if
 } bind def
