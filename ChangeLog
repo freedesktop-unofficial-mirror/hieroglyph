@@ -1,4 +1,4 @@
-2006-03-27  Akira TAGOH  <at@gclab.org>
+2006-03-26  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgfile.c (_hg_file_object_real_to_string): makes
 	a difference to not confuse for string.
