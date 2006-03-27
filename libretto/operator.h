@@ -34,18 +34,14 @@ G_BEGIN_DECLS
 	G_STMT_START {							\
 		HgValueNode *__lb_op_node;				\
 									\
-		HG_VALUE_MAKE_POINTER (libretto_vm_get_current_pool(v),	\
-				       __lb_op_node,			\
-				       (o));				\
+		HG_VALUE_MAKE_POINTER (__lb_op_node, (o));		\
 		libretto_vm_set_error((v), __lb_op_node, (e), TRUE);	\
 	} G_STMT_END
 #define _libretto_operator_set_error_from_file(v, o, e)			\
 	G_STMT_START {							\
 		HgValueNode *__lb_op_node;				\
 									\
-		HG_VALUE_MAKE_POINTER (libretto_vm_get_current_pool(v),	\
-				       __lb_op_node,			\
-				       (o));				\
+		HG_VALUE_MAKE_POINTER (__lb_op_node, (o));		\
 		libretto_vm_set_error_from_file((v), __lb_op_node, (e), TRUE); \
 	} G_STMT_END
 

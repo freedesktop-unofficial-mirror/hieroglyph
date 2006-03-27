@@ -1,3 +1,15 @@
+2006-03-28  Akira TAGOH  <at@gclab.org>
+
+	* libretto/operator.c: makes a node with the same pool where the value
+	was created.
+
+	* libretto/vm.c: likewise.
+
+	* libretto/scanner.c: likewise.
+
+	* hieroglyph/hgvaluenode.h: get a memory pool from the given value for
+	complex objects.
+
 2006-03-27  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgmem.c (hg_mem_pool_new): initialize use_gc.

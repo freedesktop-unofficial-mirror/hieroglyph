@@ -583,7 +583,7 @@ _libretto_scanner_get_object(LibrettoVM   *vm,
 		    retval = hg_dict_lookup_with_string(systemdict, "%dicttomark");
 		    break;
 	    case LB_TOKEN_PROC:
-		    HG_VALUE_MAKE_ARRAY (pool, retval, array);
+		    HG_VALUE_MAKE_ARRAY (retval, array);
 		    hg_object_executable((HgObject *)retval);
 		    break;
 	    case LB_TOKEN_PROC_END:
@@ -592,7 +592,7 @@ _libretto_scanner_get_object(LibrettoVM   *vm,
 	    case LB_TOKEN_STRING:
 		    if (string_depth == 0) {
 			    hg_string_fix_string_size(string);
-			    HG_VALUE_MAKE_STRING (pool, retval, string);
+			    HG_VALUE_MAKE_STRING (retval, string);
 		    }
 		    break;
 	    default:

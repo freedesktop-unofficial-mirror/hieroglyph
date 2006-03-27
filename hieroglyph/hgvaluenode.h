@@ -85,68 +85,82 @@ G_BEGIN_DECLS
 		(obj) = hg_value_node_new((pool));		\
 		HG_VALUE_SET_VALUE_NODE (obj, _type, sym, val);	\
 	} G_STMT_END
+#define HG_VALUE_MAKE_VALUE_NODE_WITH_SAME_POOL(obj, _type, sym, val)	\
+	G_STMT_START {							\
+		HgMemObject *__hg_value_node_obj;			\
+									\
+		hg_mem_get_object__inline((val), __hg_value_node_obj);	\
+		if (__hg_value_node_obj) {				\
+			HG_VALUE_MAKE_VALUE_NODE (__hg_value_node_obj->pool, \
+						  obj, _type,		\
+						  sym, val);		\
+		} else {						\
+			(obj) = NULL;					\
+		}							\
+	} G_STMT_END
 #define HG_VALUE_MAKE_BOOLEAN(pool, obj, val)				\
 	HG_VALUE_MAKE_VALUE_NODE (pool, obj, HG_TYPE_VALUE_BOOLEAN, boolean, val)
 #define HG_VALUE_MAKE_INTEGER(pool, obj, val)				\
 	HG_VALUE_MAKE_VALUE_NODE (pool, obj, HG_TYPE_VALUE_INTEGER, integer, val)
 #define HG_VALUE_MAKE_REAL(pool, obj, val)				\
 	HG_VALUE_MAKE_VALUE_NODE (pool, obj, HG_TYPE_VALUE_REAL, real, val)
-#define HG_VALUE_MAKE_NAME(pool, obj, val)				\
-	HG_VALUE_MAKE_VALUE_NODE (pool, obj, HG_TYPE_VALUE_NAME, pointer, val)
+#define HG_VALUE_MAKE_NAME(obj, val)					\
+	HG_VALUE_MAKE_VALUE_NODE_WITH_SAME_POOL (obj, HG_TYPE_VALUE_NAME, pointer, val)
 #define HG_VALUE_MAKE_NAME_STATIC(pool, obj, val)			\
 	G_STMT_START {							\
 		size_t __hg_value_name_length = strlen(val);		\
-		gchar *__hg_value_name_static = hg_mem_alloc(pool, __hg_value_name_length + 1); \
+		gchar *__hg_value_name_static = hg_mem_alloc((pool), __hg_value_name_length + 1); \
 		memcpy(__hg_value_name_static, (val), __hg_value_name_length); \
 		__hg_value_name_static[__hg_value_name_length] = 0;	\
-		HG_VALUE_MAKE_VALUE_NODE (pool, obj, HG_TYPE_VALUE_NAME, pointer, __hg_value_name_static); \
+		HG_VALUE_MAKE_VALUE_NODE ((pool), (obj), HG_TYPE_VALUE_NAME, pointer, __hg_value_name_static); \
 	} G_STMT_END
-#define HG_VALUE_MAKE_ARRAY(pool, obj, val)				\
-	HG_VALUE_MAKE_VALUE_NODE (pool, obj, HG_TYPE_VALUE_ARRAY, pointer, val)
-#define HG_VALUE_MAKE_STRING(pool, obj, val)				\
-	HG_VALUE_MAKE_VALUE_NODE (pool, obj, HG_TYPE_VALUE_STRING, pointer, val)
-#define HG_VALUE_MAKE_DICT(pool, obj, val)				\
-	HG_VALUE_MAKE_VALUE_NODE (pool, obj, HG_TYPE_VALUE_DICT, pointer, val)
+#define HG_VALUE_MAKE_ARRAY(obj, val)					\
+	HG_VALUE_MAKE_VALUE_NODE_WITH_SAME_POOL (obj, HG_TYPE_VALUE_ARRAY, pointer, val)
+#define HG_VALUE_MAKE_STRING(obj, val)					\
+	HG_VALUE_MAKE_VALUE_NODE_WITH_SAME_POOL (obj, HG_TYPE_VALUE_STRING, pointer, val)
+#define HG_VALUE_MAKE_DICT(obj, val)					\
+	HG_VALUE_MAKE_VALUE_NODE_WITH_SAME_POOL (obj, HG_TYPE_VALUE_DICT, pointer, val)
 #define HG_VALUE_MAKE_NULL(pool, obj, val)				\
 	HG_VALUE_MAKE_VALUE_NODE (pool, obj, HG_TYPE_VALUE_NULL, pointer, val)
-#define HG_VALUE_MAKE_POINTER(pool, obj, val)				\
-	HG_VALUE_MAKE_VALUE_NODE (pool, obj, HG_TYPE_VALUE_POINTER, pointer, val)
+#define HG_VALUE_MAKE_POINTER(obj, val)					\
+	HG_VALUE_MAKE_VALUE_NODE_WITH_SAME_POOL (obj, HG_TYPE_VALUE_POINTER, pointer, val)
 #define HG_VALUE_MAKE_MARK(pool, obj)					\
 	HG_VALUE_MAKE_VALUE_NODE (pool, obj, HG_TYPE_VALUE_MARK, pointer, NULL)
-#define HG_VALUE_MAKE_FILE(pool, obj, val)				\
-	HG_VALUE_MAKE_VALUE_NODE (pool, obj, HG_TYPE_VALUE_FILE, pointer, val)
-#define HG_VALUE_MAKE_SNAPSHOT(pool, obj, val)				\
-	HG_VALUE_MAKE_VALUE_NODE (pool, obj, HG_TYPE_VALUE_SNAPSHOT, pointer, val)
+#define HG_VALUE_MAKE_FILE(obj, val)					\
+	HG_VALUE_MAKE_VALUE_NODE_WITH_SAME_POOL (obj, HG_TYPE_VALUE_FILE, pointer, val)
+#define HG_VALUE_MAKE_SNAPSHOT(obj, val)				\
+	HG_VALUE_MAKE_VALUE_NODE_WITH_SAME_POOL (obj, HG_TYPE_VALUE_SNAPSHOT, pointer, val)
 
 #define HG_VALUE_GET_VALUE_NODE(obj, sym)	((obj)->v.sym)
-#define HG_VALUE_GET_BOOLEAN(obj)	HG_VALUE_GET_VALUE_NODE (obj, boolean)
-#define HG_VALUE_GET_INTEGER(obj)	HG_VALUE_GET_VALUE_NODE (obj, integer)
-#define HG_VALUE_GET_REAL(obj)		HG_VALUE_GET_VALUE_NODE (obj, real)
-#define HG_VALUE_GET_NAME(obj)		(gchar *)HG_VALUE_GET_VALUE_NODE (obj, pointer)
-#define HG_VALUE_GET_ARRAY(obj)		(HgArray *)HG_VALUE_GET_VALUE_NODE (obj, pointer)
-#define HG_VALUE_GET_STRING(obj)	(HgString *)HG_VALUE_GET_VALUE_NODE (obj, pointer)
-#define HG_VALUE_GET_DICT(obj)		(HgDict *)HG_VALUE_GET_VALUE_NODE (obj, pointer)
-#define HG_VALUE_GET_NULL(obj)		HG_VALUE_GET_VALUE_NODE (obj, pointer)
-#define HG_VALUE_GET_POINTER(obj)	HG_VALUE_GET_VALUE_NODE (obj, pointer)
-#define HG_VALUE_GET_MARK(obj)		HG_VALUE_GET_VALUE_NODE (obj, pointer)
-#define HG_VALUE_GET_FILE(obj)		HG_VALUE_GET_VALUE_NODE (obj, pointer)
-#define HG_VALUE_GET_SNAPSHOT(obj)	HG_VALUE_GET_VALUE_NODE (obj, pointer)
+#define HG_VALUE_GET_BOOLEAN(obj)		HG_VALUE_GET_VALUE_NODE (obj, boolean)
+#define HG_VALUE_GET_INTEGER(obj)		HG_VALUE_GET_VALUE_NODE (obj, integer)
+#define HG_VALUE_GET_INTEGER_FROM_REAL(obj)	(gint32)HG_VALUE_GET_VALUE_NODE (obj, real)
+#define HG_VALUE_GET_REAL(obj)			HG_VALUE_GET_VALUE_NODE (obj, real)
+#define HG_VALUE_GET_NAME(obj)			(gchar *)HG_VALUE_GET_VALUE_NODE (obj, pointer)
+#define HG_VALUE_GET_ARRAY(obj)			(HgArray *)HG_VALUE_GET_VALUE_NODE (obj, pointer)
+#define HG_VALUE_GET_STRING(obj)		(HgString *)HG_VALUE_GET_VALUE_NODE (obj, pointer)
+#define HG_VALUE_GET_DICT(obj)			(HgDict *)HG_VALUE_GET_VALUE_NODE (obj, pointer)
+#define HG_VALUE_GET_NULL(obj)			HG_VALUE_GET_VALUE_NODE (obj, pointer)
+#define HG_VALUE_GET_POINTER(obj)		HG_VALUE_GET_VALUE_NODE (obj, pointer)
+#define HG_VALUE_GET_MARK(obj)			HG_VALUE_GET_VALUE_NODE (obj, pointer)
+#define HG_VALUE_GET_FILE(obj)			HG_VALUE_GET_VALUE_NODE (obj, pointer)
+#define HG_VALUE_GET_SNAPSHOT(obj)		HG_VALUE_GET_VALUE_NODE (obj, pointer)
 
-#define HG_VALUE_IS(obj, _type)		((obj)->type == (_type))
-#define HG_IS_VALUE_BOOLEAN(obj)	HG_VALUE_IS (obj, HG_TYPE_VALUE_BOOLEAN)
-#define HG_IS_VALUE_INTEGER(obj)	HG_VALUE_IS (obj, HG_TYPE_VALUE_INTEGER)
-#define HG_IS_VALUE_REAL(obj)		HG_VALUE_IS (obj, HG_TYPE_VALUE_REAL)
-#define HG_IS_VALUE_NAME(obj)		HG_VALUE_IS (obj, HG_TYPE_VALUE_NAME)
-#define HG_IS_VALUE_ARRAY(obj)		HG_VALUE_IS (obj, HG_TYPE_VALUE_ARRAY)
-#define HG_IS_VALUE_STRING(obj)		HG_VALUE_IS (obj, HG_TYPE_VALUE_STRING)
-#define HG_IS_VALUE_DICT(obj)		HG_VALUE_IS (obj, HG_TYPE_VALUE_DICT)
-#define HG_IS_VALUE_NULL(obj)		HG_VALUE_IS (obj, HG_TYPE_VALUE_NULL)
-#define HG_IS_VALUE_POINTER(obj)	HG_VALUE_IS (obj, HG_TYPE_VALUE_POINTER)
-#define HG_IS_VALUE_MARK(obj)		HG_VALUE_IS (obj, HG_TYPE_VALUE_MARK)
-#define HG_IS_VALUE_FILE(obj)		HG_VALUE_IS (obj, HG_TYPE_VALUE_FILE)
-#define HG_IS_VALUE_SNAPSHOT(obj)	HG_VALUE_IS (obj, HG_TYPE_VALUE_SNAPSHOT)
+#define HG_VALUE_IS(obj, _type)			((obj)->type == (_type))
+#define HG_IS_VALUE_BOOLEAN(obj)		HG_VALUE_IS (obj, HG_TYPE_VALUE_BOOLEAN)
+#define HG_IS_VALUE_INTEGER(obj)		HG_VALUE_IS (obj, HG_TYPE_VALUE_INTEGER)
+#define HG_IS_VALUE_REAL(obj)			HG_VALUE_IS (obj, HG_TYPE_VALUE_REAL)
+#define HG_IS_VALUE_NAME(obj)			HG_VALUE_IS (obj, HG_TYPE_VALUE_NAME)
+#define HG_IS_VALUE_ARRAY(obj)			HG_VALUE_IS (obj, HG_TYPE_VALUE_ARRAY)
+#define HG_IS_VALUE_STRING(obj)			HG_VALUE_IS (obj, HG_TYPE_VALUE_STRING)
+#define HG_IS_VALUE_DICT(obj)			HG_VALUE_IS (obj, HG_TYPE_VALUE_DICT)
+#define HG_IS_VALUE_NULL(obj)			HG_VALUE_IS (obj, HG_TYPE_VALUE_NULL)
+#define HG_IS_VALUE_POINTER(obj)		HG_VALUE_IS (obj, HG_TYPE_VALUE_POINTER)
+#define HG_IS_VALUE_MARK(obj)			HG_VALUE_IS (obj, HG_TYPE_VALUE_MARK)
+#define HG_IS_VALUE_FILE(obj)			HG_VALUE_IS (obj, HG_TYPE_VALUE_FILE)
+#define HG_IS_VALUE_SNAPSHOT(obj)		HG_VALUE_IS (obj, HG_TYPE_VALUE_SNAPSHOT)
 
-#define HG_VALUE_REAL_SIMILAR(x, y)	(fabs(x - y) <= fabs(DBL_EPSILON * x))
+#define HG_VALUE_REAL_SIMILAR(x, y)		(fabs(x - y) <= fabs(DBL_EPSILON * x))
 
 #define hg_value_node_restorable(node)				\
 	G_STMT_START {						\

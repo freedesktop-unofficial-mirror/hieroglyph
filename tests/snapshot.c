@@ -35,7 +35,7 @@ main(void)
 //	g_print("appending node to array...\n");
 	hg_array_append(array, node);
 //	g_print("creating node...\n");
-	HG_VALUE_MAKE_STRING (pool, node, string);
+	HG_VALUE_MAKE_STRING (node, string);
 //	g_print("appending node to array...\n");
 	hg_array_append(array, node);
 	dict = hg_dict_new(pool, 2);

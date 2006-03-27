@@ -44,18 +44,14 @@
 	G_STMT_START {							\
 		HgValueNode *__lb_op_node;				\
 									\
-		HG_VALUE_MAKE_POINTER (libretto_vm_get_current_pool(v),	\
-				       __lb_op_node,			\
-				       (o));				\
+		HG_VALUE_MAKE_POINTER (__lb_op_node, (o));		\
 		libretto_vm_set_error((v), __lb_op_node, (e), (d));	\
 	} G_STMT_END
 #define _libretto_vm_set_error_from_file(v, o, e, d)			\
 	G_STMT_START {							\
 		HgValueNode *__lb_op_node;				\
 									\
-		HG_VALUE_MAKE_POINTER (libretto_vm_get_current_pool(v),	\
-				       __lb_op_node,			\
-				       (o));				\
+		HG_VALUE_MAKE_POINTER (__lb_op_node, (o));		\
 		libretto_vm_set_error_from_file((v), __lb_op_node, (e), (d)); \
 	} G_STMT_END
 
@@ -249,7 +245,7 @@ _libretto_vm_run(LibrettoVM  *vm,
 
 	while (1) {
 		if (!hg_file_object_has_error(file)) {
-			HG_VALUE_MAKE_FILE (pool, node, file);
+			HG_VALUE_MAKE_FILE (node, file);
 			if (node == NULL) {
 				_libretto_vm_set_error(vm, file, LB_e_VMerror, FALSE);
 				*error = TRUE;
@@ -713,7 +709,7 @@ libretto_vm_get_name_node(LibrettoVM  *vm,
 
 	node = _libretto_vm_get_name_node(vm, name);
 	if (node) {
-		HG_VALUE_MAKE_NAME (vm->global_pool, retval, HG_VALUE_GET_NAME (node));
+		HG_VALUE_MAKE_NAME (retval, HG_VALUE_GET_NAME (node));
 	}
 
 	return retval;
@@ -809,7 +805,7 @@ libretto_vm_startjob(LibrettoVM  *vm,
 		vm->local_snapshot = g_list_append(vm->local_snapshot, lsnapshot);
 	}
 
-	HG_VALUE_MAKE_DICT (vm->local_pool, node, vm->systemdict);
+	HG_VALUE_MAKE_DICT (node, vm->systemdict);
 	libretto_stack_push(vm->dstack, node);
 
 	if (!libretto_operator_init(vm))
@@ -1070,7 +1066,7 @@ libretto_vm_main(LibrettoVM *vm)
 							      hg_string_get_string(hs),
 							      hg_string_maxlength(hs));
 				    libretto_stack_pop(vm->estack);
-				    HG_VALUE_MAKE_FILE (libretto_vm_get_current_pool(vm), node, file);
+				    HG_VALUE_MAKE_FILE (node, file);
 				    retval = libretto_stack_push(vm->estack, node);
 			    } else {
 				    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.", __FUNCTION__, node->type);

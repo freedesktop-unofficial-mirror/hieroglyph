@@ -118,7 +118,7 @@ G_STMT_START {
 				}
 				for (j = 0; j <= i; j++)
 					libretto_stack_pop(ostack);
-				HG_VALUE_MAKE_ARRAY (pool, node, array);
+				HG_VALUE_MAKE_ARRAY (node, array);
 				if (node == NULL) {
 					_libretto_operator_set_error(vm, op, LB_e_VMerror);
 					break;
@@ -168,7 +168,7 @@ G_STMT_START {
 				}
 				for (j = 0; j <= i; j++)
 					libretto_stack_pop(ostack);
-				HG_VALUE_MAKE_DICT (pool, node, dict);
+				HG_VALUE_MAKE_DICT (node, dict);
 				if (node == NULL) {
 					_libretto_operator_set_error(vm, op, LB_e_VMerror);
 					break;
@@ -588,7 +588,7 @@ G_STMT_START
 			break;
 		}
 		hg_string_fix_string_size(hs);
-		HG_VALUE_MAKE_STRING (pool, node, hs);
+		HG_VALUE_MAKE_STRING (node, hs);
 		if (node == NULL) {
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
@@ -926,7 +926,7 @@ G_STMT_START
 			HG_VALUE_MAKE_NULL (pool, n, NULL);
 			hg_array_append(array, n);
 		}
-		HG_VALUE_MAKE_ARRAY (pool, node, array);
+		HG_VALUE_MAKE_ARRAY (node, array);
 		if (node == NULL) {
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
@@ -1396,7 +1396,6 @@ G_STMT_START
 	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
 	guint depth = libretto_stack_depth(ostack);
 	HgValueNode *node, *n2, *dup_node;
-	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 
 	while (1) {
 		if (depth < 1) {
@@ -1464,7 +1463,7 @@ G_STMT_START
 					/* need to make a subarray for that */
 					a2 = hg_array_make_subarray(obj->pool, a2, 0, len1 - 1);
 				}
-				HG_VALUE_MAKE_ARRAY (pool, dup_node, a2);
+				HG_VALUE_MAKE_ARRAY (dup_node, a2);
 			} else if (HG_IS_VALUE_DICT (node) &&
 				   HG_IS_VALUE_DICT (n2)) {
 				HgDict *d1, *d2;
@@ -1485,7 +1484,7 @@ G_STMT_START
 					}
 				}
 				hg_dict_traverse(d1, _libretto_operator_copy__traverse_dict, d2);
-				HG_VALUE_MAKE_DICT (pool, dup_node, d2);
+				HG_VALUE_MAKE_DICT (dup_node, d2);
 			} else if (HG_IS_VALUE_STRING (node) &&
 				   HG_IS_VALUE_STRING (n2)) {
 				HgString *s1, *s2;
@@ -1513,7 +1512,7 @@ G_STMT_START
 					/* need to make a subarray for that */
 					s2 = hg_string_make_substring(obj->pool, s2, 0, len1 - 1);
 				}
-				HG_VALUE_MAKE_STRING (pool, dup_node, s2);
+				HG_VALUE_MAKE_STRING (dup_node, s2);
 			} else {
 				_libretto_operator_set_error(vm, op, LB_e_typecheck);
 				break;
@@ -2005,7 +2004,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		HG_VALUE_MAKE_DICT (pool, node, dict);
+		HG_VALUE_MAKE_DICT (node, dict);
 		if (node == NULL) {
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
@@ -2063,7 +2062,7 @@ G_STMT_START
 				break;
 			}
 			array = hg_array_make_subarray(obj->pool, array, 0, ddepth - 1);
-			HG_VALUE_MAKE_ARRAY (obj->pool, node, array);
+			HG_VALUE_MAKE_ARRAY (node, array);
 			libretto_stack_pop(ostack);
 			retval = libretto_stack_push(ostack, node);
 			/* it must be true */
@@ -2355,7 +2354,7 @@ G_STMT_START
 				break;
 			}
 			array = hg_array_make_subarray(obj->pool, array, 0, edepth - 2);
-			HG_VALUE_MAKE_ARRAY (obj->pool, node, array);
+			HG_VALUE_MAKE_ARRAY (node, array);
 			libretto_stack_pop(ostack);
 			retval = libretto_stack_push(ostack, node);
 			/* it must be true */
@@ -2567,7 +2566,7 @@ G_STMT_START
 		}
 		libretto_stack_pop(ostack);
 		libretto_stack_pop(ostack);
-		HG_VALUE_MAKE_FILE (pool, n1, file);
+		HG_VALUE_MAKE_FILE (n1, file);
 		if (n1 == NULL) {
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
@@ -2931,7 +2930,7 @@ G_STMT_START
 			}
 			hg_mem_get_object__inline(array, obj);
 			subarray = hg_array_make_subarray(obj->pool, array, index, index + count - 1);
-			HG_VALUE_MAKE_ARRAY (obj->pool, n1, subarray);
+			HG_VALUE_MAKE_ARRAY (n1, subarray);
 		} else if (HG_IS_VALUE_STRING (n1)) {
 			HgString *string = HG_VALUE_GET_STRING (n1), *substring;
 			guint len = hg_string_maxlength(string);
@@ -2943,7 +2942,7 @@ G_STMT_START
 			}
 			hg_mem_get_object__inline(string, obj);
 			substring = hg_string_make_substring(obj->pool, string, index, index + count - 1);
-			HG_VALUE_MAKE_STRING (obj->pool, n1, substring);
+			HG_VALUE_MAKE_STRING (n1, substring);
 		} else {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -3583,7 +3582,7 @@ G_STMT_START {
 			}
 			hg_array_append(array, node);
 		}
-		HG_VALUE_MAKE_ARRAY (pool, node, array);
+		HG_VALUE_MAKE_ARRAY (node, array);
 		retval = libretto_stack_push(ostack, node);
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
@@ -4585,7 +4584,7 @@ G_STMT_START
 		libretto_vm_use_global_pool(vm, FALSE);
 		pool = libretto_vm_get_current_pool(vm);
 		snapshot = hg_mem_pool_save_snapshot(pool);
-		HG_VALUE_MAKE_SNAPSHOT (pool, node, snapshot);
+		HG_VALUE_MAKE_SNAPSHOT (node, snapshot);
 		if (node == NULL) {
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
@@ -5157,7 +5156,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		HG_VALUE_MAKE_STRING (pool, node, hs);
+		HG_VALUE_MAKE_STRING (node, hs);
 		if (node == NULL) {
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
@@ -5545,7 +5544,7 @@ G_STMT_START
 			retval = libretto_stack_push(ostack, node);
 			/* it must be true */
 		} else {
-			HG_VALUE_MAKE_DICT (pool, node, dict);
+			HG_VALUE_MAKE_DICT (node, dict);
 			libretto_stack_push(ostack, node);
 			HG_VALUE_MAKE_BOOLEAN (pool, node, TRUE);
 			retval = libretto_stack_push(ostack, node);
@@ -5940,7 +5939,7 @@ G_STMT_START
 
 	hg_string_append(hs, "Hieroglyph PostScript Interpreter", -1);
 	hg_string_fix_string_size(hs);
-	HG_VALUE_MAKE_STRING (pool, node, hs);
+	HG_VALUE_MAKE_STRING (node, hs);
 	hg_object_unwritable((HgObject *)node);
 	retval = libretto_stack_push(ostack, node);
 	if (!retval)
@@ -6111,7 +6110,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		HG_VALUE_MAKE_FILE (pool, node, file);
+		HG_VALUE_MAKE_FILE (node, file);
 		if (node == NULL) {
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
@@ -6193,7 +6192,7 @@ _libretto_operator_real_to_string(gpointer data)
 			g_warning("Failed to create an operator %s", #name); \
 		} else {						\
 			__lb_key = libretto_vm_get_name_node((vm), #name); \
-			HG_VALUE_MAKE_POINTER ((pool), __lb_val, (ret_op)); \
+			HG_VALUE_MAKE_POINTER (__lb_val, (ret_op));	\
 			if (__lb_val == NULL) {				\
 				libretto_vm_set_error((vm), __lb_key, LB_e_VMerror, FALSE); \
 			} else {					\
@@ -6669,7 +6668,7 @@ libretto_operator_init(LibrettoVM *vm)
 	LibrettoStack *ostack;
 	gboolean pool_mode;
 	HgMemPool *pool;
-	HgDict *systemdict;
+	HgDict *systemdict, *dict;
 	HgValueNode *key, *val;
 
 	g_return_val_if_fail (vm != NULL, FALSE);
@@ -6710,23 +6709,27 @@ libretto_operator_init(LibrettoVM *vm)
 	hg_dict_insert(pool, systemdict, key, val);
 	/* $error */
 	key = _libretto_vm_get_name_node(vm, "$error");
-	HG_VALUE_MAKE_DICT (pool, val, libretto_vm_get_dict_error(vm));
+	dict = libretto_vm_get_dict_error(vm);
+	HG_VALUE_MAKE_DICT (val, dict);
 	hg_dict_insert(pool, systemdict, key, val);
 	/* errordict */
 	key = _libretto_vm_get_name_node(vm, "errordict");
-	HG_VALUE_MAKE_DICT (pool, val, libretto_vm_get_dict_errordict(vm));
+	dict = libretto_vm_get_dict_errordict(vm);
+	HG_VALUE_MAKE_DICT (val, dict);
 	hg_dict_insert(pool, systemdict, key, val);
 	/* serverdict */
 	key = _libretto_vm_get_name_node(vm, "serverdict");
-	HG_VALUE_MAKE_DICT (pool, val, libretto_vm_get_dict_serverdict(vm));
+	dict = libretto_vm_get_dict_serverdict(vm);
+	HG_VALUE_MAKE_DICT (val, dict);
 	hg_dict_insert(pool, systemdict, key, val);
 	/* statusdict */
 	key = _libretto_vm_get_name_node(vm, "statusdict");
-	HG_VALUE_MAKE_DICT (pool, val, libretto_vm_get_dict_statusdict(vm));
+	dict = libretto_vm_get_dict_statusdict(vm);
+	HG_VALUE_MAKE_DICT (val, dict);
 	hg_dict_insert(pool, systemdict, key, val);
 	/* systemdict */
 	key = _libretto_vm_get_name_node(vm, "systemdict");
-	HG_VALUE_MAKE_DICT (pool, val, systemdict);
+	HG_VALUE_MAKE_DICT (val, systemdict);
 	hg_dict_insert(pool, systemdict, key, val);
 
 	libretto_operator_level1_init(vm, pool, systemdict);
