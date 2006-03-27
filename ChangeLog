@@ -1,5 +1,16 @@
 2006-03-27  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgmem.c (hg_mem_pool_new): initialize use_gc.
+	(hg_mem_pool_get_used_heap_size): new function.
+	(hg_mem_pool_get_free_heap_size): new function.
+
+	* libretto/operator.c (_libretto_operator_op_vmstatus): implemented.
+
+	* libretto/scanner.c (_libretto_scanner_get_object): fixed a null
+	exception.
+
+	* libretto/vm.c (libretto_vm_get_save_level): new function.
+
 	* hieroglyph/hgvaluenode.c (_hg_value_node_real_to_string):
 	fix an allocated size at the end.
 

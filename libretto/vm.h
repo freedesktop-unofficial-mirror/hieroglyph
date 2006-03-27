@@ -68,6 +68,7 @@ HgFileObject        *libretto_vm_get_io              (LibrettoVM            *vm,
 void                 libretto_vm_set_io              (LibrettoVM            *vm,
 						      LibrettoIOType         type,
 						      HgFileObject          *file);
+guint                libretto_vm_get_save_level      (LibrettoVM            *vm);
 HgValueNode          *libretto_vm_get_name_node      (LibrettoVM            *vm,
 						      const gchar           *name);
 HgValueNode          *libretto_vm_lookup             (LibrettoVM            *vm,

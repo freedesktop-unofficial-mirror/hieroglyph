@@ -54,6 +54,8 @@ HgMemPool     *hg_mem_pool_new                    (HgAllocator   *allocator,
 void           hg_mem_pool_destroy                (HgMemPool     *pool);
 gboolean       hg_mem_pool_allow_resize           (HgMemPool     *pool,
 						   gboolean       flag);
+gsize          hg_mem_pool_get_used_heap_size     (HgMemPool     *pool);
+gsize          hg_mem_pool_get_free_heap_size     (HgMemPool     *pool);
 guint          hg_mem_pool_get_default_access_mode(HgMemPool     *pool);
 void           hg_mem_pool_set_default_access_mode(HgMemPool     *pool,
 						   guint          state);

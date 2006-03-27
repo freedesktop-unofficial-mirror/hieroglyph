@@ -5444,7 +5444,36 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_UNIMPLEMENTED_OP (vmstatus);
+DEFUNC_OP (vmstatus)
+G_STMT_START
+{
+	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgValueNode *n1, *n2, *n3;
+	HgMemPool *pool = libretto_vm_get_current_pool(vm);
+	gint32 level, used, maximum;
+
+	while (1) {
+		level = libretto_vm_get_save_level(vm);
+		used = hg_mem_pool_get_used_heap_size(pool);
+		maximum = hg_mem_pool_get_free_heap_size(pool);
+		HG_VALUE_MAKE_INTEGER (pool, n1, level);
+		HG_VALUE_MAKE_INTEGER (pool, n2, used);
+		HG_VALUE_MAKE_INTEGER (pool, n3, maximum);
+		if (n1 == NULL ||
+		    n2 == NULL ||
+		    n3 == NULL) {
+			_libretto_operator_set_error(vm, op, LB_e_VMerror);
+			break;
+		}
+		libretto_stack_push(ostack, n1);
+		libretto_stack_push(ostack, n2);
+		retval = libretto_stack_push(ostack, n3);
+		if (!retval)
+			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
 
 DEFUNC_OP (wcheck)
 G_STMT_START

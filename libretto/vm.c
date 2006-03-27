@@ -671,6 +671,22 @@ libretto_vm_set_io(LibrettoVM     *vm,
 	}
 }
 
+guint
+libretto_vm_get_save_level(LibrettoVM *vm)
+{
+	guint retval;
+
+	g_return_val_if_fail (vm != NULL, 0);
+
+	if (libretto_vm_is_global_pool_used(vm)) {
+		retval = g_list_length(vm->global_snapshot) + g_list_length(vm->saved_jobs);
+	} else {
+		retval = g_list_length(vm->local_snapshot) + g_list_length(vm->saved_jobs);
+	}
+
+	return retval;
+}
+
 HgValueNode *
 _libretto_vm_get_name_node(LibrettoVM  *vm,
 			   const gchar *name)

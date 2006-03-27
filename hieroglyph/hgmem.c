@@ -1133,6 +1133,7 @@ hg_mem_pool_new(HgAllocator *allocator,
 	pool->root_node = NULL;
 	pool->periodical_gc = FALSE;
 	pool->gc_checked = FALSE;
+	pool->use_gc = FALSE;
 	pool->gc_threshold = 50;
 	allocator->used = TRUE;
 	if (!allocator->vtable.initialize(pool, prealloc)) {
@@ -1170,6 +1171,22 @@ hg_mem_pool_allow_resize(HgMemPool *pool,
 	pool->allow_resize = flag;
 
 	return TRUE;
+}
+
+gsize
+hg_mem_pool_get_used_heap_size(HgMemPool *pool)
+{
+	g_return_val_if_fail (pool != NULL, 0);
+
+	return pool->used_heap_size;
+}
+
+gsize
+hg_mem_pool_get_free_heap_size(HgMemPool *pool)
+{
+	g_return_val_if_fail (pool != NULL, 0);
+
+	return pool->total_heap_size - pool->used_heap_size;
 }
 
 void
