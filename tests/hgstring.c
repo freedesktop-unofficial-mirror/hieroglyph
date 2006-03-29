@@ -1,3 +1,4 @@
+#include <hieroglyph/hgallocator-ffit.h>
 #include <hieroglyph/hgmem.h>
 #include <hieroglyph/hgstring.h>
 

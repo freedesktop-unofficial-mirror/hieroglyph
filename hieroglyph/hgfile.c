@@ -31,6 +31,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include "hgfile.h"
+#include "hgallocator-ffit.h"
 #include "hgmem.h"
 #include "hgstring.h"
 #include "hglineedit.h"

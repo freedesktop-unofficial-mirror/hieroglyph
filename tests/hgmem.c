@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <hieroglyph/hgallocator-ffit.h>
 #include <hieroglyph/hgmem.h>
 
 int

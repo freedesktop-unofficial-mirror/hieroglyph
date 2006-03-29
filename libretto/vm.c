@@ -27,6 +27,7 @@
 
 #include <errno.h>
 #include <string.h>
+#include <hieroglyph/hgallocator-ffit.h>
 #include <hieroglyph/hgmem.h>
 #include <hieroglyph/hgarray.h>
 #include <hieroglyph/hgdict.h>

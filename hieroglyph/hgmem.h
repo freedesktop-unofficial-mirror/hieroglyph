@@ -33,10 +33,6 @@ void hg_mem_init         (void);
 void hg_mem_finalize     (void);
 void hg_mem_set_stack_end(gpointer mark);
 
-/* allocator */
-HgAllocator *hg_allocator_new    (void);
-void         hg_allocator_destroy(HgAllocator *allocator);
-
 /* memory pool */
 #define hg_mem_get_object__inline_nocheck(__data__)			\
 	((HgMemObject *)((gsize)(__data__) - sizeof (HgMemObject)))
@@ -68,7 +64,7 @@ gpointer       hg_mem_alloc                       (HgMemPool     *pool,
 gpointer       hg_mem_alloc_with_flags            (HgMemPool     *pool,
 						   gsize          size,
 						   guint          flags);
-void           hg_mem_free                        (gpointer       data);
+gboolean       hg_mem_free                        (gpointer       data);
 gpointer       hg_mem_resize                      (gpointer       data,
 						   gsize          size);
 

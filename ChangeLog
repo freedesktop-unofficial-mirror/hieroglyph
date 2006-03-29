@@ -1,3 +1,11 @@
+2006-03-30  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgmem.c: split up the allocator part to another files.
+
+	* hieroglyph/hgallocator-private.h: new file.
+
+	* hieroglyph/hgallocator-ffit.[ch]: new files.
+
 2006-03-28  Akira TAGOH  <at@gclab.org>
 
 	* libretto/operator.c: makes a node with the same pool where the value

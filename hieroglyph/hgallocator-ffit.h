@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * version.h
- * Copyright (C) 2005-2006 Akira TAGOH
+ * hgallocator-ffit.h
+ * Copyright (C) 2006 Akira TAGOH
  * 
  * Authors:
  *   Akira TAGOH  <at@gclab.org>
@@ -21,14 +21,25 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HG_VERSION_H__
-#define __HG_VERSION_H__
+#ifndef __HG_ALLOCATOR_FFIT_H__
+#define __HG_ALLOCATOR_FFIT_H__
 
-#include <glib/gmacros.h>
+#ifdef __HG_ALLOCATOR_H__
+#error Cannot use another allocator at the same time with this
+#endif
 
-#define HIEROGLYPH_VERSION	"@VERSION@"
-#define HIEROGLYPH_UUID		"7b5de8d3-307a-44d2-bde1-63c1f3f3ba54"
+#define __HG_ALLOCATOR_H__
 
-const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
+#include <hieroglyph/hgtypes.h>
 
-#endif /* __HG_VERSION_H__ */
+#define hg_allocator_new	hg_allocator_ffit_new
+#define hg_allocator_destroy	hg_allocator_ffit_destroy
+
+G_BEGIN_DECLS
+
+HgAllocator *hg_allocator_ffit_new    (void);
+void         hg_allocator_ffit_destroy(HgAllocator *allocator);
+
+G_END_DECLS
+
+#endif /* __HG_ALLOCATOR_FFIT_H__ */
