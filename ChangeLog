@@ -1,5 +1,7 @@
 2006-03-30  Akira TAGOH  <at@gclab.org>
 
+	* lib/hg_init.ps (.printerror): show the details of dict.
+
 	* hieroglyph/hgmem.c: split up the allocator part to another files.
 
 	* hieroglyph/hgallocator-private.h: new file.

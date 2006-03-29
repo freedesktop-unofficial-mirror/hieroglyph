@@ -223,7 +223,28 @@ systemdict /.statementedit known {
 	$error /dstack known {
 	    $error /dstack get dup length
 	    (Dictionary stack[) print =only (]:\n) print
-	    {(  ) print ==only} forall
+	    {
+		(  ) print
+%		dup type /dicttype eq {
+		    (--dict:) print
+		    dup length ==only (/) print dup maxlength ==only
+		    dup wcheck not {
+			((ro)) print
+		    } if
+%		    /gcheck where {
+%			pop gcheck {
+%			    ((G))
+%			} {
+%			    ((L))
+%			} ifelse print
+%		    } {
+			pop
+%		    } ifelse (--) print
+		    (--) print
+%		} {
+%		    ==only
+%		} ifelse
+	    } forall
 	    (\n) print
 	} if
 	% restore objects
