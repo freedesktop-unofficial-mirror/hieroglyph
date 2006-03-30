@@ -1912,8 +1912,64 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_UNIMPLEMENTED_OP (cvlit);
-DEFUNC_UNIMPLEMENTED_OP (cvn);
+DEFUNC_OP (cvlit)
+G_STMT_START
+{
+	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = libretto_stack_depth(ostack);
+	HgValueNode *node;
+
+	while (1) {
+		if (depth < 1) {
+			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
+			break;
+		}
+		node = libretto_stack_index(ostack, 0);
+		hg_object_unexecutable((HgObject *)node);
+		retval = TRUE;
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
+
+DEFUNC_OP (cvn)
+G_STMT_START
+{
+	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = libretto_stack_depth(ostack);
+	HgValueNode *n1, *n2;
+	HgString *hs;
+
+	while (1) {
+		if (depth < 1) {
+			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
+			break;
+		}
+		n1 = libretto_stack_index(ostack, 0);
+		if (!HG_IS_VALUE_STRING (n1)) {
+			_libretto_operator_set_error(vm, op, LB_e_typecheck);
+			break;
+		}
+		if (!hg_object_is_readable((HgObject *)n1)) {
+			_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
+			break;
+		}
+		hs = HG_VALUE_GET_STRING (n1);
+		HG_VALUE_MAKE_NAME (n2, hg_string_get_string(hs));
+		if (n2 == NULL) {
+			_libretto_operator_set_error(vm, op, LB_e_VMerror);
+			break;
+		}
+		if (hg_object_is_executable((HgObject *)n1))
+			hg_object_executable((HgObject *)n2);
+		libretto_stack_pop(ostack);
+		retval = libretto_stack_push(ostack, n2);
+		/* it must be true */
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
+
 DEFUNC_UNIMPLEMENTED_OP (cvr);
 DEFUNC_UNIMPLEMENTED_OP (cvrs);
 
@@ -2919,6 +2975,10 @@ G_STMT_START
 		}
 		index = HG_VALUE_GET_INTEGER (n2);
 		count = HG_VALUE_GET_INTEGER (n3);
+		if (!hg_object_is_readable((HgObject *)n1)) {
+			_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
+			break;
+		}
 		if (HG_IS_VALUE_ARRAY (n1)) {
 			HgArray *array = HG_VALUE_GET_ARRAY (n1), *subarray;
 			guint len = hg_array_length(array);

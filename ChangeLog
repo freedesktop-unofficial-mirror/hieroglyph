@@ -1,5 +1,9 @@
 2006-03-30  Akira TAGOH  <at@gclab.org>
 
+	* libretto/operator.c (_libretto_operator_op_cvlit): implemented.
+	(_libretto_operator_op_cvn): implemented.
+	(_libretto_operator_op_getinterval): check if it's readable.
+
 	* lib/hg_init.ps (.printerror): show the details of dict.
 
 	* hieroglyph/hgmem.c: split up the allocator part to another files.
