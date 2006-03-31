@@ -357,7 +357,7 @@ _hg_cairo_device_real_stroke(HgDevice       *device,
 	for (i = 0; i < len; i++) {
 		node = hg_array_index(render->dashline_pattern, i);
 		if (HG_IS_VALUE_INTEGER (node)) {
-			d = (gdouble)HG_VALUE_GET_INTEGER (node);
+			d = HG_VALUE_GET_REAL_FROM_INTEGER (node);
 		} else if (HG_IS_VALUE_REAL (node)) {
 			d = HG_VALUE_GET_REAL (node);
 		} else {

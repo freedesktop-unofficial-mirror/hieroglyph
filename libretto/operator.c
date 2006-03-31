@@ -694,7 +694,7 @@ G_STMT_START
 		n2 = libretto_stack_index(ostack, 0);
 		n1 = libretto_stack_index(ostack, 1);
 		if (HG_IS_VALUE_INTEGER (n1))
-			d1 = (gdouble)HG_VALUE_GET_INTEGER (n1);
+			d1 = HG_VALUE_GET_REAL_FROM_INTEGER (n1);
 		else if (HG_IS_VALUE_REAL (n1)) {
 			d1 = HG_VALUE_GET_REAL (n1);
 			integer = FALSE;
@@ -703,7 +703,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (n2))
-			d2 = (gdouble)HG_VALUE_GET_INTEGER (n2);
+			d2 = HG_VALUE_GET_REAL_FROM_INTEGER (n2);
 		else if (HG_IS_VALUE_REAL (n2)) {
 			d2 = HG_VALUE_GET_REAL (n2);
 			integer = FALSE;
@@ -832,7 +832,7 @@ G_STMT_START
 		ny = libretto_stack_index(ostack, 3);
 		nx = libretto_stack_index(ostack, 4);
 		if (HG_IS_VALUE_INTEGER (nx)) {
-			dx = (gdouble)HG_VALUE_GET_INTEGER (nx);
+			dx = HG_VALUE_GET_REAL_FROM_INTEGER (nx);
 		} else if (HG_IS_VALUE_REAL (nx)) {
 			dx = HG_VALUE_GET_REAL (nx);
 		} else {
@@ -840,7 +840,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (ny)) {
-			dy = (gdouble)HG_VALUE_GET_INTEGER (ny);
+			dy = HG_VALUE_GET_REAL_FROM_INTEGER (ny);
 		} else if (HG_IS_VALUE_REAL (ny)) {
 			dy = HG_VALUE_GET_REAL (ny);
 		} else {
@@ -848,7 +848,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (nr)) {
-			dr = (gdouble)HG_VALUE_GET_INTEGER (nr);
+			dr = HG_VALUE_GET_REAL_FROM_INTEGER (nr);
 		} else if (HG_IS_VALUE_REAL (nr)) {
 			dr = HG_VALUE_GET_REAL (nr);
 		} else {
@@ -856,7 +856,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (nangle1)) {
-			dangle1 = (gdouble)HG_VALUE_GET_INTEGER (nangle1);
+			dangle1 = HG_VALUE_GET_REAL_FROM_INTEGER (nangle1);
 		} else if (HG_IS_VALUE_REAL (nangle1)) {
 			dangle1 = HG_VALUE_GET_REAL (nangle1);
 		} else {
@@ -864,7 +864,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (nangle2)) {
-			dangle2 = (gdouble)HG_VALUE_GET_INTEGER (nangle2);
+			dangle2 = HG_VALUE_GET_REAL_FROM_INTEGER (nangle2);
 		} else if (HG_IS_VALUE_REAL (nangle2)) {
 			dangle2 = HG_VALUE_GET_REAL (nangle2);
 		} else {
@@ -998,7 +998,7 @@ G_STMT_START
 		n2 = libretto_stack_index(ostack, 0);
 		n1 = libretto_stack_index(ostack, 1);
 		if (HG_IS_VALUE_INTEGER (n1)) {
-			d1 = (gdouble)HG_VALUE_GET_INTEGER (n1);
+			d1 = HG_VALUE_GET_REAL_FROM_INTEGER (n1);
 		} else if (HG_IS_VALUE_REAL (n1)) {
 			d1 = HG_VALUE_GET_REAL (n1);
 		} else {
@@ -1006,7 +1006,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (n2)) {
-			d2 = (gdouble)HG_VALUE_GET_INTEGER (n2);
+			d2 = HG_VALUE_GET_REAL_FROM_INTEGER (n2);
 		} else if (HG_IS_VALUE_REAL (n2)) {
 			d2 = HG_VALUE_GET_REAL (n2);
 		} else {
@@ -1244,7 +1244,7 @@ G_STMT_START
 		for (i = 0; i < 6; i++) {
 			node = hg_array_index(matrix, i);
 			if (HG_IS_VALUE_INTEGER (node)) {
-				dmatrix[i] = (gdouble)HG_VALUE_GET_INTEGER (node);
+				dmatrix[i] = HG_VALUE_GET_REAL_FROM_INTEGER (node);
 			} else if (HG_IS_VALUE_REAL (node)) {
 				dmatrix[i] = HG_VALUE_GET_REAL (node);
 			} else {
@@ -1326,7 +1326,7 @@ G_STMT_START
 		for (i = 0; i < 6; i++) {
 			node = hg_array_index(m1, i);
 			if (HG_IS_VALUE_INTEGER (node)) {
-				d1[i] = (gdouble)HG_VALUE_GET_INTEGER (node);
+				d1[i] = HG_VALUE_GET_REAL_FROM_INTEGER (node);
 			} else if (HG_IS_VALUE_REAL (node)) {
 				d1[i] = HG_VALUE_GET_REAL (node);
 			} else {
@@ -1335,7 +1335,7 @@ G_STMT_START
 			}
 			node = hg_array_index(m2, i);
 			if (HG_IS_VALUE_INTEGER (node)) {
-				d2[i] = (gdouble)HG_VALUE_GET_INTEGER (node);
+				d2[i] = HG_VALUE_GER_REAL_FROM_INTEGER (node);
 			} else if (HG_IS_VALUE_REAL (node)) {
 				d2[i] = HG_VALUE_GET_REAL (node);
 			} else {
@@ -1544,7 +1544,7 @@ G_STMT_START
 		}
 		node = libretto_stack_index(ostack, 0);
 		if (HG_IS_VALUE_INTEGER (node)) {
-			d = (gdouble)HG_VALUE_GET_INTEGER (node);
+			d = HG_VALUE_GER_REAL_FROM_INTEGER (node);
 		} else if (HG_IS_VALUE_REAL (node)) {
 			d = HG_VALUE_GET_REAL (node);
 		} else {
@@ -1765,7 +1765,7 @@ G_STMT_START
 		ny1 = libretto_stack_index(ostack, 4);
 		nx1 = libretto_stack_index(ostack, 5);
 		if (HG_IS_VALUE_INTEGER (nx1)) {
-			dx1 = (gdouble)HG_VALUE_GET_INTEGER (nx1);
+			dx1 = HG_VALUE_GET_REAL_FROM_INTEGER (nx1);
 		} else if (HG_IS_VALUE_REAL (nx1)) {
 			dx1 = HG_VALUE_GET_REAL (nx1);
 		} else {
@@ -1773,7 +1773,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (ny1)) {
-			dy1 = (gdouble)HG_VALUE_GET_INTEGER (ny1);
+			dy1 = HG_VALUE_GET_REAL_FROM_INTEGER (ny1);
 		} else if (HG_IS_VALUE_REAL (ny1)) {
 			dy1 = HG_VALUE_GET_REAL (ny1);
 		} else {
@@ -1781,7 +1781,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (nx2)) {
-			dx2 = (gdouble)HG_VALUE_GET_INTEGER (nx2);
+			dx2 = HG_VALUE_GET_REAL_FROM_INTEGER (nx2);
 		} else if (HG_IS_VALUE_REAL (nx2)) {
 			dx2 = HG_VALUE_GET_REAL (nx2);
 		} else {
@@ -1789,7 +1789,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (ny2)) {
-			dy2 = (gdouble)HG_VALUE_GET_INTEGER (ny2);
+			dy2 = HG_VALUE_GET_REAL_FROM_INTEGER (ny2);
 		} else if (HG_IS_VALUE_REAL (ny2)) {
 			dy2 = HG_VALUE_GET_REAL (ny2);
 		} else {
@@ -1797,7 +1797,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (nx3)) {
-			dx3 = (gdouble)HG_VALUE_GET_INTEGER (nx3);
+			dx3 = HG_VALUE_GET_REAL_FROM_INTEGER (nx3);
 		} else if (HG_IS_VALUE_REAL (nx3)) {
 			dx3 = HG_VALUE_GET_REAL (nx3);
 		} else {
@@ -1805,7 +1805,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (ny3)) {
-			dy3 = (gdouble)HG_VALUE_GET_INTEGER (ny3);
+			dy3 = HG_VALUE_GET_REAL_FROM_INTEGER (ny3);
 		} else if (HG_IS_VALUE_REAL (ny3)) {
 			dy3 = HG_VALUE_GET_REAL (ny3);
 		} else {
@@ -2147,7 +2147,7 @@ G_STMT_START
 		n2 = libretto_stack_index(ostack, 0);
 		n1 = libretto_stack_index(ostack, 1);
 		if (HG_IS_VALUE_INTEGER (n1))
-			d1 = (gdouble)HG_VALUE_GET_INTEGER (n1);
+			d1 = HG_VALUE_GET_REAL_FROM_INTEGER (n1);
 		else if (HG_IS_VALUE_REAL (n1)) {
 			d1 = HG_VALUE_GET_REAL (n1);
 		} else {
@@ -2155,7 +2155,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (n2))
-			d2 = (gdouble)HG_VALUE_GET_INTEGER (n2);
+			d2 = HG_VALUE_GET_REAL_FROM_INTEGER (n2);
 		else if (HG_IS_VALUE_REAL (n2)) {
 			d2 = HG_VALUE_GET_REAL (n2);
 		} else {
@@ -2279,11 +2279,11 @@ G_STMT_START
 				gdouble d1;
 
 				if (HG_IS_VALUE_INTEGER (n1))
-					d1 = (gdouble)HG_VALUE_GET_INTEGER (n1);
+					d1 = HG_VALUE_GET_REAL_FROM_INTEGER (n1);
 				else
 					d1 = HG_VALUE_GET_REAL (n1);
 				if (HG_IS_VALUE_INTEGER (n2))
-					result = HG_VALUE_REAL_SIMILAR (d1, (gdouble)HG_VALUE_GET_INTEGER (n2));
+					result = HG_VALUE_REAL_SIMILAR (d1, HG_VALUE_GET_REAL_FROM_INTEGER (n2));
 				else
 					result = HG_VALUE_REAL_SIMILAR (d1, HG_VALUE_GET_REAL (n2));
 			}
@@ -2478,7 +2478,31 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_UNIMPLEMENTED_OP (exp);
+DEFUNC_OP (exp)
+G_STMT_START
+{
+	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = libretto_stack_depth(ostack);
+	HgValueNode *n1, *n2;
+	gdouble base, exponent;
+
+	while (1) {
+		if (depth < 2) {
+			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
+			break;
+		}
+		n2 = libretto_stack_index(ostack, 0);
+		n1 = libretto_stack_index(ostack, 1);
+		if (HG_IS_VALUE_INTEGER (n1)) {
+			base = HG_VALUE_GET_REAL_FROM_INTEGER (n1);
+		} else if (HG_IS_VALUE_REAL (n2)) {
+			base = HG_VALUE_GET_REAL (n1);
+		} else {
+			_libretto_operator_set_error(vm, op, LB_e_typecheck);
+			break;
+		}
+} G_STMT_END;
+DEFUNC_OP_END
 
 static HgFileType
 _libretto_operator_get_file_type(const gchar *p)
@@ -2832,11 +2856,11 @@ G_STMT_START
 			gdouble d1;
 
 			if (HG_IS_VALUE_INTEGER (n1))
-				d1 = (gdouble)HG_VALUE_GET_INTEGER (n1);
+				d1 = HG_VALUE_GET_REAL_FROM_INTEGER (n1);
 			else
 				d1 = HG_VALUE_GET_REAL (n1);
 			if (HG_IS_VALUE_INTEGER (n2))
-				result = d1 >= (gdouble)HG_VALUE_GET_INTEGER (n2);
+				result = d1 >= HG_VALUE_GET_REAL_FROM_INTEGER (n2);
 			else
 				result = d1 >= HG_VALUE_GET_REAL (n2);
 		} else if (HG_IS_VALUE_STRING (n1) &&
@@ -3058,11 +3082,11 @@ G_STMT_START
 			gdouble d1;
 
 			if (HG_IS_VALUE_INTEGER (n1))
-				d1 = (gdouble)HG_VALUE_GET_INTEGER (n1);
+				d1 = HG_VALUE_GET_REAL_FROM_INTEGER (n1);
 			else
 				d1 = HG_VALUE_GET_REAL (n1);
 			if (HG_IS_VALUE_INTEGER (n2))
-				result = d1 > (gdouble)HG_VALUE_GET_INTEGER (n2);
+				result = d1 > HG_VALUE_GET_REAL_FROM_INTEGER (n2);
 			else
 				result = d1 > HG_VALUE_GET_REAL (n2);
 		} else if (HG_IS_VALUE_STRING (n1) &&
@@ -3358,11 +3382,11 @@ G_STMT_START
 			gdouble d1;
 
 			if (HG_IS_VALUE_INTEGER (n1))
-				d1 = (gdouble)HG_VALUE_GET_INTEGER (n1);
+				d1 = HG_VALUE_GET_REAL_FROM_INTEGER (n1);
 			else
 				d1 = HG_VALUE_GET_REAL (n1);
 			if (HG_IS_VALUE_INTEGER (n2))
-				result = d1 <= (gdouble)HG_VALUE_GET_INTEGER (n2);
+				result = d1 <= HG_VALUE_GET_REAL_FROM_INTEGER (n2);
 			else
 				result = d1 <= HG_VALUE_GET_REAL (n2);
 		} else if (HG_IS_VALUE_STRING (n1) &&
@@ -3458,7 +3482,7 @@ G_STMT_START
 		ny = libretto_stack_index(ostack, 0);
 		nx = libretto_stack_index(ostack, 1);
 		if (HG_IS_VALUE_INTEGER (nx))
-			dx = (gdouble)HG_VALUE_GET_INTEGER (nx);
+			dx = HG_VALUE_GET_REAL_FROM_INTEGER (nx);
 		else if (HG_IS_VALUE_REAL (nx))
 			dx = HG_VALUE_GET_REAL (nx);
 		else {
@@ -3466,7 +3490,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (ny))
-			dy = (gdouble)HG_VALUE_GET_INTEGER (ny);
+			dy = HG_VALUE_GET_REAL_FROM_INTEGER (ny);
 		else if (HG_IS_VALUE_REAL (ny))
 			dy = HG_VALUE_GET_REAL (ny);
 		else {
@@ -3580,11 +3604,11 @@ G_STMT_START
 			gdouble d1;
 
 			if (HG_IS_VALUE_INTEGER (n1))
-				d1 = (gdouble)HG_VALUE_GET_INTEGER (n1);
+				d1 = HG_VALUE_GET_REAL_FROM_INTEGER (n1);
 			else
 				d1 = HG_VALUE_GET_REAL (n1);
 			if (HG_IS_VALUE_INTEGER (n2))
-				result = d1 < (gdouble)HG_VALUE_GET_INTEGER (n2);
+				result = d1 < HG_VALUE_GET_REAL_FROM_INTEGER (n2);
 			else
 				result = d1 < HG_VALUE_GET_REAL (n2);
 		} else if (HG_IS_VALUE_STRING (n1) &&
@@ -3740,7 +3764,7 @@ G_STMT_START
 		ny = libretto_stack_index(ostack, 0);
 		nx = libretto_stack_index(ostack, 1);
 		if (HG_IS_VALUE_INTEGER (nx))
-			dx = (gdouble)HG_VALUE_GET_INTEGER (nx);
+			dx = HG_VALUE_GET_REAL_FROM_INTEGER (nx);
 		else if (HG_IS_VALUE_REAL (nx))
 			dx = HG_VALUE_GET_REAL (nx);
 		else {
@@ -3748,7 +3772,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (ny))
-			dy = (gdouble)HG_VALUE_GET_INTEGER (ny);
+			dy = HG_VALUE_GET_REAL_FROM_INTEGER (ny);
 		else if (HG_IS_VALUE_REAL (ny))
 			dy = HG_VALUE_GET_REAL (ny);
 		else {
@@ -3786,7 +3810,7 @@ G_STMT_START
 		n2 = libretto_stack_index(ostack, 0);
 		n1 = libretto_stack_index(ostack, 1);
 		if (HG_IS_VALUE_INTEGER (n1))
-			d1 = (gdouble)HG_VALUE_GET_INTEGER (n1);
+			d1 = HG_VALUE_GET_REAL_FROM_INTEGER (n1);
 		else if (HG_IS_VALUE_REAL (n1)) {
 			d1 = HG_VALUE_GET_REAL (n1);
 			integer = FALSE;
@@ -3795,7 +3819,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (n2))
-			d2 = (gdouble)HG_VALUE_GET_INTEGER (n2);
+			d2 = HG_VALUE_GET_REAL_FROM_INTEGER (n2);
 		else if (HG_IS_VALUE_REAL (n2)) {
 			d2 = HG_VALUE_GET_REAL (n2);
 			integer = FALSE;
@@ -3864,11 +3888,11 @@ G_STMT_START
 				gdouble d1;
 
 				if (HG_IS_VALUE_INTEGER (n1))
-					d1 = (gdouble)HG_VALUE_GET_INTEGER (n1);
+					d1 = HG_VALUE_GET_REAL_FROM_INTEGER (n1);
 				else
 					d1 = HG_VALUE_GET_REAL (n1);
 				if (HG_IS_VALUE_INTEGER (n2))
-					result = !HG_VALUE_REAL_SIMILAR (d1, (gdouble)HG_VALUE_GET_INTEGER (n2));
+					result = !HG_VALUE_REAL_SIMILAR (d1, HG_VALUE_GET_REAL_FROM_INTEGER (n2));
 				else
 					result = !HG_VALUE_REAL_SIMILAR (d1, HG_VALUE_GET_REAL (n2));
 			}
@@ -4480,7 +4504,7 @@ G_STMT_START
 		ny = libretto_stack_index(ostack, 0);
 		nx = libretto_stack_index(ostack, 1);
 		if (HG_IS_VALUE_INTEGER (nx))
-			dx = (gdouble)HG_VALUE_GET_INTEGER (nx);
+			dx = HG_VALUE_GET_REAL_FROM_INTEGER (nx);
 		else if (HG_IS_VALUE_REAL (nx))
 			dx = HG_VALUE_GET_REAL (nx);
 		else {
@@ -4488,7 +4512,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (ny))
-			dy = (gdouble)HG_VALUE_GET_INTEGER (ny);
+			dy = HG_VALUE_GET_REAL_FROM_INTEGER (ny);
 		else if (HG_IS_VALUE_REAL (ny))
 			dy = HG_VALUE_GET_REAL (ny);
 		else {
@@ -4589,7 +4613,7 @@ G_STMT_START
 			nmatrix = NULL;
 		}
 		if (HG_IS_VALUE_INTEGER (node))
-			angle = (gdouble)HG_VALUE_GET_INTEGER (node);
+			angle = HG_VALUE_GET_REAL_FROM_INTEGER (node);
 		else if (HG_IS_VALUE_REAL (node))
 			angle = HG_VALUE_GET_REAL (node);
 		else {
@@ -4700,7 +4724,7 @@ G_STMT_START
 		}
 		nx = libretto_stack_index(ostack, offset);
 		if (HG_IS_VALUE_INTEGER (nx))
-			dx = (gdouble)HG_VALUE_GET_INTEGER (nx);
+			dx = HG_VALUE_GET_REAL_FROM_INTEGER (nx);
 		else if (HG_IS_VALUE_REAL (nx))
 			dx = HG_VALUE_GET_REAL (nx);
 		else {
@@ -4708,7 +4732,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (ny))
-			dy = (gdouble)HG_VALUE_GET_INTEGER (ny);
+			dy = HG_VALUE_GET_REAL_FROM_INTEGER (ny);
 		else if (HG_IS_VALUE_REAL (ny))
 			dy = HG_VALUE_GET_REAL (ny);
 		else {
@@ -4768,7 +4792,7 @@ G_STMT_START
 		}
 		node = libretto_stack_index(ostack, 0);
 		if (HG_IS_VALUE_INTEGER (node))
-			d = (gdouble)HG_VALUE_GET_INTEGER (node);
+			d = HG_VALUE_GET_REAL_FROM_INTEGER (node);
 		else if (HG_IS_VALUE_REAL (node))
 			d = HG_VALUE_GET_REAL (node);
 		else {
@@ -4800,7 +4824,7 @@ G_STMT_START
 		ns = libretto_stack_index(ostack, 1);
 		nb = libretto_stack_index(ostack, 2);
 		if (HG_IS_VALUE_INTEGER (nh))
-			dh = (gdouble)HG_VALUE_GET_INTEGER (nh);
+			dh = HG_VALUE_GET_REAL_FROM_INTEGER (nh);
 		else if (HG_IS_VALUE_REAL (nh))
 			dh = HG_VALUE_GET_REAL (nh);
 		else {
@@ -4808,7 +4832,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (ns))
-			ds = (gdouble)HG_VALUE_GET_INTEGER (ns);
+			ds = HG_VALUE_GET_REAL_FROM_INTEGER (ns);
 		else if (HG_IS_VALUE_REAL (ns))
 			ds = HG_VALUE_GET_REAL (ns);
 		else {
@@ -4816,7 +4840,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (nb))
-			db = (gdouble)HG_VALUE_GET_INTEGER (nb);
+			db = HG_VALUE_GET_REAL_FROM_INTEGER (nb);
 		else if (HG_IS_VALUE_REAL (nb))
 			db = HG_VALUE_GET_REAL (nb);
 		else {
@@ -4851,7 +4875,7 @@ G_STMT_START
 		}
 		node = libretto_stack_index(ostack, 0);
 		if (HG_IS_VALUE_INTEGER (node))
-			d = (gdouble)HG_VALUE_GET_INTEGER (node);
+			d = HG_VALUE_GET_REAL_FROM_INTEGER (node);
 		else if (HG_IS_VALUE_REAL (node))
 			d = HG_VALUE_GET_REAL (node);
 		else {
@@ -4898,7 +4922,7 @@ G_STMT_START
 		for (i = 0; i < 6; i++) {
 			node = hg_array_index(matrix, i);
 			if (HG_IS_VALUE_INTEGER (node)) {
-				dmatrix[i] = (gdouble)HG_VALUE_GET_INTEGER (node);
+				dmatrix[i] = HG_VALUE_GET_REAL_FROM_INTEGER (node);
 			} else if (HG_IS_VALUE_REAL (node)) {
 				dmatrix[i] = HG_VALUE_GET_REAL (node);
 			} else {
@@ -4950,7 +4974,7 @@ G_STMT_START
 		ng = libretto_stack_index(ostack, 1);
 		nr = libretto_stack_index(ostack, 2);
 		if (HG_IS_VALUE_INTEGER (nr))
-			dr = (gdouble)HG_VALUE_GET_INTEGER (nr);
+			dr = HG_VALUE_GET_REAL_FROM_INTEGER (nr);
 		else if (HG_IS_VALUE_REAL (nr))
 			dr = HG_VALUE_GET_REAL (nr);
 		else {
@@ -4958,7 +4982,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (ng))
-			dg = (gdouble)HG_VALUE_GET_INTEGER (ng);
+			dg = HG_VALUE_GET_REAL_FROM_INTEGER (ng);
 		else if (HG_IS_VALUE_REAL (ng))
 			dg = HG_VALUE_GET_REAL (ng);
 		else {
@@ -4966,7 +4990,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (nb))
-			db = (gdouble)HG_VALUE_GET_INTEGER (nb);
+			db = HG_VALUE_GET_REAL_FROM_INTEGER (nb);
 		else if (HG_IS_VALUE_REAL (nb))
 			db = HG_VALUE_GET_REAL (nb);
 		else {
@@ -5020,7 +5044,7 @@ G_STMT_START
 		}
 		node = libretto_stack_index(ostack, 0);
 		if (HG_IS_VALUE_INTEGER (node)) {
-			d = (gdouble)HG_VALUE_GET_INTEGER (node);
+			d = HG_VALUE_GET_REAL_FROM_INTEGER (node);
 		} else if (HG_IS_VALUE_REAL (node)) {
 			d = HG_VALUE_GET_REAL (node);
 		} else {
@@ -5058,7 +5082,7 @@ G_STMT_START
 		}
 		node = libretto_stack_index(ostack, 0);
 		if (HG_IS_VALUE_INTEGER (node)) {
-			d = (gdouble)HG_VALUE_GET_INTEGER (node);
+			d = HG_VALUE_GET_REAL_FROM_INTEGER (node);
 		} else if (HG_IS_VALUE_REAL (node)) {
 			d = HG_VALUE_GET_REAL (node);
 		} else {
@@ -5260,7 +5284,7 @@ G_STMT_START
 		n2 = libretto_stack_index(ostack, 0);
 		n1 = libretto_stack_index(ostack, 1);
 		if (HG_IS_VALUE_INTEGER (n1))
-			d1 = (gdouble)HG_VALUE_GET_INTEGER (n1);
+			d1 = HG_VALUE_GET_REAL_FROM_INTEGER (n1);
 		else if (HG_IS_VALUE_REAL (n1)) {
 			d1 = HG_VALUE_GET_REAL (n1);
 			integer = FALSE;
@@ -5269,7 +5293,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (n2))
-			d2 = (gdouble)HG_VALUE_GET_INTEGER (n2);
+			d2 = HG_VALUE_GET_REAL_FROM_INTEGER (n2);
 		else if (HG_IS_VALUE_REAL (n2)) {
 			d2 = HG_VALUE_GET_REAL (n2);
 			integer = FALSE;
@@ -5340,7 +5364,7 @@ G_STMT_START
 		}
 		nx = libretto_stack_index(ostack, offset);
 		if (HG_IS_VALUE_INTEGER (nx))
-			dx = (gdouble)HG_VALUE_GET_INTEGER (nx);
+			dx = HG_VALUE_GET_REAL_FROM_INTEGER (nx);
 		else if (HG_IS_VALUE_REAL (nx))
 			dx = HG_VALUE_GET_REAL (nx);
 		else {
@@ -5348,7 +5372,7 @@ G_STMT_START
 			break;
 		}
 		if (HG_IS_VALUE_INTEGER (ny))
-			dy = (gdouble)HG_VALUE_GET_INTEGER (ny);
+			dy = HG_VALUE_GET_REAL_FROM_INTEGER (ny);
 		else if (HG_IS_VALUE_REAL (ny))
 			dy = HG_VALUE_GET_REAL (ny);
 		else {

@@ -1,3 +1,8 @@
+2006-03-31  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgvaluenode.h (HG_VALUE_GET_REAL_FROM_INTEGER):
+	add a macro.
+
 2006-03-30  Akira TAGOH  <at@gclab.org>
 
 	* libretto/operator.c (_libretto_operator_op_cvlit): implemented.

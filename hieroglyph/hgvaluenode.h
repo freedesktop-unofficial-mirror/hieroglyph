@@ -136,6 +136,7 @@ G_BEGIN_DECLS
 #define HG_VALUE_GET_INTEGER(obj)		HG_VALUE_GET_VALUE_NODE (obj, integer)
 #define HG_VALUE_GET_INTEGER_FROM_REAL(obj)	(gint32)HG_VALUE_GET_VALUE_NODE (obj, real)
 #define HG_VALUE_GET_REAL(obj)			HG_VALUE_GET_VALUE_NODE (obj, real)
+#define HG_VALUE_GET_REAL_FROM_INTEGER(obj)	(gdouble)HG_VALUE_GET_VALUE_NODE (obj, integer)
 #define HG_VALUE_GET_NAME(obj)			(gchar *)HG_VALUE_GET_VALUE_NODE (obj, pointer)
 #define HG_VALUE_GET_ARRAY(obj)			(HgArray *)HG_VALUE_GET_VALUE_NODE (obj, pointer)
 #define HG_VALUE_GET_STRING(obj)		(HgString *)HG_VALUE_GET_VALUE_NODE (obj, pointer)
