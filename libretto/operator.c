@@ -1335,7 +1335,7 @@ G_STMT_START
 			}
 			node = hg_array_index(m2, i);
 			if (HG_IS_VALUE_INTEGER (node)) {
-				d2[i] = HG_VALUE_GER_REAL_FROM_INTEGER (node);
+				d2[i] = HG_VALUE_GET_REAL_FROM_INTEGER (node);
 			} else if (HG_IS_VALUE_REAL (node)) {
 				d2[i] = HG_VALUE_GET_REAL (node);
 			} else {
@@ -1544,7 +1544,7 @@ G_STMT_START
 		}
 		node = libretto_stack_index(ostack, 0);
 		if (HG_IS_VALUE_INTEGER (node)) {
-			d = HG_VALUE_GER_REAL_FROM_INTEGER (node);
+			d = HG_VALUE_GET_REAL_FROM_INTEGER (node);
 		} else if (HG_IS_VALUE_REAL (node)) {
 			d = HG_VALUE_GET_REAL (node);
 		} else {
@@ -2484,7 +2484,8 @@ G_STMT_START
 	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
 	guint depth = libretto_stack_depth(ostack);
 	HgValueNode *n1, *n2;
-	gdouble base, exponent;
+	HgMemPool *pool = libretto_vm_get_current_pool(vm);
+	gdouble base, exponent, result;
 
 	while (1) {
 		if (depth < 2) {
@@ -2495,12 +2496,37 @@ G_STMT_START
 		n1 = libretto_stack_index(ostack, 1);
 		if (HG_IS_VALUE_INTEGER (n1)) {
 			base = HG_VALUE_GET_REAL_FROM_INTEGER (n1);
-		} else if (HG_IS_VALUE_REAL (n2)) {
+		} else if (HG_IS_VALUE_REAL (n1)) {
 			base = HG_VALUE_GET_REAL (n1);
 		} else {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
 		}
+		if (HG_IS_VALUE_INTEGER (n2)) {
+			exponent = HG_VALUE_GET_REAL_FROM_INTEGER (n2);
+		} else if (HG_IS_VALUE_REAL (n2)) {
+			exponent = HG_VALUE_GET_REAL (n2);
+		} else {
+			_libretto_operator_set_error(vm, op, LB_e_typecheck);
+			break;
+		}
+		if (HG_VALUE_REAL_SIMILAR (base, 0.0) &&
+		    HG_VALUE_REAL_SIMILAR (exponent, 0.0)) {
+			_libretto_operator_set_error(vm, op, LB_e_undefinedresult);
+			break;
+		}
+		result = pow(base, exponent);
+		HG_VALUE_MAKE_REAL (pool, n1, result);
+		if (n1 == NULL) {
+			_libretto_operator_set_error(vm, op, LB_e_VMerror);
+			break;
+		}
+		libretto_stack_pop(ostack);
+		libretto_stack_pop(ostack);
+		retval = libretto_stack_push(ostack, n1);
+		/* it must be true */
+		break;
+	}
 } G_STMT_END;
 DEFUNC_OP_END
 
