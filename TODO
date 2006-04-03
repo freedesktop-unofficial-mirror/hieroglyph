@@ -1,10 +1,14 @@
 
-* More the type of value support.
+* need work before the initial release.
 
- * Hash
+ * [MUST] support asynchronous rendering
 
- * Array
+ * [MUST] rewrite memory management part to be comfortable with GC.
 
- * Name
+ * [MUST] complete to implement operators for PostScript Level 1 compliant.
 
-* Implement the modular class.
+* need work for future release.
+
+ * complete to implement operators for PostScript Level 2 compliant.
+
+ * complete to implement operators for PostScript Level 3 compliant.
