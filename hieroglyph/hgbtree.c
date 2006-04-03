@@ -551,7 +551,7 @@ hg_btree_find(HgBTree *tree,
 	      gpointer key)
 {
 	HgBTreePage *page;
-	int i;
+	guint i;
 
 	g_return_val_if_fail (tree != NULL, NULL);
 
@@ -575,7 +575,7 @@ hg_btree_find_near(HgBTree *tree,
 		   gpointer key)
 {
 	HgBTreePage *page, *prev = NULL;
-	int i;
+	guint i = 0;
 
 	g_return_val_if_fail (tree != NULL, NULL);
 

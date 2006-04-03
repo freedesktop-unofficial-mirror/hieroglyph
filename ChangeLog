@@ -1,3 +1,17 @@
+2006-04-04  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgmem.c (_hg_mem_init_stack_start): comment out
+	the incomplete code.
+
+	* hieroglyph/hgbtree.c (hg_btree_find): use proper variable type.
+	(hg_btree_find_near): likewise.
+	(hg_btree_find_near): fixed uninitialized variable warning. [Toshiya Suzuki]
+
+2006-04-03  Akira TAGOH  <at@gclab.org>
+
+	* libretto/operator.c (_libretto_operator_op_counttomark): fixed
+	a bulid error on older gcc. [Toshiya Suzuki]
+
 2006-03-31  Akira TAGOH  <at@gclab.org>
 
 	* libretto/operator.c (_libretto_operator_op_exp): implemented.

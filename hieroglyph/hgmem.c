@@ -47,6 +47,7 @@ static GAllocator *hg_mem_g_list_allocator = NULL;
 static void
 _hg_mem_init_stack_start(void)
 {
+#if 0
 #define STAT_BUFSIZE	4096
 #define STAT_SKIP	27
 	int fd, i;
@@ -74,10 +75,12 @@ _hg_mem_init_stack_start(void)
 		if (result < 0x10000000)
 			g_error("the stack bottom may be invalid: %x.", result);
 		_hg_stack_start = (gpointer)result;
-		extern int *__libc_stack_end;
-		/* FIXME: the above code somehow doesn't work on valgrind */
-		_hg_stack_start = __libc_stack_end;
 	}
+#else
+	extern int *__libc_stack_end;
+	/* FIXME: the above code somehow doesn't work on valgrind */
+	_hg_stack_start = __libc_stack_end;
+#endif
 }
 
 /* memory pool */

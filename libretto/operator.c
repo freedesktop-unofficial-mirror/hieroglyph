@@ -1619,7 +1619,7 @@ G_STMT_START
 {
 	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
 	guint depth = libretto_stack_depth(ostack);
-	HgValueNode *node;
+	HgValueNode *node = NULL;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	gint32 i;
 
@@ -1630,7 +1630,7 @@ G_STMT_START
 			break;
 		}
 	}
-	if (i == depth) {
+	if (i == depth || node == NULL) {
 		_libretto_operator_set_error(vm, op, LB_e_unmatchedmark);
 	} else {
 		retval = libretto_stack_push(ostack, node);
