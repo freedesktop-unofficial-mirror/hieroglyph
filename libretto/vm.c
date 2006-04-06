@@ -287,7 +287,7 @@ libretto_vm_init(void)
 		hg_mem_init();
 		hg_file_init();
 
-		__lb_vm_allocator = hg_allocator_new(&hg_allocator_ffit_get_vtable);
+		__lb_vm_allocator = hg_allocator_new(hg_allocator_ffit_get_vtable());
 		__lb_vm_mem_pool = hg_mem_pool_new(__lb_vm_allocator,
 						   "Libretto VM Memory Pool",
 						   8192,
