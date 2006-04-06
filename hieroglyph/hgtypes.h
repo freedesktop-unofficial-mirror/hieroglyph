@@ -29,11 +29,7 @@
 
 G_BEGIN_DECLS
 
-typedef void (*HgTraverseFunc)		(gpointer key,
-					 gpointer val,
-					 gpointer data);
-typedef void (*HgDebugFunc)             (gpointer data);
-
+typedef struct _HieroGlyphAllocatorVTable	HgAllocatorVTable;
 typedef struct _HieroGlyphAllocator		HgAllocator;
 typedef struct _HieroGlyphMemRelocateInfo	HgMemRelocateInfo;
 typedef struct _HieroGlyphMemObject		HgMemObject;
@@ -59,6 +55,12 @@ typedef struct _HieroGlyphPathBBox		HgPathBBox;
 typedef struct _HieroGlyphMatrix		HgMatrix;
 typedef struct _HieroGlyphDeviceVTable		HgDeviceVTable;
 typedef struct _HieroGlyphDevice		HgDevice;
+
+typedef void                (*HgTraverseFunc)      (gpointer key,
+						    gpointer val,
+						    gpointer data);
+typedef void                (*HgDebugFunc)         (gpointer data);
+typedef HgAllocatorVTable * (*HgAllocatorTypeFunc) (void);
 
 typedef enum {
 	HG_FL_MARK       = 1 << 0,
@@ -184,28 +186,30 @@ typedef enum {
 	HG_RENDER_DEBUG,
 } HgRenderType;
 
+struct _HieroGlyphAllocatorVTable {
+	gboolean        (* initialize)         (HgMemPool     *pool,
+						gsize          prealloc);
+	gboolean        (* destroy)            (HgMemPool     *pool);
+	gboolean        (* resize_pool)        (HgMemPool     *pool,
+						gsize          size);
+	gpointer        (* alloc)              (HgMemPool     *pool,
+						gsize          size,
+						guint          flags);
+	void            (* free)               (HgMemPool     *pool,
+						gpointer       data);
+	gpointer        (* resize)             (HgMemObject   *object,
+						gsize          size);
+	gboolean        (* garbage_collection) (HgMemPool     *pool);
+	void            (* gc_mark)            (HgMemPool     *pool);
+	HgMemSnapshot * (* save_snapshot)      (HgMemPool     *pool);
+	gboolean        (* restore_snapshot)   (HgMemPool     *pool,
+						HgMemSnapshot *snapshot);
+};
+
 struct _HieroGlyphAllocator {
-	gpointer private;
-	gboolean used;
-	struct {
-		gboolean        (* initialize)         (HgMemPool     *pool,
-							gsize          prealloc);
-		gboolean        (* destroy)            (HgMemPool     *pool);
-		gboolean        (* resize_pool)        (HgMemPool     *pool,
-							gsize          size);
-		gpointer        (* alloc)              (HgMemPool     *pool,
-							gsize          size,
-							guint          flags);
-		void            (* free)               (HgMemPool     *pool,
-							gpointer       data);
-		gpointer        (* resize)             (HgMemObject   *object,
-							gsize          size);
-		gboolean        (* garbage_collection) (HgMemPool     *pool);
-		void            (* gc_mark)            (HgMemPool     *pool);
-		HgMemSnapshot * (* save_snapshot)      (HgMemPool     *pool);
-		gboolean        (* restore_snapshot)   (HgMemPool     *pool,
-							HgMemSnapshot *snapshot);
-	} vtable;
+	gpointer           private;
+	gboolean           used;
+	HgAllocatorVTable *vtable;
 };
 
 struct _HieroGlyphMemRelocateInfo {
@@ -342,6 +346,10 @@ struct _HieroGlyphPathBBox {
 	gdouble urx;
 	gdouble ury;
 };
+
+#ifdef DEBUG
+#include <hieroglyph/hgdebug.h>
+#endif
 
 G_END_DECLS
 

@@ -11,7 +11,7 @@ main(void)
 	gchar *s, *s2;
 
 	hg_mem_init();
-	allocator = hg_allocator_new();
+	allocator = hg_allocator_new(hg_allocator_ffit_get_vtable());
 	pool = hg_mem_pool_new(allocator, "test", 256, TRUE);
 	if (pool == NULL) {
 		g_print("Failed to create a pool.\n");

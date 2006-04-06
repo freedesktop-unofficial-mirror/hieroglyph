@@ -50,6 +50,13 @@
 		}							\
 		break;							\
 	}
+#define _libretto_scanner_set_error(v, o, e)				\
+	G_STMT_START {							\
+		HgValueNode *__lb_op_node;				\
+									\
+		HG_VALUE_MAKE_POINTER (__lb_op_node, (o));		\
+		libretto_vm_set_error((v), __lb_op_node, (e), FALSE);	\
+	} G_STMT_END
 		
 
 struct _LibrettoScanner {
@@ -263,9 +270,9 @@ _libretto_scanner_get_object(LibrettoVM   *vm,
 					    string_depth++;
 				    }
 				    if (!hg_string_append_c(string, c)) {
-					    _libretto_operator_set_error(vm,
-									 __lb_operator_list[LB_op_token],
-									 LB_e_VMerror);
+					    _libretto_scanner_set_error(vm,
+									__lb_operator_list[LB_op_token],
+									LB_e_VMerror);
 					    return NULL;
 				    }
 				    break;
@@ -285,9 +292,9 @@ _libretto_scanner_get_object(LibrettoVM   *vm,
 					string_depth++;
 					break;
 				case ')':
-					_libretto_operator_set_error(vm,
-								     __lb_operator_list[LB_op_token],
-								     LB_e_syntaxerror);
+					_libretto_scanner_set_error(vm,
+								    __lb_operator_list[LB_op_token],
+								    LB_e_syntaxerror);
 					need_loop = FALSE;
 					break;
 				case '<':
@@ -328,10 +335,10 @@ _libretto_scanner_get_object(LibrettoVM   *vm,
 				case '{':
 					array = hg_array_new(pool, -1);
 					if (array == NULL) {
-						_libretto_operator_set_error(vm,
-									     __lb_operator_list[LB_op_token],
-									     LB_e_VMerror);
-						break;
+						_libretto_scanner_set_error(vm,
+									    __lb_operator_list[LB_op_token],
+									    LB_e_VMerror);
+						return NULL;
 					}
 					while (1) {
 						node = _libretto_scanner_get_object(vm, file);
@@ -339,9 +346,10 @@ _libretto_scanner_get_object(LibrettoVM   *vm,
 							return NULL;
 						}
 						if (node == NULL) {
-							_libretto_operator_set_error(vm,
-										     __lb_operator_list[LB_op_token],
-										     LB_e_syntaxerror);
+							_libretto_scanner_set_error(vm,
+										    __lb_operator_list[LB_op_token],
+										    LB_e_syntaxerror);
+							need_loop = FALSE;
 							break;
 						}
 						if (HG_IS_VALUE_NULL (node) && HG_VALUE_GET_NULL (node) != NULL) {
@@ -351,9 +359,9 @@ _libretto_scanner_get_object(LibrettoVM   *vm,
 							break;
 						}
 						if (!hg_array_append(array, node)) {
-							_libretto_operator_set_error(vm,
-										     __lb_operator_list[LB_op_token],
-										     LB_e_VMerror);
+							_libretto_scanner_set_error(vm,
+										    __lb_operator_list[LB_op_token],
+										    LB_e_VMerror);
 							return NULL;
 						}
 					}
@@ -411,9 +419,9 @@ _libretto_scanner_get_object(LibrettoVM   *vm,
 					 */
 					string = hg_string_new(pool, -1);
 					if (!hg_string_append_c(string, c)) {
-						_libretto_operator_set_error(vm,
-									     __lb_operator_list[LB_op_token],
-									     LB_e_VMerror);
+						_libretto_scanner_set_error(vm,
+									    __lb_operator_list[LB_op_token],
+									    LB_e_VMerror);
 						return NULL;
 					}
 					if (_libretto_scanner_is_sign(c)) {
@@ -439,9 +447,9 @@ _libretto_scanner_get_object(LibrettoVM   *vm,
 							d = i;
 						}
 						if (!hg_string_append_c(string, c)) {
-							_libretto_operator_set_error(vm,
-										     __lb_operator_list[LB_op_token],
-										     LB_e_VMerror);
+							_libretto_scanner_set_error(vm,
+										    __lb_operator_list[LB_op_token],
+										    LB_e_VMerror);
 							return NULL;
 						}
 						c = hg_file_object_getc(file);
@@ -463,9 +471,9 @@ _libretto_scanner_get_object(LibrettoVM   *vm,
 				case LB_TOKEN_EVAL_NAME:
 				case LB_TOKEN_STRING:
 					if (!hg_string_append_c(string, c)) {
-						_libretto_operator_set_error(vm,
-									     __lb_operator_list[LB_op_token],
-									     LB_e_VMerror);
+						_libretto_scanner_set_error(vm,
+									    __lb_operator_list[LB_op_token],
+									    LB_e_VMerror);
 						return NULL;
 					}
 					break;
@@ -476,9 +484,9 @@ _libretto_scanner_get_object(LibrettoVM   *vm,
 		    case LB_C_SPACE:
 			    if (token_type == LB_TOKEN_STRING) {
 				    if (!hg_string_append_c(string, c)) {
-					    _libretto_operator_set_error(vm,
-									 __lb_operator_list[LB_op_token],
-									 LB_e_VMerror);
+					    _libretto_scanner_set_error(vm,
+									__lb_operator_list[LB_op_token],
+									LB_e_VMerror);
 					    return NULL;
 				    }
 			    } else {
@@ -491,9 +499,9 @@ _libretto_scanner_get_object(LibrettoVM   *vm,
 					/* it might be a numeral, but possibly name. */
 					string = hg_string_new(pool, -1);
 					if (!hg_string_append_c(string, c)) {
-						_libretto_operator_set_error(vm,
-									     __lb_operator_list[LB_op_token],
-									     LB_e_VMerror);
+						_libretto_scanner_set_error(vm,
+									    __lb_operator_list[LB_op_token],
+									    LB_e_VMerror);
 						return NULL;
 					}
 					token_type = LB_TOKEN_NAME;
@@ -517,9 +525,9 @@ _libretto_scanner_get_object(LibrettoVM   *vm,
 						}
 					}
 					if (!hg_string_append_c(string, c)) {
-						_libretto_operator_set_error(vm,
-									     __lb_operator_list[LB_op_token],
-									     LB_e_VMerror);
+						_libretto_scanner_set_error(vm,
+									    __lb_operator_list[LB_op_token],
+									    LB_e_VMerror);
 						return NULL;
 					}
 					break;
@@ -544,9 +552,9 @@ _libretto_scanner_get_object(LibrettoVM   *vm,
 		    node = libretto_vm_get_name_node(vm, hg_string_get_string(string));
 		    retval = libretto_vm_lookup(vm, node);
 		    if (retval == NULL) {
-			    _libretto_operator_set_error(vm,
-							 __lb_operator_list[LB_op_token],
-							 LB_e_undefined);
+			    _libretto_scanner_set_error(vm,
+							__lb_operator_list[LB_op_token],
+							LB_e_undefined);
 		    }
 		    hg_mem_free(string);
 		    break;

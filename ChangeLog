@@ -1,3 +1,21 @@
+2006-04-05  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgmem.c (hg_allocator_new): new again.
+	(hg_allocator_destroy): likewise.
+
+	* hieroglyph/hgallocator-ffit.c (hg_allocator_ffit_get_vtable):
+	new function.
+	(hg_allocator_ffit_new): removed.
+	(hg_allocator_ffit_destroy): removed.
+
+	* hieroglyph/hgfile.c (hg_file_init): trivial thing to support
+	optional allocator.
+
+	* libretto/scanner.c: use own error function to not push self into
+	the estack.
+
+	* libretto/vm.c: trivial thing to support optional allocator.
+
 2006-04-04  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgmem.c (_hg_mem_init_stack_start): comment out

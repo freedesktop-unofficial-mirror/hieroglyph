@@ -65,13 +65,43 @@ struct _HieroGlyphMemFFitBlock {
 };
 
 
-static void     _hg_allocator_ffit_snapshot_real_free     (gpointer           data);
-static void     _hg_allocator_ffit_snapshot_real_set_flags(gpointer           data,
-							   guint              flags);
-static void     _hg_allocator_ffit_snapshot_real_relocate (gpointer           data,
-							   HgMemRelocateInfo *info);
-static gpointer _hg_allocator_ffit_snapshot_real_to_string(gpointer           data);
+static gboolean       _hg_allocator_ffit_real_initialize        (HgMemPool         *pool,
+								 gsize              prealloc);
+static gboolean       _hg_allocator_ffit_real_destroy           (HgMemPool         *pool);
+static gboolean       _hg_allocator_ffit_real_resize_pool       (HgMemPool         *pool,
+								 gsize              size);
+static gpointer       _hg_allocator_ffit_real_alloc             (HgMemPool         *pool,
+								 gsize              size,
+								 guint              flags);
+static void           _hg_allocator_ffit_real_free              (HgMemPool         *pool,
+								 gpointer           data);
+static gpointer       _hg_allocator_ffit_real_resize            (HgMemObject       *object,
+								 gsize              size);
+static gboolean       _hg_allocator_ffit_real_garbage_collection(HgMemPool         *pool);
+static void           _hg_allocator_ffit_real_gc_mark           (HgMemPool         *pool);
+static HgMemSnapshot *_hg_allocator_ffit_real_save_snapshot     (HgMemPool         *pool);
+static gboolean       _hg_allocator_ffit_real_restore_snapshot  (HgMemPool         *pool,
+								 HgMemSnapshot     *snapshot);
+static void           _hg_allocator_ffit_snapshot_real_free     (gpointer           data);
+static void           _hg_allocator_ffit_snapshot_real_set_flags(gpointer           data,
+								 guint              flags);
+static void           _hg_allocator_ffit_snapshot_real_relocate (gpointer           data,
+								 HgMemRelocateInfo *info);
+static gpointer       _hg_allocator_ffit_snapshot_real_to_string(gpointer           data);
 
+
+static HgAllocatorVTable __hg_allocator_ffit_vtable = {
+	.initialize         = _hg_allocator_ffit_real_initialize,
+	.destroy            = _hg_allocator_ffit_real_destroy,
+	.resize_pool        = _hg_allocator_ffit_real_resize_pool,
+	.alloc              = _hg_allocator_ffit_real_alloc,
+	.free               = _hg_allocator_ffit_real_free,
+	.resize             = _hg_allocator_ffit_real_resize,
+	.garbage_collection = _hg_allocator_ffit_real_garbage_collection,
+	.gc_mark            = _hg_allocator_ffit_real_gc_mark,
+	.save_snapshot      = _hg_allocator_ffit_real_save_snapshot,
+	.restore_snapshot   = _hg_allocator_ffit_real_restore_snapshot,
+};
 
 static HgObjectVTable __hg_snapshot_vtable = {
 	.free      = _hg_allocator_ffit_snapshot_real_free,
@@ -533,7 +563,7 @@ _hg_allocator_ffit_real_garbage_collection(HgMemPool *pool)
 		if (!pool->use_gc)
 			return FALSE;
 		/* keep a mark to avoid collecting garbages */
-		pool->allocator->vtable.gc_mark(pool);
+		pool->allocator->vtable->gc_mark(pool);
 	}
 	/* do the garbage collection */
 	free_list = g_list_alloc(); /* dummy */
@@ -918,33 +948,8 @@ _hg_allocator_ffit_real_restore_snapshot(HgMemPool     *pool,
 /*
  * Public Functions
  */
-HgAllocator *
-hg_allocator_ffit_new(void)
+HgAllocatorVTable *
+hg_allocator_ffit_get_vtable(void)
 {
-	HgAllocator *retval;
-
-	retval = g_new(HgAllocator, 1);
-	retval->private                   = NULL;
-	retval->used                      = FALSE;
-	retval->vtable.initialize         = _hg_allocator_ffit_real_initialize;
-	retval->vtable.destroy            = _hg_allocator_ffit_real_destroy;
-	retval->vtable.resize_pool        = _hg_allocator_ffit_real_resize_pool;
-	retval->vtable.alloc              = _hg_allocator_ffit_real_alloc;
-	retval->vtable.free               = _hg_allocator_ffit_real_free;
-	retval->vtable.resize             = _hg_allocator_ffit_real_resize;
-	retval->vtable.garbage_collection = _hg_allocator_ffit_real_garbage_collection;
-	retval->vtable.gc_mark            = _hg_allocator_ffit_real_gc_mark;
-	retval->vtable.save_snapshot      = _hg_allocator_ffit_real_save_snapshot;
-	retval->vtable.restore_snapshot   = _hg_allocator_ffit_real_restore_snapshot;
-
-	return retval;
-}
-
-void
-hg_allocator_ffit_destroy(HgAllocator *allocator)
-{
-	g_return_if_fail (allocator != NULL);
-	g_return_if_fail (!allocator->used);
-
-	g_free(allocator);
+	return &__hg_allocator_ffit_vtable;
 }

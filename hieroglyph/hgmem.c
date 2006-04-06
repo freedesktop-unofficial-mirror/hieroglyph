@@ -104,6 +104,29 @@ _hg_mem_pool_free(HgMemPool *pool)
  * Public Functions
  */
 
+/* allocator */
+HgAllocator *
+hg_allocator_new(const HgAllocatorVTable *vtable)
+{
+	HgAllocator *retval;
+
+	retval = g_new(HgAllocator, 1);
+	retval->private = NULL;
+	retval->used    = FALSE;
+	retval->vtable  = vtable;
+
+	return retval;
+}
+
+void
+hg_allocator_destroy(HgAllocator *allocator)
+{
+	g_return_if_fail (allocator != NULL);
+	g_return_if_fail (!allocator->used);
+
+	g_free(allocator);
+}
+
 /* initializer */
 void
 hg_mem_init(void)
@@ -146,13 +169,13 @@ hg_mem_pool_new(HgAllocator *allocator,
 
 	g_return_val_if_fail (_hg_stack_start != NULL, NULL);
 	g_return_val_if_fail (allocator != NULL, NULL);
-	g_return_val_if_fail (allocator->vtable.initialize != NULL &&
-			      allocator->vtable.alloc != NULL &&
-			      allocator->vtable.free != NULL, NULL);
+	g_return_val_if_fail (allocator->vtable->initialize != NULL &&
+			      allocator->vtable->alloc != NULL &&
+			      allocator->vtable->free != NULL, NULL);
 	g_return_val_if_fail (identity != NULL, NULL);
 	g_return_val_if_fail (prealloc > 0, NULL);
 	g_return_val_if_fail (!allow_resize ||
-			      (allow_resize && allocator->vtable.resize_pool != NULL), NULL);
+			      (allow_resize && allocator->vtable->resize_pool != NULL), NULL);
 	g_return_val_if_fail (!allocator->used, NULL);
 
 	pool = (HgMemPool *)g_new(HgMemPool, 1);
@@ -176,7 +199,7 @@ hg_mem_pool_new(HgAllocator *allocator,
 	pool->use_gc = FALSE;
 	pool->gc_threshold = 50;
 	allocator->used = TRUE;
-	if (!allocator->vtable.initialize(pool, prealloc)) {
+	if (!allocator->vtable->initialize(pool, prealloc)) {
 		_hg_mem_pool_free(pool);
 		return NULL;
 	}
@@ -190,8 +213,8 @@ hg_mem_pool_destroy(HgMemPool *pool)
 	g_return_if_fail (pool != NULL);
 
 	pool->destroyed = TRUE;
-	if (pool->allocator->vtable.destroy) {
-		pool->allocator->vtable.destroy(pool);
+	if (pool->allocator->vtable->destroy) {
+		pool->allocator->vtable->destroy(pool);
 	}
 	if (pool->root_node) {
 		g_list_free(pool->root_node);
@@ -206,7 +229,7 @@ hg_mem_pool_allow_resize(HgMemPool *pool,
 {
 	g_return_val_if_fail (pool != NULL, FALSE);
 	g_return_val_if_fail (!flag ||
-			      (flag && pool->allocator->vtable.resize_pool != NULL), FALSE);
+			      (flag && pool->allocator->vtable->resize_pool != NULL), FALSE);
 
 	pool->allow_resize = flag;
 
@@ -268,9 +291,9 @@ HgMemSnapshot *
 hg_mem_pool_save_snapshot(HgMemPool *pool)
 {
 	g_return_val_if_fail (pool != NULL, NULL);
-	g_return_val_if_fail (pool->allocator->vtable.save_snapshot != NULL, NULL);
+	g_return_val_if_fail (pool->allocator->vtable->save_snapshot != NULL, NULL);
 
-	return pool->allocator->vtable.save_snapshot(pool);
+	return pool->allocator->vtable->save_snapshot(pool);
 }
 
 gboolean
@@ -279,9 +302,9 @@ hg_mem_pool_restore_snapshot(HgMemPool     *pool,
 {
 	g_return_val_if_fail (pool != NULL, FALSE);
 	g_return_val_if_fail (snapshot != NULL, FALSE);
-	g_return_val_if_fail (pool->allocator->vtable.restore_snapshot != NULL, FALSE);
+	g_return_val_if_fail (pool->allocator->vtable->restore_snapshot != NULL, FALSE);
 
-	return pool->allocator->vtable.restore_snapshot(pool, snapshot);
+	return pool->allocator->vtable->restore_snapshot(pool, snapshot);
 }
 
 gboolean
@@ -289,8 +312,8 @@ hg_mem_garbage_collection(HgMemPool *pool)
 {
 	g_return_val_if_fail (pool != NULL, FALSE);
 
-	if (pool->allocator->vtable.garbage_collection)
-		return pool->allocator->vtable.garbage_collection(pool);
+	if (pool->allocator->vtable->garbage_collection)
+		return pool->allocator->vtable->garbage_collection(pool);
 	else
 		return FALSE;
 }
@@ -329,19 +352,19 @@ hg_mem_alloc_with_flags(HgMemPool *pool,
 		if (pool->gc_threshold > 90)
 			pool->gc_threshold = 90;
 	}
-	retval = pool->allocator->vtable.alloc(pool, size, flags);
+	retval = pool->allocator->vtable->alloc(pool, size, flags);
 	if (!retval) {
 		if (hg_mem_garbage_collection(pool)) {
 			/* retry */
-			retval = pool->allocator->vtable.alloc(pool, size, flags);
+			retval = pool->allocator->vtable->alloc(pool, size, flags);
 		}
 	}
 	if (!retval) {
 		/* try growing the heap up when still failed */
 		if (pool->allow_resize &&
-		    pool->allocator->vtable.resize_pool(pool, size)) {
+		    pool->allocator->vtable->resize_pool(pool, size)) {
 			hg_mem_garbage_collection(pool);
-			retval = pool->allocator->vtable.alloc(pool, size, flags);
+			retval = pool->allocator->vtable->alloc(pool, size, flags);
 		}
 	}
 
@@ -366,7 +389,7 @@ hg_mem_free(gpointer data)
 			hobj->vtable->free(data);
 		}
 		if (!obj->pool->destroyed)
-			obj->pool->allocator->vtable.free(obj->pool, data);
+			obj->pool->allocator->vtable->free(obj->pool, data);
 	}
 
 	return TRUE;
@@ -384,7 +407,7 @@ hg_mem_resize(gpointer data,
 	if (obj == NULL)
 		return NULL;
 
-	return obj->pool->allocator->vtable.resize(obj, size);
+	return obj->pool->allocator->vtable->resize(obj, size);
 }
 
 /* GC */

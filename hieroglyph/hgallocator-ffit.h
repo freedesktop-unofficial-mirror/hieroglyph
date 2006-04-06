@@ -24,21 +24,11 @@
 #ifndef __HG_ALLOCATOR_FFIT_H__
 #define __HG_ALLOCATOR_FFIT_H__
 
-#ifdef __HG_ALLOCATOR_H__
-#error Cannot use another allocator at the same time with this
-#endif
-
-#define __HG_ALLOCATOR_H__
-
 #include <hieroglyph/hgtypes.h>
-
-#define hg_allocator_new	hg_allocator_ffit_new
-#define hg_allocator_destroy	hg_allocator_ffit_destroy
 
 G_BEGIN_DECLS
 
-HgAllocator *hg_allocator_ffit_new    (void);
-void         hg_allocator_ffit_destroy(HgAllocator *allocator);
+HgAllocatorVTable *hg_allocator_ffit_get_vtable(void) G_GNUC_CONST;
 
 G_END_DECLS
 

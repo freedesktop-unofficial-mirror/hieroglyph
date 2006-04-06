@@ -287,7 +287,7 @@ libretto_vm_init(void)
 		hg_mem_init();
 		hg_file_init();
 
-		__lb_vm_allocator = hg_allocator_new();
+		__lb_vm_allocator = hg_allocator_new(&hg_allocator_ffit_get_vtable);
 		__lb_vm_mem_pool = hg_mem_pool_new(__lb_vm_allocator,
 						   "Libretto VM Memory Pool",
 						   8192,
@@ -347,9 +347,9 @@ libretto_vm_new(LibrettoEmulationType type)
 	}
 
 	/* initialize the memory pools */
-	retval->local_allocator = hg_allocator_new();
-	retval->global_allocator = hg_allocator_new();
-	retval->graphic_allocator = hg_allocator_new();
+	retval->local_allocator = hg_allocator_new(hg_allocator_ffit_get_vtable());
+	retval->global_allocator = hg_allocator_new(hg_allocator_ffit_get_vtable());
+	retval->graphic_allocator = hg_allocator_new(hg_allocator_ffit_get_vtable());
 	name = g_strdup_printf("VM %p:local pool", retval);
 	retval->local_pool = hg_mem_pool_new(retval->local_allocator,
 					     name,
