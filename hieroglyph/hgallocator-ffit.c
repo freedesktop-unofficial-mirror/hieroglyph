@@ -831,6 +831,8 @@ _hg_allocator_ffit_real_save_snapshot(HgMemPool *pool)
 			return NULL;
 		}
 		heap->serial = origheap->serial;
+		/* need to decrease the number of heap in pool */
+		pool->n_heaps--;
 		retval->n_heaps++;
 		g_ptr_array_add(retval->heap_list, heap);
 	}
