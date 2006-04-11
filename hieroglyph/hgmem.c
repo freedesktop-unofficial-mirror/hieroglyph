@@ -127,6 +127,36 @@ hg_allocator_destroy(HgAllocator *allocator)
 	g_free(allocator);
 }
 
+HgHeap *
+hg_heap_new(HgMemPool *pool,
+	    gsize      size)
+{
+	HgHeap *retval = g_new(HgHeap, 1);
+
+	if (retval != NULL) {
+		retval->heaps = g_malloc(size);
+		if (retval->heaps == NULL) {
+			g_free(retval);
+			return NULL;
+		}
+		retval->total_heap_size = size;
+		retval->used_heap_size = 0;
+		retval->serial = pool->n_heaps++;
+	}
+
+	return retval;
+}
+
+void
+hg_heap_free(HgHeap *heap)
+{
+	g_return_if_fail (heap != NULL);
+
+	if (heap->heaps)
+		g_free(heap->heaps);
+	g_free(heap);
+}
+
 /* initializer */
 void
 hg_mem_init(void)

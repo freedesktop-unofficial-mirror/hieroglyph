@@ -1,3 +1,10 @@
+2006-04-12  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgallocator-ffit.c: use hg_heap_new/free.
+
+	* hieroglyph/hgmem.c (hg_heap_new): new function.
+	(hg_heap_free): new function.
+
 2006-04-05  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgmem.c (hg_allocator_new): new again.

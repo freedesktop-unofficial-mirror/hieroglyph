@@ -36,6 +36,9 @@ void hg_mem_set_stack_end(gpointer mark);
 /* allocator */
 HgAllocator *hg_allocator_new    (const HgAllocatorVTable *vtable);
 void         hg_allocator_destroy(HgAllocator             *allocator);
+HgHeap      *hg_heap_new         (HgMemPool               *pool,
+				  gsize                    size);
+void         hg_heap_free        (HgHeap                  *heap);
 
 /* memory pool */
 #define hg_mem_get_object__inline_nocheck(__data__)			\

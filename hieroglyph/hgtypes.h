@@ -207,9 +207,9 @@ struct _HieroGlyphAllocatorVTable {
 };
 
 struct _HieroGlyphAllocator {
-	gpointer           private;
-	gboolean           used;
-	HgAllocatorVTable *vtable;
+	gpointer                 private;
+	gboolean                 used;
+	const HgAllocatorVTable *vtable;
 };
 
 struct _HieroGlyphMemRelocateInfo {
@@ -221,7 +221,7 @@ struct _HieroGlyphMemRelocateInfo {
 struct _HieroGlyphMemObject {
 	gint32     id;
 	gpointer   subid;
-	glong      heap_id;
+	gint       heap_id;
 	HgMemPool *pool;
 	gsize      block_size;
 	guint      flags;

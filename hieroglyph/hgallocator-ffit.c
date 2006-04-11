@@ -147,18 +147,12 @@ _hg_allocator_ffit_real_initialize(HgMemPool *pool,
 	if (priv == NULL)
 		return FALSE;
 
-	heap = g_new(HgHeap, 1);
+	heap = hg_heap_new(pool, total_heap_size);
 	if (heap == NULL)
 		return FALSE;
-	heap->heaps = g_malloc(total_heap_size);
-	if (heap->heaps == NULL) {
-		g_free(heap);
-		return FALSE;
-	}
 
-	heap->total_heap_size = pool->total_heap_size = pool->initial_heap_size = total_heap_size;
-	heap->used_heap_size = pool->used_heap_size = 0;
-	heap->serial = pool->n_heaps++;
+	pool->total_heap_size = pool->initial_heap_size = total_heap_size;
+	pool->used_heap_size = 0;
 	g_ptr_array_add(pool->heap_list, heap);
 
 	pool->allocator->private = priv;
@@ -454,18 +448,10 @@ _hg_allocator_ffit_real_resize_pool(HgMemPool *pool,
 		 */
 		block_size *= 2;
 	}
-	heap = g_new(HgHeap, 1);
+	heap = hg_heap_new(pool, block_size);
 	if (heap == NULL)
 		return FALSE;
-	heap->heaps = g_malloc(block_size);
-	if (heap->heaps == NULL) {
-		g_free(heap);
-		return FALSE;
-	}
-	heap->total_heap_size = block_size;
-	heap->used_heap_size = 0;
 	pool->total_heap_size += block_size;
-	heap->serial = pool->n_heaps++;
 
 	block = g_new(HgMemFFitBlock, 1);
 	block->heap_id = heap->serial;
@@ -674,8 +660,7 @@ _hg_allocator_ffit_snapshot_real_free(gpointer data)
 	if (snapshot->heap_list) {
 		for (i = 0; i < snapshot->n_heaps; i++) {
 			heap = g_ptr_array_index(snapshot->heap_list, i);
-			g_free(heap->heaps);
-			g_free(heap);
+			hg_heap_free(heap);
 		}
 		g_ptr_array_free(snapshot->heap_list, TRUE);
 	}
@@ -837,20 +822,15 @@ _hg_allocator_ffit_real_save_snapshot(HgMemPool *pool)
 	}
 	retval->n_heaps = 0;
 	for (i = 0; i < pool->n_heaps; i++) {
-		HgHeap *heap = g_new(HgHeap, 1);
+		HgHeap *heap;
 		HgHeap *origheap = g_ptr_array_index(pool->heap_list, i);
 
+		heap = hg_heap_new(pool, origheap->total_heap_size);
 		if (heap == NULL) {
 			g_warning("Failed to create a snapshot.");
 			return NULL;
 		}
 		heap->serial = origheap->serial;
-		heap->heaps = g_malloc(origheap->total_heap_size);
-		if (heap->heaps == NULL) {
-			g_free(heap);
-			g_warning("Failed to create a snapshot.");
-			return NULL;
-		}
 		retval->n_heaps++;
 		g_ptr_array_add(retval->heap_list, heap);
 	}
