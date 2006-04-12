@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * version.h
- * Copyright (C) 2005-2006 Akira TAGOH
+ * hgallocator-bfit.h
+ * Copyright (C) 2006 Akira TAGOH
  * 
  * Authors:
  *   Akira TAGOH  <at@gclab.org>
@@ -21,14 +21,15 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HG_VERSION_H__
-#define __HG_VERSION_H__
+#ifndef __HG_ALLOCATOR_BFIT_H__
+#define __HG_ALLOCATOR_BFIT_H__
 
-#include <glib/gmacros.h>
+#include <hieroglyph/hgtypes.h>
 
-#define HIEROGLYPH_VERSION	"@VERSION@"
-#define HIEROGLYPH_UUID		"60183c14-da6f-4c28-bdc1-8c20fbac41d5"
+G_BEGIN_DECLS
 
-const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
+HgAllocatorVTable *hg_allocator_bfit_get_vtable(void) G_GNUC_CONST;
 
-#endif /* __HG_VERSION_H__ */
+G_END_DECLS
+
+#endif /* __HG_ALLOCATOR_BFIT_H__ */

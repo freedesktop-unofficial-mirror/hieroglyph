@@ -13,6 +13,7 @@ LDADDS =						\
 
 noinst_PROGRAMS =					\
 	test-hgbtree					\
+	test-hgallocator-bfit				\
 	test-hgmem					\
 	test-hgfile					\
 	test-hgstring					\
@@ -30,6 +31,11 @@ test_hgbtree_SOURCES =					\
 	hgbtree.c					\
 	$(NULL)
 test_hgbtree_LDADD = $(LDADDS)
+
+test_hgallocator_bfit_SOURCES =				\
+	hgallocator-bfit.c				\
+	$(NULL)
+test_hgallocator_bfit_LDADD = $(LDADDS)
 
 test_hgmem_SOURCES =					\
 	hgmem.c						\
