@@ -92,8 +92,7 @@ _hg_mem_pool_free(HgMemPool *pool)
 	for (i = 0; i < pool->n_heaps; i++) {
 		HgHeap *heap = g_ptr_array_index(pool->heap_list, i);
 
-		g_free(heap->heaps);
-		g_free(heap);
+		hg_heap_free(heap);
 	}
 	g_free(pool->name);
 	g_ptr_array_free(pool->heap_list, TRUE);

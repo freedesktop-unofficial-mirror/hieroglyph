@@ -1,5 +1,7 @@
 2006-04-12  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgmem.c (_hg_mem_pool_free): also use hg_heap_free.
+
 	* hieroglyph/hgallocator-ffit.c: use hg_heap_new/free.
 
 	* hieroglyph/hgmem.c (hg_heap_new): new function.
