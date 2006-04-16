@@ -13,7 +13,6 @@ LDADDS =						\
 
 noinst_PROGRAMS =					\
 	test-hgbtree					\
-	test-hgallocator-bfit				\
 	test-hgmem					\
 	test-hgfile					\
 	test-hgstring					\
@@ -25,17 +24,16 @@ noinst_PROGRAMS =					\
 	test-scanner					\
 	test-vm						\
 	test-operatorencoding				\
+	bench1-hgallocator-ffit				\
+	bench2-hgallocator-ffit				\
+	bench1-hgallocator-bfit				\
+	bench2-hgallocator-bfit				\
 	$(NULL)
 
 test_hgbtree_SOURCES =					\
 	hgbtree.c					\
 	$(NULL)
 test_hgbtree_LDADD = $(LDADDS)
-
-test_hgallocator_bfit_SOURCES =				\
-	hgallocator-bfit.c				\
-	$(NULL)
-test_hgallocator_bfit_LDADD = $(LDADDS)
 
 test_hgmem_SOURCES =					\
 	hgmem.c						\
@@ -100,6 +98,26 @@ test_operatorencoding_LDADD =				\
 	$(LDADDS)					\
 	$(top_builddir)/libretto/libretto.la		\
 	$(NULL)
+
+bench1_hgallocator_ffit_SOURCES =			\
+	hgallocator-ffit-bench1.c			\
+	$(NULL)
+bench1_hgallocator_ffit_LDADD = $(LDADDS)
+
+bench2_hgallocator_ffit_SOURCES =			\
+	hgallocator-ffit-bench2.c			\
+	$(NULL)
+bench2_hgallocator_ffit_LDADD = $(LDADDS)
+
+bench1_hgallocator_bfit_SOURCES =			\
+	hgallocator-bfit-bench1.c			\
+	$(NULL)
+bench1_hgallocator_bfit_LDADD = $(LDADDS)
+
+bench2_hgallocator_bfit_SOURCES =			\
+	hgallocator-bfit-bench2.c			\
+	$(NULL)
+bench2_hgallocator_bfit_LDADD = $(LDADDS)
 
 TESTS =							\
 	test-hgbtree					\

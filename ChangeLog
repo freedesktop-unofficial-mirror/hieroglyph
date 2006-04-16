@@ -1,3 +1,17 @@
+2006-04-16  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_remove_block):
+	changes to use btree instead of list to manage the free block.
+	(_hg_allocator_bfit_add_free_block): likewise.
+	(_hg_allocator_bfit_get_free_block): likewise.
+	(_hg_allocator_bfit_btree_traverse_in_destroy): new function.
+	(_hg_allocator_bfit_real_destroy): destroying blocks through block chain.
+	(_hg_allocator_bfit_real_gc_mark): implemented.
+	(_hg_allocator_bfit_add_user_block): removed.
+	(_hg_allocator_bfit_get_used_block_list): removed.
+	(_hg_allocator_bfit_has_used_block_with_list): removed.
+	(_hg_allocator_bfit_remove_used_block): removed.
+
 2006-04-13  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgallocator-bfit.[ch]: added the best fit algorithm

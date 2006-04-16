@@ -39,8 +39,9 @@ typedef struct _HieroGlyphMemBFitBlock			HgMemBFitBlock;
 
 
 struct _HieroGlyphAllocatorBFitPrivate {
-	GPtrArray *free_block_array;
-	GPtrArray *used_block_array;
+	HgBTree   *free_block_tree;
+	GPtrArray *heap2block_array;
+	HgBTree   *obj2block_tree;
 };
 
 struct _HieroGlyphMemBFitBlock {
@@ -136,114 +137,31 @@ static void
 _hg_allocator_bfit_remove_block(HgAllocatorBFitPrivate *priv,
 				HgMemBFitBlock         *block)
 {
-	GPtrArray *farray = priv->free_block_array;
 	guint index;
 	GSList *l, *tmp = NULL;
 
 	_hg_allocator_compute_minimum_block_size_index__inline(block->length, index);
-	l = g_ptr_array_index(farray, index);
-	if ((tmp = g_slist_find(l, block)) == NULL) {
-		/* maybe bug? */
-		g_warning("[BUG] can't find a memory block %p (size: %" G_GSIZE_FORMAT ", index: %u).\n", block, block->length, index);
-		/* try another way */
-		_hg_allocator_grow_index_size__inline(block->length, index);
-		l = g_ptr_array_index(farray, index);
+	if ((l = hg_btree_find(priv->free_block_tree, GUINT_TO_POINTER (index))) == NULL) {
+		g_warning("[BUG] there are no memory chunks sized %" G_GSIZE_FORMAT " (index: %u).\n",
+			  block->length, index);
+	} else {
 		if ((tmp = g_slist_find(l, block)) == NULL) {
-			g_warning("[BUG] can't find a memory block %p with even index: %u either.\n", block, index);
+			g_warning("[BUG] can't find a memory block %p (size: %" G_GSIZE_FORMAT ", index: %u).\n",
+				  block, block->length, index);
 		} else {
-			if ((1 << index) > block->length)
-				g_warning("[BUG] a memory block %p is indexed over its size (size: %" G_GSIZE_FORMAT ", index: %u).\n", block, block->length, index);
+			hg_btree_replace(priv->free_block_tree,
+					 GUINT_TO_POINTER (index),
+					 g_slist_delete_link(l, tmp));
 		}
 	}
-	if (tmp != NULL) {
-		g_ptr_array_index(farray, index) = g_slist_delete_link(l, tmp);
-	}
-}
-
-static void
-_hg_allocator_bfit_add_used_block(HgAllocatorBFitPrivate *priv,
-				  HgMemBFitBlock         *block)
-{
-	GPtrArray *farray = priv->used_block_array;
-	guint index;
-
-	block->in_use = TRUE;
-	_hg_allocator_compute_minimum_block_size_index__inline(block->length, index);
-	if (farray->len < index) {
-		guint i, j = index - farray->len;
-		GSList *l;
-
-		for (i = 0; i < j; i++)
-			g_ptr_array_add(farray, NULL);
-		l = g_slist_alloc();
-		l->data = block;
-		l->next = NULL;
-		g_ptr_array_add(farray, l);
-	} else {
-		GSList *l = g_ptr_array_index(farray, index);
-
-		g_ptr_array_index(farray, index) = g_slist_append(l, block);
-	}
-}
-
-static GSList *
-_hg_allocator_bfit_get_used_block_list(HgAllocatorBFitPrivate *priv,
-				       HgMemBFitBlock         *block,
-				       guint                  *index)
-{
-	guint idx;
-	GPtrArray *farray = priv->used_block_array;
-
-	_hg_allocator_compute_minimum_block_size_index__inline(block->length, idx);
-	if (index != NULL)
-		*index = idx;
-	if (farray->len < idx)
-		return NULL;
-	return g_ptr_array_index(farray, idx);
-}
-
-static gboolean
-_hg_allocator_bfit_has_used_block_with_list(HgAllocatorBFitPrivate *priv,
-					    HgMemBFitBlock         *block,
-					    GSList                 *list)
-{
-	return g_slist_find(list, block) != NULL;
-}
-
-#if 0
-static gboolean
-_hg_allocator_bfit_has_used_block(HgAllocatorBFitPrivate *priv,
-				  HgMemBFitBlock         *block)
-{
-	GSList *l = _hg_allocator_bfit_get_used_block_list(priv, block, NULL);
-
-	return _hg_allocator_bfit_has_used_block_with_list(priv, block, l);
-}
-#endif
-
-static gboolean
-_hg_allocator_bfit_remove_used_block(HgAllocatorBFitPrivate *priv,
-				     HgMemBFitBlock         *block)
-{
-	guint index;
-	gboolean retval = FALSE;
-	GSList *l = _hg_allocator_bfit_get_used_block_list(priv, block, &index);
-	GPtrArray *farray = priv->used_block_array;
-
-	if (_hg_allocator_bfit_has_used_block_with_list(priv, block, l)) {
-		g_ptr_array_index(farray, index) = g_slist_remove(l, block);
-		retval = TRUE;
-	}
-
-	return retval;
 }
 
 static void
 _hg_allocator_bfit_add_free_block(HgAllocatorBFitPrivate *priv,
 				  HgMemBFitBlock         *block)
 {
-	GPtrArray *farray = priv->free_block_array;
 	guint index;
+	GSList *l;
 
 	block->in_use = FALSE;
 	/* trying to resolve the fragmentation */
@@ -269,21 +187,14 @@ _hg_allocator_bfit_add_free_block(HgAllocatorBFitPrivate *priv,
 		g_free(b);
 	}
 	_hg_allocator_compute_minimum_block_size_index__inline(block->length, index);
-	if (farray->len < index) {
-		guint i, j = index - farray->len;
-		GSList *l;
-
-		for (i = 0; i < j; i++)
-			g_ptr_array_add(farray, NULL);
+	if ((l = hg_btree_find(priv->free_block_tree, GUINT_TO_POINTER (index))) == NULL) {
 		l = g_slist_alloc();
 		l->data = block;
 		l->next = NULL;
-		g_ptr_array_add(farray, l);
 	} else {
-		GSList *l = g_ptr_array_index(farray, index);
-
-		g_ptr_array_index(farray, index) = g_slist_append(l, block);
+		l = g_slist_prepend(l, block);
 	}
+	hg_btree_add(priv->free_block_tree, GUINT_TO_POINTER (index), l);
 }
 
 static HgMemBFitBlock *
@@ -291,21 +202,16 @@ _hg_allocator_bfit_get_free_block(HgAllocatorBFitPrivate *priv,
 				  gsize                   size)
 {
 	guint index;
-	GPtrArray *farray = priv->free_block_array;
 	GSList *l;
-	guint i;
 	HgMemBFitBlock *retval = NULL;
 
 	_hg_allocator_compute_minimum_block_size_index__inline(size, index);
-	if (farray->len < index)
+	if ((l = hg_btree_find_near(priv->free_block_tree, GUINT_TO_POINTER (index))) == NULL)
 		return NULL;
-	for (i = index; i < farray->len; i++) {
-		l = g_ptr_array_index(farray, i);
-		if (l != NULL) {
-			retval = l->data;
-			g_ptr_array_index(farray, i) = g_slist_delete_link(l, l);
-		}
-	}
+	retval = l->data;
+	hg_btree_replace(priv->free_block_tree,
+			 GUINT_TO_POINTER (index),
+			 g_slist_delete_link(l, l));
 	if (retval != NULL) {
 		gsize size = 1 << index, unused = retval->length - size, min_size;
 		HgMemBFitBlock *block;
@@ -330,6 +236,14 @@ _hg_allocator_bfit_get_free_block(HgAllocatorBFitPrivate *priv,
 	}
 
 	return retval;
+}
+
+static void
+_hg_allocator_bfit_btree_traverse_in_destroy(gpointer key,
+					     gpointer val,
+					     gpointer data)
+{
+	g_slist_free(val);
 }
 
 /* best fit memory allocator */
@@ -364,9 +278,11 @@ _hg_allocator_bfit_real_initialize(HgMemPool *pool,
 		return FALSE;
 	}
 
-	priv->free_block_array = g_ptr_array_new();
-	priv->used_block_array = g_ptr_array_new();
+	priv->free_block_tree = hg_btree_new(BTREE_N_NODE);
+	priv->heap2block_array = g_ptr_array_new();
+	priv->obj2block_tree = hg_btree_new(BTREE_N_NODE);
 
+	g_ptr_array_add(priv->heap2block_array, block);
 	_hg_allocator_bfit_add_free_block(priv, block);
 	g_ptr_array_add(pool->heap_list, heap);
 
@@ -381,29 +297,30 @@ _hg_allocator_bfit_real_destroy(HgMemPool *pool)
 	HgAllocatorBFitPrivate *priv = pool->allocator->private;
 	guint i;
 
-	if (priv->free_block_array) {
-		for (i = 0; i < priv->free_block_array->len; i++) {
-			GSList *l = g_ptr_array_index(priv->free_block_array, i), *ll;
+	if (priv->heap2block_array) {
+		for (i = 0; i < priv->heap2block_array->len; i++) {
+			HgMemBFitBlock *block = g_ptr_array_index(priv->heap2block_array, i);
+			HgMemBFitBlock *tmp;
+			HgMemObject *obj;
 
-			for (ll = l; ll != NULL; ll = g_slist_next(ll)) {
-				_hg_bfit_block_free(ll->data);
+			while (block != NULL) {
+				tmp = block->next;
+				/* split off the link to avoid freeing of block in hg_mem_free */
+				block->next = NULL;
+				block->prev = NULL;
+				if (block->in_use) {
+					obj = block->heap_fragment;
+					hg_mem_free(obj->data);
+				}
+				_hg_bfit_block_free(block);
+				block = tmp;
 			}
-			g_slist_free(l);
 		}
-		g_ptr_array_free(priv->free_block_array, TRUE);
+		g_ptr_array_free(priv->heap2block_array, TRUE);
 	}
-	if (priv->used_block_array) {
-		for (i = 0; i < priv->used_block_array->len; i++) {
-			GSList *l = g_ptr_array_index(priv->used_block_array, i), *ll;
-
-			for (ll = l; ll != NULL; ll = g_slist_next(ll)) {
-				g_print(":%p\n", ll->data);
-				_hg_bfit_block_free(ll->data);
-			}
-			g_slist_free(l);
-		}
-		g_ptr_array_free(priv->used_block_array, TRUE);
-	}
+	hg_btree_foreach(priv->free_block_tree, _hg_allocator_bfit_btree_traverse_in_destroy, NULL);
+	hg_btree_destroy(priv->free_block_tree);
+	hg_btree_destroy(priv->obj2block_tree);
 	g_free(priv);
 
 	return TRUE;
@@ -438,6 +355,7 @@ _hg_allocator_bfit_real_resize_pool(HgMemPool *pool,
 		return FALSE;
 	}
 	pool->total_heap_size += block_size;
+	g_ptr_array_add(priv->heap2block_array, block);
 	_hg_allocator_bfit_add_free_block(priv, block);
 	g_ptr_array_add(pool->heap_list, heap);
 
@@ -465,7 +383,7 @@ _hg_allocator_bfit_real_alloc(HgMemPool *pool,
 		obj->pool = pool;
 		obj->block_size = block_size;
 		obj->flags = flags;
-		_hg_allocator_bfit_add_used_block(priv, block);
+		hg_btree_add(priv->obj2block_tree, block->heap_fragment, block);
 
 		return obj->data;
 	}
@@ -487,11 +405,12 @@ _hg_allocator_bfit_real_free(HgMemPool *pool,
 		return;
 	}
 	block = obj->subid;
-	if (!_hg_allocator_bfit_remove_used_block(priv, block)) {
+	if (hg_btree_find(priv->obj2block_tree, block->heap_fragment) == NULL) {
 		g_warning("[BUG] Failed to remove an object %p (block: %p) from list.",
 			  data, block);
 		return;
 	}
+	hg_btree_remove(priv->obj2block_tree, block->heap_fragment);
 	_hg_allocator_bfit_add_free_block(priv, block);
 }
 
@@ -505,12 +424,53 @@ _hg_allocator_bfit_real_resize(HgMemObject *object,
 static gboolean
 _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 {
+//	HgAllocatorBFitPrivate *priv = pool->allocator->private;
+
+	if (!pool->destroyed) {
+		if (!pool->use_gc)
+			return FALSE;
+		/* mark phase */
+		pool->allocator->vtable->gc_mark(pool);
+	}
+	/* sweep phase */
+
 	return FALSE;
 }
 
 static void
 _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 {
+	HgAllocatorBFitPrivate *priv = pool->allocator->private;
+
+	HG_SET_STACK_END;
+
+	G_STMT_START {
+		GList *list;
+		HgMemObject *obj;
+		gpointer p;
+		gsize header_size = sizeof (HgMemObject);
+
+		/* trace the root node */
+		for (list = pool->root_node; list != NULL; list = g_list_next(list)) {
+			hg_mem_get_object__inline(list->data, obj);
+			if (obj == NULL) {
+				g_warning("[BUG] Invalid object %p is in the root node.", list->data);
+			} else {
+				if (!hg_mem_is_gc_mark(obj)) {
+					hg_mem_gc_mark(obj);
+				}
+			}
+		}
+		/* trace the stack */
+		for (p = _hg_stack_start; p > _hg_stack_end; p--) {
+			obj = (gpointer)(*(gsize *)p - header_size);
+			if (hg_btree_find(priv->obj2block_tree, obj) != NULL) {
+				if (!hg_mem_is_gc_mark(obj)) {
+					hg_mem_gc_mark(obj);
+				}
+			}
+		}
+	} G_STMT_END;
 }
 
 static HgMemSnapshot *
