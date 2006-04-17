@@ -20,6 +20,10 @@ main(void)
 	}
 	for (i = 0; i < 1000000; i++) {
 		s = hg_mem_alloc(pool, 16);
+		if (s == NULL) {
+			g_print("failed to allocate memory: %d\n", i);
+			return 1;
+		}
 	}
 	hg_mem_pool_destroy(pool);
 	hg_allocator_destroy(allocator);

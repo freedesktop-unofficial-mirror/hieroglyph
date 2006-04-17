@@ -149,9 +149,16 @@ _hg_allocator_bfit_remove_block(HgAllocatorBFitPrivate *priv,
 			g_warning("[BUG] can't find a memory block %p (size: %" G_GSIZE_FORMAT ", index: %u).\n",
 				  block, block->length, index);
 		} else {
-			hg_btree_replace(priv->free_block_tree,
-					 GUINT_TO_POINTER (index),
-					 g_slist_delete_link(l, tmp));
+			l = g_slist_delete_link(l, tmp);
+			if (l == NULL) {
+				/* remove node from tree */
+				hg_btree_remove(priv->free_block_tree,
+						GUINT_TO_POINTER (index));
+			} else {
+				hg_btree_replace(priv->free_block_tree,
+						 GUINT_TO_POINTER (index),
+						 g_slist_delete_link(l, tmp));
+			}
 		}
 	}
 }
@@ -191,17 +198,18 @@ _hg_allocator_bfit_add_free_block(HgAllocatorBFitPrivate *priv,
 		l = g_slist_alloc();
 		l->data = block;
 		l->next = NULL;
+		hg_btree_add(priv->free_block_tree, GUINT_TO_POINTER (index), l);
 	} else {
 		l = g_slist_prepend(l, block);
+		hg_btree_replace(priv->free_block_tree, GUINT_TO_POINTER (index), l);
 	}
-	hg_btree_add(priv->free_block_tree, GUINT_TO_POINTER (index), l);
 }
 
 static HgMemBFitBlock *
 _hg_allocator_bfit_get_free_block(HgAllocatorBFitPrivate *priv,
 				  gsize                   size)
 {
-	guint index;
+	guint index, real_idx;
 	GSList *l;
 	HgMemBFitBlock *retval = NULL;
 
@@ -209,9 +217,15 @@ _hg_allocator_bfit_get_free_block(HgAllocatorBFitPrivate *priv,
 	if ((l = hg_btree_find_near(priv->free_block_tree, GUINT_TO_POINTER (index))) == NULL)
 		return NULL;
 	retval = l->data;
-	hg_btree_replace(priv->free_block_tree,
-			 GUINT_TO_POINTER (index),
-			 g_slist_delete_link(l, l));
+	_hg_allocator_compute_minimum_block_size_index__inline(retval->length, real_idx);
+	l = g_slist_delete_link(l, l);
+	if (l == NULL) {
+		hg_btree_remove(priv->free_block_tree,
+				GUINT_TO_POINTER (real_idx));
+	} else {
+		hg_btree_replace(priv->free_block_tree,
+				 GUINT_TO_POINTER (real_idx), l);
+	}
 	if (retval != NULL) {
 		gsize size = 1 << index, unused = retval->length - size, min_size;
 		HgMemBFitBlock *block;
@@ -297,6 +311,7 @@ _hg_allocator_bfit_real_destroy(HgMemPool *pool)
 	HgAllocatorBFitPrivate *priv = pool->allocator->private;
 	guint i;
 
+	hg_mem_garbage_collection(pool);
 	if (priv->heap2block_array) {
 		for (i = 0; i < priv->heap2block_array->len; i++) {
 			HgMemBFitBlock *block = g_ptr_array_index(priv->heap2block_array, i);
@@ -424,7 +439,8 @@ _hg_allocator_bfit_real_resize(HgMemObject *object,
 static gboolean
 _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 {
-//	HgAllocatorBFitPrivate *priv = pool->allocator->private;
+	HgAllocatorBFitPrivate *priv = pool->allocator->private;
+	guint i;
 
 	if (!pool->destroyed) {
 		if (!pool->use_gc)
@@ -433,6 +449,30 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 		pool->allocator->vtable->gc_mark(pool);
 	}
 	/* sweep phase */
+	for (i = 0; i < priv->heap2block_array->len; i++) {
+		HgMemBFitBlock *block = g_ptr_array_index(priv->heap2block_array, i), *tmp;
+		HgMemObject *obj;
+
+		while (block != NULL) {
+			obj = block->heap_fragment;
+			tmp = block->next;
+			/* if block isn't in use, it will be destroyed during hg_mem_free.
+			 * tmp must points out used block.
+			 */
+			while (tmp != NULL && !tmp->in_use)
+				tmp = tmp->next;
+
+			if (block->in_use) {
+				if (!hg_mem_is_gc_mark(obj) &&
+				    (pool->destroyed || !hg_mem_is_locked(obj))) {
+					hg_mem_free(obj->data);
+				} else {
+					hg_mem_gc_unmark(obj);
+				}
+			}
+			block = tmp;
+		}
+	}
 
 	return FALSE;
 }

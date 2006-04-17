@@ -1,3 +1,12 @@
+2006-04-17  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_remove_block):
+	remove node if there are no list for chunks.
+	(_hg_allocator_bfit_get_free_block): likewise.
+	(_hg_allocator_bfit_add_free_block): replace node with updated list
+	if there are already list in btree.
+	(_hg_allocator_bfit_real_garbage_collection): implemented.
+
 2006-04-16  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_remove_block):
