@@ -180,7 +180,9 @@ _hg_allocator_bfit_add_free_block(HgAllocatorBFitPrivate *priv,
 		/* it could be merged now */
 		b->length += block->length;
 		b->next = block->next;
-		g_free(block);
+		if (b->next)
+			b->next->prev = b;
+		_hg_bfit_block_free(block);
 		block = b;
 	}
 	while (block->next != NULL && block->next->in_use == FALSE) {
@@ -189,9 +191,11 @@ _hg_allocator_bfit_add_free_block(HgAllocatorBFitPrivate *priv,
 		/* it could be merged now */
 		block->length += b->length;
 		block->next = b->next;
+		if (block->next)
+			block->next->prev = block;
 		/* block must be removed because it's no longer available */
 		_hg_allocator_bfit_remove_block(priv, b);
-		g_free(b);
+		_hg_bfit_block_free(b);
 	}
 	_hg_allocator_compute_minimum_block_size_index__inline(block->length, index);
 	if ((l = hg_btree_find(priv->free_block_tree, GUINT_TO_POINTER (index))) == NULL) {
@@ -445,9 +449,15 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 	if (!pool->destroyed) {
 		if (!pool->use_gc)
 			return FALSE;
+#ifdef DEBUG_GC
+		g_print("DEBUG_GC: marking start.\n");
+#endif /* DEBUG_GC */
 		/* mark phase */
 		pool->allocator->vtable->gc_mark(pool);
 	}
+#ifdef DEBUG_GC
+		g_print("DEBUG_GC: sweeping start.\n");
+#endif /* DEBUG_GC */
 	/* sweep phase */
 	for (i = 0; i < priv->heap2block_array->len; i++) {
 		HgMemBFitBlock *block = g_ptr_array_index(priv->heap2block_array, i), *tmp;
