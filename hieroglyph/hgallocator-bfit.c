@@ -25,6 +25,7 @@
 #include <config.h>
 #endif
 
+#include <string.h>
 #include "hgallocator-bfit.h"
 #include "hgallocator-private.h"
 #include "hgmem.h"
@@ -116,12 +117,14 @@ static HgAllocatorVTable __hg_allocator_bfit_vtable = {
 /* utility functions */
 static HgMemBFitBlock *
 _hg_bfit_block_new(gpointer heap,
-		   gsize    length)
+		   gsize    length,
+		   gint     heap_id)
 {
 	HgMemBFitBlock *retval = g_new(HgMemBFitBlock, 1);
 
 	if (retval != NULL) {
 		retval->heap_fragment = heap;
+		retval->heap_id = heap_id;
 		retval->length = length;
 		retval->in_use = FALSE;
 		retval->next = NULL;
@@ -210,7 +213,8 @@ _hg_allocator_bfit_add_free_block(HgAllocatorBFitPrivate *priv,
 }
 
 static HgMemBFitBlock *
-_hg_allocator_bfit_get_free_block(HgAllocatorBFitPrivate *priv,
+_hg_allocator_bfit_get_free_block(HgMemPool              *pool,
+				  HgAllocatorBFitPrivate *priv,
 				  gsize                   size)
 {
 	guint index, real_idx;
@@ -237,7 +241,8 @@ _hg_allocator_bfit_get_free_block(HgAllocatorBFitPrivate *priv,
 		_hg_allocator_compute_block_size__inline(sizeof (HgMemObject), min_size);
 		if (unused > 0 && unused >= min_size) {
 			block = _hg_bfit_block_new((gpointer)((gsize)retval->heap_fragment + size),
-						   unused);
+						   unused,
+						   retval->heap_id);
 			if (block != NULL) {
 				block->prev = retval;
 				block->next = retval->next;
@@ -250,6 +255,7 @@ _hg_allocator_bfit_get_free_block(HgAllocatorBFitPrivate *priv,
 				_hg_allocator_bfit_add_free_block(priv, block);
 			}
 		}
+		pool->used_heap_size += retval->length;
 		retval->in_use = TRUE;
 	}
 
@@ -262,6 +268,54 @@ _hg_allocator_bfit_btree_traverse_in_destroy(gpointer key,
 					     gpointer data)
 {
 	g_slist_free(val);
+}
+
+static void
+_hg_allocator_bfit_relocate(HgMemPool         *pool,
+			    HgMemRelocateInfo *info)
+{
+	HgAllocatorBFitPrivate *priv = pool->allocator->private;
+	gsize header_size = sizeof (HgMemObject);
+	GList *list;
+	HgMemObject *obj, *new_obj;
+	HgObject *hobj;
+	gpointer p;
+
+	/* relocate the addresses in the root node */
+	for (list = pool->root_node; list != NULL; list = g_list_next(list)) {
+		if ((gsize)list->data >= info->start &&
+		    (gsize)list->data <= info->end) {
+			list->data = (gpointer)((gsize)list->data + info->diff);
+		} else {
+			/* object that is targetted for relocation will relocates
+			 * their member variables later. so we need to ensure
+			 * the relocation for others.
+			 */
+			hobj = (HgObject *)list->data;
+			if (hobj->id == HG_OBJECT_ID && hobj->vtable && hobj->vtable->relocate) {
+				hobj->vtable->relocate(hobj, info);
+			}
+		}
+	}
+	/* relocate the addresses in the stack */
+	for (p = _hg_stack_start; p > _hg_stack_end; p--) {
+		obj = (gpointer)(*(gsize *)p - header_size);
+		if ((gsize)obj >= info->start &&
+		    (gsize)obj <= info->end) {
+			if (hg_btree_find(priv->obj2block_tree, obj) != NULL) {
+				new_obj = (HgMemObject *)((gsize)obj + info->diff);
+				*(gsize *)p = (gsize)new_obj->data;
+			}
+		}
+		obj = (gpointer)(*(gsize *)p);
+		if ((gsize)obj >= info->start &&
+		    (gsize)obj <= info->end) {
+			if (hg_btree_find(priv->obj2block_tree, obj) != NULL) {
+				new_obj = (HgMemObject *)((gsize)obj + info->diff);
+				*(gsize *)p = (gsize)new_obj;
+			}
+		}
+	}
 }
 
 /* best fit memory allocator */
@@ -288,7 +342,7 @@ _hg_allocator_bfit_real_initialize(HgMemPool *pool,
 	pool->total_heap_size = pool->initial_heap_size = total_heap_size;
 	pool->used_heap_size = 0;
 
-	block = _hg_bfit_block_new(heap->heaps, total_heap_size);
+	block = _hg_bfit_block_new(heap->heaps, total_heap_size, heap->serial);
 	if (block == NULL) {
 		hg_heap_free(heap);
 		g_free(priv);
@@ -367,7 +421,7 @@ _hg_allocator_bfit_real_resize_pool(HgMemPool *pool,
 	heap = hg_heap_new(pool, block_size);
 	if (heap == NULL)
 		return FALSE;
-	block = _hg_bfit_block_new(heap->heaps, block_size);
+	block = _hg_bfit_block_new(heap->heaps, block_size, heap->serial);
 	if (block == NULL) {
 		hg_heap_free(heap);
 
@@ -393,7 +447,7 @@ _hg_allocator_bfit_real_alloc(HgMemPool *pool,
 
 	_hg_allocator_compute_block_size__inline(sizeof (HgMemObject), min_size);
 	_hg_allocator_compute_block_size__inline(sizeof (HgMemObject) + size, block_size);
-	block = _hg_allocator_bfit_get_free_block(priv, block_size);
+	block = _hg_allocator_bfit_get_free_block(pool, priv, block_size);
 	if (block != NULL) {
 		obj = block->heap_fragment;
 		obj->id = HG_MEM_HEADER;
@@ -430,6 +484,7 @@ _hg_allocator_bfit_real_free(HgMemPool *pool,
 		return;
 	}
 	hg_btree_remove(priv->obj2block_tree, block->heap_fragment);
+	pool->used_heap_size -= block->length;
 	_hg_allocator_bfit_add_free_block(priv, block);
 }
 
@@ -437,7 +492,51 @@ static gpointer
 _hg_allocator_bfit_real_resize(HgMemObject *object,
 			       gsize        size)
 {
-	return NULL;
+	gsize block_size, min_block_size;
+	HgMemPool *pool = object->pool;
+
+	HG_SET_STACK_END;
+
+	_hg_allocator_compute_block_size__inline(sizeof (HgMemObject) + size, block_size);
+	_hg_allocator_compute_block_size__inline(sizeof (HgMemObject), min_block_size);
+	if (block_size > object->block_size) {
+		gpointer p;
+		HgMemRelocateInfo info;
+		HgObject *hobj;
+
+		p = hg_mem_alloc_with_flags(pool, block_size, object->flags);
+		/* reset the stack bottom here again. it may be broken during allocation
+		 * if GC was running.
+		 */
+		HG_SET_STACK_END_AGAIN;
+		if (p == NULL)
+			return NULL;
+		info.start = (gsize)object;
+		info.end = (gsize)object;
+		info.diff = (gsize)p - (gsize)object->data;
+		memcpy(p, object->data, object->block_size - sizeof (HgMemObject));
+		hg_mem_free(object->data);
+		_hg_allocator_bfit_relocate(pool, &info);
+		hobj = (HgObject *)p;
+		if (hobj->id == HG_OBJECT_ID && hobj->vtable && hobj->vtable->relocate) {
+			hobj->vtable->relocate(hobj, &info);
+		}
+
+		return p;
+	} else if (block_size < object->block_size &&
+		   (object->block_size - block_size) > min_block_size) {
+		HgHeap *heap = g_ptr_array_index(pool->heap_list, object->heap_id);
+		gsize fixed_size = object->block_size - block_size;
+		HgMemBFitBlock *block = _hg_bfit_block_new((gpointer)((gsize)object + block_size),
+							   fixed_size,
+							   heap->serial);
+		HgAllocatorBFitPrivate *priv = pool->allocator->private;
+
+		pool->used_heap_size -= block->length;
+		_hg_allocator_bfit_add_free_block(priv, block);
+	}
+
+	return object->data;
 }
 
 static gboolean

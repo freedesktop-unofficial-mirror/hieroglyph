@@ -1,3 +1,13 @@
+2006-04-24  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgallocator-bfit.c (_hg_bfit_block_new): store a heap id.
+	(_hg_allocator_bfit_get_free_block): update the amount of the used
+	heap in pool.
+	(_hg_allocator_bfit_relocate): new function.
+	(_hg_allocator_bfit_real_free): update the amount of the used heap
+	in pool.
+	(_hg_allocator_bfit_real_resize): implemented.
+
 2006-04-18  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_add_free_block):
