@@ -51,26 +51,32 @@ struct _HieroGlyphMemBFitBlock {
 	HgMemBFitBlock *prev;
 	HgMemBFitBlock *next;
 	gsize           length;
-	gboolean        in_use;
+	gint            in_use;
 };
 
-static gboolean       _hg_allocator_bfit_real_initialize        (HgMemPool     *pool,
-								 gsize          prealloc);
-static gboolean       _hg_allocator_bfit_real_destroy           (HgMemPool     *pool);
-static gboolean       _hg_allocator_bfit_real_resize_pool       (HgMemPool     *pool,
-								 gsize          size);
-static gpointer       _hg_allocator_bfit_real_alloc             (HgMemPool     *pool,
-								 gsize          size,
-								 guint          flags);
-static void           _hg_allocator_bfit_real_free              (HgMemPool     *pool,
-								 gpointer       data);
-static gpointer       _hg_allocator_bfit_real_resize            (HgMemObject   *object,
-								 gsize          size);
-static gboolean       _hg_allocator_bfit_real_garbage_collection(HgMemPool     *pool);
-static void           _hg_allocator_bfit_real_gc_mark           (HgMemPool     *pool);
-static HgMemSnapshot *_hg_allocator_bfit_real_save_snapshot     (HgMemPool     *pool);
-static gboolean       _hg_allocator_bfit_real_restore_snapshot  (HgMemPool     *pool,
-								 HgMemSnapshot *snapshot);
+static gboolean       _hg_allocator_bfit_real_initialize        (HgMemPool         *pool,
+								 gsize              prealloc);
+static gboolean       _hg_allocator_bfit_real_destroy           (HgMemPool         *pool);
+static gboolean       _hg_allocator_bfit_real_resize_pool       (HgMemPool         *pool,
+								 gsize              size);
+static gpointer       _hg_allocator_bfit_real_alloc             (HgMemPool         *pool,
+								 gsize              size,
+								 guint              flags);
+static void           _hg_allocator_bfit_real_free              (HgMemPool         *pool,
+								 gpointer           data);
+static gpointer       _hg_allocator_bfit_real_resize            (HgMemObject       *object,
+								 gsize              size);
+static gboolean       _hg_allocator_bfit_real_garbage_collection(HgMemPool         *pool);
+static void           _hg_allocator_bfit_real_gc_mark           (HgMemPool         *pool);
+static HgMemSnapshot *_hg_allocator_bfit_real_save_snapshot     (HgMemPool         *pool);
+static gboolean       _hg_allocator_bfit_real_restore_snapshot  (HgMemPool         *pool,
+								 HgMemSnapshot     *snapshot);
+static void           _hg_allocator_bfit_snapshot_real_free     (gpointer           data);
+static void           _hg_allocator_bfit_snapshot_real_set_flags(gpointer           data,
+								 guint              flags);
+static void           _hg_allocator_bfit_snapshot_real_relocate (gpointer           data,
+								 HgMemRelocateInfo *info);
+static gpointer       _hg_allocator_bfit_snapshot_real_to_string(gpointer           data);
 
 
 static HgAllocatorVTable __hg_allocator_bfit_vtable = {
@@ -85,6 +91,16 @@ static HgAllocatorVTable __hg_allocator_bfit_vtable = {
 	.save_snapshot      = _hg_allocator_bfit_real_save_snapshot,
 	.restore_snapshot   = _hg_allocator_bfit_real_restore_snapshot,
 };
+
+static HgObjectVTable __hg_snapshot_vtable = {
+	.free      = _hg_allocator_bfit_snapshot_real_free,
+	.set_flags = _hg_allocator_bfit_snapshot_real_set_flags,
+	.relocate  = _hg_allocator_bfit_snapshot_real_relocate,
+	.dup       = NULL,
+	.copy      = NULL,
+	.to_string = _hg_allocator_bfit_snapshot_real_to_string,
+};
+
 
 /*
  * Private Functions
@@ -126,7 +142,7 @@ _hg_bfit_block_new(gpointer heap,
 		retval->heap_fragment = heap;
 		retval->heap_id = heap_id;
 		retval->length = length;
-		retval->in_use = FALSE;
+		retval->in_use = 0;
 		retval->next = NULL;
 		retval->prev = NULL;
 	}
@@ -159,8 +175,7 @@ _hg_allocator_bfit_remove_block(HgAllocatorBFitPrivate *priv,
 						GUINT_TO_POINTER (index));
 			} else {
 				hg_btree_replace(priv->free_block_tree,
-						 GUINT_TO_POINTER (index),
-						 g_slist_delete_link(l, tmp));
+						 GUINT_TO_POINTER (index), l);
 			}
 		}
 	}
@@ -173,9 +188,9 @@ _hg_allocator_bfit_add_free_block(HgAllocatorBFitPrivate *priv,
 	guint index;
 	GSList *l;
 
-	block->in_use = FALSE;
+	block->in_use = 0;
 	/* trying to resolve the fragmentation */
-	while (block->prev != NULL && block->prev->in_use == FALSE) {
+	while (block->prev != NULL && block->prev->in_use == 0) {
 		HgMemBFitBlock *b = block->prev;
 
 		/* block must be removed from array because available size is increased. */
@@ -188,7 +203,7 @@ _hg_allocator_bfit_add_free_block(HgAllocatorBFitPrivate *priv,
 		_hg_bfit_block_free(block);
 		block = b;
 	}
-	while (block->next != NULL && block->next->in_use == FALSE) {
+	while (block->next != NULL && block->next->in_use == 0) {
 		HgMemBFitBlock *b = block->next;
 
 		/* it could be merged now */
@@ -251,12 +266,12 @@ _hg_allocator_bfit_get_free_block(HgMemPool              *pool,
 				/* in_use flag must be set to true here.
 				 * otherwise warning will appears in _hg_allocator_bfit_add_free_block.
 				 */
-				retval->in_use = TRUE;
+				retval->in_use = 1;
 				_hg_allocator_bfit_add_free_block(priv, block);
 			}
 		}
 		pool->used_heap_size += retval->length;
-		retval->in_use = TRUE;
+		retval->in_use = 1;
 	}
 
 	return retval;
@@ -381,7 +396,7 @@ _hg_allocator_bfit_real_destroy(HgMemPool *pool)
 				/* split off the link to avoid freeing of block in hg_mem_free */
 				block->next = NULL;
 				block->prev = NULL;
-				if (block->in_use) {
+				if (block->in_use > 0) {
 					obj = block->heap_fragment;
 					hg_mem_free(obj->data);
 				}
@@ -478,6 +493,10 @@ _hg_allocator_bfit_real_free(HgMemPool *pool,
 		return;
 	}
 	block = obj->subid;
+	if (block == NULL) {
+		g_warning("[BUG] Broken object %p is going to be destroyed.", data);
+		return;
+	}
 	if (hg_btree_find(priv->obj2block_tree, block->heap_fragment) == NULL) {
 		g_warning("[BUG] Failed to remove an object %p (block: %p) from list.",
 			  data, block);
@@ -515,6 +534,13 @@ _hg_allocator_bfit_real_resize(HgMemObject *object,
 		info.end = (gsize)object;
 		info.diff = (gsize)p - (gsize)object->data;
 		memcpy(p, object->data, object->block_size - sizeof (HgMemObject));
+		/* avoid to call HgObject's free function so that
+		 * it will be invoked from copied object.
+		 */
+		hobj = (HgObject *)object->data;
+		if (hobj->id == HG_OBJECT_ID) {
+			hobj->vtable = NULL;
+		}
 		hg_mem_free(object->data);
 		_hg_allocator_bfit_relocate(pool, &info);
 		hobj = (HgObject *)p;
@@ -530,8 +556,17 @@ _hg_allocator_bfit_real_resize(HgMemObject *object,
 		HgMemBFitBlock *block = _hg_bfit_block_new((gpointer)((gsize)object + block_size),
 							   fixed_size,
 							   heap->serial);
+		HgMemBFitBlock *blk = object->subid;
 		HgAllocatorBFitPrivate *priv = pool->allocator->private;
 
+		if (block == NULL) {
+			g_warning("Failed to allocate a block for resizing.");
+			return NULL;
+		}
+		block->prev = blk;
+		block->next = blk->next;
+		blk->length = block_size;
+		blk->next = block;
 		pool->used_heap_size -= block->length;
 		_hg_allocator_bfit_add_free_block(priv, block);
 	}
@@ -568,10 +603,10 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 			/* if block isn't in use, it will be destroyed during hg_mem_free.
 			 * tmp must points out used block.
 			 */
-			while (tmp != NULL && !tmp->in_use)
+			while (tmp != NULL && tmp->in_use == 0)
 				tmp = tmp->next;
 
-			if (block->in_use) {
+			if (block->in_use > 0) {
 				if (!hg_mem_is_gc_mark(obj) &&
 				    (pool->destroyed || !hg_mem_is_locked(obj))) {
 					hg_mem_free(obj->data);
@@ -625,7 +660,51 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 static HgMemSnapshot *
 _hg_allocator_bfit_real_save_snapshot(HgMemPool *pool)
 {
-	return NULL;
+	HgMemSnapshot *retval;
+	guint i;
+
+	retval = hg_mem_alloc(pool, sizeof (HgMemSnapshot));
+	if (retval == NULL) {
+		g_warning("Failed to allocate a memory for snapshot.");
+		return NULL;
+	}
+	retval->object.id = HG_OBJECT_ID;
+	retval->object.state = hg_mem_pool_get_default_access_mode(pool);
+	/* set NULL to avoid the call before finishing an initialization. */
+	retval->object.vtable = NULL;
+
+	retval->id = (gsize)pool;
+	retval->heap_list = g_ptr_array_new();
+	if (retval->heap_list == NULL) {
+		g_warning("Failed to allocate a memory for snapshot.");
+		hg_mem_free(retval);
+
+		return NULL;
+	}
+	retval->n_heaps = 0;
+	for (i = 0; i < pool->n_heaps; i++) {
+		HgHeap *heap;
+		HgHeap *origheap = g_ptr_array_index(pool->heap_list, i);
+
+		heap = hg_heap_new(pool, origheap->total_heap_size);
+		if (heap == NULL) {
+			g_warning("Failed to allocate a heap for snapshot.");
+			hg_mem_free(retval);
+
+			return NULL;
+		}
+		heap->serial = origheap->serial;
+		/* need to decrease the number of heap in pool */
+		pool->n_heaps--;
+		retval->n_heaps++;
+		g_ptr_array_add(retval->heap_list, heap);
+	}
+
+	/* FIXME */
+
+	retval->object.vtable = &__hg_snapshot_vtable;
+
+	return retval;
 }
 
 static gboolean
@@ -633,6 +712,30 @@ _hg_allocator_bfit_real_restore_snapshot(HgMemPool     *pool,
 					 HgMemSnapshot *snapshot)
 {
 	return FALSE;
+}
+
+/* snapshot */
+static void
+_hg_allocator_bfit_snapshot_real_free(gpointer data)
+{
+}
+
+static void
+_hg_allocator_bfit_snapshot_real_set_flags(gpointer data,
+					   guint    flags)
+{
+}
+
+static void
+_hg_allocator_bfit_snapshot_real_relocate(gpointer           data,
+					  HgMemRelocateInfo *info)
+{
+}
+
+static gpointer
+_hg_allocator_bfit_snapshot_real_to_string(gpointer data)
+{
+	return NULL;
 }
 
 /*

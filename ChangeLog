@@ -1,3 +1,14 @@
+2006-05-02  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgmem.c (hg_mem_free): fixed causing the double-free
+	issue.
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_remove_block):
+	fixed broken deletion from the linked list.
+	(_hg_allocator_bfit_real_free): sanity check to get the block.
+	(_hg_allocator_bfit_real_resize): set NULL to vtable before free'ing.
+	(_hg_allocator_bfit_real_resize): exactly separate off the block.
+
 2006-04-24  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgallocator-bfit.c (_hg_bfit_block_new): store a heap id.

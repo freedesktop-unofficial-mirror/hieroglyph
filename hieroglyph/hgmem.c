@@ -416,6 +416,10 @@ hg_mem_free(gpointer data)
 		hobj = data;
 		if (hobj->id == HG_OBJECT_ID && hobj->vtable && hobj->vtable->free) {
 			hobj->vtable->free(data);
+			/* prevents to invoke 'free' twice
+			 * when the pool destroy process is being run.
+			 */
+			hobj->vtable = NULL;
 		}
 		if (!obj->pool->destroyed)
 			obj->pool->allocator->vtable->free(obj->pool, data);

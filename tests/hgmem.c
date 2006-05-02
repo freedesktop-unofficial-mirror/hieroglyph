@@ -32,6 +32,12 @@ test_ffit(void)
 		g_print("Failed to compare the memory.\n");
 		return 1;
 	}
+	s = hg_mem_resize(s, 256);
+	printf("%p:%p\n", s, s2);
+	if (strcmp(s, s2)) {
+		g_print("Failed to compare the memory.\n");
+		return 1;
+	}
 	hg_mem_free(s2);
 	hg_mem_free(s);
 	hg_mem_pool_destroy(pool);
@@ -63,6 +69,12 @@ test_bfit(void)
 	}
 	strcpy(s, "test");
 	strcpy(s2, "test");
+	if (strcmp(s, s2)) {
+		g_print("Failed to compare the memory.\n");
+		return 1;
+	}
+	s = hg_mem_resize(s, 256);
+	printf("%p:%p\n", s, s2);
 	if (strcmp(s, s2)) {
 		g_print("Failed to compare the memory.\n");
 		return 1;
