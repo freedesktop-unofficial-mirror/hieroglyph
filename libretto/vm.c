@@ -980,6 +980,7 @@ libretto_vm_set_error_from_file(LibrettoVM       *vm,
 			      __FUNCTION__, hg_file_object_get_error(file), buffer);
 		    break;
 	}
+	hg_file_object_clear_error(file);
 }
 
 gboolean

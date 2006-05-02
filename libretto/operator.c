@@ -6161,6 +6161,21 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
+DEFUNC_OP (private_hg_startgc)
+G_STMT_START
+{
+	HgMemPool *pool = libretto_vm_get_current_pool(vm);
+	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	gboolean result = hg_mem_garbage_collection(pool);
+	HgValueNode *node;
+
+	HG_VALUE_MAKE_BOOLEAN (pool, node, result);
+	retval = libretto_stack_push(ostack, node);
+	if (!retval)
+		_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
+} G_STMT_END;
+DEFUNC_OP_END
+
 DEFUNC_OP (private_hg_startjobserver)
 G_STMT_START
 {
@@ -6731,6 +6746,7 @@ libretto_operator_hieroglyph_init(LibrettoVM *vm,
 	BUILD_OP_ (vm, pool, dict, .savehistory, private_hg_savehistory);
 	BUILD_OP_ (vm, pool, dict, .setglobal, private_hg_setglobal);
 	BUILD_OP_ (vm, pool, dict, .sleep, private_hg_sleep);
+	BUILD_OP_ (vm, pool, dict, .startgc, private_hg_startgc);
 	BUILD_OP_ (vm, pool, dict, .startjobserver, private_hg_startjobserver);
 	BUILD_OP_ (vm, pool, dict, .statementedit, private_hg_statementedit);
 }

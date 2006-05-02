@@ -579,6 +579,7 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 {
 	HgAllocatorBFitPrivate *priv = pool->allocator->private;
 	guint i;
+	gboolean retval = FALSE;
 
 	if (!pool->destroyed) {
 		if (!pool->use_gc)
@@ -610,6 +611,7 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 				if (!hg_mem_is_gc_mark(obj) &&
 				    (pool->destroyed || !hg_mem_is_locked(obj))) {
 					hg_mem_free(obj->data);
+					retval = TRUE;
 				} else {
 					hg_mem_gc_unmark(obj);
 				}
@@ -618,7 +620,7 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 		}
 	}
 
-	return FALSE;
+	return retval;
 }
 
 static void

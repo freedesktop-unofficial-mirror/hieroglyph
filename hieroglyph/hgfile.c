@@ -298,6 +298,8 @@ hg_file_object_new(HgMemPool  *pool,
 	/* initialize filename here to avoid a warning
 	   when allocating a memory for this and run GC. */
 	retval->filename = NULL;
+	retval->error = 0;
+	retval->ungetc = 0;
 	retval->is_eof = FALSE;
 	va_start(ap, file_type);
 	switch (file_type) {
@@ -490,6 +492,14 @@ hg_file_object_get_error(HgFileObject *object)
 	g_return_val_if_fail (object != NULL, EIO);
 
 	return object->error;
+}
+
+void
+hg_file_object_clear_error(HgFileObject *object)
+{
+	g_return_if_fail (object != NULL);
+
+	object->error = 0;
 }
 
 gboolean

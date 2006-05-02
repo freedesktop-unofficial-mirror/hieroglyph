@@ -1,3 +1,17 @@
+2006-05-03  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_garbage_collection):
+	return TRUE if GC is succeeded.
+
+	* hieroglyph/hgfile.c (hg_file_object_new): fixed a typo.
+	(hg_file_object_clear_error): new function.
+
+	* libretto/operator.c (_libretto_operator_op_private_hg_startgc):
+	new private operator to start GC manually.
+
+	* libretto/vm.c (libretto_vm_set_error_from_file): clear an error in
+	a file object after set it to vm.
+
 2006-05-02  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgmem.c (hg_mem_free): fixed causing the double-free
