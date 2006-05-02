@@ -1,5 +1,11 @@
 2006-05-03  Akira TAGOH  <at@gclab.org>
 
+	* configure.ac: configurable allocator for testing purpose.
+
+	* libretto/vm.c: likewise.
+
+	* hieroglyph/hgfile.c: likewise.
+
 	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_garbage_collection):
 	return TRUE if GC is succeeded.
 

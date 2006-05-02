@@ -27,7 +27,11 @@
 
 #include <errno.h>
 #include <string.h>
+#ifndef USE_BFIT_ALLOCATOR
 #include <hieroglyph/hgallocator-ffit.h>
+#else
+#include <hieroglyph/hgallocator-bfit.h>
+#endif /* USE_BFIT_ALLOCATOR */
 #include <hieroglyph/hgmem.h>
 #include <hieroglyph/hgarray.h>
 #include <hieroglyph/hgdict.h>
@@ -287,7 +291,11 @@ libretto_vm_init(void)
 		hg_mem_init();
 		hg_file_init();
 
+#ifndef USE_BFIT_ALLOCATOR
 		__lb_vm_allocator = hg_allocator_new(hg_allocator_ffit_get_vtable());
+#else
+		__lb_vm_allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
+#endif /* USE_BFIT_ALLOCATOR */
 		__lb_vm_mem_pool = hg_mem_pool_new(__lb_vm_allocator,
 						   "Libretto VM Memory Pool",
 						   8192,
@@ -347,9 +355,15 @@ libretto_vm_new(LibrettoEmulationType type)
 	}
 
 	/* initialize the memory pools */
+#ifndef USE_BFIT_ALLOCATOR
 	retval->local_allocator = hg_allocator_new(hg_allocator_ffit_get_vtable());
 	retval->global_allocator = hg_allocator_new(hg_allocator_ffit_get_vtable());
 	retval->graphic_allocator = hg_allocator_new(hg_allocator_ffit_get_vtable());
+#else
+	retval->local_allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
+	retval->global_allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
+	retval->graphic_allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
+#endif /* USE_BFIT_ALLOCATOR */
 	name = g_strdup_printf("VM %p:local pool", retval);
 	retval->local_pool = hg_mem_pool_new(retval->local_allocator,
 					     name,

@@ -124,11 +124,13 @@ if test "x$USE_MAINTAINER_MODE" = xyes; then
 	AC_MSG_RESULT(force)
 	enable_debug=force
 	AC_DEFINE(DEBUG,,[enable the debuggin build])
+	AC_DEFINE(USE_BFIT_ALLOCATOR,,[use the bfit algorithm memory allocator])
 elif test "x$enable_debug" = xno; then
 	AC_MSG_RESULT(no)
 else
 	AC_MSG_RESULT(yes)
 	AC_DEFINE(DEBUG,,[enable the debuggin build])
+	AC_DEFINE(USE_BFIT_ALLOCATOR,,[use the bfit algorithm memory allocator])
 fi
 AM_CONDITIONAL(ENABLE_DEBUG, test x$enable_debug != xno)
 

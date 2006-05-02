@@ -31,7 +31,11 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include "hgfile.h"
+#ifndef USE_BFIT_ALLOCATOR
 #include "hgallocator-ffit.h"
+#else
+#include "hgallocator-bfit.h"
+#endif /* USE_BFIT_ALLOCATOR */
 #include "hgmem.h"
 #include "hgstring.h"
 #include "hglineedit.h"
@@ -233,7 +237,11 @@ hg_file_init(void)
 	hg_mem_init();
 
 	if (!__hg_file_is_initialized) {
+#ifndef USE_BFIT_ALLOCATOR
 		__hg_file_allocator = hg_allocator_new(hg_allocator_ffit_get_vtable());
+#else
+		__hg_file_allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
+#endif /* USE_BFIT_ALLOCATOR */
 		__hg_file_mem_pool = hg_mem_pool_new(__hg_file_allocator,
 						     "Memory pool for HgFileObject",
 						     sizeof (HgFileObject) * 128,
