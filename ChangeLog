@@ -1,5 +1,13 @@
 2006-05-05  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgmem.c (hg_mem_pool_new): enable GC by default.
+
+	* libretto/vm.c (libretto_vm_init): use the best fit memory allocator
+	by default.
+	(libretto_vm_new): likewise.
+
+	* hieroglyph/hgfile.c (hg_file_init): likewise.
+
 	* hieroglyph/hgarray.c (hg_array_append_forcibly): new function.
 
 	* hieroglyph/hgdict.c (hg_dict_insert_forcibly): new function.

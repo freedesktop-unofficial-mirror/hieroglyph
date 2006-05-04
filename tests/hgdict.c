@@ -1,4 +1,4 @@
-#include <hieroglyph/hgallocator-ffit.h>
+#include <hieroglyph/hgallocator-bfit.h>
 #include <hieroglyph/hgmem.h>
 #include <hieroglyph/hgdict.h>
 #include <hieroglyph/hgvaluenode.h>
@@ -12,7 +12,7 @@ main(void)
 	HgValueNode *key, *val, *node;
 
 	hg_mem_init();
-	allocator = hg_allocator_new(hg_allocator_ffit_get_vtable());
+	allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
 	pool = hg_mem_pool_new(allocator, "test", 384, FALSE);
 	if (pool == NULL) {
 		g_print("Failed to create a memory pool.\n");

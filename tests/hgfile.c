@@ -1,4 +1,4 @@
-#include <hieroglyph/hgallocator-ffit.h>
+#include <hieroglyph/hgallocator-bfit.h>
 #include <hieroglyph/hgmem.h>
 #include <hieroglyph/hgfile.h>
 
@@ -13,7 +13,7 @@ main(void)
 	hg_mem_init();
 	hg_file_init();
 
-	allocator = hg_allocator_new(hg_allocator_ffit_get_vtable());
+	allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
 	pool = hg_mem_pool_new(allocator, "test", 128, TRUE);
 	if (pool == NULL) {
 		hg_stderr_printf("Failed to create a memory pool.\n");
