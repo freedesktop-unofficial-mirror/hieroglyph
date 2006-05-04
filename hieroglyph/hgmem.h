@@ -62,6 +62,9 @@ gsize          hg_mem_pool_get_free_heap_size     (HgMemPool     *pool);
 guint          hg_mem_pool_get_default_access_mode(HgMemPool     *pool);
 void           hg_mem_pool_set_default_access_mode(HgMemPool     *pool,
 						   guint          state);
+gboolean       hg_mem_pool_is_global_mode         (HgMemPool     *pool);
+void           hg_mem_pool_use_global_mode        (HgMemPool     *pool,
+						   gboolean       flag);
 HgMemSnapshot *hg_mem_pool_save_snapshot          (HgMemPool     *pool);
 gboolean       hg_mem_pool_restore_snapshot       (HgMemPool     *pool,
 						   HgMemSnapshot *snapshot);

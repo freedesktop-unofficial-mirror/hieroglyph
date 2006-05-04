@@ -1,5 +1,8 @@
 2006-05-04  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgmem.c (hg_mem_pool_is_global_mode): new function.
+	(hg_mem_pool_use_global_mode): new function.
+
 	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_garbage_collection):
 	added the debugging messages.
 
