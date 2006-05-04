@@ -1,5 +1,10 @@
 2006-05-05  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgmem.c (hg_mem_pool_is_own_object): check if it's in
+	the root node and give a privilege to the object.
+
+	* libretto/vm.c (libretto_vm_new): set a pool mode.
+
 	* hieroglyph/hgmem.c (hg_mem_pool_is_own_object): new function.
 	(hg_mem_pool_get_name): new function.
 

@@ -346,9 +346,15 @@ hg_mem_pool_is_own_object(HgMemPool *pool,
 {
 	gint i;
 	gboolean retval = FALSE;
+	HgMemObject *obj;
 
 	g_return_val_if_fail (pool != NULL, FALSE);
 
+	hg_mem_get_object__inline(data, obj);
+	if (g_list_find(obj->pool->root_node, data) != NULL) {
+		/* We privilege the object that is already in the root node */
+		return TRUE;
+	}
 	for (i = 0; i < pool->n_heaps; i++) {
 		HgHeap *heap = g_ptr_array_index(pool->heap_list, i);
 

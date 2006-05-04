@@ -369,6 +369,7 @@ libretto_vm_new(LibrettoEmulationType type)
 					     name,
 					     LB_LOCAL_POOL_SIZE,
 					     allow_resize);
+	hg_mem_pool_use_global_mode(retval->local_pool, FALSE);
 	g_free(name);
 	if (retval->local_pool == NULL) {
 		g_warning("Failed to create a local memory pool");
@@ -379,6 +380,7 @@ libretto_vm_new(LibrettoEmulationType type)
 					      name,
 					      LB_GLOBAL_POOL_SIZE,
 					      allow_resize);
+	hg_mem_pool_use_global_mode(retval->global_pool, TRUE);
 	g_free(name);
 	if (retval->global_pool == NULL) {
 		g_warning("Failed to create a global memory pool");
