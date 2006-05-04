@@ -225,7 +225,8 @@ hg_mem_pool_new(HgAllocator *allocator,
 	pool->root_node = NULL;
 	pool->periodical_gc = FALSE;
 	pool->gc_checked = FALSE;
-	pool->use_gc = TRUE;
+	pool->use_gc = FALSE;
+	pool->is_global_mode = FALSE;
 	pool->gc_threshold = 50;
 	allocator->used = TRUE;
 	if (!allocator->vtable->initialize(pool, prealloc)) {
@@ -314,6 +315,45 @@ hg_mem_pool_set_default_access_mode(HgMemPool *pool,
 	g_return_if_fail (pool != NULL);
 
 	pool->access_mode = state;
+}
+
+gboolean
+hg_mem_pool_is_global_mode(HgMemPool *pool)
+{
+	g_return_val_if_fail (pool != NULL, FALSE);
+
+	return pool->is_global_mode;
+}
+
+void
+hg_mem_pool_use_global_mode(HgMemPool *pool,
+			    gboolean   flag)
+{
+	g_return_if_fail (pool != NULL);
+
+	pool->is_global_mode = flag;
+}
+
+gboolean
+hg_mem_pool_is_own_object(HgMemPool *pool,
+			  gpointer   data)
+{
+	gint i;
+	gboolean retval = FALSE;
+
+	g_return_val_if_fail (pool != NULL, FALSE);
+
+	for (i = 0; i < pool->n_heaps; i++) {
+		HgHeap *heap = g_ptr_array_index(pool->heap_list, i);
+
+		if ((gsize)data >= (gsize)heap->heaps &&
+		    (gsize)data <= ((gsize)heap->heaps + heap->total_heap_size)) {
+			retval = TRUE;
+			break;
+		}
+	}
+
+	return retval;
 }
 
 HgMemSnapshot *

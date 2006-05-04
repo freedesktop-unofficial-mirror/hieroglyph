@@ -65,6 +65,8 @@ void           hg_mem_pool_set_default_access_mode(HgMemPool     *pool,
 gboolean       hg_mem_pool_is_global_mode         (HgMemPool     *pool);
 void           hg_mem_pool_use_global_mode        (HgMemPool     *pool,
 						   gboolean       flag);
+gboolean       hg_mem_pool_is_own_object          (HgMemPool     *pool,
+						   gpointer       data);
 HgMemSnapshot *hg_mem_pool_save_snapshot          (HgMemPool     *pool);
 gboolean       hg_mem_pool_restore_snapshot       (HgMemPool     *pool,
 						   HgMemSnapshot *snapshot);
