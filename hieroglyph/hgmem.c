@@ -253,6 +253,12 @@ hg_mem_pool_destroy(HgMemPool *pool)
 	_hg_mem_pool_free(pool);
 }
 
+const gchar *
+hg_mem_pool_get_name(HgMemPool *pool)
+{
+	return pool->name;
+}
+
 gboolean
 hg_mem_pool_allow_resize(HgMemPool *pool,
 			 gboolean   flag)

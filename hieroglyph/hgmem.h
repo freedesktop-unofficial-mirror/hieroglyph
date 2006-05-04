@@ -55,6 +55,7 @@ HgMemPool     *hg_mem_pool_new                    (HgAllocator   *allocator,
 						   gsize          prealloc,
 						   gboolean       allow_resize);
 void           hg_mem_pool_destroy                (HgMemPool     *pool);
+const gchar   *hg_mem_pool_get_name               (HgMemPool     *pool);
 gboolean       hg_mem_pool_allow_resize           (HgMemPool     *pool,
 						   gboolean       flag);
 gsize          hg_mem_pool_get_used_heap_size     (HgMemPool     *pool);
