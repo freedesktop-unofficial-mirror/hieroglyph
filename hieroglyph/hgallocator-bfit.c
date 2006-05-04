@@ -581,6 +581,9 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 	guint i;
 	gboolean retval = FALSE;
 
+#ifdef DEBUG_GC
+	g_print("DEBUG_GC: starting GC for %s\n", pool->name);
+#endif /* DEBUG_GC */
 	if (!pool->destroyed) {
 		if (!pool->use_gc)
 			return FALSE;
@@ -610,9 +613,15 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 			if (block->in_use > 0) {
 				if (!hg_mem_is_gc_mark(obj) &&
 				    (pool->destroyed || !hg_mem_is_locked(obj))) {
+#ifdef DEBUG_GC
+					g_print("DEBUG_GC: sweeping %p (block: %p memobj: %p size: %" G_GSIZE_FORMAT ")\n", obj->data, obj->subid, obj, obj->block_size);
+#endif /* DEBUG_GC */
 					hg_mem_free(obj->data);
 					retval = TRUE;
 				} else {
+#ifdef DEBUG_GC
+					g_print("UNMARK: %p (mem: %p)\n", obj->data, obj);
+#endif /* DEBUG_GC */
 					hg_mem_gc_unmark(obj);
 				}
 			}
@@ -643,6 +652,9 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 				g_warning("[BUG] Invalid object %p is in the root node.", list->data);
 			} else {
 				if (!hg_mem_is_gc_mark(obj)) {
+#ifdef DEBUG_GC
+					g_print("MARK: %p (mem: %p) from root node.\n", obj->data, obj);
+#endif /* DEBUG_GC */
 					hg_mem_gc_mark(obj);
 				}
 			}
@@ -652,6 +664,9 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 			obj = (gpointer)(*(gsize *)p - header_size);
 			if (hg_btree_find(priv->obj2block_tree, obj) != NULL) {
 				if (!hg_mem_is_gc_mark(obj)) {
+#ifdef DEBUG_GC
+					g_print("MARK: %p (mem: %p) from stack.\n", obj->data, obj);
+#endif /* DEBUG_GC */
 					hg_mem_gc_mark(obj);
 				}
 			}

@@ -918,14 +918,16 @@ libretto_vm_set_error(LibrettoVM       *vm,
 		}
 		hs2 = hg_object_to_string((HgObject *)errnode);
 		if (enode == NULL) {
-			g_error("Multiple errors occurred.\n  prevoius error: unknown or this happened before set /errorname in %s\n  current error: %s in %s\n", name, HG_VALUE_GET_NAME (__lb_vm_errorname[error]), hg_string_get_string(hs2));
+			g_warning("Multiple errors occurred.\n  prevoius error: unknown or this happened before set /errorname in %s\n  current error: %s in %s\n", name, HG_VALUE_GET_NAME (__lb_vm_errorname[error]), hg_string_get_string(hs2));
 		} else {
-			g_error("Multiple errors occurred.\n  previous error: %s in %s\n  current error: %s in %s\n", HG_VALUE_GET_NAME (enode), name, HG_VALUE_GET_NAME (__lb_vm_errorname[error]), hg_string_get_string(hs2));
+			g_warning("Multiple errors occurred.\n  previous error: %s in %s\n  current error: %s in %s\n", HG_VALUE_GET_NAME (enode), name, HG_VALUE_GET_NAME (__lb_vm_errorname[error]), hg_string_get_string(hs2));
 		}
 		if (p)
 			g_free(p);
 		hg_mem_free(hs2);
 		hg_mem_free(hs);
+		proc = hg_dict_lookup_with_string(vm->systemdict, ".abort");
+		libretto_operator_invoke(proc->v.pointer, vm);
 	}
 	_libretto_stack_use_stack_validator(vm->ostack, FALSE);
 	_libretto_stack_use_stack_validator(vm->estack, FALSE);

@@ -1,3 +1,15 @@
+2006-05-04  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_garbage_collection):
+	added the debugging messages.
+
+	* libretto/operator.c (_libretto_operator_op_private_arraytomark):
+	go along with the steps like PS.
+	(_libretto_operator_op_private_hg_startgc): do GC for only local pool.
+
+	* libretto/vm.c (libretto_vm_set_error): dump the stacks
+	when the multiple errors happened.
+
 2006-05-03  Akira TAGOH  <at@gclab.org>
 
 	* configure.ac: configurable allocator for testing purpose.

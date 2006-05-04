@@ -97,41 +97,21 @@ LibrettoOperator *__lb_operator_list[LB_op_END];
 /* level 1 */
 DEFUNC_OP (private_arraytomark)
 G_STMT_START {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack), i, j;
-	HgMemPool *pool = libretto_vm_get_current_pool(vm);
-	HgValueNode *node, *n;
-	HgArray *array;
-
+	/* %arraytomark is the same as {counttomark array astore exch pop} */
 	while (1) {
-		for (i = 0; i < depth; i++) {
-			node = libretto_stack_index(ostack, i);
-			if (HG_IS_VALUE_MARK (node)) {
-				array = hg_array_new(pool, i);
-				if (array == NULL) {
-					_libretto_operator_set_error(vm, op, LB_e_VMerror);
-					break;
-				}
-				for (j = 1; j <= i; j++) {
-					n = libretto_stack_index(ostack, i - j);
-					hg_array_append(array, n);
-				}
-				for (j = 0; j <= i; j++)
-					libretto_stack_pop(ostack);
-				HG_VALUE_MAKE_ARRAY (node, array);
-				if (node == NULL) {
-					_libretto_operator_set_error(vm, op, LB_e_VMerror);
-					break;
-				}
-				retval = libretto_stack_push(ostack, node);
-				/* it must be true */
-				break;
-			}
-		}
-		if (i == depth) {
-			_libretto_operator_set_error(vm, op, LB_e_unmatchedmark);
+		retval = libretto_operator_invoke(__lb_operator_list[LB_op_counttomark], vm);
+		if (!retval)
 			break;
-		}
+		retval = libretto_operator_invoke(__lb_operator_list[LB_op_array], vm);
+		if (!retval)
+			break;
+		retval = libretto_operator_invoke(__lb_operator_list[LB_op_astore], vm);
+		if (!retval)
+			break;
+		retval = libretto_operator_invoke(__lb_operator_list[LB_op_exch], vm);
+		if (!retval)
+			break;
+		retval = libretto_operator_invoke(__lb_operator_list[LB_op_pop], vm);
 		break;
 	}
 } G_STMT_END;
@@ -6164,12 +6144,18 @@ DEFUNC_OP_END
 DEFUNC_OP (private_hg_startgc)
 G_STMT_START
 {
-	HgMemPool *pool = libretto_vm_get_current_pool(vm);
+	HgMemPool *pool;
 	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	gboolean result = hg_mem_garbage_collection(pool);
+	gboolean result, flag = libretto_vm_is_global_pool_used(vm);
 	HgValueNode *node;
 
+	/* do GC for only local pool */
+	libretto_vm_use_global_pool(vm, FALSE);
+	pool = libretto_vm_get_current_pool(vm);
+	result = hg_mem_garbage_collection(pool);
 	HG_VALUE_MAKE_BOOLEAN (pool, node, result);
+	libretto_vm_use_global_pool(vm, flag);
+
 	retval = libretto_stack_push(ostack, node);
 	if (!retval)
 		_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
