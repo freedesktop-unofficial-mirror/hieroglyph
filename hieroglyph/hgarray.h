@@ -34,9 +34,16 @@ HgArray     *hg_array_new             (HgMemPool   *pool,
 				       gint32       num);
 gboolean     hg_array_append          (HgArray     *array,
 				       HgValueNode *node);
+gboolean     hg_array_append_forcibly (HgArray     *array,
+				       HgValueNode *node,
+				       gboolean     force);
 gboolean     hg_array_replace         (HgArray     *array,
 				       HgValueNode *node,
 				       guint        index);
+gboolean     hg_array_replace_forcibly(HgArray     *array,
+				       HgValueNode *node,
+				       guint        index,
+				       gboolean     force);
 gboolean     hg_array_remove          (HgArray     *array,
 				       guint        index);
 HgValueNode *hg_array_index           (HgArray     *array,

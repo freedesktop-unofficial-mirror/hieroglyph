@@ -30,6 +30,7 @@
 #include "hgstring.h"
 #include "hgbtree.h"
 #include "hgmem.h"
+#include "hgvaluenode.h"
 
 #define HG_ARRAY_ALLOC_SIZE 65535
 
@@ -84,7 +85,11 @@ _hg_array_real_set_flags(gpointer data,
 #ifdef DEBUG_GC
 			G_STMT_START {
 				if ((flags & HG_FL_MARK) != 0) {
-					g_print("%s: marking %p[%d]\n", __FUNCTION__, array->current[i], i);
+					if (!hg_mem_is_flags__inline(obj, flags)) {
+						hg_debug_print_gc_state(HG_DEBUG_GC_MARK, HG_TYPE_VALUE_ARRAY, array, array->current[i], GUINT_TO_POINTER (i));
+					} else {
+						hg_debug_print_gc_state(HG_DEBUG_GC_ALREADYMARK, HG_TYPE_VALUE_ARRAY, array, array->current[i], GUINT_TO_POINTER (i));
+					}
 				}
 			} G_STMT_END;
 #endif /* DEBUG_GC */
@@ -95,12 +100,12 @@ _hg_array_real_set_flags(gpointer data,
 	if (array->arrays) {
 		hg_mem_get_object__inline(array->arrays, obj);
 		if (obj == NULL) {
-			g_warning("Invalid object %p to be marked: Array", array->arrays);
+			g_warning("[BUG] Invalid object %p to be marked: Array", array->arrays);
 		} else {
 #ifdef DEBUG_GC
 			G_STMT_START {
 				if ((flags & HG_FL_MARK) != 0) {
-					g_print("%s: marking %p\n", __FUNCTION__, array->arrays);
+					hg_debug_print_gc_state(HG_DEBUG_GC_MARK, HG_TYPE_VALUE_ARRAY, array, array->arrays, GUINT_TO_POINTER (-1));
 				}
 			} G_STMT_END;
 #endif /* DEBUG_GC */
@@ -282,11 +287,33 @@ gboolean
 hg_array_append(HgArray     *array,
 		HgValueNode *node)
 {
+	return hg_array_append_forcibly(array, node, FALSE);
+}
+
+gboolean
+hg_array_append_forcibly(HgArray     *array,
+			 HgValueNode *node,
+			 gboolean     force)
+{
 	g_return_val_if_fail (array != NULL, FALSE);
 	g_return_val_if_fail (node != NULL, FALSE);
 	g_return_val_if_fail (hg_object_is_readable((HgObject *)array), FALSE);
 	g_return_val_if_fail (hg_object_is_writable((HgObject *)array), FALSE);
 
+	if (!force) {
+		HgMemObject *obj;
+
+		hg_mem_get_object__inline(array, obj);
+		if (obj == NULL ||
+		    (hg_mem_pool_is_global_mode(obj->pool) &&
+		     !hg_mem_pool_is_own_object(obj->pool, node))) {
+			g_warning("node %p isn't allocated from a pool %s\n", node, hg_mem_pool_get_name(obj->pool));
+			sync();
+			__asm__("int3");
+
+			return FALSE;
+		}
+	}
 	if (array->removed_arrays > 0) {
 		/* remove the nodes forever */
 		memmove(array->arrays, array->current, sizeof (gpointer) * array->n_arrays);
@@ -321,12 +348,35 @@ hg_array_replace(HgArray     *array,
 		 HgValueNode *node,
 		 guint        index)
 {
+	return hg_array_replace_forcibly(array, node, index, FALSE);
+}
+
+gboolean
+hg_array_replace_forcibly(HgArray     *array,
+			  HgValueNode *node,
+			  guint        index,
+			  gboolean     force)
+{
 	g_return_val_if_fail (array != NULL, FALSE);
 	g_return_val_if_fail (node != NULL, FALSE);
 	g_return_val_if_fail (index < array->n_arrays, FALSE);
 	g_return_val_if_fail (hg_object_is_readable((HgObject *)array), FALSE);
 	g_return_val_if_fail (hg_object_is_writable((HgObject *)array), FALSE);
 
+	if (!force) {
+		HgMemObject *obj;
+
+		hg_mem_get_object__inline(array, obj);
+		if (obj == NULL ||
+		    (hg_mem_pool_is_global_mode(obj->pool) &&
+		     !hg_mem_pool_is_own_object(obj->pool, node))) {
+			g_warning("node %p isn't allocated from a pool %s\n", node, hg_mem_pool_get_name(obj->pool));
+			sync();
+			__asm__("int3");
+
+			return FALSE;
+		}
+	}
 	array->current[index] = node;
 
 	return TRUE;

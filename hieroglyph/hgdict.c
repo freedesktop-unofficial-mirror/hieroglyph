@@ -925,15 +925,22 @@ _hg_dict_traverse_set_flags(gpointer key,
 	/* mark each nodes */
 	for (list = val; list != NULL; list = g_list_next(list)) {
 		hg_mem_get_object__inline(list->data, obj);
-		if (obj != NULL && !hg_mem_is_flags__inline(obj, flags)) {
+		if (obj == NULL) {
+			g_warning("[BUG] Invalid object %p to be marked: DictNode [list %p]", list->data, list);
+		} else {
 #ifdef DEBUG_GC
 			G_STMT_START {
 				if ((flags & HG_FL_MARK) != 0) {
-					g_print("%s: marking val %p\n", __FUNCTION__, obj);
+					if (!hg_mem_is_flags__inline(obj, flags)) {
+						hg_debug_print_gc_state(HG_DEBUG_GC_MARK, HG_TYPE_VALUE_DICT, NULL, list->data, GINT_TO_POINTER (0));
+					} else {
+						hg_debug_print_gc_state(HG_DEBUG_GC_ALREADYMARK, HG_TYPE_VALUE_DICT, NULL, list->data, GINT_TO_POINTER (0));
+					}
 				}
 			} G_STMT_END;
 #endif /* DEBUG_GC */
-			hg_mem_add_flags__inline(obj, flags, TRUE);
+			if (!hg_mem_is_flags__inline(obj, flags))
+				hg_mem_add_flags__inline(obj, flags, TRUE);
 		}
 	}
 }
@@ -1041,26 +1048,40 @@ _hg_dict_node_real_set_flags(gpointer data,
 	HgMemObject *obj;
 
 	hg_mem_get_object__inline(node->key, obj);
-	if (obj != NULL && !hg_mem_is_flags__inline(obj, flags)) {
+	if (obj == NULL) {
+		g_warning("[BUG] Invalid object %p to be marked: Dict key", node->key);
+	} else {
 #ifdef DEBUG_GC
 		G_STMT_START {
 			if ((flags & HG_FL_MARK) != 0) {
-				g_print("%s: marking key %p\n", __FUNCTION__, obj);
+				if (!hg_mem_is_flags__inline(obj, flags)) {
+					hg_debug_print_gc_state(HG_DEBUG_GC_MARK, HG_TYPE_VALUE_DICT, node, node->key, GINT_TO_POINTER (1));
+				} else {
+					hg_debug_print_gc_state(HG_DEBUG_GC_ALREADYMARK, HG_TYPE_VALUE_DICT, node, node->key, GINT_TO_POINTER (1));
+				}
 			}
 		} G_STMT_END;
 #endif /* DEBUG_GC */
-		hg_mem_add_flags__inline(obj, flags, TRUE);
+		if (!hg_mem_is_flags__inline(obj, flags))
+			hg_mem_add_flags__inline(obj, flags, TRUE);
 	}
 	hg_mem_get_object__inline(node->val, obj);
-	if (obj != NULL && !hg_mem_is_flags__inline(obj, flags)) {
+	if (obj == NULL) {
+		g_warning("[BUG] Invalid object %p to be marked: Dict val", node->val);
+	} else {
 #ifdef DEBUG_GC
 		G_STMT_START {
 			if ((flags & HG_FL_MARK) != 0) {
-				g_print("%s: marking val %p\n", __FUNCTION__, obj);
+				if (!hg_mem_is_flags__inline(obj, flags)) {
+					hg_debug_print_gc_state(HG_DEBUG_GC_MARK, HG_TYPE_VALUE_DICT, node, node->val, GINT_TO_POINTER (2));
+				} else {
+					hg_debug_print_gc_state(HG_DEBUG_GC_ALREADYMARK, HG_TYPE_VALUE_DICT, node, node->val, GINT_TO_POINTER (2));
+				}
 			}
 		} G_STMT_END;
 #endif /* DEBUG_GC */
-		hg_mem_add_flags__inline(obj, flags, TRUE);
+		if (!hg_mem_is_flags__inline(obj, flags))
+			hg_mem_add_flags__inline(obj, flags, TRUE);
 	}
 }
 
@@ -1181,6 +1202,16 @@ hg_dict_insert(HgMemPool   *pool,
 	       HgValueNode *key,
 	       HgValueNode *val)
 {
+	return hg_dict_insert_forcibly(pool, dict, key, val, FALSE);
+}
+
+gboolean
+hg_dict_insert_forcibly(HgMemPool   *pool,
+			HgDict      *dict,
+			HgValueNode *key,
+			HgValueNode *val,
+			gboolean     force)
+{
 	gsize hash;
 	GList *l, *ll;
 	HgDictNode *node;
@@ -1191,6 +1222,29 @@ hg_dict_insert(HgMemPool   *pool,
 	g_return_val_if_fail (hg_object_is_readable((HgObject *)dict), FALSE);
 	g_return_val_if_fail (hg_object_is_writable((HgObject *)dict), FALSE);
 
+	if (!force) {
+		HgMemObject *obj;
+
+		hg_mem_get_object__inline(dict, obj);
+		if (obj == NULL) {
+			g_warning("Invalid dictionary %p\n", dict);
+			return FALSE;
+		} else if (hg_mem_pool_is_global_mode(obj->pool)) {
+			if (!hg_mem_pool_is_own_object(obj->pool, key)) {
+				g_warning("key %p isn't allocated from a pool %s\n", key, hg_mem_pool_get_name(obj->pool));
+				sync();
+				__asm__("int3");
+
+				return FALSE;
+			} else if (!hg_mem_pool_is_own_object(obj->pool, val)) {
+				g_warning("value %p isn't allocated from a pool %s\n", val, hg_mem_pool_get_name(obj->pool));
+				sync();
+				__asm__("int3");
+
+				return FALSE;
+			}
+		}
+	}
 	hash = HG_DICT_HASH (dict, key);
 	if ((l = hg_btree_find(dict->dict, GSIZE_TO_POINTER (hash))) != NULL) {
 		ll = g_list_find_custom(l, key, _hg_dict_node_compare);

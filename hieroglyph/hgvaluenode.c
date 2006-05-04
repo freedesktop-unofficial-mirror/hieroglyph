@@ -449,3 +449,70 @@ hg_value_node_compare(const HgValueNode *a,
 
 	return retval;
 }
+
+void
+hg_debug_print_gc_state(HgDebugStateType type,
+			HgValueType      vtype,
+			gpointer         parent,
+			gpointer         self,
+			gpointer         extrainfo)
+{
+	const gchar *value[] = {
+		"",
+		"boolean",
+		"integer",
+		"real",
+		"name",
+		"array",
+		"string",
+		"dict",
+		"null",
+		"pointer",
+		"mark",
+		"file",
+		"save",
+	};
+	const gchar *dict_info[] = {"DictNode", "Key", "Val"};
+	gchar *info = NULL;
+
+	switch (vtype) {
+	    case HG_TYPE_VALUE_BOOLEAN:
+	    case HG_TYPE_VALUE_INTEGER:
+	    case HG_TYPE_VALUE_REAL:
+	    case HG_TYPE_VALUE_NAME:
+		    break;
+	    case HG_TYPE_VALUE_ARRAY:
+		    if ((guint)extrainfo == G_MAXUINT)
+			    info = g_strdup("[base]");
+		    else
+			    info = g_strdup_printf("[%d]", (guint)extrainfo);
+		    break;
+	    case HG_TYPE_VALUE_STRING:
+		    break;
+	    case HG_TYPE_VALUE_DICT:
+		    info = g_strdup_printf("[%s]", dict_info[(gint)extrainfo]);
+		    break;
+	    case HG_TYPE_VALUE_NULL:
+	    case HG_TYPE_VALUE_POINTER:
+	    case HG_TYPE_VALUE_MARK:
+	    case HG_TYPE_VALUE_FILE:
+	    case HG_TYPE_VALUE_SNAPSHOT:
+	    default:
+		    break;
+	}
+	switch (type) {
+	    case HG_DEBUG_GC_MARK:
+		    g_print("MARK: [type: %s] parent: %p -- %p %s\n", value[vtype], parent, self, info);
+		    break;
+	    case HG_DEBUG_GC_ALREADYMARK:
+		    g_print("MARK[already]: [type: %s] parent: %p -- %p %s\n", value[vtype], parent, self, info);
+		    break;
+	    case HG_DEBUG_GC_UNMARK:
+		    g_print("UNMARK: [type: %s] parent: %p -- %p %s\n", value[vtype], parent, self, info);
+		    break;
+	    default:
+		    break;
+	}
+	if (info)
+		g_free(info);
+}

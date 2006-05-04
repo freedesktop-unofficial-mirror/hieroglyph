@@ -4191,6 +4191,7 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
+/* almost code is shared to _libretto_operator_op_private_hg_forceput */
 DEFUNC_OP (put)
 G_STMT_START
 {
@@ -6037,6 +6038,78 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
+/* almost code is shared to _libretto_operator_op_put */
+DEFUNC_OP (private_hg_forceput)
+G_STMT_START
+{
+	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = libretto_stack_depth(ostack), len;
+	gint32 index;
+	HgValueNode *n1, *n2, *n3;
+
+	while (1) {
+		if (depth < 3) {
+			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
+			break;
+		}
+		n3 = libretto_stack_index(ostack, 0);
+		n2 = libretto_stack_index(ostack, 1);
+		n1 = libretto_stack_index(ostack, 2);
+		if (!hg_object_is_writable((HgObject *)n1)) {
+			_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
+			break;
+		}
+		if (HG_IS_VALUE_ARRAY (n1)) {
+			HgArray *array = HG_VALUE_GET_ARRAY (n1);
+
+			if (!HG_IS_VALUE_INTEGER (n2)) {
+				_libretto_operator_set_error(vm, op, LB_e_typecheck);
+				break;
+			}
+			len = hg_array_length(array);
+			index = HG_VALUE_GET_INTEGER (n2);
+			if (index > len || index > 65535) {
+				_libretto_operator_set_error(vm, op, LB_e_rangecheck);
+				break;
+			}
+			retval = hg_array_replace_forcibly(array, n3, index, TRUE);
+		} else if (HG_IS_VALUE_DICT (n1)) {
+			HgDict *dict = HG_VALUE_GET_DICT (n1);
+			HgMemObject *obj;
+
+			if (!hg_object_is_writable((HgObject *)dict)) {
+				_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
+				break;
+			}
+			hg_mem_get_object__inline(n3, obj);
+			if (obj == NULL) {
+				_libretto_operator_set_error(vm, op, LB_e_VMerror);
+				break;
+			}
+			retval = hg_dict_insert_forcibly(obj->pool, dict, n2, n3, TRUE);
+		} else if (HG_IS_VALUE_STRING (n1)) {
+			HgString *string = HG_VALUE_GET_STRING (n1);
+			gint32 c;
+
+			if (!HG_IS_VALUE_INTEGER (n2) || !HG_IS_VALUE_INTEGER (n3)) {
+				_libretto_operator_set_error(vm, op, LB_e_typecheck);
+				break;
+			}
+			index = HG_VALUE_GET_INTEGER (n2);
+			c = HG_VALUE_GET_INTEGER (n3);
+			retval = hg_string_insert_c(string, c, index);
+		} else {
+			_libretto_operator_set_error(vm, op, LB_e_typecheck);
+			break;
+		}
+		libretto_stack_pop(ostack);
+		libretto_stack_pop(ostack);
+		libretto_stack_pop(ostack);
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
+
 DEFUNC_OP (private_hg_revision)
 G_STMT_START
 {
@@ -6728,6 +6801,7 @@ libretto_operator_hieroglyph_init(LibrettoVM *vm,
 	BUILD_OP_ (vm, pool, dict, .hgrevision, private_hg_hgrevision);
 	BUILD_OP_ (vm, pool, dict, .loadhistory, private_hg_loadhistory);
 	BUILD_OP_ (vm, pool, dict, .product, private_hg_product);
+	BUILD_OP_ (vm, pool, dict, .forceput, private_hg_forceput);
 	BUILD_OP_ (vm, pool, dict, .revision, private_hg_revision);
 	BUILD_OP_ (vm, pool, dict, .savehistory, private_hg_savehistory);
 	BUILD_OP_ (vm, pool, dict, .setglobal, private_hg_setglobal);
@@ -6782,6 +6856,7 @@ libretto_operator_init(LibrettoVM *vm)
 	HgMemPool *pool;
 	HgDict *systemdict, *dict;
 	HgValueNode *key, *val;
+	HgMemObject *obj;
 
 	g_return_val_if_fail (vm != NULL, FALSE);
 
@@ -6823,22 +6898,34 @@ libretto_operator_init(LibrettoVM *vm)
 	key = _libretto_vm_get_name_node(vm, "$error");
 	dict = libretto_vm_get_dict_error(vm);
 	HG_VALUE_MAKE_DICT (val, dict);
-	hg_dict_insert(pool, systemdict, key, val);
+	hg_dict_insert_forcibly(pool, systemdict, key, val, TRUE);
+	hg_mem_get_object__inline(val, obj);
+	hg_mem_add_root_node(obj->pool, val);
+	hg_mem_add_root_node(obj->pool, dict);
 	/* errordict */
 	key = _libretto_vm_get_name_node(vm, "errordict");
 	dict = libretto_vm_get_dict_errordict(vm);
 	HG_VALUE_MAKE_DICT (val, dict);
-	hg_dict_insert(pool, systemdict, key, val);
+	hg_dict_insert_forcibly(pool, systemdict, key, val, TRUE);
+	hg_mem_get_object__inline(val, obj);
+	hg_mem_add_root_node(obj->pool, val);
+	hg_mem_add_root_node(obj->pool, dict);
 	/* serverdict */
 	key = _libretto_vm_get_name_node(vm, "serverdict");
 	dict = libretto_vm_get_dict_serverdict(vm);
 	HG_VALUE_MAKE_DICT (val, dict);
-	hg_dict_insert(pool, systemdict, key, val);
+	hg_dict_insert_forcibly(pool, systemdict, key, val, TRUE);
+	hg_mem_get_object__inline(val, obj);
+	hg_mem_add_root_node(obj->pool, val);
+	hg_mem_add_root_node(obj->pool, dict);
 	/* statusdict */
 	key = _libretto_vm_get_name_node(vm, "statusdict");
 	dict = libretto_vm_get_dict_statusdict(vm);
 	HG_VALUE_MAKE_DICT (val, dict);
-	hg_dict_insert(pool, systemdict, key, val);
+	hg_dict_insert_forcibly(pool, systemdict, key, val, TRUE);
+	hg_mem_get_object__inline(val, obj);
+	hg_mem_add_root_node(obj->pool, val);
+	hg_mem_add_root_node(obj->pool, dict);
 	/* systemdict */
 	key = _libretto_vm_get_name_node(vm, "systemdict");
 	HG_VALUE_MAKE_DICT (val, systemdict);

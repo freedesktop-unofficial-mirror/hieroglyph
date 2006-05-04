@@ -35,6 +35,11 @@ gboolean     hg_dict_insert            (HgMemPool      *pool,
 					HgDict         *dict,
 					HgValueNode    *key,
 					HgValueNode    *val);
+gboolean     hg_dict_insert_forcibly   (HgMemPool      *pool,
+					HgDict         *dict,
+					HgValueNode    *key,
+					HgValueNode    *val,
+					gboolean        force);
 gboolean     hg_dict_remove            (HgDict         *dict,
 					HgValueNode    *key);
 HgValueNode *hg_dict_lookup            (HgDict         *dict,

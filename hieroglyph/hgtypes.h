@@ -79,6 +79,12 @@ typedef enum {
 } HgObjectStateFlags;
 
 typedef enum {
+	HG_DEBUG_GC_MARK = 0,
+	HG_DEBUG_GC_ALREADYMARK,
+	HG_DEBUG_GC_UNMARK,
+} HgDebugStateType;
+
+typedef enum {
 	HG_TYPE_VALUE_BOOLEAN = 1,
 	HG_TYPE_VALUE_INTEGER,
 	HG_TYPE_VALUE_REAL,
@@ -346,10 +352,6 @@ struct _HieroGlyphPathBBox {
 	gdouble urx;
 	gdouble ury;
 };
-
-#ifdef DEBUG
-#include <hieroglyph/hgdebug.h>
-#endif
 
 G_END_DECLS
 

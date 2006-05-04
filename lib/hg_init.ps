@@ -9,7 +9,7 @@
 % create userdict if it's not defined
 false .setglobal
 systemdict /userdict known not {
-    systemdict /userdict 200 dict put % FIXME: it has to be put forcibly?
+    systemdict /userdict 200 dict .forceput % need to avoid the object sanity check.
 } if
 
 % change an allocation mode to global
@@ -23,7 +23,10 @@ true .setglobal
 %%% pre-required operators
 % key any odef -
 /odef {
-    [exch /stopped load [$error 5 index /command /exch load /put load /stop load] cvx /if load] cvx bind def
+    [exch /stopped load
+    [null 5 index /command /exch load /put load /stop load]
+    dup 0 $error .forceput % need to avoid the object sanity check.
+    cvx /if load] cvx bind def
 } bind def
 
 %%%
@@ -118,6 +121,15 @@ systemdict /.statementedit known {
 /findfont {
     .findfont
 } bind odef
+% num floor num
+/floor {
+    dup cvi
+    1 index 1 index sub
+    0 lt {
+	1 sub
+    } if
+    exch type /realtype eq {cvr} if
+} bind odef
 % pstack -
 /pstack {
     0 1 count 3 sub {index ==} for
@@ -166,12 +178,10 @@ systemdict /.statementedit known {
 %% Initialize error procedures
 % <command> <error> .seterror -
 /.seterror {
-    $error begin
-	/newerror true def
-	/errorname exch def
-	/command exch def
-	/.isstop true def
-    end
+    $error /newerror true put
+    $error exch /errorname exch put
+    $error exch /command exch put
+    $error /.isstop true put
     $error /recordstacks known {
 	$error /recordstacks get
     } {
@@ -225,25 +235,24 @@ systemdict /.statementedit known {
 	    (Dictionary stack[) print =only (]:\n) print
 	    {
 		(  ) print
-%		dup type /dicttype eq {
+		dup type /dicttype eq {
 		    (--dict:) print
 		    dup length ==only (/) print dup maxlength ==only
 		    dup wcheck not {
 			((ro)) print
 		    } if
-%		    /gcheck where {
-%			pop gcheck {
-%			    ((G))
-%			} {
-%			    ((L))
-%			} ifelse print
-%		    } {
+		    /gcheck where {
+			pop gcheck {
+			    ((G))
+			} {
+			    ((L))
+			} ifelse print
+		    } {
 			pop
-%		    } ifelse (--) print
-		    (--) print
-%		} {
-%		    ==only
-%		} ifelse
+		    } ifelse (--) print
+		} {
+		    ==only
+		} ifelse
 	    } forall
 	    (\n) print
 	} if
@@ -274,6 +283,7 @@ userdict begin
 
 %%
 %% almost initialization finished here
+%% and allows 'end' operator to be described now.
 %%
 
 %% initialize $error dictionary
