@@ -1,5 +1,8 @@
 2006-05-06  Akira TAGOH  <at@gclab.org>
 
+	* commit.sh: implemented a testrun mode and -m option to give the own
+	commit message.
+
 	* hieroglyph/hgmem.c (hg_pool_ref_new): new function.
 	(hg_pool_ref_free): new function.
 	(hg_pool_ref_last): new function.
