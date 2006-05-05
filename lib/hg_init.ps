@@ -199,8 +199,9 @@ systemdict /.statementedit known {
 } bind def
 % <command> <error> .defaulterrorhandler -
 /.defaulterrorhandler {
-    .seterror
+    % enter the local allocation mode in advance to avoid /invalidaccess again.
     false .setglobal
+    .seterror
     stop
 } bind def
 % - handleerror -

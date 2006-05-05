@@ -1,5 +1,22 @@
 2006-05-05  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgdict.c (hg_dict_insert_forcibly): clean up.
+
+	* hieroglyph/hgarray.c (hg_array_replace_forcibly): clean up.
+
+	* hieroglyph/hgmem.c (hg_mem_pool_is_own_object): always return true
+	if current allocation mode is local.
+
+	* lib/hg_init.ps (.defaulterrorhandler): enter the local allocation
+	mode in advance to avoid /invalidaccess again.
+
+	* libretto/operator.c (_libretto_operator_op_astore): check
+	the allocation mode before an warning is output.
+	(_libretto_operator_op_put): likewise.
+	(_libretto_operator_op_private_dicttomark): likewise.
+	(_libretto_operator_op_def): likewise.
+	(_libretto_operator_op_private_hg_abort): possibly avoid /VMerror twice.
+
 	* hieroglyph/hgmem.c (hg_mem_pool_new): enable GC by default.
 
 	* libretto/vm.c (libretto_vm_init): use the best fit memory allocator

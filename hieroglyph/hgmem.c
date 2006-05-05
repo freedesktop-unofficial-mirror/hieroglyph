@@ -350,6 +350,10 @@ hg_mem_pool_is_own_object(HgMemPool *pool,
 
 	g_return_val_if_fail (pool != NULL, FALSE);
 
+	if (!hg_mem_pool_is_global_mode(pool)) {
+		/* always return true */
+		return TRUE;
+	}
 	hg_mem_get_object__inline(data, obj);
 	if (g_list_find(obj->pool->root_node, data) != NULL) {
 		/* We privilege the object that is already in the root node */

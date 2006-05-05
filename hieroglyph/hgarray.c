@@ -305,8 +305,7 @@ hg_array_append_forcibly(HgArray     *array,
 
 		hg_mem_get_object__inline(array, obj);
 		if (obj == NULL ||
-		    (hg_mem_pool_is_global_mode(obj->pool) &&
-		     !hg_mem_pool_is_own_object(obj->pool, node))) {
+		    !hg_mem_pool_is_own_object(obj->pool, node)) {
 			g_warning("node %p isn't allocated from a pool %s\n", node, hg_mem_pool_get_name(obj->pool));
 			sync();
 			__asm__("int3");
@@ -368,8 +367,7 @@ hg_array_replace_forcibly(HgArray     *array,
 
 		hg_mem_get_object__inline(array, obj);
 		if (obj == NULL ||
-		    (hg_mem_pool_is_global_mode(obj->pool) &&
-		     !hg_mem_pool_is_own_object(obj->pool, node))) {
+		    !hg_mem_pool_is_own_object(obj->pool, node)) {
 			g_warning("node %p isn't allocated from a pool %s\n", node, hg_mem_pool_get_name(obj->pool));
 			sync();
 			__asm__("int3");

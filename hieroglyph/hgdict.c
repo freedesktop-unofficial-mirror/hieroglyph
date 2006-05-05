@@ -1229,20 +1229,20 @@ hg_dict_insert_forcibly(HgMemPool   *pool,
 		if (obj == NULL) {
 			g_warning("Invalid dictionary %p\n", dict);
 			return FALSE;
-		} else if (hg_mem_pool_is_global_mode(obj->pool)) {
-			if (!hg_mem_pool_is_own_object(obj->pool, key)) {
-				g_warning("key %p isn't allocated from a pool %s\n", key, hg_mem_pool_get_name(obj->pool));
-				sync();
-				__asm__("int3");
+		}
+		if (!hg_mem_pool_is_own_object(obj->pool, key)) {
+			g_warning("key %p isn't allocated from a pool %s\n", key, hg_mem_pool_get_name(obj->pool));
+			sync();
+			__asm__("int3");
 
-				return FALSE;
-			} else if (!hg_mem_pool_is_own_object(obj->pool, val)) {
-				g_warning("value %p isn't allocated from a pool %s\n", val, hg_mem_pool_get_name(obj->pool));
-				sync();
-				__asm__("int3");
+			return FALSE;
+		}
+		if (!hg_mem_pool_is_own_object(obj->pool, val)) {
+			g_warning("value %p isn't allocated from a pool %s\n", val, hg_mem_pool_get_name(obj->pool));
+			sync();
+			__asm__("int3");
 
-				return FALSE;
-			}
+			return FALSE;
 		}
 	}
 	hash = HG_DICT_HASH (dict, key);

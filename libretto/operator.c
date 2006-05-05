@@ -141,6 +141,11 @@ G_STMT_START {
 				for (j = 1; j <= i; j += 2) {
 					key = libretto_stack_index(ostack, i - j);
 					val = libretto_stack_index(ostack, i - j - 1);
+					if (!hg_mem_pool_is_own_object(pool, key) ||
+					    !hg_mem_pool_is_own_object(pool, val)) {
+						_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
+						return retval;
+					}
 					if (!hg_dict_insert(pool, dict, key, val)) {
 						_libretto_operator_set_error(vm, op, LB_e_VMerror);
 						return retval;
@@ -928,6 +933,7 @@ G_STMT_START
 	guint depth = libretto_stack_depth(ostack), len, i;
 	HgValueNode *node, *narray;
 	HgArray *array;
+	HgMemObject *obj;
 
 	while (1) {
 		if (depth < 1) {
@@ -949,8 +955,13 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
+		hg_mem_get_object__inline(array, obj);
 		for (i = 0; i < len; i++) {
 			node = libretto_stack_index(ostack, len - i);
+			if (!hg_mem_pool_is_own_object(obj->pool, node)) {
+				_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
+				return FALSE;
+			}
 			hg_array_replace(array, node, i);
 		}
 		for (i = 0; i <= len; i++)
@@ -1981,6 +1992,7 @@ G_STMT_START
 	guint odepth = libretto_stack_depth(ostack);
 	HgValueNode *nd, *nk, *nv;
 	HgDict *dict;
+	HgMemObject *obj;
 
 	while (1) {
 		if (odepth < 2) {
@@ -1991,7 +2003,10 @@ G_STMT_START
 		nk = libretto_stack_index(ostack, 1);
 		nd = libretto_stack_index(dstack, 0);
 		dict = HG_VALUE_GET_DICT (nd);
-		if (!hg_object_is_writable((HgObject *)dict)) {
+		hg_mem_get_object__inline(dict, obj);
+		if (!hg_object_is_writable((HgObject *)dict) ||
+		    !hg_mem_pool_is_own_object(obj->pool, nk) ||
+		    !hg_mem_pool_is_own_object(obj->pool, nv)) {
 			_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
 			break;
 		}
@@ -4199,6 +4214,7 @@ G_STMT_START
 	guint depth = libretto_stack_depth(ostack), len;
 	gint32 index;
 	HgValueNode *n1, *n2, *n3;
+	HgMemObject *obj;
 
 	while (1) {
 		if (depth < 3) {
@@ -4215,6 +4231,7 @@ G_STMT_START
 		if (HG_IS_VALUE_ARRAY (n1)) {
 			HgArray *array = HG_VALUE_GET_ARRAY (n1);
 
+			hg_mem_get_object__inline(array, obj);
 			if (!HG_IS_VALUE_INTEGER (n2)) {
 				_libretto_operator_set_error(vm, op, LB_e_typecheck);
 				break;
@@ -4225,18 +4242,22 @@ G_STMT_START
 				_libretto_operator_set_error(vm, op, LB_e_rangecheck);
 				break;
 			}
+			if (!hg_mem_pool_is_own_object(obj->pool, n3)) {
+				_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
+				break;
+			}
 			retval = hg_array_replace(array, n3, index);
 		} else if (HG_IS_VALUE_DICT (n1)) {
 			HgDict *dict = HG_VALUE_GET_DICT (n1);
-			HgMemObject *obj;
 
+			hg_mem_get_object__inline(dict, obj);
 			if (!hg_object_is_writable((HgObject *)dict)) {
 				_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
 				break;
 			}
-			hg_mem_get_object__inline(n3, obj);
-			if (obj == NULL) {
-				_libretto_operator_set_error(vm, op, LB_e_VMerror);
+			if (!hg_mem_pool_is_own_object(obj->pool, n2) ||
+			    !hg_mem_pool_is_own_object(obj->pool, n3)) {
+				_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
 				break;
 			}
 			retval = hg_dict_insert(obj->pool, dict, n2, n3);
@@ -5890,6 +5911,17 @@ G_STMT_START
 	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
 	LibrettoStack *estack = libretto_vm_get_estack(vm);
 	LibrettoStack *dstack = libretto_vm_get_dstack(vm);
+	HgMemPool *local_pool, *global_pool;
+	gboolean flag = libretto_vm_is_global_pool_used(vm);
+
+	libretto_vm_use_global_pool(vm, TRUE);
+	global_pool = libretto_vm_get_current_pool(vm);
+	libretto_vm_use_global_pool(vm, FALSE);
+	local_pool = libretto_vm_get_current_pool(vm);
+	libretto_vm_use_global_pool(vm, flag);
+	/* allow resizing to avoid /VMerror during dumping */
+	hg_mem_pool_allow_resize(global_pool, TRUE);
+	hg_mem_pool_allow_resize(local_pool, TRUE);
 
 	hg_file_object_printf(file, "\nOperand stack:\n");
 	libretto_stack_dump(ostack, file);
