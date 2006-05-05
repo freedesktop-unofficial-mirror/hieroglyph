@@ -1,3 +1,15 @@
+2006-05-06  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgmem.c (hg_pool_ref_new): new function.
+	(hg_pool_ref_free): new function.
+	(hg_pool_ref_last): new function.
+	(hg_pool_ref_add): new function.
+	(hg_pool_ref_remove): new function.
+	(hg_mem_add_pool_reference): new function.
+	(hg_mem_remove_pool_reference): new function.
+
+	* libretto/vm.c (libretto_vm_new): correct adding object to root node.
+
 2006-05-05  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgdict.c (hg_dict_insert_forcibly): clean up.

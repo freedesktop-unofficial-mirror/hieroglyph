@@ -156,6 +156,102 @@ hg_heap_free(HgHeap *heap)
 	g_free(heap);
 }
 
+HgPoolRef *
+hg_pool_ref_new(HgMemPool *pool,
+		gpointer   data)
+{
+	HgPoolRef *retval;
+
+	g_return_val_if_fail (pool != NULL);
+	g_return_val_if_fail (data != NULL);
+
+	retval = g_new(HgPoolRef, 1);
+	if (retval != NULL) {
+		retval->pool = pool;
+		retval->data = data;
+		retval->next = NULL;
+		retval->prev = NULL;
+	}
+
+	return retval;
+}
+
+#define hg_pool_ref_free1	g_free
+
+void
+hg_pool_ref_free(HgPoolRef *poolref)
+{
+	HgPoolRef *tmp;
+
+	while (poolref) {
+		tmp = poolref->next;
+		hg_pool_ref_free1(poolref);
+		poolref = tmp;
+	}
+}
+
+HgPoolRef *
+hg_pool_ref_last(HgPoolRef *poolref)
+{
+	if (poolref != NULL) {
+		while (poolref->next) {
+			poolref = poolref->next;
+		}
+	}
+
+	return poolref;
+}
+
+HgPoolRef *
+hg_pool_ref_add(HgPoolRef *poolref,
+		HgMemPool *pool,
+		gpointer   data)
+{
+	HgPoolRef *retval, *tmp;
+
+	g_return_val_if_fail (pool != NULL, poolref);
+	g_return_val_if_fail (data != NULL, poolref);
+
+	retval = hg_pool_ref_new(pool, data);
+	tmp = hg_pool_ref_last(poolref);
+	if (tmp == NULL) {
+		poolref = retval;
+	} else {
+		tmp->next = retval;
+		retval->prev = tmp;
+	}
+
+	return poolref;
+}
+
+HgPoolRef *
+hg_pool_ref_remove(HgPoolRef *poolref,
+		   gpointer   data)
+{
+	HgPoolRef *tmp;
+
+	g_return_val_if_fail (poolref != NULL, poolref);
+	g_return_val_if_fail (data != NULL, poolref);
+
+	tmp = poolref;
+	while (tmp) {
+		if (tmp->data != data) {
+			tmp = tmp->next;
+		} else {
+			if (tmp->prev)
+				tmp->prev->next = tmp->next;
+			if (tmp->next)
+				tmp->next->prev = tmp->prev;
+			if (poolref == tmp)
+				poolref = poolref->next;
+			hg_pool_ref_free1(tmp);
+			break;
+		}
+	}
+
+	return poolref;
+}
+
 /* initializer */
 void
 hg_mem_init(void)
@@ -223,6 +319,7 @@ hg_mem_pool_new(HgAllocator *allocator,
 	pool->destroyed = FALSE;
 	pool->allocator = allocator;
 	pool->root_node = NULL;
+	pool->other_pool_pref_list = NULL;
 	pool->periodical_gc = FALSE;
 	pool->gc_checked = FALSE;
 	pool->use_gc = TRUE;
@@ -248,6 +345,9 @@ hg_mem_pool_destroy(HgMemPool *pool)
 	}
 	if (pool->root_node) {
 		g_list_free(pool->root_node);
+	}
+	if (pool->other_pool_ref_list) {
+		hg_pool_ref_free(pool->other_pool_ref_list);
 	}
 	pool->allocator->used = FALSE;
 	_hg_mem_pool_free(pool);
@@ -512,6 +612,33 @@ hg_mem_remove_root_node(HgMemPool *pool,
 			gpointer   data)
 {
 	pool->root_node = g_list_remove(pool->root_node, data);
+}
+
+void
+hg_mem_add_pool_reference(HgMemPool *pool,
+			  HgMemPool *other_pool,
+			  gpointer   data)
+{
+	HgMemObject *obj;
+
+	g_return_if_fail (pool != NULL);
+
+	hg_mem_get_object__inline(data, obj);
+	g_return_if_fail (obj != NULL);
+	g_return_if_fail (obj->pool == other_pool);
+
+	pool->other_pool_ref_list = hg_pool_ref_add(pool->other_pool_ref_list,
+						    other_pool, data);
+}
+
+void
+hg_mem_remove_pool_reference(HgMemPool *pool,
+			     gpointer   data)
+{
+	g_return_if_fail (pool != NULL);
+	g_return_if_fail (data != NULL);
+
+	pool->other_pool_ref_list = hg_pool_ref_remove(pool->other_pool_ref_list, data);
 }
 
 /* HgObject */

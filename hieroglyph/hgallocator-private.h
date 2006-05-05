@@ -36,6 +36,13 @@ struct _HieroGlyphHeap {
 	gsize    used_heap_size;
 };
 
+struct _HieroGlyphPoolReference {
+	HgMemPool *pool;
+	gpointer   data;
+	HgPoolRef *next;
+	HgPoolRef *prev;
+};
+
 struct _HieroGlyphMemPool {
 	gchar       *name;
 	GPtrArray   *heap_list;
@@ -45,6 +52,7 @@ struct _HieroGlyphMemPool {
 	gsize        used_heap_size;
 	HgAllocator *allocator;
 	GList       *root_node;
+	HgPoolRef   *other_pool_ref_list;
 	guint        access_mode;
 	gshort       gc_threshold;
 	gboolean     allow_resize : 1;

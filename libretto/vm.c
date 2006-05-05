@@ -453,9 +453,7 @@ libretto_vm_new(LibrettoEmulationType type)
 	retval->graphics = libretto_graphics_new(retval->graphic_pool);
 	hg_mem_add_root_node(retval->graphic_pool, retval->graphics);
 
-	hg_mem_add_root_node(retval->local_pool, retval);
-	hg_mem_add_root_node(retval->global_pool, retval);
-	hg_mem_add_root_node(retval->graphic_pool, retval);
+	hg_mem_add_root_node(__lb_vm_mem_pool, retval);
 
 	return retval;
 }
