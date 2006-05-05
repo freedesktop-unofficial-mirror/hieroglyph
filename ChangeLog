@@ -2,6 +2,7 @@
 
 	* commit.sh: implemented a testrun mode and -m option to give the own
 	commit message.
+	also check if the required command is available.
 
 	* hieroglyph/hgmem.c (hg_pool_ref_new): new function.
 	(hg_pool_ref_free): new function.

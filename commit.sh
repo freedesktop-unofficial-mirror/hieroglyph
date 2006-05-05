@@ -4,6 +4,23 @@ TOPDIR=`dirname $0`
 VERSIONIN=$TOPDIR/hieroglyph/version.h.in.in
 VERSION_H=${VERSIONIN//.in.in}.in
 
+which svn > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "Cannot find svn command. stopped."
+    exit
+fi
+which awk > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "Cannot find awk command. stopped."
+    exit
+fi
+which sed > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "Cannot find sed command. stopped."
+    exit
+fi
+
+
 if [ "x`svn stat`" = "x" ]; then
     echo "No changes has been made. any changes has never committed."
     exit
