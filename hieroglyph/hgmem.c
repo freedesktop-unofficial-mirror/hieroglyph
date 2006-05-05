@@ -162,8 +162,8 @@ hg_pool_ref_new(HgMemPool *pool,
 {
 	HgPoolRef *retval;
 
-	g_return_val_if_fail (pool != NULL);
-	g_return_val_if_fail (data != NULL);
+	g_return_val_if_fail (pool != NULL, NULL);
+	g_return_val_if_fail (data != NULL, NULL);
 
 	retval = g_new(HgPoolRef, 1);
 	if (retval != NULL) {
@@ -319,7 +319,7 @@ hg_mem_pool_new(HgAllocator *allocator,
 	pool->destroyed = FALSE;
 	pool->allocator = allocator;
 	pool->root_node = NULL;
-	pool->other_pool_pref_list = NULL;
+	pool->other_pool_ref_list = NULL;
 	pool->periodical_gc = FALSE;
 	pool->gc_checked = FALSE;
 	pool->use_gc = TRUE;
