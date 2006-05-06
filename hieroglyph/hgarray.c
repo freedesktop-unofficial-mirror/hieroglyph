@@ -169,7 +169,7 @@ _hg_array_real_copy(gpointer data)
 
 	if (hg_mem_is_copying(obj)) {
 		/* circular reference happened. */
-		g_warning("Circular reference happened. copying object completely is impossible.");
+		g_warning("Circular reference happened. copying entire object is impossible.");
 		return array;
 	}
 	hg_mem_set_copying(obj);
@@ -279,6 +279,8 @@ hg_array_new(HgMemPool *pool,
 	retval->current = retval->arrays;
 	if (retval->arrays == NULL)
 		return NULL;
+	/* clear data */
+	memset(retval->arrays, 0, retval->allocated_arrays);
 
 	return retval;
 }

@@ -1,3 +1,8 @@
+2006-05-07  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgarray.c (hg_array_new): clear data to avoid segfaults.
+	it may causes staying a incomplete header in the aligned memory.
+
 2006-05-06  Akira TAGOH  <at@gclab.org>
 
 	* commit.sh: implemented a testrun mode and -m option to give the own
