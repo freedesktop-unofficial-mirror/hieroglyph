@@ -484,6 +484,12 @@ _hg_allocator_bfit_real_alloc(HgMemPool *pool,
 	_hg_allocator_compute_block_size__inline(sizeof (HgMemObject) + size, block_size);
 	block = _hg_allocator_bfit_get_free_block(pool, priv, block_size);
 	if (block != NULL) {
+		/* clear data to avoid incomplete header detection */
+		if (block_size >= sizeof (HgObject)) {
+			memset(block->heap_fragment, 0, sizeof (HgObject));
+		} else {
+			memset(block->heap_fragment, 0, sizeof (HgMemObject));
+		}
 		obj = block->heap_fragment;
 		obj->id = HG_MEM_HEADER;
 		obj->subid = block;

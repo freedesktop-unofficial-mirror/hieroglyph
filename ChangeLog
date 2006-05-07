@@ -1,5 +1,14 @@
 2006-05-07  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_alloc):
+	clear data to avoid incomplete header detection.
+
+	* libretto/operator.c (_libretto_operator_op_floor): removed.
+	(_libretto_operator_op_run): removed.
+	(_libretto_operator_op_private_hg_forceput): added objects to the pool
+	reference.
+	(_libretto_operator_real_set_flags): use hg_debug_print_gc_state.
+
 	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_add_free_block):
 	check if block chain is sane.
 	(_hg_allocator_bfit_get_free_block): fixed causing wrong block chain.
