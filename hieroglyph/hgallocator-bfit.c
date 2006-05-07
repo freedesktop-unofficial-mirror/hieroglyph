@@ -591,6 +591,8 @@ _hg_allocator_bfit_real_resize(HgMemObject *object,
 		}
 		block->prev = blk;
 		block->next = blk->next;
+		if (blk->next)
+			blk->next->prev = block;
 		blk->length = block_size;
 		blk->next = block;
 		pool->used_heap_size -= block->length;

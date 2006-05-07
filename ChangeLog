@@ -2,6 +2,8 @@
 
 	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_alloc):
 	clear data to avoid incomplete header detection.
+	(_hg_allocator_bfit_real_resize): fixed possibly causing wrong block
+	chain.
 
 	* libretto/operator.c (_libretto_operator_op_floor): removed.
 	(_libretto_operator_op_run): removed.
