@@ -26,6 +26,7 @@
 #endif
 
 #include <string.h>
+#include <setjmp.h>
 #include "hgallocator-bfit.h"
 #include "hgallocator-private.h"
 #include "hgmem.h"
@@ -193,24 +194,32 @@ _hg_allocator_bfit_add_free_block(HgAllocatorBFitPrivate *priv,
 	while (block->prev != NULL && block->prev->in_use == 0) {
 		HgMemBFitBlock *b = block->prev;
 
+		if (((gsize)b->heap_fragment + b->length) != (gsize)block->heap_fragment) {
+			g_warning("[BUG] wrong block chain detected. (block: %p heap: %p length: %" G_GSIZE_FORMAT ") is chained from (block: %p heap: %p length: %" G_GSIZE_FORMAT ")", block, block->heap_fragment, block->length, b, b->heap_fragment, b->length);
+			break;
+		}
 		/* block must be removed from array because available size is increased. */
 		_hg_allocator_bfit_remove_block(priv, b);
 		/* it could be merged now */
 		b->length += block->length;
 		b->next = block->next;
-		if (b->next)
-			b->next->prev = b;
+		if (block->next)
+			block->next->prev = b;
 		_hg_bfit_block_free(block);
 		block = b;
 	}
 	while (block->next != NULL && block->next->in_use == 0) {
 		HgMemBFitBlock *b = block->next;
 
+		if (((gsize)block->heap_fragment + block->length) != (gsize)b->heap_fragment) {
+			g_warning("[BUG] wrong block chain detected. (block: %p heap: %p length: %" G_GSIZE_FORMAT ") is chained to (block: %p heap: %p length: %" G_GSIZE_FORMAT ")", block, block->heap_fragment, block->length, b, b->heap_fragment, b->length);
+			break;
+		}
 		/* it could be merged now */
 		block->length += b->length;
 		block->next = b->next;
-		if (block->next)
-			block->next->prev = block;
+		if (b->next)
+			b->next->prev = block;
 		/* block must be removed because it's no longer available */
 		_hg_allocator_bfit_remove_block(priv, b);
 		_hg_bfit_block_free(b);
@@ -261,6 +270,8 @@ _hg_allocator_bfit_get_free_block(HgMemPool              *pool,
 			if (block != NULL) {
 				block->prev = retval;
 				block->next = retval->next;
+				if (retval->next)
+					retval->next->prev = block;
 				retval->length = size;
 				retval->next = block;
 				/* in_use flag must be set to true here.
@@ -295,6 +306,7 @@ _hg_allocator_bfit_relocate(HgMemPool         *pool,
 	HgMemObject *obj, *new_obj;
 	HgObject *hobj;
 	gpointer p;
+	HgPoolRef *r;
 
 	/* relocate the addresses in the root node */
 	for (list = pool->root_node; list != NULL; list = g_list_next(list)) {
@@ -310,6 +322,14 @@ _hg_allocator_bfit_relocate(HgMemPool         *pool,
 			if (hobj->id == HG_OBJECT_ID && hobj->vtable && hobj->vtable->relocate) {
 				hobj->vtable->relocate(hobj, info);
 			}
+		}
+	}
+	/* relocate the addresses in another pool */
+	for (r = pool->other_pool_ref_list; r != NULL; r = r->next) {
+		if ((gsize)r->data >= info->start &&
+		    (gsize)r->data <= info->end) {
+			/* recursively invoke relocate in another pool. */
+			_hg_allocator_bfit_relocate(r->pool, info);
 		}
 	}
 	/* relocate the addresses in the stack */
@@ -644,6 +664,8 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 		HgMemObject *obj;
 		gpointer p;
 		gsize header_size = sizeof (HgMemObject);
+		HgPoolRef *r;
+		jmp_buf env;
 
 		/* trace the root node */
 		for (list = pool->root_node; list != NULL; list = g_list_next(list)) {
@@ -656,6 +678,49 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 					g_print("MARK: %p (mem: %p) from root node.\n", obj->data, obj);
 #endif /* DEBUG_GC */
 					hg_mem_gc_mark(obj);
+				} else {
+#ifdef DEBUG_GC
+					g_print("MARK[already]: %p (mem: %p) from root node.\n", obj->data, obj);
+#endif /* DEBUG_GC */
+				}
+			}
+		}
+		/* trace another pool */
+		for (r = pool->other_pool_ref_list; r != NULL; r = r->next) {
+			hg_mem_get_object__inline(r->data, obj);
+#ifdef DEBUG_GC
+			g_print("MARK: %p (mem: %p) from pool reference.\n", obj->data, obj);
+#endif /* DEBUG_GC */
+			hg_mem_gc_mark(obj);
+//			r->pool->allocator->vtable->gc_mark(r->pool);
+		}
+		/* trace in the registers */
+		setjmp(env);
+		for (p = (gpointer)env; p < (gpointer)env + sizeof (env); p++) {
+			obj = (gpointer)(*(gsize *)p - header_size);
+			if (hg_btree_find(priv->obj2block_tree, obj) != NULL) {
+				if (!hg_mem_is_gc_mark(obj)) {
+#ifdef DEBUG_GC
+					g_print("MARK: %p (mem: %p) from registers.\n", obj->data, obj);
+#endif /* DEBUG_GC */
+					hg_mem_gc_mark(obj);
+				} else {
+#ifdef DEBUG_GC
+					g_print("MARK[already]: %p (mem: %p) from registers.\n", obj->data, obj);
+#endif /* DEBUG_GC */
+				}
+			}
+			obj = p;
+			if (hg_btree_find(priv->obj2block_tree, obj) != NULL) {
+				if (!hg_mem_is_gc_mark(obj)) {
+#ifdef DEBUG_GC
+					g_print("MARK: %p (mem: %p) from registers.\n", obj->data, obj);
+#endif /* DEBUG_GC */
+					hg_mem_gc_mark(obj);
+				} else {
+#ifdef DEBUG_GC
+					g_print("MARK[already]: %p (mem: %p) from registers.\n", obj->data, obj);
+#endif /* DEBUG_GC */
 				}
 			}
 		}
@@ -668,6 +733,23 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 					g_print("MARK: %p (mem: %p) from stack.\n", obj->data, obj);
 #endif /* DEBUG_GC */
 					hg_mem_gc_mark(obj);
+				} else {
+#ifdef DEBUG_GC
+					g_print("MARK[already]: %p (mem: %p) from stack.\n", obj->data, obj);
+#endif /* DEBUG_GC */
+				}
+			}
+			obj = p;
+			if (hg_btree_find(priv->obj2block_tree, obj) != NULL) {
+				if (!hg_mem_is_gc_mark(obj)) {
+#ifdef DEBUG_GC
+					g_print("MARK: %p (mem: %p) from stack.\n", obj->data, obj);
+#endif /* DEBUG_GC */
+					hg_mem_gc_mark(obj);
+				} else {
+#ifdef DEBUG_GC
+					g_print("MARK[already]: %p (mem: %p) from stack.\n", obj->data, obj);
+#endif /* DEBUG_GC */
 				}
 			}
 		}

@@ -1,5 +1,15 @@
 2006-05-07  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_add_free_block):
+	check if block chain is sane.
+	(_hg_allocator_bfit_get_free_block): fixed causing wrong block chain.
+	(_hg_allocator_bfit_real_gc_mark): trace the pool reference and
+	the registers.
+
+	* hieroglyph/hgvaluenode.c (_hg_value_node_real_set_flags): set flags
+	for HG_TYPE_VALUE_POINTER as well.
+	(hg_debug_print_gc_state): support HgValueNode dump.
+
 	* hieroglyph/hgarray.c (hg_array_new): clear data to avoid segfaults.
 	it may causes staying a incomplete header in the aligned memory.
 

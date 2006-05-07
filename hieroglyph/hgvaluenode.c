@@ -70,6 +70,7 @@ _hg_value_node_real_set_flags(gpointer data,
 	    case HG_TYPE_VALUE_ARRAY:
 	    case HG_TYPE_VALUE_STRING:
 	    case HG_TYPE_VALUE_DICT:
+	    case HG_TYPE_VALUE_POINTER:
 	    case HG_TYPE_VALUE_FILE:
 	    case HG_TYPE_VALUE_SNAPSHOT:
 		    if (node->v.pointer) {
@@ -80,7 +81,11 @@ _hg_value_node_real_set_flags(gpointer data,
 #ifdef DEBUG_GC
 				    G_STMT_START {
 					    if ((flags & HG_FL_MARK) != 0) {
-						    g_print("%s: marking node %p\n", __FUNCTION__, obj);
+						    if (!hg_mem_is_flags__inline(obj, flags)) {
+							    hg_debug_print_gc_state(HG_DEBUG_GC_MARK, 0, NULL, node, NULL);
+						    } else {
+							    hg_debug_print_gc_state(HG_DEBUG_GC_ALREADYMARK, 0, NULL, node, NULL);
+						    }
 					    }
 				    } G_STMT_END;
 #endif /* DEBUG_GC */
@@ -89,7 +94,6 @@ _hg_value_node_real_set_flags(gpointer data,
 			    }
 		    }
 		    break;
-	    case HG_TYPE_VALUE_POINTER:
 	    case HG_TYPE_VALUE_NULL:
 	    case HG_TYPE_VALUE_MARK:
 		    break;
@@ -458,7 +462,7 @@ hg_debug_print_gc_state(HgDebugStateType type,
 			gpointer         extrainfo)
 {
 	const gchar *value[] = {
-		"",
+		"node",
 		"boolean",
 		"integer",
 		"real",
@@ -476,6 +480,9 @@ hg_debug_print_gc_state(HgDebugStateType type,
 	gchar *info = NULL;
 
 	switch (vtype) {
+	    case 0:
+		    info = g_strdup_printf("[type: %s %p]", value[((HgValueNode *)self)->type], ((HgValueNode *)self)->v.pointer);
+		    break;
 	    case HG_TYPE_VALUE_BOOLEAN:
 	    case HG_TYPE_VALUE_INTEGER:
 	    case HG_TYPE_VALUE_REAL:
@@ -493,7 +500,10 @@ hg_debug_print_gc_state(HgDebugStateType type,
 		    info = g_strdup_printf("[%s]", dict_info[(gint)extrainfo]);
 		    break;
 	    case HG_TYPE_VALUE_NULL:
+		    break;
 	    case HG_TYPE_VALUE_POINTER:
+		    info = g_strdup_printf("[%s]", (gchar *)extrainfo);
+		    break;
 	    case HG_TYPE_VALUE_MARK:
 	    case HG_TYPE_VALUE_FILE:
 	    case HG_TYPE_VALUE_SNAPSHOT:
@@ -502,13 +512,13 @@ hg_debug_print_gc_state(HgDebugStateType type,
 	}
 	switch (type) {
 	    case HG_DEBUG_GC_MARK:
-		    g_print("MARK: [type: %s] parent: %p -- %p %s\n", value[vtype], parent, self, info);
+		    g_print("MARK: [type: %s] parent: %p -- %p %s\n", value[vtype], parent, self, (info ? info : ""));
 		    break;
 	    case HG_DEBUG_GC_ALREADYMARK:
-		    g_print("MARK[already]: [type: %s] parent: %p -- %p %s\n", value[vtype], parent, self, info);
+		    g_print("MARK[already]: [type: %s] parent: %p -- %p %s\n", value[vtype], parent, self, (info ? info : ""));
 		    break;
 	    case HG_DEBUG_GC_UNMARK:
-		    g_print("UNMARK: [type: %s] parent: %p -- %p %s\n", value[vtype], parent, self, info);
+		    g_print("UNMARK: [type: %s] parent: %p -- %p %s\n", value[vtype], parent, self, (info ? info : ""));
 		    break;
 	    default:
 		    break;
