@@ -4,7 +4,7 @@ libdir=@libdir@
 includedir=@includedir@
 
 Name: Libretto
-Description: PostScript Library on HieroGlyph
+Description: PostScript Library on Hieroglyph
 Version: @VERSION@
 Requires: hieroglyph
 Libs: -L${libdir} -lretto
