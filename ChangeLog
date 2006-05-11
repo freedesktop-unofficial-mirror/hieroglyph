@@ -1,3 +1,26 @@
+2006-05-12  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgarray.c (_hg_array_real_copy): unset copying flag
+	if fails happens.
+	(hg_array_append_forcibly): add pool if node is from different pool.
+	(hg_array_replace_forcibly): likewise.
+
+	* hieroglyph/hgdict.c (hg_dict_insert_forcibly): check if object
+	is sane.
+	(hg_dict_insert_forcibly): add pool if node is from different pool.
+
+	* hieroglyph/hgmem.c (_hg_mem_pool_is_own_memobject): new function.
+	(hg_mem_add_pool_reference): don't add the duplicate pool.
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_add_free_block):
+	clear data to avoid incomplete header detection.
+	(_hg_allocator_bfit_relocate): avoid the infinite loop.
+	(_hg_allocator_bfit_real_gc_mark): likewise.
+
+	* libretto/operator.c (_libretto_operator_op_private_hg_forceput):
+	reverted a previous change.
+	(libretto_operator_init): likewise.
+
 2006-05-07  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_alloc):

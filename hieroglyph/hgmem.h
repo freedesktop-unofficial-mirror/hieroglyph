@@ -40,17 +40,6 @@ HgHeap      *hg_heap_new         (HgMemPool               *pool,
 				  gsize                    size);
 void         hg_heap_free        (HgHeap                  *heap);
 
-/* pool reference */
-HgPoolRef *hg_pool_ref_new   (HgMemPool *pool,
-			      gpointer   data);
-void       hg_pool_ref_free  (HgPoolRef *poolref);
-HgPoolRef *hg_pool_ref_last  (HgPoolRef *poolref);
-HgPoolRef *hg_pool_ref_add   (HgPoolRef *poolref,
-			      HgMemPool *pool,
-			      gpointer   data);
-HgPoolRef *hg_pool_ref_remove(HgPoolRef *poolref,
-			      gpointer   data);
-
 /* memory pool */
 #define hg_mem_get_object__inline_nocheck(__data__)			\
 	((HgMemObject *)((gsize)(__data__) - sizeof (HgMemObject)))
@@ -91,6 +80,10 @@ gpointer       hg_mem_alloc_with_flags            (HgMemPool     *pool,
 gboolean       hg_mem_free                        (gpointer       data);
 gpointer       hg_mem_resize                      (gpointer       data,
 						   gsize          size);
+
+/* internal use */
+gboolean       _hg_mem_pool_is_own_memobject      (HgMemPool     *pool,
+						   HgMemObject   *obj);
 
 /* GC */
 #define hg_mem_is_flags__inline(__obj__, __flags__)			\
@@ -134,10 +127,9 @@ void     hg_mem_add_root_node              (HgMemPool *pool,
 void     hg_mem_remove_root_node           (HgMemPool *pool,
 					    gpointer   data);
 void     hg_mem_add_pool_reference         (HgMemPool *pool,
-					    HgMemPool *other_pool,
-					    gpointer   data);
+					    HgMemPool *other_pool);
 void     hg_mem_remove_pool_reference      (HgMemPool *pool,
-					    gpointer   data);
+					    HgMemPool *other_pool);
 void     hg_mem_pool_use_periodical_gc     (HgMemPool *pool,
 					    gboolean   flag);
 void     hg_mem_pool_use_garbage_collection(HgMemPool *pool,

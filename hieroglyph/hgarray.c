@@ -176,12 +176,15 @@ _hg_array_real_copy(gpointer data)
 	retval = hg_array_new(obj->pool, array->n_arrays);
 	if (retval == NULL) {
 		g_warning("Failed to duplicate an array.");
+		hg_mem_unset_copying(obj);
 		return NULL;
 	}
 	for (i = 0; i < array->n_arrays; i++) {
 		p = hg_object_copy((HgObject *)array->current[i]);
-		if (p == NULL)
+		if (p == NULL) {
+			hg_mem_unset_copying(obj);
 			return NULL;
+		}
 		retval->arrays[i] = p;
 	}
 	retval->n_arrays = array->n_arrays;
@@ -227,10 +230,12 @@ _hg_array_real_to_string(gpointer data)
 		str = hg_object_to_string((HgObject *)array->current[i]);
 		if (str == NULL) {
 			hg_mem_free(retval);
+			hg_mem_unset_copying(obj);
 			return NULL;
 		}
 		if (!hg_string_concat(retval, str)) {
 			hg_mem_free(retval);
+			hg_mem_unset_copying(obj);
 			return NULL;
 		}
 	}
@@ -279,8 +284,6 @@ hg_array_new(HgMemPool *pool,
 	retval->current = retval->arrays;
 	if (retval->arrays == NULL)
 		return NULL;
-	/* clear data */
-	memset(retval->arrays, 0, retval->allocated_arrays);
 
 	return retval;
 }
@@ -297,17 +300,20 @@ hg_array_append_forcibly(HgArray     *array,
 			 HgValueNode *node,
 			 gboolean     force)
 {
+	HgMemObject *obj, *nobj;
+
 	g_return_val_if_fail (array != NULL, FALSE);
 	g_return_val_if_fail (node != NULL, FALSE);
 	g_return_val_if_fail (hg_object_is_readable((HgObject *)array), FALSE);
 	g_return_val_if_fail (hg_object_is_writable((HgObject *)array), FALSE);
 
-	if (!force) {
-		HgMemObject *obj;
+	hg_mem_get_object__inline(array, obj);
+	g_return_val_if_fail (obj != NULL, FALSE);
+	hg_mem_get_object__inline(node, nobj);
+	g_return_val_if_fail (nobj != NULL, FALSE);
 
-		hg_mem_get_object__inline(array, obj);
-		if (obj == NULL ||
-		    !hg_mem_pool_is_own_object(obj->pool, node)) {
+	if (!force) {
+		if (!hg_mem_pool_is_own_object(obj->pool, node)) {
 			g_warning("node %p isn't allocated from a pool %s\n", node, hg_mem_pool_get_name(obj->pool));
 			sync();
 			__asm__("int3");
@@ -315,6 +321,8 @@ hg_array_append_forcibly(HgArray     *array,
 			return FALSE;
 		}
 	}
+	if (obj->pool != nobj->pool)
+		hg_mem_add_pool_reference(nobj->pool, obj->pool);
 	if (array->removed_arrays > 0) {
 		/* remove the nodes forever */
 		memmove(array->arrays, array->current, sizeof (gpointer) * array->n_arrays);
@@ -337,6 +345,9 @@ hg_array_append_forcibly(HgArray     *array,
 	}
 	if (array->n_arrays < array->allocated_arrays) {
 		array->arrays[array->n_arrays++] = node;
+		/* influence mark to child object */
+		if (hg_mem_is_gc_mark(obj) && !hg_mem_is_gc_mark(nobj))
+			hg_mem_gc_mark(nobj);
 	} else {
 		return FALSE;
 	}
@@ -358,18 +369,21 @@ hg_array_replace_forcibly(HgArray     *array,
 			  guint        index,
 			  gboolean     force)
 {
+	HgMemObject *obj, *nobj;
+
 	g_return_val_if_fail (array != NULL, FALSE);
 	g_return_val_if_fail (node != NULL, FALSE);
 	g_return_val_if_fail (index < array->n_arrays, FALSE);
 	g_return_val_if_fail (hg_object_is_readable((HgObject *)array), FALSE);
 	g_return_val_if_fail (hg_object_is_writable((HgObject *)array), FALSE);
 
-	if (!force) {
-		HgMemObject *obj;
+	hg_mem_get_object__inline(array, obj);
+	g_return_val_if_fail (obj != NULL, FALSE);
+	hg_mem_get_object__inline(node, nobj);
+	g_return_val_if_fail (nobj != NULL, FALSE);
 
-		hg_mem_get_object__inline(array, obj);
-		if (obj == NULL ||
-		    !hg_mem_pool_is_own_object(obj->pool, node)) {
+	if (!force) {
+		if (!hg_mem_pool_is_own_object(obj->pool, node)) {
 			g_warning("node %p isn't allocated from a pool %s\n", node, hg_mem_pool_get_name(obj->pool));
 			sync();
 			__asm__("int3");
@@ -377,7 +391,12 @@ hg_array_replace_forcibly(HgArray     *array,
 			return FALSE;
 		}
 	}
+	if (obj->pool != nobj->pool)
+		hg_mem_add_pool_reference(nobj->pool, obj->pool);
 	array->current[index] = node;
+	/* influence mark to child object */
+	if (hg_mem_is_gc_mark(obj) && !hg_mem_is_gc_mark(nobj))
+		hg_mem_gc_mark(nobj);
 
 	return TRUE;
 }

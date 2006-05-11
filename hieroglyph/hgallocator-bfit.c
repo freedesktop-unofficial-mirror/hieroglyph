@@ -190,6 +190,12 @@ _hg_allocator_bfit_add_free_block(HgAllocatorBFitPrivate *priv,
 	GSList *l;
 
 	block->in_use = 0;
+	/* clear data to avoid incomplete header detection */
+	if (block->length >= sizeof (HgObject)) {
+		memset(block->heap_fragment, 0, sizeof (HgObject));
+	} else {
+		memset(block->heap_fragment, 0, sizeof (HgMemObject));
+	}
 	/* trying to resolve the fragmentation */
 	while (block->prev != NULL && block->prev->in_use == 0) {
 		HgMemBFitBlock *b = block->prev;
@@ -302,11 +308,14 @@ _hg_allocator_bfit_relocate(HgMemPool         *pool,
 {
 	HgAllocatorBFitPrivate *priv = pool->allocator->private;
 	gsize header_size = sizeof (HgMemObject);
-	GList *list;
+	GList *list, *reflist;
 	HgMemObject *obj, *new_obj;
 	HgObject *hobj;
 	gpointer p;
-	HgPoolRef *r;
+
+	if (pool->is_processing)
+		return;
+	pool->is_processing = TRUE;
 
 	/* relocate the addresses in the root node */
 	for (list = pool->root_node; list != NULL; list = g_list_next(list)) {
@@ -325,12 +334,11 @@ _hg_allocator_bfit_relocate(HgMemPool         *pool,
 		}
 	}
 	/* relocate the addresses in another pool */
-	for (r = pool->other_pool_ref_list; r != NULL; r = r->next) {
-		if ((gsize)r->data >= info->start &&
-		    (gsize)r->data <= info->end) {
-			/* recursively invoke relocate in another pool. */
-			_hg_allocator_bfit_relocate(r->pool, info);
-		}
+	for (reflist = pool->other_pool_ref_list;
+	     reflist != NULL;
+	     reflist = g_list_next(reflist)) {
+		/* recursively invoke relocate in another pool. */
+		_hg_allocator_bfit_relocate(reflist->data, info);
 	}
 	/* relocate the addresses in the stack */
 	for (p = _hg_stack_start; p > _hg_stack_end; p--) {
@@ -351,6 +359,8 @@ _hg_allocator_bfit_relocate(HgMemPool         *pool,
 			}
 		}
 	}
+
+	pool->is_processing = FALSE;
 }
 
 /* best fit memory allocator */
@@ -667,12 +677,15 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 
 	HG_SET_STACK_END;
 
+	if (pool->is_processing)
+		return;
+	pool->is_processing = TRUE;
+
 	G_STMT_START {
-		GList *list;
+		GList *list, *reflist;
 		HgMemObject *obj;
 		gpointer p;
 		gsize header_size = sizeof (HgMemObject);
-		HgPoolRef *r;
 		jmp_buf env;
 
 		/* trace the root node */
@@ -694,13 +707,16 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 			}
 		}
 		/* trace another pool */
-		for (r = pool->other_pool_ref_list; r != NULL; r = r->next) {
-			hg_mem_get_object__inline(r->data, obj);
+		for (reflist = pool->other_pool_ref_list;
+		     reflist != NULL;
+		     reflist = g_list_next(reflist)) {
 #ifdef DEBUG_GC
-			g_print("MARK: %p (mem: %p) from pool reference.\n", obj->data, obj);
+			g_print("DEBUG_GC: entering %s\n", ((HgMemPool *)reflist->data)->name);
 #endif /* DEBUG_GC */
-			hg_mem_gc_mark(obj);
-//			r->pool->allocator->vtable->gc_mark(r->pool);
+			((HgMemPool *)reflist->data)->allocator->vtable->gc_mark(reflist->data);
+#ifdef DEBUG_GC
+			g_print("DEBUG_GC: leaving %s\n", ((HgMemPool *)reflist->data)->name);
+#endif /* DEBUG_GC */
 		}
 		/* trace in the registers */
 		setjmp(env);
@@ -762,6 +778,8 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 			}
 		}
 	} G_STMT_END;
+
+	pool->is_processing = FALSE;
 }
 
 static HgMemSnapshot *

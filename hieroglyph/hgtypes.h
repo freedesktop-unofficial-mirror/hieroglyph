@@ -34,7 +34,6 @@ typedef struct _HieroGlyphAllocator		HgAllocator;
 typedef struct _HieroGlyphMemRelocateInfo	HgMemRelocateInfo;
 typedef struct _HieroGlyphMemObject		HgMemObject;
 typedef struct _HieroGlyphHeap			HgHeap;
-typedef struct _HieroGlyphPoolReference		HgPoolRef;
 typedef struct _HieroGlyphMemPool		HgMemPool;
 typedef struct _HieroGlyphObjectVTable		HgObjectVTable;
 typedef struct _HieroGlyphObject		HgObject;

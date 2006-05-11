@@ -1215,6 +1215,7 @@ hg_dict_insert_forcibly(HgMemPool   *pool,
 	gsize hash;
 	GList *l, *ll;
 	HgDictNode *node;
+	HgMemObject *obj, *kobj, *vobj;
 
 	g_return_val_if_fail (dict != NULL, FALSE);
 	g_return_val_if_fail (key != NULL, FALSE);
@@ -1222,14 +1223,14 @@ hg_dict_insert_forcibly(HgMemPool   *pool,
 	g_return_val_if_fail (hg_object_is_readable((HgObject *)dict), FALSE);
 	g_return_val_if_fail (hg_object_is_writable((HgObject *)dict), FALSE);
 
-	if (!force) {
-		HgMemObject *obj;
+	hg_mem_get_object__inline(dict, obj);
+	g_return_val_if_fail (obj != NULL, FALSE);
+	hg_mem_get_object__inline(key, kobj);
+	g_return_val_if_fail (kobj != NULL, FALSE);
+	hg_mem_get_object__inline(val, vobj);
+	g_return_val_if_fail (vobj != NULL, FALSE);
 
-		hg_mem_get_object__inline(dict, obj);
-		if (obj == NULL) {
-			g_warning("Invalid dictionary %p\n", dict);
-			return FALSE;
-		}
+	if (!force) {
 		if (!hg_mem_pool_is_own_object(obj->pool, key)) {
 			g_warning("key %p isn't allocated from a pool %s\n", key, hg_mem_pool_get_name(obj->pool));
 			sync();
@@ -1246,6 +1247,18 @@ hg_dict_insert_forcibly(HgMemPool   *pool,
 		}
 	}
 	hash = HG_DICT_HASH (dict, key);
+	if (obj->pool != kobj->pool)
+		hg_mem_add_pool_reference(kobj->pool, obj->pool);
+	if (obj->pool != vobj->pool)
+		hg_mem_add_pool_reference(vobj->pool, obj->pool);
+	/* influence mark to the objects */
+	if (hg_mem_is_gc_mark(obj)) {
+		if (!hg_mem_is_gc_mark(kobj))
+			hg_mem_gc_mark(kobj);
+		if (!hg_mem_is_gc_mark(vobj))
+			hg_mem_gc_mark(vobj);
+	}
+
 	if ((l = hg_btree_find(dict->dict, GSIZE_TO_POINTER (hash))) != NULL) {
 		ll = g_list_find_custom(l, key, _hg_dict_node_compare);
 		if (ll != NULL) {
