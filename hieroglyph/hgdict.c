@@ -1233,15 +1233,11 @@ hg_dict_insert_forcibly(HgMemPool   *pool,
 	if (!force) {
 		if (!hg_mem_pool_is_own_object(obj->pool, key)) {
 			g_warning("key %p isn't allocated from a pool %s\n", key, hg_mem_pool_get_name(obj->pool));
-			sync();
-			__asm__("int3");
 
 			return FALSE;
 		}
 		if (!hg_mem_pool_is_own_object(obj->pool, val)) {
 			g_warning("value %p isn't allocated from a pool %s\n", val, hg_mem_pool_get_name(obj->pool));
-			sync();
-			__asm__("int3");
 
 			return FALSE;
 		}
