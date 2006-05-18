@@ -1,5 +1,9 @@
 2006-05-19  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgarray.c (_hg_array_real_copy): update the amount of
+	objects in array when an object is copied once. it caused not marking
+	when GC happened during copying.
+
 	* hieroglyph/hgmem.h (hg_mem_set_flags__inline): don't recursively
 	set flags that isn't expected.
 

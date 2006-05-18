@@ -187,6 +187,7 @@ _hg_array_real_copy(gpointer data)
 			return NULL;
 		}
 		retval->arrays[i] = p;
+		retval->n_arrays += 1;
 	}
 	retval->n_arrays = array->n_arrays;
 	hg_mem_unset_copying(obj);
