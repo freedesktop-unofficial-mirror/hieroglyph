@@ -1,5 +1,14 @@
 2006-05-19  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgmem.h (hg_mem_set_flags__inline): don't recursively
+	set flags that isn't expected.
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_add_free_block):
+	exactly clear headers.
+	(_hg_allocator_bfit_real_alloc): likewise.
+
+	* hieroglyph/hgvaluenode.c (hg_value_node_debug_print): renamed.
+
 	* .gdbinit: added.
 
 	* hieroglyph/hgstring.c (hg_string_new): ensure a memory for termination.

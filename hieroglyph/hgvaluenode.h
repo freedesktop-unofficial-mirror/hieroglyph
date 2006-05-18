@@ -183,11 +183,12 @@ gsize        hg_value_node_get_hash(const HgValueNode *node);
 gboolean     hg_value_node_compare (const HgValueNode *a,
 				    const HgValueNode *b);
 
-void         hg_debug_print_gc_state(HgDebugStateType type,
-				     HgValueType      vtype,
-				     gpointer         parent,
-				     gpointer         self,
-				     gpointer         extrainfo);
+void         hg_value_node_debug_print(HgFileObject    *file,
+				       HgDebugStateType type,
+				       HgValueType      vtype,
+				       gpointer         parent,
+				       gpointer         self,
+				       gpointer         extrainfo);
 
 G_END_DECLS
 

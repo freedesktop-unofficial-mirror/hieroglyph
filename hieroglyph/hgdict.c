@@ -30,6 +30,7 @@
 #include "hgmem.h"
 #include "hgstring.h"
 #include "hgvaluenode.h"
+#include "hgfile.h"
 
 #define BTREE_N_NODE	5
 #define HG_DICT_HASH(dict, obj)	((hg_value_node_get_hash(obj) << 8) % (dict)->prime)
@@ -932,9 +933,9 @@ _hg_dict_traverse_set_flags(gpointer key,
 			G_STMT_START {
 				if ((flags & HG_FL_MARK) != 0) {
 					if (!hg_mem_is_flags__inline(obj, flags)) {
-						hg_debug_print_gc_state(HG_DEBUG_GC_MARK, HG_TYPE_VALUE_DICT, NULL, list->data, GINT_TO_POINTER (0));
+						hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_MARK, HG_TYPE_VALUE_DICT, NULL, list->data, GINT_TO_POINTER (0));
 					} else {
-						hg_debug_print_gc_state(HG_DEBUG_GC_ALREADYMARK, HG_TYPE_VALUE_DICT, NULL, list->data, GINT_TO_POINTER (0));
+						hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_ALREADYMARK, HG_TYPE_VALUE_DICT, NULL, list->data, GINT_TO_POINTER (0));
 					}
 				}
 			} G_STMT_END;
@@ -1055,9 +1056,9 @@ _hg_dict_node_real_set_flags(gpointer data,
 		G_STMT_START {
 			if ((flags & HG_FL_MARK) != 0) {
 				if (!hg_mem_is_flags__inline(obj, flags)) {
-					hg_debug_print_gc_state(HG_DEBUG_GC_MARK, HG_TYPE_VALUE_DICT, node, node->key, GINT_TO_POINTER (1));
+					hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_MARK, HG_TYPE_VALUE_DICT, node, node->key, GINT_TO_POINTER (1));
 				} else {
-					hg_debug_print_gc_state(HG_DEBUG_GC_ALREADYMARK, HG_TYPE_VALUE_DICT, node, node->key, GINT_TO_POINTER (1));
+					hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_ALREADYMARK, HG_TYPE_VALUE_DICT, node, node->key, GINT_TO_POINTER (1));
 				}
 			}
 		} G_STMT_END;
@@ -1073,9 +1074,9 @@ _hg_dict_node_real_set_flags(gpointer data,
 		G_STMT_START {
 			if ((flags & HG_FL_MARK) != 0) {
 				if (!hg_mem_is_flags__inline(obj, flags)) {
-					hg_debug_print_gc_state(HG_DEBUG_GC_MARK, HG_TYPE_VALUE_DICT, node, node->val, GINT_TO_POINTER (2));
+					hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_MARK, HG_TYPE_VALUE_DICT, node, node->val, GINT_TO_POINTER (2));
 				} else {
-					hg_debug_print_gc_state(HG_DEBUG_GC_ALREADYMARK, HG_TYPE_VALUE_DICT, node, node->val, GINT_TO_POINTER (2));
+					hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_ALREADYMARK, HG_TYPE_VALUE_DICT, node, node->val, GINT_TO_POINTER (2));
 				}
 			}
 		} G_STMT_END;

@@ -98,8 +98,10 @@ gboolean       _hg_mem_pool_is_own_memobject      (HgMemPool     *pool,
 		if ((__notify__) &&					\
 		    __hg_mem_hobj__->id == HG_OBJECT_ID &&		\
 		    __hg_mem_hobj__->vtable &&				\
-		    __hg_mem_hobj__->vtable->set_flags)			\
-			__hg_mem_hobj__->vtable->set_flags(__hg_mem_hobj__, __flags__); \
+		    __hg_mem_hobj__->vtable->set_flags) {		\
+			guint __hg_mem_flags__ = (__flags__) & (HG_FL_MARK); \
+			__hg_mem_hobj__->vtable->set_flags(__hg_mem_hobj__, __hg_mem_flags__); \
+		}							\
 	} G_STMT_END
 #define hg_mem_add_flags__inline(__obj__, __flags__, __notify__)	\
 	hg_mem_set_flags__inline((__obj__),				\

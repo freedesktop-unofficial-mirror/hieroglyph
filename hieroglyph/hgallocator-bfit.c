@@ -193,10 +193,10 @@ _hg_allocator_bfit_add_free_block(HgAllocatorBFitPrivate *priv,
 
 	block->in_use = 0;
 	/* clear data to avoid incomplete header detection */
-	if (block->length >= sizeof (HgObject)) {
-		memset(block->heap_fragment, 0, sizeof (HgObject));
+	if (block->length >= (sizeof (HgMemObject) + sizeof (HgObject))) {
+		memset(block->heap_fragment, 0, sizeof (HgMemObject) + sizeof (HgObject));
 	} else {
-		memset(block->heap_fragment, 0, sizeof (HgMemObject));
+		memset(block->heap_fragment, 0, block->length);
 	}
 	/* trying to resolve the fragmentation */
 	while (block->prev != NULL && block->prev->in_use == 0) {
@@ -344,7 +344,7 @@ _hg_allocator_bfit_relocate(HgMemPool         *pool,
 	}
 	/* relocate the addresses in the stack */
 	for (p = _hg_stack_start; p > _hg_stack_end; p--) {
-		obj = (gpointer)(*(gsize *)p - header_size);
+		obj = (HgMemObject *)(*(gsize *)p - header_size);
 		if ((gsize)obj >= info->start &&
 		    (gsize)obj <= info->end) {
 			if (hg_btree_find(priv->obj2block_tree, obj) != NULL) {
@@ -352,7 +352,7 @@ _hg_allocator_bfit_relocate(HgMemPool         *pool,
 				*(gsize *)p = (gsize)new_obj->data;
 			}
 		}
-		obj = (gpointer)(*(gsize *)p);
+		obj = (HgMemObject *)(*(gsize *)p);
 		if ((gsize)obj >= info->start &&
 		    (gsize)obj <= info->end) {
 			if (hg_btree_find(priv->obj2block_tree, obj) != NULL) {
@@ -497,10 +497,10 @@ _hg_allocator_bfit_real_alloc(HgMemPool *pool,
 	block = _hg_allocator_bfit_get_free_block(pool, priv, block_size);
 	if (block != NULL) {
 		/* clear data to avoid incomplete header detection */
-		if (block_size >= sizeof (HgObject)) {
-			memset(block->heap_fragment, 0, sizeof (HgObject));
+		if (block_size >= (sizeof (HgMemObject) + sizeof (HgObject))) {
+			memset(block->heap_fragment, 0, sizeof (HgMemObject) + sizeof (HgObject));
 		} else {
-			memset(block->heap_fragment, 0, sizeof (HgMemObject));
+			memset(block->heap_fragment, 0, block_size);
 		}
 		obj = block->heap_fragment;
 		obj->id = HG_MEM_HEADER;
@@ -769,7 +769,7 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 		}
 		/* trace the stack */
 		for (p = _hg_stack_start; p > _hg_stack_end; p--) {
-			obj = (gpointer)(*(gsize *)p - header_size);
+			obj = (HgMemObject *)(*(gsize *)p - header_size);
 			if (hg_btree_find(priv->obj2block_tree, obj) != NULL) {
 				if (!hg_mem_is_gc_mark(obj)) {
 #ifdef DEBUG_GC

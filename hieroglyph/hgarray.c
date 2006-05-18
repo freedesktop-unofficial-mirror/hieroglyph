@@ -31,6 +31,7 @@
 #include "hgbtree.h"
 #include "hgmem.h"
 #include "hgvaluenode.h"
+#include "hgfile.h"
 
 #define HG_ARRAY_ALLOC_SIZE 65535
 
@@ -86,9 +87,9 @@ _hg_array_real_set_flags(gpointer data,
 			G_STMT_START {
 				if ((flags & HG_FL_MARK) != 0) {
 					if (!hg_mem_is_flags__inline(obj, flags)) {
-						hg_debug_print_gc_state(HG_DEBUG_GC_MARK, HG_TYPE_VALUE_ARRAY, array, array->current[i], GUINT_TO_POINTER (i));
+						hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_MARK, HG_TYPE_VALUE_ARRAY, array, array->current[i], GUINT_TO_POINTER (i));
 					} else {
-						hg_debug_print_gc_state(HG_DEBUG_GC_ALREADYMARK, HG_TYPE_VALUE_ARRAY, array, array->current[i], GUINT_TO_POINTER (i));
+						hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_ALREADYMARK, HG_TYPE_VALUE_ARRAY, array, array->current[i], GUINT_TO_POINTER (i));
 					}
 				}
 			} G_STMT_END;
@@ -105,7 +106,7 @@ _hg_array_real_set_flags(gpointer data,
 #ifdef DEBUG_GC
 			G_STMT_START {
 				if ((flags & HG_FL_MARK) != 0) {
-					hg_debug_print_gc_state(HG_DEBUG_GC_MARK, HG_TYPE_VALUE_ARRAY, array, array->arrays, GUINT_TO_POINTER (-1));
+					hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_MARK, HG_TYPE_VALUE_ARRAY, array, array->arrays, GUINT_TO_POINTER (-1));
 				}
 			} G_STMT_END;
 #endif /* DEBUG_GC */
@@ -169,7 +170,7 @@ _hg_array_real_copy(gpointer data)
 
 	if (hg_mem_is_copying(obj)) {
 		/* circular reference happened. */
-		g_warning("Circular reference happened. copying entire object is impossible.");
+		g_warning("Circular reference happened in %p (mem: %p). copying entire object is impossible.", data, obj);
 		return array;
 	}
 	hg_mem_set_copying(obj);

@@ -63,12 +63,11 @@ typedef void                (*HgDebugFunc)         (gpointer data);
 typedef HgAllocatorVTable * (*HgAllocatorTypeFunc) (void);
 
 typedef enum {
-	HG_FL_MARK       = 1 << 0,
-	HG_FL_RESTORABLE = 1 << 1,
-	HG_FL_COMPLEX    = 1 << 2,
-	HG_FL_LOCK       = 1 << 3,
-	HG_FL_COPYING    = 1 << 4,
-	HG_FL_COPIED     = 1 << 5,
+	HG_FL_MARK       = 1 << 0, /* infect child object */
+	HG_FL_RESTORABLE = 1 << 1, /* no infect */
+	HG_FL_COMPLEX    = 1 << 2, /* no infect */
+	HG_FL_LOCK       = 1 << 3, /* no infect */
+	HG_FL_COPYING    = 1 << 4, /* no infect */
 	HG_FL_END
 } HgMemFlags;
 
