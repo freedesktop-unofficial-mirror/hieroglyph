@@ -180,14 +180,14 @@ hg_string_new(HgMemPool *pool,
 
 	retval->n_prealloc = n_prealloc;
 	if (n_prealloc < 0) {
-		retval->allocated_size = 256;
+		retval->allocated_size = HG_STRING_ALLOC_SIZE;
 	} else {
 		retval->allocated_size = n_prealloc;
 	}
 	retval->length = 0;
 	/* initialize this first to avoid a warning message */
 	retval->strings = NULL;
-	retval->strings = hg_mem_alloc(pool, sizeof (gchar) * retval->allocated_size);
+	retval->strings = hg_mem_alloc(pool, sizeof (gchar) * (retval->allocated_size + 1));
 	retval->current = retval->strings;
 	if (retval->strings == NULL) {
 		hg_mem_free(retval);
@@ -242,7 +242,7 @@ hg_string_append_c(HgString *string,
 		string->current[string->length++] = c;
 	} else if (string->n_prealloc < 0) {
 		/* resize */
-		gpointer p = hg_mem_resize(string->strings, string->allocated_size + HG_STRING_ALLOC_SIZE);
+		gpointer p = hg_mem_resize(string->strings, string->allocated_size + HG_STRING_ALLOC_SIZE + 1);
 
 		if (p == NULL) {
 			g_warning("Failed to resize a string.");
@@ -275,7 +275,7 @@ hg_string_append(HgString    *string,
 	if (string->n_prealloc < 0 &&
 	    (string->length + length) >= string->allocated_size) {
 		/* resize */
-		gsize n_unit = (string->length + length + HG_STRING_ALLOC_SIZE) / HG_STRING_ALLOC_SIZE;
+		gsize n_unit = (string->length + length + HG_STRING_ALLOC_SIZE + 1) / HG_STRING_ALLOC_SIZE;
 		gpointer p = hg_mem_resize(string->strings, n_unit * HG_STRING_ALLOC_SIZE);
 
 		if (p == NULL) {
@@ -366,7 +366,7 @@ hg_string_fix_string_size(HgString *string)
 	if (string->n_prealloc < 0) {
 		gpointer p;
 
-		p = hg_mem_resize(string->strings, string->length);
+		p = hg_mem_resize(string->strings, string->length + 1);
 		if (p == NULL) {
 			g_warning("Failed to resize a string.");
 			return FALSE;

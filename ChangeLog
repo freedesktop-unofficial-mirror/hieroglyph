@@ -1,3 +1,18 @@
+2006-05-19  Akira TAGOH  <at@gclab.org>
+
+	* .gdbinit: added.
+
+	* hieroglyph/hgstring.c (hg_string_new): ensure a memory for termination.
+	(hg_string_append_c): likewise.
+	(hg_string_append): likewise.
+	(hg_string_fix_string_size): likewise.
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_garbage_collection):
+	unmark objects in other pools after GC.
+	(_hg_allocator_bfit_real_gc_unmark): new function.
+
+	* libretto/operator.c (_libretto_operator_op_copy): clean up.
+
 2006-05-12  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgarray.c (_hg_array_real_copy): unset copying flag

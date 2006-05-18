@@ -69,6 +69,7 @@ static gpointer       _hg_allocator_bfit_real_resize            (HgMemObject    
 								 gsize              size);
 static gboolean       _hg_allocator_bfit_real_garbage_collection(HgMemPool         *pool);
 static void           _hg_allocator_bfit_real_gc_mark           (HgMemPool         *pool);
+static void           _hg_allocator_bfit_real_gc_unmark         (HgMemPool         *pool);
 static HgMemSnapshot *_hg_allocator_bfit_real_save_snapshot     (HgMemPool         *pool);
 static gboolean       _hg_allocator_bfit_real_restore_snapshot  (HgMemPool         *pool,
 								 HgMemSnapshot     *snapshot);
@@ -89,6 +90,7 @@ static HgAllocatorVTable __hg_allocator_bfit_vtable = {
 	.resize             = _hg_allocator_bfit_real_resize,
 	.garbage_collection = _hg_allocator_bfit_real_garbage_collection,
 	.gc_mark            = _hg_allocator_bfit_real_gc_mark,
+	.gc_unmark          = _hg_allocator_bfit_real_gc_unmark,
 	.save_snapshot      = _hg_allocator_bfit_real_save_snapshot,
 	.restore_snapshot   = _hg_allocator_bfit_real_restore_snapshot,
 };
@@ -618,6 +620,7 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 	HgAllocatorBFitPrivate *priv = pool->allocator->private;
 	guint i;
 	gboolean retval = FALSE;
+	GList *reflist;
 
 #ifdef DEBUG_GC
 	g_print("DEBUG_GC: starting GC for %s\n", pool->name);
@@ -665,6 +668,22 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 			}
 			block = tmp;
 		}
+	}
+	if (!pool->destroyed) {
+		/* unmark objects in another pool */
+		pool->is_processing = TRUE;
+		for (reflist = pool->other_pool_ref_list;
+		     reflist != NULL;
+		     reflist = g_list_next(reflist)) {
+#ifdef DEBUG_GC
+			g_print("DEBUG_GC: entering %s\n", ((HgMemPool *)reflist->data)->name);
+#endif /* DEBUG_GC */
+			((HgMemPool *)reflist->data)->allocator->vtable->gc_unmark(reflist->data);
+#ifdef DEBUG_GC
+			g_print("DEBUG_GC: leaving %s\n", ((HgMemPool *)reflist->data)->name);
+#endif /* DEBUG_GC */
+		}
+		pool->is_processing = FALSE;
 	}
 
 	return retval;
@@ -721,7 +740,7 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 		/* trace in the registers */
 		setjmp(env);
 		for (p = (gpointer)env; p < (gpointer)env + sizeof (env); p++) {
-			obj = (gpointer)(*(gsize *)p - header_size);
+			obj = (HgMemObject *)(*(gsize *)p - header_size);
 			if (hg_btree_find(priv->obj2block_tree, obj) != NULL) {
 				if (!hg_mem_is_gc_mark(obj)) {
 #ifdef DEBUG_GC
@@ -778,6 +797,42 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 			}
 		}
 	} G_STMT_END;
+
+	pool->is_processing = FALSE;
+}
+
+static void
+_hg_allocator_bfit_real_gc_unmark(HgMemPool *pool)
+{
+	HgAllocatorBFitPrivate *priv = pool->allocator->private;
+	guint i;
+
+	if (pool->is_processing)
+		return;
+	pool->is_processing = TRUE;
+
+	for (i = 0; i < priv->heap2block_array->len; i++) {
+		HgMemBFitBlock *block = g_ptr_array_index(priv->heap2block_array, i), *tmp;
+		HgMemObject *obj;
+
+		while (block != NULL) {
+			obj = block->heap_fragment;
+			tmp = block->next;
+
+			while (tmp != NULL && tmp->in_use == 0)
+				tmp = tmp->next;
+
+			if (block->in_use > 0) {
+				if (hg_mem_is_gc_mark(obj)) {
+#ifdef DEBUG_GC
+					g_print("UNMARK: %p (mem: %p)\n", obj->data, obj);
+#endif /* DEBUG_GC */
+					hg_mem_gc_unmark(obj);
+				}
+			}
+			block = tmp;
+		}
+	}
 
 	pool->is_processing = FALSE;
 }

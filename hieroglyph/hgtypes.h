@@ -68,6 +68,7 @@ typedef enum {
 	HG_FL_COMPLEX    = 1 << 2,
 	HG_FL_LOCK       = 1 << 3,
 	HG_FL_COPYING    = 1 << 4,
+	HG_FL_COPIED     = 1 << 5,
 	HG_FL_END
 } HgMemFlags;
 
@@ -82,6 +83,7 @@ typedef enum {
 	HG_DEBUG_GC_MARK = 0,
 	HG_DEBUG_GC_ALREADYMARK,
 	HG_DEBUG_GC_UNMARK,
+	HG_DEBUG_DUMP,
 } HgDebugStateType;
 
 typedef enum {
@@ -207,6 +209,7 @@ struct _HieroGlyphAllocatorVTable {
 						gsize          size);
 	gboolean        (* garbage_collection) (HgMemPool     *pool);
 	void            (* gc_mark)            (HgMemPool     *pool);
+	void            (* gc_unmark)          (HgMemPool     *pool);
 	HgMemSnapshot * (* save_snapshot)      (HgMemPool     *pool);
 	gboolean        (* restore_snapshot)   (HgMemPool     *pool,
 						HgMemSnapshot *snapshot);

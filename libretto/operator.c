@@ -1479,13 +1479,12 @@ G_STMT_START
 			} else if (HG_IS_VALUE_STRING (node) &&
 				   HG_IS_VALUE_STRING (n2)) {
 				HgString *s1, *s2;
-				guint len1, len2, mlen1, mlen2, i;
+				guint len1, mlen1, mlen2, i;
 				gchar c;
 
 				s2 = HG_VALUE_GET_STRING (node);
 				s1 = HG_VALUE_GET_STRING (n2);
-				len1 = hg_string_maxlength(s1);
-				len2 = hg_string_maxlength(s2);
+				len1 = hg_string_length(s1);
 				mlen1 = hg_string_maxlength(s1);
 				mlen2 = hg_string_maxlength(s2);
 				if (mlen1 > mlen2) {
@@ -1501,7 +1500,7 @@ G_STMT_START
 
 					hg_mem_get_object__inline(s2, obj);
 					/* need to make a subarray for that */
-					s2 = hg_string_make_substring(obj->pool, s2, 0, len1 - 1);
+					s2 = hg_string_make_substring(obj->pool, s2, 0, mlen1 - 1);
 				}
 				HG_VALUE_MAKE_STRING (dup_node, s2);
 			} else {
