@@ -224,7 +224,7 @@ hg_mem_pool_new(HgAllocator *allocator,
 	pool->allocator = allocator;
 	pool->root_node = NULL;
 	pool->other_pool_ref_list = NULL;
-	pool->periodical_gc = FALSE;
+	pool->periodical_gc = TRUE;
 	pool->gc_checked = FALSE;
 	pool->use_gc = TRUE;
 	pool->is_global_mode = FALSE;
