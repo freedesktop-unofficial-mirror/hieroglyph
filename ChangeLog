@@ -1,3 +1,7 @@
+2006-05-25  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgfile.c (hg_file_object_new): fixed a memory corruption.
+
 2006-05-19  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgmem.c (hg_mem_pool_new): enable periodical GC by default.

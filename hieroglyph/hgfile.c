@@ -307,7 +307,7 @@ hg_file_object_new(HgMemPool  *pool,
 		    retval->access_mode = (guint)va_arg(ap, guint);
 		    p = (gchar *)va_arg(ap, gchar *);
 		    len = strlen(p);
-		    retval->filename = hg_mem_alloc(pool, len);
+		    retval->filename = hg_mem_alloc(pool, len + 1);
 		    if (retval->filename == NULL) {
 			    g_warning("Failed to allocate a memory for file object.");
 			    return NULL;
@@ -340,7 +340,7 @@ hg_file_object_new(HgMemPool  *pool,
 		    retval->access_mode = (guint)va_arg(ap, guint);
 		    p = (gchar *)va_arg(ap, gchar *);
 		    len = strlen(p);
-		    retval->filename = hg_mem_alloc(pool, len);
+		    retval->filename = hg_mem_alloc(pool, len + 1);
 		    if (retval->filename == NULL) {
 			    g_warning("Failed to allocate a memory for file object.");
 			    return NULL;
