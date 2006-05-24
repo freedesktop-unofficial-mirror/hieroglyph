@@ -31,6 +31,7 @@
 #include "hgallocator-private.h"
 #include "hgmem.h"
 #include "hgbtree.h"
+#include "hgstring.h"
 
 
 #define BTREE_N_NODE	6
@@ -44,6 +45,7 @@ struct _HieroGlyphAllocatorBFitPrivate {
 	HgBTree   *free_block_tree;
 	GPtrArray *heap2block_array;
 	HgBTree   *obj2block_tree;
+	gint       age_of_snapshot;
 };
 
 struct _HieroGlyphMemBFitBlock {
@@ -400,6 +402,7 @@ _hg_allocator_bfit_real_initialize(HgMemPool *pool,
 	priv->free_block_tree = hg_btree_new(BTREE_N_NODE);
 	priv->heap2block_array = g_ptr_array_new();
 	priv->obj2block_tree = hg_btree_new(BTREE_N_NODE);
+	priv->age_of_snapshot = 0;
 
 	g_ptr_array_add(priv->heap2block_array, block);
 	_hg_allocator_bfit_add_free_block(priv, block);
@@ -605,7 +608,7 @@ _hg_allocator_bfit_real_resize(HgMemObject *object,
 		block->next = blk->next;
 		if (blk->next)
 			blk->next->prev = block;
-		blk->length = block_size;
+		object->block_size = blk->length = block_size;
 		blk->next = block;
 		pool->used_heap_size -= block->length;
 		_hg_allocator_bfit_add_free_block(priv, block);
@@ -915,7 +918,16 @@ _hg_allocator_bfit_snapshot_real_relocate(gpointer           data,
 static gpointer
 _hg_allocator_bfit_snapshot_real_to_string(gpointer data)
 {
-	return NULL;
+	HgMemObject *obj;
+	HgString *retval;
+
+	hg_mem_get_object__inline(data, obj);
+	if (obj == NULL)
+		return NULL;
+	retval = hg_string_new(obj->pool, 7);
+	hg_string_append(retval, "-save-", -1);
+
+	return retval;
 }
 
 /*
