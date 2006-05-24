@@ -247,11 +247,10 @@ hg_string_append_c(HgString *string,
 		if (p == NULL) {
 			g_warning("Failed to resize a string.");
 			return FALSE;
-		} else {
-			string->current = string->strings = p;
-			string->allocated_size += HG_STRING_ALLOC_SIZE;
-			string->strings[string->length++] = c;
 		}
+		string->current = string->strings = p;
+		string->allocated_size += HG_STRING_ALLOC_SIZE;
+		string->strings[string->length++] = c;
 	}
 
 	return TRUE;
@@ -281,10 +280,9 @@ hg_string_append(HgString    *string,
 		if (p == NULL) {
 			g_warning("Failed to resize a string.");
 			return FALSE;
-		} else {
-			string->current = string->strings = p;
-			string->allocated_size = n_unit * HG_STRING_ALLOC_SIZE;
 		}
+		string->current = string->strings = p;
+		string->allocated_size = n_unit * HG_STRING_ALLOC_SIZE;
 	}
 	for (i = 0; i < length && string->length < string->allocated_size; i++) {
 		string->strings[string->length++] = str[i];

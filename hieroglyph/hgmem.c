@@ -480,7 +480,7 @@ hg_mem_free(gpointer data)
 
 	hg_mem_get_object__inline(data, obj);
 	if (obj == NULL) {
-		g_warning("[BUG] Invalid object is given to be freed.");
+		g_warning("[BUG] Invalid object %p is given to be freed.", data);
 		return FALSE;
 	} else {
 		hobj = data;
