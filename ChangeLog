@@ -1,3 +1,15 @@
+2006-05-29  Akira TAGOH  <at@gclab.org>
+
+	* src/hgspy_helper.[ch]: new files.
+
+	* src/hgspy.c: new file.
+
+	* src/visualizer.[ch]: new files.
+
+	* src/Makefile.am: new file.
+
+	* po/POTFILES.in: new file.
+
 2006-05-25  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_resize):
