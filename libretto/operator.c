@@ -5050,6 +5050,7 @@ G_STMT_START
 	 * 4) invoke a BeginPage procedure in pagedevice dictionary and
 	 *    push a page number to ostack.
 	 */
+	g_print("showpage\n");
 	retval = libretto_graphics_show_page(libretto_vm_get_graphics(vm));
 } G_STMT_END;
 DEFUNC_OP_END

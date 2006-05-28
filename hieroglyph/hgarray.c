@@ -82,6 +82,8 @@ _hg_array_real_set_flags(gpointer data,
 		hg_mem_get_object__inline(array->current[i], obj);
 		if (obj == NULL) {
 			g_warning("[BUG] Invalid object %p to be marked: Array %d", array->current[i], i);
+			__asm__("int3");
+			sync();
 		} else {
 #ifdef DEBUG_GC
 			G_STMT_START {

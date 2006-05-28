@@ -1,5 +1,7 @@
 2006-05-29  Akira TAGOH  <at@gclab.org>
 
+	* commit.sh: ask once when going to commit with log.
+
 	* src/hgspy_helper.[ch]: new files.
 
 	* src/hgspy.c: new file.
