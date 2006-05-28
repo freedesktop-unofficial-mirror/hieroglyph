@@ -1,7 +1,6 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * version.h
- * Copyright (C) 2005-2006 Akira TAGOH
+ * hgspy_helper.h
+ * Copyright (C) 2006 Akira TAGOH
  * 
  * Authors:
  *   Akira TAGOH  <at@gclab.org>
@@ -21,14 +20,13 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HG_VERSION_H__
-#define __HG_VERSION_H__
+#ifndef __HG_SPY_HELPER_H__
+#define __HG_SPY_HELPER_H__
 
-#include <glib/gmacros.h>
+#include <glib.h>
 
-#define HIEROGLYPH_VERSION	"@VERSION@"
-#define HIEROGLYPH_UUID		"013b24c0-943f-40ea-ac36-bf75ff641d7d"
+G_BEGIN_DECLS
 
-const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
+G_END_DECLS
 
-#endif /* __HG_VERSION_H__ */
+#endif /* __HG_SPY_HELPER_H__ */

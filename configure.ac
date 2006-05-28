@@ -57,16 +57,23 @@ AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, "$GETTEXT_PACKAGE", [Gettext package])
 
 ALL_LINGUAS=""
 AM_GLIB_GNU_GETTEXT
+AM_GLIB_DEFINE_LOCALEDIR(HGSPY_LOCALEDIR)
 
 dnl ======================================================================
 dnl check pkg-config stuff
 dnl ======================================================================
 PKG_CHECK_MODULES(HG, glib-2.0)
 PKG_CHECK_MODULES(HG_MODULE, gmodule-2.0)
+PKG_CHECK_MODULES(GTK2, gtk+-2.0)
+PKG_CHECK_MODULES(GTHREAD, gthread-2.0)
 AC_SUBST(HG_CFLAGS)
 AC_SUBST(HG_LIBS)
 AC_SUBST(HG_MODULE_CFLAGS)
 AC_SUBST(HG_MODULE_LIBS)
+AC_SUBST(GTK2_CFLAGS)
+AC_SUBST(GTK2_LIBS)
+AC_SUBST(GTHREAD_CFLAGS)
+AC_SUBST(GTHREAD_LIBS)
 
 dnl ======================================================================
 dnl check glib-2.0 stuff
@@ -228,6 +235,7 @@ hieroglyph/version.h
 lib/Makefile
 libretto/Makefile
 po/Makefile.in
+src/Makefile
 tests/Makefile
 hg-libretto.pc
 hieroglyph.pc
