@@ -60,4 +60,5 @@ fi
 if [ "x$DO" = "x" ]; then
     $TOPDIR/update-version
 fi
+
 LANG=C $DO svn ci -m "\"$LOG\"" $FILES
