@@ -189,8 +189,10 @@ _libretto_vm_real_free(gpointer data)
 		g_list_free(vm->local_snapshot);
 	if (vm->local_pool)
 		hg_mem_pool_destroy(vm->local_pool);
+#ifdef ENABLE_GLOBAL_POOL
 	if (vm->global_pool)
 		hg_mem_pool_destroy(vm->global_pool);
+#endif
 	if (vm->graphic_pool)
 		hg_mem_pool_destroy(vm->graphic_pool);
 	hg_allocator_destroy(vm->local_allocator);
@@ -361,6 +363,7 @@ libretto_vm_new(LibrettoEmulationType type)
 		g_warning("Failed to create a local memory pool");
 		return NULL;
 	}
+#ifdef ENABLE_GLOBAL_POOL
 	name = g_strdup_printf("VM %p: global pool", retval);
 	retval->global_pool = hg_mem_pool_new(retval->global_allocator,
 					      name,
@@ -372,6 +375,9 @@ libretto_vm_new(LibrettoEmulationType type)
 		g_warning("Failed to create a global memory pool");
 		return NULL;
 	}
+#else
+	retval->global_pool = retval->local_pool;
+#endif
 	name = g_strdup_printf("VM %p:graphic pool", retval);
 	retval->graphic_pool = hg_mem_pool_new(retval->graphic_allocator,
 					       name,

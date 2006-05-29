@@ -27,7 +27,7 @@
 #include <glib/gmacros.h>
 
 #define HIEROGLYPH_VERSION	"@VERSION@"
-#define HIEROGLYPH_UUID		"7b005c83-0927-4dd2-ab4f-8fe0923faaa1"
+#define HIEROGLYPH_UUID		"488cd5dd-95dd-4a5f-8cb6-426ff21b6cf8"
 
 const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
 

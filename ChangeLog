@@ -1,5 +1,7 @@
 2006-05-29  Akira TAGOH  <at@gclab.org>
 
+	* libretto/vm.c (libretto_vm_new): just disable a global pool so far.
+
 	* commit.sh: ask once when going to commit without log.
 
 	* src/hgspy_helper.[ch]: new files.
