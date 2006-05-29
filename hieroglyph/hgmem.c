@@ -224,7 +224,7 @@ hg_mem_pool_new(HgAllocator *allocator,
 	pool->allocator = allocator;
 	pool->root_node = NULL;
 	pool->other_pool_ref_list = NULL;
-	pool->periodical_gc = FALSE;
+	pool->periodical_gc = TRUE;
 	pool->gc_checked = FALSE;
 	pool->use_gc = TRUE;
 	pool->is_global_mode = FALSE;
@@ -409,14 +409,12 @@ hg_mem_pool_restore_snapshot(HgMemPool     *pool,
 gboolean
 hg_mem_garbage_collection(HgMemPool *pool)
 {
-	gboolean retval = FALSE;
-
 	g_return_val_if_fail (pool != NULL, FALSE);
 
 	if (pool->allocator->vtable->garbage_collection)
-		retval = pool->allocator->vtable->garbage_collection(pool);
-
-	return retval;
+		return pool->allocator->vtable->garbage_collection(pool);
+	else
+		return FALSE;
 }
 
 gpointer
