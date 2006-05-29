@@ -409,12 +409,14 @@ hg_mem_pool_restore_snapshot(HgMemPool     *pool,
 gboolean
 hg_mem_garbage_collection(HgMemPool *pool)
 {
+	gboolean retval = FALSE;
+
 	g_return_val_if_fail (pool != NULL, FALSE);
 
 	if (pool->allocator->vtable->garbage_collection)
-		return pool->allocator->vtable->garbage_collection(pool);
-	else
-		return FALSE;
+		retval = pool->allocator->vtable->garbage_collection(pool);
+
+	return retval;
 }
 
 gpointer
