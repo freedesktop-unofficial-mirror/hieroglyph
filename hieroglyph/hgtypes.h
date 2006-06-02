@@ -62,12 +62,21 @@ typedef void                (*HgTraverseFunc)      (gpointer key,
 typedef void                (*HgDebugFunc)         (gpointer data);
 typedef HgAllocatorVTable * (*HgAllocatorTypeFunc) (void);
 
+/* 32bit variables */
 typedef enum {
 	HG_FL_MARK       = 1 << 0, /* infect child object */
 	HG_FL_RESTORABLE = 1 << 1, /* no infect */
 	HG_FL_COMPLEX    = 1 << 2, /* no infect */
 	HG_FL_LOCK       = 1 << 3, /* no infect */
 	HG_FL_COPYING    = 1 << 4, /* no infect */
+	HG_FL_RESERVED1  = 1 << 24, /* reserved for heap id */
+	HG_FL_RESERVED2  = 1 << 25, /* reserved for heap id */
+	HG_FL_RESERVED3  = 1 << 26, /* reserved for heap id */
+	HG_FL_RESERVED4  = 1 << 27, /* reserved for heap id */
+	HG_FL_RESERVED5  = 1 << 28, /* reserved for heap id */
+	HG_FL_RESERVED6  = 1 << 29, /* reserved for heap id */
+	HG_FL_RESERVED7  = 1 << 30, /* reserved for heap id */
+	HG_FL_RESERVED8  = 1 << 31, /* reserved for heap id */
 	HG_FL_END
 } HgMemFlags;
 
@@ -229,10 +238,9 @@ struct _HieroGlyphMemRelocateInfo {
 struct _HieroGlyphMemObject {
 	gint32     id;
 	gpointer   subid;
-	gint       heap_id;
 	HgMemPool *pool;
 	gsize      block_size;
-	guint      flags;
+	guint32    flags_;
 	gpointer   data[];
 };
 
@@ -256,7 +264,6 @@ struct _HieroGlyphObject {
 struct _HieroGlyphValueNode {
 	HgObject    object;
 	HgValueType type;
-	guint       flags;
 	union {
 		gboolean boolean;
 		gint32   integer;

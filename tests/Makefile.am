@@ -24,8 +24,6 @@ noinst_PROGRAMS =					\
 	test-scanner					\
 	test-vm						\
 	test-operatorencoding				\
-	bench1-hgallocator-ffit				\
-	bench2-hgallocator-ffit				\
 	bench1-hgallocator-bfit				\
 	bench2-hgallocator-bfit				\
 	$(NULL)

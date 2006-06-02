@@ -508,10 +508,11 @@ _hg_allocator_bfit_real_alloc(HgMemPool *pool,
 		obj = block->heap_fragment;
 		obj->id = HG_MEM_HEADER;
 		obj->subid = block;
-		obj->heap_id = block->heap_id;
 		obj->pool = pool;
 		obj->block_size = block_size;
-		obj->flags = flags;
+		HG_MEMOBJ_INIT_FLAGS (obj);
+		HG_MEMOBJ_SET_HEAP_ID (obj, block->heap_id);
+		HG_MEMOBJ_SET_FLAGS (obj, flags);
 		hg_btree_add(priv->obj2block_tree, block->heap_fragment, block);
 
 		return obj->data;
@@ -564,7 +565,7 @@ _hg_allocator_bfit_real_resize(HgMemObject *object,
 		HgMemRelocateInfo info;
 		HgObject *hobj;
 
-		p = hg_mem_alloc_with_flags(pool, block_size, object->flags);
+		p = hg_mem_alloc_with_flags(pool, block_size, HG_MEMOBJ_GET_FLAGS (object));
 		/* reset the stack bottom here again. it may be broken during allocation
 		 * if GC was running.
 		 */
@@ -592,7 +593,7 @@ _hg_allocator_bfit_real_resize(HgMemObject *object,
 		return p;
 	} else if (block_size < object->block_size &&
 		   (object->block_size - block_size) > min_block_size) {
-		HgHeap *heap = g_ptr_array_index(pool->heap_list, object->heap_id);
+		HgHeap *heap = g_ptr_array_index(pool->heap_list, HG_MEMOBJ_GET_HEAP_ID (object));
 		gsize fixed_size = object->block_size - block_size;
 		HgMemBFitBlock *block = _hg_bfit_block_new((gpointer)((gsize)object + block_size),
 							   fixed_size,

@@ -351,7 +351,6 @@ hg_value_node_new(HgMemPool *pool)
 	retval->object.id = HG_OBJECT_ID;
 	retval->object.state = hg_mem_pool_get_default_access_mode(pool);
 	retval->object.vtable = &__hg_value_node_vtable;
-	retval->flags = 0;
 
 	return retval;
 }

@@ -49,6 +49,12 @@ void         hg_heap_free        (HgHeap                  *heap);
 		if ((__retval__)->id != HG_MEM_HEADER)			\
 			(__retval__) = NULL;				\
 	} G_STMT_END
+#define HG_MEMOBJ_GET_HEAP_ID(_obj)		(((_obj)->flags_ >> 24) & 0xff)
+#define HG_MEMOBJ_SET_HEAP_ID(_obj,_id)		(_obj)->flags_ |= ((_id) << 24)
+#define HG_MEMOBJ_GET_FLAGS(_obj)		((_obj)->flags_ & 0xffffff)
+#define HG_MEMOBJ_SET_FLAGS(_obj,_flags)	(_obj)->flags_ = (HG_MEMOBJ_GET_HEAP_ID(_obj) << 24) | _flags
+#define HG_MEMOBJ_INIT_FLAGS(_obj)		(_obj)->flags_ = 0;
+
 
 HgMemPool     *hg_mem_pool_new                    (HgAllocator   *allocator,
 						   const gchar   *identity,
@@ -87,14 +93,14 @@ gboolean       _hg_mem_pool_is_own_memobject      (HgMemPool     *pool,
 
 /* GC */
 #define hg_mem_is_flags__inline(__obj__, __flags__)			\
-	(((__obj__)->flags & (__flags__)) == (__flags__))
+	((HG_MEMOBJ_GET_FLAGS (__obj__) & (__flags__)) == (__flags__))
 #define hg_mem_get_flags__inline(__obj__)				\
-	((__obj__)->flags)
+	(HG_MEMOBJ_GET_FLAGS (__obj__))
 #define hg_mem_set_flags__inline(__obj__, __flags__, __notify__)	\
 	G_STMT_START {							\
 		HgObject *__hg_mem_hobj__ = (HgObject *)(__obj__)->data; \
 									\
-		(__obj__)->flags = (__flags__);				\
+		HG_MEMOBJ_SET_FLAGS ((__obj__), (__flags__));		\
 		if ((__notify__) &&					\
 		    __hg_mem_hobj__->id == HG_OBJECT_ID &&		\
 		    __hg_mem_hobj__->vtable &&				\

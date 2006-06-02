@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <string.h>
-#include <hieroglyph/hgallocator-ffit.h>
 #include <hieroglyph/hgallocator-bfit.h>
 #include <hieroglyph/hgmem.h>
 
+#if 0
 int
 test_ffit(void)
 {
@@ -45,6 +45,7 @@ test_ffit(void)
 
 	return 0;
 }
+#endif
 
 int
 test_bfit(void)
@@ -92,8 +93,10 @@ main(void)
 {
 	hg_mem_init();
 
+#if 0
 	if (test_ffit() != 0)
 		return 1;
+#endif
 	if (test_bfit() != 0)
 		return 1;
 

@@ -1,4 +1,4 @@
-#include <hieroglyph/hgallocator-ffit.h>
+#include <hieroglyph/hgallocator-bfit.h>
 #include <hieroglyph/hgmem.h>
 #include <hieroglyph/hgarray.h>
 #include <hieroglyph/hgvaluenode.h>
@@ -19,7 +19,7 @@ main(void)
 
 	hg_mem_init();
 
-	allocator = hg_allocator_new(hg_allocator_ffit_get_vtable());
+	allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
 	pool = hg_mem_pool_new(allocator, "test", 256, TRUE);
 	if (pool == NULL) {
 		g_print("Failed to create a pool\n");

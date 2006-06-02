@@ -1,3 +1,27 @@
+2006-06-02  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgtypes.h: improved a footprint a bit.
+
+	* hieroglyph/hgmem.h (HG_MEMOBJ_GET_HEAP_ID): new macro.
+	(HG_MEMOBJ_SET_HEAP_ID): new macro.
+	(HG_MEMOBJ_GET_FLAGS): new macro.
+	(HG_MEMOBJ_SET_FLAGS): new macro.
+	(HG_MEMOBJ_INIT_FLAGS): new macro.
+	(hg_mem_is_flags__inline): use macro instead of direct access.
+	(hg_mem_get_flags__inline): likewise.
+	(hg_mem_set_flags__inline): likewise.
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_alloc):
+	use macro instead of direct access.
+	(_hg_allocator_bfit_real_resize): likewise.
+
+	* hieroglyph/hgvaluenode.c (hg_value_node_new): removed unnecessary
+	value.
+
+	* src/hgspy_helper.c (hg_mem_alloc_with_flags): use macro instead of
+	direct access.
+	(hg_mem_free): likewise.
+
 2006-05-29  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgmem.c (hg_mem_garbage_collection): trivial fix.
