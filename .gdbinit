@@ -47,10 +47,10 @@ define _hgmeminfo
     printf "Invalid object %p\n", $arg0
   else
     printf "(HgMemObject *)%p - [subid: %p] ", $_obj, $_obj->subid
-    printf "[heap id: %d] ", $_obj->heap_id
+    printf "[heap id: %d] ", ($_obj->flags >> 24) & 0xff
     printf "[pool: %p] ", $_obj->pool
     printf "[block_size: %u] ", $_obj->block_size
-    set $f = $_obj->flags
+    set $f = $_obj->flags & 0xffffff
     set $o = 0
     printf "[flags: "
     if (($f & 1) == 1)

@@ -176,7 +176,7 @@ _hg_array_real_copy(gpointer data)
 	hg_mem_set_copying(obj);
 	retval = hg_array_new(obj->pool, array->n_arrays);
 	if (retval == NULL) {
-		g_warning("Failed to duplicate an array.");
+		g_warning("Failed to copy an array.");
 		hg_mem_unset_copying(obj);
 		return NULL;
 	}

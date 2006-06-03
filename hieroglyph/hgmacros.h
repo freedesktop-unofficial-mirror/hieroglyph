@@ -37,6 +37,8 @@ G_BEGIN_DECLS
 #define HG_SET_STACK_END_AGAIN			\
 	hg_mem_set_stack_end(&__hg_stack_mark);
 
+#define HG_MEM_ALIGNMENT	4
+
 G_END_DECLS
 
 #endif /* __HG_MACROS_H__ */

@@ -110,29 +110,13 @@ static HgObjectVTable __hg_snapshot_vtable = {
 /*
  * Private Functions
  */
-#define _hg_allocator_compute_minimum_block_size_index__inline(__hg_acb_size, __hg_acb_ret) \
+#define _hg_allocator_get_minimum_aligned_size__inline(__hg_aga_size, __hg_alignment_size, __hg_aligned_ret) \
 	G_STMT_START {							\
-		gsize __hg_acbt = (__hg_acb_size);			\
-		(__hg_acb_ret) = 0;					\
-		while (__hg_acbt >= 2) {				\
-			__hg_acbt /= 2;					\
-			(__hg_acb_ret)++;				\
-		}							\
+		(__hg_aligned_ret) = (__hg_aga_size) / (__hg_alignment_size) * (__hg_alignment_size); \
 	} G_STMT_END
-#define _hg_allocator_grow_index_size__inline(__hg_acb_size, __hg_acb_ret) \
+#define _hg_allocator_get_aligned_size__inline(__hg_aga_size, __hg_alignment_size, __hg_aligned_ret) \
 	G_STMT_START {							\
-		if ((1 << (__hg_acb_ret)) < (__hg_acb_size))		\
-			(__hg_acb_ret)++;				\
-	} G_STMT_END
-#define _hg_allocator_compute_block_size_index__inline(__hg_acb_size, __hg_acb_ret) \
-	G_STMT_START {							\
-		_hg_allocator_compute_minimum_block_size_index__inline((__hg_acb_size), (__hg_acb_ret)); \
-		_hg_allocator_grow_index_size__inline((__hg_acb_size), (__hg_acb_ret));	\
-	} G_STMT_END
-#define _hg_allocator_compute_block_size__inline(__hg_acb_size, __hg_acb_ret) \
-	G_STMT_START {							\
-		_hg_allocator_compute_block_size_index__inline((__hg_acb_size), (__hg_acb_ret)); \
-		(__hg_acb_ret) = 1 << (__hg_acb_ret);			\
+		(__hg_aligned_ret) = ((__hg_aga_size) + (__hg_alignment_size)) / (__hg_alignment_size) * (__hg_alignment_size); \
 	} G_STMT_END
 
 /* utility functions */
@@ -161,26 +145,28 @@ static void
 _hg_allocator_bfit_remove_block(HgAllocatorBFitPrivate *priv,
 				HgMemBFitBlock         *block)
 {
-	guint index;
+	gsize aligned;
 	GSList *l, *tmp = NULL;
 
-	_hg_allocator_compute_minimum_block_size_index__inline(block->length, index);
-	if ((l = hg_btree_find(priv->free_block_tree, GUINT_TO_POINTER (index))) == NULL) {
-		g_warning("[BUG] there are no memory chunks sized %" G_GSIZE_FORMAT " (index: %u).\n",
-			  block->length, index);
+	_hg_allocator_get_minimum_aligned_size__inline(block->length,
+						       HG_MEM_ALIGNMENT,
+						       aligned);
+	if ((l = hg_btree_find(priv->free_block_tree, GSIZE_TO_POINTER (aligned))) == NULL) {
+		g_warning("[BUG] there are no memory chunks sized %" G_GSIZE_FORMAT " (aligned size: %" G_GSIZE_FORMAT ".\n",
+			  block->length, aligned);
 	} else {
 		if ((tmp = g_slist_find(l, block)) == NULL) {
-			g_warning("[BUG] can't find a memory block %p (size: %" G_GSIZE_FORMAT ", index: %u).\n",
-				  block, block->length, index);
+			g_warning("[BUG] can't find a memory block %p (size: %" G_GSIZE_FORMAT ", aligned size: %" G_GSIZE_FORMAT ".\n",
+				  block, block->length, aligned);
 		} else {
 			l = g_slist_delete_link(l, tmp);
 			if (l == NULL) {
 				/* remove node from tree */
 				hg_btree_remove(priv->free_block_tree,
-						GUINT_TO_POINTER (index));
+						GSIZE_TO_POINTER (aligned));
 			} else {
 				hg_btree_replace(priv->free_block_tree,
-						 GUINT_TO_POINTER (index), l);
+						 GSIZE_TO_POINTER (aligned), l);
 			}
 		}
 	}
@@ -190,7 +176,7 @@ static void
 _hg_allocator_bfit_add_free_block(HgAllocatorBFitPrivate *priv,
 				  HgMemBFitBlock         *block)
 {
-	guint index;
+	gsize aligned;
 	GSList *l;
 
 	block->in_use = 0;
@@ -234,15 +220,17 @@ _hg_allocator_bfit_add_free_block(HgAllocatorBFitPrivate *priv,
 		_hg_allocator_bfit_remove_block(priv, b);
 		_hg_bfit_block_free(b);
 	}
-	_hg_allocator_compute_minimum_block_size_index__inline(block->length, index);
-	if ((l = hg_btree_find(priv->free_block_tree, GUINT_TO_POINTER (index))) == NULL) {
+	_hg_allocator_get_minimum_aligned_size__inline(block->length,
+						       HG_MEM_ALIGNMENT,
+						       aligned);
+	if ((l = hg_btree_find(priv->free_block_tree, GSIZE_TO_POINTER (aligned))) == NULL) {
 		l = g_slist_alloc();
 		l->data = block;
 		l->next = NULL;
-		hg_btree_add(priv->free_block_tree, GUINT_TO_POINTER (index), l);
+		hg_btree_add(priv->free_block_tree, GSIZE_TO_POINTER (aligned), l);
 	} else {
 		l = g_slist_prepend(l, block);
-		hg_btree_replace(priv->free_block_tree, GUINT_TO_POINTER (index), l);
+		hg_btree_replace(priv->free_block_tree, GSIZE_TO_POINTER (aligned), l);
 	}
 }
 
@@ -251,28 +239,32 @@ _hg_allocator_bfit_get_free_block(HgMemPool              *pool,
 				  HgAllocatorBFitPrivate *priv,
 				  gsize                   size)
 {
-	guint index, real_idx;
+	gsize aligned, real_aligned;
 	GSList *l;
 	HgMemBFitBlock *retval = NULL;
 
-	_hg_allocator_compute_minimum_block_size_index__inline(size, index);
-	if ((l = hg_btree_find_near(priv->free_block_tree, GUINT_TO_POINTER (index))) == NULL)
+	g_return_val_if_fail (size % HG_MEM_ALIGNMENT == 0, NULL);
+
+	_hg_allocator_get_minimum_aligned_size__inline(size, HG_MEM_ALIGNMENT, aligned);
+	if ((l = hg_btree_find_near(priv->free_block_tree, GSIZE_TO_POINTER (aligned))) == NULL)
 		return NULL;
 	retval = l->data;
-	_hg_allocator_compute_minimum_block_size_index__inline(retval->length, real_idx);
+	_hg_allocator_get_minimum_aligned_size__inline(retval->length,
+						       HG_MEM_ALIGNMENT,
+						       real_aligned);
 	l = g_slist_delete_link(l, l);
 	if (l == NULL) {
 		hg_btree_remove(priv->free_block_tree,
-				GUINT_TO_POINTER (real_idx));
+				GSIZE_TO_POINTER (real_aligned));
 	} else {
 		hg_btree_replace(priv->free_block_tree,
-				 GUINT_TO_POINTER (real_idx), l);
+				 GSIZE_TO_POINTER (real_aligned), l);
 	}
 	if (retval != NULL) {
-		gsize size = 1 << index, unused = retval->length - size, min_size;
+		gsize unused = retval->length - size, min_size;
 		HgMemBFitBlock *block;
 
-		_hg_allocator_compute_block_size__inline(sizeof (HgMemObject), min_size);
+		_hg_allocator_get_aligned_size__inline(sizeof (HgMemObject), HG_MEM_ALIGNMENT, min_size);
 		if (unused > 0 && unused >= min_size) {
 			block = _hg_bfit_block_new((gpointer)((gsize)retval->heap_fragment + size),
 						   unused,
@@ -377,7 +369,9 @@ _hg_allocator_bfit_real_initialize(HgMemPool *pool,
 	gsize total_heap_size;
 	HgMemBFitBlock *block;
 
-	_hg_allocator_compute_block_size__inline(prealloc, total_heap_size);
+	_hg_allocator_get_aligned_size__inline(prealloc,
+					       HG_MEM_ALIGNMENT,
+					       total_heap_size);
 	priv = g_new0(HgAllocatorBFitPrivate, 1);
 	if (priv == NULL)
 		return FALSE;
@@ -458,7 +452,9 @@ _hg_allocator_bfit_real_resize_pool(HgMemPool *pool,
 	gsize block_size;
 	HgMemBFitBlock *block;
 
-	_hg_allocator_compute_block_size__inline(sizeof (HgMemObject) + size, block_size);
+	_hg_allocator_get_aligned_size__inline(sizeof (HgMemObject) + size,
+					       HG_MEM_ALIGNMENT,
+					       block_size);
 	if (pool->initial_heap_size > block_size) {
 		block_size = pool->initial_heap_size;
 	} else {
@@ -495,8 +491,12 @@ _hg_allocator_bfit_real_alloc(HgMemPool *pool,
 	HgMemBFitBlock *block;
 	HgMemObject *obj = NULL;
 
-	_hg_allocator_compute_block_size__inline(sizeof (HgMemObject), min_size);
-	_hg_allocator_compute_block_size__inline(sizeof (HgMemObject) + size, block_size);
+	_hg_allocator_get_aligned_size__inline(sizeof (HgMemObject),
+					       HG_MEM_ALIGNMENT,
+					       min_size);
+	_hg_allocator_get_aligned_size__inline(sizeof (HgMemObject) + size,
+					       HG_MEM_ALIGNMENT,
+					       block_size);
 	block = _hg_allocator_bfit_get_free_block(pool, priv, block_size);
 	if (block != NULL) {
 		/* clear data to avoid incomplete header detection */
@@ -558,8 +558,12 @@ _hg_allocator_bfit_real_resize(HgMemObject *object,
 
 	HG_SET_STACK_END;
 
-	_hg_allocator_compute_block_size__inline(sizeof (HgMemObject) + size, block_size);
-	_hg_allocator_compute_block_size__inline(sizeof (HgMemObject), min_block_size);
+	_hg_allocator_get_aligned_size__inline(sizeof (HgMemObject),
+					       HG_MEM_ALIGNMENT,
+					       min_block_size);
+	_hg_allocator_get_aligned_size__inline(sizeof (HgMemObject) + size,
+					       HG_MEM_ALIGNMENT,
+					       block_size);
 	if (block_size > object->block_size) {
 		gpointer p;
 		HgMemRelocateInfo info;

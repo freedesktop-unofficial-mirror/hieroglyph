@@ -240,7 +240,7 @@ struct _HieroGlyphMemObject {
 	gpointer   subid;
 	HgMemPool *pool;
 	gsize      block_size;
-	guint32    flags_;
+	guint32    flags;
 	gpointer   data[];
 };
 

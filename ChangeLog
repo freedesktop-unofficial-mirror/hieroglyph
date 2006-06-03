@@ -1,3 +1,20 @@
+2006-06-03  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgbtree.c (hg_btree_find_near): fixed to get correct near block.
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_get_minimum_aligned_size__inline):
+	new macro.
+	(_hg_allocator_get_aligned_size__inline): likewise.
+	(_hg_allocator_compute_minimum_block_size_index__inline): removed.
+	(_hg_allocator_grow_index_size__inline): removed.
+	(_hg_allocator_compute_block_size_index__inline): removed.
+	(_hg_allocator_compute_block_size__inline): removed.
+
+	* hieroglyph/hgvaluenode.h (HG_VALUE_SET_NAME_STATIC): allocate more
+	memory for null-terminated.
+
+	* .gdbinit (_hgmeminfo): support compat structure.
+
 2006-06-02  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgtypes.h: improved a footprint a bit.

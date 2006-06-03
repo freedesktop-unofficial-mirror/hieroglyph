@@ -50,7 +50,7 @@ G_BEGIN_DECLS
 #define HG_VALUE_SET_NAME_STATIC(pool, obj, val)			\
 	G_STMT_START {							\
 		size_t __hg_value_name_length = strlen(val);		\
-		gchar *__hg_value_name_static = hg_mem_alloc(pool, __hg_value_name_length); \
+		gchar *__hg_value_name_static = hg_mem_alloc(pool, __hg_value_name_length + 1); \
 		memcpy(__hg_value_name_static, (val), __hg_value_name_length); \
 		HG_VALUE_SET_VALUE_NODE (obj, HG_TYPE_VALUE_NAME, pointer, __hg_value_name_static); \
 		hg_value_node_unrestorable(obj);			\

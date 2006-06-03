@@ -575,7 +575,7 @@ hg_btree_find_near(HgBTree *tree,
 		   gpointer key)
 {
 	HgBTreePage *page, *prev = NULL;
-	guint i = 0;
+	guint i = 0, prev_pos = 0;
 
 	g_return_val_if_fail (tree != NULL, NULL);
 
@@ -585,16 +585,17 @@ hg_btree_find_near(HgBTree *tree,
 			for (i = 0; i < page->n_data && page->key[i] < key; i++);
 			if (i < page->n_data && page->key[i] == key)
 				return page->val[i];
+			prev = page;
+			prev_pos = i;
 		} else {
 			i = page->n_data;
 		}
-		prev = page;
 		page = page->page[i];
 	}
 	if (prev) {
-		if (i < prev->n_data) {
+		if (prev_pos < prev->n_data) {
 			/* prev->val[i - 1] should be less than key */
-			return prev->val[i];
+			return prev->val[prev_pos];
 		}
 		/* no items is bigger than key found. */
 	}
