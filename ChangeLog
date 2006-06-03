@@ -1,5 +1,15 @@
 2006-06-03  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgmem.c (hg_mem_get_object_size): new function.
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_get_object_size__inline):
+	new macro.
+	(_hg_allocator_bfit_real_get_size): new function.
+
+	* src/hgspy_helper.c (hg_mem_alloc_with_flags): don't access block_size
+	directly.
+	(hg_mem_free): likewise.
+
 	* hieroglyph/hgbtree.c (hg_btree_find_near): fixed to get correct near block.
 
 	* hieroglyph/hgallocator-bfit.c (_hg_allocator_get_minimum_aligned_size__inline):

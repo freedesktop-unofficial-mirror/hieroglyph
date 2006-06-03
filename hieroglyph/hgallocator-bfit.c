@@ -69,6 +69,7 @@ static void           _hg_allocator_bfit_real_free              (HgMemPool      
 								 gpointer           data);
 static gpointer       _hg_allocator_bfit_real_resize            (HgMemObject       *object,
 								 gsize              size);
+static gsize          _hg_allocator_bfit_real_get_size          (HgMemObject       *object);
 static gboolean       _hg_allocator_bfit_real_garbage_collection(HgMemPool         *pool);
 static void           _hg_allocator_bfit_real_gc_mark           (HgMemPool         *pool);
 static void           _hg_allocator_bfit_real_gc_unmark         (HgMemPool         *pool);
@@ -90,6 +91,7 @@ static HgAllocatorVTable __hg_allocator_bfit_vtable = {
 	.alloc              = _hg_allocator_bfit_real_alloc,
 	.free               = _hg_allocator_bfit_real_free,
 	.resize             = _hg_allocator_bfit_real_resize,
+	.get_size           = _hg_allocator_bfit_real_get_size,
 	.garbage_collection = _hg_allocator_bfit_real_garbage_collection,
 	.gc_mark            = _hg_allocator_bfit_real_gc_mark,
 	.gc_unmark          = _hg_allocator_bfit_real_gc_unmark,
@@ -118,6 +120,8 @@ static HgObjectVTable __hg_snapshot_vtable = {
 	G_STMT_START {							\
 		(__hg_aligned_ret) = ((__hg_aga_size) + (__hg_alignment_size)) / (__hg_alignment_size) * (__hg_alignment_size); \
 	} G_STMT_END
+#define _hg_allocator_get_object_size__inline(__hg_ago_object)	\
+	((HgMemBFitBlock *)(__hg_ago_object)->subid)->length
 
 /* utility functions */
 static HgMemBFitBlock *
@@ -509,7 +513,6 @@ _hg_allocator_bfit_real_alloc(HgMemPool *pool,
 		obj->id = HG_MEM_HEADER;
 		obj->subid = block;
 		obj->pool = pool;
-		obj->block_size = block_size;
 		HG_MEMOBJ_INIT_FLAGS (obj);
 		HG_MEMOBJ_SET_HEAP_ID (obj, block->heap_id);
 		HG_MEMOBJ_SET_FLAGS (obj, flags);
@@ -564,7 +567,7 @@ _hg_allocator_bfit_real_resize(HgMemObject *object,
 	_hg_allocator_get_aligned_size__inline(sizeof (HgMemObject) + size,
 					       HG_MEM_ALIGNMENT,
 					       block_size);
-	if (block_size > object->block_size) {
+	if (block_size > _hg_allocator_get_object_size__inline(object)) {
 		gpointer p;
 		HgMemRelocateInfo info;
 		HgObject *hobj;
@@ -579,7 +582,8 @@ _hg_allocator_bfit_real_resize(HgMemObject *object,
 		info.start = (gsize)object;
 		info.end = (gsize)object;
 		info.diff = (gsize)p - (gsize)object->data;
-		memcpy(p, object->data, object->block_size - sizeof (HgMemObject));
+		memcpy(p, object->data,
+		       _hg_allocator_get_object_size__inline(object) - sizeof (HgMemObject));
 		/* avoid to call HgObject's free function so that
 		 * it will be invoked from copied object.
 		 */
@@ -595,10 +599,10 @@ _hg_allocator_bfit_real_resize(HgMemObject *object,
 		}
 
 		return p;
-	} else if (block_size < object->block_size &&
-		   (object->block_size - block_size) > min_block_size) {
+	} else if (block_size < _hg_allocator_get_object_size__inline(object) &&
+		   (_hg_allocator_get_object_size__inline(object) - block_size) > min_block_size) {
 		HgHeap *heap = g_ptr_array_index(pool->heap_list, HG_MEMOBJ_GET_HEAP_ID (object));
-		gsize fixed_size = object->block_size - block_size;
+		gsize fixed_size = _hg_allocator_get_object_size__inline(object) - block_size;
 		HgMemBFitBlock *block = _hg_bfit_block_new((gpointer)((gsize)object + block_size),
 							   fixed_size,
 							   heap->serial);
@@ -613,13 +617,21 @@ _hg_allocator_bfit_real_resize(HgMemObject *object,
 		block->next = blk->next;
 		if (blk->next)
 			blk->next->prev = block;
-		object->block_size = blk->length = block_size;
+		blk->length = block_size;
 		blk->next = block;
 		pool->used_heap_size -= block->length;
 		_hg_allocator_bfit_add_free_block(priv, block);
 	}
 
 	return object->data;
+}
+
+static gsize
+_hg_allocator_bfit_real_get_size(HgMemObject *object)
+{
+	HgMemBFitBlock *block = object->subid;
+
+	return block->length;
 }
 
 static gboolean

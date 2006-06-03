@@ -215,6 +215,7 @@ struct _HieroGlyphAllocatorVTable {
 						gpointer       data);
 	gpointer        (* resize)             (HgMemObject   *object,
 						gsize          size);
+	gsize           (* get_size)           (HgMemObject   *object);
 	gboolean        (* garbage_collection) (HgMemPool     *pool);
 	void            (* gc_mark)            (HgMemPool     *pool);
 	void            (* gc_unmark)          (HgMemPool     *pool);
@@ -239,7 +240,6 @@ struct _HieroGlyphMemObject {
 	gint32     id;
 	gpointer   subid;
 	HgMemPool *pool;
-	gsize      block_size;
 	guint32    flags;
 	gpointer   data[];
 };

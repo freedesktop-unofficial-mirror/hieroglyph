@@ -84,7 +84,7 @@ hg_mem_alloc_with_flags(HgMemPool *pool,
 		hg_memory_visualizer_set_chunk_state(HG_MEMORY_VISUALIZER (visual),
 						     HG_MEMOBJ_GET_HEAP_ID (obj),
 						     obj,
-						     obj->block_size,
+						     hg_mem_get_object_size(retval),
 						     HG_CHUNK_USED);
 	}
 
@@ -101,7 +101,7 @@ hg_mem_free(gpointer data)
 		hg_memory_visualizer_set_chunk_state(HG_MEMORY_VISUALIZER (visual),
 						     HG_MEMOBJ_GET_HEAP_ID (obj),
 						     obj,
-						     obj->block_size,
+						     hg_mem_get_object_size(data),
 						     HG_CHUNK_FREE);
 	}
 

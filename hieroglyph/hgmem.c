@@ -517,6 +517,22 @@ hg_mem_resize(gpointer data,
 	return obj->pool->allocator->vtable->resize(obj, size);
 }
 
+gsize
+hg_mem_get_object_size(gpointer data)
+{
+	HgMemObject *obj;
+
+	g_return_val_if_fail (data != NULL, 0);
+
+	hg_mem_get_object__inline(data, obj);
+	if (obj == NULL) {
+		g_warning("Invalid object %p was about to get an object size.", data);
+		return 0;
+	}
+
+	return obj->pool->allocator->vtable->get_size(obj);
+}
+
 /* GC */
 void
 hg_mem_add_root_node(HgMemPool *pool,

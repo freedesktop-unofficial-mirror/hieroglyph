@@ -86,6 +86,7 @@ gpointer       hg_mem_alloc_with_flags            (HgMemPool     *pool,
 gboolean       hg_mem_free                        (gpointer       data);
 gpointer       hg_mem_resize                      (gpointer       data,
 						   gsize          size);
+gsize          hg_mem_get_object_size             (gpointer       data);
 
 /* internal use */
 gboolean       _hg_mem_pool_is_own_memobject      (HgMemPool     *pool,
