@@ -219,6 +219,8 @@ struct _HieroGlyphAllocatorVTable {
 	gboolean        (* garbage_collection) (HgMemPool     *pool);
 	void            (* gc_mark)            (HgMemPool     *pool);
 	void            (* gc_unmark)          (HgMemPool     *pool);
+	gboolean        (* is_safe_object)     (HgMemPool     *pool,
+						HgMemObject   *object);
 	HgMemSnapshot * (* save_snapshot)      (HgMemPool     *pool);
 	gboolean        (* restore_snapshot)   (HgMemPool     *pool,
 						HgMemSnapshot *snapshot);

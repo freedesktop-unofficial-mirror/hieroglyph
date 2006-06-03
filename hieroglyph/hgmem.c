@@ -535,6 +535,51 @@ hg_mem_get_object_size(gpointer data)
 
 /* GC */
 void
+hg_mem_gc_mark_array_region(HgMemPool *pool,
+			    gpointer   start,
+			    gpointer   end)
+{
+	gpointer p;
+	HgMemObject *obj;
+
+	g_return_if_fail (pool->allocator->vtable->is_safe_object != NULL);
+
+	if (start > end) {
+		p = start;
+		start = end - 1;
+		end = p + 1;
+	}
+	for (p = start; p < end; p++) {
+		obj = hg_mem_get_object__inline_nocheck(*(gsize *)p);
+		if (pool->allocator->vtable->is_safe_object(pool, obj)) {
+			if (!hg_mem_is_gc_mark(obj)) {
+#ifdef DEBUG_GC
+				g_print("MARK: %p (mem: %p) from array region.\n", obj->data, obj);
+#endif /* DEBUG_GC */
+				hg_mem_gc_mark(obj);
+			} else {
+#ifdef DEBUG_GC
+				g_print("MARK[already]: %p (mem: %p) from array region.\n", obj->data, obj);
+#endif /* DEBUG_GC */
+			}
+		}
+		obj = p;
+		if (pool->allocator->vtable->is_safe_object(pool, obj)) {
+			if (!hg_mem_is_gc_mark(obj)) {
+#ifdef DEBUG_GC
+				g_print("MARK: %p (mem: %p) from array region.\n", obj->data, obj);
+#endif /* DEBUG_GC */
+				hg_mem_gc_mark(obj);
+			} else {
+#ifdef DEBUG_GC
+				g_print("MARK[already]: %p (mem: %p) from array region.\n", obj->data, obj);
+#endif /* DEBUG_GC */
+			}
+		}
+	}
+}
+
+void
 hg_mem_add_root_node(HgMemPool *pool,
 		     gpointer   data)
 {

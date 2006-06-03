@@ -131,6 +131,9 @@ gboolean       _hg_mem_pool_is_own_memobject      (HgMemPool     *pool,
 #define hg_mem_unset_copying(obj)	hg_mem_set_flags__inline(obj, hg_mem_get_flags__inline(obj) & ~HG_FL_COPYING, FALSE)
 #define hg_mem_is_copying(obj)		hg_mem_is_flags__inline(obj, HG_FL_COPYING)
 
+void     hg_mem_gc_mark_array_region       (HgMemPool *pool,
+					    gpointer   start,
+					    gpointer   end);
 void     hg_mem_add_root_node              (HgMemPool *pool,
 					    gpointer   data);
 void     hg_mem_remove_root_node           (HgMemPool *pool,

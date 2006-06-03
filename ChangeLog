@@ -1,3 +1,12 @@
+2006-06-04  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgmem.c (hg_mem_gc_mark_array_region): new function.
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_garbage_collection):
+	lock with mutex during GC.
+	(_hg_allocator_bfit_real_gc_mark): use hg_mem_gc_mark_array_region.
+	(_hg_allocator_bfit_real_is_safe_object): new function.
+
 2006-06-03  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgmem.c (hg_mem_get_object_size): new function.

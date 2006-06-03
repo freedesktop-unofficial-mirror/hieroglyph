@@ -73,6 +73,8 @@ static gsize          _hg_allocator_bfit_real_get_size          (HgMemObject    
 static gboolean       _hg_allocator_bfit_real_garbage_collection(HgMemPool         *pool);
 static void           _hg_allocator_bfit_real_gc_mark           (HgMemPool         *pool);
 static void           _hg_allocator_bfit_real_gc_unmark         (HgMemPool         *pool);
+static gboolean       _hg_allocator_bfit_real_is_safe_object    (HgMemPool         *pool,
+								 HgMemObject       *object);
 static HgMemSnapshot *_hg_allocator_bfit_real_save_snapshot     (HgMemPool         *pool);
 static gboolean       _hg_allocator_bfit_real_restore_snapshot  (HgMemPool         *pool,
 								 HgMemSnapshot     *snapshot);
@@ -95,6 +97,7 @@ static HgAllocatorVTable __hg_allocator_bfit_vtable = {
 	.garbage_collection = _hg_allocator_bfit_real_garbage_collection,
 	.gc_mark            = _hg_allocator_bfit_real_gc_mark,
 	.gc_unmark          = _hg_allocator_bfit_real_gc_unmark,
+	.is_safe_object     = _hg_allocator_bfit_real_is_safe_object,
 	.save_snapshot      = _hg_allocator_bfit_real_save_snapshot,
 	.restore_snapshot   = _hg_allocator_bfit_real_restore_snapshot,
 };
@@ -108,6 +111,7 @@ static HgObjectVTable __hg_snapshot_vtable = {
 	.to_string = _hg_allocator_bfit_snapshot_real_to_string,
 };
 
+G_LOCK_DEFINE_STATIC (hg_allocator_bfit);
 
 /*
  * Private Functions
@@ -642,12 +646,16 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 	gboolean retval = FALSE;
 	GList *reflist;
 
+	G_LOCK (hg_allocator_bfit);
+
 #ifdef DEBUG_GC
 	g_print("DEBUG_GC: starting GC for %s\n", pool->name);
 #endif /* DEBUG_GC */
 	if (!pool->destroyed) {
-		if (!pool->use_gc)
+		if (!pool->use_gc) {
+			G_UNLOCK (hg_allocator_bfit);
 			return FALSE;
+		}
 #ifdef DEBUG_GC
 		g_print("DEBUG_GC: marking start.\n");
 #endif /* DEBUG_GC */
@@ -655,7 +663,7 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 		pool->allocator->vtable->gc_mark(pool);
 	}
 #ifdef DEBUG_GC
-		g_print("DEBUG_GC: sweeping start.\n");
+	g_print("DEBUG_GC: sweeping start.\n");
 #endif /* DEBUG_GC */
 	/* sweep phase */
 	for (i = 0; i < priv->heap2block_array->len; i++) {
@@ -705,6 +713,7 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 		}
 		pool->is_processing = FALSE;
 	}
+	G_UNLOCK (hg_allocator_bfit);
 
 	return retval;
 }
@@ -712,8 +721,6 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 static void
 _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 {
-	HgAllocatorBFitPrivate *priv = pool->allocator->private;
-
 	HG_SET_STACK_END;
 
 	if (pool->is_processing)
@@ -723,8 +730,6 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 	G_STMT_START {
 		GList *list, *reflist;
 		HgMemObject *obj;
-		gpointer p;
-		gsize header_size = sizeof (HgMemObject);
 		jmp_buf env;
 
 		/* trace the root node */
@@ -759,63 +764,15 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 		}
 		/* trace in the registers */
 		setjmp(env);
-		for (p = (gpointer)env; p < (gpointer)env + sizeof (env); p++) {
-			obj = (HgMemObject *)(*(gsize *)p - header_size);
-			if (hg_btree_find(priv->obj2block_tree, obj) != NULL) {
-				if (!hg_mem_is_gc_mark(obj)) {
 #ifdef DEBUG_GC
-					g_print("MARK: %p (mem: %p) from registers.\n", obj->data, obj);
+		g_print("DEBUG_GC: marking from registers.\n");
 #endif /* DEBUG_GC */
-					hg_mem_gc_mark(obj);
-				} else {
-#ifdef DEBUG_GC
-					g_print("MARK[already]: %p (mem: %p) from registers.\n", obj->data, obj);
-#endif /* DEBUG_GC */
-				}
-			}
-			obj = p;
-			if (hg_btree_find(priv->obj2block_tree, obj) != NULL) {
-				if (!hg_mem_is_gc_mark(obj)) {
-#ifdef DEBUG_GC
-					g_print("MARK: %p (mem: %p) from registers.\n", obj->data, obj);
-#endif /* DEBUG_GC */
-					hg_mem_gc_mark(obj);
-				} else {
-#ifdef DEBUG_GC
-					g_print("MARK[already]: %p (mem: %p) from registers.\n", obj->data, obj);
-#endif /* DEBUG_GC */
-				}
-			}
-		}
+		hg_mem_gc_mark_array_region(pool, (gpointer)env, (gpointer)env + sizeof (env));
 		/* trace the stack */
-		for (p = _hg_stack_start; p > _hg_stack_end; p--) {
-			obj = (HgMemObject *)(*(gsize *)p - header_size);
-			if (hg_btree_find(priv->obj2block_tree, obj) != NULL) {
-				if (!hg_mem_is_gc_mark(obj)) {
 #ifdef DEBUG_GC
-					g_print("MARK: %p (mem: %p) from stack.\n", obj->data, obj);
+		g_print("DEBUG_GC: marking from stacks.\n");
 #endif /* DEBUG_GC */
-					hg_mem_gc_mark(obj);
-				} else {
-#ifdef DEBUG_GC
-					g_print("MARK[already]: %p (mem: %p) from stack.\n", obj->data, obj);
-#endif /* DEBUG_GC */
-				}
-			}
-			obj = p;
-			if (hg_btree_find(priv->obj2block_tree, obj) != NULL) {
-				if (!hg_mem_is_gc_mark(obj)) {
-#ifdef DEBUG_GC
-					g_print("MARK: %p (mem: %p) from stack.\n", obj->data, obj);
-#endif /* DEBUG_GC */
-					hg_mem_gc_mark(obj);
-				} else {
-#ifdef DEBUG_GC
-					g_print("MARK[already]: %p (mem: %p) from stack.\n", obj->data, obj);
-#endif /* DEBUG_GC */
-				}
-			}
-		}
+		hg_mem_gc_mark_array_region(pool, _hg_stack_start, _hg_stack_end);
 	} G_STMT_END;
 
 	pool->is_processing = FALSE;
@@ -855,6 +812,15 @@ _hg_allocator_bfit_real_gc_unmark(HgMemPool *pool)
 	}
 
 	pool->is_processing = FALSE;
+}
+
+static gboolean
+_hg_allocator_bfit_real_is_safe_object(HgMemPool   *pool,
+				       HgMemObject *object)
+{
+	HgAllocatorBFitPrivate *priv = pool->allocator->private;
+
+	return hg_btree_find(priv->obj2block_tree, object) != NULL;
 }
 
 static HgMemSnapshot *
