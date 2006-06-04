@@ -1,5 +1,9 @@
 2006-06-05  Akira TAGOH  <at@gclab.org>
 
+	* Makefile.am (SUBDIRS): added po.
+
+	* configure.ac (ALL_LINGUAS): added ja.
+
 	* hieroglyph/hgmem.c (hg_mem_init_stack_start): new function.
 	(hg_mem_pool_add_heap): new function.
 
