@@ -117,10 +117,14 @@ hg_memory_visualizer_real_destroy(GtkObject *object)
 	g_return_if_fail (HG_IS_MEMORY_VISUALIZER (object));
 
 	visual = HG_MEMORY_VISUALIZER (object);
-	if (visual->pool2size)
+	if (visual->pool2size) {
 		g_hash_table_destroy(visual->pool2size);
-	if (visual->pool2array)
+		visual->pool2size = NULL;
+	}
+	if (visual->pool2array) {
 		g_hash_table_destroy(visual->pool2array);
+		visual->pool2array = NULL;
+	}
 
 	/* FIXME: not yet implemented */
 

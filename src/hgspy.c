@@ -100,6 +100,7 @@ _hgspy_action_menubar_open_cb(GtkAction *action,
 	GtkFileFilter *filter;
 
 	filter = gtk_file_filter_new();
+	gtk_file_filter_set_name(filter, _("PostScript file"));
 	gtk_file_filter_add_mime_type(filter, "application/postscript");
 
 	dialog = gtk_file_chooser_dialog_new(_("Open a PostScript file"),
@@ -178,7 +179,7 @@ main(int    argc,
 {
 	GModule *module;
 	HgSpy *spy;
-	GtkWidget *menubar, *vbox;
+	GtkWidget *menubar, *vbox, *none;
 	GtkUIManager *uiman;
 	GtkActionGroup *actions;
 	GtkActionEntry action_entries[] = {
@@ -186,7 +187,15 @@ main(int    argc,
 		{
 			.name = "VMMenu",
 			.stock_id = NULL,
-			.label = _("_VM"),
+			.label = _("V_M"),
+			.accelerator = NULL,
+			.tooltip = NULL,
+			.callback = NULL
+		},
+		{
+			.name = "ViewMenu",
+			.stock_id = NULL,
+			.label = _("_View"),
 			.accelerator = NULL,
 			.tooltip = NULL,
 			.callback = NULL
@@ -224,6 +233,24 @@ main(int    argc,
 			.tooltip = _("Quit"),
 			.callback = G_CALLBACK (_hgspy_action_menubar_quit_cb)
 		},
+		/* submenu - View */
+		{
+			.name = "PoolMenu",
+			.stock_id = NULL,
+			.label = _("Pool"),
+			.accelerator = NULL,
+			.tooltip = _("Pool to be visualized."),
+			.callback = NULL
+		},
+		/* submenu - Pool */
+		{
+			.name = "PoolNone",
+			.stock_id = NULL,
+			.label = _("None"),
+			.accelerator = NULL,
+			.tooltip = NULL,
+			.callback = NULL
+		},
 		/* submenu - Help */
 		{
 			.name = "About",
@@ -242,6 +269,11 @@ main(int    argc,
 		"      <menuitem action='Open'/>"
 		"      <separator/>"
 		"      <menuitem action='Quit'/>"
+		"    </menu>"
+		"    <menu action='ViewMenu'>"
+		"      <menu action='PoolMenu'>"
+		"        <menuitem action='PoolNone'/>"
+		"      </menu>"
 		"    </menu>"
 		"    <menu action='HelpMenu'>"
 		"      <menuitem action='About'/>"
@@ -290,8 +322,11 @@ main(int    argc,
 				     spy);
 
 	/* setup UI */
+	gtk_window_set_title(GTK_WINDOW (spy->window), "Memory Visualizer for Hieroglyph");
 	gtk_ui_manager_add_ui_from_string(uiman, uixml, strlen(uixml), NULL);
 	gtk_ui_manager_insert_action_group(uiman, actions, 0);
+	none = gtk_ui_manager_get_widget(uiman, "/MenuBar/ViewMenu/PoolMenu/PoolNone");
+	gtk_widget_set_sensitive(none, FALSE);
 
 	/* setup accelerators */
 	gtk_window_add_accel_group(GTK_WINDOW (spy->window), gtk_ui_manager_get_accel_group(uiman));

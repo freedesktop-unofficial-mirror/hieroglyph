@@ -1,5 +1,11 @@
 2006-06-05  Akira TAGOH  <at@gclab.org>
 
+	* src/visualizer.c (hg_memory_visualizer_real_destroy): set a null to
+	avoid a double-free.
+
+	* src/hgspy.c (_hgspy_action_menubar_open_cb): set a filter name.
+	(main): set a window title and added a view menu.
+
 	* Makefile.am (SUBDIRS): added po.
 
 	* configure.ac (ALL_LINGUAS): added ja.
