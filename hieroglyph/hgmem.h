@@ -29,9 +29,10 @@
 G_BEGIN_DECLS
 
 /* initializer */
-void hg_mem_init         (void);
-void hg_mem_finalize     (void);
-void hg_mem_set_stack_end(gpointer mark);
+void hg_mem_init_stack_start(gpointer mark);
+void hg_mem_init            (void);
+void hg_mem_finalize        (void);
+void hg_mem_set_stack_end   (gpointer mark);
 
 /* allocator */
 HgAllocator *hg_allocator_new    (const HgAllocatorVTable *vtable);
@@ -66,6 +67,8 @@ gboolean       hg_mem_pool_allow_resize           (HgMemPool     *pool,
 						   gboolean       flag);
 gsize          hg_mem_pool_get_used_heap_size     (HgMemPool     *pool);
 gsize          hg_mem_pool_get_free_heap_size     (HgMemPool     *pool);
+void           hg_mem_pool_add_heap               (HgMemPool     *pool,
+						   HgHeap        *heap);
 guint          hg_mem_pool_get_default_access_mode(HgMemPool     *pool);
 void           hg_mem_pool_set_default_access_mode(HgMemPool     *pool,
 						   guint          state);

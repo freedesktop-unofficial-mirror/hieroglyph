@@ -27,10 +27,12 @@
 #include <gmodule.h>
 #include <hieroglyph/hgtypes.h>
 #include <hieroglyph/hgmem.h>
+#include "../hieroglyph/hgallocator-private.h"
 #include "hgspy_helper.h"
 #include "visualizer.h"
 
 
+static gpointer __hg_mem_pool_add_heap = NULL;
 static gpointer __hg_mem_alloc_with_flags = NULL;
 static gpointer __hg_mem_free = NULL;
 static GModule *__handle = NULL;
@@ -46,6 +48,10 @@ helper_init(void)
 	__handle = g_module_open("libhieroglyph.so", 0);
 	if (__handle == NULL) {
 		g_warning("Failed g_module_open: %s", g_module_error());
+		exit(1);
+	}
+	if (!g_module_symbol(__handle, "hg_mem_pool_add_heap", &__hg_mem_pool_add_heap)) {
+		g_warning("Failed g_module_symbol: %s", g_module_error());
 		exit(1);
 	}
 	if (!g_module_symbol(__handle, "hg_mem_alloc_with_flags", &__hg_mem_alloc_with_flags)) {
@@ -70,6 +76,16 @@ helper_finalize(void)
 /*
  * preload functions
  */
+void
+hg_mem_pool_add_heap(HgMemPool *pool,
+		     HgHeap    *heap)
+{
+	((void (*) (HgMemPool *, HgHeap *))__hg_mem_pool_add_heap) (pool, heap);
+	hg_memory_visualizer_set_heap_state(HG_MEMORY_VISUALIZER (visual),
+					    hg_mem_pool_get_name(pool),
+					    heap);
+}
+
 gpointer
 hg_mem_alloc_with_flags(HgMemPool *pool,
 			gsize      size,
@@ -81,9 +97,13 @@ hg_mem_alloc_with_flags(HgMemPool *pool,
 
 	hg_mem_get_object__inline(retval, obj);
 	if (obj) {
+		gint heap_id = HG_MEMOBJ_GET_HEAP_ID (obj);
+		HgHeap *h = g_ptr_array_index(obj->pool->heap_list, heap_id);
+
 		hg_memory_visualizer_set_chunk_state(HG_MEMORY_VISUALIZER (visual),
-						     HG_MEMOBJ_GET_HEAP_ID (obj),
-						     obj,
+						     hg_mem_pool_get_name(obj->pool),
+						     heap_id,
+						     (gsize)obj - (gsize)h->heaps,
 						     hg_mem_get_object_size(retval),
 						     HG_CHUNK_USED);
 	}
@@ -98,9 +118,13 @@ hg_mem_free(gpointer data)
 
 	hg_mem_get_object__inline(data, obj);
 	if (obj) {
+		gint heap_id = HG_MEMOBJ_GET_HEAP_ID (obj);
+		HgHeap *h = g_ptr_array_index(obj->pool->heap_list, heap_id);
+
 		hg_memory_visualizer_set_chunk_state(HG_MEMORY_VISUALIZER (visual),
-						     HG_MEMOBJ_GET_HEAP_ID (obj),
-						     obj,
+						     hg_mem_pool_get_name(obj->pool),
+						     heap_id,
+						     (gsize)obj - (gsize)h->heaps,
 						     hg_mem_get_object_size(data),
 						     HG_CHUNK_FREE);
 	}

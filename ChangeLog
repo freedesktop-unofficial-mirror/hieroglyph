@@ -1,3 +1,26 @@
+2006-06-05  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgmem.c (hg_mem_init_stack_start): new function.
+	(hg_mem_pool_add_heap): new function.
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_initialize):
+	use hg_mem_pool_add_heap instead of direct access.
+	(_hg_allocator_bfit_real_resize_pool): likewise.
+
+	* hieroglyph/hgmacros.h (HG_STACK_INIT): new macro.
+	(HG_MEM_INIT): new macro.
+
+	* src/visualizer.c (_heap2offset_new): new function.
+	(_heap2offset_free): new function.
+	(hg_memory_visualizer_set_max_size): store the max size for each pools.
+	(hg_memory_visualizer_get_max_size): similar change.
+	(hg_memory_visualizer_set_heap_state): new function.
+	(hg_memory_visualizer_set_chunk_state): implemented.
+
+	* src/hgspy.c (_hgspy_vm_thread): call HG_MEM_INIT here.
+
+	* src/hgspy_helper.c (hg_mem_pool_add_heap): new function.
+
 2006-06-04  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgmem.c (hg_mem_gc_mark_array_region): new function.

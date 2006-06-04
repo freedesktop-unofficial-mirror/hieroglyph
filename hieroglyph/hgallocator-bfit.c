@@ -408,7 +408,7 @@ _hg_allocator_bfit_real_initialize(HgMemPool *pool,
 
 	g_ptr_array_add(priv->heap2block_array, block);
 	_hg_allocator_bfit_add_free_block(priv, block);
-	g_ptr_array_add(pool->heap_list, heap);
+	hg_mem_pool_add_heap(pool, heap);
 
 	pool->allocator->private = priv;
 
@@ -484,7 +484,7 @@ _hg_allocator_bfit_real_resize_pool(HgMemPool *pool,
 	pool->total_heap_size += block_size;
 	g_ptr_array_add(priv->heap2block_array, block);
 	_hg_allocator_bfit_add_free_block(priv, block);
-	g_ptr_array_add(pool->heap_list, heap);
+	hg_mem_pool_add_heap(pool, heap);
 
 	return TRUE;
 }

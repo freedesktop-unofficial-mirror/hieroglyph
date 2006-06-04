@@ -30,12 +30,19 @@ G_BEGIN_DECLS
 
 #define HG_MEM_HEADER	0x48474d4f
 #define HG_OBJECT_ID	0x48474f4f
+#define HG_STACK_INIT					\
+	gpointer __hg_stack_mark;			\
+							\
+	hg_mem_init_stack_start(&__hg_stack_mark)
 #define HG_SET_STACK_END			\
 	gpointer __hg_stack_mark;		\
 						\
-	hg_mem_set_stack_end(&__hg_stack_mark);
+	hg_mem_set_stack_end(&__hg_stack_mark)
 #define HG_SET_STACK_END_AGAIN			\
-	hg_mem_set_stack_end(&__hg_stack_mark);
+	hg_mem_set_stack_end(&__hg_stack_mark)
+#define HG_MEM_INIT				\
+	HG_STACK_INIT;				\
+	hg_mem_init()
 
 #define HG_MEM_ALIGNMENT	4
 

@@ -97,16 +97,6 @@ test_operatorencoding_LDADD =				\
 	$(top_builddir)/libretto/libretto.la		\
 	$(NULL)
 
-bench1_hgallocator_ffit_SOURCES =			\
-	hgallocator-ffit-bench1.c			\
-	$(NULL)
-bench1_hgallocator_ffit_LDADD = $(LDADDS)
-
-bench2_hgallocator_ffit_SOURCES =			\
-	hgallocator-ffit-bench2.c			\
-	$(NULL)
-bench2_hgallocator_ffit_LDADD = $(LDADDS)
-
 bench1_hgallocator_bfit_SOURCES =			\
 	hgallocator-bfit-bench1.c			\
 	$(NULL)

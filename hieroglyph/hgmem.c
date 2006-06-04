@@ -44,6 +44,7 @@ static GAllocator *hg_mem_g_list_allocator = NULL;
 /*
  * initializer
  */
+#ifdef USE_SYSDEP_CODE
 static void
 _hg_mem_init_stack_start(void)
 {
@@ -82,6 +83,7 @@ _hg_mem_init_stack_start(void)
 	_hg_stack_start = __libc_stack_end;
 #endif
 }
+#endif
 
 /* memory pool */
 static void
@@ -158,10 +160,17 @@ hg_heap_free(HgHeap *heap)
 
 /* initializer */
 void
+hg_mem_init_stack_start(gpointer mark)
+{
+	_hg_stack_start = mark;
+}
+
+void
 hg_mem_init(void)
 {
+	g_return_if_fail (_hg_stack_start != NULL);
+
 	if (!hg_mem_is_initialized) {
-		_hg_mem_init_stack_start();
 		if (!hg_mem_g_list_allocator) {
 			hg_mem_g_list_allocator = g_allocator_new("Default GAllocator for GList", 128);
 			g_list_push_allocator(hg_mem_g_list_allocator);
@@ -291,6 +300,24 @@ hg_mem_pool_get_free_heap_size(HgMemPool *pool)
 	g_return_val_if_fail (pool != NULL, 0);
 
 	return pool->total_heap_size - pool->used_heap_size;
+}
+
+void
+hg_mem_pool_add_heap(HgMemPool *pool,
+		     HgHeap    *heap)
+{
+	guint i;
+
+	g_return_if_fail (pool != NULL);
+	g_return_if_fail (heap != NULL);
+
+	for (i = 0; i < pool->heap_list->len; i++) {
+		HgHeap *h = g_ptr_array_index(pool->heap_list, i);
+
+		g_return_if_fail (h != heap);
+	}
+
+	g_ptr_array_add(pool->heap_list, heap);
 }
 
 void

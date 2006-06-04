@@ -9,6 +9,8 @@
 int
 main(void)
 {
+	HG_MEM_INIT;
+
 	HgAllocator *allocator;
 	HgMemPool *pool;
 	HgMemSnapshot *snap;
@@ -16,8 +18,6 @@ main(void)
 	HgArray *array;
 	HgString *string;
 	HgDict *dict;
-
-	hg_mem_init();
 
 	allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
 	pool = hg_mem_pool_new(allocator, "test", 256, TRUE);

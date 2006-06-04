@@ -49,11 +49,17 @@ enum _HgMemoryChunkState {
 GType      hg_memory_visualizer_get_type       (void) G_GNUC_CONST;
 GtkWidget *hg_memory_visualizer_new            (void);
 void       hg_memory_visualizer_set_max_size   (HgMemoryVisualizer *visual,
-						glong               size);
-glong      hg_memory_visualizer_get_max_size   (HgMemoryVisualizer *visual);
+						const gchar        *name,
+						gsize               size);
+gsize      hg_memory_visualizer_get_max_size   (HgMemoryVisualizer *visual,
+						const gchar        *name);
+void       hg_memory_visualizer_set_heap_state (HgMemoryVisualizer *visual,
+						const gchar        *name,
+						HgHeap             *heap);
 void       hg_memory_visualizer_set_chunk_state(HgMemoryVisualizer *visual,
+						const gchar        *name,
 						gint                heap_id,
-						gpointer            addr,
+						gsize               offset,
 						gsize               size,
 						HgMemoryChunkState  state);
 

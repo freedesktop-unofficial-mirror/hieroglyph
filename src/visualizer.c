@@ -24,7 +24,10 @@
 #include "config.h"
 #endif
 #include <math.h>
+#include <string.h>
 #include <glib/gi18n.h>
+#include <hieroglyph/hgtypes.h>
+#include "../hieroglyph/hgallocator-private.h"
 #include "visualizer.h"
 
 
@@ -45,9 +48,21 @@ struct _HgMemoryVisualizer {
 	GtkLayout parent_instance;
 
 	/*< private >*/
-	glong   max_size;
-	gdouble block_size;
+	gdouble     block_size;
+	GHashTable *pool2size;
+	GHashTable *pool2array;
 };
+
+struct Heap2Offset {
+	gsize *heap2offset;
+	gchar *bitmaps;
+	guint  alloc;
+	gsize  total_size;
+};
+
+
+static struct Heap2Offset *_heap2offset_new (guint    prealloc);
+static void                _heap2offset_free(gpointer data);
 
 
 static GtkLayoutClass *parent_class = NULL;
@@ -64,11 +79,11 @@ hg_memory_visualizer_real_set_property(GObject      *object,
 				       const GValue *value,
 				       GParamSpec   *pspec)
 {
-	HgMemoryVisualizer *visual = HG_MEMORY_VISUALIZER (object);
+//	HgMemoryVisualizer *visual = HG_MEMORY_VISUALIZER (object);
 
 	switch (prop_id) {
 	    case PROP_MAX_SIZE:
-		    hg_memory_visualizer_set_max_size(visual, g_value_get_long(value));
+//		    hg_memory_visualizer_set_max_size(visual, g_value_get_long(value));
 		    break;
 	    default:
 		    break;
@@ -81,11 +96,11 @@ hg_memory_visualizer_real_get_property(GObject    *object,
 				       GValue     *value,
 				       GParamSpec *pspec)
 {
-	HgMemoryVisualizer *visual = HG_MEMORY_VISUALIZER (object);
+//	HgMemoryVisualizer *visual = HG_MEMORY_VISUALIZER (object);
 
 	switch (prop_id) {
 	    case PROP_MAX_SIZE:
-		    g_value_set_long(value, hg_memory_visualizer_get_max_size(visual));
+//		    g_value_set_long(value, hg_memory_visualizer_get_max_size(visual));
 		    break;
 	    default:
 		    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -97,6 +112,16 @@ hg_memory_visualizer_real_get_property(GObject    *object,
 static void
 hg_memory_visualizer_real_destroy(GtkObject *object)
 {
+	HgMemoryVisualizer *visual;
+
+	g_return_if_fail (HG_IS_MEMORY_VISUALIZER (object));
+
+	visual = HG_MEMORY_VISUALIZER (object);
+	if (visual->pool2size)
+		g_hash_table_destroy(visual->pool2size);
+	if (visual->pool2array)
+		g_hash_table_destroy(visual->pool2array);
+
 	/* FIXME: not yet implemented */
 
 	(* GTK_OBJECT_CLASS (parent_class)->destroy) (object);
@@ -259,7 +284,39 @@ hg_memory_visualizer_class_init(HgMemoryVisualizerClass *klass)
 static void
 hg_memory_visualizer_instance_init(HgMemoryVisualizer *visual)
 {
-	visual->max_size = 0;
+	visual->block_size = 0.0L;
+	visual->pool2size = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+	visual->pool2array = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, _heap2offset_free);
+}
+
+static struct Heap2Offset *
+_heap2offset_new(guint prealloc)
+{
+	struct Heap2Offset *retval;
+
+	g_return_val_if_fail (prealloc > 0, NULL);
+
+	retval = g_new(struct Heap2Offset, 1);
+	if (retval != NULL) {
+		retval->heap2offset = g_new(gsize, prealloc);
+		retval->bitmaps = NULL;
+		retval->alloc = prealloc;
+		retval->total_size = 0;
+	}
+
+	return retval;
+}
+
+static void
+_heap2offset_free(gpointer data)
+{
+	struct Heap2Offset *p = data;
+
+	if (p->heap2offset)
+		g_free(p->heap2offset);
+	if (p->bitmaps)
+		g_free(p->bitmaps);
+	g_free(data);
 }
 
 /*
@@ -299,15 +356,36 @@ hg_memory_visualizer_new(void)
 
 void
 hg_memory_visualizer_set_max_size(HgMemoryVisualizer *visual,
-				  glong               size)
+				  const gchar        *name,
+				  gsize               size)
 {
-	glong area;
+	gsize area;
 	gdouble scale;
+	struct Heap2Offset *h2o;
 
 	g_return_if_fail (HG_IS_MEMORY_VISUALIZER (visual));
+	g_return_if_fail (name != NULL);
 
 	area = visual->parent_instance.width * visual->parent_instance.height;
-	visual->max_size = size;
+	g_hash_table_insert(visual->pool2size, g_strdup(name), GSIZE_TO_POINTER (size));
+	if ((h2o = g_hash_table_lookup(visual->pool2array, name)) == NULL) {
+		h2o = _heap2offset_new(256);
+		g_hash_table_insert(visual->pool2array, g_strdup(name), h2o);
+	}
+	if (h2o->bitmaps) {
+		if (size > h2o->total_size) {
+			gpointer p = g_realloc(h2o->bitmaps, sizeof (gchar) * ((size + 8) / 8));
+			if (p == NULL) {
+				g_warning("Failed to allocate a memory for bitmaps.");
+				return;
+			}
+			h2o->bitmaps = p;
+			memset((void *)((gsize)h2o->bitmaps + h2o->total_size), 0, size - h2o->total_size);
+		}
+	} else {
+		h2o->bitmaps = g_new0(gchar, (size + 8) / 8);
+	}
+	h2o->total_size = size;
 	if (area > size) {
 		scale = area / size;
 		visual->block_size = sqrt(scale);
@@ -316,19 +394,84 @@ hg_memory_visualizer_set_max_size(HgMemoryVisualizer *visual,
 	}
 }
 
-glong
-hg_memory_visualizer_get_max_size(HgMemoryVisualizer *visual)
+gsize
+hg_memory_visualizer_get_max_size(HgMemoryVisualizer *visual,
+				  const gchar        *name)
 {
 	g_return_val_if_fail (HG_IS_MEMORY_VISUALIZER (visual), 0);
+	g_return_val_if_fail (name != NULL, 0);
 
-	return visual->max_size;
+	return GPOINTER_TO_SIZE (g_hash_table_lookup(visual->pool2size, name));
+}
+
+void
+hg_memory_visualizer_set_heap_state(HgMemoryVisualizer *visual,
+				    const gchar        *name,
+				    HgHeap             *heap)
+{
+	gsize current_size;
+	struct Heap2Offset *h2o;
+
+	g_return_if_fail (HG_IS_MEMORY_VISUALIZER (visual));
+	g_return_if_fail (name != NULL);
+	g_return_if_fail (heap != NULL);
+
+	if ((h2o = g_hash_table_lookup(visual->pool2array, name)) == NULL) {
+		h2o = _heap2offset_new(256);
+		g_hash_table_insert(visual->pool2array, g_strdup(name), h2o);
+	}
+	current_size = hg_memory_visualizer_get_max_size(visual, name);
+	if (heap->serial >= h2o->alloc) {
+		gpointer p = g_realloc(h2o->heap2offset,
+				       sizeof (gsize) * (heap->serial + 256));
+
+		if (p == NULL) {
+			g_warning("Failed to allocate a memory for heap.");
+			return;
+		}
+		h2o->heap2offset = p;
+		h2o->alloc = heap->serial + 256;
+	}
+	h2o->heap2offset[heap->serial] = current_size;
+	hg_memory_visualizer_set_max_size(visual, name, current_size + heap->total_heap_size);
 }
 
 void
 hg_memory_visualizer_set_chunk_state(HgMemoryVisualizer *visual,
+				     const gchar        *name,
 				     gint                heap_id,
-				     gpointer            addr,
+				     gsize               offset,
 				     gsize               size,
 				     HgMemoryChunkState  state)
 {
+	struct Heap2Offset *h2o;
+	gsize base, location, start, end, i;
+	gint bit;
+
+	g_return_if_fail (HG_IS_MEMORY_VISUALIZER (visual));
+	g_return_if_fail (name != NULL);
+
+	h2o = g_hash_table_lookup(visual->pool2array, name);
+	if (h2o == NULL) {
+		g_warning("Unknown pool found (pool: %s)\n", name);
+		return;
+	}
+	base = h2o->heap2offset[heap_id];
+	start = base + offset;
+	end = start + size;
+	for (i = start; i < end; i++) {
+		location = i / 8;
+		bit = 7 - (i % 8);
+		switch (state) {
+		    case HG_CHUNK_FREE:
+			    h2o->bitmaps[location] &= ~(1 << bit);
+			    break;
+		    case HG_CHUNK_USED:
+			    h2o->bitmaps[location] |= (1 << bit);
+			    break;
+		    default:
+			    break;
+		}
+	}
+	/* FIXME: update window */
 }

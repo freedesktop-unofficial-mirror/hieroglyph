@@ -91,7 +91,7 @@ test_bfit(void)
 int
 main(void)
 {
-	hg_mem_init();
+	HG_MEM_INIT;
 
 #if 0
 	if (test_ffit() != 0)

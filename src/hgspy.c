@@ -26,6 +26,7 @@
 #include <string.h>
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
+#include <hieroglyph/hgmem.h>
 #include <libretto/vm.h>
 #include "visualizer.h"
 
@@ -33,9 +34,11 @@
 typedef struct _HieroGlyphSpy	HgSpy;
 
 struct _HieroGlyphSpy {
-	GtkWidget *window;
-	GtkWidget *visualizer;
-	GThread   *vm_thread;
+	GtkWidget  *window;
+	GtkWidget  *visualizer;
+	GThread    *vm_thread;
+	LibrettoVM *vm;
+	gchar      *file;
 };
 
 static gpointer __hg_spy_helper_get_widget = NULL;
@@ -46,12 +49,13 @@ static gpointer __hg_spy_helper_get_widget = NULL;
 static gpointer
 _hgspy_vm_thread(gpointer data)
 {
-	LibrettoVM *vm;
+	HG_MEM_INIT;
+
+	HgSpy *spy = data;
 
 	libretto_vm_init();
-
-	vm = libretto_vm_new(LB_EMULATION_LEVEL_1);
-	libretto_vm_startjob(vm, (gchar *)data, TRUE);
+	spy->vm = libretto_vm_new(LB_EMULATION_LEVEL_1);
+	libretto_vm_startjob(spy->vm, spy->file, TRUE);
 
 	return NULL;
 }
@@ -62,7 +66,8 @@ _hgspy_run_vm(HgSpy       *spy,
 {
 	if (spy->vm_thread != NULL) {
 	}
-	g_thread_create(_hgspy_vm_thread, NULL, FALSE, NULL);
+	spy->file = g_strdup(file);
+	spy->vm_thread = g_thread_create(_hgspy_vm_thread, spy, FALSE, NULL);
 }
 
 static void

@@ -50,6 +50,8 @@ print_stack(LibrettoStack *stack)
 int
 main(void)
 {
+	HG_MEM_INIT;
+
 	LibrettoVM *vm;
 	LibrettoStack *ostack, *estack;
 //	gchar *tokens = "true false moveto /foo 10050 10a 10.5 -1 .5 -1e10 10.0E5 1E 5.2e-2 36#Z 1#0 %foobar\nfoo(test)((test test) test)(foo\nbar)";

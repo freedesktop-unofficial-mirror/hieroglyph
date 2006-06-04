@@ -6,6 +6,8 @@
 int
 main(void)
 {
+	HG_MEM_INIT;
+
 	LibrettoVM *vm;
 	LibrettoStack *e, *o;
 	HgValueNode *node;

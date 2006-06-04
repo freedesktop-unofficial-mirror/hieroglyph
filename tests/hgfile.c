@@ -5,12 +5,13 @@
 int
 main(void)
 {
+	HG_MEM_INIT;
+
 	HgAllocator *allocator;
 	HgMemPool *pool;
 	HgFileObject *file;
 	gchar c;
 
-	hg_mem_init();
 	hg_file_init();
 
 	allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
