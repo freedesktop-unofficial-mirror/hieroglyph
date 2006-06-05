@@ -1,5 +1,22 @@
 2006-06-05  Akira TAGOH  <at@gclab.org>
 
+	* src/visualizer.c (hg_memory_visualizer_real_destroy): remove idle
+	timer.
+	(hg_memory_visualizer_real_size_allocate): implemented a bit.
+	(hg_memory_visualizer_real_unrealize): remove idle timer.
+	(hg_memory_visualizer_real_map): add idle timer.
+	(hg_memory_visualizer_real_unmap): remove idle timer.
+	(hg_memory_visualizer_class_init): add a signal, pool-updated.
+	(_hg_memory_visualizer_idle_handler_cb): new function.
+	(_hg_memory_visualizer_add_idle): new function.
+	(_hg_memory_visualizer_remove_idle): new function.
+	(hg_memory_visualizer_set_heap_state): set current pool and info.
+	(hg_memory_visualizer_set_chunk_state): set a flag to be updated.
+	(hg_memory_visualizer_change_pool): new function.
+
+	* src/hgspy.c (_hgspy_radio_menu_pool_activate_cb): new function.
+	(_hgspy_pool_updated_cb): new function.
+
 	* hieroglyph/version.h.in.in: surround with G_*_DECLS.
 
 	* src/visualizer.c (hg_memory_visualizer_real_destroy): set a null to

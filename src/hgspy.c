@@ -34,11 +34,12 @@
 typedef struct _HieroGlyphSpy	HgSpy;
 
 struct _HieroGlyphSpy {
-	GtkWidget  *window;
-	GtkWidget  *visualizer;
-	GThread    *vm_thread;
-	LibrettoVM *vm;
-	gchar      *file;
+	GtkWidget    *window;
+	GtkWidget    *visualizer;
+	GtkUIManager *ui;
+	GThread      *vm_thread;
+	LibrettoVM   *vm;
+	gchar        *file;
 };
 
 static gpointer __hg_spy_helper_get_widget = NULL;
@@ -170,6 +171,61 @@ _hgspy_action_menubar_about_cb(GtkAction *action,
 			      NULL);
 }
 
+static void
+_hgspy_radio_menu_pool_activate_cb(GtkMenuItem *menuitem,
+				   gpointer     data)
+{
+	const gchar *name;
+	HgSpy *spy = data;
+
+	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM (menuitem))) {
+		name = g_object_get_data(G_OBJECT (menuitem), "user-data");
+		hg_memory_visualizer_change_pool(HG_MEMORY_VISUALIZER (spy->visualizer), name);
+	}
+}
+
+static void
+_hgspy_pool_updated_cb(HgMemoryVisualizer *visual,
+		       gpointer            list,
+		       gpointer            data)
+{
+	GSList *slist = list, *l, *sigwidget = NULL;
+	HgSpy *spy = data;
+	GtkWidget *bin, *menu, *menuitem = NULL;
+	gulong sigid;
+
+	g_return_if_fail (HG_IS_MEMORY_VISUALIZER (visual));
+	g_return_if_fail (list != NULL);
+
+	bin = gtk_ui_manager_get_widget(spy->ui, "/MenuBar/ViewMenu/PoolMenu");
+	menu = gtk_menu_item_get_submenu(GTK_MENU_ITEM (bin));
+	sigwidget = (GSList *)g_object_get_data(G_OBJECT (menu), "signal-widget-list");
+	for (l = sigwidget; l != NULL; l = g_slist_next(l)) {
+		sigid = (gulong)g_object_get_data(G_OBJECT (l->data), "signal-id");
+		if (sigid > 0)
+			g_signal_handler_disconnect(l->data, sigid);
+	}
+	gtk_menu_item_remove_submenu(GTK_MENU_ITEM (bin));
+	menu = gtk_menu_new();
+	sigwidget = NULL;
+	for (l = slist; l != NULL; l = g_slist_next(l)) {
+		if (menuitem == NULL) {
+			menuitem = gtk_radio_menu_item_new_with_label(NULL, l->data);
+		} else {
+			menuitem = gtk_radio_menu_item_new_with_label_from_widget(GTK_RADIO_MENU_ITEM (menuitem), l->data);
+		}
+		sigid = g_signal_connect(menuitem, "activate",
+					 G_CALLBACK (_hgspy_radio_menu_pool_activate_cb), spy);
+		sigwidget = g_slist_append(sigwidget, menuitem);
+		g_object_set_data(G_OBJECT (menuitem), "signal-id", (gpointer)sigid);
+		g_object_set_data(G_OBJECT (menuitem), "user-data", l->data);
+		gtk_menu_shell_append(GTK_MENU_SHELL (menu), menuitem);
+		gtk_widget_show(menuitem);
+	}
+	g_object_set_data(G_OBJECT (menu), "signal-widget-list", sigwidget);
+	gtk_menu_item_set_submenu(GTK_MENU_ITEM (bin), menu);
+}
+
 /*
  * Public Functions
  */
@@ -180,7 +236,6 @@ main(int    argc,
 	GModule *module;
 	HgSpy *spy;
 	GtkWidget *menubar, *vbox, *none;
-	GtkUIManager *uiman;
 	GtkActionGroup *actions;
 	GtkActionEntry action_entries[] = {
 		/* toplevel menu */
@@ -306,7 +361,7 @@ main(int    argc,
 	spy->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	spy->vm_thread = NULL;
 	actions = gtk_action_group_new("MenuBar");
-	uiman = gtk_ui_manager_new();
+	spy->ui = gtk_ui_manager_new();
 	vbox = gtk_vbox_new(FALSE, 0);
 	spy->visualizer = ((GtkWidget * (*) (void))__hg_spy_helper_get_widget) ();
 
@@ -322,22 +377,25 @@ main(int    argc,
 				     spy);
 
 	/* setup UI */
+	gtk_window_set_default_size(GTK_WINDOW (spy->window), 100, 100);
 	gtk_window_set_title(GTK_WINDOW (spy->window), "Memory Visualizer for Hieroglyph");
-	gtk_ui_manager_add_ui_from_string(uiman, uixml, strlen(uixml), NULL);
-	gtk_ui_manager_insert_action_group(uiman, actions, 0);
-	none = gtk_ui_manager_get_widget(uiman, "/MenuBar/ViewMenu/PoolMenu/PoolNone");
+	gtk_ui_manager_add_ui_from_string(spy->ui, uixml, strlen(uixml), NULL);
+	gtk_ui_manager_insert_action_group(spy->ui, actions, 0);
+	none = gtk_ui_manager_get_widget(spy->ui, "/MenuBar/ViewMenu/PoolMenu/PoolNone");
 	gtk_widget_set_sensitive(none, FALSE);
 
 	/* setup accelerators */
-	gtk_window_add_accel_group(GTK_WINDOW (spy->window), gtk_ui_manager_get_accel_group(uiman));
+	gtk_window_add_accel_group(GTK_WINDOW (spy->window), gtk_ui_manager_get_accel_group(spy->ui));
 
 	/* widget connections */
-	menubar = gtk_ui_manager_get_widget(uiman, "/MenuBar");
+	menubar = gtk_ui_manager_get_widget(spy->ui, "/MenuBar");
 	gtk_box_pack_start(GTK_BOX (vbox), menubar, FALSE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX (vbox), spy->visualizer, TRUE, TRUE, 0);
 	gtk_container_add(GTK_CONTAINER (spy->window), vbox);
 
 	/* setup signals */
+	g_signal_connect(spy->visualizer, "pool-updated",
+			 G_CALLBACK (_hgspy_pool_updated_cb), spy);
 	g_signal_connect(spy->window, "delete-event",
 			 G_CALLBACK (gtk_main_quit), NULL);
 

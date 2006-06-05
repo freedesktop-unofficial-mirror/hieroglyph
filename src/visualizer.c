@@ -37,20 +37,15 @@ enum {
 };
 
 enum {
+	POOL_UPDATED,
 	LAST_SIGNAL
 };
 
 struct _HgMemoryVisualizerClass {
 	GtkLayoutClass parent_class;
-};
 
-struct _HgMemoryVisualizer {
-	GtkLayout parent_instance;
-
-	/*< private >*/
-	gdouble     block_size;
-	GHashTable *pool2size;
-	GHashTable *pool2array;
+	void (* pool_updated) (HgMemoryVisualizer *visual,
+			       gpointer            list);
 };
 
 struct Heap2Offset {
@@ -60,13 +55,31 @@ struct Heap2Offset {
 	gsize  total_size;
 };
 
+struct _HgMemoryVisualizer {
+	GtkLayout parent_instance;
 
-static struct Heap2Offset *_heap2offset_new (guint    prealloc);
-static void                _heap2offset_free(gpointer data);
+	/*< private >*/
+	gdouble             block_size;
+	GHashTable         *pool2size;
+	GHashTable         *pool2array;
+	GSList             *pool_name_list;
+	const gchar        *current_pool_name;
+	struct Heap2Offset *current_h2o;
+	gboolean            need_update;
+	guint               idle_id;
+};
+
+
+static struct Heap2Offset *_heap2offset_new                 (guint               prealloc);
+static void                _heap2offset_free                (gpointer            data);
+static void                _hg_memory_visualizer_add_idle   (HgMemoryVisualizer *visual);
+static void                _hg_memory_visualizer_remove_idle(HgMemoryVisualizer *visual);
 
 
 static GtkLayoutClass *parent_class = NULL;
-//static guint           signals[LAST_SIGNAL] = { 0 };
+static guint           signals[LAST_SIGNAL] = { 0 };
+
+G_LOCK_DEFINE_STATIC (visualizer);
 
 
 /*
@@ -125,6 +138,7 @@ hg_memory_visualizer_real_destroy(GtkObject *object)
 		g_hash_table_destroy(visual->pool2array);
 		visual->pool2array = NULL;
 	}
+	_hg_memory_visualizer_remove_idle(visual);
 
 	/* FIXME: not yet implemented */
 
@@ -132,23 +146,37 @@ hg_memory_visualizer_real_destroy(GtkObject *object)
 }
 
 /* GtkWidget */
-static gboolean
-hg_memory_visualizer_real_expose(GtkWidget      *widget,
-				 GdkEventExpose *event)
+#if 0
+static void
+hg_memory_visualizer_real_size_request(GtkWidget      *widget,
+				       GtkRequisition *requisition)
+{
+}
+#endif
+
+static void
+hg_memory_visualizer_real_size_allocate(GtkWidget     *widget,
+					GtkAllocation *allocation)
 {
 	HgMemoryVisualizer *visual;
 
-	g_return_val_if_fail (HG_IS_MEMORY_VISUALIZER (widget), FALSE);
-	g_return_val_if_fail (event != NULL, FALSE);
+	g_return_if_fail (HG_IS_MEMORY_VISUALIZER (widget));
+	g_return_if_fail (allocation != NULL);
+
+	if (GTK_WIDGET_CLASS (parent_class)->size_allocate)
+		(* GTK_WIDGET_CLASS (parent_class)->size_allocate) (widget, allocation);
 
 	visual = HG_MEMORY_VISUALIZER (widget);
 
-	if (!GTK_WIDGET_DRAWABLE (widget) || (event->window != visual->parent_instance.bin_window))
-		return FALSE;
+	visual->parent_instance.hadjustment->page_size = allocation->width;
+	visual->parent_instance.hadjustment->page_increment = allocation->width / 2;
+	visual->parent_instance.vadjustment->page_size = allocation->height;
+	visual->parent_instance.vadjustment->page_increment = allocation->height / 2;
 
-	/* FIXME: not yet implemented */
+	/* FIXME: scroll */
 
-	return FALSE;
+	g_signal_emit_by_name(visual->parent_instance.hadjustment, "changed");
+	g_signal_emit_by_name(visual->parent_instance.vadjustment, "changed");
 }
 
 static void
@@ -167,6 +195,7 @@ hg_memory_visualizer_real_realize(GtkWidget *widget)
 			      (gdk_window_get_events(visual->parent_instance.bin_window)
 			       | GDK_EXPOSURE_MASK));
 
+	g_print("realize\n");
 	/* FIXME: not yet implemented */
 
 }
@@ -180,6 +209,8 @@ hg_memory_visualizer_real_unrealize(GtkWidget *widget)
 
 	visual = HG_MEMORY_VISUALIZER (widget);
 
+	_hg_memory_visualizer_remove_idle(visual);
+	g_print("unrealize\n");
 	/* FIXME: not yet implemented */
 
 	if (GTK_WIDGET_CLASS (parent_class)->unrealize)
@@ -198,6 +229,10 @@ hg_memory_visualizer_real_map(GtkWidget *widget)
 
 	visual = HG_MEMORY_VISUALIZER (widget);
 
+	if (visual->need_update)
+		_hg_memory_visualizer_add_idle(visual);
+
+	g_print("map\n");
 	/* FIXME: not yet implemented */
 
 }
@@ -211,34 +246,32 @@ hg_memory_visualizer_real_unmap(GtkWidget *widget)
 
 	visual = HG_MEMORY_VISUALIZER (widget);
 
+	_hg_memory_visualizer_remove_idle(visual);
+	g_print("unmap\n");
 	/* FIXME: not yet implemented */
 
 	if (GTK_WIDGET_CLASS (parent_class)->unmap)
 		(* GTK_WIDGET_CLASS (parent_class)->unmap) (widget);
 }
 
-static void
-hg_memory_visualizer_real_size_request(GtkWidget      *widget,
-				       GtkRequisition *requisition)
-{
-}
-
-static void
-hg_memory_visualizer_real_size_allocate(GtkWidget     *widget,
-					GtkAllocation *allocation)
+static gboolean
+hg_memory_visualizer_real_expose(GtkWidget      *widget,
+				 GdkEventExpose *event)
 {
 	HgMemoryVisualizer *visual;
 
-	g_return_if_fail (HG_IS_MEMORY_VISUALIZER (widget));
-	g_return_if_fail (allocation != NULL);
-
-	if (GTK_WIDGET_CLASS (parent_class)->size_allocate)
-		(* GTK_WIDGET_CLASS (parent_class)->size_allocate) (widget, allocation);
+	g_return_val_if_fail (HG_IS_MEMORY_VISUALIZER (widget), FALSE);
+	g_return_val_if_fail (event != NULL, FALSE);
 
 	visual = HG_MEMORY_VISUALIZER (widget);
 
+	if (!GTK_WIDGET_DRAWABLE (widget) || (event->window != visual->parent_instance.bin_window))
+		return FALSE;
+
+	g_print("expose\n");
 	/* FIXME: not yet implemented */
 
+	return FALSE;
 }
 
 /*
@@ -266,7 +299,7 @@ hg_memory_visualizer_class_init(HgMemoryVisualizerClass *klass)
 	widget_class->unrealize = hg_memory_visualizer_real_unrealize;
 	widget_class->map = hg_memory_visualizer_real_map;
 	widget_class->unmap = hg_memory_visualizer_real_unmap;
-	widget_class->size_request = hg_memory_visualizer_real_size_request;
+//	widget_class->size_request = hg_memory_visualizer_real_size_request;
 	widget_class->size_allocate = hg_memory_visualizer_real_size_allocate;
 
 	/* initialize HgMemoryVisualizer */
@@ -283,6 +316,14 @@ hg_memory_visualizer_class_init(HgMemoryVisualizerClass *klass)
 							  G_PARAM_READWRITE));
 
 	/* signals */
+	signals[POOL_UPDATED] = g_signal_new("pool-updated",
+					     G_OBJECT_CLASS_TYPE (klass),
+					     G_SIGNAL_RUN_FIRST,
+					     G_STRUCT_OFFSET (HgMemoryVisualizerClass, pool_updated),
+					     NULL, NULL,
+					     gtk_marshal_VOID__POINTER,
+					     G_TYPE_NONE, 1,
+					     G_TYPE_POINTER);
 }
 
 static void
@@ -291,6 +332,11 @@ hg_memory_visualizer_instance_init(HgMemoryVisualizer *visual)
 	visual->block_size = 0.0L;
 	visual->pool2size = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 	visual->pool2array = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, _heap2offset_free);
+	visual->pool_name_list = NULL;
+	visual->current_pool_name = NULL;
+	visual->current_h2o = NULL;
+	visual->need_update = FALSE;
+	visual->idle_id = 0;
 }
 
 static struct Heap2Offset *
@@ -321,6 +367,42 @@ _heap2offset_free(gpointer data)
 	if (p->bitmaps)
 		g_free(p->bitmaps);
 	g_free(data);
+}
+
+static gboolean
+_hg_memory_visualizer_idle_handler_cb(gpointer data)
+{
+	HgMemoryVisualizer *visual;
+
+	G_LOCK (visualizer);
+
+	visual = HG_MEMORY_VISUALIZER (data);
+	gtk_widget_queue_draw(GTK_WIDGET (visual));
+	visual->idle_id = 0;
+	visual->need_update = FALSE;
+
+	G_UNLOCK (visualizer);
+
+	return FALSE;
+}
+
+static void
+_hg_memory_visualizer_add_idle(HgMemoryVisualizer *visual)
+{
+	g_return_if_fail (visual->need_update);
+
+	if (!visual->idle_id) {
+		visual->idle_id = gtk_idle_add(_hg_memory_visualizer_idle_handler_cb, visual);
+	}
+}
+
+static void
+_hg_memory_visualizer_remove_idle(HgMemoryVisualizer *visual)
+{
+	if (visual->idle_id != 0) {
+		gtk_idle_remove(visual->idle_id);
+		visual->idle_id = 0;
+	}
 }
 
 /*
@@ -438,6 +520,13 @@ hg_memory_visualizer_set_heap_state(HgMemoryVisualizer *visual,
 	}
 	h2o->heap2offset[heap->serial] = current_size;
 	hg_memory_visualizer_set_max_size(visual, name, current_size + heap->total_heap_size);
+	visual->pool_name_list = g_slist_append(visual->pool_name_list,
+						g_strdup(name));
+	if (visual->current_pool_name == NULL) {
+		visual->current_pool_name = name;
+		visual->current_h2o = h2o;
+	}
+	g_signal_emit(visual, signals[POOL_UPDATED], 0, visual->pool_name_list);
 }
 
 void
@@ -477,5 +566,28 @@ hg_memory_visualizer_set_chunk_state(HgMemoryVisualizer *visual,
 			    break;
 		}
 	}
-	/* FIXME: update window */
+	G_LOCK (visualizer);
+	visual->need_update = TRUE;
+	_hg_memory_visualizer_add_idle(visual);
+	G_UNLOCK (visualizer);
+}
+
+void
+hg_memory_visualizer_change_pool(HgMemoryVisualizer *visual,
+				 const gchar        *name)
+{
+	g_return_if_fail (HG_IS_MEMORY_VISUALIZER (visual));
+	g_return_if_fail (name != NULL);
+
+	if (g_slist_find(visual->pool_name_list, name) != NULL) {
+		visual->current_pool_name = name;
+		visual->current_h2o = g_hash_table_lookup(visual->pool2array, name);
+		G_LOCK (visualizer);
+		visual->need_update = TRUE;
+		_hg_memory_visualizer_add_idle(visual);
+		G_UNLOCK (visualizer);
+	} else {
+		/* send a signal to update the out of date list */
+		g_signal_emit(visual, signals[POOL_UPDATED], 0, visual->pool_name_list);
+	}
 }

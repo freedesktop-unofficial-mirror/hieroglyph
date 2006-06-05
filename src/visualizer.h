@@ -62,6 +62,8 @@ void       hg_memory_visualizer_set_chunk_state(HgMemoryVisualizer *visual,
 						gsize               offset,
 						gsize               size,
 						HgMemoryChunkState  state);
+void       hg_memory_visualizer_change_pool    (HgMemoryVisualizer *visual,
+						const gchar        *name);
 
 
 G_END_DECLS
