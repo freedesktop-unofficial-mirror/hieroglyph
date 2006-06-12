@@ -312,7 +312,8 @@ hg_file_object_new(HgMemPool  *pool,
 			    g_warning("Failed to allocate a memory for file object.");
 			    return NULL;
 		    }
-		    strcpy(retval->filename, p);
+		    strncpy(retval->filename, p, len);
+		    retval->filename[len] = 0;
 		    errno = 0;
 		    retval->is.file.fd = open(retval->filename,
 					      _hg_file_get_access_mode(retval->access_mode));
@@ -345,7 +346,8 @@ hg_file_object_new(HgMemPool  *pool,
 			    g_warning("Failed to allocate a memory for file object.");
 			    return NULL;
 		    }
-		    strcpy(retval->filename, p);
+		    strncpy(retval->filename, p, len);
+		    retval->filename[len] = 0;
 		    p = (gchar *)va_arg(ap, gchar *);
 		    retval->is.buf.bufsize = (gint32)va_arg(ap, gint32);
 		    if (retval->is.buf.bufsize < 0)
@@ -365,7 +367,8 @@ hg_file_object_new(HgMemPool  *pool,
 			    g_warning("Failed to allocate a memory for file object.");
 			    return NULL;
 		    }
-		    strcpy(retval->filename, "stdin");
+		    strncpy(retval->filename, "stdin", 5);
+		    retval->filename[5] = 0;
 		    retval->is.file.fd = 0;
 		    retval->is.file.is_mmap = FALSE;
 		    retval->access_mode = HG_FILE_MODE_READ;
@@ -378,7 +381,8 @@ hg_file_object_new(HgMemPool  *pool,
 			    g_warning("Failed to allocate a memory for file object.");
 			    return NULL;
 		    }
-		    strcpy(retval->filename, "stdout");
+		    strncpy(retval->filename, "stdout", 6);
+		    retval->filename[6] = 0;
 		    retval->is.file.fd = 1;
 		    retval->is.file.is_mmap = FALSE;
 		    retval->access_mode = HG_FILE_MODE_WRITE;
@@ -389,7 +393,8 @@ hg_file_object_new(HgMemPool  *pool,
 			    g_warning("Failed to allocate a memory for file object.");
 			    return NULL;
 		    }
-		    strcpy(retval->filename, "stderr");
+		    strncpy(retval->filename, "stderr", 6);
+		    retval->filename[6] = 0;
 		    retval->is.file.fd = 2;
 		    retval->is.file.is_mmap = FALSE;
 		    retval->access_mode = HG_FILE_MODE_WRITE;
@@ -400,7 +405,8 @@ hg_file_object_new(HgMemPool  *pool,
 			    g_warning("Failed to allocate a memory for file object.");
 			    return NULL;
 		    }
-		    strcpy(retval->filename, "%statementedit");
+		    strncpy(retval->filename, "%statementedit", 14);
+		    retval->filename[14] = 0;
 		    p = hg_line_edit_get_statement(__hg_file_stdin, NULL);
 		    if (p == NULL) {
 			    g_warning("Failed to read a statement.");
@@ -424,7 +430,8 @@ hg_file_object_new(HgMemPool  *pool,
 			    g_warning("Failed to allocate a memory for file object.");
 			    return NULL;
 		    }
-		    strcpy(retval->filename, "%lineedit");
+		    strncpy(retval->filename, "%lineedit", 9);
+		    retval->filename[9] = 0;
 		    p = hg_line_edit_get_line(__hg_file_stdin, NULL, TRUE);
 		    if (p == NULL) {
 			    g_warning("Failed to read a statement.");

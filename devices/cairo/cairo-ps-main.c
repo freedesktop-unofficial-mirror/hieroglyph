@@ -55,14 +55,16 @@ device_open(HgPageInfo *info)
 {
 	HgDevice *device;
 	HgCairoDevice *cdev;
-	gchar *filename;
+	gchar *filename = NULL;
 	gint fd;
 
 	TRACE_ENTER;
 
-	filename = g_build_filename(g_get_tmp_dir(), "ps-embedded-XXXXXX", NULL);
-	if ((fd = g_mkstemp(filename)) == -1) {
+	fd = g_file_open_tmp("ps-embedded-XXXXXX", &filename, NULL);
+	if (fd == -1) {
 		g_warning("Failed to open a file descriptor.");
+		if (filename)
+			g_free(filename);
 
 		return NULL;
 	}

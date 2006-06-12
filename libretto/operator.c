@@ -5910,6 +5910,7 @@ G_STMT_START
 	LibrettoStack *dstack = libretto_vm_get_dstack(vm);
 	HgMemPool *local_pool, *global_pool;
 	gboolean flag = libretto_vm_is_global_pool_used(vm);
+	gsize free_size, used_size;
 
 	libretto_vm_use_global_pool(vm, TRUE);
 	global_pool = libretto_vm_get_current_pool(vm);
@@ -5926,6 +5927,17 @@ G_STMT_START
 	libretto_stack_dump(estack, file);
 	hg_file_object_printf(file, "\nDictionary stack:\n");
 	libretto_stack_dump(dstack, file);
+	hg_file_object_printf(file, "\nVM Status:\n");
+	free_size = hg_mem_pool_get_free_heap_size(global_pool);
+	used_size = hg_mem_pool_get_used_heap_size(global_pool);
+	hg_file_object_printf(file, "  Total (Global): %" G_GSIZE_FORMAT "\n", free_size + used_size);
+	hg_file_object_printf(file, "  Free  (Global): %" G_GSIZE_FORMAT "\n", free_size);
+	hg_file_object_printf(file, "  Used  (Global): %" G_GSIZE_FORMAT "\n", used_size);
+	free_size = hg_mem_pool_get_free_heap_size(local_pool);
+	used_size = hg_mem_pool_get_used_heap_size(local_pool);
+	hg_file_object_printf(file, "  Total (Local): %" G_GSIZE_FORMAT "\n", free_size + used_size);
+	hg_file_object_printf(file, "  Free  (Local): %" G_GSIZE_FORMAT "\n", free_size);
+	hg_file_object_printf(file, "  Used  (Local): %" G_GSIZE_FORMAT "\n", used_size);
 	abort();
 } G_STMT_END;
 DEFUNC_OP_END
@@ -6849,6 +6861,7 @@ libretto_operator_new(HgMemPool            *pool,
 		      LibrettoOperatorFunc  func)
 {
 	LibrettoOperator *retval;
+	size_t len;
 
 	g_return_val_if_fail (pool != NULL, NULL);
 	g_return_val_if_fail (name != NULL, NULL);
@@ -6863,12 +6876,14 @@ libretto_operator_new(HgMemPool            *pool,
 	retval->object.state = hg_mem_pool_get_default_access_mode(pool);
 	retval->object.vtable = &__lb_operator_vtable;
 
-	retval->name = hg_mem_alloc(pool, strlen(name) + 1);
+	len = strlen(name);
+	retval->name = hg_mem_alloc(pool, len + 1);
 	if (retval->name == NULL) {
 		g_warning("Failed to create an operator.");
 		return NULL;
 	}
-	strcpy(retval->name, name);
+	strncpy(retval->name, name, len);
+	retval->name[len] = 0;
 	retval->operator = func;
 
 	return retval;

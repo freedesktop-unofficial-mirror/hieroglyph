@@ -1,3 +1,15 @@
+2006-06-12  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgfile.c (hg_file_object_new): use strncpy instead of
+	strcpy.
+
+	* libretto/operator.c (_libretto_operator_op_private_hg_abort):
+	dump a vm status as well.
+	(libretto_operator_new): use strncpy instead of strpy.
+
+	* devices/cairo/cairo-ps-main.c (device_open): use g_file_open_tmp
+	instead.
+
 2006-06-05  Akira TAGOH  <at@gclab.org>
 
 	* src/visualizer.c (hg_memory_visualizer_real_destroy): remove idle
