@@ -432,6 +432,7 @@ _hg_memory_visualizer_idle_handler_cb(gpointer data)
 	HgMemoryVisualizer *visual;
 
 	visual = HG_MEMORY_VISUALIZER (data);
+
 	_hg_memory_visualizer_redraw_in_pixmap(visual);
 
 	G_LOCK (visualizer);
@@ -738,8 +739,10 @@ hg_memory_visualizer_set_chunk_state(HgMemoryVisualizer *visual,
 	}
 	g_hash_table_insert(visual->pool2used_size, g_strdup(name), GSIZE_TO_POINTER (used_size));
 
-	visual->need_update = TRUE;
-	_hg_memory_visualizer_add_idle(visual);
+	if (strcmp(name, visual->current_pool_name) == 0) {
+		visual->need_update = TRUE;
+		_hg_memory_visualizer_add_idle(visual);
+	}
 	G_UNLOCK (visualizer);
 }
 

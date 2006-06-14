@@ -11,6 +11,8 @@
 	(_hg_memory_visualizer_redraw_in_pixmap): new function.
 	(hg_memory_visualizer_get_used_size): new function.
 	(hg_memory_visualizer_get_current_pool_name): new function.
+	(hg_memory_visualizer_set_chunk_state): update a pixmap only when
+	changes happened on current pool.
 
 	* src/hgspy.c (_hgspy_draw_updated_cb): new function.
 	(_hgspy_update_vm_status): new function.
