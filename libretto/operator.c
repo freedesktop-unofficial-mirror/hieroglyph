@@ -909,6 +909,10 @@ G_STMT_START
 		}
 		for (i = 0; i < size; i++) {
 			HG_VALUE_MAKE_NULL (pool, n, NULL);
+			if (n == NULL) {
+				_libretto_operator_set_error(vm, op, LB_e_VMerror);
+				return FALSE;
+			}
 			hg_array_append(array, n);
 		}
 		HG_VALUE_MAKE_ARRAY (node, array);

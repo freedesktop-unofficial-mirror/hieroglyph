@@ -21,6 +21,7 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#include <hieroglyph/hgmem.h>
 #include <hieroglyph/hgfile.h>
 #include <hieroglyph/hgvaluenode.h>
 #include <libretto/vm.h>
@@ -43,6 +44,7 @@ main(int argc, char **argv)
 		return 1;
 	}
 
+	HG_MEM_INIT;
 	libretto_vm_init();
 
 	vm = libretto_vm_new(LB_EMULATION_LEVEL_1);

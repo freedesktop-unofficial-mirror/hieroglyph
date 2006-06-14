@@ -32,8 +32,10 @@ G_BEGIN_DECLS
 
 #define HG_VALUE_SET_VALUE_NODE(obj, _type, sym, val)	\
 	G_STMT_START {					\
-		(obj)->type = (_type);			\
-		(obj)->v.sym = (val);			\
+		if ((obj)) {				\
+			(obj)->type = (_type);		\
+			(obj)->v.sym = (val);		\
+		}					\
 	} G_STMT_END
 #define HG_VALUE_SET_BOOLEAN(obj, val)					\
 	HG_VALUE_SET_VALUE_NODE (obj, HG_TYPE_VALUE_BOOLEAN, boolean, val); \
