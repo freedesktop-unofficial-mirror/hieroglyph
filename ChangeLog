@@ -1,5 +1,27 @@
 2006-06-15  Akira TAGOH  <at@gclab.org>
 
+	* src/visualizer.c (hg_memory_visualizer_real_size_allocate):
+	implemented.
+	(hg_memory_visualizer_real_realize): implemented.
+	(hg_memory_visualizer_real_expose): implemented.
+	(hg_memory_visualizer_class_init): added draw-updated signal.
+	(hg_memory_visualizer_real_unrealize): implemented.
+	(_hg_memory_visualizer_idle_handler_cb): update a pixmap.
+	(_hg_memory_visualizer_create_gc): new function.
+	(_hg_memory_visualizer_redraw_in_pixmap): new function.
+	(hg_memory_visualizer_get_used_size): new function.
+	(hg_memory_visualizer_get_current_pool_name): new function.
+
+	* src/hgspy.c (_hgspy_draw_updated_cb): new function.
+	(_hgspy_update_vm_status): new function.
+	(main): add widgets for memory informations.
+
+	* src/hgspy_helper.c (helper_init): get an original function pointer
+	for hg_mem_resize.
+	(hg_mem_alloc_with_flags): check null.
+	(hg_mem_free): fixed a typo.
+	(hg_mem_resize): new function. need to watch this function too.
+
 	* examples/pse.c (main): invoke HG_MEM_INIT before doing anything.
 
 	* hieroglyph/hgvaluenode.h (HG_VALUE_SET_VALUE_NODE): check null.

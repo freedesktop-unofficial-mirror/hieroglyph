@@ -36,11 +36,18 @@ typedef struct _HieroGlyphSpy	HgSpy;
 struct _HieroGlyphSpy {
 	GtkWidget    *window;
 	GtkWidget    *visualizer;
+	GtkWidget    *total_vm_size;
+	GtkWidget    *used_vm_size;
+	GtkWidget    *free_vm_size;
 	GtkUIManager *ui;
 	GThread      *vm_thread;
 	LibrettoVM   *vm;
 	gchar        *file;
 };
+
+static void _hgspy_update_vm_status(HgMemoryVisualizer *visual,
+				    HgSpy              *spy,
+				    const gchar        *name);
 
 static gpointer __hg_spy_helper_get_widget = NULL;
 
@@ -226,6 +233,47 @@ _hgspy_pool_updated_cb(HgMemoryVisualizer *visual,
 	gtk_menu_item_set_submenu(GTK_MENU_ITEM (bin), menu);
 }
 
+static void
+_hgspy_draw_updated_cb(HgMemoryVisualizer *visual,
+		       gpointer            data)
+{
+	HgSpy *spy = data;
+	const gchar *name;
+
+	g_return_if_fail (HG_IS_MEMORY_VISUALIZER (visual));
+	g_return_if_fail (data != NULL);
+
+	name = hg_memory_visualizer_get_current_pool_name(visual);
+	if (name) {
+		_hgspy_update_vm_status(visual, spy, name);
+	}
+}
+
+static void
+_hgspy_update_vm_status(HgMemoryVisualizer *visual,
+			HgSpy              *spy,
+			const gchar        *name)
+{
+	gsize total, used;
+	gchar *p;
+
+	g_return_if_fail (HG_IS_MEMORY_VISUALIZER (visual));
+	g_return_if_fail (spy != NULL);
+	g_return_if_fail (name != NULL);
+
+	total = hg_memory_visualizer_get_max_size(visual, name);
+	p = g_strdup_printf("%d", total);
+	gtk_entry_set_text(GTK_ENTRY (spy->total_vm_size), p);
+	g_free(p);
+	used = hg_memory_visualizer_get_used_size(visual, name);
+	p = g_strdup_printf("%d", used);
+	gtk_entry_set_text(GTK_ENTRY (spy->used_vm_size), p);
+	g_free(p);
+	p = g_strdup_printf("%d", total - used);
+	gtk_entry_set_text(GTK_ENTRY (spy->free_vm_size), p);
+	g_free(p);
+}
+
 /*
  * Public Functions
  */
@@ -235,7 +283,7 @@ main(int    argc,
 {
 	GModule *module;
 	HgSpy *spy;
-	GtkWidget *menubar, *vbox, *none;
+	GtkWidget *menubar, *vbox, *none, *table, *label;
 	GtkActionGroup *actions;
 	GtkActionEntry action_entries[] = {
 		/* toplevel menu */
@@ -335,6 +383,7 @@ main(int    argc,
 		"    </menu>"
 		"  </menubar>"
 		"</ui>";
+	guint i = 0;
 
 	if ((module = g_module_open("libhgspy-helper.so", 0)) == NULL) {
 		g_warning("Failed g_module_open: %s", g_module_error());
@@ -363,6 +412,10 @@ main(int    argc,
 	actions = gtk_action_group_new("MenuBar");
 	spy->ui = gtk_ui_manager_new();
 	vbox = gtk_vbox_new(FALSE, 0);
+	table = gtk_table_new(3, 2, FALSE);
+	spy->total_vm_size = gtk_entry_new();
+	spy->used_vm_size = gtk_entry_new();
+	spy->free_vm_size = gtk_entry_new();
 	spy->visualizer = ((GtkWidget * (*) (void))__hg_spy_helper_get_widget) ();
 
 	if (spy->visualizer == NULL) {
@@ -383,6 +436,12 @@ main(int    argc,
 	gtk_ui_manager_insert_action_group(spy->ui, actions, 0);
 	none = gtk_ui_manager_get_widget(spy->ui, "/MenuBar/ViewMenu/PoolMenu/PoolNone");
 	gtk_widget_set_sensitive(none, FALSE);
+	gtk_editable_set_editable(GTK_EDITABLE (spy->total_vm_size), FALSE);
+	gtk_editable_set_editable(GTK_EDITABLE (spy->used_vm_size), FALSE);
+	gtk_editable_set_editable(GTK_EDITABLE (spy->free_vm_size), FALSE);
+	GTK_WIDGET_UNSET_FLAGS (spy->total_vm_size, GTK_CAN_FOCUS);
+	GTK_WIDGET_UNSET_FLAGS (spy->used_vm_size, GTK_CAN_FOCUS);
+	GTK_WIDGET_UNSET_FLAGS (spy->free_vm_size, GTK_CAN_FOCUS);
 
 	/* setup accelerators */
 	gtk_window_add_accel_group(GTK_WINDOW (spy->window), gtk_ui_manager_get_accel_group(spy->ui));
@@ -391,11 +450,48 @@ main(int    argc,
 	menubar = gtk_ui_manager_get_widget(spy->ui, "/MenuBar");
 	gtk_box_pack_start(GTK_BOX (vbox), menubar, FALSE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX (vbox), spy->visualizer, TRUE, TRUE, 0);
+	/* total */
+	label = gtk_label_new(_("Total memory size:"));
+	gtk_table_attach(GTK_TABLE (table), label,
+			 0, 1, i, i + 1,
+			 0, GTK_FILL,
+			 0, 0);
+	gtk_table_attach(GTK_TABLE (table), spy->total_vm_size,
+			 1, 2, i, i + 1,
+			 GTK_FILL | GTK_EXPAND, GTK_FILL,
+			 0, 0);
+	i++;
+	/* used */
+	label = gtk_label_new(_("Used memory size:"));
+	gtk_table_attach(GTK_TABLE (table), label,
+			 0, 1, i, i + 1,
+			 0, GTK_FILL,
+			 0, 0);
+	gtk_table_attach(GTK_TABLE (table), spy->used_vm_size,
+			 1, 2, i, i + 1,
+			 GTK_FILL | GTK_EXPAND, GTK_FILL,
+			 0, 0);
+	i++;
+	/* free */
+	label = gtk_label_new(_("Free memory size:"));
+	gtk_table_attach(GTK_TABLE (table), label,
+			 0, 1, i, i + 1,
+			 0, GTK_FILL,
+			 0, 0);
+	gtk_table_attach(GTK_TABLE (table), spy->free_vm_size,
+			 1, 2, i, i + 1,
+			 GTK_FILL | GTK_EXPAND, GTK_FILL,
+			 0, 0);
+	i++;
+
+	gtk_box_pack_end(GTK_BOX (vbox), table, FALSE, FALSE, 0);
 	gtk_container_add(GTK_CONTAINER (spy->window), vbox);
 
 	/* setup signals */
 	g_signal_connect(spy->visualizer, "pool-updated",
 			 G_CALLBACK (_hgspy_pool_updated_cb), spy);
+	g_signal_connect(spy->visualizer, "draw-updated",
+			 G_CALLBACK (_hgspy_draw_updated_cb), spy);
 	g_signal_connect(spy->window, "delete-event",
 			 G_CALLBACK (gtk_main_quit), NULL);
 

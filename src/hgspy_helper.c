@@ -35,6 +35,7 @@
 static gpointer __hg_mem_pool_add_heap = NULL;
 static gpointer __hg_mem_alloc_with_flags = NULL;
 static gpointer __hg_mem_free = NULL;
+static gpointer __hg_mem_resize = NULL;
 static GModule *__handle = NULL;
 static GtkWidget *visual = NULL;
 
@@ -59,6 +60,10 @@ helper_init(void)
 		exit(1);
 	}
 	if (!g_module_symbol(__handle, "hg_mem_free", &__hg_mem_free)) {
+		g_warning("Failed g_module_symbol: %s", g_module_error());
+		exit(1);
+	}
+	if (!g_module_symbol(__handle, "hg_mem_resize", &__hg_mem_resize)) {
 		g_warning("Failed g_module_symbol: %s", g_module_error());
 		exit(1);
 	}
@@ -95,17 +100,19 @@ hg_mem_alloc_with_flags(HgMemPool *pool,
 			   __hg_mem_alloc_with_flags) (pool, size, flags);
 	HgMemObject *obj;
 
-	hg_mem_get_object__inline(retval, obj);
-	if (obj) {
-		gint heap_id = HG_MEMOBJ_GET_HEAP_ID (obj);
-		HgHeap *h = g_ptr_array_index(obj->pool->heap_list, heap_id);
+	if (retval) {
+		hg_mem_get_object__inline(retval, obj);
+		if (obj) {
+			gint heap_id = HG_MEMOBJ_GET_HEAP_ID (obj);
+			HgHeap *h = g_ptr_array_index(obj->pool->heap_list, heap_id);
 
-		hg_memory_visualizer_set_chunk_state(HG_MEMORY_VISUALIZER (visual),
-						     hg_mem_pool_get_name(obj->pool),
-						     heap_id,
-						     (gsize)obj - (gsize)h->heaps,
-						     hg_mem_get_object_size(retval),
-						     HG_CHUNK_USED);
+			hg_memory_visualizer_set_chunk_state(HG_MEMORY_VISUALIZER (visual),
+							     hg_mem_pool_get_name(obj->pool),
+							     heap_id,
+							     (gsize)obj - (gsize)h->heaps,
+							     hg_mem_get_object_size(retval),
+							     HG_CHUNK_USED);
+		}
 	}
 
 	return retval;
@@ -130,6 +137,46 @@ hg_mem_free(gpointer data)
 	}
 
 	return ((gboolean (*) (gpointer))__hg_mem_free) (data);
+}
+
+gpointer
+hg_mem_resize(gpointer data,
+	      gsize    size)
+{
+	gpointer retval;
+	HgMemObject *obj;
+
+	hg_mem_get_object__inline(data, obj);
+	if (obj) {
+		gint heap_id = HG_MEMOBJ_GET_HEAP_ID (obj);
+		HgHeap *h = g_ptr_array_index(obj->pool->heap_list, heap_id);
+
+		hg_memory_visualizer_set_chunk_state(HG_MEMORY_VISUALIZER (visual),
+						     hg_mem_pool_get_name(obj->pool),
+						     heap_id,
+						     (gsize)obj - (gsize)h->heaps,
+						     hg_mem_get_object_size(data),
+						     HG_CHUNK_FREE);
+	}
+
+	retval = ((gpointer (*) (gpointer, gsize))__hg_mem_resize) (data, size);
+
+	if (retval) {
+		hg_mem_get_object__inline(retval, obj);
+		if (obj) {
+			gint heap_id = HG_MEMOBJ_GET_HEAP_ID (obj);
+			HgHeap *h = g_ptr_array_index(obj->pool->heap_list, heap_id);
+
+			hg_memory_visualizer_set_chunk_state(HG_MEMORY_VISUALIZER (visual),
+							     hg_mem_pool_get_name(obj->pool),
+							     heap_id,
+							     (gsize)obj - (gsize)h->heaps,
+							     hg_mem_get_object_size(retval),
+							     HG_CHUNK_USED);
+		}
+	}
+
+	return retval;
 }
 
 /*

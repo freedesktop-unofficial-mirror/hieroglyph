@@ -38,14 +38,16 @@ enum {
 
 enum {
 	POOL_UPDATED,
+	DRAW_UPDATED,
 	LAST_SIGNAL
 };
 
 struct _HgMemoryVisualizerClass {
-	GtkLayoutClass parent_class;
+	GtkMiscClass parent_class;
 
 	void (* pool_updated) (HgMemoryVisualizer *visual,
 			       gpointer            list);
+	void (* draw_updated) (HgMemoryVisualizer *visual);
 };
 
 struct Heap2Offset {
@@ -56,28 +58,36 @@ struct Heap2Offset {
 };
 
 struct _HgMemoryVisualizer {
-	GtkLayout parent_instance;
+	GtkMisc parent_instance;
 
 	/*< private >*/
 	gdouble             block_size;
-	GHashTable         *pool2size;
+	GHashTable         *pool2total_size;
+	GHashTable         *pool2used_size;
 	GHashTable         *pool2array;
 	GSList             *pool_name_list;
 	const gchar        *current_pool_name;
 	struct Heap2Offset *current_h2o;
 	gboolean            need_update;
 	guint               idle_id;
+	GdkGC              *bg_gc;
+	GdkGC              *used_gc;
+	GdkGC              *free_gc;
+	GdkGC              *used_and_free_gc;
+	GdkPixmap          *pixmap;
 };
 
 
-static struct Heap2Offset *_heap2offset_new                 (guint               prealloc);
-static void                _heap2offset_free                (gpointer            data);
-static void                _hg_memory_visualizer_add_idle   (HgMemoryVisualizer *visual);
-static void                _hg_memory_visualizer_remove_idle(HgMemoryVisualizer *visual);
+static struct Heap2Offset *_heap2offset_new                      (guint               prealloc);
+static void                _heap2offset_free                     (gpointer            data);
+static void                _hg_memory_visualizer_add_idle        (HgMemoryVisualizer *visual);
+static void                _hg_memory_visualizer_remove_idle     (HgMemoryVisualizer *visual);
+static void                _hg_memory_visualizer_create_gc       (HgMemoryVisualizer *visual);
+static void                _hg_memory_visualizer_redraw_in_pixmap(HgMemoryVisualizer *visual);
 
 
-static GtkLayoutClass *parent_class = NULL;
-static guint           signals[LAST_SIGNAL] = { 0 };
+static GtkMiscClass *parent_class = NULL;
+static guint         signals[LAST_SIGNAL] = { 0 };
 
 G_LOCK_DEFINE_STATIC (visualizer);
 
@@ -130,17 +140,42 @@ hg_memory_visualizer_real_destroy(GtkObject *object)
 	g_return_if_fail (HG_IS_MEMORY_VISUALIZER (object));
 
 	visual = HG_MEMORY_VISUALIZER (object);
-	if (visual->pool2size) {
-		g_hash_table_destroy(visual->pool2size);
-		visual->pool2size = NULL;
+	if (visual->pool2total_size) {
+		g_hash_table_destroy(visual->pool2total_size);
+		visual->pool2total_size = NULL;
+	}
+	if (visual->pool2used_size) {
+		g_hash_table_destroy(visual->pool2used_size);
+		visual->pool2used_size = NULL;
 	}
 	if (visual->pool2array) {
 		g_hash_table_destroy(visual->pool2array);
 		visual->pool2array = NULL;
 	}
+	if (visual->pool_name_list) {
+		g_slist_free(visual->pool_name_list);
+		visual->pool_name_list = NULL;
+	}
+	visual->current_pool_name = NULL;
+	visual->current_h2o = NULL;
 	_hg_memory_visualizer_remove_idle(visual);
 
-	/* FIXME: not yet implemented */
+	if (visual->bg_gc) {
+		g_object_unref(visual->bg_gc);
+		visual->bg_gc = NULL;
+	}
+	if (visual->used_gc) {
+		g_object_unref(visual->used_gc);
+		visual->used_gc = NULL;
+	}
+	if (visual->free_gc) {
+		g_object_unref(visual->free_gc);
+		visual->free_gc = NULL;
+	}
+	if (visual->used_and_free_gc) {
+		g_object_unref(visual->used_and_free_gc);
+		visual->used_and_free_gc = NULL;
+	}
 
 	(* GTK_OBJECT_CLASS (parent_class)->destroy) (object);
 }
@@ -167,16 +202,7 @@ hg_memory_visualizer_real_size_allocate(GtkWidget     *widget,
 		(* GTK_WIDGET_CLASS (parent_class)->size_allocate) (widget, allocation);
 
 	visual = HG_MEMORY_VISUALIZER (widget);
-
-	visual->parent_instance.hadjustment->page_size = allocation->width;
-	visual->parent_instance.hadjustment->page_increment = allocation->width / 2;
-	visual->parent_instance.vadjustment->page_size = allocation->height;
-	visual->parent_instance.vadjustment->page_increment = allocation->height / 2;
-
-	/* FIXME: scroll */
-
-	g_signal_emit_by_name(visual->parent_instance.hadjustment, "changed");
-	g_signal_emit_by_name(visual->parent_instance.vadjustment, "changed");
+	_hg_memory_visualizer_redraw_in_pixmap(visual);
 }
 
 static void
@@ -191,13 +217,15 @@ hg_memory_visualizer_real_realize(GtkWidget *widget)
 
 	visual = HG_MEMORY_VISUALIZER (widget);
 
-	gdk_window_set_events(visual->parent_instance.bin_window,
-			      (gdk_window_get_events(visual->parent_instance.bin_window)
-			       | GDK_EXPOSURE_MASK));
+	widget->style = gtk_style_attach(widget->style, widget->window);
+	gdk_window_set_background(widget->window, &widget->style->base[GTK_WIDGET_STATE (widget)]);
 
-	g_print("realize\n");
-	/* FIXME: not yet implemented */
-
+	if (visual->bg_gc == NULL ||
+	    visual->used_gc == NULL ||
+	    visual->free_gc == NULL ||
+	    visual->used_and_free_gc == NULL)
+		_hg_memory_visualizer_create_gc(visual);
+	_hg_memory_visualizer_redraw_in_pixmap(visual);
 }
 
 static void
@@ -210,6 +238,23 @@ hg_memory_visualizer_real_unrealize(GtkWidget *widget)
 	visual = HG_MEMORY_VISUALIZER (widget);
 
 	_hg_memory_visualizer_remove_idle(visual);
+
+	if (visual->bg_gc) {
+		g_object_unref(visual->bg_gc);
+		visual->bg_gc = NULL;
+	}
+	if (visual->used_gc) {
+		g_object_unref(visual->used_gc);
+		visual->used_gc = NULL;
+	}
+	if (visual->free_gc) {
+		g_object_unref(visual->free_gc);
+		visual->free_gc = NULL;
+	}
+	if (visual->used_and_free_gc) {
+		g_object_unref(visual->used_and_free_gc);
+		visual->used_and_free_gc = NULL;
+	}
 	g_print("unrealize\n");
 	/* FIXME: not yet implemented */
 
@@ -231,10 +276,6 @@ hg_memory_visualizer_real_map(GtkWidget *widget)
 
 	if (visual->need_update)
 		_hg_memory_visualizer_add_idle(visual);
-
-	g_print("map\n");
-	/* FIXME: not yet implemented */
-
 }
 
 static void
@@ -247,8 +288,6 @@ hg_memory_visualizer_real_unmap(GtkWidget *widget)
 	visual = HG_MEMORY_VISUALIZER (widget);
 
 	_hg_memory_visualizer_remove_idle(visual);
-	g_print("unmap\n");
-	/* FIXME: not yet implemented */
 
 	if (GTK_WIDGET_CLASS (parent_class)->unmap)
 		(* GTK_WIDGET_CLASS (parent_class)->unmap) (widget);
@@ -259,17 +298,23 @@ hg_memory_visualizer_real_expose(GtkWidget      *widget,
 				 GdkEventExpose *event)
 {
 	HgMemoryVisualizer *visual;
+	GtkMisc *misc;
 
 	g_return_val_if_fail (HG_IS_MEMORY_VISUALIZER (widget), FALSE);
 	g_return_val_if_fail (event != NULL, FALSE);
 
+	misc = GTK_MISC (widget);
 	visual = HG_MEMORY_VISUALIZER (widget);
 
-	if (!GTK_WIDGET_DRAWABLE (widget) || (event->window != visual->parent_instance.bin_window))
+	if (!GTK_WIDGET_MAPPED (widget))
 		return FALSE;
 
-	g_print("expose\n");
-	/* FIXME: not yet implemented */
+	gdk_draw_drawable(widget->window,
+			  widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
+			  visual->pixmap,
+			  event->area.x, event->area.y,
+			  event->area.x, event->area.y,
+			  event->area.width, event->area.height);
 
 	return FALSE;
 }
@@ -324,19 +369,31 @@ hg_memory_visualizer_class_init(HgMemoryVisualizerClass *klass)
 					     gtk_marshal_VOID__POINTER,
 					     G_TYPE_NONE, 1,
 					     G_TYPE_POINTER);
+	signals[DRAW_UPDATED] = g_signal_new("draw-updated",
+					     G_OBJECT_CLASS_TYPE (klass),
+					     G_SIGNAL_RUN_FIRST,
+					     G_STRUCT_OFFSET (HgMemoryVisualizerClass, draw_updated),
+					     NULL, NULL,
+					     gtk_marshal_VOID__VOID,
+					     G_TYPE_NONE, 0);
 }
 
 static void
 hg_memory_visualizer_instance_init(HgMemoryVisualizer *visual)
 {
-	visual->block_size = 0.0L;
-	visual->pool2size = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+	visual->pool2total_size = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+	visual->pool2used_size = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 	visual->pool2array = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, _heap2offset_free);
 	visual->pool_name_list = NULL;
 	visual->current_pool_name = NULL;
 	visual->current_h2o = NULL;
 	visual->need_update = FALSE;
 	visual->idle_id = 0;
+	visual->bg_gc = NULL;
+	visual->used_gc = NULL;
+	visual->free_gc = NULL;
+	visual->used_and_free_gc = NULL;
+	visual->pixmap = NULL;
 }
 
 static struct Heap2Offset *
@@ -374,14 +431,18 @@ _hg_memory_visualizer_idle_handler_cb(gpointer data)
 {
 	HgMemoryVisualizer *visual;
 
+	visual = HG_MEMORY_VISUALIZER (data);
+	_hg_memory_visualizer_redraw_in_pixmap(visual);
+
 	G_LOCK (visualizer);
 
-	visual = HG_MEMORY_VISUALIZER (data);
 	gtk_widget_queue_draw(GTK_WIDGET (visual));
 	visual->idle_id = 0;
 	visual->need_update = FALSE;
 
 	G_UNLOCK (visualizer);
+
+	g_signal_emit(visual, signals[DRAW_UPDATED], 0);
 
 	return FALSE;
 }
@@ -402,6 +463,116 @@ _hg_memory_visualizer_remove_idle(HgMemoryVisualizer *visual)
 	if (visual->idle_id != 0) {
 		gtk_idle_remove(visual->idle_id);
 		visual->idle_id = 0;
+	}
+}
+
+static void
+_hg_memory_visualizer_create_gc(HgMemoryVisualizer *visual)
+{
+	GdkGCValues values;
+
+	gdk_color_black(gdk_colormap_get_system(), &values.background);
+	visual->bg_gc = gdk_gc_new_with_values(GTK_WIDGET (visual)->window, &values,
+					       GDK_GC_BACKGROUND);
+	values.foreground.pixel = 0;
+	values.foreground.red = 0;
+	values.foreground.green = 0;
+	values.foreground.blue = 32768;
+	gdk_colormap_alloc_color(gdk_colormap_get_system(), &values.foreground, FALSE, FALSE);
+	visual->free_gc = gdk_gc_new_with_values(GTK_WIDGET (visual)->window, &values,
+						 GDK_GC_FOREGROUND);
+	values.foreground.pixel = 0;
+	values.foreground.red = 32768;
+	values.foreground.green = 0;
+	values.foreground.blue = 0;
+	gdk_colormap_alloc_color(gdk_colormap_get_system(), &values.foreground, FALSE, FALSE);
+	visual->used_gc = gdk_gc_new_with_values(GTK_WIDGET (visual)->window, &values,
+						 GDK_GC_FOREGROUND);
+	values.foreground.pixel = 0;
+	values.foreground.red = 32768;
+	values.foreground.green = 0;
+	values.foreground.blue = 32768;
+	gdk_colormap_alloc_color(gdk_colormap_get_system(), &values.foreground, FALSE, FALSE);
+	visual->used_and_free_gc = gdk_gc_new_with_values(GTK_WIDGET (visual)->window, &values,
+						 GDK_GC_FOREGROUND);
+}
+
+static void
+_hg_memory_visualizer_redraw_in_pixmap(HgMemoryVisualizer *visual)
+{
+	GtkWidget *widget = GTK_WIDGET (visual);
+	GtkMisc *misc = GTK_MISC (visual);
+	gint i, j, base_x, base_y, x, y, width, height, base_scale, block_size, area;
+
+	if (GTK_WIDGET_REALIZED (widget)) {
+		G_LOCK (visualizer);
+
+		if (visual->pixmap)
+			g_object_unref(G_OBJECT (visual->pixmap));
+		visual->pixmap = gdk_pixmap_new(widget->window,
+						widget->allocation.width,
+						widget->allocation.height,
+						-1);
+		base_x = x = misc->xpad;
+		base_y = y = misc->ypad;
+		width = widget->allocation.width - misc->xpad;
+		height = widget->allocation.height - misc->ypad;
+		area = (gdouble)(width - base_x) * (gdouble)(height - base_y);
+		/* draw a background */
+		gdk_draw_rectangle(visual->pixmap,
+				   visual->bg_gc,
+				   TRUE,
+				   x, y, width, height);
+		/* draw a memory images */
+		if (visual->current_h2o) {
+			struct Heap2Offset *h2o = visual->current_h2o;
+			gint _used = 0, _free = 0, _scale;
+			GdkGC *gc;
+
+			if (area >= h2o->total_size) {
+				block_size = (gint)sqrt(area / h2o->total_size);
+				base_scale = 1;
+			} else {
+				base_scale = (gint)(1 / sqrt((gdouble)area / (gdouble)h2o->total_size));
+				base_scale *= base_scale;
+				block_size = 1;
+			}
+			_scale = base_scale;
+			for (i = 0; i < h2o->total_size / 8; i++) {
+				for (j = 7; j >= 0; j--) {
+					if ((x + block_size) > width) {
+						x = base_x;
+						y += block_size;
+					}
+					if ((h2o->bitmaps[i] & (1 << j)) != 0) {
+						_used++;
+					} else {
+						_free++;
+					}
+					_scale--;
+					if (_scale == 0) {
+						if (_used > 0 && _free == 0)
+							gc = visual->used_gc;
+						else if (_used == 0 && _free > 0)
+							gc = visual->free_gc;
+						else
+							gc = visual->used_and_free_gc;
+						gdk_draw_rectangle(visual->pixmap,
+								   gc,
+								   TRUE,
+								   x, y,
+								   block_size, block_size);
+						x += block_size;
+						_scale = base_scale;
+						_used = 0;
+						_free = 0;
+					}
+				}
+			}
+		}
+		visual->need_update = TRUE;
+		_hg_memory_visualizer_add_idle(visual);
+		G_UNLOCK (visualizer);
 	}
 }
 
@@ -427,7 +598,7 @@ hg_memory_visualizer_get_type(void)
 			.value_table    = NULL,
 		};
 
-		mv_type = g_type_register_static(GTK_TYPE_LAYOUT, "HgMemoryVisualizer",
+		mv_type = g_type_register_static(GTK_TYPE_MISC, "HgMemoryVisualizer",
 						 &mv_info, 0);
 	}
 
@@ -445,15 +616,12 @@ hg_memory_visualizer_set_max_size(HgMemoryVisualizer *visual,
 				  const gchar        *name,
 				  gsize               size)
 {
-	gsize area;
-	gdouble scale;
 	struct Heap2Offset *h2o;
 
 	g_return_if_fail (HG_IS_MEMORY_VISUALIZER (visual));
 	g_return_if_fail (name != NULL);
 
-	area = visual->parent_instance.width * visual->parent_instance.height;
-	g_hash_table_insert(visual->pool2size, g_strdup(name), GSIZE_TO_POINTER (size));
+	g_hash_table_insert(visual->pool2total_size, g_strdup(name), GSIZE_TO_POINTER (size));
 	if ((h2o = g_hash_table_lookup(visual->pool2array, name)) == NULL) {
 		h2o = _heap2offset_new(256);
 		g_hash_table_insert(visual->pool2array, g_strdup(name), h2o);
@@ -472,12 +640,6 @@ hg_memory_visualizer_set_max_size(HgMemoryVisualizer *visual,
 		h2o->bitmaps = g_new0(gchar, (size + 8) / 8);
 	}
 	h2o->total_size = size;
-	if (area > size) {
-		scale = area / size;
-		visual->block_size = sqrt(scale);
-	} else {
-		/* FIXME: need to scale up to fit in */
-	}
 }
 
 gsize
@@ -487,7 +649,7 @@ hg_memory_visualizer_get_max_size(HgMemoryVisualizer *visual,
 	g_return_val_if_fail (HG_IS_MEMORY_VISUALIZER (visual), 0);
 	g_return_val_if_fail (name != NULL, 0);
 
-	return GPOINTER_TO_SIZE (g_hash_table_lookup(visual->pool2size, name));
+	return GPOINTER_TO_SIZE (g_hash_table_lookup(visual->pool2total_size, name));
 }
 
 void
@@ -538,7 +700,7 @@ hg_memory_visualizer_set_chunk_state(HgMemoryVisualizer *visual,
 				     HgMemoryChunkState  state)
 {
 	struct Heap2Offset *h2o;
-	gsize base, location, start, end, i;
+	gsize base, location, start, end, i, used_size;
 	gint bit;
 
 	g_return_if_fail (HG_IS_MEMORY_VISUALIZER (visual));
@@ -552,21 +714,30 @@ hg_memory_visualizer_set_chunk_state(HgMemoryVisualizer *visual,
 	base = h2o->heap2offset[heap_id];
 	start = base + offset;
 	end = start + size;
+
+	G_LOCK (visualizer);
+
+	used_size = hg_memory_visualizer_get_used_size(visual, name);
 	for (i = start; i < end; i++) {
 		location = i / 8;
 		bit = 7 - (i % 8);
 		switch (state) {
 		    case HG_CHUNK_FREE:
 			    h2o->bitmaps[location] &= ~(1 << bit);
+			    if (i == start)
+				    used_size -= size;
 			    break;
 		    case HG_CHUNK_USED:
 			    h2o->bitmaps[location] |= (1 << bit);
+			    if (i == start)
+				    used_size += size;
 			    break;
 		    default:
 			    break;
 		}
 	}
-	G_LOCK (visualizer);
+	g_hash_table_insert(visual->pool2used_size, g_strdup(name), GSIZE_TO_POINTER (used_size));
+
 	visual->need_update = TRUE;
 	_hg_memory_visualizer_add_idle(visual);
 	G_UNLOCK (visualizer);
@@ -582,12 +753,25 @@ hg_memory_visualizer_change_pool(HgMemoryVisualizer *visual,
 	if (g_slist_find(visual->pool_name_list, name) != NULL) {
 		visual->current_pool_name = name;
 		visual->current_h2o = g_hash_table_lookup(visual->pool2array, name);
-		G_LOCK (visualizer);
-		visual->need_update = TRUE;
-		_hg_memory_visualizer_add_idle(visual);
-		G_UNLOCK (visualizer);
+		_hg_memory_visualizer_redraw_in_pixmap(visual);
 	} else {
 		/* send a signal to update the out of date list */
 		g_signal_emit(visual, signals[POOL_UPDATED], 0, visual->pool_name_list);
 	}
+}
+
+gsize
+hg_memory_visualizer_get_used_size(HgMemoryVisualizer *visual,
+				   const gchar        *name)
+{
+	g_return_val_if_fail (HG_IS_MEMORY_VISUALIZER (visual), 0);
+	g_return_val_if_fail (name != NULL, 0);
+
+	return GPOINTER_TO_SIZE (g_hash_table_lookup(visual->pool2used_size, name));
+}
+
+const gchar *
+hg_memory_visualizer_get_current_pool_name(HgMemoryVisualizer *visual)
+{
+	return visual->current_pool_name;
 }
