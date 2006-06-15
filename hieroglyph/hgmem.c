@@ -238,6 +238,7 @@ hg_mem_pool_new(HgAllocator *allocator,
 	pool->use_gc = TRUE;
 	pool->is_global_mode = FALSE;
 	pool->is_processing = FALSE;
+	pool->is_collecting = FALSE;
 	pool->gc_threshold = 50;
 	allocator->used = TRUE;
 	if (!allocator->vtable->initialize(pool, prealloc)) {

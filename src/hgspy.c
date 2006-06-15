@@ -64,6 +64,7 @@ _hgspy_vm_thread(gpointer data)
 	libretto_vm_init();
 	spy->vm = libretto_vm_new(LB_EMULATION_LEVEL_1);
 	libretto_vm_startjob(spy->vm, spy->file, TRUE);
+	libretto_vm_finalize();
 
 	return NULL;
 }
@@ -202,7 +203,6 @@ _hgspy_pool_updated_cb(HgMemoryVisualizer *visual,
 	gulong sigid;
 
 	g_return_if_fail (HG_IS_MEMORY_VISUALIZER (visual));
-	g_return_if_fail (list != NULL);
 
 	bin = gtk_ui_manager_get_widget(spy->ui, "/MenuBar/ViewMenu/PoolMenu");
 	menu = gtk_menu_item_get_submenu(GTK_MENU_ITEM (bin));
@@ -229,6 +229,12 @@ _hgspy_pool_updated_cb(HgMemoryVisualizer *visual,
 		gtk_menu_shell_append(GTK_MENU_SHELL (menu), menuitem);
 		gtk_widget_show(menuitem);
 	}
+	if (sigwidget == NULL) {
+		menuitem = gtk_menu_item_new_with_label(_("None"));
+		gtk_menu_shell_append(GTK_MENU_SHELL (menu), menuitem);
+		gtk_widget_set_sensitive(menuitem, FALSE);
+		gtk_widget_show(menuitem);
+	}
 	g_object_set_data(G_OBJECT (menu), "signal-widget-list", sigwidget);
 	gtk_menu_item_set_submenu(GTK_MENU_ITEM (bin), menu);
 }
@@ -244,9 +250,7 @@ _hgspy_draw_updated_cb(HgMemoryVisualizer *visual,
 	g_return_if_fail (data != NULL);
 
 	name = hg_memory_visualizer_get_current_pool_name(visual);
-	if (name) {
-		_hgspy_update_vm_status(visual, spy, name);
-	}
+	_hgspy_update_vm_status(visual, spy, name);
 }
 
 static void
@@ -259,19 +263,24 @@ _hgspy_update_vm_status(HgMemoryVisualizer *visual,
 
 	g_return_if_fail (HG_IS_MEMORY_VISUALIZER (visual));
 	g_return_if_fail (spy != NULL);
-	g_return_if_fail (name != NULL);
 
-	total = hg_memory_visualizer_get_max_size(visual, name);
-	p = g_strdup_printf("%d", total);
-	gtk_entry_set_text(GTK_ENTRY (spy->total_vm_size), p);
-	g_free(p);
-	used = hg_memory_visualizer_get_used_size(visual, name);
-	p = g_strdup_printf("%d", used);
-	gtk_entry_set_text(GTK_ENTRY (spy->used_vm_size), p);
-	g_free(p);
-	p = g_strdup_printf("%d", total - used);
-	gtk_entry_set_text(GTK_ENTRY (spy->free_vm_size), p);
-	g_free(p);
+	if (name) {
+		total = hg_memory_visualizer_get_max_size(visual, name);
+		p = g_strdup_printf("%d", total);
+		gtk_entry_set_text(GTK_ENTRY (spy->total_vm_size), p);
+		g_free(p);
+		used = hg_memory_visualizer_get_used_size(visual, name);
+		p = g_strdup_printf("%d", used);
+		gtk_entry_set_text(GTK_ENTRY (spy->used_vm_size), p);
+		g_free(p);
+		p = g_strdup_printf("%d", total - used);
+		gtk_entry_set_text(GTK_ENTRY (spy->free_vm_size), p);
+		g_free(p);
+	} else {
+		gtk_entry_set_text(GTK_ENTRY (spy->total_vm_size), "");
+		gtk_entry_set_text(GTK_ENTRY (spy->used_vm_size), "");
+		gtk_entry_set_text(GTK_ENTRY (spy->free_vm_size), "");
+	}
 }
 
 /*

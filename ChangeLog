@@ -1,5 +1,21 @@
 2006-06-15  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_garbage_collection):
+	use a flag instead of mutex lock.
+
+	* src/visualizer.c (hg_memory_visualizer_real_destroy): free a node in
+	pool_name_list.
+	(_hg_memory_visualizer_compare_pool_name_list): new function.
+	(hg_memory_visualizer_remove_pool): new function.
+
+	* src/hgspy.c (_hgspy_vm_thread): finalize vm instance.
+	(_hgspy_pool_updated_cb): allow NULL for name and add None item to menu
+	when no menuitem is added.
+	(_hgspy_update_vm_status): clear text when name is NULL.
+
+	* src/hgspy_helper.c (helper_init): watch hg_mem_pool_destroy as well.
+	(hg_mem_pool_destroy): new function.
+
 	* src/visualizer.c (hg_memory_visualizer_real_size_allocate):
 	implemented.
 	(hg_memory_visualizer_real_realize): implemented.

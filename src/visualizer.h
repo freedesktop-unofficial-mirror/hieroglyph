@@ -56,6 +56,8 @@ gsize        hg_memory_visualizer_get_max_size         (HgMemoryVisualizer *visu
 void         hg_memory_visualizer_set_heap_state       (HgMemoryVisualizer *visual,
 							const gchar        *name,
 							HgHeap             *heap);
+void         hg_memory_visualizer_remove_pool          (HgMemoryVisualizer *visual,
+							const gchar        *name);
 void         hg_memory_visualizer_set_chunk_state      (HgMemoryVisualizer *visual,
 							const gchar        *name,
 							gint                heap_id,

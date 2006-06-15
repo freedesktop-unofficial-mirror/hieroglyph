@@ -55,6 +55,7 @@ struct _HieroGlyphMemPool {
 	gboolean     use_gc : 1;
 	gboolean     is_global_mode : 1;
 	gboolean     is_processing : 1;
+	gboolean     is_collecting : 1;
 };
 
 struct _HieroGlyphMemSnapshot {

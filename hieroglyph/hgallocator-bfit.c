@@ -111,8 +111,6 @@ static HgObjectVTable __hg_snapshot_vtable = {
 	.to_string = _hg_allocator_bfit_snapshot_real_to_string,
 };
 
-G_LOCK_DEFINE_STATIC (hg_allocator_bfit);
-
 /*
  * Private Functions
  */
@@ -646,14 +644,18 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 	gboolean retval = FALSE;
 	GList *reflist;
 
-	G_LOCK (hg_allocator_bfit);
-
+	if (pool->is_collecting) {
+		/* just return without doing anything */
+		return FALSE;
+	}
+	pool->is_collecting = TRUE;
 #ifdef DEBUG_GC
 	g_print("DEBUG_GC: starting GC for %s\n", pool->name);
 #endif /* DEBUG_GC */
 	if (!pool->destroyed) {
 		if (!pool->use_gc) {
-			G_UNLOCK (hg_allocator_bfit);
+			pool->is_collecting = FALSE;
+
 			return FALSE;
 		}
 #ifdef DEBUG_GC
@@ -713,7 +715,7 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 		}
 		pool->is_processing = FALSE;
 	}
-	G_UNLOCK (hg_allocator_bfit);
+	pool->is_collecting = FALSE;
 
 	return retval;
 }

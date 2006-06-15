@@ -66,7 +66,7 @@ struct _HgMemoryVisualizer {
 	GHashTable         *pool2used_size;
 	GHashTable         *pool2array;
 	GSList             *pool_name_list;
-	const gchar        *current_pool_name;
+	gchar              *current_pool_name;
 	struct Heap2Offset *current_h2o;
 	gboolean            need_update;
 	guint               idle_id;
@@ -153,6 +153,10 @@ hg_memory_visualizer_real_destroy(GtkObject *object)
 		visual->pool2array = NULL;
 	}
 	if (visual->pool_name_list) {
+		GSList *l;
+
+		for (l = visual->pool_name_list; l != NULL; l = g_slist_next(l))
+			g_free(l->data);
 		g_slist_free(visual->pool_name_list);
 		visual->pool_name_list = NULL;
 	}
@@ -577,6 +581,13 @@ _hg_memory_visualizer_redraw_in_pixmap(HgMemoryVisualizer *visual)
 	}
 }
 
+static gint
+_hg_memory_visualizer_compare_pool_name_list(gconstpointer a,
+					     gconstpointer b)
+{
+	return strcmp(a, b);
+}
+
 /*
  * Public Functions
  */
@@ -686,10 +697,47 @@ hg_memory_visualizer_set_heap_state(HgMemoryVisualizer *visual,
 	visual->pool_name_list = g_slist_append(visual->pool_name_list,
 						g_strdup(name));
 	if (visual->current_pool_name == NULL) {
-		visual->current_pool_name = name;
+		visual->current_pool_name = g_strdup(name);
 		visual->current_h2o = h2o;
 	}
 	g_signal_emit(visual, signals[POOL_UPDATED], 0, visual->pool_name_list);
+}
+
+void
+hg_memory_visualizer_remove_pool(HgMemoryVisualizer *visual,
+				 const gchar        *name)
+{
+	GSList *l;
+
+	g_return_if_fail (HG_IS_MEMORY_VISUALIZER (visual));
+	g_return_if_fail (name != NULL);
+
+	if ((l = g_slist_find_custom(visual->pool_name_list,
+				     name,
+				     _hg_memory_visualizer_compare_pool_name_list)) == NULL) {
+		g_warning("pool %s isn't registered.", name);
+		return;
+	}
+
+	G_LOCK (visualizer);
+
+	g_hash_table_remove(visual->pool2total_size, name);
+	g_hash_table_remove(visual->pool2used_size, name);
+	g_hash_table_remove(visual->pool2array, name);
+	g_free(l->data);
+	visual->pool_name_list = g_slist_delete_link(visual->pool_name_list, l);
+
+	if (strcmp(name, visual->current_pool_name) == 0) {
+		const gchar *pool_name;
+
+		if (visual->pool_name_list)
+			pool_name = visual->pool_name_list->data;
+		else
+			pool_name = "";
+		hg_memory_visualizer_change_pool(visual, pool_name);
+	}
+
+	G_UNLOCK (visualizer);
 }
 
 void
@@ -754,13 +802,20 @@ hg_memory_visualizer_change_pool(HgMemoryVisualizer *visual,
 	g_return_if_fail (name != NULL);
 
 	if (g_slist_find(visual->pool_name_list, name) != NULL) {
-		visual->current_pool_name = name;
+		if (visual->current_pool_name)
+			g_free(visual->current_pool_name);
+		visual->current_pool_name = g_strdup(name);
 		visual->current_h2o = g_hash_table_lookup(visual->pool2array, name);
-		_hg_memory_visualizer_redraw_in_pixmap(visual);
 	} else {
 		/* send a signal to update the out of date list */
+		if (visual->current_pool_name)
+			g_free(visual->current_pool_name);
+		visual->current_pool_name = NULL;
+		visual->current_h2o = NULL;
 		g_signal_emit(visual, signals[POOL_UPDATED], 0, visual->pool_name_list);
 	}
+	visual->need_update = TRUE;
+	_hg_memory_visualizer_add_idle(visual);
 }
 
 gsize

@@ -32,6 +32,7 @@
 #include "visualizer.h"
 
 
+static gpointer __hg_mem_pool_destroy = NULL;
 static gpointer __hg_mem_pool_add_heap = NULL;
 static gpointer __hg_mem_alloc_with_flags = NULL;
 static gpointer __hg_mem_free = NULL;
@@ -49,6 +50,10 @@ helper_init(void)
 	__handle = g_module_open("libhieroglyph.so", 0);
 	if (__handle == NULL) {
 		g_warning("Failed g_module_open: %s", g_module_error());
+		exit(1);
+	}
+	if (!g_module_symbol(__handle, "hg_mem_pool_destroy", &__hg_mem_pool_destroy)) {
+		g_warning("Failed g_module_symbol: %s", g_module_error());
 		exit(1);
 	}
 	if (!g_module_symbol(__handle, "hg_mem_pool_add_heap", &__hg_mem_pool_add_heap)) {
@@ -81,6 +86,18 @@ helper_finalize(void)
 /*
  * preload functions
  */
+void
+hg_mem_pool_destroy(HgMemPool *pool)
+{
+	gchar *pool_name = g_strdup(hg_mem_pool_get_name(pool));
+
+	((void (*) (HgMemPool *))__hg_mem_pool_destroy) (pool);
+
+	hg_memory_visualizer_remove_pool(HG_MEMORY_VISUALIZER (visual),
+					 pool_name);
+	g_free(pool_name);
+}
+
 void
 hg_mem_pool_add_heap(HgMemPool *pool,
 		     HgHeap    *heap)
