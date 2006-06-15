@@ -151,13 +151,16 @@ _hgspy_file_write_cb(gpointer      user_data,
 	HgSpy *spy = user_data;
 	GtkTextBuffer *textbuf = gtk_text_view_get_buffer(GTK_TEXT_VIEW (spy->textview));
 	GtkTextIter iter;
+	gdouble val;
 
 	/* to be thread-safe */
 	gdk_threads_enter();
 
 	gtk_text_buffer_get_end_iter(textbuf, &iter);
 	gtk_text_buffer_insert(textbuf, &iter, buffer, size * n);
-	gtk_text_buffer_place_cursor(textbuf, &iter);
+	val = GTK_TEXT_VIEW (spy->textview)->vadjustment->upper;
+	gtk_adjustment_set_value(GTK_TEXT_VIEW (spy->textview)->vadjustment,
+				 val);
 
 	gdk_flush();
 	gdk_threads_leave();
@@ -811,9 +814,11 @@ main(int    argc,
 	gtk_main();
 	gdk_threads_leave();
 
-	spy->destroyed = TRUE;
-	while (spy->destroyed)
-		sleep(1);
+	if (spy->vm) {
+		spy->destroyed = TRUE;
+		while (spy->destroyed)
+			sleep(1);
+	}
 
 	/* finalize */
 	g_module_close(module);

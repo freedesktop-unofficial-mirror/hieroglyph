@@ -1,6 +1,8 @@
 2006-06-16  Akira TAGOH  <at@gclab.org>
 
 	* src/hgspy.c (_hgspy_quit_cb): new function.
+	(_hgspy_file_write_cb): scroll up to the latest output.
+	(main): only wait for finalize process when VM is running.
 
 	* src/visualizer.c (_hg_memory_visualizer_idle_handler_cb): update
 	a pixmap in lock.
