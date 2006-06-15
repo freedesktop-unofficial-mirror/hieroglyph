@@ -52,6 +52,7 @@ struct _HieroGlyphSpy {
 	gchar        *file;
 	gint          error;
 	gchar        *statementedit_buffer;
+	gboolean      destroyed;
 };
 
 static void _hgspy_update_vm_status(HgMemoryVisualizer *visual,
@@ -111,7 +112,7 @@ _hgspy_file_read_cb(gpointer user_data,
 	HgSpy *spy = user_data;
 	gsize retval = 0;
 
-	while (spy->statementedit_buffer == NULL)
+	while (spy->statementedit_buffer == NULL && !spy->destroyed)
 		sleep(1);
 
 	if (spy->statementedit_buffer) {
@@ -276,7 +277,10 @@ _hgspy_vm_thread(gpointer data)
 	libretto_vm_startjob(spy->vm, filename, TRUE);
 	unlink(filename);
 	g_free(filename);
+	hg_mem_free(spy->vm);
+	spy->vm = NULL;
 	libretto_vm_finalize();
+	spy->destroyed = FALSE;
 
 	return NULL;
 }
@@ -289,6 +293,43 @@ _hgspy_run_vm(HgSpy       *spy,
 	}
 	spy->file = g_strdup(file);
 	spy->vm_thread = g_thread_create(_hgspy_vm_thread, spy, FALSE, NULL);
+}
+
+static gboolean
+_hgspy_quit_cb(GtkWidget   *widget,
+	       GdkEventAny *event,
+	       gpointer     data)
+{
+	HgSpy *spy = data;
+	gboolean retval = TRUE;
+
+	if (spy->vm) {
+		GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW (spy->window),
+							   GTK_DIALOG_MODAL,
+							   GTK_MESSAGE_QUESTION,
+							   GTK_BUTTONS_YES_NO,
+							   _("Hieroglyph VM is still running.\nAre you sure that you really want to quit?"));
+		gint result = gtk_dialog_run (GTK_DIALOG (dialog));
+
+		switch (result) {
+		    case GTK_RESPONSE_YES:
+			    retval = FALSE;
+			    break;
+		    case GTK_RESPONSE_NO:
+		    default:
+			    break;
+		}
+
+		gtk_widget_destroy(dialog);
+	} else {
+		retval = FALSE;
+	}
+	if (!retval) {
+		gtk_widget_unrealize(spy->window);
+		gtk_main_quit();
+	}
+
+	return TRUE;
 }
 
 static void
@@ -351,7 +392,7 @@ static void
 _hgspy_action_menubar_quit_cb(GtkAction *action,
 			      HgSpy     *spy)
 {
-	gtk_main_quit();
+	_hgspy_quit_cb(spy->window, NULL, spy);
 }
 
 static void
@@ -658,6 +699,7 @@ main(int    argc,
 	spy->file = NULL;
 	spy->error = 0;
 	spy->statementedit_buffer = NULL;
+	spy->destroyed = FALSE;
 
 	actions = gtk_action_group_new("MenuBar");
 	spy->ui = gtk_ui_manager_new();
@@ -758,7 +800,7 @@ main(int    argc,
 	g_signal_connect(spy->visualizer, "draw-updated",
 			 G_CALLBACK (_hgspy_draw_updated_cb), spy);
 	g_signal_connect(spy->window, "delete-event",
-			 G_CALLBACK (gtk_main_quit), NULL);
+			 G_CALLBACK (_hgspy_quit_cb), spy);
 	g_signal_connect(spy->entry, "activate",
 			 G_CALLBACK (_hgspy_entry_activate_cb), spy);
 
@@ -768,6 +810,10 @@ main(int    argc,
 	gdk_threads_enter();
 	gtk_main();
 	gdk_threads_leave();
+
+	spy->destroyed = TRUE;
+	while (spy->destroyed)
+		sleep(1);
 
 	/* finalize */
 	g_module_close(module);

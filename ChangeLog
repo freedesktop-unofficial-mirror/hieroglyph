@@ -1,5 +1,7 @@
 2006-06-16  Akira TAGOH  <at@gclab.org>
 
+	* src/hgspy.c (_hgspy_quit_cb): new function.
+
 	* src/visualizer.c (_hg_memory_visualizer_idle_handler_cb): update
 	a pixmap in lock.
 

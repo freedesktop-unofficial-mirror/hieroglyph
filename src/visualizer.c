@@ -235,8 +235,6 @@ hg_memory_visualizer_real_unrealize(GtkWidget *widget)
 		g_object_unref(visual->used_and_free_gc);
 		visual->used_and_free_gc = NULL;
 	}
-	g_print("unrealize\n");
-	/* FIXME: not yet implemented */
 
 	if (GTK_WIDGET_CLASS (parent_class)->unrealize)
 		(* GTK_WIDGET_CLASS (parent_class)->unrealize) (widget);
@@ -785,9 +783,7 @@ hg_memory_visualizer_change_pool(HgMemoryVisualizer *visual,
 		visual->current_pool_name = NULL;
 		visual->current_h2o = NULL;
 
-		gdk_threads_enter();
 		g_signal_emit(visual, signals[POOL_UPDATED], 0, visual->pool_name_list);
-		gdk_threads_leave();
 	}
 	visual->need_update = TRUE;
 	_hg_memory_visualizer_add_idle(visual);
