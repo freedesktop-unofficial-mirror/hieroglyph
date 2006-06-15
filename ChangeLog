@@ -1,5 +1,7 @@
 2006-06-16  Akira TAGOH  <at@gclab.org>
 
+	* src/hgspy.c (main): changed the default window size.
+
 	* hieroglyph/hgfile.c (_hg_file_object_real_free): add
 	HG_FILE_TYPE_BUFFER_WITH_CALLBACK support.
 	(hg_file_object_new): likewise.

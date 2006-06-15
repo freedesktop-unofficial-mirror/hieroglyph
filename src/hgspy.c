@@ -685,7 +685,7 @@ main(int    argc,
 				     spy);
 
 	/* setup UI */
-	gtk_window_set_default_size(GTK_WINDOW (spy->window), 100, 100);
+	gtk_window_set_default_size(GTK_WINDOW (spy->window), 400, 300);
 	gtk_window_set_title(GTK_WINDOW (spy->window), "Memory Visualizer for Hieroglyph");
 	gtk_ui_manager_add_ui_from_string(spy->ui, uixml, strlen(uixml), NULL);
 	gtk_ui_manager_insert_action_group(spy->ui, actions, 0);
