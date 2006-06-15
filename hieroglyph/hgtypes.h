@@ -42,6 +42,7 @@ typedef struct _HieroGlyphValueNode		HgValueNode;
 typedef struct _HieroGlyphArray			HgArray;
 typedef struct _HieroGlyphDict			HgDict;
 typedef struct _HieroGlyphFileObject		HgFileObject;
+typedef struct _HieroGlyphFileObjectCallback	HgFileObjectCallback;
 typedef struct _HieroGlyphString		HgString;
 typedef struct _HieroGlyphColor			HgColor;
 typedef struct _HieroGlyphRenderFill		HgRenderFill;
@@ -118,6 +119,7 @@ typedef enum {
 	HG_FILE_TYPE_STDERR,
 	HG_FILE_TYPE_STATEMENT_EDIT,
 	HG_FILE_TYPE_LINE_EDIT,
+	HG_FILE_TYPE_BUFFER_WITH_CALLBACK,
 	HG_FILE_TYPE_END
 } HgFileType;
 
@@ -272,6 +274,22 @@ struct _HieroGlyphValueNode {
 		gdouble  real;
 		gpointer pointer;
 	} v;
+};
+
+struct _HieroGlyphFileObjectCallback {
+	gsize    (* read)           (gpointer      user_data,
+				     gpointer      buffer,
+				     gsize         size,
+				     gsize         n);
+	gsize    (* write)          (gpointer      user_data,
+				     gconstpointer buffer,
+				     gsize         size,
+				     gsize         n);
+	gchar    (* getc)           (gpointer      user_data);
+	gboolean (* flush)          (gpointer      user_data);
+	gboolean (* is_eof)         (gpointer      user_data);
+	void     (* clear_eof)      (gpointer      uesr_data);
+	gint     (* get_error_code) (gpointer      user_data);
 };
 
 struct _HieroGlyphColor {

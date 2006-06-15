@@ -1,3 +1,31 @@
+2006-06-16  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgfile.c (_hg_file_object_real_free): add
+	HG_FILE_TYPE_BUFFER_WITH_CALLBACK support.
+	(hg_file_object_new): likewise.
+	(hg_file_object_has_error): likewise.
+	(hg_file_object_read): likewise.
+	(hg_file_object_write): likewise.
+	(hg_file_object_getc): likewise.
+	(hg_file_object_flush): new function.
+
+	* src/visualizer.c (hg_memory_visualizer_set_max_size): fixed memory
+	corruption.
+	(hg_memory_visualizer_set_heap_state): don't add a pool name when it's
+	already in pool_name_list.
+
+	* src/hgspy.c (_hgspy_op_private_statementedit): new function to take
+	over the statementedit.
+	(_hgspy_file_read_cb): new function.
+	(_hgspy_file_write_cb): new function.
+	(_hgspy_file_is_eof_cb): new function.
+	(_hgspy_file_get_error_code_cb): new function.
+	(_hgspy_vm_thread): override stdin/stdout in VM, and ..statementedit
+	operator.
+	(_hgspy_entry_activate_cb): new function.
+	(main): invoke gdk_threads_init first.
+	(main): add input/output widget.
+
 2006-06-15  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_garbage_collection):

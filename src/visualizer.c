@@ -96,40 +96,6 @@ G_LOCK_DEFINE_STATIC (visualizer);
  * Signal handlers
  */
 /* GObject */
-static void
-hg_memory_visualizer_real_set_property(GObject      *object,
-				       guint         prop_id,
-				       const GValue *value,
-				       GParamSpec   *pspec)
-{
-//	HgMemoryVisualizer *visual = HG_MEMORY_VISUALIZER (object);
-
-	switch (prop_id) {
-	    case PROP_MAX_SIZE:
-//		    hg_memory_visualizer_set_max_size(visual, g_value_get_long(value));
-		    break;
-	    default:
-		    break;
-	}
-}
-
-static void
-hg_memory_visualizer_real_get_property(GObject    *object,
-				       guint       prop_id,
-				       GValue     *value,
-				       GParamSpec *pspec)
-{
-//	HgMemoryVisualizer *visual = HG_MEMORY_VISUALIZER (object);
-
-	switch (prop_id) {
-	    case PROP_MAX_SIZE:
-//		    g_value_set_long(value, hg_memory_visualizer_get_max_size(visual));
-		    break;
-	    default:
-		    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		    break;
-	}
-}
 
 /* GtkObject */
 static void
@@ -329,15 +295,12 @@ hg_memory_visualizer_real_expose(GtkWidget      *widget,
 static void
 hg_memory_visualizer_class_init(HgMemoryVisualizerClass *klass)
 {
-	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 	GtkObjectClass *object_class = GTK_OBJECT_CLASS (klass);
 	GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
 
 	parent_class = g_type_class_peek_parent(klass);
 
 	/* initialize GObject */
-	gobject_class->set_property = hg_memory_visualizer_real_set_property;
-	gobject_class->get_property = hg_memory_visualizer_real_get_property;
 
 	/* initialize GtkObject */
 	object_class->destroy = hg_memory_visualizer_real_destroy;
@@ -348,21 +311,11 @@ hg_memory_visualizer_class_init(HgMemoryVisualizerClass *klass)
 	widget_class->unrealize = hg_memory_visualizer_real_unrealize;
 	widget_class->map = hg_memory_visualizer_real_map;
 	widget_class->unmap = hg_memory_visualizer_real_unmap;
-//	widget_class->size_request = hg_memory_visualizer_real_size_request;
 	widget_class->size_allocate = hg_memory_visualizer_real_size_allocate;
 
 	/* initialize HgMemoryVisualizer */
 
 	/* GObject properties */
-	g_object_class_install_property(gobject_class,
-					PROP_MAX_SIZE,
-					g_param_spec_long("max_size",
-							  _("Max size of memory pool"),
-							  _("Max size of memory pool that is now being visualized."),
-							  0,
-							  G_MAXLONG,
-							  0,
-							  G_PARAM_READWRITE));
 
 	/* signals */
 	signals[POOL_UPDATED] = g_signal_new("pool-updated",
@@ -646,7 +599,9 @@ hg_memory_visualizer_set_max_size(HgMemoryVisualizer *visual,
 				return;
 			}
 			h2o->bitmaps = p;
-			memset((void *)((gsize)h2o->bitmaps + h2o->total_size), 0, size - h2o->total_size);
+			memset((void *)((gsize)h2o->bitmaps + (h2o->total_size / 8)),
+			       0,
+			       (size - h2o->total_size) / 8);
 		}
 	} else {
 		h2o->bitmaps = g_new0(gchar, (size + 8) / 8);
@@ -694,8 +649,12 @@ hg_memory_visualizer_set_heap_state(HgMemoryVisualizer *visual,
 	}
 	h2o->heap2offset[heap->serial] = current_size;
 	hg_memory_visualizer_set_max_size(visual, name, current_size + heap->total_heap_size);
-	visual->pool_name_list = g_slist_append(visual->pool_name_list,
-						g_strdup(name));
+	if (g_slist_find_custom(visual->pool_name_list,
+				name,
+				_hg_memory_visualizer_compare_pool_name_list) == NULL) {
+		visual->pool_name_list = g_slist_append(visual->pool_name_list,
+							g_strdup(name));
+	}
 	if (visual->current_pool_name == NULL) {
 		visual->current_pool_name = g_strdup(name);
 		visual->current_h2o = h2o;

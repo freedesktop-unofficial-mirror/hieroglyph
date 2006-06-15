@@ -59,7 +59,11 @@ struct _HieroGlyphFileObject {
 			gboolean     is_mmap;
 			HgFileBuffer mmap;
 		} file;
-		HgFileBuffer buf;
+		HgFileBuffer          buf;
+		struct {
+			gpointer              user_data;
+			HgFileObjectCallback *vtable;
+		} callback;
 	} is;
 };
 
@@ -108,6 +112,7 @@ _hg_file_object_real_free(gpointer data)
 	    case HG_FILE_TYPE_STDERR:
 	    case HG_FILE_TYPE_STATEMENT_EDIT:
 	    case HG_FILE_TYPE_LINE_EDIT:
+	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
 		    break;
 	    default:
 		    g_warning("Unknown file type %d was given to be freed.", file->file_type);
@@ -449,6 +454,20 @@ hg_file_object_new(HgMemPool  *pool,
 		    g_free(p);
 		    retval->is.buf.pos = 0;
 		    break;
+	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
+		    retval->access_mode = (guint)va_arg(ap, guint);
+		    p = (gchar *)va_arg(ap, gchar *);
+		    len = strlen(p);
+		    retval->filename = hg_mem_alloc(pool, len + 1);
+		    if (retval->filename == NULL) {
+			    g_warning("Failed to allocate a memory for file object.");
+			    return NULL;
+		    }
+		    strncpy(retval->filename, p, len);
+		    retval->filename[len] = 0;
+		    retval->is.callback.vtable = (HgFileObjectCallback *)va_arg(ap, HgFileObjectCallback *);
+		    retval->is.callback.user_data = (gpointer)va_arg(ap, gpointer);
+		    break;
 	    default:
 		    g_warning("Unknown file type %d\n", retval->file_type);
 		    retval = NULL;
@@ -484,6 +503,9 @@ hg_file_object_has_error(HgFileObject *object)
 	    case HG_FILE_TYPE_STDIN:
 	    case HG_FILE_TYPE_STDOUT:
 	    case HG_FILE_TYPE_STDERR:
+		    break;
+	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
+		    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
 		    break;
 	    default:
 		    g_warning("[BUG] Invalid file type %d was given to check the error.", object->file_type);
@@ -570,6 +592,11 @@ hg_file_object_read(HgFileObject *object,
 			object->is.buf.pos == object->is.buf.bufsize)
 			    object->is_eof = TRUE;
 		    break;
+	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
+		    retval = object->is.callback.vtable->read(object->is.callback.user_data, buffer, size, n);
+		    object->is_eof = object->is.callback.vtable->is_eof(object->is.callback.user_data);
+		    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
+		    break;
 	    default:
 		    g_warning("Invalid file type %d was given to be read.", object->file_type);
 		    object->error = EACCES;
@@ -602,7 +629,20 @@ hg_file_object_write(HgFileObject  *object,
 		    object->error = errno;
 		    break;
 	    case HG_FILE_TYPE_BUFFER:
-		    g_warning("FIXME: need to implemente it.");
+		    if ((object->is.buf.bufsize - object->is.buf.pos) < (size * n))
+			    retval = object->is.buf.bufsize - object->is.buf.pos;
+		    else
+			    retval = size * n;
+		    memcpy(object->is.buf.buffer + object->is.buf.pos, buffer, retval);
+		    ((gchar *)buffer)[retval] = 0;
+		    object->is.buf.pos += retval;
+		    if (retval == 0 &&
+			object->is.buf.pos == object->is.buf.bufsize)
+			    object->error = EIO;
+		    break;
+	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
+		    retval = object->is.callback.vtable->write(object->is.callback.user_data, buffer, size, n);
+		    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
 		    break;
 	    default:
 		    g_warning("Invalid file type %d to be wrriten.", object->file_type);
@@ -649,6 +689,11 @@ hg_file_object_getc(HgFileObject *object)
 			    if (object->is.buf.pos < object->is.buf.bufsize)
 				    retval = object->is.buf.buffer[object->is.buf.pos++];
 			    break;
+		    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
+			    retval = object->is.callback.vtable->getc(object->is.callback.user_data);
+			    object->is_eof = object->is.callback.vtable->is_eof(object->is.callback.user_data);
+			    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
+			    break;
 		    default:
 			    g_warning("Invalid file type %d was given to be get a character.", object->file_type);
 			    break;
@@ -670,6 +715,36 @@ hg_file_object_ungetc(HgFileObject *object,
 
 	object->is_eof = FALSE;
 	object->ungetc = c;
+}
+
+gboolean
+hg_file_object_flush(HgFileObject *object)
+{
+	gboolean retval = FALSE;
+
+	g_return_val_if_fail (object != NULL, FALSE);
+	g_return_val_if_fail (hg_object_is_writable((HgObject *)object), FALSE);
+
+	switch (object->file_type) {
+	    case HG_FILE_TYPE_FILE:
+	    case HG_FILE_TYPE_STDOUT:
+	    case HG_FILE_TYPE_STDERR:
+		    sync();
+		    retval = TRUE;
+		    break;
+	    case HG_FILE_TYPE_BUFFER:
+		    object->is.buf.pos = 0;
+		    retval = TRUE;
+		    break;
+	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
+		    retval = object->is.callback.vtable->flush(object->is.callback.user_data);
+		    break;
+	    default:
+		    g_warning("Invalid file type %d was given to be flushed.", object->file_type);
+		    break;
+	}
+
+	return retval;
 }
 
 void

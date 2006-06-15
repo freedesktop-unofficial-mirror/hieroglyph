@@ -27,7 +27,12 @@
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 #include <hieroglyph/hgmem.h>
+#include <hieroglyph/hgfile.h>
+#include <hieroglyph/hgvaluenode.h>
+#include <hieroglyph/hgdict.h>
 #include <libretto/vm.h>
+#include <libretto/operator.h>
+#include <libretto/lbstack.h>
 #include "visualizer.h"
 
 
@@ -39,10 +44,14 @@ struct _HieroGlyphSpy {
 	GtkWidget    *total_vm_size;
 	GtkWidget    *used_vm_size;
 	GtkWidget    *free_vm_size;
+	GtkWidget    *textview;
+	GtkWidget    *entry;
 	GtkUIManager *ui;
 	GThread      *vm_thread;
 	LibrettoVM   *vm;
 	gchar        *file;
+	gint          error;
+	gchar        *statementedit_buffer;
 };
 
 static void _hgspy_update_vm_status(HgMemoryVisualizer *visual,
@@ -54,16 +63,219 @@ static gpointer __hg_spy_helper_get_widget = NULL;
 /*
  * Private Functions
  */
+static gboolean
+_hgspy_op_private_statementedit(LibrettoOperator *op,
+				gpointer          data)
+{
+	LibrettoVM *vm = data;
+	gboolean retval = FALSE;
+	gsize ret;
+	HgFileObject *stdin = libretto_vm_get_io(vm, LB_IO_STDIN), *file;
+	gchar buffer[1025];
+	HgMemPool *pool = libretto_vm_get_current_pool(vm);
+	HgValueNode *node;
+	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+
+	while (1) {
+		ret = hg_file_object_read(stdin, buffer, sizeof (gchar), 1024);
+		if (ret == 0) {
+			_libretto_operator_set_error(vm, op, LB_e_undefinedfilename);
+			break;
+		}
+		file = hg_file_object_new(pool, HG_FILE_TYPE_BUFFER,
+					  HG_FILE_MODE_READ,
+					  "%statementedit",
+					  buffer, -1);
+		if (file == NULL) {
+			_libretto_operator_set_error(vm, op, LB_e_VMerror);
+			break;
+		}
+		HG_VALUE_MAKE_FILE (node, file);
+		if (node == NULL) {
+			_libretto_operator_set_error(vm, op, LB_e_VMerror);
+			break;
+		}
+		retval = libretto_stack_push(ostack, node);
+		break;
+	}
+
+	return retval;
+}
+
+static gsize
+_hgspy_file_read_cb(gpointer user_data,
+		    gpointer buffer,
+		    gsize    size,
+		    gsize    n)
+{
+	HgSpy *spy = user_data;
+	gsize retval = 0;
+
+	while (spy->statementedit_buffer == NULL)
+		sleep(1);
+
+	if (spy->statementedit_buffer) {
+		size_t len = strlen(spy->statementedit_buffer);
+		gpointer p;
+
+		if (len > size * n)
+			retval = size * n;
+		else
+			retval = len;
+		strncpy(buffer, spy->statementedit_buffer, retval);
+		((gchar *)buffer)[retval] = 0;
+		p = spy->statementedit_buffer;
+		spy->statementedit_buffer = NULL;
+		g_free(p);
+
+		/* to be thread-safe */
+		gdk_threads_enter();
+
+		gtk_widget_set_sensitive(spy->entry, TRUE);
+		gtk_widget_grab_focus(spy->entry);
+
+		gdk_flush();
+		gdk_threads_leave();
+	}
+
+	return retval;
+}
+
+static gsize
+_hgspy_file_write_cb(gpointer      user_data,
+		     gconstpointer buffer,
+		     gsize         size,
+		     gsize         n)
+{
+	HgSpy *spy = user_data;
+	GtkTextBuffer *textbuf = gtk_text_view_get_buffer(GTK_TEXT_VIEW (spy->textview));
+	GtkTextIter iter;
+
+	/* to be thread-safe */
+	gdk_threads_enter();
+
+	gtk_text_buffer_get_end_iter(textbuf, &iter);
+	gtk_text_buffer_insert(textbuf, &iter, buffer, size * n);
+	gtk_text_buffer_place_cursor(textbuf, &iter);
+
+	gdk_flush();
+	gdk_threads_leave();
+
+	spy->error = 0;
+
+	return size * n;
+}
+
+static gchar
+_hgspy_file_getc_cb(gpointer user_data)
+{
+	g_print("FIXME: getc\n");
+
+	return 0;
+}
+
+static gboolean
+_hgspy_file_flush_cb(gpointer user_data)
+{
+	g_print("FIXME: flush\n");
+
+	return FALSE;
+}
+
+static gboolean
+_hgspy_file_is_eof_cb(gpointer user_data)
+{
+	return FALSE;
+}
+
+static void
+_hgspy_file_clear_eof_cb(gpointer user_data)
+{
+	g_print("FIXME: clear_eof\n");
+}
+
+static gint
+_hgspy_file_get_error_code_cb(gpointer user_data)
+{
+	HgSpy *spy = user_data;
+
+	return spy->error;
+}
+
 static gpointer
 _hgspy_vm_thread(gpointer data)
 {
 	HG_MEM_INIT;
 
 	HgSpy *spy = data;
+	HgFileObjectCallback callback = {
+		.read           = _hgspy_file_read_cb,
+		.write          = _hgspy_file_write_cb,
+		.getc           = _hgspy_file_getc_cb,
+		.flush          = _hgspy_file_flush_cb,
+		.is_eof         = _hgspy_file_is_eof_cb,
+		.clear_eof      = _hgspy_file_clear_eof_cb,
+		.get_error_code = _hgspy_file_get_error_code_cb,
+	};
+	HgFileObject * volatile in, * volatile out;
+	HgMemPool *pool;
+	LibrettoOperator *op;
+	HgValueNode *key, *val;
+	HgDict *dict;
+	gint fd;
+	gchar *filename = NULL;
+	GString *buffer;
 
 	libretto_vm_init();
 	spy->vm = libretto_vm_new(LB_EMULATION_LEVEL_1);
-	libretto_vm_startjob(spy->vm, spy->file, TRUE);
+	pool = libretto_vm_get_current_pool(spy->vm);
+	dict = libretto_vm_get_dict_systemdict(spy->vm);
+	in = hg_file_object_new(pool,
+				HG_FILE_TYPE_BUFFER_WITH_CALLBACK,
+				HG_FILE_MODE_READ,
+				"stdin with callback",
+				&callback,
+				spy);
+	out = hg_file_object_new(pool,
+				 HG_FILE_TYPE_BUFFER_WITH_CALLBACK,
+				 HG_FILE_MODE_WRITE,
+				 "stdout with callback",
+				 &callback,
+				 spy);
+	libretto_vm_set_io(spy->vm, LB_IO_STDIN, in);
+	libretto_vm_set_io(spy->vm, LB_IO_STDOUT, out);
+	libretto_vm_set_io(spy->vm, LB_IO_STDERR, out);
+
+	op = libretto_operator_new(pool, "...statementedit", _hgspy_op_private_statementedit);
+	if (op == NULL) {
+		g_warning("Failed to create an operator");
+		return NULL;
+	}
+	key = libretto_vm_get_name_node(spy->vm, "...statementedit");
+	HG_VALUE_MAKE_POINTER (val, op);
+	if (val == NULL) {
+		libretto_vm_set_error(spy->vm, key, LB_e_VMerror, FALSE);
+	} else {
+		hg_object_executable((HgObject *)val);
+		hg_dict_insert(pool, dict, key, val);
+	}
+	fd = g_file_open_tmp("hgspy-XXXXXX", &filename, NULL);
+	if (fd == -1) {
+		g_warning("Failed to create an initialize file.");
+		return NULL;
+	}
+	buffer = g_string_new(NULL);
+	g_string_append(buffer, "/..statementedit {//null //null ...statementedit exch pop exch pop} bind def ");
+	if (spy->file != NULL) {
+		g_string_append_printf(buffer, "(%s) run", spy->file);
+	} else {
+		g_string_append(buffer, ".startjobserver executive");
+	}
+	write(fd, buffer->str, buffer->len);
+	close(fd);
+	libretto_vm_startjob(spy->vm, filename, TRUE);
+	unlink(filename);
+	g_free(filename);
 	libretto_vm_finalize();
 
 	return NULL;
@@ -254,6 +466,29 @@ _hgspy_draw_updated_cb(HgMemoryVisualizer *visual,
 }
 
 static void
+_hgspy_entry_activate_cb(GtkWidget *widget,
+			 gpointer   data)
+{
+	GtkEntry *entry;
+	HgSpy *spy = data;
+	const gchar *text;
+
+	g_return_if_fail (GTK_IS_ENTRY (widget));
+	g_return_if_fail (data != NULL);
+
+	entry = GTK_ENTRY (widget);
+	if (spy->statementedit_buffer) {
+		g_warning("FIXME: something lost.");
+	}
+	text = gtk_entry_get_text(entry);
+	if (text == NULL || text[0] == 0)
+		return;
+	spy->statementedit_buffer = g_strdup(text);
+	gtk_entry_set_text(entry, "");
+	gtk_widget_set_sensitive(spy->entry, FALSE);
+}
+
+static void
 _hgspy_update_vm_status(HgMemoryVisualizer *visual,
 			HgSpy              *spy,
 			const gchar        *name)
@@ -292,7 +527,7 @@ main(int    argc,
 {
 	GModule *module;
 	HgSpy *spy;
-	GtkWidget *menubar, *vbox, *none, *table, *label;
+	GtkWidget *menubar, *vbox, *none, *table, *label, *hbox, *vbox2, *scrolled;
 	GtkActionGroup *actions;
 	GtkActionEntry action_entries[] = {
 		/* toplevel menu */
@@ -413,19 +648,30 @@ main(int    argc,
 #endif /* ENABLE_NLS */
 
 	g_thread_init(NULL);
+	gdk_threads_init();
 	gtk_init(&argc, &argv);
 
 	spy = g_new(HgSpy, 1);
 	spy->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	spy->vm_thread = NULL;
+	spy->vm = NULL;
+	spy->file = NULL;
+	spy->error = 0;
+	spy->statementedit_buffer = NULL;
+
 	actions = gtk_action_group_new("MenuBar");
 	spy->ui = gtk_ui_manager_new();
 	vbox = gtk_vbox_new(FALSE, 0);
+	vbox2 = gtk_vbox_new(FALSE, 0);
+	hbox = gtk_hbox_new(FALSE, 0);
 	table = gtk_table_new(3, 2, FALSE);
+	scrolled = gtk_scrolled_window_new(NULL, NULL);
 	spy->total_vm_size = gtk_entry_new();
 	spy->used_vm_size = gtk_entry_new();
 	spy->free_vm_size = gtk_entry_new();
 	spy->visualizer = ((GtkWidget * (*) (void))__hg_spy_helper_get_widget) ();
+	spy->textview = gtk_text_view_new();
+	spy->entry = gtk_entry_new();
 
 	if (spy->visualizer == NULL) {
 		g_warning("Failed to initialize a helper module.");
@@ -451,6 +697,11 @@ main(int    argc,
 	GTK_WIDGET_UNSET_FLAGS (spy->total_vm_size, GTK_CAN_FOCUS);
 	GTK_WIDGET_UNSET_FLAGS (spy->used_vm_size, GTK_CAN_FOCUS);
 	GTK_WIDGET_UNSET_FLAGS (spy->free_vm_size, GTK_CAN_FOCUS);
+	GTK_WIDGET_UNSET_FLAGS (spy->textview, GTK_CAN_FOCUS);
+	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW (scrolled),
+				       GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+	gtk_text_view_set_editable(GTK_TEXT_VIEW (spy->textview), FALSE);
+	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW (spy->textview), GTK_WRAP_WORD_CHAR);
 
 	/* setup accelerators */
 	gtk_window_add_accel_group(GTK_WINDOW (spy->window), gtk_ui_manager_get_accel_group(spy->ui));
@@ -493,7 +744,12 @@ main(int    argc,
 			 0, 0);
 	i++;
 
-	gtk_box_pack_end(GTK_BOX (vbox), table, FALSE, FALSE, 0);
+	gtk_container_add(GTK_CONTAINER (scrolled), spy->textview);
+	gtk_box_pack_start(GTK_BOX (vbox2), scrolled, TRUE, TRUE, 0);
+	gtk_box_pack_start(GTK_BOX (vbox2), spy->entry, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX (hbox), vbox2, TRUE, TRUE, 0);
+	gtk_box_pack_start(GTK_BOX (hbox), table, FALSE, FALSE, 0);
+	gtk_box_pack_end(GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
 	gtk_container_add(GTK_CONTAINER (spy->window), vbox);
 
 	/* setup signals */
@@ -503,10 +759,15 @@ main(int    argc,
 			 G_CALLBACK (_hgspy_draw_updated_cb), spy);
 	g_signal_connect(spy->window, "delete-event",
 			 G_CALLBACK (gtk_main_quit), NULL);
+	g_signal_connect(spy->entry, "activate",
+			 G_CALLBACK (_hgspy_entry_activate_cb), spy);
 
 	gtk_widget_show_all(spy->window);
+	gtk_widget_grab_focus(spy->entry);
 
+	gdk_threads_enter();
 	gtk_main();
+	gdk_threads_leave();
 
 	/* finalize */
 	g_module_close(module);

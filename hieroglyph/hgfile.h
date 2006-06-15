@@ -57,6 +57,7 @@ gsize         hg_file_object_write      (HgFileObject  *object,
 gchar         hg_file_object_getc       (HgFileObject  *object);
 void          hg_file_object_ungetc     (HgFileObject  *object,
 					 gchar          c);
+gboolean      hg_file_object_flush      (HgFileObject *object);
 void          hg_file_object_printf     (HgFileObject *object,
 					 gchar const  *format,
 					 ...) G_GNUC_PRINTF (2, 3);
