@@ -172,7 +172,12 @@ hg_memory_visualizer_real_size_allocate(GtkWidget     *widget,
 		(* GTK_WIDGET_CLASS (parent_class)->size_allocate) (widget, allocation);
 
 	visual = HG_MEMORY_VISUALIZER (widget);
+
+	G_LOCK (visualizer);
+
 	_hg_memory_visualizer_redraw_in_pixmap(visual);
+
+	G_UNLOCK (visualizer);
 }
 
 static void
@@ -195,7 +200,12 @@ hg_memory_visualizer_real_realize(GtkWidget *widget)
 	    visual->free_gc == NULL ||
 	    visual->used_and_free_gc == NULL)
 		_hg_memory_visualizer_create_gc(visual);
+
+	G_LOCK (visualizer);
+
 	_hg_memory_visualizer_redraw_in_pixmap(visual);
+
+	G_UNLOCK (visualizer);
 }
 
 static void
@@ -390,11 +400,12 @@ _hg_memory_visualizer_idle_handler_cb(gpointer data)
 
 	visual = HG_MEMORY_VISUALIZER (data);
 
-	_hg_memory_visualizer_redraw_in_pixmap(visual);
-
 	G_LOCK (visualizer);
 
+	_hg_memory_visualizer_redraw_in_pixmap(visual);
+
 	gtk_widget_queue_draw(GTK_WIDGET (visual));
+
 	visual->idle_id = 0;
 	visual->need_update = FALSE;
 
@@ -463,8 +474,6 @@ _hg_memory_visualizer_redraw_in_pixmap(HgMemoryVisualizer *visual)
 	gint i, j, base_x, base_y, x, y, width, height, base_scale, block_size, area;
 
 	if (GTK_WIDGET_REALIZED (widget)) {
-		G_LOCK (visualizer);
-
 		if (visual->pixmap)
 			g_object_unref(G_OBJECT (visual->pixmap));
 		visual->pixmap = gdk_pixmap_new(widget->window,
@@ -530,7 +539,6 @@ _hg_memory_visualizer_redraw_in_pixmap(HgMemoryVisualizer *visual)
 		}
 		visual->need_update = TRUE;
 		_hg_memory_visualizer_add_idle(visual);
-		G_UNLOCK (visualizer);
 	}
 }
 
@@ -659,7 +667,10 @@ hg_memory_visualizer_set_heap_state(HgMemoryVisualizer *visual,
 		visual->current_pool_name = g_strdup(name);
 		visual->current_h2o = h2o;
 	}
+
+	gdk_threads_enter();
 	g_signal_emit(visual, signals[POOL_UPDATED], 0, visual->pool_name_list);
+	gdk_threads_leave();
 }
 
 void
@@ -686,6 +697,8 @@ hg_memory_visualizer_remove_pool(HgMemoryVisualizer *visual,
 	g_free(l->data);
 	visual->pool_name_list = g_slist_delete_link(visual->pool_name_list, l);
 
+	G_UNLOCK (visualizer);
+
 	if (strcmp(name, visual->current_pool_name) == 0) {
 		const gchar *pool_name;
 
@@ -695,8 +708,6 @@ hg_memory_visualizer_remove_pool(HgMemoryVisualizer *visual,
 			pool_name = "";
 		hg_memory_visualizer_change_pool(visual, pool_name);
 	}
-
-	G_UNLOCK (visualizer);
 }
 
 void
@@ -760,6 +771,8 @@ hg_memory_visualizer_change_pool(HgMemoryVisualizer *visual,
 	g_return_if_fail (HG_IS_MEMORY_VISUALIZER (visual));
 	g_return_if_fail (name != NULL);
 
+	G_LOCK (visualizer);
+
 	if (g_slist_find(visual->pool_name_list, name) != NULL) {
 		if (visual->current_pool_name)
 			g_free(visual->current_pool_name);
@@ -771,10 +784,15 @@ hg_memory_visualizer_change_pool(HgMemoryVisualizer *visual,
 			g_free(visual->current_pool_name);
 		visual->current_pool_name = NULL;
 		visual->current_h2o = NULL;
+
+		gdk_threads_enter();
 		g_signal_emit(visual, signals[POOL_UPDATED], 0, visual->pool_name_list);
+		gdk_threads_leave();
 	}
 	visual->need_update = TRUE;
 	_hg_memory_visualizer_add_idle(visual);
+
+	G_UNLOCK (visualizer);
 }
 
 gsize
