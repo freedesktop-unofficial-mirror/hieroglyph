@@ -152,11 +152,11 @@ void     hg_mem_pool_use_garbage_collection(HgMemPool *pool,
 					    gboolean   flag);
 
 /* HgObject */
-#define HG_OBJECT_GET_VTABLE_ID(_obj)		(((_obj)->state_ >> 24) & 0xff)
-#define HG_OBJECT_SET_VTABLE_ID(_obj,_id)	((_obj)->state_ = HG_OBJECT_GET_STATE (_obj) | ((_id) << 24))
-#define HG_OBJECT_GET_STATE(_obj)		((_obj)->state_ & 0xffffff)
-#define HG_OBJECT_SET_STATE(_obj,_state)	((_obj)->state_ = (HG_OBJECT_GET_VTABLE_ID (_obj) << 24) | _state)
-#define HG_OBJECT_INIT_STATE(_obj)		((_obj)->state_ = 0)
+#define HG_OBJECT_GET_VTABLE_ID(_obj)		(((_obj)->state >> 24) & 0xff)
+#define HG_OBJECT_SET_VTABLE_ID(_obj,_id)	((_obj)->state = HG_OBJECT_GET_STATE (_obj) | ((_id) << 24))
+#define HG_OBJECT_GET_STATE(_obj)		((_obj)->state & 0xffffff)
+#define HG_OBJECT_SET_STATE(_obj,_state)	((_obj)->state = (HG_OBJECT_GET_VTABLE_ID (_obj) << 24) | _state)
+#define HG_OBJECT_INIT_STATE(_obj)		((_obj)->state = 0)
 #define hg_object_readable(obj)		hg_object_add_state(obj, HG_ST_READABLE)
 #define hg_object_unreadable(obj)	hg_object_set_state(obj, hg_object_get_state(obj) & ~HG_ST_READABLE)
 #define hg_object_is_readable(obj)	hg_object_is_state(obj, HG_ST_READABLE)
