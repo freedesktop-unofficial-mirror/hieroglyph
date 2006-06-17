@@ -21,6 +21,7 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#include <hieroglyph/hgmem.h>
 #include <hieroglyph/hgfile.h>
 #include <hieroglyph/hgvaluenode.h>
 #include <hieroglyph/hgdevice.h>
@@ -31,6 +32,8 @@
 int
 main(int argc, char **argv)
 {
+	HG_MEM_INIT;
+
 	LibrettoVM *vm;
 	LibrettoGraphics *graphics;
 	HgDevice *device;

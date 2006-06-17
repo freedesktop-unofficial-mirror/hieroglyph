@@ -1,5 +1,7 @@
 2006-06-18  Akira TAGOH  <at@gclab.org>
 
+	* examples/cairo-xlib.c (main): invoke HG_MEM_INIT before doing anything.
+
 	* hieroglyph/hgarray.c (hg_array_new): improved a footprint.
 
 	* hieroglyph/hgmem.h (hg_mem_set_flags__inline): don't access vtable
