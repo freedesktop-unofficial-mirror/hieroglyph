@@ -39,6 +39,8 @@ enum {
 enum {
 	POOL_UPDATED,
 	DRAW_UPDATED,
+	GC_STARTED,
+	GC_FINISHED,
 	LAST_SIGNAL
 };
 
@@ -48,6 +50,8 @@ struct _HgMemoryVisualizerClass {
 	void (* pool_updated) (HgMemoryVisualizer *visual,
 			       gpointer            list);
 	void (* draw_updated) (HgMemoryVisualizer *visual);
+	void (* gc_started)   (HgMemoryVisualizer *visual);
+	void (* gc_finished)  (HgMemoryVisualizer *visual);
 };
 
 struct Heap2Offset {
@@ -341,6 +345,20 @@ hg_memory_visualizer_class_init(HgMemoryVisualizerClass *klass)
 					     NULL, NULL,
 					     gtk_marshal_VOID__VOID,
 					     G_TYPE_NONE, 0);
+	signals[GC_STARTED] = g_signal_new("gc-started",
+					   G_OBJECT_CLASS_TYPE (klass),
+					   G_SIGNAL_RUN_FIRST,
+					   G_STRUCT_OFFSET (HgMemoryVisualizerClass, gc_started),
+					   NULL, NULL,
+					   gtk_marshal_VOID__VOID,
+					   G_TYPE_NONE, 0);
+	signals[GC_FINISHED] = g_signal_new("gc-finished",
+					    G_OBJECT_CLASS_TYPE (klass),
+					    G_SIGNAL_RUN_FIRST,
+					    G_STRUCT_OFFSET (HgMemoryVisualizerClass, gc_finished),
+					    NULL, NULL,
+					    gtk_marshal_VOID__VOID,
+					    G_TYPE_NONE, 0);
 }
 
 static void
@@ -805,4 +823,23 @@ const gchar *
 hg_memory_visualizer_get_current_pool_name(HgMemoryVisualizer *visual)
 {
 	return visual->current_pool_name;
+}
+
+void
+hg_memory_visualizer_notify_gc_state(HgMemoryVisualizer *visual,
+				     gboolean            is_finished)
+{
+	gdk_threads_enter();
+	if (is_finished)
+		g_signal_emit(visual, signals[GC_FINISHED], 0);
+	else
+		g_signal_emit(visual, signals[GC_STARTED], 0);
+	gdk_threads_leave();
+
+	G_LOCK (visualizer);
+
+	visual->need_update = TRUE;
+	_hg_memory_visualizer_add_idle(visual);
+
+	G_UNLOCK (visualizer);
 }

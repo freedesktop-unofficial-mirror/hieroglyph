@@ -1,5 +1,16 @@
 2006-06-18  Akira TAGOH  <at@gclab.org>
 
+	* src/visualizer.c (hg_memory_visualizer_class_init): added gc-started
+	and gc-finished signals.
+	(hg_memory_visualizer_notify_gc_state): new function.
+
+	* src/hgspy.c (_hgspy_gc_started_cb): new function.
+	(_hgspy_gc_finished_cb): new function.
+	(main): added a statusbar.
+
+	* src/hgspy_helper.c (helper_init): watch hg_mem_garbage_collection too.
+	(hg_mem_garbage_collection): new function.
+
 	* examples/cairo-xlib.c (main): invoke HG_MEM_INIT before doing anything.
 
 	* hieroglyph/hgarray.c (hg_array_new): improved a footprint.

@@ -69,6 +69,8 @@ void         hg_memory_visualizer_change_pool          (HgMemoryVisualizer *visu
 gsize        hg_memory_visualizer_get_used_size        (HgMemoryVisualizer *visual,
 							const gchar        *name);
 const gchar *hg_memory_visualizer_get_current_pool_name(HgMemoryVisualizer *visual);
+void         hg_memory_visualizer_notify_gc_state      (HgMemoryVisualizer *visual,
+							gboolean            is_finished);
 
 
 G_END_DECLS

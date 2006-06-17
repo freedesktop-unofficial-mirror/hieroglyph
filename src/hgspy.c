@@ -40,6 +40,7 @@ typedef struct _HieroGlyphSpy	HgSpy;
 
 struct _HieroGlyphSpy {
 	GtkWidget    *window;
+	GtkWidget    *status;
 	GtkWidget    *visualizer;
 	GtkWidget    *total_vm_size;
 	GtkWidget    *used_vm_size;
@@ -53,6 +54,8 @@ struct _HieroGlyphSpy {
 	gint          error;
 	gchar        *statementedit_buffer;
 	gboolean      destroyed;
+	guint         gc_status_ctxt_id;
+	guint         gc_status_msg_id;
 };
 
 static void _hgspy_update_vm_status(HgMemoryVisualizer *visual,
@@ -510,6 +513,34 @@ _hgspy_draw_updated_cb(HgMemoryVisualizer *visual,
 }
 
 static void
+_hgspy_gc_started_cb(HgMemoryVisualizer *visual,
+		     gpointer            data)
+{
+	HgSpy *spy = data;
+
+	g_return_if_fail (HG_IS_MEMORY_VISUALIZER (visual));
+	g_return_if_fail (data != NULL);
+
+	spy->gc_status_msg_id = gtk_statusbar_push(GTK_STATUSBAR (spy->status),
+						   spy->gc_status_ctxt_id,
+						   _("Collecting the garbages..."));
+}
+
+static void
+_hgspy_gc_finished_cb(HgMemoryVisualizer *visual,
+		     gpointer            data)
+{
+	HgSpy *spy = data;
+
+	g_return_if_fail (HG_IS_MEMORY_VISUALIZER (visual));
+	g_return_if_fail (data != NULL);
+
+	gtk_statusbar_remove(GTK_STATUSBAR (spy->status),
+			     spy->gc_status_ctxt_id,
+			     spy->gc_status_msg_id);
+}
+
+static void
 _hgspy_entry_activate_cb(GtkWidget *widget,
 			 gpointer   data)
 {
@@ -703,6 +734,8 @@ main(int    argc,
 	spy->error = 0;
 	spy->statementedit_buffer = NULL;
 	spy->destroyed = FALSE;
+	spy->gc_status_ctxt_id = 0;
+	spy->gc_status_msg_id = 0;
 
 	actions = gtk_action_group_new("MenuBar");
 	spy->ui = gtk_ui_manager_new();
@@ -717,6 +750,7 @@ main(int    argc,
 	spy->visualizer = ((GtkWidget * (*) (void))__hg_spy_helper_get_widget) ();
 	spy->textview = gtk_text_view_new();
 	spy->entry = gtk_entry_new();
+	spy->status = gtk_statusbar_new();
 
 	if (spy->visualizer == NULL) {
 		g_warning("Failed to initialize a helper module.");
@@ -747,6 +781,8 @@ main(int    argc,
 				       GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 	gtk_text_view_set_editable(GTK_TEXT_VIEW (spy->textview), FALSE);
 	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW (spy->textview), GTK_WRAP_WORD_CHAR);
+	spy->gc_status_ctxt_id = gtk_statusbar_get_context_id(GTK_STATUSBAR (spy->status),
+							      "Status for GC");
 
 	/* setup accelerators */
 	gtk_window_add_accel_group(GTK_WINDOW (spy->window), gtk_ui_manager_get_accel_group(spy->ui));
@@ -794,7 +830,8 @@ main(int    argc,
 	gtk_box_pack_start(GTK_BOX (vbox2), spy->entry, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX (hbox), vbox2, TRUE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX (hbox), table, FALSE, FALSE, 0);
-	gtk_box_pack_end(GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
+	gtk_box_pack_end(GTK_BOX (vbox), spy->status, FALSE, FALSE, 0);
 	gtk_container_add(GTK_CONTAINER (spy->window), vbox);
 
 	/* setup signals */
@@ -802,6 +839,10 @@ main(int    argc,
 			 G_CALLBACK (_hgspy_pool_updated_cb), spy);
 	g_signal_connect(spy->visualizer, "draw-updated",
 			 G_CALLBACK (_hgspy_draw_updated_cb), spy);
+	g_signal_connect(spy->visualizer, "gc-started",
+			 G_CALLBACK (_hgspy_gc_started_cb), spy);
+	g_signal_connect(spy->visualizer, "gc-finished",
+			 G_CALLBACK (_hgspy_gc_finished_cb), spy);
 	g_signal_connect(spy->window, "delete-event",
 			 G_CALLBACK (_hgspy_quit_cb), spy);
 	g_signal_connect(spy->entry, "activate",

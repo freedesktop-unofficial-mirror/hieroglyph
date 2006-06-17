@@ -37,6 +37,7 @@ static gpointer __hg_mem_pool_add_heap = NULL;
 static gpointer __hg_mem_alloc_with_flags = NULL;
 static gpointer __hg_mem_free = NULL;
 static gpointer __hg_mem_resize = NULL;
+static gpointer __hg_mem_garbage_collection = NULL;
 static GModule *__handle = NULL;
 static GtkWidget *visual = NULL;
 
@@ -69,6 +70,10 @@ helper_init(void)
 		exit(1);
 	}
 	if (!g_module_symbol(__handle, "hg_mem_resize", &__hg_mem_resize)) {
+		g_warning("Failed g_module_symbol: %s", g_module_error());
+		exit(1);
+	}
+	if (!g_module_symbol(__handle, "hg_mem_garbage_collection", &__hg_mem_garbage_collection)) {
 		g_warning("Failed g_module_symbol: %s", g_module_error());
 		exit(1);
 	}
@@ -192,6 +197,18 @@ hg_mem_resize(gpointer data,
 							     HG_CHUNK_USED);
 		}
 	}
+
+	return retval;
+}
+
+gboolean
+hg_mem_garbage_collection(HgMemPool *pool)
+{
+	gboolean retval;
+
+	hg_memory_visualizer_notify_gc_state(HG_MEMORY_VISUALIZER (visual), FALSE);
+	retval = ((gboolean (*) (HgMemPool *))__hg_mem_garbage_collection) (pool);
+	hg_memory_visualizer_notify_gc_state(HG_MEMORY_VISUALIZER (visual), TRUE);
 
 	return retval;
 }
