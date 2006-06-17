@@ -1,5 +1,10 @@
 2006-06-18  Akira TAGOH  <at@gclab.org>
 
+	* src/hgspy.c (_hgspy_file_read_cb): update a prompt.
+	(_hgspy_entry_activate_cb): echo back the input to the textview.
+	(_hgspy_insert_text_into_textview): new function.
+	(main): added a prompt label.
+
 	* src/visualizer.c (hg_memory_visualizer_class_init): added gc-started
 	and gc-finished signals.
 	(hg_memory_visualizer_notify_gc_state): new function.

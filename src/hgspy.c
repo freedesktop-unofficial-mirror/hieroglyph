@@ -47,6 +47,7 @@ struct _HieroGlyphSpy {
 	GtkWidget    *free_vm_size;
 	GtkWidget    *textview;
 	GtkWidget    *entry;
+	GtkWidget    *prompt;
 	GtkUIManager *ui;
 	GThread      *vm_thread;
 	LibrettoVM   *vm;
@@ -58,9 +59,12 @@ struct _HieroGlyphSpy {
 	guint         gc_status_msg_id;
 };
 
-static void _hgspy_update_vm_status(HgMemoryVisualizer *visual,
-				    HgSpy              *spy,
-				    const gchar        *name);
+static void _hgspy_update_vm_status         (HgMemoryVisualizer *visual,
+					     HgSpy              *spy,
+					     const gchar        *name);
+static void _hgspy_insert_text_into_textview(HgSpy              *spy,
+					     const gchar        *text,
+					     gsize               length);
 
 static gpointer __hg_spy_helper_get_widget = NULL;
 
@@ -114,6 +118,22 @@ _hgspy_file_read_cb(gpointer user_data,
 {
 	HgSpy *spy = user_data;
 	gsize retval = 0;
+	LibrettoStack *ostack = libretto_vm_get_ostack(spy->vm);
+	gchar *prompt;
+	/* depends on hg_init.ps. */
+	guint depth = libretto_stack_depth(ostack) - 2;
+
+	if (depth > 0)
+		prompt = g_strdup_printf("PS[%d]>", depth);
+	else
+		prompt = g_strdup("PS>");
+
+	gdk_threads_enter();
+	gtk_label_set_text(GTK_LABEL (spy->prompt), prompt);
+	gdk_flush();
+	gdk_threads_leave();
+
+	g_free(prompt);
 
 	while (spy->statementedit_buffer == NULL && !spy->destroyed)
 		sleep(1);
@@ -152,18 +172,11 @@ _hgspy_file_write_cb(gpointer      user_data,
 		     gsize         n)
 {
 	HgSpy *spy = user_data;
-	GtkTextBuffer *textbuf = gtk_text_view_get_buffer(GTK_TEXT_VIEW (spy->textview));
-	GtkTextIter iter;
-	gdouble val;
 
 	/* to be thread-safe */
 	gdk_threads_enter();
 
-	gtk_text_buffer_get_end_iter(textbuf, &iter);
-	gtk_text_buffer_insert(textbuf, &iter, buffer, size * n);
-	val = GTK_TEXT_VIEW (spy->textview)->vadjustment->upper;
-	gtk_adjustment_set_value(GTK_TEXT_VIEW (spy->textview)->vadjustment,
-				 val);
+	_hgspy_insert_text_into_textview(spy, buffer, size * n);
 
 	gdk_flush();
 	gdk_threads_leave();
@@ -547,6 +560,7 @@ _hgspy_entry_activate_cb(GtkWidget *widget,
 	GtkEntry *entry;
 	HgSpy *spy = data;
 	const gchar *text;
+	gchar *echoback;
 
 	g_return_if_fail (GTK_IS_ENTRY (widget));
 	g_return_if_fail (data != NULL);
@@ -558,6 +572,11 @@ _hgspy_entry_activate_cb(GtkWidget *widget,
 	text = gtk_entry_get_text(entry);
 	if (text == NULL || text[0] == 0)
 		return;
+	echoback = g_strdup_printf("%s%s\n",
+				   gtk_label_get_text(GTK_LABEL (spy->prompt)),
+				   text);
+	_hgspy_insert_text_into_textview(spy, echoback, strlen(echoback));
+	g_free(echoback);
 	spy->statementedit_buffer = g_strdup(text);
 	gtk_entry_set_text(entry, "");
 	gtk_widget_set_sensitive(spy->entry, FALSE);
@@ -593,6 +612,22 @@ _hgspy_update_vm_status(HgMemoryVisualizer *visual,
 	}
 }
 
+static void
+_hgspy_insert_text_into_textview(HgSpy       *spy,
+				 const gchar *text,
+				 gsize        length)
+{
+	GtkTextBuffer *textbuf = gtk_text_view_get_buffer(GTK_TEXT_VIEW (spy->textview));
+	GtkTextIter iter;
+	gdouble val;
+
+	gtk_text_buffer_get_end_iter(textbuf, &iter);
+	gtk_text_buffer_insert(textbuf, &iter, text, length);
+	val = GTK_TEXT_VIEW (spy->textview)->vadjustment->upper;
+	gtk_adjustment_set_value(GTK_TEXT_VIEW (spy->textview)->vadjustment,
+				 val);
+}
+
 /*
  * Public Functions
  */
@@ -602,7 +637,7 @@ main(int    argc,
 {
 	GModule *module;
 	HgSpy *spy;
-	GtkWidget *menubar, *vbox, *none, *table, *label, *hbox, *vbox2, *scrolled;
+	GtkWidget *menubar, *vbox, *none, *table, *label, *hbox, *vbox2, *scrolled, *hbox2;
 	GtkActionGroup *actions;
 	GtkActionEntry action_entries[] = {
 		/* toplevel menu */
@@ -742,6 +777,7 @@ main(int    argc,
 	vbox = gtk_vbox_new(FALSE, 0);
 	vbox2 = gtk_vbox_new(FALSE, 0);
 	hbox = gtk_hbox_new(FALSE, 0);
+	hbox2 = gtk_hbox_new(FALSE, 0);
 	table = gtk_table_new(3, 2, FALSE);
 	scrolled = gtk_scrolled_window_new(NULL, NULL);
 	spy->total_vm_size = gtk_entry_new();
@@ -750,6 +786,7 @@ main(int    argc,
 	spy->visualizer = ((GtkWidget * (*) (void))__hg_spy_helper_get_widget) ();
 	spy->textview = gtk_text_view_new();
 	spy->entry = gtk_entry_new();
+	spy->prompt = gtk_label_new("PS>");
 	spy->status = gtk_statusbar_new();
 
 	if (spy->visualizer == NULL) {
@@ -827,7 +864,9 @@ main(int    argc,
 
 	gtk_container_add(GTK_CONTAINER (scrolled), spy->textview);
 	gtk_box_pack_start(GTK_BOX (vbox2), scrolled, TRUE, TRUE, 0);
-	gtk_box_pack_start(GTK_BOX (vbox2), spy->entry, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX (hbox2), spy->prompt, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX (hbox2), spy->entry, FALSE, TRUE, 0);
+	gtk_box_pack_start(GTK_BOX (vbox2), hbox2, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX (hbox), vbox2, TRUE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX (hbox), table, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
