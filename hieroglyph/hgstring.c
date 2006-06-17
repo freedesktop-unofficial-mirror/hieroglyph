@@ -175,8 +175,9 @@ hg_string_new(HgMemPool *pool,
 		return NULL;
 	}
 	retval->object.id = HG_OBJECT_ID;
-	retval->object.state = hg_mem_pool_get_default_access_mode(pool);
-	retval->object.vtable = &__hg_string_vtable;
+	HG_OBJECT_INIT_STATE (&retval->object);
+	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
+	hg_object_set_vtable(&retval->object, &__hg_string_vtable);
 
 	retval->n_prealloc = n_prealloc;
 	if (n_prealloc < 0) {
@@ -454,11 +455,13 @@ hg_object_to_string(HgObject *object)
 {
 	HgString *retval;
 	HgMemObject *obj;
+	const HgObjectVTable const *vtable;
 
 	g_return_val_if_fail (object != NULL, NULL);
 
-	if (object->vtable && object->vtable->to_string)
-		return object->vtable->to_string(object);
+	if ((vtable = hg_object_get_vtable(object)) != NULL &&
+	    vtable->to_string)
+		return vtable->to_string(object);
 
 	hg_mem_get_object__inline(object, obj);
 	retval = hg_string_new(obj->pool, 16);

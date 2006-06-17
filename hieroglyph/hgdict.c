@@ -1113,8 +1113,9 @@ hg_dict_node_new(HgMemPool *pool)
 		return NULL;
 	}
 	retval->object.id = HG_OBJECT_ID;
-	retval->object.state = 0; hg_mem_pool_get_default_access_mode(pool);
-	retval->object.vtable = &__hg_dict_node_vtable;
+	HG_OBJECT_INIT_STATE (&retval->object);
+	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
+	hg_object_set_vtable(&retval->object, &__hg_dict_node_vtable);
 	retval->key = NULL;
 	retval->val = NULL;
 
@@ -1182,8 +1183,9 @@ hg_dict_new(HgMemPool *pool,
 		return NULL;
 	}
 	retval->object.id = HG_OBJECT_ID;
-	retval->object.state = hg_mem_pool_get_default_access_mode(pool);
-	retval->object.vtable = &__hg_dict_vtable;
+	HG_OBJECT_INIT_STATE (&retval->object);
+	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
+	hg_object_set_vtable(&retval->object, &__hg_dict_vtable);
 
 	retval->dict = hg_btree_new(BTREE_N_NODE);
 	if (retval->dict == NULL) {

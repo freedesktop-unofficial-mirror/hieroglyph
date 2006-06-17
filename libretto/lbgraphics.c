@@ -229,8 +229,9 @@ libretto_graphic_state_new(HgMemPool *pool)
 		if (retval == NULL)
 			break;
 		retval->object.id = HG_OBJECT_ID;
-		retval->object.state = hg_mem_pool_get_default_access_mode(pool);
-		retval->object.vtable = &__lb_gstate_vtable;
+		HG_OBJECT_INIT_STATE (&retval->object);
+		HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
+		hg_object_set_vtable(&retval->object, &__lb_gstate_vtable);
 
 		retval->path = hg_path_new(pool);
 		if (retval->path == NULL)
@@ -270,8 +271,9 @@ libretto_graphics_new(HgMemPool *pool)
 		if (retval == NULL)
 			break;
 		retval->object.id = HG_OBJECT_ID;
-		retval->object.state = hg_mem_pool_get_default_access_mode(pool);
-		retval->object.vtable = &__lb_graphics_vtable;
+		HG_OBJECT_INIT_STATE (&retval->object);
+		HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
+		hg_object_set_vtable(&retval->object, &__lb_graphics_vtable);
 
 		retval->pool = pool;
 		retval->current_gstate = libretto_graphic_state_new(pool);

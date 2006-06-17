@@ -296,8 +296,9 @@ hg_file_object_new(HgMemPool  *pool,
 		return NULL;
 	}
 	retval->object.id = HG_OBJECT_ID;
-	retval->object.state = hg_mem_pool_get_default_access_mode(pool);
-	retval->object.vtable = &__hg_file_vtable;
+	HG_OBJECT_INIT_STATE (&retval->object);
+	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
+	hg_object_set_vtable(&retval->object, &__hg_file_vtable);
 
 	retval->file_type = file_type;
 	/* initialize filename here to avoid a warning

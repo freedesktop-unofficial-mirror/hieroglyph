@@ -152,7 +152,7 @@ _hg_value_node_real_dup(gpointer data)
 		g_warning("Failed to duplicate a node.");
 		return NULL;
 	}
-	retval->object.state = node->object.state;
+	HG_OBJECT_SET_STATE (&retval->object, HG_OBJECT_GET_STATE (&node->object));
 	retval->v.pointer = NULL;
 	switch (node->type) {
 	    case HG_TYPE_VALUE_BOOLEAN:
@@ -199,7 +199,7 @@ _hg_value_node_real_copy(gpointer data)
 		g_warning("Failed to duplicate a node.");
 		return NULL;
 	}
-	retval->object.state = node->object.state;
+	HG_OBJECT_SET_STATE (&retval->object, HG_OBJECT_GET_STATE (&node->object));
 	retval->v.pointer = NULL;
 	switch (node->type) {
 	    case HG_TYPE_VALUE_BOOLEAN:
@@ -349,8 +349,9 @@ hg_value_node_new(HgMemPool *pool)
 		return NULL;
 	}
 	retval->object.id = HG_OBJECT_ID;
-	retval->object.state = hg_mem_pool_get_default_access_mode(pool);
-	retval->object.vtable = &__hg_value_node_vtable;
+	HG_OBJECT_INIT_STATE (&retval->object);
+	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
+	hg_object_set_vtable(&retval->object, &__hg_value_node_vtable);
 
 	return retval;
 }

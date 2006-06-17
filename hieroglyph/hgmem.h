@@ -51,7 +51,7 @@ void         hg_heap_free        (HgHeap                  *heap);
 			(__retval__) = NULL;				\
 	} G_STMT_END
 #define HG_MEMOBJ_GET_HEAP_ID(_obj)		(((_obj)->flags >> 24) & 0xff)
-#define HG_MEMOBJ_SET_HEAP_ID(_obj,_id)		(_obj)->flags |= ((_id) << 24)
+#define HG_MEMOBJ_SET_HEAP_ID(_obj,_id)		((_obj)->flags = HG_MEMOBJ_GET_FLAGS (_obj) | ((_id) << 24))
 #define HG_MEMOBJ_GET_FLAGS(_obj)		((_obj)->flags & 0xffffff)
 #define HG_MEMOBJ_SET_FLAGS(_obj,_flags)	(_obj)->flags = (HG_MEMOBJ_GET_HEAP_ID(_obj) << 24) | _flags
 #define HG_MEMOBJ_INIT_FLAGS(_obj)		(_obj)->flags = 0;
@@ -103,14 +103,15 @@ gboolean       _hg_mem_pool_is_own_memobject      (HgMemPool     *pool,
 #define hg_mem_set_flags__inline(__obj__, __flags__, __notify__)	\
 	G_STMT_START {							\
 		HgObject *__hg_mem_hobj__ = (HgObject *)(__obj__)->data; \
+		const HgObjectVTable const *__hg_obj_vtable__;		\
 									\
 		HG_MEMOBJ_SET_FLAGS ((__obj__), (__flags__));		\
 		if ((__notify__) &&					\
 		    __hg_mem_hobj__->id == HG_OBJECT_ID &&		\
-		    __hg_mem_hobj__->vtable &&				\
-		    __hg_mem_hobj__->vtable->set_flags) {		\
+		    (__hg_obj_vtable__ = hg_object_get_vtable(__hg_mem_hobj__)) != NULL && \
+		    __hg_obj_vtable__->set_flags) {			\
 			guint __hg_mem_flags__ = (__flags__) & (HG_FL_MARK); \
-			__hg_mem_hobj__->vtable->set_flags(__hg_mem_hobj__, __hg_mem_flags__); \
+			__hg_obj_vtable__->set_flags(__hg_mem_hobj__, __hg_mem_flags__); \
 		}							\
 	} G_STMT_END
 #define hg_mem_add_flags__inline(__obj__, __flags__, __notify__)	\
@@ -151,6 +152,11 @@ void     hg_mem_pool_use_garbage_collection(HgMemPool *pool,
 					    gboolean   flag);
 
 /* HgObject */
+#define HG_OBJECT_GET_VTABLE_ID(_obj)		(((_obj)->state_ >> 24) & 0xff)
+#define HG_OBJECT_SET_VTABLE_ID(_obj,_id)	((_obj)->state_ = HG_OBJECT_GET_STATE (_obj) | ((_id) << 24))
+#define HG_OBJECT_GET_STATE(_obj)		((_obj)->state_ & 0xffffff)
+#define HG_OBJECT_SET_STATE(_obj,_state)	((_obj)->state_ = (HG_OBJECT_GET_VTABLE_ID (_obj) << 24) | _state)
+#define HG_OBJECT_INIT_STATE(_obj)		((_obj)->state_ = 0)
 #define hg_object_readable(obj)		hg_object_add_state(obj, HG_ST_READABLE)
 #define hg_object_unreadable(obj)	hg_object_set_state(obj, hg_object_get_state(obj) & ~HG_ST_READABLE)
 #define hg_object_is_readable(obj)	hg_object_is_state(obj, HG_ST_READABLE)
@@ -161,15 +167,18 @@ void     hg_mem_pool_use_garbage_collection(HgMemPool *pool,
 #define hg_object_unexecutable(obj)	hg_object_set_state(obj, hg_object_get_state(obj) & ~HG_ST_EXECUTABLE)
 #define hg_object_is_executable(obj)	hg_object_is_state(obj, HG_ST_EXECUTABLE)
 
-guint    hg_object_get_state(HgObject *object);
-void     hg_object_set_state(HgObject *object,
-			     guint     state);
-void     hg_object_add_state(HgObject *object,
-			     guint     state);
-gboolean hg_object_is_state (HgObject *object,
-			     guint     state);
-gpointer hg_object_dup      (HgObject *object);
-gpointer hg_object_copy     (HgObject *object);
+guint                       hg_object_get_state (HgObject                   *object);
+void                        hg_object_set_state (HgObject                   *object,
+						 guint                       state);
+void                        hg_object_add_state (HgObject                   *object,
+						 guint                       state);
+gboolean                    hg_object_is_state  (HgObject                   *object,
+						 guint                       state);
+gpointer                    hg_object_dup       (HgObject                   *object);
+gpointer                    hg_object_copy      (HgObject                   *object);
+const HgObjectVTable const *hg_object_get_vtable(HgObject                   *object);
+void                        hg_object_set_vtable(HgObject                   *object,
+						 const HgObjectVTable const *vtable);
 
 
 G_END_DECLS

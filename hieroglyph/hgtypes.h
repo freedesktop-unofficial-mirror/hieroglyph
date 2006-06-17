@@ -85,6 +85,14 @@ typedef enum {
 	HG_ST_READABLE   = 1 << 0,
 	HG_ST_WRITABLE   = 1 << 1,
 	HG_ST_EXECUTABLE = 1 << 2,
+	HG_ST_RESERVED1  = 1 << 24, /* reserved for vtable ID */
+	HG_ST_RESERVED2  = 1 << 25, /* reserved for vtable ID */
+	HG_ST_RESERVED3  = 1 << 26, /* reserved for vtable ID */
+	HG_ST_RESERVED4  = 1 << 27, /* reserved for vtable ID */
+	HG_ST_RESERVED5  = 1 << 28, /* reserved for vtable ID */
+	HG_ST_RESERVED6  = 1 << 29, /* reserved for vtable ID */
+	HG_ST_RESERVED7  = 1 << 30, /* reserved for vtable ID */
+	HG_ST_RESERVED8  = 1 << 31, /* reserved for vtable ID */
 	HG_ST_END
 } HgObjectStateFlags;
 
@@ -262,7 +270,6 @@ struct _HieroGlyphObjectVTable {
 struct _HieroGlyphObject {
 	gint32          id;
 	guint           state;
-	HgObjectVTable *vtable;
 };
 
 struct _HieroGlyphValueNode {

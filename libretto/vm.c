@@ -336,8 +336,9 @@ libretto_vm_new(LibrettoEmulationType type)
 		return NULL;
 	}
 	retval->object.id = HG_OBJECT_ID;
-	retval->object.state = hg_mem_pool_get_default_access_mode(__lb_vm_mem_pool);
-	retval->object.vtable = &__lb_vm_vtable;
+	HG_OBJECT_INIT_STATE (&retval->object);
+	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(__lb_vm_mem_pool));
+	hg_object_set_vtable(&retval->object, &__lb_vm_vtable);
 
 	retval->emulation_type = type;
 	retval->use_global_pool = FALSE;

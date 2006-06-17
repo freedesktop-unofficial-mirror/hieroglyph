@@ -29,6 +29,7 @@
 #include <hieroglyph/hgmem.h>
 #include <hieroglyph/hgfile.h>
 #include <hieroglyph/hgstring.h>
+#include <hieroglyph/hgvaluenode.h>
 #include "lbstack.h"
 
 
@@ -143,7 +144,8 @@ libretto_stack_new(HgMemPool *pool,
 		return NULL;
 	}
 	retval->object.id = HG_OBJECT_ID;
-	retval->object.vtable = &__lb_stack_vtable;
+	HG_OBJECT_INIT_STATE (&retval->object);
+	hg_object_set_vtable(&retval->object, &__lb_stack_vtable);
 	retval->current_depth = 0;
 	retval->max_depth = max_depth;
 	retval->stack = NULL;
@@ -318,16 +320,13 @@ libretto_stack_dump(LibrettoStack *stack,
 {
 	GList *l;
 	HgValueNode *node;
-	HgString *hs;
 
 	g_return_if_fail (stack != NULL);
 
-	hg_file_object_printf(file, "   address|type|content\n");
-	hg_file_object_printf(file, "----------+----+-------------------------------\n");
+	hg_file_object_printf(file, "   address|   type|content\n");
+	hg_file_object_printf(file, "----------+-------+-------------------------------\n");
 	for (l = stack->stack; l != NULL; l = g_list_next(l)) {
 		node = l->data;
-		hs = hg_object_to_string((HgObject *)node);
-		hg_file_object_printf(file, "%p|%4d|%s\n", node, node->type, hg_string_get_string(hs));
-		hg_mem_free(hs);
+		hg_value_node_debug_print(file, HG_DEBUG_DUMP, node->type, stack, node, NULL);
 	}
 }

@@ -246,8 +246,9 @@ hg_path_node_new(HgMemPool  *pool,
 		return NULL;
 
 	node->object.id = HG_OBJECT_ID;
-	node->object.state = hg_mem_pool_get_default_access_mode(pool);
-	node->object.vtable = &__hg_path_node_vtable;
+	HG_OBJECT_INIT_STATE (&node->object);
+	HG_OBJECT_SET_STATE (&node->object, hg_mem_pool_get_default_access_mode(pool));
+	hg_object_set_vtable(&node->object, &__hg_path_node_vtable);
 
 	node->type = type;
 	node->x = x;
@@ -279,8 +280,9 @@ hg_path_new(HgMemPool *pool)
 
 	retval = hg_mem_alloc(pool, sizeof (HgPath));
 	retval->object.id = HG_OBJECT_ID;
-	retval->object.state = hg_mem_pool_get_default_access_mode(pool);
-	retval->object.vtable = &__hg_path_vtable;
+	HG_OBJECT_INIT_STATE (&retval->object);
+	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
+	hg_object_set_vtable(&retval->object, &__hg_path_vtable);
 
 	retval->node = NULL;
 	retval->last_node = NULL;

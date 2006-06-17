@@ -186,8 +186,9 @@ hg_render_eofill_new(HgMemPool     *pool,
 
 	retval = hg_mem_alloc(pool, sizeof (HgRender));
 	retval->object.id = HG_OBJECT_ID;
-	retval->object.state = hg_mem_pool_get_default_access_mode(pool);
-	retval->object.vtable = &__hg_render_fill_vtable;
+	HG_OBJECT_INIT_STATE (&retval->object);
+	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
+	hg_object_set_vtable(&retval->object, &__hg_render_fill_vtable);
 
 	retval->u.type = HG_RENDER_EOFILL;
 	memcpy(&retval->u.fill.mtx, ctm, sizeof (HgMatrix));
@@ -211,8 +212,9 @@ hg_render_fill_new(HgMemPool     *pool,
 
 	retval = hg_mem_alloc(pool, sizeof (HgRender));
 	retval->object.id = HG_OBJECT_ID;
-	retval->object.state = hg_mem_pool_get_default_access_mode(pool);
-	retval->object.vtable = &__hg_render_fill_vtable;
+	HG_OBJECT_INIT_STATE (&retval->object);
+	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
+	hg_object_set_vtable(&retval->object, &__hg_render_fill_vtable);
 
 	retval->u.type = HG_RENDER_FILL;
 	memcpy(&retval->u.fill.mtx, ctm, sizeof (HgMatrix));
@@ -243,8 +245,9 @@ hg_render_stroke_new(HgMemPool     *pool,
 
 	retval = hg_mem_alloc(pool, sizeof (HgRender));
 	retval->object.id = HG_OBJECT_ID;
-	retval->object.state = hg_mem_pool_get_default_access_mode(pool);
-	retval->object.vtable = &__hg_render_stroke_vtable;
+	HG_OBJECT_INIT_STATE (&retval->object);
+	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
+	hg_object_set_vtable(&retval->object, &__hg_render_stroke_vtable);
 
 	retval->u.type = HG_RENDER_STROKE;
 	memcpy(&retval->u.stroke.mtx, ctm, sizeof (HgMatrix));
@@ -273,8 +276,9 @@ hg_render_debug_new(HgMemPool   *pool,
 
 	retval = hg_mem_alloc(pool, sizeof (HgRender));
 	retval->object.id = HG_OBJECT_ID;
-	retval->object.state = hg_mem_pool_get_default_access_mode(pool);
-	retval->object.vtable = &__hg_render_debug_vtable;
+	HG_OBJECT_INIT_STATE (&retval->object);
+	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
+	hg_object_set_vtable(&retval->object, &__hg_render_debug_vtable);
 
 	retval->u.type = HG_RENDER_DEBUG;
 	retval->u.debug.func = func;

@@ -30,12 +30,18 @@
 #include <unistd.h>
 #include "hgmem.h"
 #include "hgallocator-private.h"
+#include "hgbtree.h"
 
+#define VTABLE_TREE_N_NODE	3
 
 gpointer _hg_stack_start = NULL;
 gpointer _hg_stack_end = NULL;
 static gboolean hg_mem_is_initialized = FALSE;
 static GAllocator *hg_mem_g_list_allocator = NULL;
+static HgBTree *_hg_object_vtable_tree = NULL;
+static GPtrArray *_hg_object_vtable_array = NULL;
+
+G_LOCK_DEFINE_STATIC (hgobject);
 
 /*
  * Private Functions
@@ -175,6 +181,14 @@ hg_mem_init(void)
 			hg_mem_g_list_allocator = g_allocator_new("Default GAllocator for GList", 128);
 			g_list_push_allocator(hg_mem_g_list_allocator);
 		}
+		if (!_hg_object_vtable_tree) {
+			_hg_object_vtable_tree = hg_btree_new(VTABLE_TREE_N_NODE);
+			if (_hg_object_vtable_tree == NULL) {
+				g_warning("Failed to initialize VTable tree.");
+				return;
+			}
+			_hg_object_vtable_array = g_ptr_array_new();
+		}
 		hg_mem_is_initialized = TRUE;
 	}
 }
@@ -185,7 +199,11 @@ hg_mem_finalize(void)
 	if (hg_mem_is_initialized) {
 		g_list_pop_allocator();
 		g_allocator_free(hg_mem_g_list_allocator);
+		hg_btree_destroy(_hg_object_vtable_tree);
+		g_ptr_array_free(_hg_object_vtable_array, TRUE);
 		hg_mem_g_list_allocator = NULL;
+		_hg_object_vtable_tree = NULL;
+		_hg_object_vtable_array = NULL;
 		hg_mem_is_initialized = FALSE;
 	}
 }
@@ -513,13 +531,17 @@ hg_mem_free(gpointer data)
 		g_warning("[BUG] Invalid object %p is given to be freed.", data);
 		return FALSE;
 	} else {
+		const HgObjectVTable const *vtable;
+
 		hobj = data;
-		if (hobj->id == HG_OBJECT_ID && hobj->vtable && hobj->vtable->free) {
-			hobj->vtable->free(data);
+		if (hobj->id == HG_OBJECT_ID &&
+		    (vtable = hg_object_get_vtable(hobj)) != NULL &&
+		    vtable->free) {
+			vtable->free(data);
 			/* prevents to invoke 'free' twice
 			 * when the pool destroy process is being run.
 			 */
-			hobj->vtable = NULL;
+			HG_OBJECT_SET_VTABLE_ID (hobj, 0);
 		}
 		if (!obj->pool->destroyed)
 			obj->pool->allocator->vtable->free(obj->pool, data);
@@ -658,7 +680,7 @@ hg_object_get_state(HgObject *object)
 {
 	g_return_val_if_fail (object != NULL, 0);
 
-	return object->state;
+	return HG_OBJECT_GET_STATE (object);
 }
 
 void
@@ -667,7 +689,7 @@ hg_object_set_state(HgObject *object,
 {
 	g_return_if_fail (object != NULL);
 
-	object->state = state;
+	HG_OBJECT_SET_STATE (object, state);
 }
 
 void
@@ -684,17 +706,20 @@ hg_object_is_state(HgObject *object,
 {
 	g_return_val_if_fail (object != NULL, FALSE);
 
-	return (object->state & state) == state;
+	return (HG_OBJECT_GET_STATE (object) & state) == state;
 }
 
 gpointer
 hg_object_dup(HgObject *object)
 {
+	const HgObjectVTable const *vtable;
+
 	g_return_val_if_fail (object != NULL, NULL);
 
 	if (object->id == HG_OBJECT_ID &&
-	    object->vtable && object->vtable->dup)
-		return object->vtable->dup(object);
+	    (vtable = hg_object_get_vtable(object)) != NULL &&
+	    vtable->dup)
+		return vtable->dup(object);
 
 	return object;
 }
@@ -702,11 +727,65 @@ hg_object_dup(HgObject *object)
 gpointer
 hg_object_copy(HgObject *object)
 {
+	const HgObjectVTable const *vtable;
+
 	g_return_val_if_fail (object != NULL, NULL);
 
 	if (object->id == HG_OBJECT_ID &&
-	    object->vtable && object->vtable->copy)
-		return object->vtable->copy(object);
+	    (vtable = hg_object_get_vtable(object)) != NULL &&
+	    vtable->copy)
+		return vtable->copy(object);
 
 	return object;
+}
+
+const HgObjectVTable const *
+hg_object_get_vtable(HgObject *object)
+{
+	guint id;
+
+	g_return_val_if_fail (object != NULL, NULL);
+	g_return_val_if_fail (object->id == HG_OBJECT_ID, NULL);
+
+	id = HG_OBJECT_GET_VTABLE_ID (object);
+
+	if (id == 0) {
+		/* 0 is still valid and intentional that means no vtable. */
+		return NULL;
+	}
+	if (id > _hg_object_vtable_array->len) {
+		g_warning("[BUG] Invalid vtable ID found: %p id: %d latest id: %u\n",
+			  object, id, _hg_object_vtable_array->len);
+
+		return NULL;
+	}
+
+	return g_ptr_array_index(_hg_object_vtable_array, id - 1);
+}
+
+void
+hg_object_set_vtable(HgObject                   *object,
+		     const HgObjectVTable const *vtable)
+{
+	guint id = 0;
+
+	g_return_if_fail (object != NULL);
+	g_return_if_fail (vtable != NULL);
+	g_return_if_fail (hg_mem_is_initialized);
+	g_return_if_fail (_hg_object_vtable_array->len < 255);
+
+	G_LOCK (hgobject);
+
+	if ((id = GPOINTER_TO_UINT(hg_btree_find(_hg_object_vtable_tree, (gpointer)vtable))) == 0) {
+		g_ptr_array_add(_hg_object_vtable_array, (gpointer)vtable);
+		id = _hg_object_vtable_array->len;
+		hg_btree_add(_hg_object_vtable_tree, (gpointer)vtable, GUINT_TO_POINTER (id));
+	}
+	if (id > 255) {
+		g_warning("[BUG] Invalid vtable ID found in tree: %p id %u\n", object, id);
+		id = 0;
+	}
+	HG_OBJECT_SET_VTABLE_ID (object, id);
+
+	G_UNLOCK (hgobject);
 }

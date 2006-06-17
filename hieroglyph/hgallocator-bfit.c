@@ -325,13 +325,17 @@ _hg_allocator_bfit_relocate(HgMemPool         *pool,
 		    (gsize)list->data <= info->end) {
 			list->data = (gpointer)((gsize)list->data + info->diff);
 		} else {
+			const HgObjectVTable const *vtable;
+
 			/* object that is targetted for relocation will relocates
 			 * their member variables later. so we need to ensure
 			 * the relocation for others.
 			 */
 			hobj = (HgObject *)list->data;
-			if (hobj->id == HG_OBJECT_ID && hobj->vtable && hobj->vtable->relocate) {
-				hobj->vtable->relocate(hobj, info);
+			if (hobj->id == HG_OBJECT_ID &&
+			    (vtable = hg_object_get_vtable(hobj)) != NULL &&
+			    vtable->relocate) {
+				vtable->relocate(hobj, info);
 			}
 		}
 	}
@@ -573,6 +577,7 @@ _hg_allocator_bfit_real_resize(HgMemObject *object,
 		gpointer p;
 		HgMemRelocateInfo info;
 		HgObject *hobj;
+		const HgObjectVTable const *vtable;
 
 		p = hg_mem_alloc_with_flags(pool, block_size, HG_MEMOBJ_GET_FLAGS (object));
 		/* reset the stack bottom here again. it may be broken during allocation
@@ -591,13 +596,15 @@ _hg_allocator_bfit_real_resize(HgMemObject *object,
 		 */
 		hobj = (HgObject *)object->data;
 		if (hobj->id == HG_OBJECT_ID) {
-			hobj->vtable = NULL;
+			HG_OBJECT_SET_VTABLE_ID (hobj, 0);
 		}
 		hg_mem_free(object->data);
 		_hg_allocator_bfit_relocate(pool, &info);
 		hobj = (HgObject *)p;
-		if (hobj->id == HG_OBJECT_ID && hobj->vtable && hobj->vtable->relocate) {
-			hobj->vtable->relocate(hobj, &info);
+		if (hobj->id == HG_OBJECT_ID &&
+		    (vtable = hg_object_get_vtable(hobj)) != NULL &&
+		    vtable->relocate) {
+			vtable->relocate(hobj, &info);
 		}
 
 		return p;
@@ -837,9 +844,10 @@ _hg_allocator_bfit_real_save_snapshot(HgMemPool *pool)
 		return NULL;
 	}
 	retval->object.id = HG_OBJECT_ID;
-	retval->object.state = hg_mem_pool_get_default_access_mode(pool);
+	HG_OBJECT_INIT_STATE (&retval->object);
+	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
 	/* set NULL to avoid the call before finishing an initialization. */
-	retval->object.vtable = NULL;
+	HG_OBJECT_SET_VTABLE_ID (&retval->object, 0);
 
 	retval->id = (gsize)pool;
 	retval->heap_list = g_ptr_array_new();
@@ -870,7 +878,7 @@ _hg_allocator_bfit_real_save_snapshot(HgMemPool *pool)
 
 	/* FIXME */
 
-	retval->object.vtable = &__hg_snapshot_vtable;
+	hg_object_set_vtable(&retval->object, &__hg_snapshot_vtable);
 
 	return retval;
 }

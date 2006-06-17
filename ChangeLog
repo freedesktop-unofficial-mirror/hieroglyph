@@ -1,3 +1,64 @@
+2006-06-18  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgarray.c (hg_array_new): improved a footprint.
+
+	* hieroglyph/hgmem.h (hg_mem_set_flags__inline): don't access vtable
+	directly.
+	(HG_OBJECT_GET_VTABLE_ID): new macro.
+	(HG_OBJECT_SET_VTABLE_ID): likewise.
+	(HG_OBJECT_GET_STATE): likewise.
+	(HG_OBJECT_SET_STATE): likewise.
+
+	* hieroglyph/hgdict.c (hg_dict_node_new): improved a footprint.
+	(hg_dict_new): likewise.
+
+	* hieroglyph/hgmem.c (hg_mem_init): initialize vtable tree for
+	HgObject.
+	(hg_mem_finalize): destroy vtable tree for HgObject.
+	(hg_mem_free): don't access vtable directly.
+	(hg_object_get_state): use macro instead of direct access.
+	(hg_object_set_state): likewise.
+	(hg_object_is_state): likewise.
+	(hg_object_dup): don't access vtable directly.
+	(hg_object_copy): likewise.
+	(hg_object_get_vtable): new function.
+	(hg_object_set_vtable): new function.
+
+	* hieroglyph/hgstring.c (hg_string_new): improved a footprint.
+	(hg_object_to_string): use macro instead of direct access.
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_relocate):
+	don't access vtable directly.
+	(_hg_allocator_bfit_real_resize): likewise.
+	(_hg_allocator_bfit_real_save_snapshot): improved a footprint.
+
+	* hieroglyph/hgpath.c (hg_path_node_new): improved a footprint.
+	(hg_path_new): likewise.
+
+	* hieroglyph/hgvaluenode.c (_hg_value_node_real_dup): use macro
+	instead of direct access.
+	(_hg_value_node_real_copy): likewise.
+	(hg_value_node_new): improved a footprint.
+
+	* hieroglyph/hgfile.c (hg_file_object_new): improved a footprint.
+
+	* hieroglyph/hgrender.c (hg_render_eofill_new): improved a footprint.
+	(hg_render_fill_new): likewise.
+	(hg_render_stroke_new): likewise.
+	(hg_render_debug_new): likewise.
+
+	* libretto/operator.c (libretto_operator_new): improved a footprint.
+
+	* libretto/lbgraphics.c (libretto_graphic_state_new): improved
+	a footprint.
+	(libretto_graphics_new): likewise.
+
+	* libretto/vm.c (libretto_vm_new): likewise.
+
+	* libretto/lbstack.c (libretto_stack_new): likewise.
+	(libretto_stack_dump): don't reply on hieroglyph memory management
+	system to dump a stack. it may be failed.
+
 2006-06-16  Akira TAGOH  <at@gclab.org>
 
 	* src/hgspy.c (_hgspy_quit_cb): new function.
