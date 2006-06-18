@@ -155,13 +155,15 @@ hg_memory_visualizer_real_destroy(GtkObject *object)
 }
 
 /* GtkWidget */
-#if 0
 static void
 hg_memory_visualizer_real_size_request(GtkWidget      *widget,
 				       GtkRequisition *requisition)
 {
+	GtkWidget *parent = gtk_widget_get_parent(widget);
+
+	requisition->width = widget->requisition.width = parent->requisition.width;
+	requisition->height = widget->requisition.height = parent->requisition.height;
 }
-#endif
 
 static void
 hg_memory_visualizer_real_size_allocate(GtkWidget     *widget,
@@ -323,6 +325,7 @@ hg_memory_visualizer_class_init(HgMemoryVisualizerClass *klass)
 	widget_class->unrealize = hg_memory_visualizer_real_unrealize;
 	widget_class->map = hg_memory_visualizer_real_map;
 	widget_class->unmap = hg_memory_visualizer_real_unmap;
+	widget_class->size_request = hg_memory_visualizer_real_size_request;
 	widget_class->size_allocate = hg_memory_visualizer_real_size_allocate;
 
 	/* initialize HgMemoryVisualizer */

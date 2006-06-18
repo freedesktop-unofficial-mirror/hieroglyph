@@ -572,14 +572,16 @@ _hgspy_entry_activate_cb(GtkWidget *widget,
 	text = gtk_entry_get_text(entry);
 	if (text == NULL || text[0] == 0)
 		return;
-	echoback = g_strdup_printf("%s%s\n",
-				   gtk_label_get_text(GTK_LABEL (spy->prompt)),
-				   text);
-	_hgspy_insert_text_into_textview(spy, echoback, strlen(echoback));
-	g_free(echoback);
-	spy->statementedit_buffer = g_strdup(text);
+	if (spy->vm) {
+		echoback = g_strdup_printf("%s%s\n",
+					   gtk_label_get_text(GTK_LABEL (spy->prompt)),
+					   text);
+		_hgspy_insert_text_into_textview(spy, echoback, strlen(echoback));
+		g_free(echoback);
+		spy->statementedit_buffer = g_strdup(text);
+		gtk_widget_set_sensitive(spy->entry, FALSE);
+	}
 	gtk_entry_set_text(entry, "");
-	gtk_widget_set_sensitive(spy->entry, FALSE);
 }
 
 static void
@@ -638,6 +640,7 @@ main(int    argc,
 	GModule *module;
 	HgSpy *spy;
 	GtkWidget *menubar, *vbox, *none, *table, *label, *hbox, *vbox2, *scrolled, *hbox2;
+	GtkWidget *vpaned, *vbox3;
 	GtkActionGroup *actions;
 	GtkActionEntry action_entries[] = {
 		/* toplevel menu */
@@ -776,10 +779,12 @@ main(int    argc,
 	spy->ui = gtk_ui_manager_new();
 	vbox = gtk_vbox_new(FALSE, 0);
 	vbox2 = gtk_vbox_new(FALSE, 0);
+	vbox3 = gtk_vbox_new(FALSE, 0);
 	hbox = gtk_hbox_new(FALSE, 0);
 	hbox2 = gtk_hbox_new(FALSE, 0);
 	table = gtk_table_new(3, 2, FALSE);
 	scrolled = gtk_scrolled_window_new(NULL, NULL);
+	vpaned = gtk_vpaned_new();
 	spy->total_vm_size = gtk_entry_new();
 	spy->used_vm_size = gtk_entry_new();
 	spy->free_vm_size = gtk_entry_new();
@@ -865,13 +870,15 @@ main(int    argc,
 	gtk_container_add(GTK_CONTAINER (scrolled), spy->textview);
 	gtk_box_pack_start(GTK_BOX (vbox2), scrolled, TRUE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX (hbox2), spy->prompt, FALSE, FALSE, 0);
-	gtk_box_pack_start(GTK_BOX (hbox2), spy->entry, FALSE, TRUE, 0);
-	gtk_box_pack_start(GTK_BOX (vbox2), hbox2, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX (hbox2), spy->entry, TRUE, TRUE, 0);
+	gtk_box_pack_start(GTK_BOX (vbox2), hbox2, FALSE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX (hbox), vbox2, TRUE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX (hbox), table, FALSE, FALSE, 0);
-	gtk_box_pack_start(GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
-	gtk_box_pack_end(GTK_BOX (vbox), spy->status, FALSE, FALSE, 0);
-	gtk_container_add(GTK_CONTAINER (spy->window), vbox);
+	gtk_paned_pack1(GTK_PANED (vpaned), vbox, TRUE, FALSE);
+	gtk_paned_pack2(GTK_PANED (vpaned), hbox, TRUE, FALSE);
+	gtk_box_pack_start(GTK_BOX (vbox3), vpaned, TRUE, TRUE, 0);
+	gtk_box_pack_end(GTK_BOX (vbox3), spy->status, FALSE, FALSE, 0);
+	gtk_container_add(GTK_CONTAINER (spy->window), vbox3);
 
 	/* setup signals */
 	g_signal_connect(spy->visualizer, "pool-updated",
