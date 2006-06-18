@@ -1,5 +1,16 @@
 2006-06-19  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgmem.h (HG_OBJECT_INIT_OBJECT): new macro.
+
+	* hieroglyph/hgmacros.h (HG_MEMOBJ_GET_HGOBJECT_ID): new macro.
+	(HG_MEMOBJ_SET_HGOBJECT_ID): new macro.
+	(HG_MEMOBJ_IS_HGOBJECT): new macro.
+	(HG_OBJECT_GET_USER_DATA): new macro.
+	(HG_OBJECT_SET_USER_DATA): new macro.
+
+	* hieroglyph/hgvaluenode.h (HG_VALUE_GET_VALUE_TYPE): new macro.
+	(HG_VALUE_SET_VALUE_TYPE): new macro.
+
 	* hieroglyph/hgmem.h (HG_MEMOBJ_GET_MARK_AGE): new macro.
 	(HG_MEMOBJ_SET_MARK_AGE): new macro.
 	(hg_mem_set_flags__inline): use HG_MEMOBJ_SET_MARK_AGE for marking.

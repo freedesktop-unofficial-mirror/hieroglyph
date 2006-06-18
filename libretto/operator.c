@@ -522,7 +522,7 @@ G_STMT_START
 			break;
 		}
 		node = libretto_stack_index(ostack, 0);
-		switch (node->type) {
+		switch (HG_VALUE_GET_VALUE_TYPE (node)) {
 		    case HG_TYPE_VALUE_BOOLEAN:
 		    case HG_TYPE_VALUE_INTEGER:
 		    case HG_TYPE_VALUE_REAL:
@@ -5486,7 +5486,7 @@ G_STMT_START
 			break;
 		}
 		node = libretto_stack_index(ostack, 0);
-		switch (node->type) {
+		switch (HG_VALUE_GET_VALUE_TYPE (node)) {
 		    case HG_TYPE_VALUE_BOOLEAN:
 			    node = libretto_vm_get_name_node(vm, "booleantype");
 			    break;
@@ -5525,7 +5525,8 @@ G_STMT_START
 			    break;
 		    case HG_TYPE_VALUE_END:
 		    default:
-			    g_warning("[BUG] Unknown node type %d was given.", node->type);
+			    g_warning("[BUG] Unknown node type %d was given.",
+				      HG_VALUE_GET_VALUE_TYPE (node));
 			    _libretto_operator_set_error(vm, op, LB_e_typecheck);
 
 			    return retval;
@@ -6876,7 +6877,7 @@ libretto_operator_new(HgMemPool            *pool,
 		g_warning("Failed to create an operator.");
 		return NULL;
 	}
-	HG_SET_MAGIC_CODE (&retval->object, HG_OBJECT_ID);
+	HG_OBJECT_INIT_OBJECT (retval);
 	HG_OBJECT_INIT_STATE (&retval->object);
 	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
 	hg_object_set_vtable(&retval->object, &__lb_operator_vtable);

@@ -29,7 +29,6 @@
 G_BEGIN_DECLS
 
 #define HG_MEM_HEADER	0x48474d4f
-#define HG_OBJECT_ID	0x48474f4f
 #define HG_CHECK_MAGIC_CODE(_obj, _magic)		\
 	((_obj)->magic == (_magic))
 #define HG_SET_MAGIC_CODE(_obj, _magic)			\
@@ -50,6 +49,60 @@ G_BEGIN_DECLS
 	hg_mem_init()
 
 #define HG_MEM_ALIGNMENT	4
+
+/* HgMemObject */
+#define HG_MEMOBJ_HEAP_ID_MASK		0xff000000
+#define HG_MEMOBJ_MARK_AGE_MASK		0x00ff0000
+#define HG_MEMOBJ_HGOBJECT_MASK		0x00008000
+#define HG_MEMOBJ_FLAGS_MASK		0x00007fff
+#define HG_MEMOBJ_GET_HEAP_ID(_obj)		(((_obj)->flags & HG_MEMOBJ_HEAP_ID_MASK) >> 24)
+#define HG_MEMOBJ_SET_HEAP_ID(_obj, _id)				\
+	((_obj)->flags = (((_id) << 24) & HG_MEMOBJ_HEAP_ID_MASK)	\
+	 | (HG_MEMOBJ_GET_MARK_AGE (_obj) << 16)			\
+	 | (HG_MEMOBJ_GET_HGOBJECT_ID (_obj) << 15)			\
+	 | HG_MEMOBJ_GET_FLAGS (_obj))
+#define HG_MEMOBJ_GET_MARK_AGE(_obj)		(((_obj)->flags & HG_MEMOBJ_MARK_AGE_MASK) >> 16)
+#define HG_MEMOBJ_SET_MARK_AGE(_obj, _age)				\
+	((_obj)->flags = (HG_MEMOBJ_GET_HEAP_ID (_obj) << 24)		\
+	 | (((_age) << 16) & HG_MEMOBJ_MARK_AGE_MASK)			\
+	 | (HG_MEMOBJ_GET_HGOBJECT_ID (_obj) << 15)			\
+	 | HG_MEMOBJ_GET_FLAGS (_obj))
+#define HG_MEMOBJ_GET_HGOBJECT_ID(_obj)		(((_obj)->flags & HG_MEMOBJ_HGOBJECT_MASK) >> 15)
+#define HG_MEMOBJ_SET_HGOBJECT_ID(_obj)					\
+	((_obj)->flags = (HG_MEMOBJ_GET_HEAP_ID (_obj) << 24)		\
+	 | (HG_MEMOBJ_GET_MARK_AGE (_obj) << 16)			\
+	 | (1 << 15)							\
+	 | HG_MEMOBJ_GET_FLAGS (_obj))
+#define HG_MEMOBJ_GET_FLAGS(_obj)		((_obj)->flags & HG_MEMOBJ_FLAGS_MASK)
+#define HG_MEMOBJ_SET_FLAGS(_obj, _flags)				\
+	((_obj)->flags = (HG_MEMOBJ_GET_HEAP_ID (_obj) << 24)		\
+	 | (HG_MEMOBJ_GET_MARK_AGE (_obj) << 16)			\
+	 | (HG_MEMOBJ_GET_HGOBJECT_ID (_obj) << 15)			\
+	 | ((_flags) & HG_MEMOBJ_FLAGS_MASK))
+#define HG_MEMOBJ_INIT_FLAGS(_obj)		(_obj)->flags = 0;
+#define HG_MEMOBJ_IS_HGOBJECT(_obj)		(HG_MEMOBJ_GET_HGOBJECT_ID (_obj) == 1)
+
+/* HgObject */
+#define HG_OBJECT_VTABLE_ID_MASK	0xff000000
+#define HG_OBJECT_USER_DATA_MASK	0x00ff0000
+#define HG_OBJECT_STATE_MASK		0x0000ffff
+#define HG_OBJECT_GET_VTABLE_ID(_obj)		(((_obj)->state & HG_OBJECT_VTABLE_ID_MASK) >> 24)
+#define HG_OBJECT_SET_VTABLE_ID(_obj, _id)				\
+	((_obj)->state = (((_id) << 24) & HG_OBJECT_VTABLE_ID_MASK)	\
+	 | (HG_OBJECT_GET_USER_DATA (_obj) << 16)			\
+	 | HG_OBJECT_GET_STATE (_obj))
+#define HG_OBJECT_GET_USER_DATA(_obj)		(((_obj)->state & HG_OBJECT_USER_DATA_MASK) >> 16)
+#define HG_OBJECT_SET_USER_DATA(_obj, _data)				\
+	((_obj)->state = (HG_OBJECT_GET_VTABLE_ID (_obj) << 24)		\
+	 | (((_data) << 16) & HG_OBJECT_USER_DATA_MASK)			\
+	 | HG_OBJECT_GET_STATE (_obj))
+#define HG_OBJECT_GET_STATE(_obj)		((_obj)->state & HG_OBJECT_STATE_MASK)
+#define HG_OBJECT_SET_STATE(_obj,_state)				\
+	((_obj)->state = (HG_OBJECT_GET_VTABLE_ID (_obj) << 24)		\
+	 | (HG_OBJECT_GET_USER_DATA (_obj) << 16)			\
+	 | ((_state) & HG_OBJECT_STATE_MASK))
+#define HG_OBJECT_INIT_STATE(_obj)		((_obj)->state = 0)
+
 
 G_END_DECLS
 

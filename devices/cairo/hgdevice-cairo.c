@@ -361,7 +361,8 @@ _hg_cairo_device_real_stroke(HgDevice       *device,
 		} else if (HG_IS_VALUE_REAL (node)) {
 			d = HG_VALUE_GET_REAL (node);
 		} else {
-			g_warning("[BUG] Invalid object type %d was given for dashline pattern.", node->type);
+			g_warning("[BUG] Invalid object type %d was given for dashline pattern.",
+				  HG_VALUE_GET_VALUE_TYPE (node));
 			d = 0.0;
 		}
 		dashes[i] = d;

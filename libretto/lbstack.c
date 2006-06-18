@@ -143,7 +143,7 @@ libretto_stack_new(HgMemPool *pool,
 		g_warning("Failed to create a stack.");
 		return NULL;
 	}
-	HG_SET_MAGIC_CODE (&retval->object, HG_OBJECT_ID);
+	HG_OBJECT_INIT_OBJECT (retval);
 	HG_OBJECT_INIT_STATE (&retval->object);
 	hg_object_set_vtable(&retval->object, &__lb_stack_vtable);
 	retval->current_depth = 0;
@@ -327,6 +327,9 @@ libretto_stack_dump(LibrettoStack *stack,
 	hg_file_object_printf(file, "----------+-------+-------------------------------\n");
 	for (l = stack->stack; l != NULL; l = g_list_next(l)) {
 		node = l->data;
-		hg_value_node_debug_print(file, HG_DEBUG_DUMP, node->type, stack, node, NULL);
+		hg_value_node_debug_print(file,
+					  HG_DEBUG_DUMP,
+					  HG_VALUE_GET_VALUE_TYPE (node),
+					  stack, node, NULL);
 	}
 }

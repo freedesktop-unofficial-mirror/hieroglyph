@@ -1112,7 +1112,7 @@ hg_dict_node_new(HgMemPool *pool)
 		g_warning("Failed to create a dict node.");
 		return NULL;
 	}
-	HG_SET_MAGIC_CODE (&retval->object, HG_OBJECT_ID);
+	HG_OBJECT_INIT_OBJECT (retval);
 	HG_OBJECT_INIT_STATE (&retval->object);
 	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
 	hg_object_set_vtable(&retval->object, &__hg_dict_node_vtable);
@@ -1182,7 +1182,7 @@ hg_dict_new(HgMemPool *pool,
 		g_warning("Failed to create a dict.");
 		return NULL;
 	}
-	HG_SET_MAGIC_CODE (&retval->object, HG_OBJECT_ID);
+	HG_OBJECT_INIT_OBJECT (retval);
 	HG_OBJECT_INIT_STATE (&retval->object);
 	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
 	hg_object_set_vtable(&retval->object, &__hg_dict_vtable);

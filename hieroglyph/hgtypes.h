@@ -65,10 +65,11 @@ typedef HgAllocatorVTable * (*HgAllocatorTypeFunc) (void);
 
 /* 32bit variables */
 typedef enum {
-	HG_FL_RESTORABLE = 1 << 0, /* no infect */
-	HG_FL_COMPLEX    = 1 << 1, /* no infect */
-	HG_FL_LOCK       = 1 << 2, /* no infect */
-	HG_FL_COPYING    = 1 << 3, /* no infect */
+	HG_FL_RESTORABLE = 1 << 0,  /* no infect */
+	HG_FL_COMPLEX    = 1 << 1,  /* no infect */
+	HG_FL_LOCK       = 1 << 2,  /* no infect */
+	HG_FL_COPYING    = 1 << 3,  /* no infect */
+	HG_FL_HGOBJECT   = 1 << 15, /* mark for HgObject */
 	HG_FL_MARK1      = 1 << 16, /* infect all child objects - reserved for age of mark */
 	HG_FL_MARK2      = 1 << 17, /* infect all child objects - reserved for age of mark */
 	HG_FL_MARK3      = 1 << 18, /* infect all child objects - reserved for age of mark */
@@ -89,17 +90,25 @@ typedef enum {
 } HgMemFlags;
 
 typedef enum {
-	HG_ST_READABLE   = 1 << 0,
-	HG_ST_WRITABLE   = 1 << 1,
-	HG_ST_EXECUTABLE = 1 << 2,
-	HG_ST_RESERVED1  = 1 << 24, /* reserved for vtable ID */
-	HG_ST_RESERVED2  = 1 << 25, /* reserved for vtable ID */
-	HG_ST_RESERVED3  = 1 << 26, /* reserved for vtable ID */
-	HG_ST_RESERVED4  = 1 << 27, /* reserved for vtable ID */
-	HG_ST_RESERVED5  = 1 << 28, /* reserved for vtable ID */
-	HG_ST_RESERVED6  = 1 << 29, /* reserved for vtable ID */
-	HG_ST_RESERVED7  = 1 << 30, /* reserved for vtable ID */
-	HG_ST_RESERVED8  = 1 << 31, /* reserved for vtable ID */
+	HG_ST_READABLE    = 1 << 0,
+	HG_ST_WRITABLE    = 1 << 1,
+	HG_ST_EXECUTABLE  = 1 << 2,
+	HG_ST_RESERVED1   = 1 << 16, /* reserved for object-specific data */
+	HG_ST_RESERVED2   = 1 << 17, /* reserved for object-specific data */
+	HG_ST_RESERVED3   = 1 << 18, /* reserved for object-specific data */
+	HG_ST_RESERVED4   = 1 << 19, /* reserved for object-specific data */
+	HG_ST_RESERVED5   = 1 << 20, /* reserved for object-specific data */
+	HG_ST_RESERVED6   = 1 << 21, /* reserved for object-specific data */
+	HG_ST_RESERVED7   = 1 << 22, /* reserved for object-specific data */
+	HG_ST_RESERVED8   = 1 << 23, /* reserved for object-specific data */
+	HG_ST_RESERVED9   = 1 << 24, /* reserved for vtable ID */
+	HG_ST_RESERVED10  = 1 << 25, /* reserved for vtable ID */
+	HG_ST_RESERVED11  = 1 << 26, /* reserved for vtable ID */
+	HG_ST_RESERVED12  = 1 << 27, /* reserved for vtable ID */
+	HG_ST_RESERVED13  = 1 << 28, /* reserved for vtable ID */
+	HG_ST_RESERVED14  = 1 << 29, /* reserved for vtable ID */
+	HG_ST_RESERVED15  = 1 << 30, /* reserved for vtable ID */
+	HG_ST_RESERVED16  = 1 << 31, /* reserved for vtable ID */
 	HG_ST_END
 } HgObjectStateFlags;
 
@@ -274,13 +283,11 @@ struct _HieroGlyphObjectVTable {
 };
 
 struct _HieroGlyphObject {
-	gint32          magic;
 	guint           state;
 };
 
 struct _HieroGlyphValueNode {
 	HgObject    object;
-	HgValueType type;
 	union {
 		gboolean boolean;
 		gint32   integer;

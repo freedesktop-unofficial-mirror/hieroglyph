@@ -15,7 +15,7 @@ print_stack(LibrettoStack *stack)
 	depth = libretto_stack_depth(stack);
 	for (i = 0; i < depth; i++) {
 		node = libretto_stack_index(stack, depth - i - 1);
-		switch (node->type) {
+		switch (HG_VALUE_GET_VALUE_TYPE (node)) {
 		    case HG_TYPE_VALUE_BOOLEAN:
 			    g_print("  bool:%s\n", (HG_VALUE_GET_BOOLEAN (node) ? "true" : "false"));
 			    break;

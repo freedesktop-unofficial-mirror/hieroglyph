@@ -30,12 +30,15 @@
 
 G_BEGIN_DECLS
 
-#define HG_VALUE_SET_VALUE_NODE(obj, _type, sym, val)	\
-	G_STMT_START {					\
-		if ((obj)) {				\
-			(obj)->type = (_type);		\
-			(obj)->v.sym = (val);		\
-		}					\
+#define HG_VALUE_GET_VALUE_TYPE(_obj)		((HgValueType)HG_OBJECT_GET_USER_DATA (&(_obj)->object))
+#define HG_VALUE_SET_VALUE_TYPE(_obj, _type)	(HG_OBJECT_SET_USER_DATA (&(_obj)->object, (_type)))
+
+#define HG_VALUE_SET_VALUE_NODE(obj, _type, sym, val)			\
+	G_STMT_START {							\
+		if ((obj)) {						\
+			HG_VALUE_SET_VALUE_TYPE ((obj), (_type));	\
+			(obj)->v.sym = (val);				\
+		}							\
 	} G_STMT_END
 #define HG_VALUE_SET_BOOLEAN(obj, val)					\
 	HG_VALUE_SET_VALUE_NODE (obj, HG_TYPE_VALUE_BOOLEAN, boolean, val); \
@@ -149,7 +152,7 @@ G_BEGIN_DECLS
 #define HG_VALUE_GET_FILE(obj)			HG_VALUE_GET_VALUE_NODE (obj, pointer)
 #define HG_VALUE_GET_SNAPSHOT(obj)		HG_VALUE_GET_VALUE_NODE (obj, pointer)
 
-#define HG_VALUE_IS(obj, _type)			((obj)->type == (_type))
+#define HG_VALUE_IS(_obj, _type)		(HG_OBJECT_GET_USER_DATA (&(_obj)->object) == (_type))
 #define HG_IS_VALUE_BOOLEAN(obj)		HG_VALUE_IS (obj, HG_TYPE_VALUE_BOOLEAN)
 #define HG_IS_VALUE_INTEGER(obj)		HG_VALUE_IS (obj, HG_TYPE_VALUE_INTEGER)
 #define HG_IS_VALUE_REAL(obj)			HG_VALUE_IS (obj, HG_TYPE_VALUE_REAL)

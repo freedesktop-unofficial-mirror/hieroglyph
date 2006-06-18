@@ -50,19 +50,6 @@ void         hg_heap_free        (HgHeap                  *heap);
 		if (!HG_CHECK_MAGIC_CODE ((__retval__), HG_MEM_HEADER))	\
 			(__retval__) = NULL;				\
 	} G_STMT_END
-#define HG_MEMOBJ_HEAP_ID_MASK		0xff000000
-#define HG_MEMOBJ_MARK_AGE_MASK		0x00ff0000
-#define HG_MEMOBJ_FLAGS_MASK		0x0000ffff
-#define HG_MEMOBJ_GET_HEAP_ID(_obj)		(((_obj)->flags & HG_MEMOBJ_HEAP_ID_MASK) >> 24)
-#define HG_MEMOBJ_SET_HEAP_ID(_obj,_id)					\
-	((_obj)->flags = ((_id) << 24) | (HG_MEMOBJ_GET_MARK_AGE (_obj) << 16) | HG_MEMOBJ_GET_FLAGS (_obj))
-#define HG_MEMOBJ_GET_MARK_AGE(_obj)		(((_obj)->flags & HG_MEMOBJ_MARK_AGE_MASK) >> 16)
-#define HG_MEMOBJ_SET_MARK_AGE(_obj, _age)				\
-	((_obj)->flags = (HG_MEMOBJ_GET_HEAP_ID (_obj) << 24) | ((_age) << 16) | HG_MEMOBJ_GET_FLAGS (_obj))
-#define HG_MEMOBJ_GET_FLAGS(_obj)		((_obj)->flags & HG_MEMOBJ_FLAGS_MASK)
-#define HG_MEMOBJ_SET_FLAGS(_obj,_flags)				\
-	((_obj)->flags = (HG_MEMOBJ_GET_HEAP_ID (_obj) << 24) | (HG_MEMOBJ_GET_MARK_AGE (_obj) << 16) | (_flags))
-#define HG_MEMOBJ_INIT_FLAGS(_obj)		(_obj)->flags = 0;
 
 
 HgMemPool     *hg_mem_pool_new                    (HgAllocator   *allocator,
@@ -114,14 +101,16 @@ gboolean       _hg_mem_pool_is_own_memobject      (HgMemPool     *pool,
 		const HgObjectVTable const *__hg_obj_vtable__;		\
 									\
 		if ((__flags__) > HG_MEMOBJ_MARK_AGE_MASK) {		\
-			g_warning("[BUG] Invalid flags to not be set by hg_mem_set_flags: %X", (__flags__)); \
-		} else if ((__flags__) > HG_MEMOBJ_FLAGS_MASK) {	\
+			g_warning("[BUG] Invalid flags to not be set by hg_mem_set_flags: (possibly vtable id) %X", (__flags__)); \
+		} else if ((__flags__) > HG_MEMOBJ_HGOBJECT_MASK) {	\
 			HG_MEMOBJ_SET_MARK_AGE ((__obj__), (((__flags__) & HG_MEMOBJ_MARK_AGE_MASK) >> 16)); \
+		} else if ((__flags__) > HG_MEMOBJ_FLAGS_MASK) {	\
+			g_warning("[BUG] Invalid flags to not be set by hg_mem_set_flags: (possibly hgobject id) %X", (__flags__)); \
 		} else {						\
 			HG_MEMOBJ_SET_FLAGS ((__obj__), (__flags__));	\
 		}							\
 		if ((__notify__) &&					\
-		    HG_CHECK_MAGIC_CODE (__hg_mem_hobj__, HG_OBJECT_ID) && \
+		    HG_MEMOBJ_IS_HGOBJECT (__obj__) &&			\
 		    (__hg_obj_vtable__ = hg_object_get_vtable(__hg_mem_hobj__)) != NULL && \
 		    __hg_obj_vtable__->set_flags) {			\
 			__hg_obj_vtable__->set_flags(__hg_mem_hobj__, (__flags__)); \
@@ -148,7 +137,7 @@ gboolean       _hg_mem_pool_is_own_memobject      (HgMemPool     *pool,
 		const HgObjectVTable const *__hg_obj_vtable__;		\
 									\
 		HG_MEMOBJ_SET_MARK_AGE ((_obj), (_obj)->pool->age_of_gc_mark); \
-		if (HG_CHECK_MAGIC_CODE (__hg_mem_hobj__, HG_OBJECT_ID) && \
+		if (HG_MEMOBJ_IS_HGOBJECT (_obj) &&			\
 		    (__hg_obj_vtable__ = hg_object_get_vtable(__hg_mem_hobj__)) != NULL && \
 		    __hg_obj_vtable__->set_flags) {			\
 			guint __hg_mem_flags__ = HG_MEMOBJ_GET_MARK_AGE ((_obj)) << 16; \
@@ -187,11 +176,18 @@ void     hg_mem_pool_use_garbage_collection(HgMemPool *pool,
 					    gboolean   flag);
 
 /* HgObject */
-#define HG_OBJECT_GET_VTABLE_ID(_obj)		(((_obj)->state >> 24) & 0xff)
-#define HG_OBJECT_SET_VTABLE_ID(_obj,_id)	((_obj)->state = HG_OBJECT_GET_STATE (_obj) | ((_id) << 24))
-#define HG_OBJECT_GET_STATE(_obj)		((_obj)->state & 0xffffff)
-#define HG_OBJECT_SET_STATE(_obj,_state)	((_obj)->state = (HG_OBJECT_GET_VTABLE_ID (_obj) << 24) | _state)
-#define HG_OBJECT_INIT_STATE(_obj)		((_obj)->state = 0)
+#define HG_OBJECT_INIT_OBJECT(_obj)					\
+	G_STMT_START {							\
+		HgMemObject *__hg_obj__;				\
+									\
+		hg_mem_get_object__inline(_obj, __hg_obj__);		\
+		if (__hg_obj__ == NULL) {				\
+			g_warning("[BUG] Failed to initialize HgObject."); \
+		} else {						\
+			HG_MEMOBJ_SET_HGOBJECT_ID (__hg_obj__);		\
+		}							\
+	} G_STMT_END
+
 #define hg_object_readable(obj)		hg_object_add_state(obj, HG_ST_READABLE)
 #define hg_object_unreadable(obj)	hg_object_set_state(obj, hg_object_get_state(obj) & ~HG_ST_READABLE)
 #define hg_object_is_readable(obj)	hg_object_is_state(obj, HG_ST_READABLE)

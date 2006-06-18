@@ -335,7 +335,7 @@ libretto_vm_new(LibrettoEmulationType type)
 		g_warning("Failed to create a virtual machine.");
 		return NULL;
 	}
-	HG_SET_MAGIC_CODE (&retval->object, HG_OBJECT_ID);
+	HG_OBJECT_INIT_OBJECT (retval);
 	HG_OBJECT_INIT_STATE (&retval->object);
 	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(__lb_vm_mem_pool));
 	hg_object_set_vtable(&retval->object, &__lb_vm_vtable);
@@ -1018,14 +1018,15 @@ libretto_vm_main(LibrettoVM *vm)
 			break;
 		}
 
-		switch (node->type) {
+		switch (HG_VALUE_GET_VALUE_TYPE (node)) {
 		    case HG_TYPE_VALUE_BOOLEAN:
 		    case HG_TYPE_VALUE_INTEGER:
 		    case HG_TYPE_VALUE_REAL:
 		    case HG_TYPE_VALUE_DICT:
 		    case HG_TYPE_VALUE_NULL:
 		    case HG_TYPE_VALUE_MARK:
-			    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.", __FUNCTION__, node->type);
+			    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.",
+				      __FUNCTION__, HG_VALUE_GET_VALUE_TYPE (node));
 			    libretto_stack_pop(vm->estack);
 			    retval = libretto_stack_push(vm->ostack, node);
 			    if (!retval) {
@@ -1058,7 +1059,8 @@ libretto_vm_main(LibrettoVM *vm)
 						    _libretto_vm_set_error(vm, file, LB_e_stackoverflow, FALSE);
 				    }
 			    } else {
-				    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.", __FUNCTION__, node->type);
+				    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.",
+					      __FUNCTION__, HG_VALUE_GET_VALUE_TYPE (node));
 				    libretto_stack_pop(vm->estack);
 				    retval = libretto_stack_push(vm->ostack, node);
 				    if (!retval) {
@@ -1080,7 +1082,8 @@ libretto_vm_main(LibrettoVM *vm)
 				    HG_VALUE_MAKE_FILE (node, file);
 				    retval = libretto_stack_push(vm->estack, node);
 			    } else {
-				    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.", __FUNCTION__, node->type);
+				    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.",
+					      __FUNCTION__, HG_VALUE_GET_VALUE_TYPE (node));
 				    libretto_stack_pop(vm->estack);
 				    retval = libretto_stack_push(vm->ostack, node);
 			    }
@@ -1112,7 +1115,8 @@ libretto_vm_main(LibrettoVM *vm)
 					    }
 				    }
 			    } else {
-				    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.", __FUNCTION__, node->type);
+				    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.",
+					      __FUNCTION__, HG_VALUE_GET_VALUE_TYPE (node));
 				    libretto_stack_pop(vm->estack);
 				    retval = libretto_stack_push(vm->ostack, node);
 				    if (!retval) {
@@ -1157,7 +1161,8 @@ libretto_vm_main(LibrettoVM *vm)
 					    }
 				    }
 			    } else {
-				    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.", __FUNCTION__, node->type);
+				    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.",
+					      __FUNCTION__, HG_VALUE_GET_VALUE_TYPE (node));
 				    libretto_stack_pop(vm->estack);
 				    retval = libretto_stack_push(vm->ostack, node);
 				    if (!retval) {
@@ -1166,7 +1171,8 @@ libretto_vm_main(LibrettoVM *vm)
 			    }
 			    break;
 		    default:
-			    g_warning("[BUG] Unknown node type %d was given into the estack.", node->type);
+			    g_warning("[BUG] Unknown node type %d was given into the estack.",
+				      HG_VALUE_GET_VALUE_TYPE (node));
 			    libretto_stack_pop(vm->estack);
 			    break;
 		}

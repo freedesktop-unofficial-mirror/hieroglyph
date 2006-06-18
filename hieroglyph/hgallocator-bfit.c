@@ -324,13 +324,15 @@ _hg_allocator_bfit_relocate(HgMemPool         *pool,
 			list->data = (gpointer)((gsize)list->data + info->diff);
 		} else {
 			const HgObjectVTable const *vtable;
+			HgMemObject *obj;
 
 			/* object that is targetted for relocation will relocates
 			 * their member variables later. so we need to ensure
 			 * the relocation for others.
 			 */
 			hobj = (HgObject *)list->data;
-			if (HG_CHECK_MAGIC_CODE (hobj, HG_OBJECT_ID) &&
+			hg_mem_get_object__inline(hobj, obj);
+			if (obj != NULL && HG_MEMOBJ_IS_HGOBJECT (obj) &&
 			    (vtable = hg_object_get_vtable(hobj)) != NULL &&
 			    vtable->relocate) {
 				vtable->relocate(hobj, info);
@@ -575,6 +577,7 @@ _hg_allocator_bfit_real_resize(HgMemObject *object,
 		gpointer p;
 		HgMemRelocateInfo info;
 		HgObject *hobj;
+		HgMemObject *obj;
 		const HgObjectVTable const *vtable;
 
 		p = hg_mem_alloc_with_flags(pool, block_size, HG_MEMOBJ_GET_FLAGS (object));
@@ -592,14 +595,15 @@ _hg_allocator_bfit_real_resize(HgMemObject *object,
 		/* avoid to call HgObject's free function so that
 		 * it will be invoked from copied object.
 		 */
-		hobj = (HgObject *)object->data;
-		if (HG_CHECK_MAGIC_CODE (hobj, HG_OBJECT_ID)) {
+		if (HG_MEMOBJ_IS_HGOBJECT (object)) {
+			hobj = (HgObject *)object->data;
 			HG_OBJECT_SET_VTABLE_ID (hobj, 0);
 		}
 		hg_mem_free(object->data);
 		_hg_allocator_bfit_relocate(pool, &info);
 		hobj = (HgObject *)p;
-		if (HG_CHECK_MAGIC_CODE (hobj, HG_OBJECT_ID) &&
+		hg_mem_get_object__inline(hobj, obj);
+		if (obj != NULL && HG_MEMOBJ_IS_HGOBJECT (obj) &&
 		    (vtable = hg_object_get_vtable(hobj)) != NULL &&
 		    vtable->relocate) {
 			vtable->relocate(hobj, &info);
@@ -802,7 +806,7 @@ _hg_allocator_bfit_real_save_snapshot(HgMemPool *pool)
 		g_warning("Failed to allocate a memory for snapshot.");
 		return NULL;
 	}
-	HG_SET_MAGIC_CODE (&retval->object, HG_OBJECT_ID);
+	HG_OBJECT_INIT_OBJECT (retval);
 	HG_OBJECT_INIT_STATE (&retval->object);
 	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
 	/* set NULL to avoid the call before finishing an initialization. */

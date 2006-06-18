@@ -539,7 +539,7 @@ hg_mem_free(gpointer data)
 		const HgObjectVTable const *vtable;
 
 		hobj = data;
-		if (HG_CHECK_MAGIC_CODE (hobj, HG_OBJECT_ID) &&
+		if (HG_MEMOBJ_IS_HGOBJECT (obj) &&
 		    (vtable = hg_object_get_vtable(hobj)) != NULL &&
 		    vtable->free) {
 			vtable->free(data);
@@ -718,10 +718,12 @@ gpointer
 hg_object_dup(HgObject *object)
 {
 	const HgObjectVTable const *vtable;
+	HgMemObject *obj;
 
 	g_return_val_if_fail (object != NULL, NULL);
 
-	if (HG_CHECK_MAGIC_CODE (object, HG_OBJECT_ID) &&
+	hg_mem_get_object__inline(object, obj);
+	if (obj != NULL && HG_MEMOBJ_IS_HGOBJECT (obj) &&
 	    (vtable = hg_object_get_vtable(object)) != NULL &&
 	    vtable->dup)
 		return vtable->dup(object);
@@ -733,10 +735,12 @@ gpointer
 hg_object_copy(HgObject *object)
 {
 	const HgObjectVTable const *vtable;
+	HgMemObject *obj;
 
 	g_return_val_if_fail (object != NULL, NULL);
 
-	if (HG_CHECK_MAGIC_CODE (object, HG_OBJECT_ID) &&
+	hg_mem_get_object__inline(object, obj);
+	if (obj != NULL && HG_MEMOBJ_IS_HGOBJECT (obj) &&
 	    (vtable = hg_object_get_vtable(object)) != NULL &&
 	    vtable->copy)
 		return vtable->copy(object);
@@ -748,9 +752,11 @@ const HgObjectVTable const *
 hg_object_get_vtable(HgObject *object)
 {
 	guint id;
+	HgMemObject *obj;
 
 	g_return_val_if_fail (object != NULL, NULL);
-	g_return_val_if_fail (HG_CHECK_MAGIC_CODE (object, HG_OBJECT_ID), NULL);
+	hg_mem_get_object__inline(object, obj);
+	g_return_val_if_fail (HG_MEMOBJ_IS_HGOBJECT (obj), NULL);
 
 	id = HG_OBJECT_GET_VTABLE_ID (object);
 
