@@ -249,7 +249,7 @@ struct _HieroGlyphMemRelocateInfo {
 };
 
 struct _HieroGlyphMemObject {
-	gint32     id;
+	gint32     magic;
 	gpointer   subid;
 	HgMemPool *pool;
 	guint32    flags;
@@ -268,7 +268,7 @@ struct _HieroGlyphObjectVTable {
 };
 
 struct _HieroGlyphObject {
-	gint32          id;
+	gint32          magic;
 	guint           state;
 };
 

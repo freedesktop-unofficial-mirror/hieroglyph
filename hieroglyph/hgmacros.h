@@ -30,6 +30,11 @@ G_BEGIN_DECLS
 
 #define HG_MEM_HEADER	0x48474d4f
 #define HG_OBJECT_ID	0x48474f4f
+#define HG_CHECK_MAGIC_CODE(_obj, _magic)		\
+	((_obj)->magic == (_magic))
+#define HG_SET_MAGIC_CODE(_obj, _magic)			\
+	((_obj)->magic = (_magic))
+
 #define HG_STACK_INIT					\
 	gpointer __hg_stack_mark;			\
 							\

@@ -47,7 +47,7 @@ void         hg_heap_free        (HgHeap                  *heap);
 #define hg_mem_get_object__inline(__data__, __retval__)			\
 	G_STMT_START {							\
 		(__retval__) = hg_mem_get_object__inline_nocheck(__data__); \
-		if ((__retval__)->id != HG_MEM_HEADER)			\
+		if (!HG_CHECK_MAGIC_CODE ((__retval__), HG_MEM_HEADER))	\
 			(__retval__) = NULL;				\
 	} G_STMT_END
 #define HG_MEMOBJ_GET_HEAP_ID(_obj)		(((_obj)->flags >> 24) & 0xff)
@@ -107,7 +107,7 @@ gboolean       _hg_mem_pool_is_own_memobject      (HgMemPool     *pool,
 									\
 		HG_MEMOBJ_SET_FLAGS ((__obj__), (__flags__));		\
 		if ((__notify__) &&					\
-		    __hg_mem_hobj__->id == HG_OBJECT_ID &&		\
+		    HG_CHECK_MAGIC_CODE (__hg_mem_hobj__, HG_OBJECT_ID) && \
 		    (__hg_obj_vtable__ = hg_object_get_vtable(__hg_mem_hobj__)) != NULL && \
 		    __hg_obj_vtable__->set_flags) {			\
 			guint __hg_mem_flags__ = (__flags__) & (HG_FL_MARK); \

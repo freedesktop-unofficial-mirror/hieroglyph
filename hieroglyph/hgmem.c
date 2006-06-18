@@ -534,7 +534,7 @@ hg_mem_free(gpointer data)
 		const HgObjectVTable const *vtable;
 
 		hobj = data;
-		if (hobj->id == HG_OBJECT_ID &&
+		if (HG_CHECK_MAGIC_CODE (hobj, HG_OBJECT_ID) &&
 		    (vtable = hg_object_get_vtable(hobj)) != NULL &&
 		    vtable->free) {
 			vtable->free(data);
@@ -716,7 +716,7 @@ hg_object_dup(HgObject *object)
 
 	g_return_val_if_fail (object != NULL, NULL);
 
-	if (object->id == HG_OBJECT_ID &&
+	if (HG_CHECK_MAGIC_CODE (object, HG_OBJECT_ID) &&
 	    (vtable = hg_object_get_vtable(object)) != NULL &&
 	    vtable->dup)
 		return vtable->dup(object);
@@ -731,7 +731,7 @@ hg_object_copy(HgObject *object)
 
 	g_return_val_if_fail (object != NULL, NULL);
 
-	if (object->id == HG_OBJECT_ID &&
+	if (HG_CHECK_MAGIC_CODE (object, HG_OBJECT_ID) &&
 	    (vtable = hg_object_get_vtable(object)) != NULL &&
 	    vtable->copy)
 		return vtable->copy(object);
@@ -745,7 +745,7 @@ hg_object_get_vtable(HgObject *object)
 	guint id;
 
 	g_return_val_if_fail (object != NULL, NULL);
-	g_return_val_if_fail (object->id == HG_OBJECT_ID, NULL);
+	g_return_val_if_fail (HG_CHECK_MAGIC_CODE (object, HG_OBJECT_ID), NULL);
 
 	id = HG_OBJECT_GET_VTABLE_ID (object);
 

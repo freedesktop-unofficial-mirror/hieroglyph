@@ -332,7 +332,7 @@ _hg_allocator_bfit_relocate(HgMemPool         *pool,
 			 * the relocation for others.
 			 */
 			hobj = (HgObject *)list->data;
-			if (hobj->id == HG_OBJECT_ID &&
+			if (HG_CHECK_MAGIC_CODE (hobj, HG_OBJECT_ID) &&
 			    (vtable = hg_object_get_vtable(hobj)) != NULL &&
 			    vtable->relocate) {
 				vtable->relocate(hobj, info);
@@ -516,7 +516,7 @@ _hg_allocator_bfit_real_alloc(HgMemPool *pool,
 			memset(block->heap_fragment, 0, block_size);
 		}
 		obj = block->heap_fragment;
-		obj->id = HG_MEM_HEADER;
+		HG_SET_MAGIC_CODE (obj, HG_MEM_HEADER);
 		obj->subid = block;
 		obj->pool = pool;
 		HG_MEMOBJ_INIT_FLAGS (obj);
@@ -595,13 +595,13 @@ _hg_allocator_bfit_real_resize(HgMemObject *object,
 		 * it will be invoked from copied object.
 		 */
 		hobj = (HgObject *)object->data;
-		if (hobj->id == HG_OBJECT_ID) {
+		if (HG_CHECK_MAGIC_CODE (hobj, HG_OBJECT_ID)) {
 			HG_OBJECT_SET_VTABLE_ID (hobj, 0);
 		}
 		hg_mem_free(object->data);
 		_hg_allocator_bfit_relocate(pool, &info);
 		hobj = (HgObject *)p;
-		if (hobj->id == HG_OBJECT_ID &&
+		if (HG_CHECK_MAGIC_CODE (hobj, HG_OBJECT_ID) &&
 		    (vtable = hg_object_get_vtable(hobj)) != NULL &&
 		    vtable->relocate) {
 			vtable->relocate(hobj, &info);
@@ -843,7 +843,7 @@ _hg_allocator_bfit_real_save_snapshot(HgMemPool *pool)
 		g_warning("Failed to allocate a memory for snapshot.");
 		return NULL;
 	}
-	retval->object.id = HG_OBJECT_ID;
+	HG_SET_MAGIC_CODE (&retval->object, HG_OBJECT_ID);
 	HG_OBJECT_INIT_STATE (&retval->object);
 	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
 	/* set NULL to avoid the call before finishing an initialization. */

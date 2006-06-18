@@ -143,7 +143,7 @@ libretto_stack_new(HgMemPool *pool,
 		g_warning("Failed to create a stack.");
 		return NULL;
 	}
-	retval->object.id = HG_OBJECT_ID;
+	HG_SET_MAGIC_CODE (&retval->object, HG_OBJECT_ID);
 	HG_OBJECT_INIT_STATE (&retval->object);
 	hg_object_set_vtable(&retval->object, &__lb_stack_vtable);
 	retval->current_depth = 0;

@@ -1,5 +1,50 @@
 2006-06-18  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgarray.c (hg_array_new): use macro.
+
+	* hieroglyph/hgdict.c (hg_dict_node_new): use macro.
+	(hg_dict_new): likewise.
+
+	* hieroglyph/hgmem.h (hg_mem_get_object__inline): use macro.
+	(hg_mem_set_flags__inline): likewise.
+
+	* hieroglyph/hgmem.c (hg_mem_free): use macro.
+	(hg_object_dup): likewise.
+	(hg_object_copy): likewise.
+	(hg_object_get_vtable): likewise.
+
+	* hieroglyph/hgstring.c (hg_string_new): use macro.
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_relocate):
+	use macro.
+	(_hg_allocator_bfit_real_alloc): likewise.
+	(_hg_allocator_bfit_real_resize): likewise.
+	(_hg_allocator_bfit_real_save_snapshot): likewise.
+
+	* hieroglyph/hgpath.c (hg_path_node_new): use macro.
+	(hg_path_new): likewise.
+
+	* hieroglyph/hgmacros.h (HG_CHECK_MAGIC_CODE): new macro.
+	(HG_SET_MAGIC_CODE): new macro.
+
+	* hieroglyph/hgvaluenode.c (hg_value_node_new): use macro.
+
+	* hieroglyph/hgfile.c (hg_file_object_new): use macro.
+
+	* hieroglyph/hgrender.c (hg_render_eofill_new): use macro.
+	(hg_render_fill_new): likewise.
+	(hg_render_stroke_new): likewise.
+	(hg_render_debug_new): likewise.
+
+	* libretto/operator.c (libretto_operator_new): use macro.
+
+	* libretto/lbstack.c (libretto_stack_new): use macro.
+
+	* libretto/vm.c (libretto_vm_new): use macro.
+
+	* libretto/lbgraphics.c (libretto_graphic_state_new): use macro.
+	(libretto_graphics_new): likewise.
+
 	* src/hgspy.c (_hgspy_entry_activate_cb): don't send anything
 	if VM isn't running.
 	(main): added visualizer widget into VPaned.

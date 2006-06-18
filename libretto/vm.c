@@ -335,7 +335,7 @@ libretto_vm_new(LibrettoEmulationType type)
 		g_warning("Failed to create a virtual machine.");
 		return NULL;
 	}
-	retval->object.id = HG_OBJECT_ID;
+	HG_SET_MAGIC_CODE (&retval->object, HG_OBJECT_ID);
 	HG_OBJECT_INIT_STATE (&retval->object);
 	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(__lb_vm_mem_pool));
 	hg_object_set_vtable(&retval->object, &__lb_vm_vtable);
