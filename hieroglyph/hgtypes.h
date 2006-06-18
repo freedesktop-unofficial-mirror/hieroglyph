@@ -283,7 +283,7 @@ struct _HieroGlyphObjectVTable {
 };
 
 struct _HieroGlyphObject {
-	guint           state;
+	guint32 state;
 };
 
 struct _HieroGlyphValueNode {
