@@ -85,7 +85,7 @@ _hg_array_real_set_flags(gpointer data,
 		} else {
 #ifdef DEBUG_GC
 			G_STMT_START {
-				if ((flags & HG_FL_MARK) != 0) {
+				if ((flags & HG_MEMOBJ_MARK_AGE_MASK) != 0) {
 					if (!hg_mem_is_flags__inline(obj, flags)) {
 						hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_MARK, HG_TYPE_VALUE_ARRAY, array, array->current[i], GUINT_TO_POINTER (i));
 					} else {
@@ -105,7 +105,7 @@ _hg_array_real_set_flags(gpointer data,
 		} else {
 #ifdef DEBUG_GC
 			G_STMT_START {
-				if ((flags & HG_FL_MARK) != 0) {
+				if ((flags & HG_MEMOBJ_MARK_AGE_MASK) != 0) {
 					hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_MARK, HG_TYPE_VALUE_ARRAY, array, array->arrays, GUINT_TO_POINTER (-1));
 				}
 			} G_STMT_END;
@@ -344,9 +344,6 @@ hg_array_append_forcibly(HgArray     *array,
 	}
 	if (array->n_arrays < array->allocated_arrays) {
 		array->arrays[array->n_arrays++] = node;
-		/* influence mark to child object */
-		if (hg_mem_is_gc_mark(obj) && !hg_mem_is_gc_mark(nobj))
-			hg_mem_gc_mark(nobj);
 	} else {
 		return FALSE;
 	}
@@ -391,9 +388,6 @@ hg_array_replace_forcibly(HgArray     *array,
 	if (obj->pool != nobj->pool)
 		hg_mem_add_pool_reference(nobj->pool, obj->pool);
 	array->current[index] = node;
-	/* influence mark to child object */
-	if (hg_mem_is_gc_mark(obj) && !hg_mem_is_gc_mark(nobj))
-		hg_mem_gc_mark(nobj);
 
 	return TRUE;
 }

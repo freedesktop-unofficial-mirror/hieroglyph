@@ -65,11 +65,18 @@ typedef HgAllocatorVTable * (*HgAllocatorTypeFunc) (void);
 
 /* 32bit variables */
 typedef enum {
-	HG_FL_MARK       = 1 << 0, /* infect child object */
-	HG_FL_RESTORABLE = 1 << 1, /* no infect */
-	HG_FL_COMPLEX    = 1 << 2, /* no infect */
-	HG_FL_LOCK       = 1 << 3, /* no infect */
-	HG_FL_COPYING    = 1 << 4, /* no infect */
+	HG_FL_RESTORABLE = 1 << 0, /* no infect */
+	HG_FL_COMPLEX    = 1 << 1, /* no infect */
+	HG_FL_LOCK       = 1 << 2, /* no infect */
+	HG_FL_COPYING    = 1 << 3, /* no infect */
+	HG_FL_MARK1      = 1 << 16, /* infect all child objects - reserved for age of mark */
+	HG_FL_MARK2      = 1 << 17, /* infect all child objects - reserved for age of mark */
+	HG_FL_MARK3      = 1 << 18, /* infect all child objects - reserved for age of mark */
+	HG_FL_MARK4      = 1 << 19, /* infect all child objects - reserved for age of mark */
+	HG_FL_MARK5      = 1 << 20, /* infect all child objects - reserved for age of mark */
+	HG_FL_MARK6      = 1 << 21, /* infect all child objects - reserved for age of mark */
+	HG_FL_MARK7      = 1 << 22, /* infect all child objects - reserved for age of mark */
+	HG_FL_MARK8      = 1 << 23, /* infect all child objects - reserved for age of mark */
 	HG_FL_RESERVED1  = 1 << 24, /* reserved for heap id */
 	HG_FL_RESERVED2  = 1 << 25, /* reserved for heap id */
 	HG_FL_RESERVED3  = 1 << 26, /* reserved for heap id */
@@ -228,7 +235,6 @@ struct _HieroGlyphAllocatorVTable {
 	gsize           (* get_size)           (HgMemObject   *object);
 	gboolean        (* garbage_collection) (HgMemPool     *pool);
 	void            (* gc_mark)            (HgMemPool     *pool);
-	void            (* gc_unmark)          (HgMemPool     *pool);
 	gboolean        (* is_safe_object)     (HgMemPool     *pool,
 						HgMemObject   *object);
 	HgMemSnapshot * (* save_snapshot)      (HgMemPool     *pool);

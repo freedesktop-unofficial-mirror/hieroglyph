@@ -251,13 +251,14 @@ hg_mem_pool_new(HgAllocator *allocator,
 	pool->allocator = allocator;
 	pool->root_node = NULL;
 	pool->other_pool_ref_list = NULL;
-	pool->periodical_gc = TRUE;
+	pool->periodical_gc = FALSE;
 	pool->gc_checked = FALSE;
 	pool->use_gc = TRUE;
 	pool->is_global_mode = FALSE;
 	pool->is_processing = FALSE;
 	pool->is_collecting = FALSE;
 	pool->gc_threshold = 50;
+	pool->age_of_gc_mark = 0;
 	allocator->used = TRUE;
 	if (!allocator->vtable->initialize(pool, prealloc)) {
 		_hg_mem_pool_free(pool);
@@ -488,7 +489,11 @@ hg_mem_alloc_with_flags(HgMemPool *pool,
 				pool->gc_threshold += 5;
 			} else {
 				pool->gc_checked = TRUE;
-				pool->gc_threshold -= 5;
+				if ((pool->used_heap_size * 100 / pool->total_heap_size) > pool->gc_threshold) {
+					pool->gc_threshold += 5;
+				} else {
+					pool->gc_threshold -= 5;
+				}
 			}
 		} else {
 			pool->gc_threshold -= 5;
@@ -602,11 +607,11 @@ hg_mem_gc_mark_array_region(HgMemPool *pool,
 	for (p = start; p < end; p++) {
 		obj = hg_mem_get_object__inline_nocheck(*(gsize *)p);
 		if (pool->allocator->vtable->is_safe_object(pool, obj)) {
-			if (!hg_mem_is_gc_mark(obj)) {
+			if (!hg_mem_is_gc_mark__inline(obj)) {
 #ifdef DEBUG_GC
-				g_print("MARK: %p (mem: %p) from array region.\n", obj->data, obj);
+				g_print("MARK: %p (mem: %p age: %d) from array region.\n", obj->data, obj, HG_MEMOBJ_GET_MARK_AGE (obj));
 #endif /* DEBUG_GC */
-				hg_mem_gc_mark(obj);
+				hg_mem_gc_mark__inline(obj);
 			} else {
 #ifdef DEBUG_GC
 				g_print("MARK[already]: %p (mem: %p) from array region.\n", obj->data, obj);
@@ -615,11 +620,11 @@ hg_mem_gc_mark_array_region(HgMemPool *pool,
 		}
 		obj = p;
 		if (pool->allocator->vtable->is_safe_object(pool, obj)) {
-			if (!hg_mem_is_gc_mark(obj)) {
+			if (!hg_mem_is_gc_mark__inline(obj)) {
 #ifdef DEBUG_GC
 				g_print("MARK: %p (mem: %p) from array region.\n", obj->data, obj);
 #endif /* DEBUG_GC */
-				hg_mem_gc_mark(obj);
+				hg_mem_gc_mark__inline(obj);
 			} else {
 #ifdef DEBUG_GC
 				g_print("MARK[already]: %p (mem: %p) from array region.\n", obj->data, obj);

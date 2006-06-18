@@ -931,7 +931,7 @@ _hg_dict_traverse_set_flags(gpointer key,
 		} else {
 #ifdef DEBUG_GC
 			G_STMT_START {
-				if ((flags & HG_FL_MARK) != 0) {
+				if ((flags & HG_MEMOBJ_MARK_AGE_MASK) != 0) {
 					if (!hg_mem_is_flags__inline(obj, flags)) {
 						hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_MARK, HG_TYPE_VALUE_DICT, NULL, list->data, GINT_TO_POINTER (0));
 					} else {
@@ -1054,7 +1054,7 @@ _hg_dict_node_real_set_flags(gpointer data,
 	} else {
 #ifdef DEBUG_GC
 		G_STMT_START {
-			if ((flags & HG_FL_MARK) != 0) {
+			if ((flags & HG_MEMOBJ_MARK_AGE_MASK) != 0) {
 				if (!hg_mem_is_flags__inline(obj, flags)) {
 					hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_MARK, HG_TYPE_VALUE_DICT, node, node->key, GINT_TO_POINTER (1));
 				} else {
@@ -1072,7 +1072,7 @@ _hg_dict_node_real_set_flags(gpointer data,
 	} else {
 #ifdef DEBUG_GC
 		G_STMT_START {
-			if ((flags & HG_FL_MARK) != 0) {
+			if ((flags & HG_MEMOBJ_MARK_AGE_MASK) != 0) {
 				if (!hg_mem_is_flags__inline(obj, flags)) {
 					hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_MARK, HG_TYPE_VALUE_DICT, node, node->val, GINT_TO_POINTER (2));
 				} else {
@@ -1250,13 +1250,6 @@ hg_dict_insert_forcibly(HgMemPool   *pool,
 		hg_mem_add_pool_reference(kobj->pool, obj->pool);
 	if (obj->pool != vobj->pool)
 		hg_mem_add_pool_reference(vobj->pool, obj->pool);
-	/* influence mark to the objects */
-	if (hg_mem_is_gc_mark(obj)) {
-		if (!hg_mem_is_gc_mark(kobj))
-			hg_mem_gc_mark(kobj);
-		if (!hg_mem_is_gc_mark(vobj))
-			hg_mem_gc_mark(vobj);
-	}
 
 	if ((l = hg_btree_find(dict->dict, GSIZE_TO_POINTER (hash))) != NULL) {
 		ll = g_list_find_custom(l, key, _hg_dict_node_compare);

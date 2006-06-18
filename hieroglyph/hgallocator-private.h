@@ -48,6 +48,7 @@ struct _HieroGlyphMemPool {
 	GList       *other_pool_ref_list;
 	guint        access_mode;
 	gshort       gc_threshold;
+	guint8       age_of_gc_mark;
 	gboolean     allow_resize : 1;
 	gboolean     destroyed : 1;
 	gboolean     periodical_gc : 1;

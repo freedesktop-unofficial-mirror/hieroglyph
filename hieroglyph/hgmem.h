@@ -50,10 +50,18 @@ void         hg_heap_free        (HgHeap                  *heap);
 		if (!HG_CHECK_MAGIC_CODE ((__retval__), HG_MEM_HEADER))	\
 			(__retval__) = NULL;				\
 	} G_STMT_END
-#define HG_MEMOBJ_GET_HEAP_ID(_obj)		(((_obj)->flags >> 24) & 0xff)
-#define HG_MEMOBJ_SET_HEAP_ID(_obj,_id)		((_obj)->flags = HG_MEMOBJ_GET_FLAGS (_obj) | ((_id) << 24))
-#define HG_MEMOBJ_GET_FLAGS(_obj)		((_obj)->flags & 0xffffff)
-#define HG_MEMOBJ_SET_FLAGS(_obj,_flags)	(_obj)->flags = (HG_MEMOBJ_GET_HEAP_ID(_obj) << 24) | _flags
+#define HG_MEMOBJ_HEAP_ID_MASK		0xff000000
+#define HG_MEMOBJ_MARK_AGE_MASK		0x00ff0000
+#define HG_MEMOBJ_FLAGS_MASK		0x0000ffff
+#define HG_MEMOBJ_GET_HEAP_ID(_obj)		(((_obj)->flags & HG_MEMOBJ_HEAP_ID_MASK) >> 24)
+#define HG_MEMOBJ_SET_HEAP_ID(_obj,_id)					\
+	((_obj)->flags = ((_id) << 24) | (HG_MEMOBJ_GET_MARK_AGE (_obj) << 16) | HG_MEMOBJ_GET_FLAGS (_obj))
+#define HG_MEMOBJ_GET_MARK_AGE(_obj)		(((_obj)->flags & HG_MEMOBJ_MARK_AGE_MASK) >> 16)
+#define HG_MEMOBJ_SET_MARK_AGE(_obj, _age)				\
+	((_obj)->flags = (HG_MEMOBJ_GET_HEAP_ID (_obj) << 24) | ((_age) << 16) | HG_MEMOBJ_GET_FLAGS (_obj))
+#define HG_MEMOBJ_GET_FLAGS(_obj)		((_obj)->flags & HG_MEMOBJ_FLAGS_MASK)
+#define HG_MEMOBJ_SET_FLAGS(_obj,_flags)				\
+	((_obj)->flags = (HG_MEMOBJ_GET_HEAP_ID (_obj) << 24) | (HG_MEMOBJ_GET_MARK_AGE (_obj) << 16) | (_flags))
 #define HG_MEMOBJ_INIT_FLAGS(_obj)		(_obj)->flags = 0;
 
 
@@ -97,7 +105,7 @@ gboolean       _hg_mem_pool_is_own_memobject      (HgMemPool     *pool,
 
 /* GC */
 #define hg_mem_is_flags__inline(__obj__, __flags__)			\
-	((HG_MEMOBJ_GET_FLAGS (__obj__) & (__flags__)) == (__flags__))
+	((((__obj__)->flags & (HG_MEMOBJ_MARK_AGE_MASK | HG_MEMOBJ_FLAGS_MASK)) & (__flags__)) == (__flags__))
 #define hg_mem_get_flags__inline(__obj__)				\
 	(HG_MEMOBJ_GET_FLAGS (__obj__))
 #define hg_mem_set_flags__inline(__obj__, __flags__, __notify__)	\
@@ -105,23 +113,50 @@ gboolean       _hg_mem_pool_is_own_memobject      (HgMemPool     *pool,
 		HgObject *__hg_mem_hobj__ = (HgObject *)(__obj__)->data; \
 		const HgObjectVTable const *__hg_obj_vtable__;		\
 									\
-		HG_MEMOBJ_SET_FLAGS ((__obj__), (__flags__));		\
+		if ((__flags__) > HG_MEMOBJ_MARK_AGE_MASK) {		\
+			g_warning("[BUG] Invalid flags to not be set by hg_mem_set_flags: %X", (__flags__)); \
+		} else if ((__flags__) > HG_MEMOBJ_FLAGS_MASK) {	\
+			HG_MEMOBJ_SET_MARK_AGE ((__obj__), (((__flags__) & HG_MEMOBJ_MARK_AGE_MASK) >> 16)); \
+		} else {						\
+			HG_MEMOBJ_SET_FLAGS ((__obj__), (__flags__));	\
+		}							\
 		if ((__notify__) &&					\
 		    HG_CHECK_MAGIC_CODE (__hg_mem_hobj__, HG_OBJECT_ID) && \
 		    (__hg_obj_vtable__ = hg_object_get_vtable(__hg_mem_hobj__)) != NULL && \
 		    __hg_obj_vtable__->set_flags) {			\
-			guint __hg_mem_flags__ = (__flags__) & (HG_FL_MARK); \
-			__hg_obj_vtable__->set_flags(__hg_mem_hobj__, __hg_mem_flags__); \
+			__hg_obj_vtable__->set_flags(__hg_mem_hobj__, (__flags__)); \
 		}							\
 	} G_STMT_END
 #define hg_mem_add_flags__inline(__obj__, __flags__, __notify__)	\
-	hg_mem_set_flags__inline((__obj__),				\
-				 (__flags__) | hg_mem_get_flags__inline(__obj__), \
-				 (__notify__))
+	G_STMT_START {							\
+		if (((__flags__) & HG_MEMOBJ_FLAGS_MASK) != 0 &&	\
+		    ((__flags__) & HG_MEMOBJ_MARK_AGE_MASK) != 0) {	\
+			g_warning("[BUG] can't set a flags with mark");	\
+		} else if (((__flags__) & HG_MEMOBJ_FLAGS_MASK) == 0) {	\
+			/* set a mark */				\
+			hg_mem_set_flags__inline((__obj__), (__flags__), (__notify__));	\
+		} else {						\
+			hg_mem_set_flags__inline((__obj__),		\
+						 (__flags__) | hg_mem_get_flags__inline(__obj__), \
+						 (__notify__));		\
+		}							\
+	} G_STMT_END
 
-#define hg_mem_gc_mark(obj)		hg_mem_set_flags__inline(obj, hg_mem_get_flags__inline(obj) | HG_FL_MARK, TRUE)
-#define hg_mem_gc_unmark(obj)		hg_mem_set_flags__inline(obj, hg_mem_get_flags__inline(obj) & ~HG_FL_MARK, FALSE)
-#define hg_mem_is_gc_mark(obj)		hg_mem_is_flags__inline(obj, HG_FL_MARK)
+#define hg_mem_gc_mark__inline(_obj)					\
+	G_STMT_START {							\
+		HgObject *__hg_mem_hobj__ = (HgObject *)(_obj)->data;	\
+		const HgObjectVTable const *__hg_obj_vtable__;		\
+									\
+		HG_MEMOBJ_SET_MARK_AGE ((_obj), (_obj)->pool->age_of_gc_mark); \
+		if (HG_CHECK_MAGIC_CODE (__hg_mem_hobj__, HG_OBJECT_ID) && \
+		    (__hg_obj_vtable__ = hg_object_get_vtable(__hg_mem_hobj__)) != NULL && \
+		    __hg_obj_vtable__->set_flags) {			\
+			guint __hg_mem_flags__ = HG_MEMOBJ_GET_MARK_AGE ((_obj)) << 16; \
+			__hg_obj_vtable__->set_flags(__hg_mem_hobj__, __hg_mem_flags__); \
+		}							\
+	} G_STMT_END
+#define hg_mem_is_gc_mark__inline(_obj)					\
+	((_obj)->pool->age_of_gc_mark == HG_MEMOBJ_GET_MARK_AGE (_obj))
 #define hg_mem_restorable(obj)		hg_mem_set_flags__inline(obj, hg_mem_get_flags__inline(obj) | HG_FL_RESTORABLE, FALSE)
 #define hg_mem_unrestorable(obj)	hg_mem_set_flags__inline(obj, hg_mem_get_flags__inline(obj) & ~HG_FL_RESTORABLE, FALSE)
 #define hg_mem_is_restorable(obj)	hg_mem_is_flags__inline(obj, HG_FL_RESTORABLE)

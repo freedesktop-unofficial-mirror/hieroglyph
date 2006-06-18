@@ -79,7 +79,7 @@ _hg_string_real_set_flags(gpointer data,
 		} else {
 #ifdef DEBUG_GC
 			G_STMT_START {
-				if ((flags & HG_FL_MARK) != 0) {
+				if ((flags & HG_MEMOBJ_MARK_AGE_MASK) != 0) {
 					g_print("%s: marking string %p\n", __FUNCTION__, obj);
 				}
 			} G_STMT_END;

@@ -81,7 +81,7 @@ _hg_value_node_real_set_flags(gpointer data,
 			    } else {
 #ifdef DEBUG_GC
 				    G_STMT_START {
-					    if ((flags & HG_FL_MARK) != 0) {
+					    if ((flags & HG_MEMOBJ_MARK_AGE_MASK) != 0) {
 						    if (!hg_mem_is_flags__inline(obj, flags)) {
 							    hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_MARK, 0, NULL, node, NULL);
 						    } else {

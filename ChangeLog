@@ -1,3 +1,35 @@
+2006-06-19  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgmem.h (HG_MEMOBJ_GET_MARK_AGE): new macro.
+	(HG_MEMOBJ_SET_MARK_AGE): new macro.
+	(hg_mem_set_flags__inline): use HG_MEMOBJ_SET_MARK_AGE for marking.
+	(hg_mem_add_flags__inline): modified for marking.
+	(hg_mem_gc_mark): removed.
+	(hg_mem_gc_unmark): removed.
+	(hg_mem_is_gc_mark): removed.
+	(hg_mem_gc_mark__inline): new macro.
+	(hg_mem_is_gc_mark__inline): new macro.
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_garbage_collection):
+	increase an age of mark.
+	(_hg_allocator_bfit_real_garbage_collection): removed unmarking code.
+	(_hg_allocator_bfit_real_gc_unmark): removed.
+
+	* hieroglyph/hgarray.c (_hg_array_real_set_flags): modified to not use
+	HG_FL_MARK which is obsolete.
+	(hg_array_append_forcibly): removed pre-marking code.
+	(hg_array_replace_forcibly): likewise.
+
+	* hieroglyph/hgfile.c (_hg_file_object_real_set_flags): modified to not
+	use HG_FL_MARK which is obsolete.
+
+	* hieroglyph/hgstring.c (_hg_string_real_set_flags): likewise.
+
+	* hieroglyph/hgvaluenode.c (_hg_value_node_real_set_flags): likewise.
+
+	* hieroglyph/hgdict.c (_hg_dict_node_real_set_flags): likewise.
+	(hg_dict_insert_forcibly): removed pre-marking code.
+
 2006-06-18  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgarray.c (hg_array_new): use macro.

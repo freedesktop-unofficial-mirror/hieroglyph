@@ -72,7 +72,6 @@ static gpointer       _hg_allocator_bfit_real_resize            (HgMemObject    
 static gsize          _hg_allocator_bfit_real_get_size          (HgMemObject       *object);
 static gboolean       _hg_allocator_bfit_real_garbage_collection(HgMemPool         *pool);
 static void           _hg_allocator_bfit_real_gc_mark           (HgMemPool         *pool);
-static void           _hg_allocator_bfit_real_gc_unmark         (HgMemPool         *pool);
 static gboolean       _hg_allocator_bfit_real_is_safe_object    (HgMemPool         *pool,
 								 HgMemObject       *object);
 static HgMemSnapshot *_hg_allocator_bfit_real_save_snapshot     (HgMemPool         *pool);
@@ -96,7 +95,6 @@ static HgAllocatorVTable __hg_allocator_bfit_vtable = {
 	.get_size           = _hg_allocator_bfit_real_get_size,
 	.garbage_collection = _hg_allocator_bfit_real_garbage_collection,
 	.gc_mark            = _hg_allocator_bfit_real_gc_mark,
-	.gc_unmark          = _hg_allocator_bfit_real_gc_unmark,
 	.is_safe_object     = _hg_allocator_bfit_real_is_safe_object,
 	.save_snapshot      = _hg_allocator_bfit_real_save_snapshot,
 	.restore_snapshot   = _hg_allocator_bfit_real_restore_snapshot,
@@ -656,6 +654,21 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 		return FALSE;
 	}
 	pool->is_collecting = TRUE;
+	pool->age_of_gc_mark++;
+	if (pool->age_of_gc_mark == 0)
+		pool->age_of_gc_mark++;
+	if (!pool->destroyed) {
+		/* increase an age of mark in another pool too */
+		for (reflist = pool->other_pool_ref_list;
+		     reflist != NULL;
+		     reflist = g_list_next(reflist)) {
+			HgMemPool *p = reflist->data;
+
+			p->age_of_gc_mark++;
+			if (p->age_of_gc_mark == 0)
+				p->age_of_gc_mark++;
+		}
+	}
 #ifdef DEBUG_GC
 	g_print("DEBUG_GC: starting GC for %s\n", pool->name);
 #endif /* DEBUG_GC */
@@ -689,38 +702,17 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 				tmp = tmp->next;
 
 			if (block->in_use > 0) {
-				if (!hg_mem_is_gc_mark(obj) &&
+				if (!hg_mem_is_gc_mark__inline(obj) &&
 				    (pool->destroyed || !hg_mem_is_locked(obj))) {
 #ifdef DEBUG_GC
-					g_print("DEBUG_GC: sweeping %p (block: %p memobj: %p size: %" G_GSIZE_FORMAT ")\n", obj->data, obj->subid, obj, obj->block_size);
+					g_print("DEBUG_GC: sweeping %p (block: %p memobj: %p size: %" G_GSIZE_FORMAT ")\n", obj->data, obj->subid, obj, ((HgMemBFitBlock *)obj->subid)->length);
 #endif /* DEBUG_GC */
 					hg_mem_free(obj->data);
 					retval = TRUE;
-				} else {
-#ifdef DEBUG_GC
-					g_print("UNMARK: %p (mem: %p)\n", obj->data, obj);
-#endif /* DEBUG_GC */
-					hg_mem_gc_unmark(obj);
 				}
 			}
 			block = tmp;
 		}
-	}
-	if (!pool->destroyed) {
-		/* unmark objects in another pool */
-		pool->is_processing = TRUE;
-		for (reflist = pool->other_pool_ref_list;
-		     reflist != NULL;
-		     reflist = g_list_next(reflist)) {
-#ifdef DEBUG_GC
-			g_print("DEBUG_GC: entering %s\n", ((HgMemPool *)reflist->data)->name);
-#endif /* DEBUG_GC */
-			((HgMemPool *)reflist->data)->allocator->vtable->gc_unmark(reflist->data);
-#ifdef DEBUG_GC
-			g_print("DEBUG_GC: leaving %s\n", ((HgMemPool *)reflist->data)->name);
-#endif /* DEBUG_GC */
-		}
-		pool->is_processing = FALSE;
 	}
 	pool->is_collecting = FALSE;
 
@@ -736,6 +728,9 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 		return;
 	pool->is_processing = TRUE;
 
+#ifdef DEBUG_GC
+	g_print("MARK AGE: %d (%s)\n", pool->age_of_gc_mark, pool->name);
+#endif /* DEBUG_GC */
 	G_STMT_START {
 		GList *list, *reflist;
 		HgMemObject *obj;
@@ -747,14 +742,14 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 			if (obj == NULL) {
 				g_warning("[BUG] Invalid object %p is in the root node.", list->data);
 			} else {
-				if (!hg_mem_is_gc_mark(obj)) {
+				if (!hg_mem_is_gc_mark__inline(obj)) {
 #ifdef DEBUG_GC
-					g_print("MARK: %p (mem: %p) from root node.\n", obj->data, obj);
+					g_print("MARK: %p (mem: %p age: %d) from root node.\n", obj->data, obj, HG_MEMOBJ_GET_MARK_AGE (obj));
 #endif /* DEBUG_GC */
-					hg_mem_gc_mark(obj);
+					hg_mem_gc_mark__inline(obj);
 				} else {
 #ifdef DEBUG_GC
-					g_print("MARK[already]: %p (mem: %p) from root node.\n", obj->data, obj);
+					g_print("MARK[already]: %p (mem: %p age: %d) from root node.\n", obj->data, obj, HG_MEMOBJ_GET_MARK_AGE (obj));
 #endif /* DEBUG_GC */
 				}
 			}
@@ -783,42 +778,6 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 #endif /* DEBUG_GC */
 		hg_mem_gc_mark_array_region(pool, _hg_stack_start, _hg_stack_end);
 	} G_STMT_END;
-
-	pool->is_processing = FALSE;
-}
-
-static void
-_hg_allocator_bfit_real_gc_unmark(HgMemPool *pool)
-{
-	HgAllocatorBFitPrivate *priv = pool->allocator->private;
-	guint i;
-
-	if (pool->is_processing)
-		return;
-	pool->is_processing = TRUE;
-
-	for (i = 0; i < priv->heap2block_array->len; i++) {
-		HgMemBFitBlock *block = g_ptr_array_index(priv->heap2block_array, i), *tmp;
-		HgMemObject *obj;
-
-		while (block != NULL) {
-			obj = block->heap_fragment;
-			tmp = block->next;
-
-			while (tmp != NULL && tmp->in_use == 0)
-				tmp = tmp->next;
-
-			if (block->in_use > 0) {
-				if (hg_mem_is_gc_mark(obj)) {
-#ifdef DEBUG_GC
-					g_print("UNMARK: %p (mem: %p)\n", obj->data, obj);
-#endif /* DEBUG_GC */
-					hg_mem_gc_unmark(obj);
-				}
-			}
-			block = tmp;
-		}
-	}
 
 	pool->is_processing = FALSE;
 }
