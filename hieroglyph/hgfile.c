@@ -290,12 +290,12 @@ hg_file_object_new(HgMemPool  *pool,
 
 	g_return_val_if_fail (pool != NULL, NULL);
 
-	retval = hg_mem_alloc(pool, sizeof (HgFileObject));
+	retval = hg_mem_alloc_with_flags(pool, sizeof (HgFileObject),
+					 HG_FL_HGOBJECT);
 	if (retval == NULL) {
 		g_warning("Failed to create a file object.");
 		return NULL;
 	}
-	HG_OBJECT_INIT_OBJECT (retval);
 	HG_OBJECT_INIT_STATE (&retval->object);
 	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
 	hg_object_set_vtable(&retval->object, &__hg_file_vtable);

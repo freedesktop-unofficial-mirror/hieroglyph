@@ -6872,12 +6872,12 @@ libretto_operator_new(HgMemPool            *pool,
 	g_return_val_if_fail (name != NULL, NULL);
 	g_return_val_if_fail (func != NULL, NULL);
 
-	retval = hg_mem_alloc(pool, sizeof (LibrettoOperator));
+	retval = hg_mem_alloc_with_flags(pool, sizeof (LibrettoOperator),
+					 HG_FL_HGOBJECT);
 	if (retval == NULL) {
 		g_warning("Failed to create an operator.");
 		return NULL;
 	}
-	HG_OBJECT_INIT_OBJECT (retval);
 	HG_OBJECT_INIT_STATE (&retval->object);
 	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
 	hg_object_set_vtable(&retval->object, &__lb_operator_vtable);

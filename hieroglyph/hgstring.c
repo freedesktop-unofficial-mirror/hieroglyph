@@ -169,12 +169,11 @@ hg_string_new(HgMemPool *pool,
 
 	retval = hg_mem_alloc_with_flags(pool,
 					 sizeof (HgString),
-					 HG_FL_COMPLEX);
+					 HG_FL_HGOBJECT | HG_FL_COMPLEX);
 	if (retval == NULL) {
 		g_warning("Failed to create a string.");
 		return NULL;
 	}
-	HG_OBJECT_INIT_OBJECT (retval);
 	HG_OBJECT_INIT_STATE (&retval->object);
 	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
 	hg_object_set_vtable(&retval->object, &__hg_string_vtable);

@@ -801,12 +801,12 @@ _hg_allocator_bfit_real_save_snapshot(HgMemPool *pool)
 	HgMemSnapshot *retval;
 	guint i;
 
-	retval = hg_mem_alloc(pool, sizeof (HgMemSnapshot));
+	retval = hg_mem_alloc_with_flags(pool, sizeof (HgMemSnapshot),
+					 HG_FL_HGOBJECT);
 	if (retval == NULL) {
 		g_warning("Failed to allocate a memory for snapshot.");
 		return NULL;
 	}
-	HG_OBJECT_INIT_OBJECT (retval);
 	HG_OBJECT_INIT_STATE (&retval->object);
 	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
 	/* set NULL to avoid the call before finishing an initialization. */

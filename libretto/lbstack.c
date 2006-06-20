@@ -138,12 +138,12 @@ libretto_stack_new(HgMemPool *pool,
 	g_return_val_if_fail (pool != NULL, NULL);
 	g_return_val_if_fail (max_depth > 0, NULL);
 
-	retval = hg_mem_alloc(pool, sizeof (LibrettoStack));
+	retval = hg_mem_alloc_with_flags(pool, sizeof (LibrettoStack),
+					 HG_FL_HGOBJECT);
 	if (retval == NULL) {
 		g_warning("Failed to create a stack.");
 		return NULL;
 	}
-	HG_OBJECT_INIT_OBJECT (retval);
 	HG_OBJECT_INIT_STATE (&retval->object);
 	hg_object_set_vtable(&retval->object, &__lb_stack_vtable);
 	retval->current_depth = 0;

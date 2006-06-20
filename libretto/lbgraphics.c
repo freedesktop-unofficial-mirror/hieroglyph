@@ -225,10 +225,9 @@ libretto_graphic_state_new(HgMemPool *pool)
 	while (1) {
 		retval = hg_mem_alloc_with_flags(pool,
 						 sizeof (LibrettoGraphicState),
-						 HG_FL_COMPLEX);
+						 HG_FL_HGOBJECT | HG_FL_COMPLEX);
 		if (retval == NULL)
 			break;
-		HG_OBJECT_INIT_OBJECT (retval);
 		HG_OBJECT_INIT_STATE (&retval->object);
 		HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
 		hg_object_set_vtable(&retval->object, &__lb_gstate_vtable);
@@ -267,10 +266,10 @@ libretto_graphics_new(HgMemPool *pool)
 	g_return_val_if_fail (pool != NULL, NULL);
 
 	while (1) {
-		retval = hg_mem_alloc(pool, sizeof (LibrettoGraphics));
+		retval = hg_mem_alloc_with_flags(pool, sizeof (LibrettoGraphics),
+						 HG_FL_HGOBJECT);
 		if (retval == NULL)
 			break;
-		HG_OBJECT_INIT_OBJECT (retval);
 		HG_OBJECT_INIT_STATE (&retval->object);
 		HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
 		hg_object_set_vtable(&retval->object, &__lb_graphics_vtable);

@@ -71,7 +71,7 @@ G_BEGIN_DECLS
 #define HG_MEMOBJ_SET_HGOBJECT_ID(_obj)					\
 	((_obj)->flags = (HG_MEMOBJ_GET_HEAP_ID (_obj) << 24)		\
 	 | (HG_MEMOBJ_GET_MARK_AGE (_obj) << 16)			\
-	 | (1 << 15)							\
+	 | HG_FL_HGOBJECT						\
 	 | HG_MEMOBJ_GET_FLAGS (_obj))
 #define HG_MEMOBJ_GET_FLAGS(_obj)		((_obj)->flags & HG_MEMOBJ_FLAGS_MASK)
 #define HG_MEMOBJ_SET_FLAGS(_obj, _flags)				\

@@ -176,18 +176,6 @@ void     hg_mem_pool_use_garbage_collection(HgMemPool *pool,
 					    gboolean   flag);
 
 /* HgObject */
-#define HG_OBJECT_INIT_OBJECT(_obj)					\
-	G_STMT_START {							\
-		HgMemObject *__hg_obj__;				\
-									\
-		hg_mem_get_object__inline(_obj, __hg_obj__);		\
-		if (__hg_obj__ == NULL) {				\
-			g_warning("[BUG] Failed to initialize HgObject."); \
-		} else {						\
-			HG_MEMOBJ_SET_HGOBJECT_ID (__hg_obj__);		\
-		}							\
-	} G_STMT_END
-
 #define hg_object_readable(obj)		hg_object_add_state(obj, HG_ST_READABLE)
 #define hg_object_unreadable(obj)	hg_object_set_state(obj, hg_object_get_state(obj) & ~HG_ST_READABLE)
 #define hg_object_is_readable(obj)	hg_object_is_state(obj, HG_ST_READABLE)

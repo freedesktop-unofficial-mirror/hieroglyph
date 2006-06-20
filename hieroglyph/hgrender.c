@@ -184,8 +184,8 @@ hg_render_eofill_new(HgMemPool     *pool,
 	g_return_val_if_fail (path != NULL, NULL);
 	g_return_val_if_fail (color != NULL, NULL);
 
-	retval = hg_mem_alloc(pool, sizeof (HgRender));
-	HG_OBJECT_INIT_OBJECT (retval);
+	retval = hg_mem_alloc_with_flags(pool, sizeof (HgRender),
+					 HG_FL_HGOBJECT);
 	HG_OBJECT_INIT_STATE (&retval->object);
 	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
 	hg_object_set_vtable(&retval->object, &__hg_render_fill_vtable);
@@ -210,8 +210,8 @@ hg_render_fill_new(HgMemPool     *pool,
 	g_return_val_if_fail (path != NULL, NULL);
 	g_return_val_if_fail (color != NULL, NULL);
 
-	retval = hg_mem_alloc(pool, sizeof (HgRender));
-	HG_OBJECT_INIT_OBJECT (retval);
+	retval = hg_mem_alloc_with_flags(pool, sizeof (HgRender),
+					 HG_FL_HGOBJECT);
 	HG_OBJECT_INIT_STATE (&retval->object);
 	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
 	hg_object_set_vtable(&retval->object, &__hg_render_fill_vtable);
@@ -243,8 +243,8 @@ hg_render_stroke_new(HgMemPool     *pool,
 	g_return_val_if_fail (color != NULL, NULL);
 	g_return_val_if_fail (dashline_pattern != NULL, NULL);
 
-	retval = hg_mem_alloc(pool, sizeof (HgRender));
-	HG_OBJECT_INIT_OBJECT (retval);
+	retval = hg_mem_alloc_with_flags(pool, sizeof (HgRender),
+					 HG_FL_HGOBJECT);
 	HG_OBJECT_INIT_STATE (&retval->object);
 	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
 	hg_object_set_vtable(&retval->object, &__hg_render_stroke_vtable);
@@ -274,8 +274,8 @@ hg_render_debug_new(HgMemPool   *pool,
 	g_return_val_if_fail (pool != NULL, NULL);
 	g_return_val_if_fail (func != NULL, NULL);
 
-	retval = hg_mem_alloc(pool, sizeof (HgRender));
-	HG_OBJECT_INIT_OBJECT (retval);
+	retval = hg_mem_alloc_with_flags(pool, sizeof (HgRender),
+					 HG_FL_HGOBJECT);
 	HG_OBJECT_INIT_STATE (&retval->object);
 	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
 	hg_object_set_vtable(&retval->object, &__hg_render_debug_vtable);
