@@ -521,6 +521,8 @@ _hg_allocator_bfit_real_alloc(HgMemPool *pool,
 		obj->pool = pool;
 		HG_MEMOBJ_INIT_FLAGS (obj);
 		HG_MEMOBJ_SET_HEAP_ID (obj, block->heap_id);
+		if ((flags & HG_FL_HGOBJECT) != 0)
+			HG_MEMOBJ_SET_HGOBJECT_ID (obj);
 		HG_MEMOBJ_SET_FLAGS (obj, flags);
 		hg_btree_add(priv->obj2block_tree, block->heap_fragment, block);
 

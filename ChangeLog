@@ -1,3 +1,8 @@
+2006-06-20  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_alloc):
+	exactly set HG_FL_HGOBJECT.
+
 2006-06-19  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgmem.h (HG_OBJECT_INIT_OBJECT): new macro.
