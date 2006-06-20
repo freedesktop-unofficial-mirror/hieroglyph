@@ -501,6 +501,7 @@ hg_value_node_debug_print(HgFileObject    *file,
 	    case HG_TYPE_VALUE_INTEGER:
 	    case HG_TYPE_VALUE_REAL:
 	    case HG_TYPE_VALUE_NAME:
+		    info = g_strdup((gchar *)((HgValueNode *)self)->v.pointer);
 		    break;
 	    case HG_TYPE_VALUE_ARRAY:
 		    if ((guint)extrainfo == G_MAXUINT)

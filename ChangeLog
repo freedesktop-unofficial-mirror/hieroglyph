@@ -1,5 +1,8 @@
 2006-06-20  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgvaluenode.c (hg_value_node_debug_print): show the name
+	to be dumped.
+
 	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_alloc):
 	exactly set HG_FL_HGOBJECT.
 
