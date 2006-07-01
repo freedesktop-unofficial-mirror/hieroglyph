@@ -3,8 +3,6 @@
 
  * [MUST] support asynchronous rendering
 
- * [MUST] rewrite memory management part to be comfortable with GC.
-
  * [MUST] complete to implement operators for PostScript Level 1 compliant.
 
 * need work for future release.
@@ -14,3 +12,5 @@
  * complete to implement operators for PostScript Level 3 compliant.
 
  * improve a memory footprint.
+
+ * much better GC.
