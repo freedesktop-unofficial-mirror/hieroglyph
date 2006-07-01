@@ -1,5 +1,7 @@
 2006-07-01  Akira TAGOH  <at@gclab.org>
 
+	* TODO: add an item.
+
 	* hieroglyph/hgdict.c (hg_dict_new): add a limitation of the amount of
 	Hash items.
 
