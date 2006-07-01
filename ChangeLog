@@ -1,5 +1,20 @@
 2006-07-01  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgfile.h (HG_FILE_GET_FILE_TYPE): new macro.
+	(HG_FILE_SET_FILE_TYPE): new macro.
+
+	* hieroglyph/hgfile.c (_hg_file_object_real_free): use macro instead of
+	a direct access.
+	(_hg_file_object_real_set_flags): likewise.
+	(_hg_file_object_real_relocate): likewise.
+	(_hg_file_object_real_to_string): likewise.
+	(hg_file_object_new): likewise.
+	(hg_file_object_has_error): likewise.
+	(hg_file_object_read): likewise.
+	(hg_file_object_write): likewise.
+	(hg_file_object_getc): likewise.
+	(hg_file_object_flush): likewise.
+
 	* hieroglyph/hgstring.c (hg_string_new): add a limitation of the amount
 	of strings.
 

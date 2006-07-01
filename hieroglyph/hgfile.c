@@ -47,12 +47,11 @@ struct _HieroGlyphFileBuffer {
 
 struct _HieroGlyphFileObject {
 	HgObject    object;
-	HgFileType  file_type;
-	guint       access_mode;
 	gchar      *filename;
 	gint        error;
+	guint       access_mode;
 	gchar       ungetc;
-	gboolean    is_eof;
+	gboolean    is_eof : 1;
 	union {
 		struct {
 			gint         fd;
@@ -99,7 +98,7 @@ _hg_file_object_real_free(gpointer data)
 {
 	HgFileObject *file = data;
 
-	switch (file->file_type) {
+	switch (HG_FILE_GET_FILE_TYPE (file)) {
 	    case HG_FILE_TYPE_FILE:
 		    if (file->is.file.is_mmap)
 			    munmap(file->is.file.mmap.buffer, file->is.file.mmap.bufsize);
@@ -115,7 +114,7 @@ _hg_file_object_real_free(gpointer data)
 	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
 		    break;
 	    default:
-		    g_warning("Unknown file type %d was given to be freed.", file->file_type);
+		    g_warning("Unknown file type %d was given to be freed.", HG_FILE_GET_FILE_TYPE (file));
 		    break;
 	}
 }
@@ -143,9 +142,9 @@ _hg_file_object_real_set_flags(gpointer data,
 				hg_mem_add_flags__inline(obj, flags, TRUE);
 		}
 	}
-	if ((file->file_type == HG_FILE_TYPE_BUFFER ||
-	     file->file_type == HG_FILE_TYPE_STATEMENT_EDIT ||
-	     file->file_type == HG_FILE_TYPE_LINE_EDIT) &&
+	if ((HG_FILE_GET_FILE_TYPE (file) == HG_FILE_TYPE_BUFFER ||
+	     HG_FILE_GET_FILE_TYPE (file) == HG_FILE_TYPE_STATEMENT_EDIT ||
+	     HG_FILE_GET_FILE_TYPE (file) == HG_FILE_TYPE_LINE_EDIT) &&
 	    file->is.buf.buffer) {
 		hg_mem_get_object__inline(file->is.buf.buffer, obj);
 		if (obj == NULL) {
@@ -174,9 +173,9 @@ _hg_file_object_real_relocate(gpointer           data,
 	    (gsize)file->filename <= info->end) {
 		file->filename = (gchar *)((gsize)file->filename + info->diff);
 	}
-	if ((file->file_type == HG_FILE_TYPE_BUFFER ||
-	     file->file_type == HG_FILE_TYPE_STATEMENT_EDIT ||
-	     file->file_type == HG_FILE_TYPE_LINE_EDIT) &&
+	if ((HG_FILE_GET_FILE_TYPE (file) == HG_FILE_TYPE_BUFFER ||
+	     HG_FILE_GET_FILE_TYPE (file) == HG_FILE_TYPE_STATEMENT_EDIT ||
+	     HG_FILE_GET_FILE_TYPE (file) == HG_FILE_TYPE_LINE_EDIT) &&
 	    file->is.buf.buffer) {
 		if ((gsize)file->is.buf.buffer >= info->start &&
 		    (gsize)file->is.buf.buffer <= info->end) {
@@ -197,7 +196,7 @@ _hg_file_object_real_to_string(gpointer data)
 		return NULL;
 
 	retval = hg_string_new(obj->pool, -1);
-	if (file->file_type == HG_FILE_TYPE_BUFFER) {
+	if (HG_FILE_GET_FILE_TYPE (file) == HG_FILE_TYPE_BUFFER) {
 		/* it shows as string to evaluate it */
 		hg_string_append_c(retval, '(');
 		hg_string_append(retval, file->is.buf.buffer + file->is.buf.pos, file->is.buf.bufsize - file->is.buf.pos);
@@ -300,7 +299,7 @@ hg_file_object_new(HgMemPool  *pool,
 	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
 	hg_object_set_vtable(&retval->object, &__hg_file_vtable);
 
-	retval->file_type = file_type;
+	HG_FILE_SET_FILE_TYPE (retval, file_type);
 	/* initialize filename here to avoid a warning
 	   when allocating a memory for this and run GC. */
 	retval->filename = NULL;
@@ -470,7 +469,7 @@ hg_file_object_new(HgMemPool  *pool,
 		    retval->is.callback.user_data = (gpointer)va_arg(ap, gpointer);
 		    break;
 	    default:
-		    g_warning("Unknown file type %d\n", retval->file_type);
+		    g_warning("Unknown file type %d\n", HG_FILE_GET_FILE_TYPE (retval));
 		    retval = NULL;
 		    break;
 	}
@@ -484,7 +483,7 @@ hg_file_object_has_error(HgFileObject *object)
 {
 	g_return_val_if_fail (object != NULL, TRUE);
 
-	switch (object->file_type) {
+	switch (HG_FILE_GET_FILE_TYPE (object)) {
 	    case HG_FILE_TYPE_FILE:
 		    if (object->is.file.fd == -1)
 			    return TRUE;
@@ -509,7 +508,7 @@ hg_file_object_has_error(HgFileObject *object)
 		    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
 		    break;
 	    default:
-		    g_warning("[BUG] Invalid file type %d was given to check the error.", object->file_type);
+		    g_warning("[BUG] Invalid file type %d was given to check the error.", HG_FILE_GET_FILE_TYPE (object));
 		    return TRUE;
 	}
 
@@ -557,7 +556,7 @@ hg_file_object_read(HgFileObject *object,
 	if (object->ungetc != 0) {
 		g_warning("FIXME: ungetc handling not yet implemented!!");
 	}
-	switch (object->file_type) {
+	switch (HG_FILE_GET_FILE_TYPE (object)) {
 	    case HG_FILE_TYPE_FILE:
 		    if (object->is.file.is_mmap) {
 			    if ((object->is.file.mmap.bufsize - object->is.file.mmap.pos) < (size * n))
@@ -599,7 +598,7 @@ hg_file_object_read(HgFileObject *object,
 		    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
 		    break;
 	    default:
-		    g_warning("Invalid file type %d was given to be read.", object->file_type);
+		    g_warning("Invalid file type %d was given to be read.", HG_FILE_GET_FILE_TYPE (object));
 		    object->error = EACCES;
 		    break;
 	}
@@ -621,7 +620,7 @@ hg_file_object_write(HgFileObject  *object,
 	g_return_val_if_fail (hg_object_is_readable((HgObject *)object), FALSE);
 	g_return_val_if_fail (hg_object_is_writable((HgObject *)object), FALSE);
 
-	switch (object->file_type) {
+	switch (HG_FILE_GET_FILE_TYPE (object)) {
 	    case HG_FILE_TYPE_FILE:
 	    case HG_FILE_TYPE_STDOUT:
 	    case HG_FILE_TYPE_STDERR:
@@ -646,7 +645,7 @@ hg_file_object_write(HgFileObject  *object,
 		    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
 		    break;
 	    default:
-		    g_warning("Invalid file type %d to be wrriten.", object->file_type);
+		    g_warning("Invalid file type %d to be wrriten.", HG_FILE_GET_FILE_TYPE (object));
 		    object->error = EACCES;
 		    break;
 	}
@@ -667,7 +666,7 @@ hg_file_object_getc(HgFileObject *object)
 		retval = object->ungetc;
 		object->ungetc = 0;
 	} else {
-		switch (object->file_type) {
+		switch (HG_FILE_GET_FILE_TYPE (object)) {
 		    case HG_FILE_TYPE_FILE:
 			    if (object->is.file.is_mmap) {
 				    if (object->is.file.mmap.pos == object->is.file.mmap.bufsize)
@@ -696,7 +695,7 @@ hg_file_object_getc(HgFileObject *object)
 			    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
 			    break;
 		    default:
-			    g_warning("Invalid file type %d was given to be get a character.", object->file_type);
+			    g_warning("Invalid file type %d was given to be get a character.", HG_FILE_GET_FILE_TYPE (object));
 			    break;
 		}
 	}
@@ -726,7 +725,7 @@ hg_file_object_flush(HgFileObject *object)
 	g_return_val_if_fail (object != NULL, FALSE);
 	g_return_val_if_fail (hg_object_is_writable((HgObject *)object), FALSE);
 
-	switch (object->file_type) {
+	switch (HG_FILE_GET_FILE_TYPE (object)) {
 	    case HG_FILE_TYPE_FILE:
 	    case HG_FILE_TYPE_STDOUT:
 	    case HG_FILE_TYPE_STDERR:
@@ -741,7 +740,7 @@ hg_file_object_flush(HgFileObject *object)
 		    retval = object->is.callback.vtable->flush(object->is.callback.user_data);
 		    break;
 	    default:
-		    g_warning("Invalid file type %d was given to be flushed.", object->file_type);
+		    g_warning("Invalid file type %d was given to be flushed.", HG_FILE_GET_FILE_TYPE (object));
 		    break;
 	}
 

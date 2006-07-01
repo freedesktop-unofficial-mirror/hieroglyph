@@ -28,6 +28,9 @@
 
 G_BEGIN_DECLS
 
+#define HG_FILE_GET_FILE_TYPE(_obj)		((HgFileType)HG_OBJECT_GET_USER_DATA (&(_obj)->object))
+#define HG_FILE_SET_FILE_TYPE(_obj, _type)	(HG_OBJECT_SET_USER_DATA (&(_obj)->object, (_type)))
+
 extern HgFileObject *__hg_file_stdin;
 extern HgFileObject *__hg_file_stdout;
 extern HgFileObject *__hg_file_stderr;
