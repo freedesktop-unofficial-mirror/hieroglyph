@@ -1,5 +1,11 @@
 2006-07-01  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgdict.c (hg_dict_new): add a limitation of the amount of
+	Hash items.
+
+	* libretto/vm.c (libretto_vm_new): allocate more spaces for the name
+	dict.
+
 	* hieroglyph/hgfile.h (HG_FILE_GET_FILE_TYPE): new macro.
 	(HG_FILE_SET_FILE_TYPE): new macro.
 

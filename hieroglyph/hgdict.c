@@ -51,9 +51,9 @@ struct _HieroGlyphDictNode {
 struct _HieroGlyphDict {
 	HgObject  object;
 	HgBTree  *dict;
-	guint     prime;
-	guint     n_prealloc;
-	guint     n_keys;
+	guint32   prime;
+	guint16   n_prealloc;
+	guint16   n_keys;
 };
 
 
@@ -1172,7 +1172,7 @@ hg_dict_new(HgMemPool *pool,
 	HgDict *retval;
 
 	g_return_val_if_fail (pool != NULL, NULL);
-	g_return_val_if_fail (n_prealloc > 0, NULL);
+	g_return_val_if_fail (n_prealloc > 0 && n_prealloc < 65536, NULL);
 
 	retval = hg_mem_alloc_with_flags(pool,
 					 sizeof (HgDict),
@@ -1223,6 +1223,7 @@ hg_dict_insert_forcibly(HgMemPool   *pool,
 	g_return_val_if_fail (val != NULL, FALSE);
 	g_return_val_if_fail (hg_object_is_readable((HgObject *)dict), FALSE);
 	g_return_val_if_fail (hg_object_is_writable((HgObject *)dict), FALSE);
+	g_return_val_if_fail (dict->n_keys < 65535, FALSE);
 
 	hg_mem_get_object__inline(dict, obj);
 	g_return_val_if_fail (obj != NULL, FALSE);
@@ -1243,6 +1244,7 @@ hg_dict_insert_forcibly(HgMemPool   *pool,
 			return FALSE;
 		}
 	}
+
 	hash = HG_DICT_HASH (dict, key);
 	if (obj->pool != kobj->pool)
 		hg_mem_add_pool_reference(kobj->pool, obj->pool);
@@ -1268,6 +1270,9 @@ hg_dict_insert_forcibly(HgMemPool   *pool,
 		l = g_list_append(NULL, node);
 		hg_btree_add(dict->dict, GSIZE_TO_POINTER (hash), l);
 		dict->n_keys++;
+	}
+	if (dict->n_keys > dict->n_prealloc) {
+		g_warning("FIXME: need to recalculate the prime.");
 	}
 
 	return TRUE;

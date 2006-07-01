@@ -391,7 +391,7 @@ libretto_vm_new(LibrettoEmulationType type)
 	}
 
 	/* internal use */
-	retval->name_dict = hg_dict_new(retval->global_pool, 256);
+	retval->name_dict = hg_dict_new(retval->global_pool, 1024);
 	if (retval->name_dict == NULL) {
 		g_warning("Failed to create a name dict.");
 		return NULL;
