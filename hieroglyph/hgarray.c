@@ -40,12 +40,12 @@ struct _HieroGlyphArray {
 	HgObject      object;
 	HgValueNode **current;
 	HgValueNode **arrays;
-	guint         n_arrays;
-	gint32        total_arrays;
-	gint32        allocated_arrays;
-	gint32        removed_arrays;
-	guint         subarray_offset;
-	gboolean      is_subarray;
+	guint16       n_arrays;
+	guint16       allocated_arrays;
+	guint16       removed_arrays;
+	guint16       subarray_offset;
+	gboolean      is_subarray : 1;
+	gboolean      is_fixed_size : 1;
 };
 
 
@@ -255,6 +255,7 @@ hg_array_new(HgMemPool *pool,
 	HgArray *retval;
 
 	g_return_val_if_fail (pool != NULL, NULL);
+	g_return_val_if_fail (num < 65536, NULL);
 
 	retval = hg_mem_alloc_with_flags(pool,
 					 sizeof (HgArray),
@@ -269,11 +270,13 @@ hg_array_new(HgMemPool *pool,
 	retval->removed_arrays = 0;
 	retval->subarray_offset = 0;
 	retval->is_subarray = FALSE;
-	retval->total_arrays = num;
-	if (retval->total_arrays < 0)
+	if (num < 0) {
 		retval->allocated_arrays = HG_ARRAY_ALLOC_SIZE;
-	else
+		retval->is_fixed_size = FALSE;
+	} else {
 		retval->allocated_arrays = num;
+		retval->is_fixed_size = TRUE;
+	}
 	/* initialize arrays with NULL first to avoid a crash.
 	 * when the alloc size is too big and GC is necessary to be ran.
 	 */
@@ -327,8 +330,10 @@ hg_array_append_forcibly(HgArray     *array,
 		array->removed_arrays = 0;
 		array->current = array->arrays;
 	}
-	if (array->total_arrays < 0 &&
+	if (!array->is_fixed_size &&
 	    array->n_arrays >= array->allocated_arrays) {
+		/* max array size is 65535 */
+		g_return_val_if_fail (array->n_arrays < 65535, FALSE);
 		/* resize */
 		gpointer p = hg_mem_resize(array->arrays,
 					   sizeof (HgValueNode *) * (array->allocated_arrays + HG_ARRAY_ALLOC_SIZE));
@@ -399,7 +404,7 @@ hg_array_remove(HgArray *array,
 
 	g_return_val_if_fail (array != NULL, FALSE);
 	g_return_val_if_fail (index < array->n_arrays, FALSE);
-	g_return_val_if_fail (array->is_subarray != TRUE, FALSE);
+	g_return_val_if_fail (array->is_subarray == FALSE, FALSE);
 	g_return_val_if_fail (hg_object_is_readable((HgObject *)array), FALSE);
 	g_return_val_if_fail (hg_object_is_writable((HgObject *)array), FALSE);
 
@@ -446,7 +451,7 @@ hg_array_fix_array_size(HgArray *array)
 	g_return_val_if_fail (hg_object_is_readable((HgObject *)array), FALSE);
 	g_return_val_if_fail (hg_object_is_writable((HgObject *)array), FALSE);
 
-	if (array->total_arrays < 0) {
+	if (!array->is_fixed_size) {
 		gpointer p;
 
 		if (array->removed_arrays > 0) {
@@ -460,7 +465,8 @@ hg_array_fix_array_size(HgArray *array)
 			return FALSE;
 		}
 		array->current = array->arrays = p;
-		array->allocated_arrays = array->total_arrays = array->n_arrays;
+		array->allocated_arrays = array->n_arrays;
+		array->is_fixed_size = TRUE;
 	}
 
 	return TRUE;
@@ -507,10 +513,11 @@ hg_array_copy_as_subarray(HgArray *src,
 	/* make a sub-array */
 	dest->arrays = src->arrays;
 	dest->current = (gpointer)((gsize)dest->arrays + sizeof (gpointer) * start_index);
-	dest->allocated_arrays = dest->total_arrays = dest->n_arrays = end_index - start_index + 1;
+	dest->allocated_arrays = dest->n_arrays = end_index - start_index + 1;
 	dest->removed_arrays = 0;
 	dest->subarray_offset = start_index;
 	dest->is_subarray = TRUE;
+	dest->is_fixed_size = TRUE;
 
 	return TRUE;
 }

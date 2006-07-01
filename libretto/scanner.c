@@ -356,6 +356,7 @@ _libretto_scanner_get_object(LibrettoVM   *vm,
 							/* HACK: assume that this is a mark for proc end. */
 							token_type = LB_TOKEN_PROC;
 							hg_array_fix_array_size(array);
+							hg_mem_free(node);
 							break;
 						}
 						if (!hg_array_append(array, node)) {
@@ -582,7 +583,7 @@ _libretto_scanner_get_object(LibrettoVM   *vm,
 		    hg_mem_free(string);
 		    break;
 	    case LB_TOKEN_MARK:
-		    HG_VALUE_MAKE_MARK (pool, retval);
+		    retval = hg_dict_lookup_with_string(systemdict, "mark");
 		    break;
 	    case LB_TOKEN_ARRAY:
 		    retval = hg_dict_lookup_with_string(systemdict, "%arraytomark");

@@ -1,3 +1,20 @@
+2006-07-01  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgarray.c (hg_array_new): add a limitation of the amount
+	of arrays.
+
+	* hieroglyph/hgvaluenode.c (_hg_value_node_real_dup): don't duplicate
+	a null object and a mark object.
+	(_hg_value_node_real_copy): don't copy a null object and a mark object.
+
+	* libretto/operator.c (_libretto_operator_op_array): use the existing
+	null object in systemdict.
+
+	* libretto/scanner.c (_libretto_scanner_get_object): free a special
+	null object that used for a terminator of proc.
+	(_libretto_scanner_get_object): use the existing mark object
+	in systemdict.
+
 2006-06-20  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgvaluenode.c (hg_value_node_debug_print): show the name

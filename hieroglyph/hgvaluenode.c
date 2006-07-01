@@ -148,6 +148,10 @@ _hg_value_node_real_dup(gpointer data)
 	if (obj == NULL)
 		return NULL;
 
+	if (HG_VALUE_GET_VALUE_TYPE (node) == HG_TYPE_VALUE_NULL ||
+	    HG_VALUE_GET_VALUE_TYPE (node) == HG_TYPE_VALUE_MARK) {
+		return node;
+	}
 	retval = hg_value_node_new(obj->pool);
 	if (retval == NULL) {
 		g_warning("Failed to duplicate a node.");
@@ -172,8 +176,6 @@ _hg_value_node_real_dup(gpointer data)
 	    case HG_TYPE_VALUE_FILE:
 	    case HG_TYPE_VALUE_POINTER:
 	    case HG_TYPE_VALUE_SNAPSHOT:
-	    case HG_TYPE_VALUE_NULL:
-	    case HG_TYPE_VALUE_MARK:
 		    HG_VALUE_SET_VALUE_TYPE (retval, HG_VALUE_GET_VALUE_TYPE (node));
 		    retval->v.pointer = node->v.pointer;
 		    break;
@@ -195,6 +197,10 @@ _hg_value_node_real_copy(gpointer data)
 	if (obj == NULL)
 		return NULL;
 
+	if (HG_VALUE_GET_VALUE_TYPE (node) == HG_TYPE_VALUE_NULL ||
+	    HG_VALUE_GET_VALUE_TYPE (node) == HG_TYPE_VALUE_MARK) {
+		return node;
+	}
 	retval = hg_value_node_new(obj->pool);
 	if (retval == NULL) {
 		g_warning("Failed to duplicate a node.");
@@ -223,11 +229,6 @@ _hg_value_node_real_copy(gpointer data)
 		    retval->v.pointer = hg_object_copy((HgObject *)node->v.pointer);
 		    if (retval->v.pointer == NULL)
 			    return NULL;
-		    break;
-	    case HG_TYPE_VALUE_NULL:
-	    case HG_TYPE_VALUE_MARK:
-		    HG_VALUE_SET_VALUE_TYPE (retval, HG_VALUE_GET_VALUE_TYPE (node));
-		    retval->v.pointer = node->v.pointer;
 		    break;
 	    default:
 		    g_warning("Unknown node type %d to be duplicated", HG_VALUE_GET_VALUE_TYPE (node));
