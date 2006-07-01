@@ -1,5 +1,8 @@
 2006-07-01  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgstring.c (hg_string_new): add a limitation of the amount
+	of strings.
+
 	* hieroglyph/hgarray.c (hg_array_new): add a limitation of the amount
 	of arrays.
 

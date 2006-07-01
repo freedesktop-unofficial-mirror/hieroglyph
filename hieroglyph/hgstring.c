@@ -37,10 +37,10 @@ struct _HieroGlyphString {
 	HgObject  object;
 	gchar    *strings;
 	gchar    *current;
-	gint32    n_prealloc;
 	gint32    allocated_size;
-	guint     length;
-	guint     substring_offset;
+	guint16   length;
+	guint16   substring_offset;
+	gboolean  is_fixed_size : 1;
 };
 
 
@@ -166,6 +166,7 @@ hg_string_new(HgMemPool *pool,
 	HgString *retval;
 
 	g_return_val_if_fail (pool != NULL, NULL);
+	g_return_val_if_fail (n_prealloc < 65536, NULL);
 
 	retval = hg_mem_alloc_with_flags(pool,
 					 sizeof (HgString),
@@ -178,11 +179,12 @@ hg_string_new(HgMemPool *pool,
 	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
 	hg_object_set_vtable(&retval->object, &__hg_string_vtable);
 
-	retval->n_prealloc = n_prealloc;
 	if (n_prealloc < 0) {
 		retval->allocated_size = HG_STRING_ALLOC_SIZE;
+		retval->is_fixed_size = FALSE;
 	} else {
 		retval->allocated_size = n_prealloc;
+		retval->is_fixed_size = TRUE;
 	}
 	retval->length = 0;
 	/* initialize this first to avoid a warning message */
@@ -240,7 +242,9 @@ hg_string_append_c(HgString *string,
 
 	if (string->length < string->allocated_size) {
 		string->current[string->length++] = c;
-	} else if (string->n_prealloc < 0) {
+	} else if (!string->is_fixed_size) {
+		/* max string size is 65535 */
+		g_return_val_if_fail (string->allocated_size < 65535, FALSE);
 		/* resize */
 		gpointer p = hg_mem_resize(string->strings, string->allocated_size + HG_STRING_ALLOC_SIZE + 1);
 
@@ -271,8 +275,10 @@ hg_string_append(HgString    *string,
 
 	if (length < 0)
 		length = strlen(str);
-	if (string->n_prealloc < 0 &&
+	if (!string->is_fixed_size &&
 	    (string->length + length) >= string->allocated_size) {
+		/* max string size is 65535 */
+		g_return_val_if_fail ((string->length + length) < 65535, FALSE);
 		/* resize */
 		gsize n_unit = (string->length + length + HG_STRING_ALLOC_SIZE + 1) / HG_STRING_ALLOC_SIZE;
 		gpointer p = hg_mem_resize(string->strings, n_unit * HG_STRING_ALLOC_SIZE);
@@ -361,7 +367,7 @@ hg_string_fix_string_size(HgString *string)
 	g_return_val_if_fail (string != NULL, FALSE);
 	g_return_val_if_fail (hg_object_is_readable((HgObject *)string), FALSE);
 
-	if (string->n_prealloc < 0) {
+	if (!string->is_fixed_size) {
 		gpointer p;
 
 		p = hg_mem_resize(string->strings, string->length + 1);
@@ -370,7 +376,8 @@ hg_string_fix_string_size(HgString *string)
 			return FALSE;
 		}
 		string->strings = p;
-		string->allocated_size = string->n_prealloc = string->length;
+		string->allocated_size = string->length;
+		string->is_fixed_size = TRUE;
 	}
 
 	return TRUE;
@@ -442,7 +449,8 @@ hg_string_copy_as_substring(HgString *src,
 	/* make a sub-string */
 	dest->strings = src->strings;
 	dest->current = (gpointer)((gsize)dest->strings + sizeof (gpointer) * start_index);
-	dest->allocated_size = dest->n_prealloc = dest->length = end_index - start_index + 1;
+	dest->allocated_size = dest->length = end_index - start_index + 1;
+	dest->is_fixed_size = TRUE;
 	dest->substring_offset = start_index;
 
 	return TRUE;
