@@ -344,6 +344,8 @@ hg_value_node_new(HgMemPool *pool)
 {
 	HgValueNode *retval;
 
+	g_return_val_if_fail (pool != NULL, NULL);
+
 	retval = hg_mem_alloc_with_flags(pool,
 					 sizeof (HgValueNode),
 					 HG_FL_HGOBJECT | HG_FL_RESTORABLE);

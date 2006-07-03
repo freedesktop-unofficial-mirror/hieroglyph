@@ -1,5 +1,8 @@
 2006-07-04  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgvaluenode.c (hg_value_node_new): validate if pool is
+	non-null.
+
 	* src/hgspy.c (_hgspy_ask_dialog): new function.
 	(_hgspy_run_vm): ask if VM is already running.
 
