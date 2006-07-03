@@ -1,3 +1,7 @@
+2006-07-04  Akira TAGOH  <at@gclab.org>
+
+	* devices/cairo/cairo-xlib-main.c (device_close): fixed a memory leak.
+
 2006-07-01  Akira TAGOH  <at@gclab.org>
 
 	* TODO: add an item.

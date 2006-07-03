@@ -109,4 +109,6 @@ device_close(HgDevice *device)
 	cairo_surface_destroy(cdev->surface);
 	XDestroyWindow(cdev->u.xlib.dpy, cdev->u.xlib.drawable);
 	XCloseDisplay(cdev->u.xlib.dpy);
+
+	g_free(device);
 }
