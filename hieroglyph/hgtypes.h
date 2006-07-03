@@ -29,6 +29,7 @@
 
 G_BEGIN_DECLS
 
+/* hgmem.h */
 typedef struct _HieroGlyphAllocatorVTable	HgAllocatorVTable;
 typedef struct _HieroGlyphAllocator		HgAllocator;
 typedef struct _HieroGlyphMemRelocateInfo	HgMemRelocateInfo;
@@ -38,11 +39,18 @@ typedef struct _HieroGlyphMemPool		HgMemPool;
 typedef struct _HieroGlyphObjectVTable		HgObjectVTable;
 typedef struct _HieroGlyphObject		HgObject;
 typedef struct _HieroGlyphMemSnapshot		HgMemSnapshot;
+/* hgvaluenode.h */
 typedef struct _HieroGlyphValueNode		HgValueNode;
+/* hgarray.h */
 typedef struct _HieroGlyphArray			HgArray;
+/* hgdict.h */
 typedef struct _HieroGlyphDict			HgDict;
+/* hgfile.h */
 typedef struct _HieroGlyphFileObject		HgFileObject;
 typedef struct _HieroGlyphFileObjectCallback	HgFileObjectCallback;
+/* hgstack.h */
+typedef struct _HieroGlyphStack			HgStack;
+/* hgstring.h */
 typedef struct _HieroGlyphString		HgString;
 typedef struct _HieroGlyphColor			HgColor;
 typedef struct _HieroGlyphRenderFill		HgRenderFill;
@@ -56,12 +64,15 @@ typedef struct _HieroGlyphPathBBox		HgPathBBox;
 typedef struct _HieroGlyphMatrix		HgMatrix;
 typedef struct _HieroGlyphDeviceVTable		HgDeviceVTable;
 typedef struct _HieroGlyphDevice		HgDevice;
+typedef struct _HieroGlyphPluginVTable		HgPluginVTable;
+typedef struct _HieroGlyphPlugin		HgPlugin;
 
-typedef void                (*HgTraverseFunc)      (gpointer key,
-						    gpointer val,
-						    gpointer data);
-typedef void                (*HgDebugFunc)         (gpointer data);
+typedef void                (*HgTraverseFunc)      (gpointer   key,
+						    gpointer   val,
+						    gpointer   data);
+typedef void                (*HgDebugFunc)         (gpointer   data);
 typedef HgAllocatorVTable * (*HgAllocatorTypeFunc) (void);
+typedef HgPlugin          * (*HgPluginNewFunc)     (HgMemPool *pool);
 
 /* 32bit variables */
 typedef enum {
@@ -227,6 +238,11 @@ typedef enum {
 	HG_RENDER_STROKE,
 	HG_RENDER_DEBUG,
 } HgRenderType;
+
+typedef enum {
+	HG_PLUGIN_EXTENSION = 1,
+	HG_PLUGIN_DEVICE,
+} HgPluginType;
 
 struct _HieroGlyphAllocatorVTable {
 	gboolean        (* initialize)         (HgMemPool     *pool,
@@ -400,6 +416,13 @@ struct _HieroGlyphPathBBox {
 	gdouble lly;
 	gdouble urx;
 	gdouble ury;
+};
+
+struct _HieroGlyphPluginVTable {
+};
+
+struct _HieroGlyphPlugin {
+	HgObject  object;
 };
 
 G_END_DECLS

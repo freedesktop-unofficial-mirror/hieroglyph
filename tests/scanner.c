@@ -1,20 +1,20 @@
 #include <hieroglyph/hgmem.h>
 #include <hieroglyph/hgfile.h>
+#include <hieroglyph/hgstack.h>
 #include <hieroglyph/hgstring.h>
 #include <hieroglyph/hgvaluenode.h>
-#include <libretto/lbstack.h>
 #include <libretto/scanner.h>
 #include <libretto/vm.h>
 
 void
-print_stack(LibrettoStack *stack)
+print_stack(HgStack *stack)
 {
 	HgValueNode *node;
 	guint i, depth;
 
-	depth = libretto_stack_depth(stack);
+	depth = hg_stack_depth(stack);
 	for (i = 0; i < depth; i++) {
-		node = libretto_stack_index(stack, depth - i - 1);
+		node = hg_stack_index(stack, depth - i - 1);
 		switch (HG_VALUE_GET_VALUE_TYPE (node)) {
 		    case HG_TYPE_VALUE_BOOLEAN:
 			    g_print("  bool:%s\n", (HG_VALUE_GET_BOOLEAN (node) ? "true" : "false"));
@@ -53,7 +53,7 @@ main(void)
 	HG_MEM_INIT;
 
 	LibrettoVM *vm;
-	LibrettoStack *ostack, *estack;
+	HgStack *ostack, *estack;
 //	gchar *tokens = "true false moveto /foo 10050 10a 10.5 -1 .5 -1e10 10.0E5 1E 5.2e-2 36#Z 1#0 %foobar\nfoo(test)((test test) test)(foo\nbar)";
 	HgValueNode *node;
 	HgFileObject *file;
@@ -70,7 +70,7 @@ main(void)
 	while (!hg_file_object_is_eof(file)) {
 		node = libretto_scanner_get_object(vm, file);
 		if (node != NULL) {
-			libretto_stack_push(ostack, node);
+			hg_stack_push(ostack, node);
 		}
 	}
 	print_stack(ostack);

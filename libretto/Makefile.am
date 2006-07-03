@@ -21,7 +21,6 @@ LDADDS =							\
 lrincludedir = $(includedir)/libretto
 lrinclude_HEADERS =						\
 	lbgraphics.h						\
-	lbstack.h						\
 	lbtypes.h						\
 	operator.h						\
 	scanner.h						\
@@ -36,7 +35,6 @@ lib_LTLIBRARIES =						\
 libretto_la_SOURCES =						\
 	$(lrinclude_HEADERS)					\
 	lbgraphics.c						\
-	lbstack.c						\
 	operator.c						\
 	scanner.c						\
 	vm.c							\

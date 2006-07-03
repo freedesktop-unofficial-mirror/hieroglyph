@@ -30,7 +30,6 @@
 typedef struct _LibrettoGraphics		LibrettoGraphics;
 typedef struct _LibrettoGraphicState		LibrettoGraphicState;
 typedef struct _LibrettoOperator		LibrettoOperator;
-typedef struct _LibrettoStack			LibrettoStack;
 typedef struct _LibrettoVirtualMachine		LibrettoVM;
 
 typedef gboolean (* LibrettoOperatorFunc)	(LibrettoOperator *op,

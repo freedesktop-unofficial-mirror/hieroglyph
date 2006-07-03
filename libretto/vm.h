@@ -44,11 +44,11 @@ LibrettoVM           *libretto_vm_new                (LibrettoEmulationType  typ
 void                  libretto_vm_set_emulation_level(LibrettoVM            *vm,
 						      LibrettoEmulationType  type);
 LibrettoEmulationType libretto_vm_get_emulation_level(LibrettoVM            *vm);
-LibrettoStack        *libretto_vm_get_ostack         (LibrettoVM            *vm);
-LibrettoStack        *libretto_vm_get_estack         (LibrettoVM            *vm);
+HgStack              *libretto_vm_get_ostack         (LibrettoVM            *vm);
+HgStack              *libretto_vm_get_estack         (LibrettoVM            *vm);
 void                  libretto_vm_set_estack         (LibrettoVM            *vm,
-						      LibrettoStack         *estack);
-LibrettoStack        *libretto_vm_get_dstack         (LibrettoVM            *vm);
+						      HgStack               *estack);
+HgStack              *libretto_vm_get_dstack         (LibrettoVM            *vm);
 HgDict               *libretto_vm_get_dict_errordict (LibrettoVM            *vm);
 HgDict               *libretto_vm_get_dict_error     (LibrettoVM            *vm);
 HgDict               *libretto_vm_get_dict_statusdict(LibrettoVM            *vm);

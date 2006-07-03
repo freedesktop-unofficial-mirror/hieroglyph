@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * lbstack.h
+ * hgstack.h
  * Copyright (C) 2005-2006 Akira TAGOH
  * 
  * Authors:
@@ -21,36 +21,35 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __LIBRETTO_STACK_H__
-#define __LIBRETTO_STACK_H__
+#ifndef __HG_STACK_H__
+#define __HG_STACK_H__
 
 #include <hieroglyph/hgtypes.h>
-#include <libretto/lbtypes.h>
 
 G_BEGIN_DECLS
 
 
-LibrettoStack *libretto_stack_new  (HgMemPool     *pool,
-				    guint          max_depth);
-guint          libretto_stack_depth(LibrettoStack *stack);
-gboolean       libretto_stack_push (LibrettoStack *stack,
-				    HgValueNode   *node);
-HgValueNode   *libretto_stack_pop  (LibrettoStack *stack);
-void           libretto_stack_clear(LibrettoStack *stack);
-HgValueNode   *libretto_stack_index(LibrettoStack *stack,
-				    guint          index_from_top);
-void           libretto_stack_roll (LibrettoStack *stack,
-				    guint          n_block,
-				    gint32         n_times);
-void           libretto_stack_dump (LibrettoStack *stack,
-				    HgFileObject  *file);
+HgStack       *hg_stack_new  (HgMemPool    *pool,
+			      guint         max_depth);
+guint          hg_stack_depth(HgStack      *stack);
+gboolean       hg_stack_push (HgStack      *stack,
+			      HgValueNode  *node);
+HgValueNode   *hg_stack_pop  (HgStack      *stack);
+void           hg_stack_clear(HgStack      *stack);
+HgValueNode   *hg_stack_index(HgStack      *stack,
+			      guint         index_from_top);
+void           hg_stack_roll (HgStack      *stack,
+			      guint         n_block,
+			      gint32        n_times);
+void           hg_stack_dump (HgStack      *stack,
+			      HgFileObject *file);
 
 /* internal use */
-void     _libretto_stack_use_stack_validator(LibrettoStack *stack,
-					     gboolean       flag);
-gboolean _libretto_stack_push               (LibrettoStack *stack,
-					     HgValueNode   *node);
+void     _hg_stack_use_stack_validator(HgStack     *stack,
+				       gboolean     flag);
+gboolean _hg_stack_push               (HgStack     *stack,
+				       HgValueNode *node);
 
 G_END_DECLS
 
-#endif /* __LIBRETTO_STACK_H__ */
+#endif /* __HG_STACK_H__ */

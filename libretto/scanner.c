@@ -220,7 +220,7 @@ _libretto_scanner_get_object(LibrettoVM   *vm,
 			     HgFileObject *file)
 {
 	HgMemPool *pool;
-	LibrettoStack *estack, *ostack;
+	HgStack *estack, *ostack;
 	HgDict *systemdict;
 	HgValueNode *node, *retval = NULL;
 	guchar c;

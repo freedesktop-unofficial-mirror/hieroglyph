@@ -1,5 +1,22 @@
 2006-07-04  Akira TAGOH  <at@gclab.org>
 
+	* src/hgspy.c (_hgspy_ask_dialog): new function.
+	(_hgspy_run_vm): ask if VM is already running.
+
+	* hieroglyph/hgstack.[ch]: new files.
+
+	* libretto/Makefile.am: removed lbstack.[ch].
+
+	* libretto/lbtypes.h: removed LibrettoStack definition.
+
+	* libretto/vm.[ch]: modified for LibrettoStack->HgStack transition.
+
+	* libretto/scanner.c: likewise.
+
+	* libretto/operator.c: likewise.
+	
+	* libretto/lbstack.[ch]: moved as hieroglyph/hgstack.[ch].
+
 	* devices/cairo/cairo-xlib-main.c (device_close): fixed a memory leak.
 
 2006-07-01  Akira TAGOH  <at@gclab.org>

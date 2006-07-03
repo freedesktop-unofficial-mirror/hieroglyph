@@ -1,6 +1,6 @@
 #include <hieroglyph/hgmem.h>
+#include <hieroglyph/hgstack.h>
 #include <hieroglyph/hgvaluenode.h>
-#include <libretto/lbstack.h>
 #include <libretto/vm.h>
 
 int
@@ -9,7 +9,7 @@ main(void)
 	HG_MEM_INIT;
 
 	LibrettoVM *vm;
-	LibrettoStack *e, *o;
+	HgStack *e, *o;
 	HgValueNode *node;
 	HgMemPool *pool;
 
@@ -23,11 +23,11 @@ main(void)
 	o = libretto_vm_get_ostack(vm);
 	node = libretto_vm_get_name_node(vm, "add");
 	hg_object_executable((HgObject *)node);
-	libretto_stack_push(e, node);
+	hg_stack_push(e, node);
 	HG_VALUE_MAKE_INTEGER (pool, node, 2);
-	libretto_stack_push(o, node);
+	hg_stack_push(o, node);
 	HG_VALUE_MAKE_INTEGER (pool, node, 1);
-	libretto_stack_push(o, node);
+	hg_stack_push(o, node);
 	libretto_vm_main(vm);
 
 	libretto_vm_finalize();

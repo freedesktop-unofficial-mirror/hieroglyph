@@ -38,11 +38,11 @@
 #include <hieroglyph/hglineedit.h>
 #include <hieroglyph/hgmatrix.h>
 #include <hieroglyph/hgpath.h>
+#include <hieroglyph/hgstack.h>
 #include <hieroglyph/hgstring.h>
 #include <hieroglyph/hgvaluenode.h>
 #include "operator.h"
 #include "lbgraphics.h"
-#include "lbstack.h"
 #include "scanner.h"
 #include "vm.h"
 
@@ -119,15 +119,15 @@ DEFUNC_OP_END
 
 DEFUNC_OP (private_dicttomark)
 G_STMT_START {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack), i, j;
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack), i, j;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	HgValueNode *node, *key, *val;
 	HgDict *dict;
 
 	while (1) {
 		for (i = 0; i < depth; i++) {
-			node = libretto_stack_index(ostack, i);
+			node = hg_stack_index(ostack, i);
 			if (HG_IS_VALUE_MARK (node)) {
 				if ((i % 2) != 0) {
 					_libretto_operator_set_error(vm, op, LB_e_rangecheck);
@@ -139,8 +139,8 @@ G_STMT_START {
 					break;
 				}
 				for (j = 1; j <= i; j += 2) {
-					key = libretto_stack_index(ostack, i - j);
-					val = libretto_stack_index(ostack, i - j - 1);
+					key = hg_stack_index(ostack, i - j);
+					val = hg_stack_index(ostack, i - j - 1);
 					if (!hg_mem_pool_is_own_object(pool, key) ||
 					    !hg_mem_pool_is_own_object(pool, val)) {
 						_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
@@ -152,13 +152,13 @@ G_STMT_START {
 					}
 				}
 				for (j = 0; j <= i; j++)
-					libretto_stack_pop(ostack);
+					hg_stack_pop(ostack);
 				HG_VALUE_MAKE_DICT (node, dict);
 				if (node == NULL) {
 					_libretto_operator_set_error(vm, op, LB_e_VMerror);
 					break;
 				}
-				retval = libretto_stack_push(ostack, node);
+				retval = hg_stack_push(ostack, node);
 				/* it must be true */
 				break;
 			}
@@ -175,29 +175,29 @@ DEFUNC_OP_END
 DEFUNC_OP (private_for_pos_int_continue)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *estack = libretto_vm_get_estack(vm);
 	HgValueNode *nself, *nproc, *nlimit, *ninc, *nini, *node;
 	gint32 iini, iinc, ilimit;
 
 	while (1) {
-		nself = libretto_stack_index(estack, 0);
-		nproc = libretto_stack_index(estack, 1);
-		nlimit = libretto_stack_index(estack, 2);
-		ninc = libretto_stack_index(estack, 3);
-		nini = libretto_stack_index(estack, 4);
+		nself = hg_stack_index(estack, 0);
+		nproc = hg_stack_index(estack, 1);
+		nlimit = hg_stack_index(estack, 2);
+		ninc = hg_stack_index(estack, 3);
+		nini = hg_stack_index(estack, 4);
 
 		ilimit = HG_VALUE_GET_INTEGER (nlimit);
 		iinc = HG_VALUE_GET_INTEGER (ninc);
 		iini = HG_VALUE_GET_INTEGER (nini);
 		if ((iinc > 0 && iini > ilimit) ||
 		    (iinc < 0 && iini < ilimit)) {
-			libretto_stack_pop(estack);
-			libretto_stack_pop(estack);
-			libretto_stack_pop(estack);
-			libretto_stack_pop(estack);
-			libretto_stack_pop(estack);
-			retval = libretto_stack_push(estack, nself);
+			hg_stack_pop(estack);
+			hg_stack_pop(estack);
+			hg_stack_pop(estack);
+			hg_stack_pop(estack);
+			hg_stack_pop(estack);
+			retval = hg_stack_push(estack, nself);
 			break;
 		}
 		HG_VALUE_SET_INTEGER (nini, iini + iinc);
@@ -206,7 +206,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		retval = libretto_stack_push(ostack, node);
+		retval = hg_stack_push(ostack, node);
 		if (!retval) {
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 			break;
@@ -216,8 +216,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_push(estack, node);
-		retval = libretto_stack_push(estack, nself); /* dummy */
+		hg_stack_push(estack, node);
+		retval = hg_stack_push(estack, nself); /* dummy */
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 		break;
@@ -228,29 +228,29 @@ DEFUNC_OP_END
 DEFUNC_OP (private_for_pos_real_continue)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *estack = libretto_vm_get_estack(vm);
 	HgValueNode *nself, *nproc, *nlimit, *ninc, *nini, *node;
 	gdouble dini, dinc, dlimit;
 
 	while (1) {
-		nself = libretto_stack_index(estack, 0);
-		nproc = libretto_stack_index(estack, 1);
-		nlimit = libretto_stack_index(estack, 2);
-		ninc = libretto_stack_index(estack, 3);
-		nini = libretto_stack_index(estack, 4);
+		nself = hg_stack_index(estack, 0);
+		nproc = hg_stack_index(estack, 1);
+		nlimit = hg_stack_index(estack, 2);
+		ninc = hg_stack_index(estack, 3);
+		nini = hg_stack_index(estack, 4);
 
 		dlimit = HG_VALUE_GET_REAL (nlimit);
 		dinc = HG_VALUE_GET_REAL (ninc);
 		dini = HG_VALUE_GET_REAL (nini);
 		if ((dinc > 0.0 && dini > dlimit) ||
 		    (dinc < 0.0 && dini < dlimit)) {
-			libretto_stack_pop(estack);
-			libretto_stack_pop(estack);
-			libretto_stack_pop(estack);
-			libretto_stack_pop(estack);
-			libretto_stack_pop(estack);
-			retval = libretto_stack_push(estack, nself);
+			hg_stack_pop(estack);
+			hg_stack_pop(estack);
+			hg_stack_pop(estack);
+			hg_stack_pop(estack);
+			hg_stack_pop(estack);
+			retval = hg_stack_push(estack, nself);
 			break;
 		}
 		HG_VALUE_SET_REAL (nini, dini + dinc);
@@ -259,7 +259,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		retval = libretto_stack_push(ostack, node);
+		retval = hg_stack_push(ostack, node);
 		if (!retval) {
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 			break;
@@ -269,8 +269,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_push(estack, node);
-		retval = libretto_stack_push(estack, nself); /* dummy */
+		hg_stack_push(estack, node);
+		retval = hg_stack_push(estack, nself); /* dummy */
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 		break;
@@ -281,26 +281,26 @@ DEFUNC_OP_END
 DEFUNC_OP (private_forall_array_continue)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *estack = libretto_vm_get_estack(vm);
 	HgValueNode *nself, *nproc, *nval, *nn, *copy_proc, *node;
 	HgArray *array;
 	gint32 i;
 
 	while (1) {
-		nself = libretto_stack_index(estack, 0);
-		nproc = libretto_stack_index(estack, 1);
-		nval = libretto_stack_index(estack, 2);
-		nn = libretto_stack_index(estack, 3);
+		nself = hg_stack_index(estack, 0);
+		nproc = hg_stack_index(estack, 1);
+		nval = hg_stack_index(estack, 2);
+		nn = hg_stack_index(estack, 3);
 
 		array = HG_VALUE_GET_ARRAY (nval);
 		i = HG_VALUE_GET_INTEGER (nn);
 		if (hg_array_length(array) <= i) {
-			libretto_stack_pop(estack);
-			libretto_stack_pop(estack);
-			libretto_stack_pop(estack);
-			libretto_stack_pop(estack);
-			retval = libretto_stack_push(estack, nself); /* dummy */
+			hg_stack_pop(estack);
+			hg_stack_pop(estack);
+			hg_stack_pop(estack);
+			hg_stack_pop(estack);
+			retval = hg_stack_push(estack, nself); /* dummy */
 			/* it must be true */
 			break;
 		}
@@ -311,13 +311,13 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		retval = libretto_stack_push(ostack, node);
+		retval = hg_stack_push(ostack, node);
 		if (!retval) {
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 			break;
 		}
-		libretto_stack_push(estack, copy_proc);
-		retval = libretto_stack_push(estack, nself); /* dummy */
+		hg_stack_push(estack, copy_proc);
+		retval = hg_stack_push(estack, nself); /* dummy */
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 		break;
@@ -328,24 +328,24 @@ DEFUNC_OP_END
 DEFUNC_OP (private_forall_dict_continue)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *estack = libretto_vm_get_estack(vm);
 	HgValueNode *nself, *nproc, *nval, *nn, *copy_proc, *key, *val;
 	HgDict *dict;
 
 	while (1) {
-		nself = libretto_stack_index(estack, 0);
-		nproc = libretto_stack_index(estack, 1);
-		nval = libretto_stack_index(estack, 2);
-		nn = libretto_stack_index(estack, 3);
+		nself = hg_stack_index(estack, 0);
+		nproc = hg_stack_index(estack, 1);
+		nval = hg_stack_index(estack, 2);
+		nn = hg_stack_index(estack, 3);
 
 		dict = HG_VALUE_GET_DICT (nval);
 		if (!hg_dict_first(dict, &key, &val)) {
-			libretto_stack_pop(estack);
-			libretto_stack_pop(estack);
-			libretto_stack_pop(estack);
-			libretto_stack_pop(estack);
-			retval = libretto_stack_push(estack, nself); /* dummy */
+			hg_stack_pop(estack);
+			hg_stack_pop(estack);
+			hg_stack_pop(estack);
+			hg_stack_pop(estack);
+			retval = hg_stack_push(estack, nself); /* dummy */
 			/* it must be true */
 			break;
 		}
@@ -355,14 +355,14 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_push(ostack, key);
-		retval = libretto_stack_push(ostack, val);
+		hg_stack_push(ostack, key);
+		retval = hg_stack_push(ostack, val);
 		if (!retval) {
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 			break;
 		}
-		libretto_stack_push(estack, copy_proc);
-		retval = libretto_stack_push(estack, nself); /* dummy */
+		hg_stack_push(estack, copy_proc);
+		retval = hg_stack_push(estack, nself); /* dummy */
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 		break;
@@ -373,27 +373,27 @@ DEFUNC_OP_END
 DEFUNC_OP (private_forall_string_continue)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *estack = libretto_vm_get_estack(vm);
 	HgValueNode *nself, *nproc, *nval, *nn, *copy_proc, *node;
 	HgString *string;
 	gint32 i;
 	gchar c;
 
 	while (1) {
-		nself = libretto_stack_index(estack, 0);
-		nproc = libretto_stack_index(estack, 1);
-		nval = libretto_stack_index(estack, 2);
-		nn = libretto_stack_index(estack, 3);
+		nself = hg_stack_index(estack, 0);
+		nproc = hg_stack_index(estack, 1);
+		nval = hg_stack_index(estack, 2);
+		nn = hg_stack_index(estack, 3);
 
 		string = HG_VALUE_GET_STRING (nval);
 		i = HG_VALUE_GET_INTEGER (nn);
 		if (hg_string_maxlength(string) <= i) {
-			libretto_stack_pop(estack);
-			libretto_stack_pop(estack);
-			libretto_stack_pop(estack);
-			libretto_stack_pop(estack);
-			retval = libretto_stack_push(estack, nself); /* dummy */
+			hg_stack_pop(estack);
+			hg_stack_pop(estack);
+			hg_stack_pop(estack);
+			hg_stack_pop(estack);
+			retval = hg_stack_push(estack, nself); /* dummy */
 			/* it must be true */
 			break;
 		}
@@ -405,13 +405,13 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		retval = libretto_stack_push(ostack, node);
+		retval = hg_stack_push(ostack, node);
 		if (!retval) {
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 			break;
 		}
-		libretto_stack_push(estack, copy_proc);
-		retval = libretto_stack_push(estack, nself); /* dummy */
+		hg_stack_push(estack, copy_proc);
+		retval = hg_stack_push(estack, nself); /* dummy */
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 		break;
@@ -422,20 +422,20 @@ DEFUNC_OP_END
 DEFUNC_OP (private_loop_continue)
 G_STMT_START
 {
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
+	HgStack *estack = libretto_vm_get_estack(vm);
 	HgValueNode *nself, *nproc, *node;
 
 	while (1) {
-		nself = libretto_stack_index(estack, 0);
-		nproc = libretto_stack_index(estack, 1);
+		nself = hg_stack_index(estack, 0);
+		nproc = hg_stack_index(estack, 1);
 
 		node = hg_object_copy((HgObject *)nproc);
 		if (node == NULL) {
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_push(estack, node);
-		retval = libretto_stack_push(estack, nself); /* dummy */
+		hg_stack_push(estack, node);
+		retval = hg_stack_push(estack, nself); /* dummy */
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_execstackoverflow);
 		break;
@@ -446,14 +446,14 @@ DEFUNC_OP_END
 DEFUNC_OP (private_repeat_continue)
 G_STMT_START
 {
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
+	HgStack *estack = libretto_vm_get_estack(vm);
 	HgValueNode *nself, *nproc, *nn, *node;
 	gint32 n;
 
 	while (1) {
-		nself = libretto_stack_index(estack, 0);
-		nproc = libretto_stack_index(estack, 1);
-		nn = libretto_stack_index(estack, 2);
+		nself = hg_stack_index(estack, 0);
+		nproc = hg_stack_index(estack, 1);
+		nn = hg_stack_index(estack, 2);
 
 		n = HG_VALUE_GET_INTEGER (nn);
 		if (n > 0) {
@@ -463,16 +463,16 @@ G_STMT_START
 				_libretto_operator_set_error(vm, op, LB_e_VMerror);
 				break;
 			}
-			libretto_stack_push(estack, node);
-			retval = libretto_stack_push(estack, nself); /* dummy */
+			hg_stack_push(estack, node);
+			retval = hg_stack_push(estack, nself); /* dummy */
 			if (!retval)
 				_libretto_operator_set_error(vm, op, LB_e_execstackoverflow);
 			break;
 		}
-		libretto_stack_pop(estack);
-		libretto_stack_pop(estack);
-		libretto_stack_pop(estack);
-		retval = libretto_stack_push(estack, nself);
+		hg_stack_pop(estack);
+		hg_stack_pop(estack);
+		hg_stack_pop(estack);
+		retval = hg_stack_push(estack, nself);
 		break;
 	}
 } G_STMT_END;
@@ -481,7 +481,7 @@ DEFUNC_OP_END
 DEFUNC_OP (private_stopped_continue)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 	HgDict *error = libretto_vm_get_dict_error(vm);
 	HgValueNode *node, *node2, *name;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
@@ -498,7 +498,7 @@ G_STMT_START
 	} else {
 		HG_VALUE_MAKE_BOOLEAN (pool, node2, FALSE);
 	}
-	retval = libretto_stack_push(ostack, node2);
+	retval = hg_stack_push(ostack, node2);
 	if (!retval)
 		_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 } G_STMT_END;
@@ -510,8 +510,8 @@ DEFUNC_UNIMPLEMENTED_OP (private_definefont);
 DEFUNC_OP (private_stringcvs)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	HgValueNode *node;
 	HgString *hs;
@@ -521,7 +521,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		switch (HG_VALUE_GET_VALUE_TYPE (node)) {
 		    case HG_TYPE_VALUE_BOOLEAN:
 		    case HG_TYPE_VALUE_INTEGER:
@@ -578,8 +578,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		/* it must be true */
 		break;
 	}
@@ -591,8 +591,8 @@ DEFUNC_UNIMPLEMENTED_OP (private_undefinefont);
 DEFUNC_OP (private_write_eqeq_only)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *n1, *n2;
 	HgFileObject *file;
 	HgString *hs;
@@ -602,8 +602,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n2 = libretto_stack_index(ostack, 0);
-		n1 = libretto_stack_index(ostack, 1);
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
 		if (!HG_IS_VALUE_FILE (n1)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -619,8 +619,8 @@ G_STMT_START
 					     sizeof (gchar),
 					     hg_string_maxlength(hs));
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		retval = TRUE;
 		break;
 	}
@@ -630,9 +630,9 @@ DEFUNC_OP_END
 DEFUNC_OP (abs)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 	HgValueNode *n, *node;
-	guint depth = libretto_stack_depth(ostack);
+	guint depth = hg_stack_depth(ostack);
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 
 	while (1) {
@@ -640,7 +640,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n = libretto_stack_index(ostack, 0);
+		n = hg_stack_index(ostack, 0);
 		if (HG_IS_VALUE_INTEGER (n)) {
 			HG_VALUE_MAKE_INTEGER (pool, node, abs(HG_VALUE_GET_INTEGER (n)));
 		} else if (HG_IS_VALUE_REAL (n)) {
@@ -653,8 +653,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		/* it must be true */
 		break;
 	}
@@ -664,10 +664,10 @@ DEFUNC_OP_END
 DEFUNC_OP (add)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 	HgValueNode *n1, *n2;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
-	guint depth = libretto_stack_depth(ostack);
+	guint depth = hg_stack_depth(ostack);
 	gboolean integer = TRUE;
 	gdouble d1, d2;
 
@@ -676,8 +676,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n2 = libretto_stack_index(ostack, 0);
-		n1 = libretto_stack_index(ostack, 1);
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
 		if (HG_IS_VALUE_INTEGER (n1))
 			d1 = HG_VALUE_GET_REAL_FROM_INTEGER (n1);
 		else if (HG_IS_VALUE_REAL (n1)) {
@@ -705,9 +705,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, n1);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, n1);
 		/* it must be true */
 		break;
 	}
@@ -717,8 +717,8 @@ DEFUNC_OP_END
 DEFUNC_OP (aload)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack), len, i;
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack), len, i;
 	HgValueNode *narray;
 	HgArray *array;
 
@@ -727,7 +727,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		narray = libretto_stack_index(ostack, 0);
+		narray = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_ARRAY (narray)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -736,13 +736,13 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
 			break;
 		}
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		array = HG_VALUE_GET_ARRAY (narray);
 		len = hg_array_length(array);
 		for (i = 0; i < len; i++) {
-			libretto_stack_push(ostack, hg_array_index(array, i));
+			hg_stack_push(ostack, hg_array_index(array, i));
 		}
-		retval = libretto_stack_push(ostack, narray);
+		retval = hg_stack_push(ostack, narray);
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 		break;
@@ -755,8 +755,8 @@ DEFUNC_UNIMPLEMENTED_OP (anchorsearch);
 DEFUNC_OP (and)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *n1, *n2;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 
@@ -765,8 +765,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n2 = libretto_stack_index(ostack, 0);
-		n1 = libretto_stack_index(ostack, 1);
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
 		if (HG_IS_VALUE_BOOLEAN (n1) &&
 		    HG_IS_VALUE_BOOLEAN (n2)) {
 			gboolean result = HG_VALUE_GET_BOOLEAN (n1) & HG_VALUE_GET_BOOLEAN (n2);
@@ -789,9 +789,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, n1);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, n1);
 		/* it must be true */
 		break;
 	}
@@ -801,8 +801,8 @@ DEFUNC_OP_END
 DEFUNC_OP (arc)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *nx, *ny, *nr, *nangle1, *nangle2;
 	gdouble dx, dy, dr, dangle1, dangle2;
 
@@ -811,11 +811,11 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		nangle2 = libretto_stack_index(ostack, 0);
-		nangle1 = libretto_stack_index(ostack, 1);
-		nr = libretto_stack_index(ostack, 2);
-		ny = libretto_stack_index(ostack, 3);
-		nx = libretto_stack_index(ostack, 4);
+		nangle2 = hg_stack_index(ostack, 0);
+		nangle1 = hg_stack_index(ostack, 1);
+		nr = hg_stack_index(ostack, 2);
+		ny = hg_stack_index(ostack, 3);
+		nx = hg_stack_index(ostack, 4);
 		if (HG_IS_VALUE_INTEGER (nx)) {
 			dx = HG_VALUE_GET_REAL_FROM_INTEGER (nx);
 		} else if (HG_IS_VALUE_REAL (nx)) {
@@ -864,11 +864,11 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		break;
 	}
 } G_STMT_END;
@@ -880,8 +880,8 @@ DEFUNC_UNIMPLEMENTED_OP (arcto);
 DEFUNC_OP (array)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node, *n;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	gint32 size, i;
@@ -892,7 +892,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_INTEGER (node)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -920,8 +920,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		/* it must be true */
 		break;
 	}
@@ -933,8 +933,8 @@ DEFUNC_UNIMPLEMENTED_OP (ashow);
 DEFUNC_OP (astore)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack), len, i;
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack), len, i;
 	HgValueNode *node, *narray;
 	HgArray *array;
 	HgMemObject *obj;
@@ -944,7 +944,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		narray = libretto_stack_index(ostack, 0);
+		narray = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_ARRAY (narray)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -961,7 +961,7 @@ G_STMT_START
 		}
 		hg_mem_get_object__inline(array, obj);
 		for (i = 0; i < len; i++) {
-			node = libretto_stack_index(ostack, len - i);
+			node = hg_stack_index(ostack, len - i);
 			if (!hg_mem_pool_is_own_object(obj->pool, node)) {
 				_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
 				return FALSE;
@@ -969,8 +969,8 @@ G_STMT_START
 			hg_array_replace(array, node, i);
 		}
 		for (i = 0; i <= len; i++)
-			libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, narray);
+			hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, narray);
 		/* it must be true */
 		break;
 	}
@@ -980,8 +980,8 @@ DEFUNC_OP_END
 DEFUNC_OP (atan)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *n1, *n2, *node;
 	gdouble d1, d2, result;
 
@@ -990,8 +990,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n2 = libretto_stack_index(ostack, 0);
-		n1 = libretto_stack_index(ostack, 1);
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
 		if (HG_IS_VALUE_INTEGER (n1)) {
 			d1 = HG_VALUE_GET_REAL_FROM_INTEGER (n1);
 		} else if (HG_IS_VALUE_REAL (n1)) {
@@ -1021,9 +1021,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		/* it must be true */
 		break;
 	}
@@ -1035,9 +1035,9 @@ DEFUNC_UNIMPLEMENTED_OP (awidthshow);
 DEFUNC_OP (begin)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *dstack = libretto_vm_get_dstack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *dstack = libretto_vm_get_dstack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	HgDict *dict;
 
@@ -1046,7 +1046,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_DICT (node)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -1056,12 +1056,12 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
 			break;
 		}
-		retval = libretto_stack_push(dstack, node);
+		retval = hg_stack_push(dstack, node);
 		if (!retval) {
 			_libretto_operator_set_error(vm, op, LB_e_dictstackoverflow);
 			break;
 		}
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		break;
 	}
 } G_STMT_END;
@@ -1070,8 +1070,8 @@ DEFUNC_OP_END
 DEFUNC_OP (bind)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint length = libretto_stack_depth(ostack), array_len, i;
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint length = hg_stack_depth(ostack), array_len, i;
 	HgValueNode *n, *node;
 	HgArray *array;
 
@@ -1080,7 +1080,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n = libretto_stack_index(ostack, 0);
+		n = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_ARRAY (n)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -1096,11 +1096,11 @@ G_STMT_START
 			n = hg_array_index(array, i);
 			if (hg_object_is_executable((HgObject *)n)) {
 				if (HG_IS_VALUE_ARRAY (n)) {
-					if (!libretto_stack_push(ostack, n)) {
+					if (!hg_stack_push(ostack, n)) {
 						_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 					} else {
 						_libretto_operator_op_bind(op, vm);
-						libretto_stack_pop(ostack);
+						hg_stack_pop(ostack);
 					}
 				} else if (HG_IS_VALUE_NAME (n)) {
 					node = libretto_vm_lookup(vm, n);
@@ -1125,9 +1125,9 @@ DEFUNC_UNIMPLEMENTED_OP (charpath);
 DEFUNC_OP (clear)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 
-	libretto_stack_clear(ostack);
+	hg_stack_clear(ostack);
 	retval = TRUE;
 } G_STMT_END;
 DEFUNC_OP_END
@@ -1135,8 +1135,8 @@ DEFUNC_OP_END
 DEFUNC_OP (cleardictstack)
 G_STMT_START
 {
-	LibrettoStack *dstack = libretto_vm_get_dstack(vm);
-	guint depth = libretto_stack_depth(dstack);
+	HgStack *dstack = libretto_vm_get_dstack(vm);
+	guint depth = hg_stack_depth(dstack);
 	gint i = 0;
 	LibrettoEmulationType type = libretto_vm_get_emulation_level(vm);
 
@@ -1155,7 +1155,7 @@ G_STMT_START
 		_libretto_operator_set_error(vm, op, LB_e_VMerror);
 	} else {
 		for (; i > 0; i--)
-			libretto_stack_pop(dstack);
+			hg_stack_pop(dstack);
 		retval = TRUE;
 	}
 } G_STMT_END;
@@ -1164,15 +1164,15 @@ DEFUNC_OP_END
 DEFUNC_OP (cleartomark)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack), i, j;
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack), i, j;
 	HgValueNode *node;
 
 	for (i = 0; i < depth; i++) {
-		node = libretto_stack_index(ostack, i);
+		node = hg_stack_index(ostack, i);
 		if (HG_IS_VALUE_MARK (node)) {
 			for (j = 0; j <= i; j++) {
-				libretto_stack_pop(ostack);
+				hg_stack_pop(ostack);
 			}
 			retval = TRUE;
 			break;
@@ -1208,8 +1208,8 @@ DEFUNC_OP_END
 DEFUNC_OP (concat)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack), i;
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack), i;
 	HgValueNode *node;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	HgArray *matrix;
@@ -1222,7 +1222,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_ARRAY (node)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -1271,7 +1271,7 @@ G_STMT_START
 				_libretto_operator_set_error(vm, op, LB_e_VMerror);
 				break;
 			}
-			libretto_stack_pop(ostack);
+			hg_stack_pop(ostack);
 		}
 		break;
 	}
@@ -1281,8 +1281,8 @@ DEFUNC_OP_END
 DEFUNC_OP (concatmatrix)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack), i;
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack), i;
 	HgValueNode *n1, *n2, *n3, *node;
 	HgArray *m1, *m2, *m3;
 	gdouble d1[6], d2[6];
@@ -1294,9 +1294,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n3 = libretto_stack_index(ostack, 0);
-		n2 = libretto_stack_index(ostack, 1);
-		n1 = libretto_stack_index(ostack, 2);
+		n3 = hg_stack_index(ostack, 0);
+		n2 = hg_stack_index(ostack, 1);
+		n1 = hg_stack_index(ostack, 2);
 		if (!HG_IS_VALUE_ARRAY (n1) ||
 		    !HG_IS_VALUE_ARRAY (n2) ||
 		    !HG_IS_VALUE_ARRAY (n3)) {
@@ -1360,10 +1360,10 @@ G_STMT_START
 		hg_mem_free(mtx1);
 		hg_mem_free(mtx2);
 		hg_mem_free(mtx3);
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, n3);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, n3);
 		/* it must be true */
 		break;
 	}
@@ -1388,8 +1388,8 @@ _libretto_operator_copy__traverse_dict(gpointer key,
 DEFUNC_OP (copy)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node, *n2, *dup_node;
 
 	while (1) {
@@ -1397,7 +1397,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (HG_IS_VALUE_INTEGER (node)) {
 			/* stack copy */
 			guint32 i, n = HG_VALUE_GET_INTEGER (node);
@@ -1406,11 +1406,11 @@ G_STMT_START
 				_libretto_operator_set_error(vm, op, LB_e_rangecheck);
 				break;
 			}
-			libretto_stack_pop(ostack);
+			hg_stack_pop(ostack);
 			for (i = 0; i < n; i++) {
-				node = libretto_stack_index(ostack, n - 1);
+				node = hg_stack_index(ostack, n - 1);
 				dup_node = hg_object_dup((HgObject *)node);
-				retval = libretto_stack_push(ostack, dup_node);
+				retval = hg_stack_push(ostack, dup_node);
 				if (!retval) {
 					_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 					break;
@@ -1423,7 +1423,7 @@ G_STMT_START
 				_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 				break;
 			}
-			n2 = libretto_stack_index(ostack, 1);
+			n2 = hg_stack_index(ostack, 1);
 			if (!hg_object_is_readable((HgObject *)node) ||
 			    !hg_object_is_writable((HgObject *)n2)) {
 				_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
@@ -1511,9 +1511,9 @@ G_STMT_START
 				_libretto_operator_set_error(vm, op, LB_e_typecheck);
 				break;
 			}
-			libretto_stack_pop(ostack);
-			libretto_stack_pop(ostack);
-			retval = libretto_stack_push(ostack, dup_node);
+			hg_stack_pop(ostack);
+			hg_stack_pop(ostack);
+			retval = hg_stack_push(ostack, dup_node);
 			/* it must be true */
 		}
 		break;
@@ -1526,8 +1526,8 @@ DEFUNC_UNIMPLEMENTED_OP (copypage);
 DEFUNC_OP (cos)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	gdouble d;
 
@@ -1536,7 +1536,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (HG_IS_VALUE_INTEGER (node)) {
 			d = HG_VALUE_GET_REAL_FROM_INTEGER (node);
 		} else if (HG_IS_VALUE_REAL (node)) {
@@ -1552,8 +1552,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		/* it must be true */
 		break;
 	}
@@ -1563,15 +1563,15 @@ DEFUNC_OP_END
 DEFUNC_OP (count)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 
 	HG_VALUE_MAKE_INTEGER (libretto_vm_get_current_pool(vm), node, depth);
 	if (node == NULL) {
 		_libretto_operator_set_error(vm, op, LB_e_VMerror);
 	} else {
-		retval = libretto_stack_push(ostack, node);
+		retval = hg_stack_push(ostack, node);
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 	}
@@ -1581,13 +1581,13 @@ DEFUNC_OP_END
 DEFUNC_OP (countdictstack)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *dstack = libretto_vm_get_dstack(vm);
-	guint ddepth = libretto_stack_depth(dstack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *dstack = libretto_vm_get_dstack(vm);
+	guint ddepth = hg_stack_depth(dstack);
 	HgValueNode *node;
 
 	HG_VALUE_MAKE_INTEGER (libretto_vm_get_current_pool(vm), node, ddepth);
-	retval = libretto_stack_push(ostack, node);
+	retval = hg_stack_push(ostack, node);
 	if (!retval)
 		_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 } G_STMT_END;
@@ -1596,13 +1596,13 @@ DEFUNC_OP_END
 DEFUNC_OP (countexecstack)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
-	guint edepth = libretto_stack_depth(estack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *estack = libretto_vm_get_estack(vm);
+	guint edepth = hg_stack_depth(estack);
 	HgValueNode *node;
 
 	HG_VALUE_MAKE_INTEGER (libretto_vm_get_current_pool(vm), node, edepth);
-	retval = libretto_stack_push(ostack, node);
+	retval = hg_stack_push(ostack, node);
 	if (!retval)
 		_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 } G_STMT_END;
@@ -1611,14 +1611,14 @@ DEFUNC_OP_END
 DEFUNC_OP (counttomark)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node = NULL;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	gint32 i;
 
 	for (i = 0; i < depth; i++) {
-		node = libretto_stack_index(ostack, i);
+		node = hg_stack_index(ostack, i);
 		if (HG_IS_VALUE_MARK (node)) {
 			HG_VALUE_MAKE_INTEGER (pool, node, i);
 			break;
@@ -1627,7 +1627,7 @@ G_STMT_START
 	if (i == depth || node == NULL) {
 		_libretto_operator_set_error(vm, op, LB_e_unmatchedmark);
 	} else {
-		retval = libretto_stack_push(ostack, node);
+		retval = hg_stack_push(ostack, node);
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 	}
@@ -1639,13 +1639,13 @@ DEFUNC_UNIMPLEMENTED_OP (currentdash);
 DEFUNC_OP (currentdict)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *dstack = libretto_vm_get_dstack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *dstack = libretto_vm_get_dstack(vm);
 	HgValueNode *node, *dup_node;
 
-	node = libretto_stack_index(dstack, 0);
+	node = hg_stack_index(dstack, 0);
 	dup_node = hg_object_dup((HgObject *)node);
-	retval = libretto_stack_push(ostack, dup_node);
+	retval = hg_stack_push(ostack, dup_node);
 	if (!retval)
 		_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 } G_STMT_END;
@@ -1663,8 +1663,8 @@ DEFUNC_UNIMPLEMENTED_OP (currentlinewidth);
 DEFUNC_OP (currentmatrix)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	HgArray *array;
 	LibrettoGraphicState *gstate = libretto_graphics_get_state(libretto_vm_get_graphics(vm));
@@ -1674,7 +1674,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_ARRAY (node)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -1712,7 +1712,7 @@ DEFUNC_UNIMPLEMENTED_OP (currentmiterlimit);
 DEFUNC_OP (currentpoint)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 	LibrettoGraphicState *gstate = libretto_graphics_get_state(libretto_vm_get_graphics(vm));
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	HgValueNode *node;
@@ -1724,9 +1724,9 @@ G_STMT_START
 			break;
 		}
 		HG_VALUE_MAKE_REAL (pool, node, dx);
-		libretto_stack_push(ostack, node);
+		hg_stack_push(ostack, node);
 		HG_VALUE_MAKE_REAL (pool, node, dy);
-		retval = libretto_stack_push(ostack, node);
+		retval = hg_stack_push(ostack, node);
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 		break;
@@ -1741,8 +1741,8 @@ DEFUNC_UNIMPLEMENTED_OP (currenttransfer);
 DEFUNC_OP (curveto)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *nx1, *ny1, *nx2, *ny2, *nx3, *ny3;
 	gdouble dx1, dy1, dx2, dy2, dx3, dy3, dx, dy;
 	LibrettoGraphicState *gstate = libretto_graphics_get_state(libretto_vm_get_graphics(vm));
@@ -1752,12 +1752,12 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		ny3 = libretto_stack_index(ostack, 0);
-		nx3 = libretto_stack_index(ostack, 1);
-		ny2 = libretto_stack_index(ostack, 2);
-		nx2 = libretto_stack_index(ostack, 3);
-		ny1 = libretto_stack_index(ostack, 4);
-		nx1 = libretto_stack_index(ostack, 5);
+		ny3 = hg_stack_index(ostack, 0);
+		nx3 = hg_stack_index(ostack, 1);
+		ny2 = hg_stack_index(ostack, 2);
+		nx2 = hg_stack_index(ostack, 3);
+		ny1 = hg_stack_index(ostack, 4);
+		nx1 = hg_stack_index(ostack, 5);
 		if (HG_IS_VALUE_INTEGER (nx1)) {
 			dx1 = HG_VALUE_GET_REAL_FROM_INTEGER (nx1);
 		} else if (HG_IS_VALUE_REAL (nx1)) {
@@ -1819,12 +1819,12 @@ G_STMT_START
 			break;
 		}
 
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		break;
 	}
 } G_STMT_END;
@@ -1833,8 +1833,8 @@ DEFUNC_OP_END
 DEFUNC_OP (cvi)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 
@@ -1843,7 +1843,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (HG_IS_VALUE_INTEGER (node)) {
 			/* nothing to do here */
 		} else if (HG_IS_VALUE_REAL (node)) {
@@ -1898,8 +1898,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		/* it must be true */
 		break;
 	}
@@ -1909,8 +1909,8 @@ DEFUNC_OP_END
 DEFUNC_OP (cvlit)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 
 	while (1) {
@@ -1918,7 +1918,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		hg_object_unexecutable((HgObject *)node);
 		retval = TRUE;
 		break;
@@ -1929,8 +1929,8 @@ DEFUNC_OP_END
 DEFUNC_OP (cvn)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *n1, *n2;
 	HgString *hs;
 
@@ -1939,7 +1939,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n1 = libretto_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_STRING (n1)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -1956,8 +1956,8 @@ G_STMT_START
 		}
 		if (hg_object_is_executable((HgObject *)n1))
 			hg_object_executable((HgObject *)n2);
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, n2);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, n2);
 		/* it must be true */
 		break;
 	}
@@ -1970,8 +1970,8 @@ DEFUNC_UNIMPLEMENTED_OP (cvrs);
 DEFUNC_OP (cvx)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 
 	while (1) {
@@ -1979,7 +1979,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		hg_object_executable((HgObject *)node);
 		retval = TRUE;
 		break;
@@ -1990,9 +1990,9 @@ DEFUNC_OP_END
 DEFUNC_OP (def)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *dstack = libretto_vm_get_dstack(vm);
-	guint odepth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *dstack = libretto_vm_get_dstack(vm);
+	guint odepth = hg_stack_depth(ostack);
 	HgValueNode *nd, *nk, *nv;
 	HgDict *dict;
 	HgMemObject *obj;
@@ -2002,9 +2002,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		nv = libretto_stack_index(ostack, 0);
-		nk = libretto_stack_index(ostack, 1);
-		nd = libretto_stack_index(dstack, 0);
+		nv = hg_stack_index(ostack, 0);
+		nk = hg_stack_index(ostack, 1);
+		nd = hg_stack_index(dstack, 0);
 		dict = HG_VALUE_GET_DICT (nd);
 		hg_mem_get_object__inline(dict, obj);
 		if (!hg_object_is_writable((HgObject *)dict) ||
@@ -2015,8 +2015,8 @@ G_STMT_START
 		}
 		retval = hg_dict_insert(libretto_vm_get_current_pool(vm),
 					dict, nk, nv);
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		break;
 	}
 } G_STMT_END;
@@ -2027,8 +2027,8 @@ DEFUNC_UNIMPLEMENTED_OP (defaultmatrix);
 DEFUNC_OP (dict)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	HgDict *dict;
@@ -2039,7 +2039,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_INTEGER (node)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -2063,8 +2063,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		/* it must be true */
 		break;
 	}
@@ -2074,10 +2074,10 @@ DEFUNC_OP_END
 DEFUNC_OP (dictstack)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *dstack = libretto_vm_get_dstack(vm);
-	guint depth = libretto_stack_depth(ostack);
-	guint ddepth = libretto_stack_depth(dstack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *dstack = libretto_vm_get_dstack(vm);
+	guint depth = hg_stack_depth(ostack);
+	guint ddepth = hg_stack_depth(dstack);
 	guint len, i;
 	HgValueNode *node, *dup_node;
 	HgArray *array;
@@ -2087,7 +2087,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_ARRAY (node)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -2103,7 +2103,7 @@ G_STMT_START
 			break;
 		}
 		for (i = 0; i < ddepth; i++) {
-			node = libretto_stack_index(dstack, ddepth - i - 1);
+			node = hg_stack_index(dstack, ddepth - i - 1);
 			dup_node = hg_object_dup((HgObject *)node);
 			hg_array_replace(array, dup_node, i);
 		}
@@ -2117,8 +2117,8 @@ G_STMT_START
 			}
 			array = hg_array_make_subarray(obj->pool, array, 0, ddepth - 1);
 			HG_VALUE_MAKE_ARRAY (node, array);
-			libretto_stack_pop(ostack);
-			retval = libretto_stack_push(ostack, node);
+			hg_stack_pop(ostack);
+			retval = hg_stack_push(ostack, node);
 			/* it must be true */
 		} else {
 			retval = TRUE;
@@ -2131,19 +2131,19 @@ DEFUNC_OP_END
 DEFUNC_OP (div)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 	HgValueNode *n1, *n2;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	gdouble d1, d2;
-	guint depth = libretto_stack_depth(ostack);
+	guint depth = hg_stack_depth(ostack);
 
 	while (1) {
 		if (depth < 2) {
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n2 = libretto_stack_index(ostack, 0);
-		n1 = libretto_stack_index(ostack, 1);
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
 		if (HG_IS_VALUE_INTEGER (n1))
 			d1 = HG_VALUE_GET_REAL_FROM_INTEGER (n1);
 		else if (HG_IS_VALUE_REAL (n1)) {
@@ -2169,9 +2169,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, n1);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, n1);
 		break;
 	}
 } G_STMT_END;
@@ -2182,8 +2182,8 @@ DEFUNC_UNIMPLEMENTED_OP (dtransform);
 DEFUNC_OP (dup)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node, *dup_node;
 
 	while (1) {
@@ -2191,9 +2191,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		dup_node = hg_object_dup((HgObject *)node);
-		retval = libretto_stack_push(ostack, dup_node);
+		retval = hg_stack_push(ostack, dup_node);
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 		break;
@@ -2207,8 +2207,8 @@ DEFUNC_UNIMPLEMENTED_OP (eexec);
 DEFUNC_OP (end)
 G_STMT_START
 {
-	LibrettoStack *dstack = libretto_vm_get_dstack(vm);
-	guint depth = libretto_stack_depth(dstack);
+	HgStack *dstack = libretto_vm_get_dstack(vm);
+	guint depth = hg_stack_depth(dstack);
 	LibrettoEmulationType type = libretto_vm_get_emulation_level(vm);
 
 	while (1) {
@@ -2217,7 +2217,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_dictstackunderflow);
 			break;
 		}
-		libretto_stack_pop(dstack);
+		hg_stack_pop(dstack);
 		retval = TRUE;
 		break;
 	}
@@ -2238,8 +2238,8 @@ DEFUNC_OP_END
 DEFUNC_OP (eq)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *n1, *n2;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	gboolean result;
@@ -2249,8 +2249,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n2 = libretto_stack_index(ostack, 0);
-		n1 = libretto_stack_index(ostack, 1);
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
 		if (!hg_object_is_readable((HgObject *)n1) ||
 		    !hg_object_is_readable((HgObject *)n2)) {
 			_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
@@ -2291,9 +2291,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, n1);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, n1);
 		/* it must be true */
 		break;
 	}
@@ -2305,8 +2305,8 @@ DEFUNC_UNIMPLEMENTED_OP (erasepage);
 DEFUNC_OP (exch)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *n1, *n2;
 
 	while (1) {
@@ -2314,10 +2314,10 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n2 = libretto_stack_pop(ostack);
-		n1 = libretto_stack_pop(ostack);
-		libretto_stack_push(ostack, n2);
-		libretto_stack_push(ostack, n1);
+		n2 = hg_stack_pop(ostack);
+		n1 = hg_stack_pop(ostack);
+		hg_stack_push(ostack, n2);
+		hg_stack_push(ostack, n1);
 		retval = TRUE;
 		break;
 	}
@@ -2327,9 +2327,9 @@ DEFUNC_OP_END
 DEFUNC_OP (exec)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *estack = libretto_vm_get_estack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node, *self, *tmp;
 
 	while (1) {
@@ -2337,23 +2337,23 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (hg_object_is_executable((HgObject *)node)) {
 			if (!hg_object_is_readable((HgObject *)node)) {
 				_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
 				break;
 			}
-			self = libretto_stack_pop(estack);
+			self = hg_stack_pop(estack);
 			tmp = hg_object_copy((HgObject *)node);
 			if (tmp)
-				libretto_stack_push(estack, tmp);
-			retval = libretto_stack_push(estack, self);
+				hg_stack_push(estack, tmp);
+			retval = hg_stack_push(estack, self);
 			if (!tmp)
 				_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			else if (!retval)
 				_libretto_operator_set_error(vm, op, LB_e_execstackoverflow);
 			else
-				libretto_stack_pop(ostack);
+				hg_stack_pop(ostack);
 		} else {
 			retval = TRUE;
 		}
@@ -2365,10 +2365,10 @@ DEFUNC_OP_END
 DEFUNC_OP (execstack)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
-	guint depth = libretto_stack_depth(ostack);
-	guint edepth = libretto_stack_depth(estack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *estack = libretto_vm_get_estack(vm);
+	guint depth = hg_stack_depth(ostack);
+	guint edepth = hg_stack_depth(estack);
 	guint len, i;
 	HgValueNode *node, *dup_node;
 	HgArray *array;
@@ -2378,7 +2378,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_ARRAY (node)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -2395,7 +2395,7 @@ G_STMT_START
 		}
 		/* don't include the last node. it's a node for this call */
 		for (i = 0; i < edepth - 1; i++) {
-			node = libretto_stack_index(estack, edepth - i - 1);
+			node = hg_stack_index(estack, edepth - i - 1);
 			dup_node = hg_object_dup((HgObject *)node);
 			hg_array_replace(array, dup_node, i);
 		}
@@ -2409,8 +2409,8 @@ G_STMT_START
 			}
 			array = hg_array_make_subarray(obj->pool, array, 0, edepth - 2);
 			HG_VALUE_MAKE_ARRAY (node, array);
-			libretto_stack_pop(ostack);
-			retval = libretto_stack_push(ostack, node);
+			hg_stack_pop(ostack);
+			retval = hg_stack_push(ostack, node);
 			/* it must be true */
 		} else {
 			retval = TRUE;
@@ -2425,13 +2425,13 @@ DEFUNC_UNIMPLEMENTED_OP (executeonly);
 DEFUNC_OP (exit)
 G_STMT_START
 {
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
-	guint depth = libretto_stack_depth(estack), i, j;
+	HgStack *estack = libretto_vm_get_estack(vm);
+	guint depth = hg_stack_depth(estack), i, j;
 	const gchar *name;
 	HgValueNode *node;
 
 	for (i = 0; i < depth; i++) {
-		node = libretto_stack_index(estack, i);
+		node = hg_stack_index(estack, i);
 		if (HG_IS_VALUE_POINTER (node)) {
 			/* target operators are:
 			 * cshow filenameforall for forall kshow loop pathforall
@@ -2441,29 +2441,29 @@ G_STMT_START
 			if (strcmp(name, "%for_pos_int_continue") == 0 ||
 			    strcmp(name, "%for_pos_real_continue") == 0) {
 				/* drop down ini inc limit proc in estack */
-				libretto_stack_pop(estack);
-				libretto_stack_pop(estack);
-				libretto_stack_pop(estack);
-				libretto_stack_pop(estack);
+				hg_stack_pop(estack);
+				hg_stack_pop(estack);
+				hg_stack_pop(estack);
+				hg_stack_pop(estack);
 			} else if (strcmp(name, "%loop_continue") == 0) {
 				/* drop down proc in estack */
-				libretto_stack_pop(estack);
+				hg_stack_pop(estack);
 			} else if (strcmp(name, "%repeat_continue") == 0) {
 				/* drop down n proc in estack */
-				libretto_stack_pop(estack);
-				libretto_stack_pop(estack);
+				hg_stack_pop(estack);
+				hg_stack_pop(estack);
 			} else if (strcmp(name, "%forall_array_continue") == 0 ||
 				   strcmp(name, "%forall_dict_continue") == 0 ||
 				   strcmp(name, "%forall_string_continue") == 0) {
 				/* drop down n val proc in estack */
-				libretto_stack_pop(estack);
-				libretto_stack_pop(estack);
-				libretto_stack_pop(estack);
+				hg_stack_pop(estack);
+				hg_stack_pop(estack);
+				hg_stack_pop(estack);
 			} else {
 				continue;
 			}
 			for (j = 0; j < i; j++)
-				libretto_stack_pop(estack);
+				hg_stack_pop(estack);
 			retval = TRUE;
 			break;
 		} else if (HG_IS_VALUE_FILE (node)) {
@@ -2479,8 +2479,8 @@ DEFUNC_OP_END
 DEFUNC_OP (exp)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *n1, *n2;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	gdouble base, exponent, result;
@@ -2490,8 +2490,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n2 = libretto_stack_index(ostack, 0);
-		n1 = libretto_stack_index(ostack, 1);
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
 		if (HG_IS_VALUE_INTEGER (n1)) {
 			base = HG_VALUE_GET_REAL_FROM_INTEGER (n1);
 		} else if (HG_IS_VALUE_REAL (n1)) {
@@ -2519,9 +2519,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, n1);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, n1);
 		/* it must be true */
 		break;
 	}
@@ -2579,8 +2579,8 @@ _libretto_operator_get_file_mode(const gchar *p)
 DEFUNC_OP (file)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack), file_mode;
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack), file_mode;
 	HgValueNode *n1, *n2;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	gchar *s1 = NULL, *s2 = NULL;
@@ -2592,8 +2592,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n2 = libretto_stack_index(ostack, 0);
-		n1 = libretto_stack_index(ostack, 1);
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
 		if (!HG_IS_VALUE_STRING (n1) || !HG_IS_VALUE_STRING (n2)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -2668,14 +2668,14 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		HG_VALUE_MAKE_FILE (n1, file);
 		if (n1 == NULL) {
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		retval = libretto_stack_push(ostack, n1);
+		retval = hg_stack_push(ostack, n1);
 		/* it must be true */
 		break;
 	}
@@ -2709,9 +2709,9 @@ DEFUNC_UNIMPLEMENTED_OP (fontdirectory);
 DEFUNC_OP (for)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
-	guint odepth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *estack = libretto_vm_get_estack(vm);
+	guint odepth = hg_stack_depth(ostack);
 	HgValueNode *nini, *ninc, *nlimit, *nproc, *node, *self;
 	gboolean fint = TRUE;
 
@@ -2720,10 +2720,10 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		nproc = libretto_stack_index(ostack, 0);
-		nlimit = libretto_stack_index(ostack, 1);
-		ninc = libretto_stack_index(ostack, 2);
-		nini = libretto_stack_index(ostack, 3);
+		nproc = hg_stack_index(ostack, 0);
+		nlimit = hg_stack_index(ostack, 1);
+		ninc = hg_stack_index(ostack, 2);
+		nini = hg_stack_index(ostack, 3);
 		if (!HG_IS_VALUE_ARRAY (nproc)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -2765,28 +2765,28 @@ G_STMT_START
 			break;
 		}
 
-		self = libretto_stack_pop(estack);
-		libretto_stack_push(estack, nini);
-		libretto_stack_push(estack, ninc);
-		libretto_stack_push(estack, nlimit);
-		libretto_stack_push(estack, nproc);
+		self = hg_stack_pop(estack);
+		hg_stack_push(estack, nini);
+		hg_stack_push(estack, ninc);
+		hg_stack_push(estack, nlimit);
+		hg_stack_push(estack, nproc);
 		if (fint)
 			node = hg_dict_lookup_with_string(libretto_vm_get_dict_systemdict(vm),
 							  "%for_pos_int_continue");
 		else
 			node = hg_dict_lookup_with_string(libretto_vm_get_dict_systemdict(vm),
 							  "%for_pos_real_continue");
-		libretto_stack_push(estack, node);
-		retval = libretto_stack_push(estack, self); /* dummy */
+		hg_stack_push(estack, node);
+		retval = hg_stack_push(estack, self); /* dummy */
 		if (!retval) {
 			_libretto_operator_set_error(vm, op, LB_e_execstackoverflow);
 			break;
 		}
 
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		break;
 	}
 } G_STMT_END;
@@ -2795,9 +2795,9 @@ DEFUNC_OP_END
 DEFUNC_OP (forall)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *estack = libretto_vm_get_estack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node, *nval, *nproc, *nn, *self;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 
@@ -2806,8 +2806,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		nproc = libretto_stack_index(ostack, 0);
-		nval = libretto_stack_index(ostack, 1);
+		nproc = hg_stack_index(ostack, 0);
+		nval = hg_stack_index(ostack, 1);
 		if (!HG_IS_VALUE_ARRAY (nproc)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -2841,18 +2841,18 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
 		}
-		self = libretto_stack_pop(estack);
-		libretto_stack_push(estack, nn);
-		libretto_stack_push(estack, nval);
-		libretto_stack_push(estack, nproc);
-		libretto_stack_push(estack, node);
-		retval = libretto_stack_push(estack, self); /* dummy */
+		self = hg_stack_pop(estack);
+		hg_stack_push(estack, nn);
+		hg_stack_push(estack, nval);
+		hg_stack_push(estack, nproc);
+		hg_stack_push(estack, node);
+		retval = hg_stack_push(estack, self); /* dummy */
 		if (!retval) {
 			_libretto_operator_set_error(vm, op, LB_e_execstackoverflow);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		break;
 	}
 } G_STMT_END;
@@ -2861,8 +2861,8 @@ DEFUNC_OP_END
 DEFUNC_OP (ge)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *n1, *n2;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	gboolean result;
@@ -2872,8 +2872,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n2 = libretto_stack_index(ostack, 0);
-		n1 = libretto_stack_index(ostack, 1);
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
 		if ((HG_IS_VALUE_INTEGER (n1) || HG_IS_VALUE_REAL (n1)) &&
 		    (HG_IS_VALUE_INTEGER (n2) || HG_IS_VALUE_REAL (n2))) {
 			gdouble d1;
@@ -2902,14 +2902,14 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		HG_VALUE_MAKE_BOOLEAN (pool, n1, result);
 		if (n1 == NULL) {
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		retval = libretto_stack_push(ostack, n1);
+		retval = hg_stack_push(ostack, n1);
 		/* it must be true */
 		break;
 	}
@@ -2919,8 +2919,8 @@ DEFUNC_OP_END
 DEFUNC_OP (get)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack), len;
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack), len;
 	HgValueNode *n1, *n2, *node = NULL;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	HgArray *array;
@@ -2933,8 +2933,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n2 = libretto_stack_index(ostack, 0);
-		n1 = libretto_stack_index(ostack, 1);
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
 		if (HG_IS_VALUE_ARRAY (n1)) {
 			if (!hg_object_is_readable((HgObject *)n1)) {
 				_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
@@ -2989,9 +2989,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		/* it must be true */
 		break;
 	}
@@ -3001,8 +3001,8 @@ DEFUNC_OP_END
 DEFUNC_OP (getinterval)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *n1, *n2, *n3;
 	HgMemObject *obj;
 	gint32 index, count;
@@ -3012,9 +3012,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n3 = libretto_stack_index(ostack, 0);
-		n2 = libretto_stack_index(ostack, 1);
-		n1 = libretto_stack_index(ostack, 2);
+		n3 = hg_stack_index(ostack, 0);
+		n2 = hg_stack_index(ostack, 1);
+		n1 = hg_stack_index(ostack, 2);
 		if (!HG_IS_VALUE_INTEGER (n2) ||
 		    !HG_IS_VALUE_INTEGER (n3)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
@@ -3054,10 +3054,10 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, n1);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, n1);
 		/* it must be true */
 		break;
 	}
@@ -3087,8 +3087,8 @@ DEFUNC_OP_END
 DEFUNC_OP (gt)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *n1, *n2;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	gboolean result;
@@ -3098,8 +3098,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n2 = libretto_stack_index(ostack, 0);
-		n1 = libretto_stack_index(ostack, 1);
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
 		if ((HG_IS_VALUE_INTEGER (n1) || HG_IS_VALUE_REAL (n1)) &&
 		    (HG_IS_VALUE_INTEGER (n2) || HG_IS_VALUE_REAL (n2))) {
 			gdouble d1;
@@ -3128,14 +3128,14 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		HG_VALUE_MAKE_BOOLEAN (pool, n1, result);
 		if (n1 == NULL) {
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		retval = libretto_stack_push(ostack, n1);
+		retval = hg_stack_push(ostack, n1);
 		/* it must be true */
 		break;
 	}
@@ -3147,19 +3147,19 @@ DEFUNC_UNIMPLEMENTED_OP (identmatrix);
 DEFUNC_OP (idiv)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 	HgValueNode *n1, *n2;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	gint32 i1, i2;
-	guint depth = libretto_stack_depth(ostack);
+	guint depth = hg_stack_depth(ostack);
 
 	while (1) {
 		if (depth < 2) {
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n2 = libretto_stack_index(ostack, 0);
-		n1 = libretto_stack_index(ostack, 1);
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
 		if (!HG_IS_VALUE_INTEGER (n1) ||
 		    !HG_IS_VALUE_INTEGER (n2)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
@@ -3176,9 +3176,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, n1);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, n1);
 		break;
 	}
 } G_STMT_END;
@@ -3189,9 +3189,9 @@ DEFUNC_UNIMPLEMENTED_OP (idtransform);
 DEFUNC_OP (if)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *estack = libretto_vm_get_estack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *nflag, *nif, *self, *node;
 
 	while (1) {
@@ -3199,8 +3199,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		nif = libretto_stack_index(ostack, 0);
-		nflag = libretto_stack_index(ostack, 1);
+		nif = hg_stack_index(ostack, 0);
+		nflag = hg_stack_index(ostack, 1);
 		if (!HG_IS_VALUE_ARRAY (nif) ||
 		    !HG_IS_VALUE_BOOLEAN (nflag)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
@@ -3211,18 +3211,18 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
 			break;
 		}
-		self = libretto_stack_pop(estack);
+		self = hg_stack_pop(estack);
 		if (HG_VALUE_GET_BOOLEAN (nflag)) {
 			node = hg_object_copy((HgObject *)nif);
-			retval = libretto_stack_push(estack, node);
+			retval = hg_stack_push(estack, node);
 			if (!retval) {
 				_libretto_operator_set_error(vm, op, LB_e_execstackoverflow);
 				break;
 			}
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(estack, self); /* dummy */
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(estack, self); /* dummy */
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_execstackoverflow);
 		break;
@@ -3233,9 +3233,9 @@ DEFUNC_OP_END
 DEFUNC_OP (ifelse)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *estack = libretto_vm_get_estack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *nflag, *nif, *nelse, *self, *node;
 
 	while (1) {
@@ -3243,9 +3243,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		nelse = libretto_stack_index(ostack, 0);
-		nif = libretto_stack_index(ostack, 1);
-		nflag = libretto_stack_index(ostack, 2);
+		nelse = hg_stack_index(ostack, 0);
+		nif = hg_stack_index(ostack, 1);
+		nflag = hg_stack_index(ostack, 2);
 		if (!HG_IS_VALUE_ARRAY (nelse) ||
 		    !HG_IS_VALUE_ARRAY (nif) ||
 		    !HG_IS_VALUE_BOOLEAN (nflag)) {
@@ -3259,26 +3259,26 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
 			break;
 		}
-		self = libretto_stack_pop(estack);
+		self = hg_stack_pop(estack);
 		if (HG_VALUE_GET_BOOLEAN (nflag)) {
 			node = hg_object_copy((HgObject *)nif);
-			retval = libretto_stack_push(estack, node);
+			retval = hg_stack_push(estack, node);
 			if (!retval) {
 				_libretto_operator_set_error(vm, op, LB_e_execstackoverflow);
 				break;
 			}
 		} else {
 			node = hg_object_copy((HgObject *)nelse);
-			retval = libretto_stack_push(estack, node);
+			retval = hg_stack_push(estack, node);
 			if (!retval) {
 				_libretto_operator_set_error(vm, op, LB_e_execstackoverflow);
 				break;
 			}
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(estack, self); /* dummy */
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(estack, self); /* dummy */
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_execstackoverflow);
 		break;
@@ -3292,8 +3292,8 @@ DEFUNC_UNIMPLEMENTED_OP (imagemask);
 DEFUNC_OP (index)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *n1, *node;
 	gint32 i;
 
@@ -3302,7 +3302,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n1 = libretto_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_INTEGER (n1)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -3312,9 +3312,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_rangecheck);
 			break;
 		}
-		node = libretto_stack_index(ostack, i + 1);
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		node = hg_stack_index(ostack, i + 1);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 		break;
@@ -3346,8 +3346,8 @@ DEFUNC_UNIMPLEMENTED_OP (itransform);
 DEFUNC_OP (known)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *ndict, *node;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	HgDict *dict;
@@ -3357,8 +3357,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
-		ndict = libretto_stack_index(ostack, 1);
+		node = hg_stack_index(ostack, 0);
+		ndict = hg_stack_index(ostack, 1);
 		if (!HG_IS_VALUE_DICT (ndict)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -3373,9 +3373,9 @@ G_STMT_START
 		} else {
 			HG_VALUE_MAKE_BOOLEAN (pool, node, FALSE);
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		/* it must be true */
 		break;
 	}
@@ -3387,8 +3387,8 @@ DEFUNC_UNIMPLEMENTED_OP (kshow);
 DEFUNC_OP (le)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *n1, *n2;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	gboolean result;
@@ -3398,8 +3398,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n2 = libretto_stack_index(ostack, 0);
-		n1 = libretto_stack_index(ostack, 1);
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
 		if ((HG_IS_VALUE_INTEGER (n1) || HG_IS_VALUE_REAL (n1)) &&
 		    (HG_IS_VALUE_INTEGER (n2) || HG_IS_VALUE_REAL (n2))) {
 			gdouble d1;
@@ -3428,14 +3428,14 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		HG_VALUE_MAKE_BOOLEAN (pool, n1, result);
 		if (n1 == NULL) {
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		retval = libretto_stack_push(ostack, n1);
+		retval = hg_stack_push(ostack, n1);
 		/* it must be true */
 		break;
 	}
@@ -3445,8 +3445,8 @@ DEFUNC_OP_END
 DEFUNC_OP (length)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 
@@ -3455,7 +3455,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (!hg_object_is_readable((HgObject *)node)) {
 			_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
 			break;
@@ -3480,8 +3480,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		/* it must be true */
 		break;
 	}
@@ -3491,8 +3491,8 @@ DEFUNC_OP_END
 DEFUNC_OP (lineto)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *nx, *ny;
 	LibrettoGraphicState *gstate = libretto_graphics_get_state(libretto_vm_get_graphics(vm));
 	gdouble dx, dy, d;
@@ -3502,8 +3502,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		ny = libretto_stack_index(ostack, 0);
-		nx = libretto_stack_index(ostack, 1);
+		ny = hg_stack_index(ostack, 0);
+		nx = hg_stack_index(ostack, 1);
 		if (HG_IS_VALUE_INTEGER (nx))
 			dx = HG_VALUE_GET_REAL_FROM_INTEGER (nx);
 		else if (HG_IS_VALUE_REAL (nx))
@@ -3529,8 +3529,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		break;
 	}
 } G_STMT_END;
@@ -3541,8 +3541,8 @@ DEFUNC_UNIMPLEMENTED_OP (ln);
 DEFUNC_OP (load)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *nkey, *nval;
 
 	while (1) {
@@ -3550,14 +3550,14 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		nkey = libretto_stack_index(ostack, 0);
+		nkey = hg_stack_index(ostack, 0);
 		nval = libretto_vm_lookup(vm, nkey);
 		if (nval == NULL) {
 			_libretto_operator_set_error(vm, op, LB_e_undefined);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, nval);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, nval);
 		/* it must be true */
 		break;
 	}
@@ -3569,9 +3569,9 @@ DEFUNC_UNIMPLEMENTED_OP (log);
 DEFUNC_OP (loop)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *estack = libretto_vm_get_estack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *self, *nproc, *node;
 
 	while (1) {
@@ -3579,7 +3579,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		nproc = libretto_stack_index(ostack, 0);
+		nproc = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_ARRAY (nproc)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -3589,18 +3589,18 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
 			break;
 		}
-		self = libretto_stack_pop(estack);
-		libretto_stack_push(estack, nproc);
+		self = hg_stack_pop(estack);
+		hg_stack_push(estack, nproc);
 		node = hg_dict_lookup_with_string(libretto_vm_get_dict_systemdict(vm),
 						  "%loop_continue");
-		libretto_stack_push(estack, node);
-		retval = libretto_stack_push(estack, self); /* dummy */
+		hg_stack_push(estack, node);
+		retval = hg_stack_push(estack, self); /* dummy */
 		if (!retval) {
 			_libretto_operator_set_error(vm, op, LB_e_execstackoverflow);
 			break;
 		}
 
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		break;
 	}
 } G_STMT_END;
@@ -3609,8 +3609,8 @@ DEFUNC_OP_END
 DEFUNC_OP (lt)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *n1, *n2;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	gboolean result;
@@ -3620,8 +3620,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n2 = libretto_stack_index(ostack, 0);
-		n1 = libretto_stack_index(ostack, 1);
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
 		if ((HG_IS_VALUE_INTEGER (n1) || HG_IS_VALUE_REAL (n1)) &&
 		    (HG_IS_VALUE_INTEGER (n2) || HG_IS_VALUE_REAL (n2))) {
 			gdouble d1;
@@ -3650,14 +3650,14 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		HG_VALUE_MAKE_BOOLEAN (pool, n1, result);
 		if (n1 == NULL) {
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		retval = libretto_stack_push(ostack, n1);
+		retval = hg_stack_push(ostack, n1);
 		/* it must be true */
 		break;
 	}
@@ -3668,7 +3668,7 @@ DEFUNC_UNIMPLEMENTED_OP (makefont);
 
 DEFUNC_OP (matrix)
 G_STMT_START {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 	HgValueNode *node;
 	HgArray *array;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
@@ -3690,7 +3690,7 @@ G_STMT_START {
 			hg_array_append(array, node);
 		}
 		HG_VALUE_MAKE_ARRAY (node, array);
-		retval = libretto_stack_push(ostack, node);
+		retval = hg_stack_push(ostack, node);
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 		break;
@@ -3701,8 +3701,8 @@ DEFUNC_OP_END
 DEFUNC_OP (maxlength)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	HgDict *dict;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
@@ -3712,7 +3712,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_DICT (node)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -3723,8 +3723,8 @@ G_STMT_START
 			break;
 		}
 		HG_VALUE_MAKE_INTEGER (pool, node, hg_dict_maxlength(dict));
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		/* it must be true */
 		break;
 	}
@@ -3734,10 +3734,10 @@ DEFUNC_OP_END
 DEFUNC_OP (mod)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 	HgValueNode *n1, *n2;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
-	guint depth = libretto_stack_depth(ostack);
+	guint depth = hg_stack_depth(ostack);
 	gint32 i2, result;
 
 	while (1) {
@@ -3745,8 +3745,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n2 = libretto_stack_index(ostack, 0);
-		n1 = libretto_stack_index(ostack, 1);
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
 		if (!HG_IS_VALUE_INTEGER (n1) || !HG_IS_VALUE_INTEGER (n2)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -3762,9 +3762,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, n1);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, n1);
 		/* it must be true */
 		break;
 	}
@@ -3774,8 +3774,8 @@ DEFUNC_OP_END
 DEFUNC_OP (moveto)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *nx, *ny;
 	gdouble dx, dy;
 
@@ -3784,8 +3784,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		ny = libretto_stack_index(ostack, 0);
-		nx = libretto_stack_index(ostack, 1);
+		ny = hg_stack_index(ostack, 0);
+		nx = hg_stack_index(ostack, 1);
 		if (HG_IS_VALUE_INTEGER (nx))
 			dx = HG_VALUE_GET_REAL_FROM_INTEGER (nx);
 		else if (HG_IS_VALUE_REAL (nx))
@@ -3808,8 +3808,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		break;
 	}
 } G_STMT_END;
@@ -3818,11 +3818,11 @@ DEFUNC_OP_END
 DEFUNC_OP (mul)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 	HgValueNode *n1, *n2;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	gdouble d1, d2;
-	guint depth = libretto_stack_depth(ostack);
+	guint depth = hg_stack_depth(ostack);
 	gdouble integer = TRUE;
 
 	while (1) {
@@ -3830,8 +3830,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n2 = libretto_stack_index(ostack, 0);
-		n1 = libretto_stack_index(ostack, 1);
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
 		if (HG_IS_VALUE_INTEGER (n1))
 			d1 = HG_VALUE_GET_REAL_FROM_INTEGER (n1);
 		else if (HG_IS_VALUE_REAL (n1)) {
@@ -3860,9 +3860,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, n1);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, n1);
 		/* it must be true */
 		break;
 	}
@@ -3872,8 +3872,8 @@ DEFUNC_OP_END
 DEFUNC_OP (ne)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *n1, *n2;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	gboolean result;
@@ -3883,8 +3883,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n2 = libretto_stack_index(ostack, 0);
-		n1 = libretto_stack_index(ostack, 1);
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
 		if (!hg_object_is_readable((HgObject *)n1) ||
 		    !hg_object_is_readable((HgObject *)n2)) {
 			_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
@@ -3925,9 +3925,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, n1);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, n1);
 		/* it must be true */
 		break;
 	}
@@ -3937,17 +3937,17 @@ DEFUNC_OP_END
 DEFUNC_OP (neg)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 	HgValueNode *n, *node;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
-	guint depth = libretto_stack_depth(ostack);
+	guint depth = hg_stack_depth(ostack);
 
 	while (1) {
 		if (depth < 1) {
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n = libretto_stack_index(ostack, 0);
+		n = hg_stack_index(ostack, 0);
 		if (HG_IS_VALUE_INTEGER (n)) {
 			HG_VALUE_MAKE_INTEGER (pool, node, -HG_VALUE_GET_INTEGER (n));
 		} else if (HG_IS_VALUE_REAL (n)) {
@@ -3960,8 +3960,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		/* it must be true */
 		break;
 	}
@@ -3980,8 +3980,8 @@ DEFUNC_OP_END
 DEFUNC_OP (noaccess)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 
 	while (1) {
@@ -3989,7 +3989,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_ARRAY (node) &&
 		    !HG_IS_VALUE_DICT (node) &&
 		    !HG_IS_VALUE_FILE (node) &&
@@ -4018,8 +4018,8 @@ DEFUNC_OP_END
 DEFUNC_OP (not)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 
@@ -4028,7 +4028,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (HG_IS_VALUE_BOOLEAN (node)) {
 			gboolean bool = HG_VALUE_GET_BOOLEAN (node);
 
@@ -4041,8 +4041,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		/* it must be true */
 		break;
 	}
@@ -4054,8 +4054,8 @@ DEFUNC_UNIMPLEMENTED_OP (nulldevice);
 DEFUNC_OP (or)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *n1, *n2;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 
@@ -4064,8 +4064,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n2 = libretto_stack_index(ostack, 0);
-		n1 = libretto_stack_index(ostack, 1);
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
 		if (HG_IS_VALUE_BOOLEAN (n1) &&
 		    HG_IS_VALUE_BOOLEAN (n2)) {
 			gboolean result = HG_VALUE_GET_BOOLEAN (n1) | HG_VALUE_GET_BOOLEAN (n2);
@@ -4088,9 +4088,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, n1);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, n1);
 		/* it must be true */
 		break;
 	}
@@ -4100,7 +4100,7 @@ DEFUNC_OP_END
 DEFUNC_OP (pathbbox)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	HgValueNode *node;
 	HgPathBBox bbox;
@@ -4122,25 +4122,25 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_push(ostack, node);
+		hg_stack_push(ostack, node);
 		HG_VALUE_MAKE_REAL (pool, node, bbox.lly);
 		if (node == NULL) {
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_push(ostack, node);
+		hg_stack_push(ostack, node);
 		HG_VALUE_MAKE_REAL (pool, node, bbox.urx);
 		if (node == NULL) {
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_push(ostack, node);
+		hg_stack_push(ostack, node);
 		HG_VALUE_MAKE_REAL (pool, node, bbox.ury);
 		if (node == NULL) {
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		retval = libretto_stack_push(ostack, node);
+		retval = hg_stack_push(ostack, node);
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 		break;
@@ -4153,15 +4153,15 @@ DEFUNC_UNIMPLEMENTED_OP (pathforall);
 DEFUNC_OP (pop)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 
 	while (1) {
 		if (depth < 1) {
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		retval = TRUE;
 		break;
 	}
@@ -4171,8 +4171,8 @@ DEFUNC_OP_END
 DEFUNC_OP (print)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	HgString *hs;
 	HgFileObject *stdout;
@@ -4182,7 +4182,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_STRING (node)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -4201,7 +4201,7 @@ G_STMT_START
 			_libretto_operator_set_error_from_file(vm, op, stdout);
 			break;
 		}
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		retval = TRUE;
 		break;
 	}
@@ -4212,8 +4212,8 @@ DEFUNC_OP_END
 DEFUNC_OP (put)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack), len;
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack), len;
 	gint32 index;
 	HgValueNode *n1, *n2, *n3;
 	HgMemObject *obj;
@@ -4223,9 +4223,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n3 = libretto_stack_index(ostack, 0);
-		n2 = libretto_stack_index(ostack, 1);
-		n1 = libretto_stack_index(ostack, 2);
+		n3 = hg_stack_index(ostack, 0);
+		n2 = hg_stack_index(ostack, 1);
+		n1 = hg_stack_index(ostack, 2);
 		if (!hg_object_is_writable((HgObject *)n1)) {
 			_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
 			break;
@@ -4278,9 +4278,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		break;
 	}
 } G_STMT_END;
@@ -4289,11 +4289,11 @@ DEFUNC_OP_END
 DEFUNC_OP (quit)
 G_STMT_START
 {
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
-	HgValueNode *self = libretto_stack_index(estack, 0);
+	HgStack *estack = libretto_vm_get_estack(vm);
+	HgValueNode *self = hg_stack_index(estack, 0);
 
-	libretto_stack_clear(estack);
-	retval = libretto_stack_push(estack, self);
+	hg_stack_clear(estack);
+	retval = hg_stack_push(estack, self);
 	/* FIXME */
 } G_STMT_END;
 DEFUNC_OP_END
@@ -4301,7 +4301,7 @@ DEFUNC_OP_END
 DEFUNC_OP (rand)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 	HgValueNode *node;
 	GRand *rand_ = libretto_vm_get_random_generator(vm);
 
@@ -4310,7 +4310,7 @@ G_STMT_START
 	if (node == NULL) {
 		_libretto_operator_set_error(vm, op, LB_e_VMerror);
 	} else {
-		retval = libretto_stack_push(ostack, node);
+		retval = hg_stack_push(ostack, node);
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 	}
@@ -4320,8 +4320,8 @@ DEFUNC_OP_END
 DEFUNC_OP (rcheck)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 
@@ -4330,7 +4330,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (HG_IS_VALUE_ARRAY (node) ||
 		    HG_IS_VALUE_FILE (node) ||
 		    HG_IS_VALUE_STRING (node)) {
@@ -4346,8 +4346,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		/* it must be true */
 		break;
 	}
@@ -4359,8 +4359,8 @@ DEFUNC_UNIMPLEMENTED_OP (rcurveto);
 DEFUNC_OP (read)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *nfile, *node;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	HgFileObject *file, *stdin;
@@ -4371,7 +4371,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		nfile = libretto_stack_index(ostack, 0);
+		nfile = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_FILE (nfile)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -4392,27 +4392,27 @@ G_STMT_START
 			 * just returns false to not breaks it.
 			 */
 			HG_VALUE_MAKE_BOOLEAN (pool, node, FALSE);
-			libretto_stack_pop(ostack);
-			retval = libretto_stack_push(ostack, node);
+			hg_stack_pop(ostack);
+			retval = hg_stack_push(ostack, node);
 			/* it must be true */
 			break;
 		}			
 		c = hg_file_object_getc(file);
 		if (hg_file_object_is_eof(file)) {
 			HG_VALUE_MAKE_BOOLEAN (pool, node, FALSE);
-			libretto_stack_pop(ostack);
-			retval = libretto_stack_push(ostack, node);
+			hg_stack_pop(ostack);
+			retval = hg_stack_push(ostack, node);
 			/* it must be true */
 			break;
 		} else if (hg_file_object_has_error(file)) {
 			_libretto_operator_set_error_from_file(vm, op, file);
 			break;
 		} else {
-			libretto_stack_pop(ostack);
+			hg_stack_pop(ostack);
 			HG_VALUE_MAKE_INTEGER (pool, node, c);
-			libretto_stack_push(ostack, node);
+			hg_stack_push(ostack, node);
 			HG_VALUE_MAKE_BOOLEAN (pool, node, TRUE);
-			retval = libretto_stack_push(ostack, node);
+			retval = hg_stack_push(ostack, node);
 			if (!retval)
 				_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 		}
@@ -4428,9 +4428,9 @@ DEFUNC_UNIMPLEMENTED_OP (readstring);
 
 DEFUNC_OP (repeat)
 G_STMT_START {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *estack = libretto_vm_get_estack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *n, *nproc, *node, *self;
 
 	while (1) {
@@ -4438,8 +4438,8 @@ G_STMT_START {
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		nproc = libretto_stack_index(ostack, 0);
-		n = libretto_stack_index(ostack, 1);
+		nproc = hg_stack_index(ostack, 0);
+		n = hg_stack_index(ostack, 1);
 		if (!HG_IS_VALUE_INTEGER (n) || !HG_IS_VALUE_ARRAY (nproc)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -4453,26 +4453,26 @@ G_STMT_START {
 			_libretto_operator_set_error(vm, op, LB_e_rangecheck);
 			break;
 		}
-		self = libretto_stack_pop(estack);
+		self = hg_stack_pop(estack);
 		/* only n must be copied. */
 		node = hg_object_copy((HgObject *)n);
 		if (node == NULL) {
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_push(estack, node);
-		libretto_stack_push(estack, nproc);
+		hg_stack_push(estack, node);
+		hg_stack_push(estack, nproc);
 		node = hg_dict_lookup_with_string(libretto_vm_get_dict_systemdict(vm),
 						  "%repeat_continue");
-		libretto_stack_push(estack, node);
-		retval = libretto_stack_push(estack, self); /* dummy */
+		hg_stack_push(estack, node);
+		retval = hg_stack_push(estack, self); /* dummy */
 		if (!retval) {
 			_libretto_operator_set_error(vm, op, LB_e_execstackoverflow);
 			break;
 		}
 
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		break;
 	}
 } G_STMT_END;
@@ -4483,8 +4483,8 @@ DEFUNC_UNIMPLEMENTED_OP (resetfile);
 DEFUNC_OP (restore)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	HgMemSnapshot *snapshot;
 	HgMemPool *pool;
@@ -4495,7 +4495,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_SNAPSHOT (node)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -4520,8 +4520,8 @@ DEFUNC_UNIMPLEMENTED_OP (reversepath);
 DEFUNC_OP (rlineto)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *nx, *ny;
 	LibrettoGraphicState *gstate = libretto_graphics_get_state(libretto_vm_get_graphics(vm));
 	gdouble dx, dy, d;
@@ -4531,8 +4531,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		ny = libretto_stack_index(ostack, 0);
-		nx = libretto_stack_index(ostack, 1);
+		ny = hg_stack_index(ostack, 0);
+		nx = hg_stack_index(ostack, 1);
 		if (HG_IS_VALUE_INTEGER (nx))
 			dx = HG_VALUE_GET_REAL_FROM_INTEGER (nx);
 		else if (HG_IS_VALUE_REAL (nx))
@@ -4558,8 +4558,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		break;
 	}
 } G_STMT_END;
@@ -4570,8 +4570,8 @@ DEFUNC_UNIMPLEMENTED_OP (rmoveto);
 DEFUNC_OP (roll)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *nd, *ni;
 	gint32 index, d;
 
@@ -4580,8 +4580,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		nd = libretto_stack_index(ostack, 0);
-		ni = libretto_stack_index(ostack, 1);
+		nd = hg_stack_index(ostack, 0);
+		ni = hg_stack_index(ostack, 1);
 		if (!HG_IS_VALUE_INTEGER (nd) || !HG_IS_VALUE_INTEGER (ni)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -4596,9 +4596,9 @@ G_STMT_START
 			break;
 		}
 		d = HG_VALUE_GET_INTEGER (nd);
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		libretto_stack_roll(ostack, index, d);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_roll(ostack, index, d);
 		retval = TRUE;
 		break;
 	}
@@ -4608,8 +4608,8 @@ DEFUNC_OP_END
 DEFUNC_OP (rotate)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack), len;
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack), len;
 	HgValueNode *node, *nmatrix;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	HgArray *matrix = NULL;
@@ -4621,7 +4621,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		nmatrix = libretto_stack_index(ostack, 0);
+		nmatrix = hg_stack_index(ostack, 0);
 		if (HG_IS_VALUE_ARRAY (nmatrix)) {
 			if (depth < 2) {
 				_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
@@ -4637,7 +4637,7 @@ G_STMT_START
 				_libretto_operator_set_error(vm, op, LB_e_rangecheck);
 				break;
 			}
-			node = libretto_stack_index(ostack, 1);
+			node = hg_stack_index(ostack, 1);
 		} else {
 			node = nmatrix;
 			nmatrix = NULL;
@@ -4664,9 +4664,9 @@ G_STMT_START
 			HG_VALUE_SET_REAL (hg_array_index(matrix, 4), mtx->x0);
 			HG_VALUE_SET_REAL (hg_array_index(matrix, 5), mtx->y0);
 
-			libretto_stack_pop(ostack);
-			libretto_stack_pop(ostack);
-			retval = libretto_stack_push(ostack, nmatrix);
+			hg_stack_pop(ostack);
+			hg_stack_pop(ostack);
+			retval = hg_stack_push(ostack, nmatrix);
 		} else {
 			retval = libretto_graphics_matrix_rotate(libretto_vm_get_graphics(vm),
 								 angle);
@@ -4674,7 +4674,7 @@ G_STMT_START
 				_libretto_operator_set_error(vm, op, LB_e_VMerror);
 				break;
 			}
-			libretto_stack_pop(ostack);
+			hg_stack_pop(ostack);
 		}
 		break;
 	}
@@ -4687,7 +4687,7 @@ DEFUNC_UNIMPLEMENTED_OP (rrand);
 DEFUNC_OP (save)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 	HgMemSnapshot *snapshot;
 	HgMemPool *pool;
 	gboolean global_mode = libretto_vm_is_global_pool_used(vm);
@@ -4703,7 +4703,7 @@ G_STMT_START
 			break;
 		}
 		libretto_vm_use_global_pool(vm, global_mode);
-		retval = libretto_stack_push(ostack, node);
+		retval = hg_stack_push(ostack, node);
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 		break;
@@ -4714,8 +4714,8 @@ DEFUNC_OP_END
 DEFUNC_OP (scale)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *nx, *ny, *nmatrix;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	HgArray *matrix;
@@ -4728,7 +4728,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		nmatrix = libretto_stack_index(ostack, 0);
+		nmatrix = hg_stack_index(ostack, 0);
 		if (HG_IS_VALUE_ARRAY (nmatrix)) {
 			if (depth < 3) {
 				_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
@@ -4744,14 +4744,14 @@ G_STMT_START
 				_libretto_operator_set_error(vm, op, LB_e_rangecheck);
 				break;
 			}
-			ny = libretto_stack_index(ostack, 1);
+			ny = hg_stack_index(ostack, 1);
 			offset = 2;
 		} else {
 			ny = nmatrix;
 			nmatrix = NULL;
 			offset = 1;
 		}
-		nx = libretto_stack_index(ostack, offset);
+		nx = hg_stack_index(ostack, offset);
 		if (HG_IS_VALUE_INTEGER (nx))
 			dx = HG_VALUE_GET_REAL_FROM_INTEGER (nx);
 		else if (HG_IS_VALUE_REAL (nx))
@@ -4778,10 +4778,10 @@ G_STMT_START
 			HG_VALUE_SET_REAL (hg_array_index(matrix, 4), mtx->x0);
 			HG_VALUE_SET_REAL (hg_array_index(matrix, 5), mtx->y0);
 
-			libretto_stack_pop(ostack);
-			libretto_stack_pop(ostack);
-			libretto_stack_pop(ostack);
-			retval = libretto_stack_push(ostack, nmatrix);
+			hg_stack_pop(ostack);
+			hg_stack_pop(ostack);
+			hg_stack_pop(ostack);
+			retval = hg_stack_push(ostack, nmatrix);
 		} else {
 			retval = libretto_graphics_matrix_scale(libretto_vm_get_graphics(vm),
 								dx, dy);
@@ -4789,8 +4789,8 @@ G_STMT_START
 				_libretto_operator_set_error(vm, op, LB_e_VMerror);
 				break;
 			}
-			libretto_stack_pop(ostack);
-			libretto_stack_pop(ostack);
+			hg_stack_pop(ostack);
+			hg_stack_pop(ostack);
 		}
 		break;
 	}
@@ -4809,8 +4809,8 @@ DEFUNC_UNIMPLEMENTED_OP (setfont);
 DEFUNC_OP (setgray)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	gdouble d;
 
@@ -4819,7 +4819,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (HG_IS_VALUE_INTEGER (node))
 			d = HG_VALUE_GET_REAL_FROM_INTEGER (node);
 		else if (HG_IS_VALUE_REAL (node))
@@ -4828,7 +4828,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
 		}
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		retval = libretto_graphic_state_color_set_rgb(libretto_vm_get_graphics(vm)->current_gstate,
 							      d, d, d);
 		break;
@@ -4839,8 +4839,8 @@ DEFUNC_OP_END
 DEFUNC_OP (sethsbcolor)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *nh, *ns, *nb;
 	gdouble dh, ds, db;
 
@@ -4849,9 +4849,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		nh = libretto_stack_index(ostack, 0);
-		ns = libretto_stack_index(ostack, 1);
-		nb = libretto_stack_index(ostack, 2);
+		nh = hg_stack_index(ostack, 0);
+		ns = hg_stack_index(ostack, 1);
+		nb = hg_stack_index(ostack, 2);
 		if (HG_IS_VALUE_INTEGER (nh))
 			dh = HG_VALUE_GET_REAL_FROM_INTEGER (nh);
 		else if (HG_IS_VALUE_REAL (nh))
@@ -4878,9 +4878,9 @@ G_STMT_START
 		}
 		retval = libretto_graphic_state_color_set_hsv(libretto_vm_get_graphics(vm)->current_gstate,
 							      dh, ds, db);
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		break;
 	}
 } G_STMT_END;
@@ -4892,8 +4892,8 @@ DEFUNC_UNIMPLEMENTED_OP (setlinejoin);
 DEFUNC_OP (setlinewidth)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	gdouble d;
 
@@ -4902,7 +4902,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (HG_IS_VALUE_INTEGER (node))
 			d = HG_VALUE_GET_REAL_FROM_INTEGER (node);
 		else if (HG_IS_VALUE_REAL (node))
@@ -4911,7 +4911,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
 		}
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		retval = libretto_graphic_state_set_linewidth(libretto_vm_get_graphics(vm)->current_gstate, d);
 		break;
 	}
@@ -4921,8 +4921,8 @@ DEFUNC_OP_END
 DEFUNC_OP (setmatrix)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack), i;
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack), i;
 	HgValueNode *node;
 	HgArray *matrix;
 	LibrettoGraphicState *gstate = libretto_graphics_get_state(libretto_vm_get_graphics(vm));
@@ -4934,7 +4934,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_ARRAY (node)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -4977,7 +4977,7 @@ G_STMT_START
 				_libretto_operator_set_error(vm, op, LB_e_VMerror);
 				break;
 			}
-			libretto_stack_pop(ostack);
+			hg_stack_pop(ostack);
 		}
 		break;
 	}
@@ -4989,8 +4989,8 @@ DEFUNC_UNIMPLEMENTED_OP (setmiterlimit);
 DEFUNC_OP (setrgbcolor)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *nr, *ng, *nb;
 	gdouble dr, dg, db;
 
@@ -4999,9 +4999,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		nb = libretto_stack_index(ostack, 0);
-		ng = libretto_stack_index(ostack, 1);
-		nr = libretto_stack_index(ostack, 2);
+		nb = hg_stack_index(ostack, 0);
+		ng = hg_stack_index(ostack, 1);
+		nr = hg_stack_index(ostack, 2);
 		if (HG_IS_VALUE_INTEGER (nr))
 			dr = HG_VALUE_GET_REAL_FROM_INTEGER (nr);
 		else if (HG_IS_VALUE_REAL (nr))
@@ -5028,9 +5028,9 @@ G_STMT_START
 		}
 		retval = libretto_graphic_state_color_set_rgb(libretto_vm_get_graphics(vm)->current_gstate,
 							      dr, dg, db);
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		break;
 	}
 } G_STMT_END;
@@ -5061,8 +5061,8 @@ DEFUNC_OP_END
 DEFUNC_OP (sin)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	gdouble d;
 
@@ -5071,7 +5071,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (HG_IS_VALUE_INTEGER (node)) {
 			d = HG_VALUE_GET_REAL_FROM_INTEGER (node);
 		} else if (HG_IS_VALUE_REAL (node)) {
@@ -5087,8 +5087,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		/* it must be true */
 		break;
 	}
@@ -5098,8 +5098,8 @@ DEFUNC_OP_END
 DEFUNC_OP (sqrt)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	gdouble d;
@@ -5109,7 +5109,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (HG_IS_VALUE_INTEGER (node)) {
 			d = HG_VALUE_GET_REAL_FROM_INTEGER (node);
 		} else if (HG_IS_VALUE_REAL (node)) {
@@ -5123,8 +5123,8 @@ G_STMT_START
 			break;
 		}
 		HG_VALUE_MAKE_REAL (pool, node, sqrt(d));
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		/* it must be true */
 		break;
 	}
@@ -5134,8 +5134,8 @@ DEFUNC_OP_END
 DEFUNC_OP (srand)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	GRand *rand_;
 
@@ -5144,14 +5144,14 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_INTEGER (node)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
 		}
 		rand_ = libretto_vm_get_random_generator(vm);
 		g_rand_set_seed(rand_, (guint32)HG_VALUE_GET_INTEGER (node));
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		retval = TRUE;
 		break;
 	}
@@ -5165,13 +5165,13 @@ DEFUNC_UNIMPLEMENTED_OP (status);
 DEFUNC_OP (stop)
 G_STMT_START
 {
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
-	guint edepth = libretto_stack_depth(estack), i;
+	HgStack *estack = libretto_vm_get_estack(vm);
+	guint edepth = hg_stack_depth(estack), i;
 	HgValueNode *node, *self, *key;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 
 	for (i = 0; i < edepth; i++) {
-		node = libretto_stack_index(estack, i);
+		node = hg_stack_index(estack, i);
 		if (HG_IS_VALUE_POINTER (node) &&
 		    strcmp("%stopped_continue", libretto_operator_get_name(HG_VALUE_GET_POINTER (node))) == 0) {
 			break;
@@ -5180,15 +5180,15 @@ G_STMT_START
 	if (i == edepth) {
 		hg_stderr_printf("No /stopped operator found. exiting...\n");
 		node = hg_dict_lookup_with_string(libretto_vm_get_dict_systemdict(vm), ".abort");
-		self = libretto_stack_pop(estack);
-		libretto_stack_push(estack, node);
-		retval = libretto_stack_push(estack, self);
+		self = hg_stack_pop(estack);
+		hg_stack_push(estack, node);
+		retval = hg_stack_push(estack, self);
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_execstackoverflow);
 	} else {
 		/* this operator itself is still in the estack. */
 		for (; i > 1; i--)
-			libretto_stack_pop(estack);
+			hg_stack_pop(estack);
 		key = libretto_vm_get_name_node(vm, ".isstop");
 		HG_VALUE_MAKE_BOOLEAN (pool, node, TRUE);
 		hg_dict_insert(pool, libretto_vm_get_dict_error(vm), key, node);
@@ -5200,9 +5200,9 @@ DEFUNC_OP_END
 DEFUNC_OP (stopped)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *estack = libretto_vm_get_estack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node, *self, *proc;
 
 	while (1) {
@@ -5210,25 +5210,25 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (!hg_object_is_readable((HgObject *)node)) {
 			_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
 			break;
 		}
 		if (hg_object_is_executable((HgObject *)node)) {
-			libretto_stack_pop(ostack);
-			self = libretto_stack_pop(estack);
+			hg_stack_pop(ostack);
+			self = hg_stack_pop(estack);
 			proc = hg_dict_lookup_with_string(libretto_vm_get_dict_systemdict(vm),
 							  "%stopped_continue");
-			libretto_stack_push(estack, proc);
-			libretto_stack_push(estack, node);
-			retval = libretto_stack_push(estack, self);
+			hg_stack_push(estack, proc);
+			hg_stack_push(estack, node);
+			retval = hg_stack_push(estack, self);
 			if (!retval)
 				_libretto_operator_set_error(vm, op, LB_e_execstackoverflow);
 		} else {
 			HG_VALUE_MAKE_BOOLEAN (libretto_vm_get_current_pool(vm),
 					       node, FALSE);
-			retval = libretto_stack_push(ostack, node);
+			retval = hg_stack_push(ostack, node);
 			if (!retval)
 				_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 		}
@@ -5242,8 +5242,8 @@ DEFUNC_UNIMPLEMENTED_OP (store);
 DEFUNC_OP (string)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	gint32 size;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
@@ -5254,7 +5254,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_INTEGER (node)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -5274,8 +5274,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		/* it must be true */
 		break;
 	}
@@ -5298,11 +5298,11 @@ DEFUNC_UNIMPLEMENTED_OP (strokepath);
 DEFUNC_OP (sub)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 	HgValueNode *n1, *n2;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	gdouble d1, d2;
-	guint depth = libretto_stack_depth(ostack);
+	guint depth = hg_stack_depth(ostack);
 	gdouble integer = TRUE;
 
 	while (1) {
@@ -5310,8 +5310,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n2 = libretto_stack_index(ostack, 0);
-		n1 = libretto_stack_index(ostack, 1);
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
 		if (HG_IS_VALUE_INTEGER (n1))
 			d1 = HG_VALUE_GET_REAL_FROM_INTEGER (n1);
 		else if (HG_IS_VALUE_REAL (n1)) {
@@ -5339,9 +5339,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, n1);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, n1);
 		/* it must be true */
 		break;
 	}
@@ -5354,8 +5354,8 @@ DEFUNC_UNIMPLEMENTED_OP (transform);
 DEFUNC_OP (translate)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *nx, *ny, *nmatrix;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	HgArray *matrix;
@@ -5368,7 +5368,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		nmatrix = libretto_stack_index(ostack, 0);
+		nmatrix = hg_stack_index(ostack, 0);
 		if (HG_IS_VALUE_ARRAY (nmatrix)) {
 			if (depth < 3) {
 				_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
@@ -5384,14 +5384,14 @@ G_STMT_START
 				_libretto_operator_set_error(vm, op, LB_e_rangecheck);
 				break;
 			}
-			ny = libretto_stack_index(ostack, 1);
+			ny = hg_stack_index(ostack, 1);
 			offset = 2;
 		} else {
 			ny = nmatrix;
 			nmatrix = NULL;
 			offset = 1;
 		}
-		nx = libretto_stack_index(ostack, offset);
+		nx = hg_stack_index(ostack, offset);
 		if (HG_IS_VALUE_INTEGER (nx))
 			dx = HG_VALUE_GET_REAL_FROM_INTEGER (nx);
 		else if (HG_IS_VALUE_REAL (nx))
@@ -5418,10 +5418,10 @@ G_STMT_START
 			HG_VALUE_SET_REAL (hg_array_index(matrix, 4), mtx->x0);
 			HG_VALUE_SET_REAL (hg_array_index(matrix, 5), mtx->y0);
 
-			libretto_stack_pop(ostack);
-			libretto_stack_pop(ostack);
-			libretto_stack_pop(ostack);
-			retval = libretto_stack_push(ostack, nmatrix);
+			hg_stack_pop(ostack);
+			hg_stack_pop(ostack);
+			hg_stack_pop(ostack);
+			retval = hg_stack_push(ostack, nmatrix);
 		} else {
 			retval = libretto_graphics_matrix_translate(libretto_vm_get_graphics(vm),
 								    dx, dy);
@@ -5429,8 +5429,8 @@ G_STMT_START
 				_libretto_operator_set_error(vm, op, LB_e_VMerror);
 				break;
 			}
-			libretto_stack_pop(ostack);
-			libretto_stack_pop(ostack);
+			hg_stack_pop(ostack);
+			hg_stack_pop(ostack);
 		}
 		break;
 	}
@@ -5440,8 +5440,8 @@ DEFUNC_OP_END
 DEFUNC_OP (truncate)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 
@@ -5450,7 +5450,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (HG_IS_VALUE_INTEGER (node)) {
 			/* nothing to do here */
 			retval = TRUE;
@@ -5462,8 +5462,8 @@ G_STMT_START
 				_libretto_operator_set_error(vm, op, LB_e_VMerror);
 				break;
 			}
-			libretto_stack_pop(ostack);
-			retval = libretto_stack_push(ostack, node);
+			hg_stack_pop(ostack);
+			retval = hg_stack_push(ostack, node);
 			/* it must be true */
 		} else {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
@@ -5476,8 +5476,8 @@ DEFUNC_OP_END
 DEFUNC_OP (type)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 
 	while (1) {
@@ -5485,7 +5485,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		switch (HG_VALUE_GET_VALUE_TYPE (node)) {
 		    case HG_TYPE_VALUE_BOOLEAN:
 			    node = libretto_vm_get_name_node(vm, "booleantype");
@@ -5532,8 +5532,8 @@ G_STMT_START
 			    return retval;
 		}
 		hg_object_executable((HgObject *)node);
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		break;
 	}
 } G_STMT_END;
@@ -5542,7 +5542,7 @@ DEFUNC_OP_END
 DEFUNC_OP (usertime)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 	HgValueNode *node;
 
 	HG_VALUE_MAKE_INTEGER (libretto_vm_get_current_pool(vm),
@@ -5550,7 +5550,7 @@ G_STMT_START
 	if (node == NULL) {
 		_libretto_operator_set_error(vm, op, LB_e_VMerror);
 	} else {
-		retval = libretto_stack_push(ostack, node);
+		retval = hg_stack_push(ostack, node);
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 	}
@@ -5560,7 +5560,7 @@ DEFUNC_OP_END
 DEFUNC_OP (vmstatus)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 	HgValueNode *n1, *n2, *n3;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	gint32 level, used, maximum;
@@ -5578,9 +5578,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_push(ostack, n1);
-		libretto_stack_push(ostack, n2);
-		retval = libretto_stack_push(ostack, n3);
+		hg_stack_push(ostack, n1);
+		hg_stack_push(ostack, n2);
+		retval = hg_stack_push(ostack, n3);
 		if (!retval)
 			_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 		break;
@@ -5591,8 +5591,8 @@ DEFUNC_OP_END
 DEFUNC_OP (wcheck)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 
@@ -5601,7 +5601,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (HG_IS_VALUE_ARRAY (node) ||
 		    HG_IS_VALUE_FILE (node) ||
 		    HG_IS_VALUE_STRING (node)) {
@@ -5617,8 +5617,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		/* it must be true */
 		break;
 	}
@@ -5628,10 +5628,10 @@ DEFUNC_OP_END
 DEFUNC_OP (where)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *dstack = libretto_vm_get_dstack(vm);
-	guint depth = libretto_stack_depth(ostack);
-	guint ddepth = libretto_stack_depth(dstack), i;
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *dstack = libretto_vm_get_dstack(vm);
+	guint depth = hg_stack_depth(ostack);
+	guint ddepth = hg_stack_depth(dstack), i;
 	HgValueNode *node, *ndict;
 	HgDict *dict = NULL;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
@@ -5641,9 +5641,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		for (i = 0; i < ddepth; i++) {
-			ndict = libretto_stack_index(dstack, i);
+			ndict = hg_stack_index(dstack, i);
 			if (!HG_IS_VALUE_DICT (ndict)) {
 				g_warning("[BUG] Invalid dictionary was in the dictionary stack.");
 				return retval;
@@ -5652,16 +5652,16 @@ G_STMT_START
 			if (hg_dict_lookup(dict, node) != NULL)
 				break;
 		}
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		if (i == ddepth || dict == NULL) {
 			HG_VALUE_MAKE_BOOLEAN (pool, node, FALSE);
-			retval = libretto_stack_push(ostack, node);
+			retval = hg_stack_push(ostack, node);
 			/* it must be true */
 		} else {
 			HG_VALUE_MAKE_DICT (node, dict);
-			libretto_stack_push(ostack, node);
+			hg_stack_push(ostack, node);
 			HG_VALUE_MAKE_BOOLEAN (pool, node, TRUE);
-			retval = libretto_stack_push(ostack, node);
+			retval = hg_stack_push(ostack, node);
 			if (!retval)
 				_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 		}
@@ -5677,8 +5677,8 @@ DEFUNC_UNIMPLEMENTED_OP (writehexstring);
 DEFUNC_OP (writestring)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *n1, *n2;
 	HgFileObject *file;
 	HgString *hs;
@@ -5688,8 +5688,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n2 = libretto_stack_index(ostack, 0);
-		n1 = libretto_stack_index(ostack, 1);
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
 		if (!HG_IS_VALUE_FILE (n1) ||
 		    !HG_IS_VALUE_STRING (n2)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
@@ -5710,8 +5710,8 @@ G_STMT_START
 			_libretto_operator_set_error_from_file(vm, op, file);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		retval = TRUE;
 		break;
 	}
@@ -5721,8 +5721,8 @@ DEFUNC_OP_END
 DEFUNC_OP (xcheck)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 
@@ -5731,7 +5731,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (HG_IS_VALUE_ARRAY (node) ||
 		    HG_IS_VALUE_FILE (node) ||
 		    HG_IS_VALUE_STRING (node) ||
@@ -5747,8 +5747,8 @@ G_STMT_START
 		} else {
 			HG_VALUE_MAKE_BOOLEAN (pool, node, FALSE);
 		}
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		/* it must be true */
 		break;
 	}
@@ -5910,9 +5910,9 @@ DEFUNC_OP (private_hg_abort)
 G_STMT_START
 {
 	HgFileObject *file = libretto_vm_get_io(vm, LB_IO_STDERR);
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
-	LibrettoStack *dstack = libretto_vm_get_dstack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *estack = libretto_vm_get_estack(vm);
+	HgStack *dstack = libretto_vm_get_dstack(vm);
 	HgMemPool *local_pool, *global_pool;
 	gboolean flag = libretto_vm_is_global_pool_used(vm);
 	gsize free_size, used_size;
@@ -5927,11 +5927,11 @@ G_STMT_START
 	hg_mem_pool_allow_resize(local_pool, TRUE);
 
 	hg_file_object_printf(file, "\nOperand stack:\n");
-	libretto_stack_dump(ostack, file);
+	hg_stack_dump(ostack, file);
 	hg_file_object_printf(file, "\nExecution stack:\n");
-	libretto_stack_dump(estack, file);
+	hg_stack_dump(estack, file);
 	hg_file_object_printf(file, "\nDictionary stack:\n");
-	libretto_stack_dump(dstack, file);
+	hg_stack_dump(dstack, file);
 	hg_file_object_printf(file, "\nVM Status:\n");
 	free_size = hg_mem_pool_get_free_heap_size(global_pool);
 	used_size = hg_mem_pool_get_used_heap_size(global_pool);
@@ -5958,11 +5958,11 @@ DEFUNC_OP_END
 DEFUNC_OP (private_hg_currentglobal)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 	HgValueNode *node;
 
 	HG_VALUE_MAKE_BOOLEAN (libretto_vm_get_current_pool(vm), node, libretto_vm_is_global_pool_used(vm));
-	retval = libretto_stack_push(ostack, node);
+	retval = hg_stack_push(ostack, node);
 	if (!retval)
 		_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 } G_STMT_END;
@@ -5971,9 +5971,9 @@ DEFUNC_OP_END
 DEFUNC_OP (private_hg_execn)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *estack = libretto_vm_get_estack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *nn, *node, *copy_node, *self;
 	gint32 i, n;
 
@@ -5982,7 +5982,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		nn = libretto_stack_index(ostack, 0);
+		nn = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_INTEGER (nn)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -5992,22 +5992,22 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		self = libretto_stack_pop(estack);
+		self = hg_stack_pop(estack);
 		for (i = 0; i < n; i++) {
-			node = libretto_stack_index(ostack, i + 1);
+			node = hg_stack_index(ostack, i + 1);
 			copy_node = hg_object_copy((HgObject *)node);
 			if (copy_node == NULL) {
 				_libretto_operator_set_error(vm, op, LB_e_VMerror);
 				break;
 			}
-			libretto_stack_push(estack, copy_node);
+			hg_stack_push(estack, copy_node);
 		}
 		if (!libretto_vm_has_error(vm)) {
-			libretto_stack_pop(ostack);
+			hg_stack_pop(ostack);
 			for (i = 0; i < n; i++)
-				libretto_stack_pop(ostack);
+				hg_stack_pop(ostack);
 		}
-		retval = libretto_stack_push(estack, self);
+		retval = hg_stack_push(estack, self);
 		break;
 	}
 } G_STMT_END;
@@ -6016,14 +6016,14 @@ DEFUNC_OP_END
 DEFUNC_OP (private_hg_hgrevision)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 	HgValueNode *node;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	gint32 revision = 0;
 
 	sscanf(__hg_rcsid, "$Rev: %d $", &revision);
 	HG_VALUE_MAKE_INTEGER (pool, node, revision);
-	retval = libretto_stack_push(ostack, node);
+	retval = hg_stack_push(ostack, node);
 	if (!retval)
 		_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 } G_STMT_END;
@@ -6032,8 +6032,8 @@ DEFUNC_OP_END
 DEFUNC_OP (private_hg_loadhistory)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	HgString *hs;
 	gchar *filename, *histfile;
@@ -6044,7 +6044,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_STRING (node)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -6060,7 +6060,7 @@ G_STMT_START
 		retval = hg_line_edit_load_history(histfile);
 		g_free(histfile);
 		g_free(filename);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		break;
 	}
 } G_STMT_END;
@@ -6069,7 +6069,7 @@ DEFUNC_OP_END
 DEFUNC_OP (private_hg_product)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 	HgValueNode *node;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	HgString *hs = hg_string_new(pool, -1);
@@ -6078,7 +6078,7 @@ G_STMT_START
 	hg_string_fix_string_size(hs);
 	HG_VALUE_MAKE_STRING (node, hs);
 	hg_object_unwritable((HgObject *)node);
-	retval = libretto_stack_push(ostack, node);
+	retval = hg_stack_push(ostack, node);
 	if (!retval)
 		_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 } G_STMT_END;
@@ -6088,8 +6088,8 @@ DEFUNC_OP_END
 DEFUNC_OP (private_hg_forceput)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack), len;
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack), len;
 	gint32 index;
 	HgValueNode *n1, *n2, *n3;
 	HgMemObject *obj;
@@ -6099,9 +6099,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		n3 = libretto_stack_index(ostack, 0);
-		n2 = libretto_stack_index(ostack, 1);
-		n1 = libretto_stack_index(ostack, 2);
+		n3 = hg_stack_index(ostack, 0);
+		n2 = hg_stack_index(ostack, 1);
+		n1 = hg_stack_index(ostack, 2);
 		if (!hg_object_is_writable((HgObject *)n1)) {
 			_libretto_operator_set_error(vm, op, LB_e_invalidaccess);
 			break;
@@ -6144,9 +6144,9 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		break;
 	}
 } G_STMT_END;
@@ -6155,14 +6155,14 @@ DEFUNC_OP_END
 DEFUNC_OP (private_hg_revision)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 	HgValueNode *node;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	gint32 major, minor, release;
 
 	sscanf(HIEROGLYPH_VERSION, "%d.%d.%d", &major, &minor, &release);
 	HG_VALUE_MAKE_INTEGER (pool, node, major * 1000000 + minor * 1000 + release);
-	retval = libretto_stack_push(ostack, node);
+	retval = hg_stack_push(ostack, node);
 	if (!retval)
 		_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 } G_STMT_END;
@@ -6171,8 +6171,8 @@ DEFUNC_OP_END
 DEFUNC_OP (private_hg_savehistory)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	HgString *hs;
 	gchar *filename, *histfile;
@@ -6183,7 +6183,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_STRING (node)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -6199,7 +6199,7 @@ G_STMT_START
 		retval = hg_line_edit_save_history(histfile);
 		g_free(histfile);
 		g_free(filename);
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		break;
 	}
 } G_STMT_END;
@@ -6208,8 +6208,8 @@ DEFUNC_OP_END
 DEFUNC_OP (private_hg_setglobal)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 
 	while (1) {
@@ -6217,13 +6217,13 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_BOOLEAN (node)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
 		}
 		libretto_vm_use_global_pool(vm, HG_VALUE_GET_BOOLEAN (node));
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		retval = TRUE;
 		break;
 	}
@@ -6233,8 +6233,8 @@ DEFUNC_OP_END
 DEFUNC_OP (private_hg_sleep)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 
 	while (1) {
@@ -6242,7 +6242,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_INTEGER (node)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -6250,7 +6250,7 @@ G_STMT_START
 		retval = libretto_graphics_debug(libretto_vm_get_graphics(vm),
 						 &hg_debug_sleep,
 						 GINT_TO_POINTER(HG_VALUE_GET_INTEGER (node)));
-		libretto_stack_pop(ostack);
+		hg_stack_pop(ostack);
 		break;
 	}
 } G_STMT_END;
@@ -6260,7 +6260,7 @@ DEFUNC_OP (private_hg_startgc)
 G_STMT_START
 {
 	HgMemPool *pool;
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 	gboolean result, flag = libretto_vm_is_global_pool_used(vm);
 	HgValueNode *node;
 
@@ -6271,7 +6271,7 @@ G_STMT_START
 	HG_VALUE_MAKE_BOOLEAN (pool, node, result);
 	libretto_vm_use_global_pool(vm, flag);
 
-	retval = libretto_stack_push(ostack, node);
+	retval = hg_stack_push(ostack, node);
 	if (!retval)
 		_libretto_operator_set_error(vm, op, LB_e_stackoverflow);
 } G_STMT_END;
@@ -6298,8 +6298,8 @@ DEFUNC_OP_END
 DEFUNC_OP (private_hg_statementedit)
 G_STMT_START
 {
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
-	guint depth = libretto_stack_depth(ostack);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
 	HgValueNode *node;
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	HgString *hs;
@@ -6311,7 +6311,7 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_stackunderflow);
 			break;
 		}
-		node = libretto_stack_index(ostack, 0);
+		node = hg_stack_index(ostack, 0);
 		if (!HG_IS_VALUE_STRING (node)) {
 			_libretto_operator_set_error(vm, op, LB_e_typecheck);
 			break;
@@ -6341,8 +6341,8 @@ G_STMT_START
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		libretto_stack_pop(ostack);
-		retval = libretto_stack_push(ostack, node);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
 		/* it must be true */
 		break;
 	}
@@ -6899,7 +6899,7 @@ gboolean
 libretto_operator_init(LibrettoVM *vm)
 {
 	LibrettoEmulationType type;
-	LibrettoStack *ostack;
+	HgStack *ostack;
 	gboolean pool_mode;
 	HgMemPool *pool;
 	HgDict *systemdict, *dict;

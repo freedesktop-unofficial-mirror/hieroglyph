@@ -28,11 +28,11 @@
 #include <gtk/gtk.h>
 #include <hieroglyph/hgmem.h>
 #include <hieroglyph/hgfile.h>
-#include <hieroglyph/hgvaluenode.h>
 #include <hieroglyph/hgdict.h>
+#include <hieroglyph/hgstack.h>
+#include <hieroglyph/hgvaluenode.h>
 #include <libretto/vm.h>
 #include <libretto/operator.h>
-#include <libretto/lbstack.h>
 #include "visualizer.h"
 
 
@@ -72,6 +72,32 @@ static gpointer __hg_spy_helper_get_widget = NULL;
  * Private Functions
  */
 static gboolean
+_hgspy_ask_dialog(HgSpy       *spy,
+		  const gchar *message)
+{
+	gboolean retval = TRUE;
+	GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW (spy->window),
+						   GTK_DIALOG_MODAL,
+						   GTK_MESSAGE_QUESTION,
+						   GTK_BUTTONS_YES_NO,
+						   _(message));
+	gint result = gtk_dialog_run (GTK_DIALOG (dialog));
+
+	switch (result) {
+	    case GTK_RESPONSE_YES:
+		    retval = FALSE;
+		    break;
+	    case GTK_RESPONSE_NO:
+	    default:
+		    break;
+	}
+
+	gtk_widget_destroy(dialog);
+
+	return !retval;
+}
+
+static gboolean
 _hgspy_op_private_statementedit(LibrettoOperator *op,
 				gpointer          data)
 {
@@ -82,7 +108,7 @@ _hgspy_op_private_statementedit(LibrettoOperator *op,
 	gchar buffer[1025];
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
 	HgValueNode *node;
-	LibrettoStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = libretto_vm_get_ostack(vm);
 
 	while (1) {
 		ret = hg_file_object_read(stdin, buffer, sizeof (gchar), 1024);
@@ -103,7 +129,7 @@ _hgspy_op_private_statementedit(LibrettoOperator *op,
 			_libretto_operator_set_error(vm, op, LB_e_VMerror);
 			break;
 		}
-		retval = libretto_stack_push(ostack, node);
+		retval = hg_stack_push(ostack, node);
 		break;
 	}
 
@@ -118,10 +144,10 @@ _hgspy_file_read_cb(gpointer user_data,
 {
 	HgSpy *spy = user_data;
 	gsize retval = 0;
-	LibrettoStack *ostack = libretto_vm_get_ostack(spy->vm);
+	HgStack *ostack = libretto_vm_get_ostack(spy->vm);
 	gchar *prompt;
 	/* depends on hg_init.ps. */
-	guint depth = libretto_stack_depth(ostack) - 2;
+	guint depth = hg_stack_depth(ostack) - 2;
 
 	if (depth > 0)
 		prompt = g_strdup_printf("PS[%d]>", depth);
@@ -309,6 +335,12 @@ _hgspy_run_vm(HgSpy       *spy,
 	      const gchar *file)
 {
 	if (spy->vm_thread != NULL) {
+		if (!_hgspy_ask_dialog(spy, N_("HieroglyphVM is still running.\nAre you sure that you really want to restart?"))) {
+			return;
+		}
+		g_thread_exit(spy->vm_thread);
+		hg_mem_free(spy->vm);
+		libretto_vm_finalize();
 	}
 	spy->file = g_strdup(file);
 	spy->vm_thread = g_thread_create(_hgspy_vm_thread, spy, FALSE, NULL);
@@ -323,27 +355,11 @@ _hgspy_quit_cb(GtkWidget   *widget,
 	gboolean retval = TRUE;
 
 	if (spy->vm) {
-		GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW (spy->window),
-							   GTK_DIALOG_MODAL,
-							   GTK_MESSAGE_QUESTION,
-							   GTK_BUTTONS_YES_NO,
-							   _("Hieroglyph VM is still running.\nAre you sure that you really want to quit?"));
-		gint result = gtk_dialog_run (GTK_DIALOG (dialog));
-
-		switch (result) {
-		    case GTK_RESPONSE_YES:
-			    retval = FALSE;
-			    break;
-		    case GTK_RESPONSE_NO:
-		    default:
-			    break;
-		}
-
-		gtk_widget_destroy(dialog);
+		retval = _hgspy_ask_dialog(spy, N_("Hieroglyph VM is still running.\nAre you sure that you really want to quit?"));
 	} else {
 		retval = FALSE;
 	}
-	if (!retval) {
+	if (retval) {
 		gtk_widget_unrealize(spy->window);
 		gtk_main_quit();
 	}

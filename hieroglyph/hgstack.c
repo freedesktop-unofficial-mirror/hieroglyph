@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * lbstack.c
+ * hgstack.c
  * Copyright (C) 2005-2006 Akira TAGOH
  * 
  * Authors:
@@ -26,14 +26,14 @@
 #endif
 
 #include <stdlib.h>
-#include <hieroglyph/hgmem.h>
-#include <hieroglyph/hgfile.h>
-#include <hieroglyph/hgstring.h>
-#include <hieroglyph/hgvaluenode.h>
-#include "lbstack.h"
+#include "hgstack.h"
+#include "hgmem.h"
+#include "hgfile.h"
+#include "hgstring.h"
+#include "hgvaluenode.h"
 
 
-struct _LibrettoStack {
+struct _HieroGlyphStack {
 	HgObject  object;
 	GList    *stack;
 	GList    *last_stack;
@@ -43,19 +43,19 @@ struct _LibrettoStack {
 };
 
 
-static void     _libretto_stack_real_free     (gpointer           data);
-static void     _libretto_stack_real_set_flags(gpointer           data,
-					       guint              flags);
-static void     _libretto_stack_real_relocate (gpointer           data,
-					       HgMemRelocateInfo *info);
-static gpointer _libretto_stack_real_dup      (gpointer           data);
+static void     _hg_stack_real_free     (gpointer           data);
+static void     _hg_stack_real_set_flags(gpointer           data,
+					 guint              flags);
+static void     _hg_stack_real_relocate (gpointer           data,
+					 HgMemRelocateInfo *info);
+static gpointer _hg_stack_real_dup      (gpointer           data);
 
 
-static HgObjectVTable __lb_stack_vtable = {
-	.free      = _libretto_stack_real_free,
-	.set_flags = _libretto_stack_real_set_flags,
-	.relocate  = _libretto_stack_real_relocate,
-	.dup       = _libretto_stack_real_dup,
+static HgObjectVTable __hg_stack_vtable = {
+	.free      = _hg_stack_real_free,
+	.set_flags = _hg_stack_real_set_flags,
+	.relocate  = _hg_stack_real_relocate,
+	.dup       = _hg_stack_real_dup,
 	.copy      = NULL,
 	.to_string = NULL,
 };
@@ -64,18 +64,18 @@ static HgObjectVTable __lb_stack_vtable = {
  * Private Functions
  */
 static void
-_libretto_stack_real_free(gpointer data)
+_hg_stack_real_free(gpointer data)
 {
-	LibrettoStack *stack = data;
+	HgStack *stack = data;
 
 	g_list_free(stack->stack);
 }
 
 static void
-_libretto_stack_real_set_flags(gpointer data,
-			       guint    flags)
+_hg_stack_real_set_flags(gpointer data,
+			 guint    flags)
 {
-	LibrettoStack *stack = data;
+	HgStack *stack = data;
 	GList *list;
 	HgMemObject *obj;
 
@@ -91,10 +91,10 @@ _libretto_stack_real_set_flags(gpointer data,
 }
 
 static void
-_libretto_stack_real_relocate(gpointer           data,
-			      HgMemRelocateInfo *info)
+_hg_stack_real_relocate(gpointer           data,
+			HgMemRelocateInfo *info)
 {
-	LibrettoStack *stack = data;
+	HgStack *stack = data;
 	GList *list;
 
 	for (list = stack->stack; list != NULL; list = g_list_next(list)) {
@@ -106,16 +106,16 @@ _libretto_stack_real_relocate(gpointer           data,
 }
 
 static gpointer
-_libretto_stack_real_dup(gpointer data)
+_hg_stack_real_dup(gpointer data)
 {
-	LibrettoStack *stack = data, *retval;
+	HgStack *stack = data, *retval;
 	HgMemObject *obj;
 
 	hg_mem_get_object__inline(data, obj);
 	if (obj == NULL)
 		return NULL;
 
-	retval = libretto_stack_new(obj->pool, stack->max_depth);
+	retval = hg_stack_new(obj->pool, stack->max_depth);
 	if (retval == NULL) {
 		g_warning("Failed to duplicate a stack.");
 		return NULL;
@@ -129,23 +129,23 @@ _libretto_stack_real_dup(gpointer data)
 /*
  * Public Functions
  */
-LibrettoStack *
-libretto_stack_new(HgMemPool *pool,
-		   guint      max_depth)
+HgStack *
+hg_stack_new(HgMemPool *pool,
+	     guint      max_depth)
 {
-	LibrettoStack *retval;
+	HgStack *retval;
 
 	g_return_val_if_fail (pool != NULL, NULL);
 	g_return_val_if_fail (max_depth > 0, NULL);
 
-	retval = hg_mem_alloc_with_flags(pool, sizeof (LibrettoStack),
+	retval = hg_mem_alloc_with_flags(pool, sizeof (HgStack),
 					 HG_FL_HGOBJECT);
 	if (retval == NULL) {
 		g_warning("Failed to create a stack.");
 		return NULL;
 	}
 	HG_OBJECT_INIT_STATE (&retval->object);
-	hg_object_set_vtable(&retval->object, &__lb_stack_vtable);
+	hg_object_set_vtable(&retval->object, &__hg_stack_vtable);
 	retval->current_depth = 0;
 	retval->max_depth = max_depth;
 	retval->stack = NULL;
@@ -156,8 +156,8 @@ libretto_stack_new(HgMemPool *pool,
 }
 
 void
-_libretto_stack_use_stack_validator(LibrettoStack *stack,
-				    gboolean       flag)
+_hg_stack_use_stack_validator(HgStack  *stack,
+			      gboolean  flag)
 {
 	g_return_if_fail (stack != NULL);
 
@@ -165,7 +165,7 @@ _libretto_stack_use_stack_validator(LibrettoStack *stack,
 }
 
 guint
-libretto_stack_depth(LibrettoStack *stack)
+hg_stack_depth(HgStack *stack)
 {
 	g_return_val_if_fail (stack != NULL, 0);
 
@@ -173,8 +173,8 @@ libretto_stack_depth(LibrettoStack *stack)
 }
 
 gboolean
-_libretto_stack_push(LibrettoStack *stack,
-		     HgValueNode   *node)
+_hg_stack_push(HgStack     *stack,
+	       HgValueNode *node)
 {
 	GList *list;
 
@@ -196,8 +196,8 @@ _libretto_stack_push(LibrettoStack *stack,
 }
 
 gboolean
-libretto_stack_push(LibrettoStack *stack,
-		    HgValueNode   *node)
+hg_stack_push(HgStack     *stack,
+	      HgValueNode *node)
 {
 	g_return_val_if_fail (stack != NULL, FALSE);
 	g_return_val_if_fail (node != NULL, FALSE);
@@ -206,11 +206,11 @@ libretto_stack_push(LibrettoStack *stack,
 	    stack->current_depth >= stack->max_depth)
 		return FALSE;
 
-	return _libretto_stack_push(stack, node);
+	return _hg_stack_push(stack, node);
 }
 
 HgValueNode *
-libretto_stack_pop(LibrettoStack *stack)
+hg_stack_pop(HgStack *stack)
 {
 	HgValueNode *retval;
 	GList *list;
@@ -237,7 +237,7 @@ libretto_stack_pop(LibrettoStack *stack)
 }
 
 void
-libretto_stack_clear(LibrettoStack *stack)
+hg_stack_clear(HgStack *stack)
 {
 	g_return_if_fail (stack != NULL);
 
@@ -247,8 +247,8 @@ libretto_stack_clear(LibrettoStack *stack)
 }
 
 HgValueNode *
-libretto_stack_index(LibrettoStack *stack,
-		     guint          index_from_top)
+hg_stack_index(HgStack *stack,
+	       guint    index_from_top)
 {
 	GList *list;
 
@@ -261,9 +261,9 @@ libretto_stack_index(LibrettoStack *stack,
 }
 
 void
-libretto_stack_roll(LibrettoStack *stack,
-		    guint          n_block,
-		    gint32         n_times)
+hg_stack_roll(HgStack *stack,
+	      guint    n_block,
+	      gint32   n_times)
 {
 	GList *oroll, *top, *iroll;
 	gint32 n;
@@ -315,8 +315,8 @@ libretto_stack_roll(LibrettoStack *stack,
 }
 
 void
-libretto_stack_dump(LibrettoStack *stack,
-		    HgFileObject  *file)
+hg_stack_dump(HgStack      *stack,
+	      HgFileObject *file)
 {
 	GList *l;
 	HgValueNode *node;

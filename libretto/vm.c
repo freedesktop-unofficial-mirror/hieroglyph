@@ -32,11 +32,11 @@
 #include <hieroglyph/hgarray.h>
 #include <hieroglyph/hgdict.h>
 #include <hieroglyph/hgfile.h>
+#include <hieroglyph/hgstack.h>
 #include <hieroglyph/hgstring.h>
 #include <hieroglyph/hgvaluenode.h>
 #include "vm.h"
 #include "lbgraphics.h"
-#include "lbstack.h"
 #include "operator.h"
 #include "scanner.h"
 
@@ -82,9 +82,9 @@ struct _LibrettoVirtualMachine {
 	HgMemPool             *graphic_pool;
 
 	/* stacks */
-	LibrettoStack         *ostack;
-	LibrettoStack         *estack;
-	LibrettoStack         *dstack;
+	HgStack               *ostack;
+	HgStack               *estack;
+	HgStack               *dstack;
 
 	/* local dictionaries */
 	HgDict                *errordict;
@@ -238,7 +238,7 @@ _libretto_vm_run(LibrettoVM  *vm,
 		 gboolean    *error)
 {
 	HgMemPool *pool = libretto_vm_get_current_pool(vm);
-	LibrettoStack *estack = libretto_vm_get_estack(vm);
+	HgStack *estack = libretto_vm_get_estack(vm);
 	HgFileObject *file = hg_file_object_new(pool,
 						HG_FILE_TYPE_FILE,
 						HG_FILE_MODE_READ,
@@ -254,10 +254,10 @@ _libretto_vm_run(LibrettoVM  *vm,
 				*error = TRUE;
 				break;
 			}
-			libretto_stack_clear(estack);
+			hg_stack_clear(estack);
 			libretto_vm_reset_error(vm);
 			hg_object_executable((HgObject *)node);
-			retval = libretto_stack_push(estack, node);
+			retval = hg_stack_push(estack, node);
 			if (!retval) {
 				libretto_vm_set_error(vm, node, LB_e_execstackoverflow, FALSE);
 				*error = TRUE;
@@ -407,9 +407,9 @@ libretto_vm_new(LibrettoEmulationType type)
 	retval->local_snapshot = NULL;
 
 	/* initialize the stacks */
-	retval->ostack = libretto_stack_new(retval->local_pool, 500);
-	retval->estack = libretto_stack_new(retval->local_pool, 250);
-	retval->dstack = libretto_stack_new(retval->local_pool, 20);
+	retval->ostack = hg_stack_new(retval->local_pool, 500);
+	retval->estack = hg_stack_new(retval->local_pool, 250);
+	retval->dstack = hg_stack_new(retval->local_pool, 20);
 	if (retval->ostack == NULL ||
 	    retval->estack == NULL ||
 	    retval->dstack == NULL) {
@@ -490,21 +490,21 @@ libretto_vm_get_emulation_level(LibrettoVM *vm)
 	return vm->emulation_type;
 }
 
-LibrettoStack *
+HgStack *
 libretto_vm_get_ostack(LibrettoVM *vm)
 {
 	return vm->ostack;
 }
 
-LibrettoStack *
+HgStack *
 libretto_vm_get_estack(LibrettoVM *vm)
 {
 	return vm->estack;
 }
 
 void
-libretto_vm_set_estack(LibrettoVM    *vm,
-		       LibrettoStack *estack)
+libretto_vm_set_estack(LibrettoVM *vm,
+		       HgStack    *estack)
 {
 	g_return_if_fail (vm != NULL);
 	g_return_if_fail (estack != NULL);
@@ -512,7 +512,7 @@ libretto_vm_set_estack(LibrettoVM    *vm,
 	vm->estack = estack;
 }
 
-LibrettoStack *
+HgStack *
 libretto_vm_get_dstack(LibrettoVM *vm)
 {
 	return vm->dstack;
@@ -733,11 +733,11 @@ libretto_vm_lookup(LibrettoVM *vm,
 	g_return_val_if_fail (vm != NULL, NULL);
 	g_return_val_if_fail (key != NULL, NULL);
 
-	depth = libretto_stack_depth(vm->dstack);
+	depth = hg_stack_depth(vm->dstack);
 	for (i = 0; i < depth; i++) {
 		HgDict *dict;
 
-		node = libretto_stack_index(vm->dstack, i);
+		node = hg_stack_index(vm->dstack, i);
 		if (node == NULL || !HG_IS_VALUE_DICT (node)) {
 			g_error("dictionary stack was broken.");
 			break;
@@ -760,9 +760,9 @@ libretto_vm_lookup_with_string(LibrettoVM  *vm,
 	g_return_val_if_fail (vm != NULL, NULL);
 	g_return_val_if_fail (key != NULL, NULL);
 
-	depth = libretto_stack_depth(vm->dstack);
+	depth = hg_stack_depth(vm->dstack);
 	for (i = 0; i < depth; i++) {
-		node = libretto_stack_index(vm->dstack, i);
+		node = hg_stack_index(vm->dstack, i);
 		if (node == NULL || !HG_IS_VALUE_DICT (node)) {
 			g_error("dictionary stack was broken.");
 			break;
@@ -799,8 +799,8 @@ libretto_vm_startjob(LibrettoVM  *vm,
 		vm->local_snapshot = g_list_delete_link(vm->local_snapshot, l);
 	}
 
-	libretto_stack_clear(vm->ostack);
-	libretto_stack_clear(vm->dstack);
+	hg_stack_clear(vm->ostack);
+	hg_stack_clear(vm->dstack);
 
 	hg_mem_garbage_collection(vm->global_pool);
 	hg_mem_garbage_collection(vm->local_pool);
@@ -814,7 +814,7 @@ libretto_vm_startjob(LibrettoVM  *vm,
 	}
 
 	HG_VALUE_MAKE_DICT (node, vm->systemdict);
-	libretto_stack_push(vm->dstack, node);
+	hg_stack_push(vm->dstack, node);
 
 	if (!libretto_operator_init(vm))
 		return FALSE;
@@ -872,9 +872,9 @@ libretto_vm_reset_error(LibrettoVM *vm)
 	g_return_if_fail (vm != NULL);
 
 	libretto_vm_clear_error(vm);
-	_libretto_stack_use_stack_validator(vm->ostack, TRUE);
-	_libretto_stack_use_stack_validator(vm->estack, TRUE);
-	_libretto_stack_use_stack_validator(vm->dstack, TRUE);
+	_hg_stack_use_stack_validator(vm->ostack, TRUE);
+	_hg_stack_use_stack_validator(vm->estack, TRUE);
+	_hg_stack_use_stack_validator(vm->dstack, TRUE);
 	nnull = hg_dict_lookup_with_string(vm->systemdict, "null");
 	nfalse = hg_dict_lookup_with_string(vm->systemdict, "false");
 	key = _libretto_vm_get_name_node(vm, "newerror");
@@ -922,9 +922,9 @@ libretto_vm_set_error(LibrettoVM       *vm,
 		proc = hg_dict_lookup_with_string(vm->systemdict, ".abort");
 		libretto_operator_invoke(proc->v.pointer, vm);
 	}
-	_libretto_stack_use_stack_validator(vm->ostack, FALSE);
-	_libretto_stack_use_stack_validator(vm->estack, FALSE);
-	_libretto_stack_use_stack_validator(vm->dstack, FALSE);
+	_hg_stack_use_stack_validator(vm->ostack, FALSE);
+	_hg_stack_use_stack_validator(vm->estack, FALSE);
+	_hg_stack_use_stack_validator(vm->dstack, FALSE);
 	proc = hg_dict_lookup(vm->errordict, __lb_vm_errorname[error]);
 	if (proc == NULL) {
 		g_error("[BUG] no error handler for /%s\n", HG_VALUE_GET_NAME (__lb_vm_errorname[error]));
@@ -933,11 +933,11 @@ libretto_vm_set_error(LibrettoVM       *vm,
 	if (copy_proc == NULL) {
 		g_error("FATAL: failed to allocate a memory for an error handler. there are no way to recover it unfortunately.");
 	}
-	self = libretto_stack_pop(vm->estack);
-	_libretto_stack_push(vm->estack, copy_proc);
+	self = hg_stack_pop(vm->estack);
+	_hg_stack_push(vm->estack, copy_proc);
 	if (need_self)
-		_libretto_stack_push(vm->estack, self);
-	_libretto_stack_push(vm->ostack, errnode);
+		_hg_stack_push(vm->estack, self);
+	_hg_stack_push(vm->ostack, errnode);
 	vm->has_error = TRUE;
 }
 
@@ -1009,10 +1009,10 @@ libretto_vm_main(LibrettoVM *vm)
 				  "%system",
 				  "", 0);
 	while (1) {
-		depth = libretto_stack_depth(vm->estack);
+		depth = hg_stack_depth(vm->estack);
 		if (depth == 0)
 			break;
-		node = libretto_stack_index(vm->estack, 0);
+		node = hg_stack_index(vm->estack, 0);
 		if (node == NULL) {
 			retval = FALSE;
 			break;
@@ -1027,8 +1027,8 @@ libretto_vm_main(LibrettoVM *vm)
 		    case HG_TYPE_VALUE_MARK:
 			    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.",
 				      __FUNCTION__, HG_VALUE_GET_VALUE_TYPE (node));
-			    libretto_stack_pop(vm->estack);
-			    retval = libretto_stack_push(vm->ostack, node);
+			    hg_stack_pop(vm->estack);
+			    retval = hg_stack_push(vm->ostack, node);
 			    if (!retval) {
 				    _libretto_vm_set_error(vm, file, LB_e_stackoverflow, FALSE);
 			    }
@@ -1041,28 +1041,28 @@ libretto_vm_main(LibrettoVM *vm)
 				    array = HG_VALUE_GET_ARRAY (node);
 				    if (hg_array_length(array) == 0) {
 					    /* this might be an empty array */
-					    libretto_stack_pop(vm->estack);
+					    hg_stack_pop(vm->estack);
 					    break;
 				    }
 				    tmp = hg_array_index(array, 0);
 				    hg_array_remove(array, 0);
 				    if (hg_array_length(array) == 0)
-					    libretto_stack_pop(vm->estack);
+					    hg_stack_pop(vm->estack);
 				    if (hg_object_is_executable((HgObject *)tmp) &&
 					(HG_IS_VALUE_NAME (tmp) || HG_IS_VALUE_POINTER (tmp))) {
-					    retval = libretto_stack_push(vm->estack, tmp);
+					    retval = hg_stack_push(vm->estack, tmp);
 					    if (!retval)
 						    _libretto_vm_set_error(vm, file, LB_e_execstackoverflow, FALSE);
 				    } else {
-					    retval = libretto_stack_push(vm->ostack, tmp);
+					    retval = hg_stack_push(vm->ostack, tmp);
 					    if (!retval)
 						    _libretto_vm_set_error(vm, file, LB_e_stackoverflow, FALSE);
 				    }
 			    } else {
 				    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.",
 					      __FUNCTION__, HG_VALUE_GET_VALUE_TYPE (node));
-				    libretto_stack_pop(vm->estack);
-				    retval = libretto_stack_push(vm->ostack, node);
+				    hg_stack_pop(vm->estack);
+				    retval = hg_stack_push(vm->ostack, node);
 				    if (!retval) {
 					    _libretto_vm_set_error(vm, file, LB_e_stackoverflow, FALSE);
 				    }
@@ -1078,14 +1078,14 @@ libretto_vm_main(LibrettoVM *vm)
 							      "%eval_string",
 							      hg_string_get_string(hs),
 							      hg_string_maxlength(hs));
-				    libretto_stack_pop(vm->estack);
+				    hg_stack_pop(vm->estack);
 				    HG_VALUE_MAKE_FILE (node, file);
-				    retval = libretto_stack_push(vm->estack, node);
+				    retval = hg_stack_push(vm->estack, node);
 			    } else {
 				    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.",
 					      __FUNCTION__, HG_VALUE_GET_VALUE_TYPE (node));
-				    libretto_stack_pop(vm->estack);
-				    retval = libretto_stack_push(vm->ostack, node);
+				    hg_stack_pop(vm->estack);
+				    retval = hg_stack_push(vm->ostack, node);
 			    }
 			    if (!retval) {
 				    _libretto_vm_set_error(vm, file, LB_e_stackoverflow, FALSE);
@@ -1098,18 +1098,18 @@ libretto_vm_main(LibrettoVM *vm)
 				    if (op_node == NULL) {
 					    libretto_vm_set_error(vm, node, LB_e_undefined, FALSE);
 				    } else {
-					    libretto_stack_pop(vm->estack);
+					    hg_stack_pop(vm->estack);
 					    if (hg_object_is_executable((HgObject *)op_node)) {
 						    tmp = hg_object_copy((HgObject *)op_node);
 						    if (tmp == NULL) {
 							    _libretto_vm_set_error(vm, file, LB_e_VMerror, FALSE);
 						    } else {
-							    retval = libretto_stack_push(vm->estack, tmp);
+							    retval = hg_stack_push(vm->estack, tmp);
 							    if (!retval)
 								    _libretto_vm_set_error(vm, file, LB_e_execstackoverflow, FALSE);
 						    }
 					    } else {
-						    retval = libretto_stack_push(vm->ostack, op_node);
+						    retval = hg_stack_push(vm->ostack, op_node);
 						    if (!retval)
 							    _libretto_vm_set_error(vm, file, LB_e_stackoverflow, FALSE);
 					    }
@@ -1117,8 +1117,8 @@ libretto_vm_main(LibrettoVM *vm)
 			    } else {
 				    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.",
 					      __FUNCTION__, HG_VALUE_GET_VALUE_TYPE (node));
-				    libretto_stack_pop(vm->estack);
-				    retval = libretto_stack_push(vm->ostack, node);
+				    hg_stack_pop(vm->estack);
+				    retval = hg_stack_push(vm->ostack, node);
 				    if (!retval) {
 					    _libretto_vm_set_error(vm, file, LB_e_stackoverflow, FALSE);
 				    }
@@ -1127,13 +1127,13 @@ libretto_vm_main(LibrettoVM *vm)
 		    case HG_TYPE_VALUE_POINTER:
 			    op = HG_VALUE_GET_POINTER (node);
 			    retval = libretto_operator_invoke(op, vm);
-			    libretto_stack_pop(vm->estack);
+			    hg_stack_pop(vm->estack);
 			    break;
 		    case HG_TYPE_VALUE_FILE:
 			    if (hg_object_is_executable((HgObject *)node)) {
 				    file = HG_VALUE_GET_FILE (node);
 				    if (hg_file_object_has_error(file)) {
-					    libretto_stack_pop(vm->estack);
+					    hg_stack_pop(vm->estack);
 					    _libretto_vm_set_error_from_file(vm, file, file, FALSE);
 				    } else {
 					    HgValueNode *tmp_node;
@@ -1150,21 +1150,21 @@ libretto_vm_main(LibrettoVM *vm)
 						    if (hg_object_is_executable((HgObject *)tmp_node) &&
 							(HG_IS_VALUE_NAME (tmp_node) ||
 							 HG_IS_VALUE_POINTER (tmp_node))) {
-							    libretto_stack_push(vm->estack, tmp_node);
+							    hg_stack_push(vm->estack, tmp_node);
 						    } else {
-							    libretto_stack_push(vm->ostack, tmp_node);
+							    hg_stack_push(vm->ostack, tmp_node);
 						    }
 					    } else {
 						    if (hg_file_object_is_eof(file)) {
-							    libretto_stack_pop(vm->estack);
+							    hg_stack_pop(vm->estack);
 						    }
 					    }
 				    }
 			    } else {
 				    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.",
 					      __FUNCTION__, HG_VALUE_GET_VALUE_TYPE (node));
-				    libretto_stack_pop(vm->estack);
-				    retval = libretto_stack_push(vm->ostack, node);
+				    hg_stack_pop(vm->estack);
+				    retval = hg_stack_push(vm->ostack, node);
 				    if (!retval) {
 					    _libretto_vm_set_error(vm, file, LB_e_stackoverflow, FALSE);
 				    }
@@ -1173,7 +1173,7 @@ libretto_vm_main(LibrettoVM *vm)
 		    default:
 			    g_warning("[BUG] Unknown node type %d was given into the estack.",
 				      HG_VALUE_GET_VALUE_TYPE (node));
-			    libretto_stack_pop(vm->estack);
+			    hg_stack_pop(vm->estack);
 			    break;
 		}
 		if (!retval && !libretto_vm_has_error(vm)) {

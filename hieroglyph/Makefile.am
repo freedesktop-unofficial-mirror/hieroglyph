@@ -3,6 +3,7 @@ NULL =
 INCLUDES =							\
 	-DG_LOG_DOMAIN="\"Hieroglyph\""				\
 	-DHIEROGLYPH_DEVICEDIR="\"$(HIEROGLYPH_DEVICEDIR)\""	\
+	-DHIEROGLYPH_PLUGINDIR="\"$(HIEROGLYPH_PLUGINDIR)\""	\
 	-DHIEROGLYPH_CMAPDIR="\"$(HIEROGLYPH_CMAPDIR)\""	\
 	$(HG_CFLAGS)						\
 	$(HG_MODULE_CFLAGS)					\
@@ -49,6 +50,7 @@ hginclude_HEADERS =						\
 	hgpage.h						\
 	hgpath.h						\
 	hgrender.h						\
+	hgstack.h						\
 	hgstring.h						\
 	hgtypes.h						\
 	hgvaluenode.h						\
@@ -79,6 +81,7 @@ libhieroglyph_la_SOURCES =					\
 	hgpage.c						\
 	hgpath.c						\
 	hgrender.c						\
+	hgstack.c						\
 	hgstring.c						\
 	hgvaluenode.c						\
 	$(NULL)
