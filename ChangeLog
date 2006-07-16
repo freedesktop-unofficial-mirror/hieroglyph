@@ -1,5 +1,15 @@
 2006-07-16  Akira TAGOH  <at@gclab.org>
 
+	* plugins/Makefile.am: new file.
+
+	* plugins/test/Makefile.am: new file.
+
+	* plugins/test/test-main.c: new file.
+
+	* plugins/libedit/Makefile.am: new file.
+
+	* plugins/libedit/libedit-main.c: new file.
+
 	* src/hgspy.c: use hieroglyph/* instead of libretto/*.
 
 	* src/Makefile.am: removed the libretto.la dependency.
