@@ -11,4 +11,5 @@ EXTRA_DIST =			\
 	intltool-merge.in	\
 	intltool-update.in	\
 	requires		\
+	update-version		\
 	$(NULL)

@@ -113,4 +113,5 @@ version.h.in: version.h.in.in $(top_srcdir)/update-version
 #
 EXTRA_DIST =							\
 	version.h.in						\
+	version.h.in.in						\
 	$(NULL)
