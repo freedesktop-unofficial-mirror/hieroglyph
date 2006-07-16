@@ -115,6 +115,11 @@ void                  hg_vm_set_io               (HgVM              *vm,
 HgLineEdit           *hg_vm_get_line_editor      (HgVM              *vm);
 void                  hg_vm_set_line_editor      (HgVM              *vm,
 						  HgLineEdit        *editor);
+gboolean              hg_vm_load_plugin          (HgVM              *vm,
+						  const gchar       *filename);
+gboolean              hg_vm_unload_plugin        (HgVM              *vm,
+						  const gchar       *filename);
+void                  hg_vm_load_plugins_all     (HgVM              *vm);
 guint                 hg_vm_get_save_level       (HgVM              *vm);
 HgValueNode          *hg_vm_get_name_node        (HgVM              *vm,
 						  const gchar       *name);

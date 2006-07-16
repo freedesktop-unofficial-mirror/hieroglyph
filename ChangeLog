@@ -1,3 +1,20 @@
+2006-07-17  Akira TAGOH  <at@gclab.org>
+
+	* examples/pse.c (_pse_plugin_arg_cb): new function.
+
+	* hieroglyph/operator.c (_hg_operator_op_file): support new HgLineEdit.
+	(_hg_operator_op_private_hg_initplugins): new function.
+
+	* hieroglyph/vm.c (hg_vm_load_plugin): new function.
+	(hg_vm_load_plugins_all): new function.
+	(hg_vm_unload_plugin): new function.
+
+	* hieroglyph/hgdevice.c (hg_device_new): support the multiple paths.
+
+	* lib/hg_init.ps: initialize the plugins.
+
+	* tests/run.sh: support the multiple paths.
+
 2006-07-16  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/vm.c (hg_vm_new): create an instance of HgLineEdit.

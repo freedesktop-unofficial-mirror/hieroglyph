@@ -26,19 +26,38 @@
 #include <hieroglyph/hgvaluenode.h>
 #include <hieroglyph/vm.h>
 
+GList *plugin_list = NULL;
+
+static gboolean
+_pse_arg_plugin_cb(const char *option_name,
+		   const char *value,
+		   gpointer    data)
+{
+	gboolean retval = TRUE;
+
+	if (value && *value) {
+		plugin_list = g_list_append(plugin_list, g_strdup(value));
+	} else {
+		retval = FALSE;
+	}
+
+	return retval;
+}
 
 int
 main(int argc, char **argv)
 {
 	HgVM *vm;
 	GOptionContext *ctxt = g_option_context_new("PostScriptFile.ps");
-//	GOptionEntry entries[] = {
-//		NULL
-//	};
+	GOptionEntry entries[] = {
+		{"plugin", 'l', 0, G_OPTION_ARG_CALLBACK, _pse_arg_plugin_cb, "A plugin to be loaded.", "NAME"},
+		{NULL}
+	};
 	GError *error = NULL;
 	const gchar *psfile = NULL;
+	GList *l;
 
-//	g_option_context_add_main_entries(ctxt, entries, NULL);
+	g_option_context_add_main_entries(ctxt, entries, NULL);
 	if (!g_option_context_parse(ctxt, &argc, &argv, &error)) {
 		g_print("Option parse error.\n");
 		return 1;
@@ -48,6 +67,12 @@ main(int argc, char **argv)
 	hg_vm_init();
 
 	vm = hg_vm_new(VM_EMULATION_LEVEL_1);
+	for (l = plugin_list; l != NULL; l = g_list_next(l)) {
+		hg_vm_load_plugin(vm, l->data);
+		g_free(l->data);
+	}
+	g_list_free(plugin_list);
+	plugin_list = NULL;
 
 	if (argc > 1)
 		psfile = argv[1];

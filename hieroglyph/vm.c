@@ -34,6 +34,7 @@
 #include "hgdict.h"
 #include "hgfile.h"
 #include "hglineedit.h"
+#include "hgplugins.h"
 #include "hgstack.h"
 #include "hgstring.h"
 #include "hgvaluenode.h"
@@ -106,6 +107,10 @@ struct _HieroGlyphVirtualMachine {
 
 	/* graphics */
 	HgGraphics        *graphics;
+
+	/* plugin */
+	HgDict            *plugin_table;
+	GList             *plugin_list;
 };
 
 
@@ -464,6 +469,11 @@ hg_vm_new(HgVMEmulationType type)
 	retval->graphics = hg_graphics_new(retval->graphic_pool);
 	hg_mem_add_root_node(retval->graphic_pool, retval->graphics);
 
+	/* plugin support */
+	retval->plugin_table = hg_dict_new(retval->local_pool, 256);
+	retval->plugin_list = NULL;
+	hg_mem_add_root_node(retval->local_pool, retval->plugin_table);
+
 	hg_mem_add_root_node(__hg_vm_mem_pool, retval);
 
 	return retval;
@@ -697,6 +707,61 @@ hg_vm_set_line_editor(HgVM       *vm,
 	vm->lineeditor = editor;
 }
 
+gboolean
+hg_vm_load_plugin(HgVM        *vm,
+		  const gchar *filename)
+{
+	HgPlugin *plugin;
+	HgValueNode *key, *val;
+
+	g_return_val_if_fail (vm != NULL, FALSE);
+	g_return_val_if_fail (filename != NULL, FALSE);
+
+	if (hg_dict_lookup_with_string(vm->plugin_table, filename) != NULL) {
+		g_warning("`%s' plugin is already loaded.", filename);
+		return FALSE;
+	}
+	plugin = hg_plugin_open(vm->local_pool, filename, HG_PLUGIN_EXTENSION);
+	if (plugin) {
+		HG_VALUE_MAKE_NAME_STATIC (vm->local_pool, key, filename);
+		HG_VALUE_MAKE_POINTER (val, plugin);
+		hg_dict_insert(vm->local_pool, vm->plugin_table, key, val);
+		vm->plugin_list = g_list_append(vm->plugin_list, plugin);
+	}
+
+	return plugin != NULL;
+}
+
+void
+hg_vm_load_plugins_all(HgVM *vm)
+{
+	GList *l;
+
+	/* load all the plugins after the VM initialization is finished */
+	for (l = vm->plugin_list; l != NULL; l = g_list_next(l)) {
+		HgPlugin *plugin = l->data;
+
+		hg_plugin_load(plugin, vm);
+	}
+}
+
+gboolean
+hg_vm_unload_plugin(HgVM        *vm,
+		    const gchar *filename)
+{
+	HgValueNode *val;
+
+	g_return_val_if_fail (vm != NULL, FALSE);
+	g_return_val_if_fail (filename != NULL, FALSE);
+
+	if ((val = hg_dict_lookup_with_string(vm->plugin_table, filename)) == NULL) {
+		g_warning("`%s' plugin isn't yet loaded.", filename);
+		return FALSE;
+	}
+
+	return hg_plugin_unload((HgPlugin *)HG_VALUE_GET_POINTER (val), vm);
+}
+
 guint
 hg_vm_get_save_level(HgVM *vm)
 {
@@ -864,6 +929,7 @@ hg_vm_startjob(HgVM        *vm,
 		/* set read-only attribute for systemdict */
 		hg_object_unwritable((HgObject *)vm->systemdict);
 	}
+
 	if (initializer)
 		return hg_vm_run(vm, initializer);
 

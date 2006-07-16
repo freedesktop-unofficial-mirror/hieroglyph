@@ -25,6 +25,7 @@
 #include <config.h>
 #endif
 
+#include <string.h>
 #include <gmodule.h>
 #include "hgdevice.h"
 
@@ -49,8 +50,10 @@ _hg_device_open(const gchar *filename)
 
 			return NULL;
 		}
+#ifdef DEBUG_MODULES
 	} else {
 		g_warning(g_module_error());
+#endif /* DEBUG_MODULES */
 	}
 
 	return retval;
@@ -71,9 +74,32 @@ hg_device_new(const gchar *name)
 	realname = g_path_get_basename(name);
 	modulename = g_strdup_printf("lib%s-device.so", realname);
 	if ((modpath = g_getenv("HIEROGLYPH_DEVICE_PATH")) != NULL) {
-		fullmodname = g_build_filename(modpath, modulename, NULL);
-		retval = _hg_device_open(fullmodname);
-		g_free(fullmodname);
+		gchar **path_list = g_strsplit(modpath, G_SEARCHPATH_SEPARATOR_S, -1);
+		gchar *p, *path;
+		gint i = 0;
+		size_t len;
+
+		while (path_list[i]) {
+			p = path_list[i];
+
+			while (*p && g_ascii_isspace(*p))
+				p++;
+			len = strlen(p);
+			while (len > 0 && g_ascii_isspace(p[len - 1]))
+				len--;
+			path = g_strndup(p, len);
+			if (path[0] != 0) {
+				fullmodname = g_build_filename(path, modulename, NULL);
+				retval = _hg_device_open(fullmodname);
+				g_free(fullmodname);
+			}
+			g_free(path);
+			if (retval != NULL) {
+				break;
+			}
+			i++;
+		}
+		g_strfreev(path_list);
 	}
 	if (retval == NULL) {
 		fullmodname = g_build_filename(HIEROGLYPH_DEVICEDIR, modulename, NULL);

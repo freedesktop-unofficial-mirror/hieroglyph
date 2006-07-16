@@ -2638,7 +2638,7 @@ G_STMT_START
 				_hg_operator_set_error(vm, op, VM_e_invalidfileaccess);
 				break;
 			}
-			file = hg_file_object_new(pool, file_type);
+			file = hg_file_object_new(pool, file_type, hg_vm_get_line_editor(vm));
 			if (file == NULL) {
 				_hg_operator_set_error(vm, op, VM_e_undefinedfilename);
 				break;
@@ -6029,6 +6029,14 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
+DEFUNC_OP (private_hg_initplugins)
+G_STMT_START
+{
+	hg_vm_load_plugins_all(vm);
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OP_END
+
 DEFUNC_OP (private_hg_loadhistory)
 G_STMT_START
 {
@@ -6845,6 +6853,7 @@ hg_operator_hieroglyph_init(HgVM      *vm,
 	BUILD_OP_ (vm, pool, dict, .currentglobal, private_hg_currentglobal);
 	BUILD_OP_ (vm, pool, dict, .execn, private_hg_execn);
 	BUILD_OP_ (vm, pool, dict, .hgrevision, private_hg_hgrevision);
+	BUILD_OP_ (vm, pool, dict, .initplugins, private_hg_initplugins);
 	BUILD_OP_ (vm, pool, dict, .loadhistory, private_hg_loadhistory);
 	BUILD_OP_ (vm, pool, dict, .product, private_hg_product);
 	BUILD_OP_ (vm, pool, dict, .forceput, private_hg_forceput);
