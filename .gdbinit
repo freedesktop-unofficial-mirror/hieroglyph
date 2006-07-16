@@ -21,9 +21,9 @@
 
 define _hggetmemobj
   set $_obj = (HgMemObject *)($arg0)
-  if ($_obj->id != 0x48474d4f)
+  if ($_obj->magic != 0x48474d4f)
     set $_obj = (HgMemObject *)((gsize)($arg0) - sizeof (HgMemObject))
-    if ($_obj->id != 0x48474d4f)
+    if ($_obj->magic != 0x48474d4f)
       set $_obj = 0
     end
   end
@@ -33,9 +33,8 @@ define _hggethgobj
   _hggetmemobj $arg0
   set $_hobj = 0
   if ($_obj != 0)
-    set $_hobj = (HgObject *)$_obj->data
-    if ($_hobj->id != 0x48474f4f)
-      set $_hobj = 0
+    if (($_obj->flags & (1 << 15)) != 0)
+      set $_hobj = (HgObject *)$_obj->data
     end
   end
 end
@@ -50,46 +49,40 @@ define _hgmeminfo
     printf "[heap id: %d] ", ($_obj->flags >> 24) & 0xff
     printf "[pool: %p] ", $_obj->pool
     printf "[block_size: %u] ", $_obj->block_size
-    set $f = $_obj->flags & 0xffffff
+    printf "[mark age: %d] ", ($_obj->flags >> 16) & 0xff
+    set $f = $_obj->flags & 0xffff
     set $o = 0
     printf "[flags: "
-    if (($f & 1) == 1)
-      printf "MARK"
-      set $o = 1
-    end
-    if (($f & 2) == 2)
-      if $o != 0
-	printf "|"
-      end
+    if (($f & (1 << 0)) != 0)
       printf "RESTORABLE"
       set $o = 1
     end
-    if (($f & 4) == 4)
+    if (($f & (1 << 1)) != 0)
       if $o != 0
 	printf "|"
       end
       printf "COMPLEX"
       set $o = 1
     end
-    if (($f & 8) == 8)
+    if (($f & (1 << 2)) != 0)
       if $o != 0
 	printf "|"
       end
       printf "LOCK"
       set $o = 1
     end
-    if (($f & 16) == 16)
+    if (($f & (1 << 3)) != 0)
       if $o != 0
 	printf "|"
       end
       printf "COPYING"
       set $o = 1
     end
-    if (($f & 32) == 32)
+    if (($f & (1 << 15)) != 0)
       if $o != 0
 	printf "|"
       end
-      printf "COPIED"
+      printf "HGOBJECT"
       set $o = 1
     end
     printf "]\n"
@@ -103,49 +96,31 @@ define _hgobjinfo
     printf "Invalid object %p\n", $arg0
   else
     printf "(HgObject *)%p - ", $_hobj
-    set $f = $_hobj->state
+    set $f = $_hobj->state & 0xffff
     set $o = 0
     printf "[state: "
-    if (($f & 1) == 1)
+    if (($f & (1 << 0)) != 0)
       printf "READABLE"
       set $o = 1
     end
-    if (($f & 2) == 2)
+    if (($f & (1 << 1)) != 0)
       if $o != 0
 	printf "|"
       end
       printf "WRITABLE"
       set $o = 1
     end
-    if (($f & 4) == 4)
+    if (($f & (1 << 2)) != 0)
       if $o != 0
 	printf "|"
       end
       printf "EXECUTABLE"
       set $o = 1
     end
-    printf "]\n"
-    printf "  vtable[%p]:\n", $_hobj->vtable
-    if ($_hobj->vtable)
-      printf "    free: "
-      output $_hobj->vtable->free
-      printf "\n"
-      printf "    set_flags: "
-      output $_hobj->vtable->set_flags
-      printf "\n"
-      printf "    relocate: "
-      output $_hobj->vtable->relocate
-      printf "\n"
-      printf "    dup: "
-      output $_hobj->vtable->dup
-      printf "\n"
-      printf "    copy: "
-      output $_hobj->vtable->copy
-      printf "\n"
-      printf "    to_string: "
-      output $_hobj->vtable->to_string
-      printf "\n"
-    end
+    printf "] "
+    printf "[user data: %d] ", ($_hobj->state >> 16) & 0xff
+    printf "[vtable id: %d] ", ($_hobj->state >> 24) & 0xff
+    printf "\n"
   end
 end
 
@@ -158,46 +133,47 @@ define hgnodeprint
     _hgmeminfo $arg0
     _hgobjinfo $arg0
     set $_node = (HgValueNode *)$_hobj
+    set $_nodetype = (HgValueType)(($_hobj->state >> 16) & 0xff)
     printf "(HgValueNode *)%p - [type: ", $_node
-    if ($_node->type == HG_TYPE_VALUE_BOOLEAN)
+    if ($_nodetype == HG_TYPE_VALUE_BOOLEAN)
       printf "BOOLEAN] [%d]\n", $_node->v.boolean
     end
-    if ($_node->type == HG_TYPE_VALUE_INTEGER)
+    if ($_nodetype == HG_TYPE_VALUE_INTEGER)
       printf "INTEGER] [%d]\n", $_node->v.integer
     end
-    if ($_node->type == HG_TYPE_VALUE_REAL)
+    if ($_nodetype == HG_TYPE_VALUE_REAL)
       printf "REAL] [%f]\n", $_node->v.real
     end
-    if ($_node->type == HG_TYPE_VALUE_NAME)
+    if ($_nodetype == HG_TYPE_VALUE_NAME)
       printf "NAME] [%s]\n", (char *)$_node->v.pointer
     end
-    if ($_node->type == HG_TYPE_VALUE_ARRAY)
+    if ($_nodetype == HG_TYPE_VALUE_ARRAY)
       printf "ARRAY]\n"
       print (HgArray *)$_node->v.pointer
     end
-    if ($_node->type == HG_TYPE_VALUE_STRING)
+    if ($_nodetype == HG_TYPE_VALUE_STRING)
       printf "STRING]\n"
       print (HgString *)$_node->v.pointer
     end
-    if ($_node->type == HG_TYPE_VALUE_DICT)
+    if ($_nodetype == HG_TYPE_VALUE_DICT)
       printf "DICT]\n"
       print (HgDict *)$_node->v.pointer
     end
-    if ($_node->type == HG_TYPE_VALUE_NULL)
+    if ($_nodetype == HG_TYPE_VALUE_NULL)
       printf "NULL]\n"
     end
-    if ($_node->type == HG_TYPE_VALUE_POINTER)
+    if ($_nodetype == HG_TYPE_VALUE_POINTER)
       printf "OPERATOR]\n"
       print (LibrettoOperator *)$_node->v.pointer
     end
-    if ($_node->type == HG_TYPE_VALUE_MARK)
+    if ($_nodetype == HG_TYPE_VALUE_MARK)
       printf "MARK]\n"
     end
-    if ($_node->type == HG_TYPE_VALUE_FILE)
+    if ($_nodetype == HG_TYPE_VALUE_FILE)
       printf "FILE]\n"
       print (HgFileObject *)$_node->v.pointer
     end
-    if ($_node->type == HG_TYPE_VALUE_SNAPSHOT)
+    if ($_nodetype == HG_TYPE_VALUE_SNAPSHOT)
       printf "SNAPSHOT]\n"
       print (HgMemSnapshot *)$_node->v.pointer
     end
@@ -233,6 +209,26 @@ end
 
 define hgstringprint
   dont-repeat
+  _hggethgobj $arg0
+  if ($_hobj == 0)
+    printf "%p isn't a valid object managed by hieroglyph.\n", $arg0
+  else
+    _hgmeminfo $arg0
+    _hgobjinfo $arg0
+    set $_string = (HgString *)$_hobj
+    printf "(HgString *)%p - ", $_string
+    if ($_string->substring_offset != 0)
+      printf "[substring] "
+    end
+    printf "[alloc: %d] [length: %d]\n", $_string->allocated_size, $_string->length
+    output "  [string: "
+    set $_i = 0
+    while ($_i < $_string->length)
+      printf "%c", $_string->current[$_i]
+      set $_i++
+    end
+    printf "]\n"
+  end
 end
 
 define hgoperprint

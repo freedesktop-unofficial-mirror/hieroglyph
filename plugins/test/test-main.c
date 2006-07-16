@@ -28,10 +28,12 @@
 #include <hieroglyph/hgplugins.h>
 
 
-static gboolean plugin_init(void);
+static gboolean plugin_init    (void);
 static gboolean plugin_finalize(void);
-static gboolean plugin_load(void);
-static gboolean plugin_unload(void);
+static gboolean plugin_load    (HgPlugin *plugin,
+				HgVM     *vm);
+static gboolean plugin_unload  (HgPlugin *plugin,
+				HgVM     *vm);
 
 
 static HgPluginVTable vtable = {
@@ -57,13 +59,15 @@ plugin_finalize(void)
 }
 
 static gboolean
-plugin_load(void)
+plugin_load(HgPlugin *plugin,
+	    HgVM     *vm)
 {
 	return TRUE;
 }
 
 static gboolean
-plugin_unload(void)
+plugin_unload(HgPlugin *plugin,
+	      HgVM     *vm)
 {
 	return TRUE;
 }

@@ -1,5 +1,21 @@
 2006-07-16  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/vm.c (hg_vm_new): create an instance of HgLineEdit.
+
+	* hieroglyph/hglineedit.[ch]: made a lot of changes to get rid of
+	the libedit dependency directly.
+
+	* hieroglyph/hgplugins.[ch]: new files.
+
+	* hieroglyph/hgfile.c (hg_file_object_new): handle an argument
+	as HgLineEdit.
+
+	* .gdbinit: modified for current object structures.
+	(hgstringprint): implemented.
+
+	* plugins/libedit/libedit-main.c (plugin_load): implemented.
+	(plugin_unload): implemented.
+
 	* hg-libretto.pc.in: removed.
 
 	* configure.ac: check for exp10 function.

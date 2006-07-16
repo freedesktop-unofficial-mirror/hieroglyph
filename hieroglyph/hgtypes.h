@@ -29,6 +29,19 @@
 
 G_BEGIN_DECLS
 
+/* hgarray.h */
+typedef struct _HieroGlyphArray			HgArray;
+/* hgdict.h */
+typedef struct _HieroGlyphDict			HgDict;
+/* hgfile.h */
+typedef struct _HieroGlyphFileObject		HgFileObject;
+typedef struct _HieroGlyphFileObjectCallback	HgFileObjectCallback;
+/* hggraphics.h */
+typedef struct _HieroGlyphGraphics		HgGraphics;
+typedef struct _HieroGlyphGraphicState		HgGraphicState;
+/* hglineedit.h */
+typedef struct _HieroGlyphLineEdit		HgLineEdit;
+typedef struct _HieroGlyphLineEditVTable	HgLineEditVTable;
 /* hgmem.h */
 typedef struct _HieroGlyphAllocatorVTable	HgAllocatorVTable;
 typedef struct _HieroGlyphAllocator		HgAllocator;
@@ -39,19 +52,20 @@ typedef struct _HieroGlyphMemPool		HgMemPool;
 typedef struct _HieroGlyphObjectVTable		HgObjectVTable;
 typedef struct _HieroGlyphObject		HgObject;
 typedef struct _HieroGlyphMemSnapshot		HgMemSnapshot;
-/* hgvaluenode.h */
-typedef struct _HieroGlyphValueNode		HgValueNode;
-/* hgarray.h */
-typedef struct _HieroGlyphArray			HgArray;
-/* hgdict.h */
-typedef struct _HieroGlyphDict			HgDict;
-/* hgfile.h */
-typedef struct _HieroGlyphFileObject		HgFileObject;
-typedef struct _HieroGlyphFileObjectCallback	HgFileObjectCallback;
+/* operator.h */
+typedef struct _HieroGlyphOperator		HgOperator;
+/* hgplugins.h */
+typedef struct _HieroGlyphPluginVTable		HgPluginVTable;
+typedef struct _HieroGlyphPlugin		HgPlugin;
 /* hgstack.h */
 typedef struct _HieroGlyphStack			HgStack;
 /* hgstring.h */
 typedef struct _HieroGlyphString		HgString;
+/* hgvaluenode.h */
+typedef struct _HieroGlyphValueNode		HgValueNode;
+/* vm.h */
+typedef struct _HieroGlyphVirtualMachine	HgVM;
+
 typedef struct _HieroGlyphColor			HgColor;
 typedef struct _HieroGlyphRenderFill		HgRenderFill;
 typedef struct _HieroGlyphRenderStroke		HgRenderStroke;
@@ -64,15 +78,15 @@ typedef struct _HieroGlyphPathBBox		HgPathBBox;
 typedef struct _HieroGlyphMatrix		HgMatrix;
 typedef struct _HieroGlyphDeviceVTable		HgDeviceVTable;
 typedef struct _HieroGlyphDevice		HgDevice;
-typedef struct _HieroGlyphPluginVTable		HgPluginVTable;
-typedef struct _HieroGlyphPlugin		HgPlugin;
 
-typedef void                (*HgTraverseFunc)      (gpointer   key,
-						    gpointer   val,
-						    gpointer   data);
-typedef void                (*HgDebugFunc)         (gpointer   data);
+typedef void                (*HgTraverseFunc)      (gpointer    key,
+						    gpointer    val,
+						    gpointer    data);
+typedef void                (*HgDebugFunc)         (gpointer    data);
 typedef HgAllocatorVTable * (*HgAllocatorTypeFunc) (void);
-typedef HgPlugin          * (*HgPluginNewFunc)     (HgMemPool *pool);
+typedef HgPlugin          * (*HgPluginNewFunc)     (HgMemPool  *pool);
+typedef gboolean            (*HgOperatorFunc)      (HgOperator *op,
+						    gpointer    vm);
 
 /* 32bit variables */
 typedef enum {
@@ -418,11 +432,54 @@ struct _HieroGlyphPathBBox {
 	gdouble ury;
 };
 
-struct _HieroGlyphPluginVTable {
+struct _HieroGlyphLineEditVTable {
+	gchar * (* get_line)     (const gchar *prompt);
+	void    (* add_history)  (const gchar *strings);
+	void    (* load_history) (const gchar *filename);
+	void    (* save_history) (const gchar *filename);
 };
 
-struct _HieroGlyphPlugin {
+struct _HieroGlyphGraphicState {
 	HgObject  object;
+
+	/* device independent parameters */
+	HgMatrix   ctm;
+	HgMatrix   snapshot_matrix;
+	gdouble    x;
+	gdouble    y;
+	HgPath    *path;
+	HgPath    *clip_path;
+	/* FIXME: clip path stack */
+	HgArray   *color_space;
+	HgColor    color;
+	HgDict    *font;
+	gdouble    line_width;
+	gint       line_cap;
+	gint       line_join;
+	gdouble    miter_limit;
+	gdouble    dashline_offset;
+	HgArray   *dashline_pattern;
+	gboolean   stroke_correction;
+
+	/* device dependent parameters */
+	HgDict    *color_rendering;
+	gboolean   over_printing;
+	HgArray   *black_generator;
+	HgArray   *black_corrector;
+	HgArray   *transfer;
+	/* FIXME: halftone */
+	gdouble    smoothing;
+	gdouble    shading;
+	gpointer   device;
+};
+
+struct _HieroGlyphGraphics {
+	HgObject        object;
+	HgMemPool      *pool;
+	HgPage         *current_page;
+	GList          *pages;
+	HgGraphicState *current_gstate;
+	GList          *gstate_stack;
 };
 
 G_END_DECLS

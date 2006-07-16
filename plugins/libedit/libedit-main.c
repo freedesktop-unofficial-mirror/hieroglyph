@@ -32,12 +32,15 @@
 #include <editline/readline.h>
 #include <hieroglyph/hgplugins.h>
 #include <hieroglyph/hglineedit.h>
+#include <hieroglyph/vm.h>
 
 
 static gboolean  plugin_init                             (void);
 static gboolean  plugin_finalize                         (void);
-static gboolean  plugin_load                             (void);
-static gboolean  plugin_unload                           (void);
+static gboolean  plugin_load                             (HgPlugin *plugin,
+							  HgVM     *vm);
+static gboolean  plugin_unload                           (HgPlugin *plugin,
+							  HgVM     *vm);
 static gchar    *_hg_line_edit__libedit_real_get_line    (const gchar *prompt);
 static void      _hg_line_edit__libedit_real_add_history (const gchar *strings);
 static void      _hg_line_edit__libedit_real_load_history(const gchar *filename);
@@ -74,14 +77,40 @@ plugin_finalize(void)
 }
 
 static gboolean
-plugin_load(void)
+plugin_load(HgPlugin *plugin,
+	    HgVM     *vm)
 {
+	HgLineEdit *editor;
+
+	g_return_val_if_fail (plugin != NULL, FALSE);
+	g_return_val_if_fail (vm != NULL, FALSE);
+
+	if (plugin->user_data != NULL) {
+		g_warning("already loaded.");
+		return FALSE;
+	}
+	plugin->user_data = hg_vm_get_line_editor(vm);
+
+	editor = hg_line_edit_new(hg_vm_get_current_pool(vm),
+				  &lineedit_vtable);
+	hg_vm_set_line_editor(vm, editor);
+
 	return TRUE;
 }
 
 static gboolean
-plugin_unload(void)
+plugin_unload(HgPlugin *plugin,
+	      HgVM     *vm)
 {
+	g_return_val_if_fail (plugin != NULL, FALSE);
+	g_return_val_if_fail (vm != NULL, FALSE);
+
+	if (plugin->user_data != NULL) {
+		g_warning("not yet loaded.");
+		return FALSE;
+	}
+	hg_vm_set_line_editor(vm, plugin->user_data);
+
 	return TRUE;
 }
 

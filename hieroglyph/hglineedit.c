@@ -27,57 +27,120 @@
 
 #include <stdlib.h>
 #include <string.h>
-#ifdef USE_LIBEDIT
-#include <editline/readline.h>
-#endif
 #include "hglineedit.h"
+#include "hgmem.h"
 
+
+static gchar *_hg_line_edit__default_get_line    (const gchar *prompt);
+static void   _hg_line_edit__default_add_history (const gchar *strings);
+static void   _hg_line_edit__default_load_history(const gchar *filename);
+static void   _hg_line_edit__default_save_history(const gchar *filename);
+
+
+struct _HieroGlyphLineEdit {
+	HgObject                object;
+	const HgLineEditVTable *vtable;
+};
+
+static HgObjectVTable __hg_line_edit_vtable = {
+	.free      = NULL,
+	.set_flags = NULL,
+	.relocate  = NULL,
+	.dup       = NULL,
+	.copy      = NULL,
+	.to_string = NULL,
+};
+static const HgLineEditVTable __hg_line_edit_default_vtable = {
+	.get_line     = _hg_line_edit__default_get_line,
+	.add_history  = _hg_line_edit__default_add_history,
+	.load_history = _hg_line_edit__default_load_history,
+	.save_history = _hg_line_edit__default_save_history,
+};
 
 /*
  * Private Functions
  */
+static gchar *
+_hg_line_edit__default_get_line(const gchar *prompt)
+{
+	return NULL;
+}
+
+static void
+_hg_line_edit__default_add_history(const gchar *strings)
+{
+}
+
+static void
+_hg_line_edit__default_load_history(const gchar *filename)
+{
+}
+
+static void
+_hg_line_edit__default_save_history(const gchar *filename)
+{
+}
 
 /*
  * Public Functions
  */
-gchar *
-hg_line_edit_get_line(HgFileObject *stdin,
-		      const gchar  *prompt,
-		      gboolean      history)
+HgLineEdit *
+hg_line_edit_new(HgMemPool              *pool,
+		 const HgLineEditVTable *vtable)
 {
-	g_return_val_if_fail (stdin != NULL, NULL);
+	HgLineEdit *retval;
 
-#ifdef USE_LIBEDIT
-	G_STMT_START {
-		gchar *retval;
+	g_return_val_if_fail (pool != NULL, NULL);
 
-		if (prompt == NULL)
-			retval = readline("");
-		else
-			retval = readline(prompt);
-		if (retval == NULL)
-			return NULL;
-		if (history)
-			add_history(retval);
+	retval = hg_mem_alloc_with_flags(pool, sizeof (HgLineEdit), HG_FL_HGOBJECT);
+	if (retval == NULL)
+		return NULL;
+	HG_OBJECT_INIT_STATE (&retval->object);
+	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
+	hg_object_set_vtable(&retval->object, &__hg_line_edit_vtable);
 
-		return retval;
-	} G_STMT_END;
-#else
-#error FIXME: implement me!
-#endif /* USE_LIBEDIT */
+	if (vtable == NULL) {
+		retval->vtable = &__hg_line_edit_default_vtable;
+	} else {
+		retval->vtable = vtable;
+	}
+
+	return retval;
 }
 
 gchar *
-hg_line_edit_get_statement(HgFileObject *stdin, const gchar *prompt)
+hg_line_edit_get_line(HgLineEdit  *lineedit,
+		      const gchar *prompt,
+		      gboolean     history)
+{
+	gchar *retval;
+
+	g_return_val_if_fail (lineedit != NULL, NULL);
+	g_return_val_if_fail (lineedit->vtable != NULL, NULL);
+	g_return_val_if_fail (lineedit->vtable->get_line != NULL, NULL);
+	g_return_val_if_fail (lineedit->vtable->add_history != NULL, NULL);
+
+	retval = lineedit->vtable->get_line(prompt);
+	if (retval != NULL && history)
+		lineedit->vtable->add_history(retval);
+
+	return retval;
+}
+
+gchar *
+hg_line_edit_get_statement(HgLineEdit *lineedit,
+			   const gchar *prompt)
 {
 	gchar *line, *retval, *p;
 	gint array_nest = 0, string_nest = 0;
 	size_t len, i;
 
-	g_return_val_if_fail (stdin != NULL, NULL);
+	g_return_val_if_fail (lineedit != NULL, NULL);
+	g_return_val_if_fail (lineedit->vtable != NULL, NULL);
+	g_return_val_if_fail (lineedit->vtable->add_history != NULL, NULL);
 
 	retval = g_strdup("");
-	line = hg_line_edit_get_line(stdin, prompt, FALSE);
+	line = hg_line_edit_get_line(lineedit, prompt, FALSE);
 	if (line == NULL)
 		return retval;
 	while (1) {
@@ -104,49 +167,45 @@ hg_line_edit_get_statement(HgFileObject *stdin, const gchar *prompt)
 		retval = p;
 		if (string_nest == 0 && array_nest == 0)
 			break;
-		line = hg_line_edit_get_line(stdin, "", FALSE);
+		line = hg_line_edit_get_line(lineedit, "", FALSE);
 		if (line == NULL)
 			return retval;
 	}
 	p = g_strdup(retval);
 	g_strchomp(p);
 	len = strlen(p);
-#ifdef USE_LIBEDIT
 	if (len > 0) {
-		add_history(p);
+		lineedit->vtable->add_history(p);
 	}
-#else
-#error FIXME: implement me!
-#endif /* USE_LINEEDIT */
 	g_free(p);
 
 	return retval;
 }
 
 gboolean
-hg_line_edit_load_history(const gchar *filename)
+hg_line_edit_load_history(HgLineEdit  *lineedit,
+			  const gchar *filename)
 {
+	g_return_val_if_fail (lineedit != NULL, FALSE);
+	g_return_val_if_fail (lineedit->vtable != NULL, FALSE);
+	g_return_val_if_fail (lineedit->vtable->load_history != NULL, FALSE);
 	g_return_val_if_fail (filename != NULL, FALSE);
 
-#ifdef USE_LIBEDIT
-	read_history(filename);
-#else
-#error FIXME: implement me!
-#endif
+	lineedit->vtable->load_history(filename);
 
 	return TRUE;
 }
 
 gboolean
-hg_line_edit_save_history(const gchar *filename)
+hg_line_edit_save_history(HgLineEdit  *lineedit,
+			  const gchar *filename)
 {
+	g_return_val_if_fail (lineedit != NULL, FALSE);
+	g_return_val_if_fail (lineedit->vtable != NULL, FALSE);
+	g_return_val_if_fail (lineedit->vtable->save_history != NULL, FALSE);
 	g_return_val_if_fail (filename != NULL, FALSE);
 
-#ifdef USE_LIBEDIT
-	write_history(filename);
-#else
-#error FIXME: implement me!
-#endif
+	lineedit->vtable->save_history(filename);
 
 	return TRUE;
 }

@@ -286,6 +286,7 @@ hg_file_object_new(HgMemPool  *pool,
 	gchar *p;
 	gsize len;
 	gint flag;
+	HgLineEdit *lineedit;
 
 	g_return_val_if_fail (pool != NULL, NULL);
 
@@ -405,6 +406,11 @@ hg_file_object_new(HgMemPool  *pool,
 		    retval->access_mode = HG_FILE_MODE_WRITE;
 		    break;
 	    case HG_FILE_TYPE_STATEMENT_EDIT:
+		    lineedit = (HgLineEdit *)va_arg(ap, HgLineEdit *);
+		    if (lineedit == NULL) {
+			    g_warning("[BUG] No HgLineEdit instance.");
+			    return NULL;
+		    }
 		    retval->filename = hg_mem_alloc(pool, 15);
 		    if (retval->filename == NULL) {
 			    g_warning("Failed to allocate a memory for file object.");
@@ -412,7 +418,7 @@ hg_file_object_new(HgMemPool  *pool,
 		    }
 		    strncpy(retval->filename, "%statementedit", 14);
 		    retval->filename[14] = 0;
-		    p = hg_line_edit_get_statement(__hg_file_stdin, NULL);
+		    p = hg_line_edit_get_statement(lineedit, NULL);
 		    if (p == NULL) {
 			    g_warning("Failed to read a statement.");
 			    return NULL;
@@ -430,6 +436,11 @@ hg_file_object_new(HgMemPool  *pool,
 		    retval->is.buf.pos = 0;
 		    break;
 	    case HG_FILE_TYPE_LINE_EDIT:
+		    lineedit = (HgLineEdit *)va_arg(ap, HgLineEdit *);
+		    if (lineedit == NULL) {
+			    g_warning("[BUG] No HgLineEdit instance.");
+			    return NULL;
+		    }
 		    retval->filename = hg_mem_alloc(pool, 10);
 		    if (retval->filename == NULL) {
 			    g_warning("Failed to allocate a memory for file object.");
@@ -437,7 +448,7 @@ hg_file_object_new(HgMemPool  *pool,
 		    }
 		    strncpy(retval->filename, "%lineedit", 9);
 		    retval->filename[9] = 0;
-		    p = hg_line_edit_get_line(__hg_file_stdin, NULL, TRUE);
+		    p = hg_line_edit_get_line(lineedit, NULL, TRUE);
 		    if (p == NULL) {
 			    g_warning("Failed to read a statement.");
 			    return NULL;

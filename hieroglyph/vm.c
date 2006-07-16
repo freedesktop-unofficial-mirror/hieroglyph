@@ -33,6 +33,7 @@
 #include "hgarray.h"
 #include "hgdict.h"
 #include "hgfile.h"
+#include "hglineedit.h"
 #include "hgstack.h"
 #include "hgstring.h"
 #include "hgvaluenode.h"
@@ -456,6 +457,8 @@ hg_vm_new(HgVMEmulationType type)
 	retval->stdin = __hg_file_stdin;
 	retval->stdout = __hg_file_stdout;
 	retval->stderr = __hg_file_stderr;
+	retval->lineeditor = hg_line_edit_new(retval->local_pool, NULL);
+	hg_mem_add_root_node(retval->local_pool, retval->lineeditor);
 
 	/* initialize graphics */
 	retval->graphics = hg_graphics_new(retval->graphic_pool);

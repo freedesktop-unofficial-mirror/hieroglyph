@@ -32,6 +32,7 @@ hgspy_bin_LDADD =						\
 	$(HG_MODULE_LIBS)					\
 	$(GTHREAD_LIBS)						\
 	libhgspy.la						\
+	$(top_builddir)/hieroglyph/libhieroglyph.la		\
 	$(NULL)
 
 libhgspy_la_SOURCES =						\

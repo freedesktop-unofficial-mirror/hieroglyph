@@ -30,13 +30,17 @@
 G_BEGIN_DECLS
 
 
-gchar    *hg_line_edit_get_line     (HgFileObject *stdin,
-				     const gchar  *prompt,
-				     gboolean      history);
-gchar    *hg_line_edit_get_statement(HgFileObject *stdin,
-                                     const gchar  *prompt);
-gboolean  hg_line_edit_load_history (const gchar  *filename);
-gboolean  hg_line_edit_save_history (const gchar  *filename);
+HgLineEdit *hg_line_edit_new        (HgMemPool              *pool,
+				     const HgLineEditVTable *vtable);
+gchar      *hg_line_edit_get_line   (HgLineEdit             *lineedit,
+				     const gchar            *prompt,
+				     gboolean                history);
+gchar    *hg_line_edit_get_statement(HgLineEdit             *lineedit,
+                                     const gchar            *prompt);
+gboolean  hg_line_edit_load_history (HgLineEdit             *lineedit,
+				     const gchar            *filename);
+gboolean  hg_line_edit_save_history (HgLineEdit             *lineedit,
+				     const gchar            *filename);
 
 
 G_END_DECLS
