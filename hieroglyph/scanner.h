@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * version.h
+ * scanner.h
  * Copyright (C) 2005-2006 Akira TAGOH
  * 
  * Authors:
@@ -21,18 +21,27 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HG_VERSION_H__
-#define __HG_VERSION_H__
+#ifndef __LIBRETTO_SCANNER_H__
+#define __LIBRETTO_SCANNER_H__
 
-#include <glib/gmacros.h>
+#include <hieroglyph/hgtypes.h>
+
 
 G_BEGIN_DECLS
 
-#define HIEROGLYPH_VERSION	"@VERSION@"
-#define HIEROGLYPH_UUID		"e056ab27-7e6a-4b73-9cc6-0083f1895f05"
+typedef enum {
+	HG_SCAN_C_NULL,
+	HG_SCAN_C_CONTROL,
+	HG_SCAN_C_NAME,
+	HG_SCAN_C_SPACE,
+	HG_SCAN_C_NUMERAL,
+	HG_SCAN_C_BINARY,
+} HgScannerCharType;
 
-const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
+HgValueNode *hg_scanner_get_object(HgVM         *vm,
+				   HgFileObject *file);
 
 G_END_DECLS
 
-#endif /* __HG_VERSION_H__ */
+
+#endif /* __LIBRETTO_SCANNER_H__ */

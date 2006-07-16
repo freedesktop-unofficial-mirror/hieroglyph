@@ -1,5 +1,7 @@
 2006-07-16  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/scanner.[ch]: moved from libretto/.
+
 	* hieroglyph/vm.[ch]: moved from libretto/.
 
 	* hieroglyph/hggraphics.[ch]: moved from libretto/lbgraphics.[ch].
