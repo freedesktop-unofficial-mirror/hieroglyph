@@ -1,0 +1,3 @@
+Hieroglyph
+=============
+Hieroglyph is a PostScript rendering library with having an own PostScript interpreter engine and support for pluggable output devices and the extensions.

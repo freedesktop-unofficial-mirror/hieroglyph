@@ -1,5 +1,7 @@
 2006-07-17  Akira TAGOH  <at@gclab.org>
 
+	* README: described a bit.
+
 	* hieroglyph/Makefile.am (EXTRA_DIST): added version.h.in.in.
 
 	* Makefile.am (EXTRA_DIST): added update-version.
