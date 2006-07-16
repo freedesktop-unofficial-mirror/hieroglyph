@@ -1,5 +1,10 @@
 2006-07-17  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/operator.c (_hg_operator_op_anchorsearch): implemented.
+
+	* hieroglyph/hgstring.c (hg_string_ncompare): new function.
+	(hg_string_copy_as_substring): fixed an index bug.
+
 	* README: described a bit.
 
 	* hieroglyph/Makefile.am (EXTRA_DIST): added version.h.in.in.

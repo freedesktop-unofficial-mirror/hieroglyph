@@ -399,6 +399,19 @@ hg_string_compare(const HgString *a,
 }
 
 gboolean
+hg_string_ncompare(const HgString *a,
+		   const HgString *b,
+		   guint           length)
+{
+	g_return_val_if_fail (a != NULL, FALSE);
+	g_return_val_if_fail (b != NULL, FALSE);
+	g_return_val_if_fail (hg_object_is_readable((HgObject *)a), FALSE);
+	g_return_val_if_fail (hg_object_is_readable((HgObject *)b), FALSE);
+
+	return memcmp(a->current, b->current, length) == 0;
+}
+
+gboolean
 hg_string_compare_with_raw(const HgString *a,
 			   const gchar    *b,
 			   gint            length)
@@ -448,7 +461,7 @@ hg_string_copy_as_substring(HgString *src,
 	hg_mem_free(dest->strings);
 	/* make a sub-string */
 	dest->strings = src->strings;
-	dest->current = (gpointer)((gsize)dest->strings + sizeof (gpointer) * start_index);
+	dest->current = (gpointer)((gsize)dest->strings + start_index);
 	dest->allocated_size = dest->length = end_index - start_index + 1;
 	dest->is_fixed_size = TRUE;
 	dest->substring_offset = start_index;

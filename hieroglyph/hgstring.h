@@ -50,6 +50,9 @@ gchar    *hg_string_get_string       (HgString       *string);
 gboolean  hg_string_fix_string_size  (HgString       *string);
 gboolean  hg_string_compare          (const HgString *a,
 				      const HgString *b);
+gboolean  hg_string_ncompare         (const HgString *a,
+				      const HgString *b,
+				      guint           length);
 gboolean  hg_string_compare_with_raw (const HgString *a,
 				      const gchar    *b,
 				      gint            length);
