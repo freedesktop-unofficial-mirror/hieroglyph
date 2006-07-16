@@ -1,5 +1,7 @@
 2006-07-16  Akira TAGOH  <at@gclab.org>
 
+	* configure.ac: check for exp10 function.
+
 	* plugins/Makefile.am: new file.
 
 	* plugins/test/Makefile.am: new file.

@@ -1,5 +1,5 @@
 NULL =
-SUBDIRS = hieroglyph libretto src devices lib tests examples po
+SUBDIRS = hieroglyph src devices plugins lib tests examples po
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = hg-libretto.pc hieroglyph.pc

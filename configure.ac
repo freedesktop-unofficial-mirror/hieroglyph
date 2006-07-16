@@ -46,7 +46,18 @@ changequote([,])dnl
 dnl ======================================================================
 dnl functions testing
 dnl ======================================================================
-AC_FUNC_FSEEKO
+AC_CHECK_FUNC(exp10,,[
+	AC_MSG_CHECKING([for exp10 whether _GNU_SOURCE needs to be defined.])
+	SAVE_CFLAGS="$CFLAGS"
+	CFLAGS="$CFLAGS -D_GNU_SOURCE"
+	AC_COMPILE_IFELSE([
+#include <math.h>
+void *foo = exp10;
+		], [
+		AC_MSG_RESULT([-D_GNU_SOURCE])] ,[
+		AC_MSG_ERROR([FIXME: need exp10 function anyway.])
+	])
+])
 
 dnl ======================================================================
 dnl gettext stuff
@@ -88,12 +99,12 @@ dnl ======================================================================
 dnl check another libraries
 dnl ======================================================================
 AC_CHECK_LIB(edit, readline, [
-	READLINE_LIBS="-ledit"
+	LIBEDIT_LIBS="-ledit"
 	AC_DEFINE(USE_LIBEDIT,1,[build with readline])
 	],
 	AC_MSG_ERROR([
 *** libedit is required.]), )
-AC_SUBST(READLINE_LIBS)
+AC_SUBST(LIBEDIT_LIBS)
 
 dnl ======================================================================
 dnl options
@@ -213,12 +224,14 @@ HIEROGLYPH_RELEASE_VERSION=`echo $PACKAGE_VERSION | sed -e 's/^[0-9]*\.[0-9]*\.\
 changequote([,]) dnl
 HIEROGLYPH_BINARY_VERSION=$HIEROGLYPH_MAJOR_VERSION.0
 HIEROGLYPH_DEVICEDIR="${libdir}/hieroglyph/${HIEROGLYPH_BINARY_VERSION}/devices"
+HIEROGLYPH_PLUGINDIR="${libdir}/hieroglyph/${HIEROGLYPH_BINARY_VERSION}/plugins"
 HIEROGLYPH_LIBDIR="${datadir}/hieroglyph/${HIEROGLYPH_BINARY_VERSION}/lib"
 AC_SUBST(HIEROGLYPH_MAJOR_VERSION)
 AC_SUBST(HIEROGLYPH_MINOR_VERSION)
 AC_SUBST(HIEROGLYPH_RELEASE_VERSION)
 AC_SUBST(HIEROGLYPH_BINARY_VERSION)
 AC_SUBST(HIEROGLYPH_DEVICEDIR)
+AC_SUBST(HIEROGLYPH_PLUGINDIR)
 AC_SUBST(HIEROGLYPH_LIBDIR)
 
 dnl ======================================================================
@@ -234,6 +247,9 @@ hieroglyph/Makefile
 hieroglyph/version.h
 lib/Makefile
 libretto/Makefile
+plugins/Makefile
+plugins/libedit/Makefile
+plugins/test/Makefile
 po/Makefile.in
 src/Makefile
 tests/Makefile
@@ -252,6 +268,7 @@ echo " Enable autogeneration:      $enable_rebuilds"
 echo " Binary version:             $HIEROGLYPH_BINARY_VERSION"
 echo " Device support:             $devices"
 echo " Device install path:        $HIEROGLYPH_DEVICEDIR"
+echo " Plugin install path:        $HIEROGLYPH_PLUGINDIR"
 echo -n " Use CMap:                   $with_cmap "
 if test "x$with_cmap" = xyes; then
 	echo "($HIEROGLYPH_CMAPDIR)"
