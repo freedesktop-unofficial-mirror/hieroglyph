@@ -53,8 +53,9 @@ AC_CHECK_FUNC(exp10,,[
 	AC_COMPILE_IFELSE([
 #include <math.h>
 void *foo = exp10;
-		], [
-		AC_MSG_RESULT([-D_GNU_SOURCE])] ,[
+	], [
+		AC_MSG_RESULT([-D_GNU_SOURCE])
+	] ,[
 		AC_MSG_ERROR([FIXME: need exp10 function anyway.])
 	])
 ])
