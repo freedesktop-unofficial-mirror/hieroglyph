@@ -78,7 +78,6 @@ test_scanner_SOURCES =					\
 	$(NULL)
 test_scanner_LDADD = 					\
 	$(LDADDS)					\
-	$(top_builddir)/libretto/libretto.la		\
 	$(NULL)
 
 test_vm_SOURCES =					\
@@ -86,7 +85,6 @@ test_vm_SOURCES =					\
 	$(NULL)
 test_vm_LDADD = 					\
 	$(LDADDS)					\
-	$(top_builddir)/libretto/libretto.la		\
 	$(NULL)
 
 test_operatorencoding_SOURCES =				\
@@ -94,7 +92,6 @@ test_operatorencoding_SOURCES =				\
 	$(NULL)
 test_operatorencoding_LDADD =				\
 	$(LDADDS)					\
-	$(top_builddir)/libretto/libretto.la		\
 	$(NULL)
 
 bench1_hgallocator_bfit_SOURCES =			\

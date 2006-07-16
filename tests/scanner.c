@@ -3,8 +3,8 @@
 #include <hieroglyph/hgstack.h>
 #include <hieroglyph/hgstring.h>
 #include <hieroglyph/hgvaluenode.h>
-#include <libretto/scanner.h>
-#include <libretto/vm.h>
+#include <hieroglyph/scanner.h>
+#include <hieroglyph/vm.h>
 
 void
 print_stack(HgStack *stack)
@@ -52,30 +52,30 @@ main(void)
 {
 	HG_MEM_INIT;
 
-	LibrettoVM *vm;
+	HgVM *vm;
 	HgStack *ostack, *estack;
 //	gchar *tokens = "true false moveto /foo 10050 10a 10.5 -1 .5 -1e10 10.0E5 1E 5.2e-2 36#Z 1#0 %foobar\nfoo(test)((test test) test)(foo\nbar)";
 	HgValueNode *node;
 	HgFileObject *file;
 	HgMemPool *pool;
 
-	libretto_vm_init();
+	hg_vm_init();
 
-	vm = libretto_vm_new(LB_EMULATION_LEVEL_1);
-	libretto_vm_startjob(vm, NULL, FALSE);
-	pool = libretto_vm_get_current_pool(vm);
-	ostack = libretto_vm_get_ostack(vm);
-	estack = libretto_vm_get_estack(vm);
+	vm = hg_vm_new(VM_EMULATION_LEVEL_1);
+	hg_vm_startjob(vm, NULL, FALSE);
+	pool = hg_vm_get_current_pool(vm);
+	ostack = hg_vm_get_ostack(vm);
+	estack = hg_vm_get_estack(vm);
 	file = hg_file_object_new(pool, HG_FILE_TYPE_BUFFER, HG_FILE_MODE_READ, "*buffer*", "/foo true false null [moveto (test(test test) test) 10050 10a 10.5 -1 .5 -1e10 10.0E5 1E 5.2e-2 36#Z 1#0 //true 10e2.5 1.0ee10 1..5", -1);
 	while (!hg_file_object_is_eof(file)) {
-		node = libretto_scanner_get_object(vm, file);
+		node = hg_scanner_get_object(vm, file);
 		if (node != NULL) {
 			hg_stack_push(ostack, node);
 		}
 	}
 	print_stack(ostack);
 
-	libretto_vm_finalize();
+	hg_vm_finalize();
 
 	return 0;
 }
