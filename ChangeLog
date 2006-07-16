@@ -1,5 +1,7 @@
 2006-07-17  Akira TAGOH  <at@gclab.org>
 
+	* Makefile.am (pkgconfig_DATA): removed hg-libretto.pc.
+
 	* examples/pse.c (_pse_plugin_arg_cb): new function.
 
 	* hieroglyph/operator.c (_hg_operator_op_file): support new HgLineEdit.
