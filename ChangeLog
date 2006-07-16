@@ -1,5 +1,7 @@
 2006-07-16  Akira TAGOH  <at@gclab.org>
 
+	* src/Makefile.am: removed the libretto.la dependency.
+
 	* examples/pse.c: use hieroglyph/* instead of libretto/*.
 
 	* examples/cairo-xlib.c: likewise.

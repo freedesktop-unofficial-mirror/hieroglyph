@@ -9,7 +9,6 @@ LIBS =								\
 	$(NULL)
 DEPS =								\
 	$(top_builddir)/hieroglyph/libhieroglyph.la		\
-	$(top_builddir)/libretto/libretto.la			\
 	$(NULL)
 
 noinst_PROGRAMS =						\
@@ -33,7 +32,6 @@ hgspy_bin_LDADD =						\
 	$(HG_MODULE_LIBS)					\
 	$(GTHREAD_LIBS)						\
 	libhgspy.la						\
-	$(top_builddir)/libretto/libretto.la			\
 	$(NULL)
 
 libhgspy_la_SOURCES =						\
