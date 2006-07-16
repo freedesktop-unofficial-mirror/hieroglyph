@@ -1,3 +1,7 @@
+2006-07-16  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hggraphics.[ch]: moved from libretto/lbgraphics.[ch].
+
 2006-07-04  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgvaluenode.c (hg_value_node_new): validate if pool is
