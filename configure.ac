@@ -247,14 +247,12 @@ examples/Makefile
 hieroglyph/Makefile
 hieroglyph/version.h
 lib/Makefile
-libretto/Makefile
 plugins/Makefile
 plugins/libedit/Makefile
 plugins/test/Makefile
 po/Makefile.in
 src/Makefile
 tests/Makefile
-hg-libretto.pc
 hieroglyph.pc
 ])
 AC_OUTPUT
