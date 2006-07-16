@@ -68,5 +68,5 @@ libhgspy-helper.la: $(libhgspy_helper_la_OBJECTS) $(libhgspy_helper_la_DEPENDENC
 	$(LINK) -rpath $(libdir) $(libhgspy_helper_la_LDFLAGS) $(libhgspy_helper_la_OBJECTS) $(libhgspy_helper_la_LIBADD) $(LIBS)
 
 EXTRA_DIST =							\
-	hgspy							\
+	hgspy.sh						\
 	$(NULL)
