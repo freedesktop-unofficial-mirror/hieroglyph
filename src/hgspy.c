@@ -31,8 +31,8 @@
 #include <hieroglyph/hgdict.h>
 #include <hieroglyph/hgstack.h>
 #include <hieroglyph/hgvaluenode.h>
-#include <libretto/vm.h>
-#include <libretto/operator.h>
+#include <hieroglyph/vm.h>
+#include <hieroglyph/operator.h>
 #include "visualizer.h"
 
 
@@ -50,7 +50,7 @@ struct _HieroGlyphSpy {
 	GtkWidget    *prompt;
 	GtkUIManager *ui;
 	GThread      *vm_thread;
-	LibrettoVM   *vm;
+	HgVM         *vm;
 	gchar        *file;
 	gint          error;
 	gchar        *statementedit_buffer;
@@ -98,22 +98,22 @@ _hgspy_ask_dialog(HgSpy       *spy,
 }
 
 static gboolean
-_hgspy_op_private_statementedit(LibrettoOperator *op,
-				gpointer          data)
+_hgspy_op_private_statementedit(HgOperator *op,
+				gpointer    data)
 {
-	LibrettoVM *vm = data;
+	HgVM *vm = data;
 	gboolean retval = FALSE;
 	gsize ret;
-	HgFileObject *stdin = libretto_vm_get_io(vm, LB_IO_STDIN), *file;
+	HgFileObject *stdin = hg_vm_get_io(vm, VM_IO_STDIN), *file;
 	gchar buffer[1025];
-	HgMemPool *pool = libretto_vm_get_current_pool(vm);
+	HgMemPool *pool = hg_vm_get_current_pool(vm);
 	HgValueNode *node;
-	HgStack *ostack = libretto_vm_get_ostack(vm);
+	HgStack *ostack = hg_vm_get_ostack(vm);
 
 	while (1) {
 		ret = hg_file_object_read(stdin, buffer, sizeof (gchar), 1024);
 		if (ret == 0) {
-			_libretto_operator_set_error(vm, op, LB_e_undefinedfilename);
+			_hg_operator_set_error(vm, op, VM_e_undefinedfilename);
 			break;
 		}
 		file = hg_file_object_new(pool, HG_FILE_TYPE_BUFFER,
@@ -121,12 +121,12 @@ _hgspy_op_private_statementedit(LibrettoOperator *op,
 					  "%statementedit",
 					  buffer, -1);
 		if (file == NULL) {
-			_libretto_operator_set_error(vm, op, LB_e_VMerror);
+			_hg_operator_set_error(vm, op, VM_e_VMerror);
 			break;
 		}
 		HG_VALUE_MAKE_FILE (node, file);
 		if (node == NULL) {
-			_libretto_operator_set_error(vm, op, LB_e_VMerror);
+			_hg_operator_set_error(vm, op, VM_e_VMerror);
 			break;
 		}
 		retval = hg_stack_push(ostack, node);
@@ -144,7 +144,7 @@ _hgspy_file_read_cb(gpointer user_data,
 {
 	HgSpy *spy = user_data;
 	gsize retval = 0;
-	HgStack *ostack = libretto_vm_get_ostack(spy->vm);
+	HgStack *ostack = hg_vm_get_ostack(spy->vm);
 	gchar *prompt;
 	/* depends on hg_init.ps. */
 	guint depth = hg_stack_depth(ostack) - 2;
@@ -265,17 +265,17 @@ _hgspy_vm_thread(gpointer data)
 	};
 	HgFileObject * volatile in, * volatile out;
 	HgMemPool *pool;
-	LibrettoOperator *op;
+	HgOperator *op;
 	HgValueNode *key, *val;
 	HgDict *dict;
 	gint fd;
 	gchar *filename = NULL;
 	GString *buffer;
 
-	libretto_vm_init();
-	spy->vm = libretto_vm_new(LB_EMULATION_LEVEL_1);
-	pool = libretto_vm_get_current_pool(spy->vm);
-	dict = libretto_vm_get_dict_systemdict(spy->vm);
+	hg_vm_init();
+	spy->vm = hg_vm_new(VM_EMULATION_LEVEL_1);
+	pool = hg_vm_get_current_pool(spy->vm);
+	dict = hg_vm_get_dict_systemdict(spy->vm);
 	in = hg_file_object_new(pool,
 				HG_FILE_TYPE_BUFFER_WITH_CALLBACK,
 				HG_FILE_MODE_READ,
@@ -288,19 +288,19 @@ _hgspy_vm_thread(gpointer data)
 				 "stdout with callback",
 				 &callback,
 				 spy);
-	libretto_vm_set_io(spy->vm, LB_IO_STDIN, in);
-	libretto_vm_set_io(spy->vm, LB_IO_STDOUT, out);
-	libretto_vm_set_io(spy->vm, LB_IO_STDERR, out);
+	hg_vm_set_io(spy->vm, VM_IO_STDIN, in);
+	hg_vm_set_io(spy->vm, VM_IO_STDOUT, out);
+	hg_vm_set_io(spy->vm, VM_IO_STDERR, out);
 
-	op = libretto_operator_new(pool, "...statementedit", _hgspy_op_private_statementedit);
+	op = hg_operator_new(pool, "...statementedit", _hgspy_op_private_statementedit);
 	if (op == NULL) {
 		g_warning("Failed to create an operator");
 		return NULL;
 	}
-	key = libretto_vm_get_name_node(spy->vm, "...statementedit");
+	key = hg_vm_get_name_node(spy->vm, "...statementedit");
 	HG_VALUE_MAKE_POINTER (val, op);
 	if (val == NULL) {
-		libretto_vm_set_error(spy->vm, key, LB_e_VMerror, FALSE);
+		hg_vm_set_error(spy->vm, key, VM_e_VMerror, FALSE);
 	} else {
 		hg_object_executable((HgObject *)val);
 		hg_dict_insert(pool, dict, key, val);
@@ -319,12 +319,12 @@ _hgspy_vm_thread(gpointer data)
 	}
 	write(fd, buffer->str, buffer->len);
 	close(fd);
-	libretto_vm_startjob(spy->vm, filename, TRUE);
+	hg_vm_startjob(spy->vm, filename, TRUE);
 	unlink(filename);
 	g_free(filename);
 	hg_mem_free(spy->vm);
 	spy->vm = NULL;
-	libretto_vm_finalize();
+	hg_vm_finalize();
 	spy->destroyed = FALSE;
 
 	return NULL;
@@ -340,7 +340,7 @@ _hgspy_run_vm(HgSpy       *spy,
 		}
 		g_thread_exit(spy->vm_thread);
 		hg_mem_free(spy->vm);
-		libretto_vm_finalize();
+		hg_vm_finalize();
 	}
 	spy->file = g_strdup(file);
 	spy->vm_thread = g_thread_create(_hgspy_vm_thread, spy, FALSE, NULL);
