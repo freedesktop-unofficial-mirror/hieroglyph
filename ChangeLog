@@ -1,5 +1,11 @@
 2006-07-16  Akira TAGOH  <at@gclab.org>
 
+	* examples/pse.c: use hieroglyph/* instead of libretto/*.
+
+	* examples/cairo-xlib.c: likewise.
+
+	* examples/Makefile.am: removed the libretto.la dependency.
+
 	* hieroglyph/operator.[ch]: moved from libretto/.
 
 	* hieroglyph/scanner.[ch]: moved from libretto/.

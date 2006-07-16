@@ -25,8 +25,8 @@
 #include <hieroglyph/hgfile.h>
 #include <hieroglyph/hgvaluenode.h>
 #include <hieroglyph/hgdevice.h>
-#include <libretto/vm.h>
-#include <libretto/lbgraphics.h>
+#include <hieroglyph/vm.h>
+#include <hieroglyph/hggraphics.h>
 
 
 int
@@ -34,8 +34,8 @@ main(int argc, char **argv)
 {
 	HG_MEM_INIT;
 
-	LibrettoVM *vm;
-	LibrettoGraphics *graphics;
+	HgVM *vm;
+	HgGraphics *graphics;
 	HgDevice *device;
 	GList *l, *prev = NULL;
 	gint i;
@@ -54,20 +54,20 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	libretto_vm_init();
+	hg_vm_init();
 
-	vm = libretto_vm_new(LB_EMULATION_LEVEL_1);
+	vm = hg_vm_new(VM_EMULATION_LEVEL_1);
 
 	if (argc > 1)
 		psfile = argv[1];
 
-	if (!libretto_vm_startjob(vm, psfile, TRUE)) {
+	if (!hg_vm_startjob(vm, psfile, TRUE)) {
 		g_print("Failed to start a job.\n");
 		return 1;
 	}
 
-	if (!libretto_vm_has_error(vm)) {
-		graphics = libretto_vm_get_graphics(vm);
+	if (!hg_vm_has_error(vm)) {
+		graphics = hg_vm_get_graphics(vm);
 		for (l = graphics->pages, i = 1; l != NULL; l = g_list_next(l), i++) {
 			hg_device_draw(device, l->data);
 			g_print("%d page\n", i);
@@ -81,7 +81,7 @@ main(int argc, char **argv)
 		sleep(5);
 	}
 
-	libretto_vm_finalize();
+	hg_vm_finalize();
 	g_option_context_free(ctxt);
 
 	return 0;

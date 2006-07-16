@@ -24,13 +24,13 @@
 #include <hieroglyph/hgmem.h>
 #include <hieroglyph/hgfile.h>
 #include <hieroglyph/hgvaluenode.h>
-#include <libretto/vm.h>
+#include <hieroglyph/vm.h>
 
 
 int
 main(int argc, char **argv)
 {
-	LibrettoVM *vm;
+	HgVM *vm;
 	GOptionContext *ctxt = g_option_context_new("PostScriptFile.ps");
 //	GOptionEntry entries[] = {
 //		NULL
@@ -45,19 +45,19 @@ main(int argc, char **argv)
 	}
 
 	HG_MEM_INIT;
-	libretto_vm_init();
+	hg_vm_init();
 
-	vm = libretto_vm_new(LB_EMULATION_LEVEL_1);
+	vm = hg_vm_new(VM_EMULATION_LEVEL_1);
 
 	if (argc > 1)
 		psfile = argv[1];
 
-	if (!libretto_vm_startjob(vm, psfile, TRUE)) {
+	if (!hg_vm_startjob(vm, psfile, TRUE)) {
 		g_print("Failed to start a job.\n");
 		return 1;
 	}
 
-	libretto_vm_finalize();
+	hg_vm_finalize();
 	g_option_context_free(ctxt);
 
 	return 0;

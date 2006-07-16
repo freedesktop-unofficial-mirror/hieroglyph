@@ -21,7 +21,6 @@ pse_SOURCES =						\
 	$(NULL)
 pse_LDADD =						\
 	$(LDADDS)					\
-	$(top_builddir)/libretto/libretto.la		\
 	$(NULL)
 
 cairo_xlib_SOURCES =					\
@@ -29,5 +28,4 @@ cairo_xlib_SOURCES =					\
 	$(NULL)
 cairo_xlib_LDADD =					\
 	$(LDADDS)					\
-	$(top_builddir)/libretto/libretto.la		\
 	$(NULL)
