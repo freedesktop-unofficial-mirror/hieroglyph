@@ -1167,7 +1167,43 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_UNIMPLEMENTED_OP (bitshift);
+DEFUNC_OP (bitshift)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgValueNode *n1, *n2, *result;
+	HgMemPool *pool = hg_vm_get_current_pool(vm);
+	gint32 i1, i2;
+
+	while (1) {
+		if (depth < 2) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
+		if (!HG_IS_VALUE_INTEGER (n1) ||
+		    !HG_IS_VALUE_INTEGER (n2)) {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		i1 = HG_VALUE_GET_INTEGER (n1);
+		i2 = HG_VALUE_GET_INTEGER (n2);
+		if (i2 < 0) {
+			HG_VALUE_MAKE_INTEGER (pool, result, i1 >> abs(i2));
+		} else {
+			HG_VALUE_MAKE_INTEGER (pool, result, i1 << i2);
+		}
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, result);
+		/* it must be true */
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
+
 DEFUNC_UNIMPLEMENTED_OP (bytesavailable);
 DEFUNC_UNIMPLEMENTED_OP (cachestatus);
 DEFUNC_UNIMPLEMENTED_OP (ceiling);
