@@ -1,6 +1,10 @@
 2006-07-18  Akira TAGOH  <at@gclab.org>
 
+	* tests/ps/currentfile.ps: new file.
+
 	* hieroglyph/operator.c (_hg_operator_op_closefile): implemented.
+	(_hg_operator_op_currentfile): implemented.
+	(_hg_operator_op_readline): implemented.
 
 	* hieroglyph/hgfile.c (_hg_file_object_real_free): use
 	hg_file_object_close instead of handling a close process directly.

@@ -1849,7 +1849,34 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_UNIMPLEMENTED_OP (currentfile);
+DEFUNC_OP (currentfile)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	HgStack *estack = hg_vm_get_estack(vm);
+	guint edepth = hg_stack_depth(estack), i;
+	HgValueNode *n;
+	HgFileObject *file = NULL;
+	HgMemPool *pool = hg_vm_get_current_pool(vm);
+
+	for (i = 0; i < edepth; i++) {
+		n = hg_stack_index(estack, i);
+		if (HG_IS_VALUE_FILE (n)) {
+			file = HG_VALUE_GET_FILE (n);
+			break;
+		}
+	}
+	if (file == NULL) {
+		/* make an invalid file object */
+		file = hg_file_object_new(pool, HG_FILE_TYPE_BUFFER, HG_FILE_MODE_READ, "%invalid", "", 0);
+	}
+	HG_VALUE_MAKE_FILE (n, file);
+	retval = hg_stack_push(ostack, n);
+	if (!retval)
+		_hg_operator_set_error(vm, op, VM_e_stackoverflow);
+} G_STMT_END;
+DEFUNC_OP_END
+
 DEFUNC_UNIMPLEMENTED_OP (currentflat);
 DEFUNC_UNIMPLEMENTED_OP (currentfont);
 DEFUNC_UNIMPLEMENTED_OP (currentgray);
@@ -4620,7 +4647,71 @@ G_STMT_START
 DEFUNC_OP_END
 
 DEFUNC_UNIMPLEMENTED_OP (readhexstring);
-DEFUNC_UNIMPLEMENTED_OP (readline);
+
+DEFUNC_OP (readline)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgValueNode *n1, *n2;
+	HgString *s, *sresult;
+	HgFileObject *file;
+	guchar c;
+	guint length = 0, maxlength;
+	gboolean result = FALSE;
+	HgMemPool *pool = hg_vm_get_current_pool(vm);
+
+	while (1) {
+		if (depth < 2) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
+		if (!HG_IS_VALUE_FILE (n1) ||
+		    !HG_IS_VALUE_STRING (n2)) {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		if (!hg_object_is_readable((HgObject *)n1) ||
+		    !hg_object_is_writable((HgObject *)n2)) {
+			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
+			break;
+		}
+		file = HG_VALUE_GET_FILE (n1);
+		s = HG_VALUE_GET_STRING (n2);
+		maxlength = hg_string_maxlength(s);
+		while (!hg_file_object_is_eof(file)) {
+			c = hg_file_object_getc(file);
+			if (c == '\r') {
+				c = hg_file_object_getc(file);
+				if (c != '\n')
+					hg_file_object_ungetc(file, c);
+				result = TRUE;
+				break;
+			} else if (c == '\n') {
+				result = TRUE;
+				break;
+			}
+			if (length > maxlength) {
+				_hg_operator_set_error(vm, op, VM_e_rangecheck);
+				return FALSE;
+			}
+			hg_string_insert_c(s, c, length++);
+		}
+		sresult = hg_string_make_substring(pool, s, 0, length - 1);
+		HG_VALUE_MAKE_STRING (n1, sresult);
+		HG_VALUE_MAKE_BOOLEAN (pool, n2, result);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_push(ostack, n1);
+		retval = hg_stack_push(ostack, n2);
+		/* it must be true */
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
+
 DEFUNC_UNIMPLEMENTED_OP (readonly);
 DEFUNC_UNIMPLEMENTED_OP (readstring);
 
