@@ -1247,7 +1247,41 @@ G_STMT_START
 DEFUNC_OP_END
 
 DEFUNC_UNIMPLEMENTED_OP (cachestatus);
-DEFUNC_UNIMPLEMENTED_OP (ceiling);
+
+DEFUNC_OP (ceiling)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgMemPool *pool = hg_vm_get_current_pool(vm);
+	HgValueNode *n;
+	gdouble result;
+
+	while (1) {
+		if (depth < 1) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		n = hg_stack_index(ostack, 0);
+		if (HG_IS_VALUE_INTEGER (n)) {
+			/* nothing to do */
+			retval = TRUE;
+			break;
+		} else if (HG_IS_VALUE_REAL (n)) {
+			result = ceil(HG_VALUE_GET_REAL (n));
+			HG_VALUE_MAKE_REAL (pool, n, result);
+			hg_stack_pop(ostack);
+			retval = hg_stack_push(ostack, n);
+			/* it must be true */
+		} else {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
+
 DEFUNC_UNIMPLEMENTED_OP (charpath);
 
 DEFUNC_OP (clear)

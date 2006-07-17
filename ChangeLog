@@ -1,6 +1,7 @@
 2006-07-18  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/operator.c (_hg_operator_op_bytesavailable): implemented.
+	(_hg_operator_op_ceiling): implemented.
 
 	* hieroglyph/hgfile.c (hg_file_object_seek): new function.
 	(hg_file_object_is_readable): new function.
