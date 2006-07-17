@@ -1701,8 +1701,8 @@ G_STMT_START
 					HgMemObject *obj;
 
 					hg_mem_get_object__inline(s2, obj);
-					/* need to make a subarray for that */
-					s2 = hg_string_make_substring(obj->pool, s2, 0, mlen1 - 1);
+					/* need to make a substring for that */
+					s2 = hg_string_make_substring(obj->pool, s2, 0, len1 - 1);
 				}
 				HG_VALUE_MAKE_STRING (dup_node, s2);
 			} else {

@@ -1,6 +1,8 @@
 2006-07-18  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/operator.c (_hg_operator_op_cvr): implemented.
+	(_hg_operator_op_copy): fixed to not include a invalid character in
+	a substring.
 
 	* tests/ps/currentfile.ps: new file.
 
