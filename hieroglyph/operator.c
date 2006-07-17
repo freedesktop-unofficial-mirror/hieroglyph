@@ -1356,7 +1356,43 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_UNIMPLEMENTED_OP (closefile);
+DEFUNC_OP (closefile)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgValueNode *n;
+	HgFileObject *file;
+
+	while (1) {
+		if (depth < 1) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		n = hg_stack_index(ostack, 0);
+		if (!HG_IS_VALUE_FILE (n)) {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		if (!hg_object_is_readable((HgObject *)n)) {
+			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
+			break;
+		}
+		file = HG_VALUE_GET_FILE (n);
+		if (hg_file_object_is_writable(file)) {
+			if (!hg_object_is_writable((HgObject *)file)) {
+				_hg_operator_set_error(vm, op, VM_e_invalidaccess);
+				break;
+			}
+			hg_file_object_flush(file);
+		}
+		hg_file_object_close(file);
+		hg_stack_pop(ostack);
+		retval = TRUE;
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
 
 DEFUNC_OP (closepath)
 G_STMT_START

@@ -1,5 +1,13 @@
 2006-07-18  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/operator.c (_hg_operator_op_closefile): implemented.
+
+	* hieroglyph/hgfile.c (_hg_file_object_real_free): use
+	hg_file_object_close instead of handling a close process directly.
+	(hg_file_object_close): new function.
+
+	* src/hgspy.c (_hgspy_file_close_cb): new function.
+
 	* hieroglyph/operator.c (_hg_operator_op_bytesavailable): implemented.
 	(_hg_operator_op_ceiling): implemented.
 

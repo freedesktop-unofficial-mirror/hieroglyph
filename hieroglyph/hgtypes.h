@@ -340,6 +340,7 @@ struct _HieroGlyphFileObjectCallback {
 	gssize   (* seek)           (gpointer      user_data,
 				     gssize        offset,
 				     HgFilePosType whence);
+	void     (* close)          (gpointer      user_data);
 	gboolean (* is_eof)         (gpointer      user_data);
 	void     (* clear_eof)      (gpointer      uesr_data);
 	gint     (* get_error_code) (gpointer      user_data);

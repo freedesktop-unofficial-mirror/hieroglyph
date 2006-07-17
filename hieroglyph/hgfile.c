@@ -98,25 +98,9 @@ _hg_file_object_real_free(gpointer data)
 {
 	HgFileObject *file = data;
 
-	switch (HG_FILE_GET_FILE_TYPE (file)) {
-	    case HG_FILE_TYPE_FILE:
-		    if (file->is.file.is_mmap)
-			    munmap(file->is.file.mmap.buffer, file->is.file.mmap.bufsize);
-		    if (file->is.file.fd != -1)
-			    close(file->is.file.fd);
-		    break;
-	    case HG_FILE_TYPE_BUFFER:
-	    case HG_FILE_TYPE_STDIN:
-	    case HG_FILE_TYPE_STDOUT:
-	    case HG_FILE_TYPE_STDERR:
-	    case HG_FILE_TYPE_STATEMENT_EDIT:
-	    case HG_FILE_TYPE_LINE_EDIT:
-	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
-		    break;
-	    default:
-		    g_warning("Unknown file type %d was given to be freed.", HG_FILE_GET_FILE_TYPE (file));
-		    break;
-	}
+	if (hg_file_object_is_writable(file))
+		hg_file_object_flush(file);
+	hg_file_object_close(file);
 }
 
 static void
@@ -855,7 +839,46 @@ hg_file_object_seek(HgFileObject  *object,
 
 	return retval;
 }
-		    
+
+void
+hg_file_object_close(HgFileObject *object)
+{
+	g_return_if_fail (object != NULL);
+
+	object->ungetc = 0;
+	object->is_eof = TRUE;
+	switch (HG_FILE_GET_FILE_TYPE (object)) {
+	    case HG_FILE_TYPE_FILE:
+		    if (object->is.file.is_mmap) {
+			    munmap(object->is.file.mmap.buffer, object->is.file.mmap.bufsize);
+			    object->is.file.is_mmap = FALSE;
+		    }
+		    if (object->is.file.fd != -1) {
+			    close(object->is.file.fd);
+			    object->is.file.fd = -1;
+		    }
+		    break;
+	    case HG_FILE_TYPE_STDIN:
+	    case HG_FILE_TYPE_STDOUT:
+	    case HG_FILE_TYPE_STDERR:
+		    /* just ignore for them */
+		    break;
+	    case HG_FILE_TYPE_BUFFER:
+	    case HG_FILE_TYPE_STATEMENT_EDIT:
+	    case HG_FILE_TYPE_LINE_EDIT:
+		    object->is.buf.pos = 0;
+		    object->is.buf.bufsize = 0;
+		    break;
+	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
+		    object->is.callback.vtable->close(object->is.callback.user_data);
+		    break;
+	    default:
+		    g_warning("Unknown file type %d was given to be closed.",
+			      HG_FILE_GET_FILE_TYPE (object));
+		    break;
+	}
+}
+
 gboolean
 hg_file_object_is_readable(HgFileObject *object)
 {
