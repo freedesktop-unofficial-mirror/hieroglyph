@@ -1204,7 +1204,48 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_UNIMPLEMENTED_OP (bytesavailable);
+DEFUNC_OP (bytesavailable)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgMemPool *pool = hg_vm_get_current_pool(vm);
+	HgValueNode *n;
+	HgFileObject *file;
+	gint32 result;
+	gssize cur_pos;
+
+	while (1) {
+		if (depth < 1) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		n = hg_stack_index(ostack, 0);
+		if (!HG_IS_VALUE_FILE (n)) {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		if (!hg_object_is_readable((HgObject *)n)) {
+			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
+			break;
+		}
+		file = HG_VALUE_GET_FILE (n);
+		if (!hg_file_object_is_readable(file)) {
+			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
+			break;
+		}
+		cur_pos = hg_file_object_seek(file, 0, HG_FILE_POS_CURRENT);
+		result = hg_file_object_seek(file, 0, HG_FILE_POS_END);
+		hg_file_object_seek(file, cur_pos, HG_FILE_POS_BEGIN);
+		HG_VALUE_MAKE_INTEGER (pool, n, result);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, n);
+		/* it must be true */
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
+
 DEFUNC_UNIMPLEMENTED_OP (cachestatus);
 DEFUNC_UNIMPLEMENTED_OP (ceiling);
 DEFUNC_UNIMPLEMENTED_OP (charpath);

@@ -24,6 +24,7 @@
 #include "config.h"
 #endif
 #include <string.h>
+#include <errno.h>
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 #include <hieroglyph/hgmem.h>
@@ -228,6 +229,19 @@ _hgspy_file_flush_cb(gpointer user_data)
 	return FALSE;
 }
 
+static gssize
+_hgspy_file_seek_cb(gpointer      user_data,
+		    gssize        offset,
+		    HgFilePosType whence)
+{
+	HgSpy *spy = user_data;
+
+	g_print("FIXME: seek.\n");
+	spy->error = ESPIPE;
+
+	return -1;
+}
+
 static gboolean
 _hgspy_file_is_eof_cb(gpointer user_data)
 {
@@ -259,6 +273,7 @@ _hgspy_vm_thread(gpointer data)
 		.write          = _hgspy_file_write_cb,
 		.getc           = _hgspy_file_getc_cb,
 		.flush          = _hgspy_file_flush_cb,
+		.seek           = _hgspy_file_seek_cb,
 		.is_eof         = _hgspy_file_is_eof_cb,
 		.clear_eof      = _hgspy_file_clear_eof_cb,
 		.get_error_code = _hgspy_file_get_error_code_cb,

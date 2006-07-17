@@ -758,6 +758,122 @@ hg_file_object_flush(HgFileObject *object)
 	return retval;
 }
 
+gssize
+hg_file_object_seek(HgFileObject  *object,
+		    gssize         offset,
+		    HgFilePosType  whence)
+{
+	gssize retval = -1;
+
+	g_return_val_if_fail (object != NULL, -1);
+
+	switch (HG_FILE_GET_FILE_TYPE (object)) {
+	    case HG_FILE_TYPE_FILE:
+		    if (object->is.file.is_mmap) {
+			    switch (whence) {
+				case HG_FILE_POS_BEGIN:
+					if (offset < 0)
+						object->is.file.mmap.pos = 0;
+					else if (offset > object->is.file.mmap.bufsize)
+						object->is.file.mmap.pos = object->is.file.mmap.bufsize;
+					else
+						object->is.file.mmap.pos = offset;
+					break;
+				case HG_FILE_POS_CURRENT:
+					object->is.file.mmap.pos += offset;
+					if (object->is.file.mmap.pos < 0)
+						object->is.file.mmap.pos = 0;
+					else if (object->is.file.mmap.pos > object->is.file.mmap.bufsize)
+						object->is.file.mmap.pos = object->is.file.mmap.bufsize;
+					break;
+				case HG_FILE_POS_END:
+					object->is.file.mmap.pos = object->is.file.mmap.bufsize + offset;
+					if (object->is.file.mmap.pos < 0)
+						object->is.file.mmap.pos = 0;
+					else if (object->is.file.mmap.pos > object->is.file.mmap.bufsize)
+						object->is.file.mmap.pos = object->is.file.mmap.bufsize;
+					break;
+				default:
+					g_warning("Invalid whence `%d' was given.", whence);
+					object->error = EINVAL;
+					break;
+			    }
+			    retval = object->is.file.mmap.pos;
+		    } else {
+			    retval = lseek(object->is.file.fd, offset, whence);
+			    object->error = errno;
+		    }
+		    break;
+	    case HG_FILE_TYPE_BUFFER:
+	    case HG_FILE_TYPE_STATEMENT_EDIT:
+	    case HG_FILE_TYPE_LINE_EDIT:
+		    switch (whence) {
+			case HG_FILE_POS_BEGIN:
+				if (offset < 0)
+					object->is.buf.pos = 0;
+				else if (offset > object->is.buf.bufsize)
+					object->is.buf.pos = object->is.buf.bufsize;
+				else
+					object->is.buf.pos = offset;
+				break;
+			case HG_FILE_POS_CURRENT:
+				object->is.buf.pos += offset;
+				if (object->is.buf.pos < 0)
+					object->is.buf.pos = 0;
+				else if (object->is.buf.pos > object->is.buf.bufsize)
+					object->is.buf.pos = object->is.buf.bufsize;
+				break;
+			case HG_FILE_POS_END:
+				object->is.buf.pos = object->is.buf.bufsize + offset;
+				if (object->is.buf.pos < 0)
+					object->is.buf.pos = 0;
+				else if (object->is.buf.pos > object->is.buf.bufsize)
+					object->is.buf.pos = object->is.buf.bufsize;
+				break;
+			default:
+				g_warning("Invalid whence `%d' was given.", whence);
+				object->error = EINVAL;
+				break;
+		    }
+		    retval = object->is.buf.pos;
+		    break;
+	    case HG_FILE_TYPE_STDIN:
+	    case HG_FILE_TYPE_STDOUT:
+	    case HG_FILE_TYPE_STDERR:
+		    g_warning("Not supported to be sought.");
+		    object->error = ESPIPE;
+		    break;
+	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
+		    retval = object->is.callback.vtable->seek(object->is.callback.user_data, offset, whence);
+		    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
+		    break;
+	    default:
+		    g_warning("Unknown file type %d was given to be sought.",
+			      HG_FILE_GET_FILE_TYPE (object));
+		    break;
+	}
+
+	return retval;
+}
+		    
+gboolean
+hg_file_object_is_readable(HgFileObject *object)
+{
+	g_return_val_if_fail (object != NULL, FALSE);
+	g_return_val_if_fail (hg_object_is_readable((HgObject *)object), FALSE);
+
+	return (object->access_mode & HG_FILE_MODE_READ) != 0;
+}
+
+gboolean
+hg_file_object_is_writable(HgFileObject *object)
+{
+	g_return_val_if_fail (object != NULL, FALSE);
+	g_return_val_if_fail (hg_object_is_readable((HgObject *)object), FALSE);
+
+	return (object->access_mode & HG_FILE_MODE_WRITE) != 0;
+}
+
 void
 hg_file_object_printf(HgFileObject *object,
 		      gchar const *format,

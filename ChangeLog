@@ -1,3 +1,13 @@
+2006-07-18  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/operator.c (_hg_operator_op_bytesavailable): implemented.
+
+	* hieroglyph/hgfile.c (hg_file_object_seek): new function.
+	(hg_file_object_is_readable): new function.
+	(hg_file_object_is_writable): new function.
+
+	* src/hgspy.c (_hgspy_file_seek_cb): new function.
+
 2006-07-17  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/operator.c (_hg_operator_op_anchorsearch): implemented.
