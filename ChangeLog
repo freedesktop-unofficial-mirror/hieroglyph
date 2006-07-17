@@ -1,5 +1,7 @@
 2006-07-18  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/operator.c (_hg_operator_op_cvr): implemented.
+
 	* tests/ps/currentfile.ps: new file.
 
 	* hieroglyph/operator.c (_hg_operator_op_closefile): implemented.

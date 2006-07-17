@@ -2189,7 +2189,74 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_UNIMPLEMENTED_OP (cvr);
+DEFUNC_OP (cvr)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgValueNode *node;
+	HgMemPool *pool = hg_vm_get_current_pool(vm);
+
+	while (1) {
+		if (depth < 1) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		node = hg_stack_index(ostack, 0);
+		if (HG_IS_VALUE_REAL (node)) {
+			/* nothing to do here */
+		} else if (HG_IS_VALUE_INTEGER (node)) {
+			gint32 i = HG_VALUE_GET_INTEGER (node);
+
+			HG_VALUE_MAKE_REAL (pool, node, (gdouble)i);
+		} else if (HG_IS_VALUE_STRING (node)) {
+			HgString *str;
+			HgValueNode *n;
+			HgFileObject *file;
+
+			if (!hg_object_is_readable((HgObject *)node)) {
+				_hg_operator_set_error(vm, op, VM_e_invalidaccess);
+				break;
+			}
+			str = HG_VALUE_GET_STRING (node);
+			file = hg_file_object_new(pool,
+						  HG_FILE_TYPE_BUFFER,
+						  HG_FILE_MODE_READ,
+						  "--%cvr--",
+						  hg_string_get_string(str),
+						  hg_string_maxlength(str));
+			n = hg_scanner_get_object(vm, file);
+			if (n == NULL) {
+				if (!hg_vm_has_error(vm))
+					_hg_operator_set_error(vm, op, VM_e_syntaxerror);
+				break;
+			} else if (HG_IS_VALUE_REAL (n)) {
+				HG_VALUE_MAKE_REAL (pool, node, HG_VALUE_GET_REAL (n));
+			} else if (HG_IS_VALUE_INTEGER (n)) {
+				gint32 i = HG_VALUE_GET_INTEGER (n);
+
+				HG_VALUE_MAKE_REAL (pool, node, (gdouble)i);
+			} else {
+				_hg_operator_set_error(vm, op, VM_e_typecheck);
+				break;
+			}
+			hg_mem_free(n);
+		} else {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		if (node == NULL) {
+			_hg_operator_set_error(vm, op, VM_e_VMerror);
+			break;
+		}
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, node);
+		/* it must be true */
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
+
 DEFUNC_UNIMPLEMENTED_OP (cvrs);
 
 DEFUNC_OP (cvx)
