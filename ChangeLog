@@ -1,5 +1,11 @@
 2006-07-24  Akira TAGOH  <at@gclab.org>
 
+	* lib/hg_init.ps (matrix): use identmatrix instead of
+	the own C function.
+
+	* hieroglyph/operator.c (_hg_operator_op_identmatrix): implemented.
+	(_hg_operator_op_matrix): moved into lib/hg_init.ps.
+
 	* hieroglyph/hgfile.c (hg_file_object_flush): changed the behavior for
 	read mode.
 

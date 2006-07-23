@@ -96,7 +96,8 @@ HgOperator *__hg_operator_list[HG_op_END];
 
 /* level 1 */
 DEFUNC_OP (private_arraytomark)
-G_STMT_START {
+G_STMT_START
+{
 	/* %arraytomark is the same as {counttomark array astore exch pop} */
 	while (1) {
 		retval = hg_operator_invoke(__hg_operator_list[HG_op_counttomark], vm);
@@ -118,7 +119,8 @@ G_STMT_START {
 DEFUNC_OP_END
 
 DEFUNC_OP (private_dicttomark)
-G_STMT_START {
+G_STMT_START
+{
 	HgStack *ostack = hg_vm_get_ostack(vm);
 	guint depth = hg_stack_depth(ostack), i, j;
 	HgMemPool *pool = hg_vm_get_current_pool(vm);
@@ -3548,7 +3550,50 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_UNIMPLEMENTED_OP (identmatrix);
+DEFUNC_OP (identmatrix)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgValueNode *n, *node;
+	HgArray *array;
+	guint i;
+	gdouble d[6] = {1.0, .0, .0, 1.0, .0, .0};
+	HgMemObject *obj;
+
+	while (1) {
+		if (depth < 1) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		n = hg_stack_index(ostack, 0);
+		if (!HG_IS_VALUE_ARRAY (n)) {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		if (!hg_object_is_writable((HgObject *)n)) {
+			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
+			break;
+		}
+		array = HG_VALUE_GET_ARRAY (n);
+		if (hg_array_length(array) != 6) {
+			_hg_operator_set_error(vm, op, VM_e_rangecheck);
+			break;
+		}
+		hg_mem_get_object__inline(array, obj);
+		for (i = 0; i < 6; i++) {
+			HG_VALUE_MAKE_REAL (obj->pool, node, d[i]);
+			if (node == NULL) {
+				_hg_operator_set_error(vm, op, VM_e_VMerror);
+				break;
+			}
+			hg_array_replace(array, node, i);
+		}
+		retval = TRUE;
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
 
 DEFUNC_OP (idiv)
 G_STMT_START
@@ -4071,38 +4116,6 @@ G_STMT_START
 DEFUNC_OP_END
 
 DEFUNC_UNIMPLEMENTED_OP (makefont);
-
-DEFUNC_OP (matrix)
-G_STMT_START {
-	HgStack *ostack = hg_vm_get_ostack(vm);
-	HgValueNode *node;
-	HgArray *array;
-	HgMemPool *pool = hg_vm_get_current_pool(vm);
-	guint i;
-	gdouble d[6] = {1.0, .0, .0, 1.0, .0, .0};
-
-	while (1) {
-		array = hg_array_new(pool, 6);
-		if (array == NULL) {
-			_hg_operator_set_error(vm, op, VM_e_VMerror);
-			break;
-		}
-		for (i = 0; i < 6; i++) {
-			HG_VALUE_MAKE_REAL (pool, node, d[i]);
-			if (node == NULL) {
-				_hg_operator_set_error(vm, op, VM_e_VMerror);
-				break;
-			}
-			hg_array_append(array, node);
-		}
-		HG_VALUE_MAKE_ARRAY (node, array);
-		retval = hg_stack_push(ostack, node);
-		if (!retval)
-			_hg_operator_set_error(vm, op, VM_e_stackoverflow);
-		break;
-	}
-} G_STMT_END;
-DEFUNC_OP_END
 
 DEFUNC_OP (maxlength)
 G_STMT_START
@@ -4897,7 +4910,8 @@ DEFUNC_UNIMPLEMENTED_OP (readonly);
 DEFUNC_UNIMPLEMENTED_OP (readstring);
 
 DEFUNC_OP (repeat)
-G_STMT_START {
+G_STMT_START
+{
 	HgStack *ostack = hg_vm_get_ostack(vm);
 	HgStack *estack = hg_vm_get_estack(vm);
 	guint depth = hg_stack_depth(ostack);
@@ -7066,7 +7080,6 @@ hg_operator_level1_init(HgVM      *vm,
 	BUILD_OP (vm, pool, dict, loop, loop);
 	BUILD_OP (vm, pool, dict, lt, lt);
 	BUILD_OP (vm, pool, dict, makefont, makefont);
-	BUILD_OP (vm, pool, dict, matrix, matrix);
 	BUILD_OP (vm, pool, dict, maxlength, maxlength);
 	BUILD_OP (vm, pool, dict, mod, mod);
 	BUILD_OP (vm, pool, dict, moveto, moveto);

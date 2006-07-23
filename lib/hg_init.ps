@@ -130,6 +130,10 @@ systemdict /.statementedit known {
     } if
     exch type /realtype eq {cvr} if
 } bind odef
+% matrix -matrix-
+/matrix {
+    6 array identmatrix
+} bind odef
 % pstack -
 /pstack {
     0 1 count 3 sub {index ==} for
