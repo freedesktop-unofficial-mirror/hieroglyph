@@ -245,6 +245,7 @@ _hg_value_node_real_to_string(gpointer data)
 	HgMemObject *obj;
 	HgString *retval, *str;
 	gchar *tmp, start, end;
+	size_t len;
 
 	hg_mem_get_object__inline(data, obj);
 	if (obj == NULL)
@@ -266,8 +267,15 @@ _hg_value_node_real_to_string(gpointer data)
 		    break;
 	    case HG_TYPE_VALUE_REAL:
 		    tmp = g_strdup_printf("%f", HG_VALUE_GET_REAL (node));
-		    hg_string_append(retval, tmp, -1);
-		    g_free(tmp);
+		    if (tmp != NULL) {
+			    len = strlen(tmp);
+			    while (len > 1 && tmp[len - 1] == '0')
+				    len--;
+			    if (tmp[len - 1] == '.')
+				    len++;
+			    hg_string_append(retval, tmp, len);
+			    g_free(tmp);
+		    }
 		    break;
 	    case HG_TYPE_VALUE_NAME:
 		    if (!hg_object_is_executable((HgObject *)node))

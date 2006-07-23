@@ -469,6 +469,49 @@ hg_string_copy_as_substring(HgString *src,
 	return TRUE;
 }
 
+gboolean
+hg_string_convert_from_integer(HgString *string,
+			       gint32    num,
+			       guint     radix,
+			       gboolean  is_lower)
+{
+	static const gchar *template_upper = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	static const gchar *template_lower = "0123456789abcdefghijklmnopqrstuvwxyz";
+	const gchar *template;
+	gchar buf[40]; /* should be enough */
+	gint i = 0, j;
+	guint32 unum = (guint32)num;
+	guint maxlength;
+	gboolean minus = FALSE;
+
+	g_return_val_if_fail (string != NULL, FALSE);
+	g_return_val_if_fail (radix >= 2 && radix <= 36, FALSE);
+
+	if (radix == 10 && num < 0) {
+		unum = (guint32)((num - 1) ^ G_MAXUINT32);
+		minus = (num < 0 ? TRUE : FALSE);
+	}
+	maxlength = hg_string_maxlength(string);
+	if (is_lower)
+		template = template_lower;
+	else
+		template = template_upper;
+	do {
+		buf[i++] = template[unum % radix];
+		unum /= radix;
+	} while (unum != 0);
+	if (i > maxlength)
+		return FALSE;
+	hg_string_clear(string);
+	if (minus)
+		hg_string_append_c(string, '-');
+	for (j = 0; j < i; j++) {
+		hg_string_append_c(string, buf[i - 1 - j]);
+	}
+
+	return TRUE;
+}
+
 /* HgObject */
 HgString *
 hg_object_to_string(HgObject *object)

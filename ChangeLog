@@ -1,3 +1,12 @@
+2006-07-23  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/operator.c (_hg_operator_op_cvrs): implemented.
+
+	* hieroglyph/hgstring.c (hg_string_convert_from_integer): new function.
+
+	* hieroglyph/hgvaluenode.c (_hg_value_node_real_to_string): suppressed
+	the unnecessary zeros.
+
 2006-07-18  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/operator.c (_hg_operator_op_cvr): implemented.

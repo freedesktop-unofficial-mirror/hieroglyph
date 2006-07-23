@@ -519,7 +519,7 @@ _hg_scanner_get_object(HgVM         *vm,
 							e += c - '0';
 						} else if (!HG_VALUE_REAL_SIMILAR (real, 0)) {
 							d += (c - '0') / real;
-							real *= 10;
+							real *= 10.0L;
 						} else {
 							i *= radix;
 							i += c - '0';

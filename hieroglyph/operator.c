@@ -2257,7 +2257,95 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_UNIMPLEMENTED_OP (cvrs);
+DEFUNC_OP (cvrs)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgValueNode *n1, *n2, *n3;
+	gint32 radix;
+	HgString *s, *sresult;
+	gboolean is_real = FALSE;
+
+	while (1) {
+		if (depth < 3) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		n3 = hg_stack_index(ostack, 0);
+		n2 = hg_stack_index(ostack, 1);
+		n1 = hg_stack_index(ostack, 2);
+		if (HG_IS_VALUE_REAL (n1)) {
+			is_real = TRUE;
+		} else if (!HG_IS_VALUE_INTEGER (n1)) {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		if (!HG_IS_VALUE_INTEGER (n2) ||
+		    !HG_IS_VALUE_STRING (n3)) {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		radix = HG_VALUE_GET_INTEGER (n2);
+		if (radix < 2 || radix > 36) {
+			_hg_operator_set_error(vm, op, VM_e_rangecheck);
+			break;
+		}
+		if (!hg_object_is_writable((HgObject *)n3)) {
+			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
+			break;
+		}
+		s = HG_VALUE_GET_STRING (n3);
+		if (radix == 10 && is_real) {
+			HgString *stmp = hg_object_to_string((HgObject *)n1);
+			gchar *str;
+
+			if (stmp == NULL) {
+				_hg_operator_set_error(vm, op, VM_e_VMerror);
+				break;
+			}
+			if (hg_string_length(stmp) > hg_string_maxlength(s)) {
+				hg_mem_free(stmp);
+				_hg_operator_set_error(vm, op, VM_e_rangecheck);
+				break;
+			}
+			str = hg_string_get_string(stmp);
+			hg_string_clear(s);
+			hg_string_append(s, str, hg_string_length(stmp));
+			hg_mem_free(stmp);
+		} else if (is_real) {
+			if (!hg_string_convert_from_integer(s,
+							    HG_VALUE_GET_INTEGER_FROM_REAL (n1),
+							    radix, FALSE)) {
+				_hg_operator_set_error(vm, op, VM_e_rangecheck);
+				break;
+			}
+		} else {
+			if (!hg_string_convert_from_integer(s,
+							    HG_VALUE_GET_INTEGER (n1),
+							    radix, FALSE)) {
+				_hg_operator_set_error(vm, op, VM_e_rangecheck);
+				break;
+			}
+		}
+		if (hg_string_maxlength(s) > hg_string_length(s)) {
+			HgMemObject *obj;
+
+			hg_mem_get_object__inline(s, obj);
+			sresult = hg_string_make_substring(obj->pool, s, 0, hg_string_length(s) - 1);
+		} else {
+			sresult = s;
+		}
+		HG_VALUE_MAKE_STRING (n1, sresult);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, n1);
+		/* it must be true */
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
 
 DEFUNC_OP (cvx)
 G_STMT_START
