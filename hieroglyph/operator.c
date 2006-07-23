@@ -3083,7 +3083,33 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_UNIMPLEMENTED_OP (flushfile);
+DEFUNC_OP (flushfile)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgValueNode *n;
+	HgFileObject *file;
+
+	while (1) {
+		if (depth < 1) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		n = hg_stack_index(ostack, 0);
+		if (!HG_IS_VALUE_FILE (n)) {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		file = HG_VALUE_GET_FILE (n);
+		hg_file_object_flush(file);
+		hg_stack_pop(ostack);
+		retval = TRUE;
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
+
 DEFUNC_UNIMPLEMENTED_OP (fontdirectory);
 
 DEFUNC_OP (for)

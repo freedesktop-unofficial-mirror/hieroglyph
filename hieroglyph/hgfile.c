@@ -722,13 +722,29 @@ hg_file_object_flush(HgFileObject *object)
 
 	switch (HG_FILE_GET_FILE_TYPE (object)) {
 	    case HG_FILE_TYPE_FILE:
+	    case HG_FILE_TYPE_STDIN:
 	    case HG_FILE_TYPE_STDOUT:
 	    case HG_FILE_TYPE_STDERR:
-		    sync();
+		    if (hg_file_object_is_readable(object)) {
+			    /* clear the inbuffer */
+			    gchar tmp[256];
+
+			    while (!hg_file_object_is_eof(object)) {
+				    hg_file_object_read(object, tmp, sizeof (gchar), 255);
+			    }
+		    } else {
+			    /* FIXME: clear the outbuffer */
+			    sync();
+		    }
 		    retval = TRUE;
 		    break;
 	    case HG_FILE_TYPE_BUFFER:
-		    object->is.buf.pos = 0;
+	    case HG_FILE_TYPE_STATEMENT_EDIT:
+	    case HG_FILE_TYPE_LINE_EDIT:
+		    if (hg_file_object_is_readable(object)) {
+			    object->is.buf.pos = object->is.buf.bufsize;
+			    object->is_eof = TRUE;
+		    }
 		    retval = TRUE;
 		    break;
 	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:

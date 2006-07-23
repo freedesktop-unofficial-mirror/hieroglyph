@@ -1,3 +1,10 @@
+2006-07-24  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgfile.c (hg_file_object_flush): changed the behavior for
+	read mode.
+
+	* hieroglyph/operator.c (_hg_operator_op_flushfile): implemented.
+
 2006-07-23  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/operator.c (_hg_operator_op_cvrs): implemented.
