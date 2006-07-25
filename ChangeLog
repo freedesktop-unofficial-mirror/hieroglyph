@@ -1,3 +1,7 @@
+2006-07-26  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/operator.c (_hg_operator_op_ln): implemented.
+
 2006-07-24  Akira TAGOH  <at@gclab.org>
 
 	* lib/hg_init.ps (matrix): use identmatrix instead of

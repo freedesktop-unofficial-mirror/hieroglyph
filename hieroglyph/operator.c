@@ -3987,7 +3987,41 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_UNIMPLEMENTED_OP (ln);
+DEFUNC_OP (ln)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgValueNode *n;
+	gdouble d;
+	HgMemPool *pool = hg_vm_get_current_pool(vm);
+
+	while (1) {
+		if (depth < 1) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		n = hg_stack_index(ostack, 0);
+		if (HG_IS_VALUE_INTEGER (n)) {
+			d = HG_VALUE_GET_REAL_FROM_INTEGER (n);
+		} else if (HG_IS_VALUE_REAL (n)) {
+			d = HG_VALUE_GET_REAL (n);
+		} else {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		HG_VALUE_MAKE_REAL (pool, n, log(d));
+		if (n == NULL) {
+			_hg_operator_set_error(vm, op, VM_e_VMerror);
+			break;
+		}
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, n);
+		/* it must be true */
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
 
 DEFUNC_OP (load)
 G_STMT_START
