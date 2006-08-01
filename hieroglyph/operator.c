@@ -7018,40 +7018,6 @@ _hg_operator_real_to_string(gpointer data)
 	return retval;
 }
 
-#define _hg_operator_build_operator(vm, pool, sdict, name, func, ret_op) \
-	G_STMT_START {							\
-		HgValueNode *__hg_key, *__hg_val;			\
-									\
-		(ret_op) = hg_operator_new((pool), #name, _hg_operator_op_##func); \
-		if ((ret_op) == NULL) {					\
-			g_warning("Failed to create an operator %s", #name); \
-		} else {						\
-			__hg_key = hg_vm_get_name_node((vm), #name);	\
-			HG_VALUE_MAKE_POINTER (__hg_val, (ret_op));	\
-			if (__hg_val == NULL) {				\
-				hg_vm_set_error((vm), __hg_key, VM_e_VMerror, FALSE); \
-			} else {					\
-				hg_object_executable((HgObject *)__hg_val); \
-				hg_dict_insert((pool), (sdict), __hg_key, __hg_val); \
-			}						\
-		}							\
-	} G_STMT_END
-#define BUILD_OP(vm, pool, sdict, name, func)				\
-	G_STMT_START {							\
-		HgOperator *__hg_op;					\
-									\
-		_hg_operator_build_operator(vm, pool, sdict, name, func, __hg_op); \
-		if (__hg_op != NULL) {					\
-			__hg_operator_list[HG_op_##name] = __hg_op;	\
-		}							\
-	} G_STMT_END
-#define BUILD_OP_(vm, pool, sdict, name, func)				\
-	G_STMT_START {							\
-		HgOperator *__hg_op;					\
-									\
-		_hg_operator_build_operator(vm, pool, sdict, name, func, __hg_op); \
-	} G_STMT_END
-
 static void
 hg_operator_level1_init(HgVM      *vm,
 			HgMemPool *pool,
@@ -7459,8 +7425,6 @@ hg_operator_hieroglyph_init(HgVM      *vm,
 	BUILD_OP_ (vm, pool, dict, .startjobserver, private_hg_startjobserver);
 	BUILD_OP_ (vm, pool, dict, .statementedit, private_hg_statementedit);
 }
-
-#undef BUILD_OP
 
 /*
  * Public Functions
