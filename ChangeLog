@@ -1,5 +1,15 @@
 2006-08-02  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/operator.c (hg_operator_hieroglyph_init): removed
+	.startgc definition.
+	(_hg_operator_op_private_hg_startgc): removed.
+
+	* plugins/Makefile.am (SUBDIRS): added debug subdir.
+
+	* plugins/debug/debug-main.c: new file.
+
+	* plugins/debug/Makefile.am: new file.
+
 	* hieroglyph/operator.h (_hg_operator_build_operator): moved from
 	operator.c.
 	(BUILD_OP): likewise.

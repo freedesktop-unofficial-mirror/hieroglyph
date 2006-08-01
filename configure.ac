@@ -248,6 +248,7 @@ hieroglyph/Makefile
 hieroglyph/version.h
 lib/Makefile
 plugins/Makefile
+plugins/debug/Makefile
 plugins/libedit/Makefile
 plugins/test/Makefile
 po/Makefile.in
