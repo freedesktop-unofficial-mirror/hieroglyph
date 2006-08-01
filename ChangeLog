@@ -4,6 +4,7 @@
 	operator.c.
 	(BUILD_OP): likewise.
 	(BUILD_OP_): likewise.
+	(hg_operator_build_operator__inline): new macro.
 
 2006-07-26  Akira TAGOH  <at@gclab.org>
 

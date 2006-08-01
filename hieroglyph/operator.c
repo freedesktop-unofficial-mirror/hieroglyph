@@ -93,6 +93,23 @@ HgOperator *__hg_operator_list[HG_op_END];
 							\
 		return FALSE;				\
 	}
+#define _hg_operator_build_operator(vm, pool, sdict, name, func, ret_op) \
+	hg_operator_build_operator__inline(_hg_operator_op_, vm, pool, sdict, name, func, ret_op)
+#define BUILD_OP(vm, pool, sdict, name, func)				\
+	G_STMT_START {							\
+		HgOperator *__hg_op;					\
+									\
+		_hg_operator_build_operator(vm, pool, sdict, name, func, __hg_op); \
+		if (__hg_op != NULL) {					\
+			__hg_operator_list[HG_op_##name] = __hg_op;	\
+		}							\
+	} G_STMT_END
+#define BUILD_OP_(vm, pool, sdict, name, func)				\
+	G_STMT_START {							\
+		HgOperator *__hg_op;					\
+									\
+		_hg_operator_build_operator(vm, pool, sdict, name, func, __hg_op); \
+	} G_STMT_END
 
 /* level 1 */
 DEFUNC_OP (private_arraytomark)
