@@ -8,7 +8,6 @@ LIBS =							\
 	@LDFLAGS@					\
 	-export-dynamic					\
 	$(HG_LIBS)					\
-	$(LIBEDIT_LIBS)					\
 	$(NULL)
 LDADDS =						\
 	$(top_builddir)/hieroglyph/libhieroglyph.la	\

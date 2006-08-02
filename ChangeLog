@@ -1,5 +1,7 @@
 2006-08-02  Akira TAGOH  <at@gclab.org>
 
+	* plugins/debug/Makefile.am (LIBS): removed the unnecessary dependency.
+
 	* hieroglyph/operator.c (hg_operator_hieroglyph_init): removed
 	.startgc definition.
 	(_hg_operator_op_private_hg_startgc): removed.
