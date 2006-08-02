@@ -546,7 +546,7 @@ _hg_scanner_get_object(HgVM         *vm,
 	switch (token_type) {
 	    case HG_SCAN_TOKEN_LITERAL:
 		    retval = hg_vm_get_name_node(vm, hg_string_get_string(string));
-		    hg_object_unexecutable((HgObject *)retval);
+		    hg_object_inexecutable((HgObject *)retval);
 		    hg_mem_free(string);
 		    break;
 	    case HG_SCAN_TOKEN_EVAL_NAME:

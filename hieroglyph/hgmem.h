@@ -183,8 +183,11 @@ void     hg_mem_pool_use_garbage_collection(HgMemPool *pool,
 #define hg_object_is_writable(obj)	hg_object_is_state(obj, HG_ST_WRITABLE)
 #define hg_object_unwritable(obj)	hg_object_set_state(obj, hg_object_get_state(obj) & ~HG_ST_WRITABLE)
 #define hg_object_executable(obj)	hg_object_add_state(obj, HG_ST_EXECUTABLE)
-#define hg_object_unexecutable(obj)	hg_object_set_state(obj, hg_object_get_state(obj) & ~HG_ST_EXECUTABLE)
+#define hg_object_inexecutable(obj)	hg_object_set_state(obj, hg_object_get_state(obj) & ~HG_ST_EXECUTABLE)
 #define hg_object_is_executable(obj)	hg_object_is_state(obj, HG_ST_EXECUTABLE)
+#define hg_object_executeonly(obj)	hg_object_set_state(obj, (hg_object_get_state(obj) & ~(HG_ST_READABLE | HG_ST_WRITABLE)) | HG_ST_EXECUTEONLY)
+#define hg_object_is_executeonly(obj)	hg_object_is_state(obj, HG_ST_EXECUTEONLY)
+#define hg_object_inaccessible(obj)	hg_object_set_state(obj, hg_object_get_state(obj) & ~(HG_ST_READABLE | HG_ST_WRITABLE | HG_ST_EXECUTABLE | HG_ST_EXECUTEONLY))
 
 guint                       hg_object_get_state (HgObject                   *object);
 void                        hg_object_set_state (HgObject                   *object,

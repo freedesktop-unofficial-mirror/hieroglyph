@@ -2163,7 +2163,7 @@ G_STMT_START
 			break;
 		}
 		node = hg_stack_index(ostack, 0);
-		hg_object_unexecutable((HgObject *)node);
+		hg_object_inexecutable((HgObject *)node);
 		retval = TRUE;
 		break;
 	}
@@ -2738,7 +2738,8 @@ G_STMT_START
 		}
 		node = hg_stack_index(ostack, 0);
 		if (hg_object_is_executable((HgObject *)node)) {
-			if (!hg_object_is_readable((HgObject *)node)) {
+			if (!hg_object_is_executeonly((HgObject *)node) &&
+			    !hg_object_is_readable((HgObject *)node)) {
 				_hg_operator_set_error(vm, op, VM_e_invalidaccess);
 				break;
 			}
@@ -2819,7 +2820,36 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_UNIMPLEMENTED_OP (executeonly);
+DEFUNC_OP (executeonly)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgValueNode *node;
+
+	while (1) {
+		if (depth < 1) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		node = hg_stack_index(ostack, 0);
+		if (!HG_IS_VALUE_ARRAY (node) &&
+		    !HG_IS_VALUE_FILE (node) &&
+		    !HG_IS_VALUE_STRING (node)) {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		if (!hg_object_is_executeonly((HgObject *)node) &&
+		    !hg_object_is_readable((HgObject *)node)) {
+			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
+			break;
+		}
+		hg_object_executeonly((HgObject *)node);
+		retval = TRUE;
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
 
 DEFUNC_OP (exit)
 G_STMT_START
@@ -4508,11 +4538,9 @@ G_STMT_START
 				_hg_operator_set_error(vm, op, VM_e_invalidaccess);
 				break;
 			}
-			hg_object_set_state((HgObject *)dict,
-					    hg_object_get_state((HgObject *)dict) & ~(HG_ST_READABLE | HG_ST_WRITABLE));
+			hg_object_inaccessible((HgObject *)dict);
 		}
-		hg_object_set_state((HgObject *)node,
-				    hg_object_get_state((HgObject *)node) & ~(HG_ST_READABLE | HG_ST_WRITABLE));
+		hg_object_inaccessible((HgObject *)node);
 		retval = TRUE;
 		break;
 	}

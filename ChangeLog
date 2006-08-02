@@ -1,3 +1,17 @@
+2006-08-03  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/operator.c (_hg_operator_op_exec): check executeonly flag.
+	(_hg_operator_op_executeonly): implemented.
+	(_hg_operator_op_noaccess): use hg_object_inaccessible.
+
+	* hieroglyph/vm.c (hg_vm_main): set the same flags from string to file.
+
+	* hieroglyph/hgmem.h (hg_object_inexecutable): renamed from
+	hg_object_unexecutable.
+	(hg_object_executeonly): new macro.
+	(hg_object_is_executeonly): new macro.
+	(hg_object_inaccessible): new macro.
+
 2006-08-02  Akira TAGOH  <at@gclab.org>
 
 	* plugins/debug/Makefile.am (LIBS): removed the unnecessary dependency.

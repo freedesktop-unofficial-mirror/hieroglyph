@@ -1159,6 +1159,7 @@ hg_vm_main(HgVM *vm)
 		    case HG_TYPE_VALUE_STRING:
 			    if (hg_object_is_executable((HgObject *)node)) {
 				    HgString *hs = HG_VALUE_GET_STRING (node);
+				    guint state = hg_object_get_state((HgObject *)node);
 
 				    file = hg_file_object_new(hg_vm_get_current_pool(vm),
 							      HG_FILE_TYPE_BUFFER,
@@ -1168,6 +1169,7 @@ hg_vm_main(HgVM *vm)
 							      hg_string_maxlength(hs));
 				    hg_stack_pop(vm->estack);
 				    HG_VALUE_MAKE_FILE (node, file);
+				    hg_object_set_state((HgObject *)node, state);
 				    retval = hg_stack_push(vm->estack, node);
 			    } else {
 				    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.",
