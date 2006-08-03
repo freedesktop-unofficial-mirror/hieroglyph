@@ -119,6 +119,7 @@ typedef enum {
 	HG_ST_WRITABLE    = 1 << 1,
 	HG_ST_EXECUTABLE  = 1 << 2,
 	HG_ST_EXECUTEONLY = 1 << 3,
+	HG_ST_ACCESSIBLE  = 1 << 4,
 	HG_ST_RESERVED1   = 1 << 16, /* reserved for object-specific data */
 	HG_ST_RESERVED2   = 1 << 17, /* reserved for object-specific data */
 	HG_ST_RESERVED3   = 1 << 18, /* reserved for object-specific data */

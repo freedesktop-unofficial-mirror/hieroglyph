@@ -1,5 +1,13 @@
 2006-08-03  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/operator.c (_hg_operator_op_cvn): inherited
+	the executeonly.
+
+	* hieroglyph/hgmem.h (hg_object_is_accessible): new macro.
+
+	* hieroglyph/hgmem.c (hg_mem_pool_new): changed the default access
+	mode.
+
 	* hieroglyph/operator.c (_hg_operator_op_exec): check executeonly flag.
 	(_hg_operator_op_executeonly): implemented.
 	(_hg_operator_op_noaccess): use hg_object_inaccessible.

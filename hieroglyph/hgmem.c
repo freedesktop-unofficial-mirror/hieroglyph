@@ -246,7 +246,7 @@ hg_mem_pool_new(HgAllocator *allocator,
 	pool->total_heap_size = 0;
 	pool->used_heap_size = 0;
 	pool->allow_resize = allow_resize;
-	pool->access_mode = HG_ST_READABLE | HG_ST_WRITABLE;
+	pool->access_mode = HG_ST_READABLE | HG_ST_WRITABLE | HG_ST_ACCESSIBLE;
 	pool->destroyed = FALSE;
 	pool->allocator = allocator;
 	pool->root_node = NULL;

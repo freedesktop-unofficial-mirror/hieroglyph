@@ -2200,6 +2200,8 @@ G_STMT_START
 		}
 		if (hg_object_is_executable((HgObject *)n1))
 			hg_object_executable((HgObject *)n2);
+		if (hg_object_is_executeonly((HgObject *)n1))
+			hg_object_executeonly((HgObject *)n2);
 		hg_stack_pop(ostack);
 		retval = hg_stack_push(ostack, n2);
 		/* it must be true */
@@ -5052,11 +5054,9 @@ G_STMT_START
 				_hg_operator_set_error(vm, op, VM_e_invalidaccess);
 				break;
 			}
-			hg_object_set_state((HgObject *)dict,
-					    hg_object_get_state((HgObject *)dict) & ~HG_ST_WRITABLE);
+			hg_object_unwritable((HgObject *)dict);
 		}
-		hg_object_set_state((HgObject *)node,
-				    hg_object_get_state((HgObject *)node) & ~HG_ST_WRITABLE);
+		hg_object_unwritable((HgObject *)node);
 		retval = TRUE;
 		break;
 	}
