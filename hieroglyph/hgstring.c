@@ -144,7 +144,7 @@ _hg_string_real_to_string(gpointer data)
 				    hg_string_append(retval, "\\f", 2);
 				    break;
 			    default:
-				    snprintf(buffer, 8, "%04o", str->current[i]);
+				    snprintf(buffer, 8, "%04o", str->current[i] & 0xff);
 				    hg_string_append_c(retval, '\\');
 				    hg_string_append(retval, buffer, -1);
 				    break;

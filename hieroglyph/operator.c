@@ -3083,7 +3083,7 @@ G_STMT_START
 				_hg_operator_set_error(vm, op, VM_e_invalidfileaccess);
 				break;
 			}
-			file = hg_file_object_new(pool, file_type);
+			file = hg_file_object_new(pool, file_type, hg_vm_get_line_editor(vm));
 			if (file == NULL) {
 				_hg_operator_set_error(vm, op, VM_e_undefinedfilename);
 				break;
@@ -4955,7 +4955,79 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_UNIMPLEMENTED_OP (readhexstring);
+DEFUNC_OP (readhexstring)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgValueNode *n1, *n2;
+	HgFileObject *file;
+	HgString *s, *sub;
+	guint maxlength, length = 0;
+	HgMemPool *pool = hg_vm_get_current_pool(vm);
+	gchar c, hex = 0;
+	gint count = 2;
+	HgMemObject *obj;
+	gboolean found;
+
+	while (1) {
+		if (depth < 2) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
+		if (!HG_IS_VALUE_FILE (n1) ||
+		    !HG_IS_VALUE_STRING (n2)) {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		file = HG_VALUE_GET_FILE (n1);
+		s = HG_VALUE_GET_STRING (n2);
+		maxlength = hg_string_maxlength(s);
+		while (length < maxlength) {
+			found = FALSE;
+			c = hg_file_object_getc(file);
+			if (hg_file_object_is_eof(file)) {
+				break;
+			}
+			if (c >= '0' && c <= '9') {
+				c = c - '0';
+				found = TRUE;
+			} else if (c >= 'a' && c <= 'f') {
+				c = c - 'a' + 10;
+				found = TRUE;
+			} else if (c >= 'A' && c <= 'F') {
+				c = c - 'A' + 10;
+				found = TRUE;
+			}
+			if (found) {
+				hex = (hex << 4) | c;
+				count--;
+				if (count == 0) {
+					hg_string_insert_c(s, hex, length++);
+					count = 2;
+					hex = 0;
+				}
+			}
+		}
+		if (length < maxlength) {
+			hg_mem_get_object__inline(s, obj);
+			HG_VALUE_MAKE_BOOLEAN (pool, n1, FALSE);
+			sub = hg_string_make_substring(obj->pool, s, 0, length - 1);
+			HG_VALUE_MAKE_STRING (n2, sub);
+		} else {
+			HG_VALUE_MAKE_BOOLEAN (pool, n1, TRUE);
+		}
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_push(ostack, n2);
+		retval = hg_stack_push(ostack, n1);
+		/* it must be true */
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
 
 DEFUNC_OP (readline)
 G_STMT_START

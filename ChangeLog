@@ -1,3 +1,12 @@
+2006-08-10  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/operator.c (_hg_operator_op_file): give a HgLineEdit
+	for %lineedit.
+	(_hg_operator_op_readhexstring): implemented.
+
+	* hieroglyph/hgstring.c (_hg_string_real_to_string): mask a character
+	to get a char exactly.
+
 2006-08-03  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/operator.c (_hg_operator_op_cvn): inherited
