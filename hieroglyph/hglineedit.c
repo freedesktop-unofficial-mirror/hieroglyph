@@ -27,6 +27,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include "hglineedit.h"
 #include "hgmem.h"
 
@@ -63,7 +64,51 @@ static const HgLineEditVTable __hg_line_edit_default_vtable = {
 static gchar *
 _hg_line_edit__default_get_line(const gchar *prompt)
 {
-	return NULL;
+	ssize_t len;
+	gchar c;
+	static gchar ungetc = 0;
+	gboolean cr = FALSE;
+	GString *buf = g_string_new(NULL);
+
+	if (prompt) {
+		write(1, prompt, strlen(prompt));
+		fsync(1);
+	}
+	while (1) {
+		if (ungetc != 0) {
+			len = 1;
+			c = ungetc;
+			ungetc = 0;
+		} else {
+			len = read(0, &c, 1);
+		}
+		if (len == -1) {
+			if (errno == EAGAIN) {
+				sleep(1);
+				continue;
+			} else {
+				g_print("FIXME: errno %d: %s\n", errno, strerror(errno));
+				break;
+			}
+		} else if (len == 0) {
+			g_string_free(buf, TRUE);
+			return NULL;
+		}
+		if (c == '\r') {
+			cr = TRUE;
+			continue;
+		} else if (c == '\n') {
+			break;
+		} else {
+			if (cr) {
+				ungetc = c;
+				break;
+			}
+			g_string_append_c(buf, c);
+		}
+	}
+
+	return g_string_free(buf, FALSE);
 }
 
 static void
