@@ -4982,6 +4982,11 @@ G_STMT_START
 			_hg_operator_set_error(vm, op, VM_e_typecheck);
 			break;
 		}
+		if (!hg_object_is_readable((HgObject *)n1) ||
+		    !hg_object_is_writable((HgObject *)n2)) {
+			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
+			break;
+		}
 		file = HG_VALUE_GET_FILE (n1);
 		s = HG_VALUE_GET_STRING (n2);
 		maxlength = hg_string_maxlength(s);

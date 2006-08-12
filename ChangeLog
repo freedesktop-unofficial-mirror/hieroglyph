@@ -1,5 +1,8 @@
 2006-08-13  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/operator.c (_hg_operator_op_readhexstring):
+	check the access attributes.
+
 	* hieroglyph/hglineedit.c (_hg_line_edit__default_get_line):
 	implemented.
 
