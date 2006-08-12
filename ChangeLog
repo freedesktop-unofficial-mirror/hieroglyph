@@ -1,5 +1,8 @@
 2006-08-13  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/scanner.c (_hg_scanner_get_object): '\r', '\n' and '\r\n'
+	has to be escaped by '\'.
+
 	* hieroglyph/operator.c (_hg_operator_op_readhexstring):
 	check the access attributes.
 

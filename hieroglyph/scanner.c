@@ -409,6 +409,27 @@ _hg_scanner_get_object(HgVM         *vm,
 					case 'f':
 						c = '\f';
 						break;
+					case '\r':
+						if (token_type == HG_SCAN_TOKEN_STRING) {
+							c = hg_file_object_getc(file);
+							if (c != '\n') {
+								hg_file_object_ungetc(file, c);
+								continue;
+							}
+						} else {
+							hg_file_object_ungetc(file, c);
+							c = '\\';
+						}
+						break;
+					case '\n':
+						if (token_type == HG_SCAN_TOKEN_STRING) {
+							/* ignore it */
+							continue;
+						} else {
+							hg_file_object_ungetc(file, c);
+							c = '\\';
+						}
+						break;
 					default:
 						break;
 				    }
