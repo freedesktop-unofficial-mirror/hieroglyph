@@ -1,5 +1,8 @@
 2006-08-14  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgvaluenode.c (hg_value_node_debug_print): use macro
+	instead of casting directly.
+
 	* configure.ac: don't stop configure process even if libedit isn't
 	installed.
 

@@ -515,15 +515,15 @@ hg_value_node_debug_print(HgFileObject    *file,
 		    info = g_strdup((gchar *)((HgValueNode *)self)->v.pointer);
 		    break;
 	    case HG_TYPE_VALUE_ARRAY:
-		    if ((guint)extrainfo == G_MAXUINT)
+		    if (GPOINTER_TO_UINT (extrainfo) == G_MAXUINT)
 			    info = g_strdup("[base]");
 		    else
-			    info = g_strdup_printf("[%d]", (guint)extrainfo);
+			    info = g_strdup_printf("[%d]", GPOINTER_TO_UINT (extrainfo));
 		    break;
 	    case HG_TYPE_VALUE_STRING:
 		    break;
 	    case HG_TYPE_VALUE_DICT:
-		    info = g_strdup_printf("[%s]", dict_info[(gint)extrainfo]);
+		    info = g_strdup_printf("[%s]", dict_info[GPOINTER_TO_UINT (extrainfo)]);
 		    break;
 	    case HG_TYPE_VALUE_NULL:
 		    break;
