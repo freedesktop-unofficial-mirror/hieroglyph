@@ -635,14 +635,14 @@ _hgspy_update_vm_status(HgMemoryVisualizer *visual,
 
 	if (name) {
 		total = hg_memory_visualizer_get_max_size(visual, name);
-		p = g_strdup_printf("%d", total);
+		p = g_strdup_printf("%" G_GSIZE_FORMAT, total);
 		gtk_entry_set_text(GTK_ENTRY (spy->total_vm_size), p);
 		g_free(p);
 		used = hg_memory_visualizer_get_used_size(visual, name);
-		p = g_strdup_printf("%d", used);
+		p = g_strdup_printf("%" G_GSIZE_FORMAT, used);
 		gtk_entry_set_text(GTK_ENTRY (spy->used_vm_size), p);
 		g_free(p);
-		p = g_strdup_printf("%d", total - used);
+		p = g_strdup_printf("%" G_GSIZE_FORMAT, total - used);
 		gtk_entry_set_text(GTK_ENTRY (spy->free_vm_size), p);
 		g_free(p);
 	} else {

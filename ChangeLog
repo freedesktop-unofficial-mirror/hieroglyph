@@ -1,5 +1,7 @@
 2006-08-14  Akira TAGOH  <at@gclab.org>
 
+	* src/hgspy.c (_hgspy_update_vm_status): use macro.
+
 	* hieroglyph/hgvaluenode.c (hg_value_node_debug_print): use macro
 	instead of casting directly.
 
