@@ -6754,44 +6754,6 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_OP (private_hg_loadhistory)
-G_STMT_START
-{
-	HgStack *ostack = hg_vm_get_ostack(vm);
-	guint depth = hg_stack_depth(ostack);
-	HgValueNode *node;
-	HgString *hs;
-	gchar *filename, *histfile;
-	const gchar *env;
-
-	while (1) {
-		if (depth < 1) {
-			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
-			break;
-		}
-		node = hg_stack_index(ostack, 0);
-		if (!HG_IS_VALUE_STRING (node)) {
-			_hg_operator_set_error(vm, op, VM_e_typecheck);
-			break;
-		}
-		hs = HG_VALUE_GET_STRING (node);
-		env = g_getenv("HOME");
-		filename = g_path_get_basename(hg_string_get_string(hs));
-		if (env != NULL) {
-			histfile = g_build_filename(env, filename, NULL);
-		} else {
-			histfile = g_strdup(filename);
-		}
-		retval = hg_line_edit_load_history(hg_vm_get_line_editor(vm),
-						   histfile);
-		g_free(histfile);
-		g_free(filename);
-		hg_stack_pop(ostack);
-		break;
-	}
-} G_STMT_END;
-DEFUNC_OP_END
-
 DEFUNC_OP (private_hg_product)
 G_STMT_START
 {
@@ -6894,44 +6856,6 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_OP (private_hg_savehistory)
-G_STMT_START
-{
-	HgStack *ostack = hg_vm_get_ostack(vm);
-	guint depth = hg_stack_depth(ostack);
-	HgValueNode *node;
-	HgString *hs;
-	gchar *filename, *histfile;
-	const gchar *env;
-
-	while (1) {
-		if (depth < 1) {
-			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
-			break;
-		}
-		node = hg_stack_index(ostack, 0);
-		if (!HG_IS_VALUE_STRING (node)) {
-			_hg_operator_set_error(vm, op, VM_e_typecheck);
-			break;
-		}
-		hs = HG_VALUE_GET_STRING (node);
-		env = g_getenv("HOME");
-		filename = g_path_get_basename(hg_string_get_string(hs));
-		if (env != NULL) {
-			histfile = g_build_filename(env, filename, NULL);
-		} else {
-			histfile = g_strdup(filename);
-		}
-		retval = hg_line_edit_save_history(hg_vm_get_line_editor(vm),
-						   histfile);
-		g_free(histfile);
-		g_free(filename);
-		hg_stack_pop(ostack);
-		break;
-	}
-} G_STMT_END;
-DEFUNC_OP_END
-
 DEFUNC_OP (private_hg_setglobal)
 G_STMT_START
 {
@@ -6957,32 +6881,6 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_OP (private_hg_sleep)
-G_STMT_START
-{
-	HgStack *ostack = hg_vm_get_ostack(vm);
-	guint depth = hg_stack_depth(ostack);
-	HgValueNode *node;
-
-	while (1) {
-		if (depth < 1) {
-			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
-			break;
-		}
-		node = hg_stack_index(ostack, 0);
-		if (!HG_IS_VALUE_INTEGER (node)) {
-			_hg_operator_set_error(vm, op, VM_e_typecheck);
-			break;
-		}
-		retval = hg_graphics_debug(hg_vm_get_graphics(vm),
-					   &hg_debug_sleep,
-					   GINT_TO_POINTER(HG_VALUE_GET_INTEGER (node)));
-		hg_stack_pop(ostack);
-		break;
-	}
-} G_STMT_END;
-DEFUNC_OP_END
-
 DEFUNC_OP (private_hg_startjobserver)
 G_STMT_START
 {
@@ -6998,60 +6896,6 @@ G_STMT_START
 	/* set read-only attribute to systemdict */
 	hg_object_unwritable((HgObject *)hg_vm_get_dict_systemdict(vm));
 	retval = TRUE;
-} G_STMT_END;
-DEFUNC_OP_END
-
-DEFUNC_OP (private_hg_statementedit)
-G_STMT_START
-{
-	HgStack *ostack = hg_vm_get_ostack(vm);
-	guint depth = hg_stack_depth(ostack);
-	HgValueNode *node;
-	HgMemPool *pool = hg_vm_get_current_pool(vm);
-	HgString *hs;
-	HgFileObject *file;
-	gchar *line, *prompt;
-
-	while (1) {
-		if (depth < 1) {
-			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
-			break;
-		}
-		node = hg_stack_index(ostack, 0);
-		if (!HG_IS_VALUE_STRING (node)) {
-			_hg_operator_set_error(vm, op, VM_e_typecheck);
-			break;
-		}
-		hs = HG_VALUE_GET_STRING (node);
-		prompt = g_strndup(hg_string_get_string(hs), hg_string_maxlength(hs));
-		line = hg_line_edit_get_statement(hg_vm_get_line_editor(vm),
-						  prompt);
-		g_free(prompt);
-		if (line == NULL || line[0] == 0) {
-			_hg_operator_set_error(vm, op, VM_e_undefinedfilename);
-			if (line)
-				g_free(line);
-			break;
-		}
-		file = hg_file_object_new(pool, HG_FILE_TYPE_BUFFER,
-					  HG_FILE_MODE_READ,
-					  "%statementedit",
-					  line, -1);
-		g_free(line);
-		if (file == NULL) {
-			_hg_operator_set_error(vm, op, VM_e_VMerror);
-			break;
-		}
-		HG_VALUE_MAKE_FILE (node, file);
-		if (node == NULL) {
-			_hg_operator_set_error(vm, op, VM_e_VMerror);
-			break;
-		}
-		hg_stack_pop(ostack);
-		retval = hg_stack_push(ostack, node);
-		/* it must be true */
-		break;
-	}
 } G_STMT_END;
 DEFUNC_OP_END
 
@@ -7515,15 +7359,11 @@ hg_operator_hieroglyph_init(HgVM      *vm,
 	BUILD_OP_ (vm, pool, dict, .execn, private_hg_execn);
 	BUILD_OP_ (vm, pool, dict, .hgrevision, private_hg_hgrevision);
 	BUILD_OP_ (vm, pool, dict, .initplugins, private_hg_initplugins);
-	BUILD_OP_ (vm, pool, dict, .loadhistory, private_hg_loadhistory);
 	BUILD_OP_ (vm, pool, dict, .product, private_hg_product);
 	BUILD_OP_ (vm, pool, dict, .forceput, private_hg_forceput);
 	BUILD_OP_ (vm, pool, dict, .revision, private_hg_revision);
-	BUILD_OP_ (vm, pool, dict, .savehistory, private_hg_savehistory);
 	BUILD_OP_ (vm, pool, dict, .setglobal, private_hg_setglobal);
-	BUILD_OP_ (vm, pool, dict, .sleep, private_hg_sleep);
 	BUILD_OP_ (vm, pool, dict, .startjobserver, private_hg_startjobserver);
-	BUILD_OP_ (vm, pool, dict, .statementedit, private_hg_statementedit);
 }
 
 /*

@@ -90,8 +90,6 @@ void                  hg_vm_set_emulation_level  (HgVM              *vm,
 HgVMEmulationType     hg_vm_get_emulation_level  (HgVM              *vm);
 HgStack              *hg_vm_get_ostack           (HgVM              *vm);
 HgStack              *hg_vm_get_estack           (HgVM              *vm);
-void                  hg_vm_set_estack           (HgVM              *vm,
-						  HgStack           *estack);
 HgStack              *hg_vm_get_dstack           (HgVM              *vm);
 HgDict               *hg_vm_get_dict_errordict   (HgVM              *vm);
 HgDict               *hg_vm_get_dict_error       (HgVM              *vm);
@@ -144,6 +142,12 @@ void                  hg_vm_set_error_from_file  (HgVM              *vm,
 gboolean              hg_vm_main                 (HgVM              *vm);
 gboolean              hg_vm_run                  (HgVM              *vm,
 						  const gchar       *file);
+gboolean              hg_vm_eval                 (HgVM              *vm,
+						  const gchar       *expression,
+						  HgStack           *ostack,
+						  HgStack           *estack,
+						  HgStack           *dstack,
+						  gboolean          *error);
 
 
 /* internal use */

@@ -240,16 +240,11 @@ _hg_vm_real_relocate(gpointer           data,
 }
 
 static gboolean
-_hg_vm_run(HgVM        *vm,
-	   const gchar *filename,
-	   gboolean    *error)
+_hg_vm_eval_file(HgVM         *vm,
+		 HgFileObject *file,
+		 gboolean     *error)
 {
-	HgMemPool *pool = hg_vm_get_current_pool(vm);
 	HgStack *estack = hg_vm_get_estack(vm);
-	HgFileObject *file = hg_file_object_new(pool,
-						HG_FILE_TYPE_FILE,
-						HG_FILE_MODE_READ,
-						filename);
 	gboolean retval = FALSE;
 	HgValueNode *node;
 
@@ -282,6 +277,50 @@ _hg_vm_run(HgVM        *vm,
 	}
 
 	return retval;
+}
+
+static gboolean
+_hg_vm_run(HgVM        *vm,
+	   const gchar *filename,
+	   gboolean    *error)
+{
+	HgMemPool *pool = hg_vm_get_current_pool(vm);
+	HgFileObject *file = hg_file_object_new(pool,
+						HG_FILE_TYPE_FILE,
+						HG_FILE_MODE_READ,
+						filename);
+
+	return _hg_vm_eval_file(vm, file, error);
+}
+
+static void
+hg_vm_set_ostack(HgVM    *vm,
+		 HgStack *ostack)
+{
+	g_return_if_fail (vm != NULL);
+	g_return_if_fail (ostack != NULL);
+
+	vm->ostack = ostack;
+}
+
+static void
+hg_vm_set_estack(HgVM    *vm,
+		 HgStack *estack)
+{
+	g_return_if_fail (vm != NULL);
+	g_return_if_fail (estack != NULL);
+
+	vm->estack = estack;
+}
+
+static void
+hg_vm_set_dstack(HgVM    *vm,
+		 HgStack *dstack)
+{
+	g_return_if_fail (vm != NULL);
+	g_return_if_fail (dstack != NULL);
+
+	vm->dstack = dstack;
 }
 
 /*
@@ -514,16 +553,6 @@ HgStack *
 hg_vm_get_estack(HgVM *vm)
 {
 	return vm->estack;
-}
-
-void
-hg_vm_set_estack(HgVM    *vm,
-		 HgStack *estack)
-{
-	g_return_if_fail (vm != NULL);
-	g_return_if_fail (estack != NULL);
-
-	vm->estack = estack;
 }
 
 HgStack *
@@ -1327,6 +1356,52 @@ hg_vm_run(HgVM        *vm,
 	}
 	if (basename)
 		g_free(basename);
+
+	return retval;
+}
+
+gboolean
+hg_vm_eval(HgVM        *vm,
+	   const gchar *expression,
+	   HgStack     *ostack,
+	   HgStack     *estack,
+	   HgStack     *dstack,
+	   gboolean    *error)
+{
+	HgMemPool *pool = hg_vm_get_current_pool(vm);
+	HgStack *old_ostack = NULL, *old_estack = NULL, *old_dstack = NULL;
+	HgFileObject *file;
+	gboolean retval = FALSE;
+
+	g_return_val_if_fail (vm != NULL, FALSE);
+	g_return_val_if_fail (expression != NULL, FALSE);
+
+	if (ostack) {
+		old_ostack = hg_vm_get_ostack(vm);
+		hg_vm_set_ostack(vm, ostack);
+	}
+	if (estack) {
+		old_estack = hg_vm_get_estack(vm);
+		hg_vm_set_estack(vm, estack);
+	}
+	if (dstack) {
+		old_dstack = hg_vm_get_dstack(vm);
+		hg_vm_set_dstack(vm, dstack);
+	}
+	file = hg_file_object_new(pool,
+				  HG_FILE_TYPE_BUFFER,
+				  HG_FILE_MODE_READ,
+				  "%eval",
+				  expression, - 1);
+
+	retval = _hg_vm_eval_file(vm, file, error);
+
+	if (old_ostack)
+		hg_vm_set_ostack(vm, old_ostack);
+	if (old_estack)
+		hg_vm_set_estack(vm, old_estack);
+	if (old_dstack)
+		hg_vm_set_dstack(vm, old_dstack);
 
 	return retval;
 }

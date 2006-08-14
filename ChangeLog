@@ -1,3 +1,19 @@
+2006-08-14  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/vm.c (_hg_vm_eval_file): new function.
+	(hg_vm_set_ostack): new function.
+	(hg_vm_set_estack): make it as a private function.
+	(hg_vm_set_dstack): new function.
+	(hg_vm_eval): new function.
+
+	* lib/hg_init.ps: don't invoke if .loadhistory and .savehistory isn't
+	available.
+
+	* plugins/libedit/libedit-main.c (_libedit_op_loadhistory): moved from
+	operator.c.
+	(_libedit_op_statementedit): likewise.
+	(_libedit_op_savehistory): likewise.
+
 2006-08-13  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/scanner.c (_hg_scanner_get_object): '\r', '\n' and '\r\n'

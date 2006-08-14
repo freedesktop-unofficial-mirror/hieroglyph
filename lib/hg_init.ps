@@ -319,7 +319,11 @@ end
 % if JOBSERVER isn't true, it means one gives the initializer to libretto_vm_startjob().
 % so no need to read PS from stdin.
 serverdict /JOBSERVER get {
-    (.hghistory) .loadhistory
+    systemdict /.loadhistory known {
+	(.hghistory) .loadhistory
+    } if
     .startjobserver executive
-    (.hghistory) .savehistory
+    systemdict /.savehistory known {
+	(.hghistory) .savehistory
+    } if
 } if
