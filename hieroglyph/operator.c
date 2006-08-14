@@ -5605,7 +5605,9 @@ G_STMT_START
 DEFUNC_OP_END
 
 DEFUNC_UNIMPLEMENTED_OP (scalefont);
+
 DEFUNC_UNIMPLEMENTED_OP (search);
+
 DEFUNC_UNIMPLEMENTED_OP (setcachedevice);
 DEFUNC_UNIMPLEMENTED_OP (setcachelimit);
 DEFUNC_UNIMPLEMENTED_OP (setcharwidth);
@@ -6156,6 +6158,7 @@ G_STMT_START
 DEFUNC_OP_END
 
 DEFUNC_UNIMPLEMENTED_OP (token);
+
 DEFUNC_UNIMPLEMENTED_OP (transform);
 
 DEFUNC_OP (translate)
@@ -6478,6 +6481,7 @@ G_STMT_START
 DEFUNC_OP_END
 
 DEFUNC_UNIMPLEMENTED_OP (widthshow);
+
 DEFUNC_UNIMPLEMENTED_OP (write);
 DEFUNC_UNIMPLEMENTED_OP (writehexstring);
 
@@ -6562,7 +6566,51 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_UNIMPLEMENTED_OP (xor);
+DEFUNC_OP (xor)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgValueNode *n1, *n2;
+	HgMemPool *pool = hg_vm_get_current_pool(vm);
+
+	while (1) {
+		if (depth < 2) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
+		if (HG_IS_VALUE_BOOLEAN (n1) &&
+		    HG_IS_VALUE_BOOLEAN (n2)) {
+			gboolean result = HG_VALUE_GET_BOOLEAN (n1) ^ HG_VALUE_GET_BOOLEAN (n2);
+
+			HG_VALUE_MAKE_BOOLEAN (pool, n1, result);
+			if (n1 == NULL) {
+				_hg_operator_set_error(vm, op, VM_e_VMerror);
+				break;
+			}
+		} else if (HG_IS_VALUE_INTEGER (n1) &&
+			   HG_IS_VALUE_INTEGER (n2)) {
+			gint32 result = HG_VALUE_GET_INTEGER (n1) ^ HG_VALUE_GET_INTEGER (n2);
+
+			HG_VALUE_MAKE_INTEGER (pool, n1, result);
+			if (n1 == NULL) {
+				_hg_operator_set_error(vm, op, VM_e_VMerror);
+				break;
+			}
+		} else {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = hg_stack_push(ostack, n1);
+		/* it must be true */
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
 
 /* level 2 */
 DEFUNC_UNIMPLEMENTED_OP (arct);
