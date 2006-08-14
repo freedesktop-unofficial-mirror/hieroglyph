@@ -1,5 +1,9 @@
 2006-08-14  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/operator.c (_hg_operator_op_readline): have to check EOF
+	after reading a character.
+	(_hg_operator_op_readstring): implemented.
+
 	* src/hgspy.c (_hgspy_update_vm_status): use macro.
 
 	* hieroglyph/hgvaluenode.c (hg_value_node_debug_print): use macro

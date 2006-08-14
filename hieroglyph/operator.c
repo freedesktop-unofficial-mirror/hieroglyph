@@ -5067,8 +5067,10 @@ G_STMT_START
 		file = HG_VALUE_GET_FILE (n1);
 		s = HG_VALUE_GET_STRING (n2);
 		maxlength = hg_string_maxlength(s);
-		while (!hg_file_object_is_eof(file)) {
+		while (1) {
 			c = hg_file_object_getc(file);
+			if (hg_file_object_is_eof(file))
+				break;
 			if (c == '\r') {
 				c = hg_file_object_getc(file);
 				if (c != '\n')
@@ -5140,7 +5142,66 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_UNIMPLEMENTED_OP (readstring);
+DEFUNC_OP (readstring)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgValueNode *n1, *n2;
+	HgFileObject *file;
+	HgString *s, *sub;
+	guint length = 0, maxlength;
+	gchar c;
+	HgMemObject *obj;
+	HgMemPool *pool = hg_vm_get_current_pool(vm);
+
+	while (1) {
+		if (depth < 2) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
+		if (!HG_IS_VALUE_FILE (n1) ||
+		    !HG_IS_VALUE_STRING (n2)) {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		if (!hg_object_is_readable((HgObject *)n1) ||
+		    !hg_object_is_writable((HgObject *)n2)) {
+			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
+			break;
+		}
+		file = HG_VALUE_GET_FILE (n1);
+		s = HG_VALUE_GET_STRING (n2);
+		maxlength = hg_string_maxlength(s);
+		if (maxlength <= 0) {
+			_hg_operator_set_error(vm, op, VM_e_rangecheck);
+			break;
+		}
+		while (length < maxlength) {
+			c = hg_file_object_getc(file);
+			if (hg_file_object_is_eof(file))
+				break;
+			hg_string_insert_c(s, c, length++);
+		}
+		if (length < maxlength) {
+			hg_mem_get_object__inline(s, obj);
+			HG_VALUE_MAKE_BOOLEAN (pool, n1, FALSE);
+			sub = hg_string_make_substring(obj->pool, s, 0, length - 1);
+			HG_VALUE_MAKE_STRING (n2, sub);
+		} else {
+			HG_VALUE_MAKE_BOOLEAN (pool, n1, TRUE);
+		}
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_push(ostack, n2);
+		retval = hg_stack_push(ostack, n1);
+		/* it must be true */
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
 
 DEFUNC_OP (repeat)
 G_STMT_START
