@@ -1285,7 +1285,6 @@ G_STMT_START
 		if (HG_IS_VALUE_INTEGER (n)) {
 			/* nothing to do */
 			retval = TRUE;
-			break;
 		} else if (HG_IS_VALUE_REAL (n)) {
 			result = ceil(HG_VALUE_GET_REAL (n));
 			HG_VALUE_MAKE_REAL (pool, n, result);
@@ -1294,7 +1293,6 @@ G_STMT_START
 			/* it must be true */
 		} else {
 			_hg_operator_set_error(vm, op, VM_e_typecheck);
-			break;
 		}
 		break;
 	}
@@ -5459,7 +5457,38 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_UNIMPLEMENTED_OP (round);
+DEFUNC_OP (round)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgValueNode *n;
+	gdouble result;
+	HgMemPool *pool = hg_vm_get_current_pool(vm);
+
+	while (1) {
+		if (depth < 1) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		n = hg_stack_index(ostack, 0);
+		if (HG_IS_VALUE_INTEGER (n)) {
+			/* nothing to do */
+			retval = TRUE;
+		} else if (HG_IS_VALUE_REAL (n)) {
+			result = round(HG_VALUE_GET_REAL (n));
+			HG_VALUE_MAKE_REAL (pool, n, result);
+			hg_stack_pop(ostack);
+			retval = hg_stack_push(ostack, n);
+			/* it must be true */
+		} else {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+		}
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
+
 DEFUNC_UNIMPLEMENTED_OP (rrand);
 
 DEFUNC_OP (save)

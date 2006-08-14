@@ -3,6 +3,7 @@
 	* hieroglyph/operator.c (_hg_operator_op_readline): have to check EOF
 	after reading a character.
 	(_hg_operator_op_readstring): implemented.
+	(_hg_operator_op_round): implemented.
 
 	* src/hgspy.c (_hgspy_update_vm_status): use macro.
 
