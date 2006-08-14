@@ -1,5 +1,9 @@
 NULL =
-SUBDIRS = debug libedit test
+SUBDIRS = debug test
+
+if ENABLE_LIBEDIT
+SUBDIRS += libedit
+endif
 
 EXTRA_DIST =			\
 	$(NULL)

@@ -1,5 +1,11 @@
 2006-08-14  Akira TAGOH  <at@gclab.org>
 
+	* configure.ac: don't stop configure process even if libedit isn't
+	installed.
+
+	* plugins/Makefile.am (SUBDIRS): built without libedit plugin
+	if it's not available.
+
 	* hieroglyph/vm.c (_hg_vm_eval_file): new function.
 	(hg_vm_set_ostack): new function.
 	(hg_vm_set_estack): make it as a private function.

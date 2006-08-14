@@ -15,6 +15,11 @@ AC_PROG_CC
 AC_SYS_LARGEFILE
 
 dnl ======================================================================
+dnl initialize values
+dnl ======================================================================
+pluginslist="debug test"
+
+dnl ======================================================================
 dnl set CFLAGS
 dnl ======================================================================
 changequote(,)dnl
@@ -102,10 +107,12 @@ dnl ======================================================================
 AC_CHECK_LIB(edit, readline, [
 	LIBEDIT_LIBS="-ledit"
 	AC_DEFINE(USE_LIBEDIT,1,[build with readline])
-	],
-	AC_MSG_ERROR([
-*** libedit is required.]), )
+	pluginslist="$pluginslist libedit"
+	],[
+	LIBEDIT_LIBS=""
+	])
 AC_SUBST(LIBEDIT_LIBS)
+AM_CONDITIONAL(ENABLE_LIBEDIT, test x$LIBEDIT_LIBS != x)
 
 dnl ======================================================================
 dnl options
@@ -275,6 +282,7 @@ if test "x$with_cmap" = xyes; then
 else
 	echo
 fi
+echo " Plugins list:               $pluginslist"
 echo " CFLAGS:                     $HG_CFLAGS"
 echo "   for modules:              $HG_MODULE_CFLAGS"
 if test "x$with_cairo" = xyes; then
