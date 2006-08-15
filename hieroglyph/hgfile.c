@@ -901,6 +901,39 @@ hg_file_object_close(HgFileObject *object)
 }
 
 gboolean
+hg_file_object_is_closed(HgFileObject *object)
+{
+	gboolean retval = FALSE;
+
+	g_return_val_if_fail (object != NULL, TRUE);
+
+	switch (HG_FILE_GET_FILE_TYPE (object)) {
+	    case HG_FILE_TYPE_FILE:
+		    retval = (!object->is.file.is_mmap && object->is.file.fd == -1);
+		    break;
+	    case HG_FILE_TYPE_STDIN:
+	    case HG_FILE_TYPE_STDOUT:
+	    case HG_FILE_TYPE_STDERR:
+		    /* just ignore for them */
+		    break;
+	    case HG_FILE_TYPE_BUFFER:
+	    case HG_FILE_TYPE_STATEMENT_EDIT:
+	    case HG_FILE_TYPE_LINE_EDIT:
+		    retval = (object->is.buf.pos == 0 && object->is.buf.bufsize == 0);
+		    break;
+	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
+		    retval = object->is.callback.vtable->is_closed(object->is.callback.user_data);
+		    break;
+	    default:
+		    g_warning("Unknown file type %d was given to be closed.",
+			      HG_FILE_GET_FILE_TYPE (object));
+		    break;
+	}
+
+	return retval;
+}
+
+gboolean
 hg_file_object_is_readable(HgFileObject *object)
 {
 	g_return_val_if_fail (object != NULL, FALSE);

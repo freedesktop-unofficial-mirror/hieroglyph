@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include "operator.h"
 #include "version.h"
 #include "hgmem.h"
@@ -5967,7 +5968,60 @@ DEFUNC_OP_END
 
 DEFUNC_UNIMPLEMENTED_OP (standardencoding);
 DEFUNC_UNIMPLEMENTED_OP (start);
-DEFUNC_UNIMPLEMENTED_OP (status);
+
+DEFUNC_OP (status)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgValueNode *n, *npages, *nbytes, *nreferenced, *ncreated;
+	HgFileObject *file;
+	HgString *s;
+	HgMemPool *pool = hg_vm_get_current_pool(vm);
+	gchar *filename;
+	struct stat st;
+
+	while (1) {
+		if (depth < 1) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		n = hg_stack_index(ostack, 0);
+		if (HG_IS_VALUE_FILE (n)) {
+			file = HG_VALUE_GET_FILE (n);
+			HG_VALUE_MAKE_BOOLEAN (pool, n, !hg_file_object_is_closed(file));
+			hg_stack_pop(ostack);
+			retval = hg_stack_push(ostack, n);
+			/* it must be true */
+		} else if (HG_IS_VALUE_STRING (n)) {
+			hg_stack_pop(ostack);
+
+			s = HG_VALUE_GET_STRING (n);
+			filename = hg_string_get_string(s);
+			if (lstat(filename, &st) == -1) {
+				HG_VALUE_MAKE_BOOLEAN (pool, n, FALSE);
+			} else {
+				HG_VALUE_MAKE_INTEGER (pool, npages, st.st_blocks);
+				HG_VALUE_MAKE_INTEGER (pool, nbytes, st.st_size);
+				HG_VALUE_MAKE_INTEGER (pool, nreferenced, st.st_atime);
+				HG_VALUE_MAKE_INTEGER (pool, ncreated, st.st_mtime);
+				HG_VALUE_MAKE_BOOLEAN (pool, n, TRUE);
+				hg_stack_push(ostack, npages);
+				hg_stack_push(ostack, nbytes);
+				hg_stack_push(ostack, nreferenced);
+				hg_stack_push(ostack, ncreated);
+			}
+			retval = hg_stack_push(ostack, n);
+			if (!retval) {
+				_hg_operator_set_error(vm, op, VM_e_stackoverflow);
+			}
+		} else {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+		}
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
 
 DEFUNC_OP (stop)
 G_STMT_START

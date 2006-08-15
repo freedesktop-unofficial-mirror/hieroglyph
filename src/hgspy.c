@@ -249,6 +249,14 @@ _hgspy_file_close_cb(gpointer user_data)
 }
 
 static gboolean
+_hgspy_file_is_closed_cb(gpointer user_data)
+{
+	g_print("FIXME: is_closed.\n");
+
+	return FALSE;
+}
+
+static gboolean
 _hgspy_file_is_eof_cb(gpointer user_data)
 {
 	return FALSE;
@@ -281,6 +289,7 @@ _hgspy_vm_thread(gpointer data)
 		.flush          = _hgspy_file_flush_cb,
 		.seek           = _hgspy_file_seek_cb,
 		.close          = _hgspy_file_close_cb,
+		.is_closed      = _hgspy_file_is_closed_cb,
 		.is_eof         = _hgspy_file_is_eof_cb,
 		.clear_eof      = _hgspy_file_clear_eof_cb,
 		.get_error_code = _hgspy_file_get_error_code_cb,

@@ -1,3 +1,11 @@
+2006-08-16  Akira TAGOH  <at@gclab.org>
+
+	* src/hgspy.c (_hgspy_file_close_cb): new function.
+
+	* hieroglyph/hgfile.c (hg_file_object_is_closed): new function.
+
+	* hieroglyph/operator.c (_hg_operator_op_status): implemented.
+
 2006-08-15  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/operator.c (_hg_operator_op_token): implemented.

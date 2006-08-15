@@ -65,6 +65,7 @@ gssize        hg_file_object_seek       (HgFileObject  *object,
 					 gssize         offset,
 					 HgFilePosType  whence);
 void          hg_file_object_close      (HgFileObject  *object);
+gboolean      hg_file_object_is_closed  (HgFileObject  *object);
 gboolean      hg_file_object_is_readable(HgFileObject  *object);
 gboolean      hg_file_object_is_writable(HgFileObject  *object);
 void          hg_file_object_printf     (HgFileObject  *object,
