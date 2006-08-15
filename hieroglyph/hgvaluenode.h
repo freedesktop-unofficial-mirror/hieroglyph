@@ -62,28 +62,34 @@ G_BEGIN_DECLS
 	} G_STMT_END
 #define HG_VALUE_SET_ARRAY(obj, val)					\
 	HG_VALUE_SET_VALUE_NODE (obj, HG_TYPE_VALUE_ARRAY, pointer, val); \
-	hg_value_node_restorable(obj)
+	hg_value_node_restorable(obj);					\
+	hg_value_node_inherit_complex(obj, val)
 #define HG_VALUE_SET_STRING(obj, val)					\
 	HG_VALUE_SET_VALUE_NODE (obj, HG_TYPE_VALUE_STRING, pointer, val); \
-	hg_value_node_unrestorable(obj)
+	hg_value_node_unrestorable(obj);				\
+	hg_value_node_inherit_complex(obj, val)
 #define HG_VALUE_SET_DICT(obj, val)					\
 	HG_VALUE_SET_VALUE_NODE (obj, HG_TYPE_VALUE_DICT, pointer, val); \
-	hg_value_node_restorable(obj)
+	hg_value_node_restorable(obj);					\
+	hg_value_node_inherit_complex(obj, val)
 #define HG_VALUE_SET_NULL(obj, val)					\
 	HG_VALUE_SET_VALUE_NODE (obj, HG_TYPE_VALUE_NULL, pointer, val); \
 	hg_value_node_restorable(obj)
 #define HG_VALUE_SET_POINTER(obj, val)					\
 	HG_VALUE_SET_VALUE_NODE (obj, HG_TYPE_VALUE_POINTER, pointer, val); \
-	hg_value_node_restorable(obj)
+	hg_value_node_restorable(obj);					\
+	hg_value_node_inherit_complex(obj, val)
 #define HG_VALUE_SET_MARK(obj)						\
 	HG_VALUE_SET_VALUE_NODE (obj, HG_TYPE_VALUE_MARK, pointer, NULL); \
 	hg_value_node_restorable(obj)
 #define HG_VALUE_SET_FILE(obj, val)					\
 	HG_VALUE_SET_VALUE_NODE (obj, HG_TYPE_VALUE_FILE, pointer, val); \
-	hg_value_node_unrestorable(obj)
+	hg_value_node_unrestorable(obj);				\
+	hg_value_node_inherit_complex(obj, val)
 #define HG_VALUE_SET_SNAPSHOT(obj, val)					\
 	HG_VALUE_SET_VALUE_NODE (obj, HG_TYPE_VALUE_SNAPSHOT, pointer, val); \
-	hg_value_node_unrestorable(obj)
+	hg_value_node_unrestorable(obj);				\
+	hg_value_node_inherit_complex(obj, val)
 
 #define HG_VALUE_MAKE_VALUE_NODE(pool, obj, _type, sym, val)	\
 	G_STMT_START {						\
@@ -120,21 +126,27 @@ G_BEGIN_DECLS
 		HG_VALUE_MAKE_VALUE_NODE ((pool), (obj), HG_TYPE_VALUE_NAME, pointer, __hg_value_name_static); \
 	} G_STMT_END
 #define HG_VALUE_MAKE_ARRAY(obj, val)					\
-	HG_VALUE_MAKE_VALUE_NODE_WITH_SAME_POOL (obj, HG_TYPE_VALUE_ARRAY, pointer, val)
+	HG_VALUE_MAKE_VALUE_NODE_WITH_SAME_POOL (obj, HG_TYPE_VALUE_ARRAY, pointer, val); \
+	hg_value_node_inherit_complex(obj, val)
 #define HG_VALUE_MAKE_STRING(obj, val)					\
-	HG_VALUE_MAKE_VALUE_NODE_WITH_SAME_POOL (obj, HG_TYPE_VALUE_STRING, pointer, val)
+	HG_VALUE_MAKE_VALUE_NODE_WITH_SAME_POOL (obj, HG_TYPE_VALUE_STRING, pointer, val); \
+	hg_value_node_inherit_complex(obj, val)
 #define HG_VALUE_MAKE_DICT(obj, val)					\
-	HG_VALUE_MAKE_VALUE_NODE_WITH_SAME_POOL (obj, HG_TYPE_VALUE_DICT, pointer, val)
+	HG_VALUE_MAKE_VALUE_NODE_WITH_SAME_POOL (obj, HG_TYPE_VALUE_DICT, pointer, val); \
+	hg_value_node_inherit_complex(obj, val)
 #define HG_VALUE_MAKE_NULL(pool, obj, val)				\
 	HG_VALUE_MAKE_VALUE_NODE (pool, obj, HG_TYPE_VALUE_NULL, pointer, val)
 #define HG_VALUE_MAKE_POINTER(obj, val)					\
-	HG_VALUE_MAKE_VALUE_NODE_WITH_SAME_POOL (obj, HG_TYPE_VALUE_POINTER, pointer, val)
+	HG_VALUE_MAKE_VALUE_NODE_WITH_SAME_POOL (obj, HG_TYPE_VALUE_POINTER, pointer, val); \
+	hg_value_node_inherit_complex(obj, val)
 #define HG_VALUE_MAKE_MARK(pool, obj)					\
 	HG_VALUE_MAKE_VALUE_NODE (pool, obj, HG_TYPE_VALUE_MARK, pointer, NULL)
 #define HG_VALUE_MAKE_FILE(obj, val)					\
-	HG_VALUE_MAKE_VALUE_NODE_WITH_SAME_POOL (obj, HG_TYPE_VALUE_FILE, pointer, val)
+	HG_VALUE_MAKE_VALUE_NODE_WITH_SAME_POOL (obj, HG_TYPE_VALUE_FILE, pointer, val); \
+	hg_value_node_inherit_complex(obj, val)
 #define HG_VALUE_MAKE_SNAPSHOT(obj, val)				\
-	HG_VALUE_MAKE_VALUE_NODE_WITH_SAME_POOL (obj, HG_TYPE_VALUE_SNAPSHOT, pointer, val)
+	HG_VALUE_MAKE_VALUE_NODE_WITH_SAME_POOL (obj, HG_TYPE_VALUE_SNAPSHOT, pointer, val); \
+	hg_value_node_inherit_complex(obj, val)
 
 #define HG_VALUE_GET_VALUE_NODE(obj, sym)	((obj)->v.sym)
 #define HG_VALUE_GET_BOOLEAN(obj)		HG_VALUE_GET_VALUE_NODE (obj, boolean)
@@ -182,6 +194,19 @@ G_BEGIN_DECLS
 	} G_STMT_END
 #define hg_value_node_is_restorable(node)				\
 	hg_mem_is_restorable(hg_mem_get_object__inline_nocheck(node))
+#define hg_value_node_inherit_complex(node, hobj)		\
+	G_STMT_START {						\
+		HgMemObject *__obj__, *__obj2__;		\
+		hg_mem_get_object__inline((node), __obj__);	\
+		hg_mem_get_object__inline((hobj), __obj2__);	\
+		if (hg_mem_is_complex_mark(__obj2__)) {		\
+			hg_mem_complex_mark(__obj__);		\
+		} else {					\
+			hg_mem_complex_unmark(__obj__);		\
+		}						\
+	} G_STMT_END
+#define hg_value_node_has_complex_object(node)	\
+	hg_mem_is_complex_mark(hg_mem_get_object__inline_nocheck(node))
 
 HgValueNode *hg_value_node_new     (HgMemPool         *pool);
 gsize        hg_value_node_get_hash(const HgValueNode *node);

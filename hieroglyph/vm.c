@@ -635,6 +635,43 @@ hg_vm_use_global_pool(HgVM     *vm,
 	vm->use_global_pool = use_global;
 }
 
+gboolean
+hg_vm_is_global_object(HgVM        *vm,
+		       HgValueNode *node)
+{
+	HgMemObject *obj;
+	gboolean retval = FALSE;
+	gpointer p;
+
+	g_return_val_if_fail (vm != NULL, TRUE);
+	g_return_val_if_fail (node != NULL, TRUE);
+
+	switch (HG_VALUE_GET_VALUE_TYPE (node)) {
+	    case HG_TYPE_VALUE_BOOLEAN:
+	    case HG_TYPE_VALUE_INTEGER:
+	    case HG_TYPE_VALUE_REAL:
+	    case HG_TYPE_VALUE_NAME:
+	    case HG_TYPE_VALUE_NULL:
+	    case HG_TYPE_VALUE_POINTER:
+	    case HG_TYPE_VALUE_MARK:
+		    break;
+	    case HG_TYPE_VALUE_ARRAY:
+	    case HG_TYPE_VALUE_STRING:
+	    case HG_TYPE_VALUE_DICT:
+	    case HG_TYPE_VALUE_FILE:
+	    case HG_TYPE_VALUE_SNAPSHOT:
+		    p = HG_VALUE_GET_VALUE_NODE (node, pointer);
+		    hg_mem_get_object__inline(p, obj);
+		    retval = (vm->local_pool != obj->pool);
+		    break;
+	    default:
+		    g_warning("Failed to consider if the object is a global object due to the unknown type ID: %d", HG_VALUE_GET_VALUE_TYPE (node));
+		    break;
+	}
+
+	return retval;
+}
+
 HgGraphics *
 hg_vm_get_graphics(HgVM *vm)
 {

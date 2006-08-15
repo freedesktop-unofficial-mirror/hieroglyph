@@ -1,5 +1,28 @@
 2006-08-15  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/operator.c (_hg_operator_op_put): improved to detect
+	/invalidaccess.
+
+	* hieroglyph/vm.c (hg_vm_is_global_object): new function.
+
+	* hieroglyph/hgvaluenode.h (HG_VALUE_SET_ARRAY): inherited a complex
+	mark to find it easily.
+	(HG_VALUE_SET_STRING): likewise.
+	(HG_VALUE_SET_DICT): likewise.
+	(HG_VALUE_SET_POINTER): likewise.
+	(HG_VALUE_SET_FILE): likewise.
+	(HG_VALUE_SET_SNAPSHOT): likewise.
+	(HG_VALUE_MAKE_ARRAY): likewise.
+	(HG_VALUE_MAKE_STRING): likewise.
+	(HG_VALUE_MAKE_DICT): likewise.
+	(HG_VALUE_MAKE_POINTER): likewise.
+	(HG_VALUE_MAKE_FILE): likewise.
+	(HG_VALUE_MAKE_SNAPSHOT): likewise.
+	(hg_value_node_inherit_complex): new macro.
+	(hg_value_node_has_complex_object): likewise.
+
+	* lib/hg_init.ps (store): implemented.
+
 	* hieroglyph/hgfile.c (hg_file_object_new): marked as complex object.
 
 	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_save_snapshot):

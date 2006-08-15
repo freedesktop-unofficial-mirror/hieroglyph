@@ -4762,6 +4762,13 @@ G_STMT_START
 			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
 			break;
 		}
+		hg_mem_get_object__inline(n3, obj);
+		if (hg_vm_is_global_object(vm, n1) &&
+		    hg_mem_is_complex_mark(obj) &&
+		    !hg_vm_is_global_object(vm, n3)) {
+			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
+			break;
+		}
 		if (HG_IS_VALUE_ARRAY (n1)) {
 			HgArray *array = HG_VALUE_GET_ARRAY (n1);
 
@@ -4776,11 +4783,7 @@ G_STMT_START
 				_hg_operator_set_error(vm, op, VM_e_rangecheck);
 				break;
 			}
-			if (!hg_mem_pool_is_own_object(obj->pool, n3)) {
-				_hg_operator_set_error(vm, op, VM_e_invalidaccess);
-				break;
-			}
-			retval = hg_array_replace(array, n3, index);
+			retval = hg_array_replace_forcibly(array, n3, index, TRUE);
 		} else if (HG_IS_VALUE_DICT (n1)) {
 			HgDict *dict = HG_VALUE_GET_DICT (n1);
 
@@ -4789,12 +4792,7 @@ G_STMT_START
 				_hg_operator_set_error(vm, op, VM_e_invalidaccess);
 				break;
 			}
-			if (!hg_mem_pool_is_own_object(obj->pool, n2) ||
-			    !hg_mem_pool_is_own_object(obj->pool, n3)) {
-				_hg_operator_set_error(vm, op, VM_e_invalidaccess);
-				break;
-			}
-			retval = hg_dict_insert(obj->pool, dict, n2, n3);
+			retval = hg_dict_insert_forcibly(obj->pool, dict, n2, n3, TRUE);
 		} else if (HG_IS_VALUE_STRING (n1)) {
 			HgString *string = HG_VALUE_GET_STRING (n1);
 			gint32 c;
@@ -6045,8 +6043,6 @@ G_STMT_START
 	}
 } G_STMT_END;
 DEFUNC_OP_END
-
-DEFUNC_UNIMPLEMENTED_OP (store);
 
 DEFUNC_OP (string)
 G_STMT_START
@@ -7379,7 +7375,6 @@ hg_operator_level1_init(HgVM      *vm,
 	BUILD_OP (vm, pool, dict, status, status);
 	BUILD_OP (vm, pool, dict, stop, stop);
 	BUILD_OP (vm, pool, dict, stopped, stopped);
-	BUILD_OP (vm, pool, dict, store, store);
 	BUILD_OP (vm, pool, dict, string, string);
 	BUILD_OP (vm, pool, dict, stringwidth, stringwidth);
 	BUILD_OP (vm, pool, dict, stroke, stroke);

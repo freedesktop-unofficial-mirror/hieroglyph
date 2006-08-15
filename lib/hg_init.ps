@@ -162,6 +162,14 @@ systemdict /.statementedit known {
 /stack {
     0 1 count 3 sub {index =} for
 } bind odef
+% key value store -
+/store {
+    1 index where {
+    } {
+	currentdict
+    } ifelse
+    3 1 roll put
+} bind odef
 % key undefinefont -
 /undefinefont {
     .undefinefont

@@ -102,6 +102,8 @@ HgMemPool            *hg_vm_get_current_pool     (HgVM              *vm);
 gboolean              hg_vm_is_global_pool_used  (HgVM              *vm);
 void                  hg_vm_use_global_pool      (HgVM              *vm,
 						  gboolean           use_global);
+gboolean              hg_vm_is_global_object     (HgVM              *vm,
+						  HgValueNode       *node);
 HgGraphics           *hg_vm_get_graphics         (HgVM              *vm);
 gint32                hg_vm_get_current_time     (HgVM              *vm);
 GRand                *hg_vm_get_random_generator (HgVM              *vm);
