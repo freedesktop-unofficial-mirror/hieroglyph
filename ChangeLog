@@ -1,5 +1,17 @@
 2006-08-15  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/operator.c (_hg_operator_op_token): implemented.
+
+	* hieroglyph/hgfile.c (hg_file_object_seek): reflect ungetc.
+
+	* hieroglyph/scanner.h (_hg_scanner_isspace): new macro.
+
+	* hieroglyph/hgstring.c (hg_string_copy_as_substring): refer to current
+	substring offset to not break a substring when making from substring.
+
+	* hieroglyph/hgarray.c (hg_array_copy_as_subarray): refer to current
+	subarray offset to not break a subarray when making from subarray.
+
 	* hieroglyph/operator.c (_hg_operator_op_put): improved to detect
 	/invalidaccess.
 

@@ -6153,7 +6153,81 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_UNIMPLEMENTED_OP (token);
+DEFUNC_OP (token)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgValueNode *n1, *nresult, *npost;
+	HgFileObject *file;
+	HgString *s, *sub;
+	gboolean result = FALSE;
+	HgMemPool *pool = hg_vm_get_current_pool(vm);
+	HgMemObject *obj;
+	gchar c;
+
+	while (1) {
+		if (depth < 1) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		n1 = hg_stack_index(ostack, 0);
+		if (!hg_object_is_readable((HgObject *)n1)) {
+			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
+			break;
+		}
+		if (HG_IS_VALUE_FILE (n1)) {
+			file = HG_VALUE_GET_FILE (n1);
+			nresult = hg_scanner_get_object(vm, file);
+			c = hg_file_object_getc(file);
+			if (!_hg_scanner_isspace(c)) {
+				hg_file_object_ungetc(file, c);
+			}
+			hg_stack_pop(ostack);
+			if (nresult != NULL) {
+				hg_stack_push(ostack, nresult);
+				result = TRUE;
+			}
+		} else if (HG_IS_VALUE_STRING (n1)) {
+			s = HG_VALUE_GET_STRING (n1);
+			file = hg_file_object_new(pool, HG_FILE_TYPE_BUFFER,
+						  HG_FILE_MODE_READ, "%token",
+						  hg_string_get_string(s), hg_string_maxlength(s));
+			nresult = hg_scanner_get_object(vm, file);
+			c = hg_file_object_getc(file);
+			if (!_hg_scanner_isspace(c)) {
+				hg_file_object_ungetc(file, c);
+			}
+			hg_stack_pop(ostack);
+			if (nresult != NULL) {
+				gssize pos = hg_file_object_seek(file, 0, HG_FILE_POS_CURRENT);
+				guint maxlength = hg_string_maxlength(s) - 1;
+
+				hg_mem_get_object__inline(s, obj);
+				if (pos > maxlength) {
+					sub = hg_string_new(obj->pool, 0);
+				} else {
+					sub = hg_string_make_substring(obj->pool, s, pos, maxlength);
+				}
+				HG_VALUE_MAKE_STRING (npost, sub);
+				hg_stack_push(ostack, npost);
+				hg_stack_push(ostack, nresult);
+				result = TRUE;
+			}
+			hg_mem_free(file);
+		} else {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		HG_VALUE_MAKE_BOOLEAN (pool, n1, result);
+		retval = hg_stack_push(ostack, n1);
+		if (!retval) {
+			_hg_operator_set_error(vm, op, VM_e_stackoverflow);
+		}
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
 
 DEFUNC_UNIMPLEMENTED_OP (transform);
 

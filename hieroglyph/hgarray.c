@@ -512,7 +512,7 @@ hg_array_copy_as_subarray(HgArray *src,
 	hg_mem_free(dest->arrays);
 	/* make a sub-array */
 	dest->arrays = src->arrays;
-	dest->current = (gpointer)((gsize)dest->arrays + sizeof (gpointer) * start_index);
+	dest->current = (gpointer)((gsize)dest->arrays + sizeof (gpointer) * (src->subarray_offset + start_index));
 	dest->allocated_arrays = dest->n_arrays = end_index - start_index + 1;
 	dest->removed_arrays = 0;
 	dest->subarray_offset = start_index;

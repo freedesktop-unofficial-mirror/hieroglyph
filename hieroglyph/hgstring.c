@@ -461,7 +461,7 @@ hg_string_copy_as_substring(HgString *src,
 	hg_mem_free(dest->strings);
 	/* make a sub-string */
 	dest->strings = src->strings;
-	dest->current = (gpointer)((gsize)dest->strings + start_index);
+	dest->current = (gpointer)((gsize)dest->strings + src->substring_offset + start_index);
 	dest->allocated_size = dest->length = end_index - start_index + 1;
 	dest->is_fixed_size = TRUE;
 	dest->substring_offset = start_index;

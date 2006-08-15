@@ -780,6 +780,8 @@ hg_file_object_seek(HgFileObject  *object,
 						object->is.file.mmap.pos = offset;
 					break;
 				case HG_FILE_POS_CURRENT:
+					if (object->ungetc)
+						object->is.file.mmap.pos--;
 					object->is.file.mmap.pos += offset;
 					if (object->is.file.mmap.pos < 0)
 						object->is.file.mmap.pos = 0;
@@ -817,6 +819,8 @@ hg_file_object_seek(HgFileObject  *object,
 					object->is.buf.pos = offset;
 				break;
 			case HG_FILE_POS_CURRENT:
+				if (object->ungetc)
+					object->is.buf.pos--;
 				object->is.buf.pos += offset;
 				if (object->is.buf.pos < 0)
 					object->is.buf.pos = 0;
@@ -852,6 +856,7 @@ hg_file_object_seek(HgFileObject  *object,
 			      HG_FILE_GET_FILE_TYPE (object));
 		    break;
 	}
+	object->ungetc = 0;
 
 	return retval;
 }

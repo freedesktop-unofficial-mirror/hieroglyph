@@ -42,10 +42,7 @@
 #define _hg_scanner_skip_spaces(__hg_scanner_file, __hg_scanner_char)	\
 	while (1) {							\
 		(__hg_scanner_char) = hg_file_object_getc(__hg_scanner_file); \
-		if ((__hg_scanner_char) == ' ' ||			\
-		    (__hg_scanner_char) == '\t' ||			\
-		    (__hg_scanner_char) == '\r' ||			\
-		    (__hg_scanner_char) == '\n') {			\
+		if (_hg_scanner_isspace(__hg_scanner_char)) {		\
 			continue;					\
 		}							\
 		break;							\

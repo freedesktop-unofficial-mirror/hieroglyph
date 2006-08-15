@@ -38,6 +38,14 @@ typedef enum {
 	HG_SCAN_C_BINARY,
 } HgScannerCharType;
 
+
+#define _hg_scanner_isspace(__hg_scanner_char)	\
+	((__hg_scanner_char) == ' ' ||		\
+	 (__hg_scanner_char) == '\t' ||		\
+	 (__hg_scanner_char) == '\r' ||		\
+	 (__hg_scanner_char) == '\n')
+
+
 HgValueNode *hg_scanner_get_object(HgVM         *vm,
 				   HgFileObject *file);
 
