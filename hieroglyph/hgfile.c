@@ -275,7 +275,7 @@ hg_file_object_new(HgMemPool  *pool,
 	g_return_val_if_fail (pool != NULL, NULL);
 
 	retval = hg_mem_alloc_with_flags(pool, sizeof (HgFileObject),
-					 HG_FL_HGOBJECT);
+					 HG_FL_HGOBJECT | HG_FL_COMPLEX);
 	if (retval == NULL) {
 		g_warning("Failed to create a file object.");
 		return NULL;

@@ -804,7 +804,7 @@ _hg_allocator_bfit_real_save_snapshot(HgMemPool *pool)
 	guint i;
 
 	retval = hg_mem_alloc_with_flags(pool, sizeof (HgMemSnapshot),
-					 HG_FL_HGOBJECT);
+					 HG_FL_HGOBJECT | HG_FL_COMPLEX);
 	if (retval == NULL) {
 		g_warning("Failed to allocate a memory for snapshot.");
 		return NULL;

@@ -1,5 +1,10 @@
 2006-08-15  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgfile.c (hg_file_object_new): marked as complex object.
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_save_snapshot):
+	likewise.
+
 	* hieroglyph/operator.c (_hg_operator_op_writehexstring): implemented.
 	(_hg_operator_op_write): implemented.
 
