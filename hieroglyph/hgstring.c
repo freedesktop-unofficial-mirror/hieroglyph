@@ -408,6 +408,8 @@ hg_string_ncompare(const HgString *a,
 	g_return_val_if_fail (hg_object_is_readable((HgObject *)a), FALSE);
 	g_return_val_if_fail (hg_object_is_readable((HgObject *)b), FALSE);
 
+	if (length > a->length)
+		return FALSE;
 	return memcmp(a->current, b->current, length) == 0;
 }
 
@@ -422,10 +424,45 @@ hg_string_compare_with_raw(const HgString *a,
 
 	if (length < 0)
 		length = strlen(b);
-	if (a->length != length)
+	if (length > a->length)
 		return FALSE;
 
 	return memcmp(a->current, b, length) == 0;
+}
+
+gboolean
+hg_string_compare_offset_later(const HgString *a,
+			       const HgString *b,
+			       guint           offset1,
+			       guint           offset2)
+{
+	g_return_val_if_fail (a != NULL, FALSE);
+	g_return_val_if_fail (b != NULL, FALSE);
+	g_return_val_if_fail (hg_object_is_readable((HgObject *)a), FALSE);
+	g_return_val_if_fail (hg_object_is_readable((HgObject *)b), FALSE);
+	g_return_val_if_fail (offset1 <= a->length, FALSE);
+	g_return_val_if_fail (offset2 <= b->length, FALSE);
+
+	return memcmp(a->current + offset1, b->current + offset2, a->length - offset1) == 0;
+}
+
+gboolean
+hg_string_ncompare_offset_later(const HgString *a,
+				const HgString *b,
+				guint           offset1,
+				guint           offset2,
+				guint           length)
+{
+	g_return_val_if_fail (a != NULL, FALSE);
+	g_return_val_if_fail (b != NULL, FALSE);
+	g_return_val_if_fail (hg_object_is_readable((HgObject *)a), FALSE);
+	g_return_val_if_fail (hg_object_is_readable((HgObject *)b), FALSE);
+	g_return_val_if_fail (offset1 <= a->length, FALSE);
+	g_return_val_if_fail (offset2 <= b->length, FALSE);
+
+	if (length > (a->length - offset1))
+		return FALSE;
+	return memcmp(a->current + offset1, b->current + offset2, length) == 0;
 }
 
 HgString *

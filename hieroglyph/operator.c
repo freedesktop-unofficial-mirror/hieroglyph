@@ -777,6 +777,7 @@ G_STMT_START
 	guint depth = hg_stack_depth(ostack), length;
 	HgValueNode *n1, *n2, *result;
 	HgString *s, *seek, *post, *match;
+	HgMemObject *obj;
 	HgMemPool *pool = hg_vm_get_current_pool(vm);
 
 	while (1) {
@@ -800,9 +801,10 @@ G_STMT_START
 		seek = HG_VALUE_GET_STRING (n2);
 		length = hg_string_length(seek);
 		if (hg_string_ncompare(s, seek, length)) {
-			match = hg_string_make_substring(pool, s, 0, length - 1);
+			hg_mem_get_object__inline(s, obj);
+			match = hg_string_make_substring(obj->pool, s, 0, length - 1);
 			HG_VALUE_MAKE_STRING (n2, match);
-			post = hg_string_make_substring(pool, s, length, hg_string_length(s) - 1);
+			post = hg_string_make_substring(obj->pool, s, length, hg_string_length(s) - 1);
 			HG_VALUE_MAKE_STRING (n1, post);
 			hg_stack_pop(ostack);
 			hg_stack_pop(ostack);
@@ -5605,7 +5607,84 @@ DEFUNC_OP_END
 
 DEFUNC_UNIMPLEMENTED_OP (scalefont);
 
-DEFUNC_UNIMPLEMENTED_OP (search);
+DEFUNC_OP (search)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack), length1, length2, i;
+	HgValueNode *n1, *n2, *npre, *npost, *nmatch, *nresult;
+	HgString *s, *seek, *pre, *post, *match;
+	gchar c1, c2;
+	HgMemObject *obj;
+	HgMemPool *pool = hg_vm_get_current_pool(vm);
+	gboolean found = FALSE;
+
+	while (1) {
+		if (depth < 2) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
+		if (!HG_IS_VALUE_STRING (n1) ||
+		    !HG_IS_VALUE_STRING (n2)) {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		if (!hg_object_is_readable((HgObject *)n1) ||
+		    !hg_object_is_readable((HgObject *)n2)) {
+			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
+			break;
+		}
+		s = HG_VALUE_GET_STRING (n1);
+		seek = HG_VALUE_GET_STRING (n2);
+		length1 = hg_string_length(s);
+		length2 = hg_string_length(seek);
+		c2 = hg_string_index(seek, 0);
+		for (i = 0; i <= (length1 - length2); i++) {
+			c1 = hg_string_index(s, i);
+			if (c1 == c2) {
+				if (hg_string_ncompare_offset_later(s, seek, i, 0, length2)) {
+					found = TRUE;
+					hg_mem_get_object__inline(s, obj);
+					if (i == 0) {
+						pre = hg_string_new(obj->pool, 0);
+					} else {
+						pre = hg_string_make_substring(obj->pool, s, 0, i - 1);
+					}
+					match = hg_string_make_substring(obj->pool, s, i, i + length2 - 1);
+					if ((i + length2) == length1) {
+						post = hg_string_new(obj->pool, 0);
+					} else {
+						post = hg_string_make_substring(obj->pool, s, i + length2, length1 - 1);
+					}
+
+					HG_VALUE_MAKE_STRING (npost, post);
+					HG_VALUE_MAKE_STRING (nmatch, match);
+					HG_VALUE_MAKE_STRING (npre, pre);
+					HG_VALUE_MAKE_BOOLEAN (pool, nresult, TRUE);
+
+					hg_stack_pop(ostack);
+					hg_stack_pop(ostack);
+					hg_stack_push(ostack, npost);
+					hg_stack_push(ostack, nmatch);
+					hg_stack_push(ostack, npre);
+					retval = hg_stack_push(ostack, nresult);
+					if (!retval)
+						_hg_operator_set_error(vm, op, VM_e_stackoverflow);
+				}
+			}
+		}
+		if (!found) {
+			hg_stack_pop(ostack);
+			HG_VALUE_MAKE_BOOLEAN (pool, nresult, FALSE);
+			retval = hg_stack_push(ostack, nresult);
+			/* it must be true */
+		}
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
 
 DEFUNC_UNIMPLEMENTED_OP (setcachedevice);
 DEFUNC_UNIMPLEMENTED_OP (setcachelimit);

@@ -1,5 +1,13 @@
 2006-08-16  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/operator.c (_hg_operator_op_search): implemented.
+
+	* hieroglyph/hgstring.c (hg_string_compare_offset_later): new function.
+	(hg_string_ncompare_offset_later): new function.
+	(hg_string_ncompare): just return false if length is greater than
+	the source length.
+	(hg_string_compare_with_raw): likewise.
+
 	* src/hgspy.c (_hgspy_file_close_cb): new function.
 
 	* hieroglyph/hgfile.c (hg_file_object_is_closed): new function.
