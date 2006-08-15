@@ -1,6 +1,7 @@
 2006-08-15  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/operator.c (_hg_operator_op_writehexstring): implemented.
+	(_hg_operator_op_write): implemented.
 
 2006-08-14  Akira TAGOH  <at@gclab.org>
 
