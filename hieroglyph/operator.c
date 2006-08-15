@@ -6483,7 +6483,47 @@ DEFUNC_OP_END
 DEFUNC_UNIMPLEMENTED_OP (widthshow);
 
 DEFUNC_UNIMPLEMENTED_OP (write);
-DEFUNC_UNIMPLEMENTED_OP (writehexstring);
+
+DEFUNC_OP (writehexstring)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgValueNode *n1, *n2;
+	HgFileObject *file;
+	HgString *s;
+	guint length, i;
+
+	while (1) {
+		if (depth < 2) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
+		if (!HG_IS_VALUE_FILE (n1) ||
+		    !HG_IS_VALUE_STRING (n2)) {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		if (!hg_object_is_writable((HgObject *)n1) ||
+		    !hg_object_is_readable((HgObject *)n2)) {
+			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
+			break;
+		}
+		file = HG_VALUE_GET_FILE (n1);
+		s = HG_VALUE_GET_STRING (n2);
+		length = hg_string_maxlength(s);
+		for (i = 0; i < length; i++) {
+			hg_file_object_printf(file, "%02X", hg_string_index(s, i) & 0xff);
+		}
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = TRUE;
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
 
 DEFUNC_OP (writestring)
 G_STMT_START
