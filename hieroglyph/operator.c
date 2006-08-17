@@ -3187,7 +3187,8 @@ G_STMT_START
 			break;
 		}
 		if (!hg_object_is_executable((HgObject *)nproc) ||
-		    !hg_object_is_readable((HgObject *)nproc)) {
+		    (!hg_object_is_readable((HgObject *)nproc) &&
+		     !hg_object_is_executeonly((HgObject *)nproc))) {
 			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
 			break;
 		}
@@ -3271,7 +3272,8 @@ G_STMT_START
 			break;
 		}
 		if (!hg_object_is_executable((HgObject *)nproc) ||
-		    !hg_object_is_readable((HgObject *)nproc) ||
+		    (!hg_object_is_readable((HgObject *)nproc) &&
+		     !hg_object_is_executeonly((HgObject *)nproc)) ||
 		    !hg_object_is_readable((HgObject *)nval)) {
 			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
 			break;
@@ -3708,7 +3710,8 @@ G_STMT_START
 			break;
 		}
 		if (!hg_object_is_executable((HgObject *)nif) ||
-		    !hg_object_is_readable((HgObject *)nif)) {
+		    (!hg_object_is_readable((HgObject *)nif) &&
+		     !hg_object_is_executeonly((HgObject *)nif))) {
 			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
 			break;
 		}
@@ -3755,8 +3758,10 @@ G_STMT_START
 		}
 		if (!hg_object_is_executable((HgObject *)nif) ||
 		    !hg_object_is_executable((HgObject *)nelse) ||
-		    !hg_object_is_readable((HgObject *)nif) ||
-		    !hg_object_is_readable((HgObject *)nelse)) {
+		    (!hg_object_is_readable((HgObject *)nif) &&
+		     !hg_object_is_executeonly((HgObject *)nif)) ||
+		    (!hg_object_is_readable((HgObject *)nelse) &&
+		     !hg_object_is_executeonly((HgObject *)nelse))) {
 			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
 			break;
 		}
@@ -4154,7 +4159,8 @@ G_STMT_START
 			break;
 		}
 		if (!hg_object_is_executable((HgObject *)nproc) ||
-		    !hg_object_is_readable((HgObject *)nproc)) {
+		    (!hg_object_is_readable((HgObject *)nproc) &&
+		     !hg_object_is_executeonly((HgObject *)nproc))) {
 			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
 			break;
 		}
@@ -5222,7 +5228,8 @@ G_STMT_START
 			break;
 		}
 		if (!hg_object_is_executable((HgObject *)nproc) ||
-		    !hg_object_is_readable((HgObject *)nproc)) {
+		    (!hg_object_is_readable((HgObject *)nproc) &&
+		     !hg_object_is_executeonly((HgObject *)nproc))) {
 			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
 			break;
 		}
@@ -6151,7 +6158,8 @@ G_STMT_START
 			break;
 		}
 		node = hg_stack_index(ostack, 0);
-		if (!hg_object_is_readable((HgObject *)node)) {
+		if (!hg_object_is_readable((HgObject *)node) &&
+		    !hg_object_is_executeonly((HgObject *)node)) {
 			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
 			break;
 		}

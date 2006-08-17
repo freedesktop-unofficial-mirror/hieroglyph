@@ -1,3 +1,14 @@
+2006-08-18  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/operator.c (_hg_operator_op_for): check the executeonly
+	flag.
+	(_hg_operator_op_forall): likewise.
+	(_hg_operator_op_if): likewise.
+	(_hg_operator_op_ifelse): likewise.
+	(_hg_operator_op_loop): likewise.
+	(_hg_operator_op_repeat): likewise.
+	(_hg_operator_op_stopped): likewise.
+
 2006-08-16  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/operator.c (_hg_operator_op_search): implemented.
