@@ -142,6 +142,8 @@ void                  hg_vm_set_error_from_file  (HgVM              *vm,
 						  HgFileObject      *file,
 						  gboolean           drop_self);
 gboolean              hg_vm_main                 (HgVM              *vm);
+gchar                *hg_vm_find_libfile         (HgVM              *vm,
+						  const gchar       *file);
 gboolean              hg_vm_run                  (HgVM              *vm,
 						  const gchar       *file);
 gboolean              hg_vm_eval                 (HgVM              *vm,

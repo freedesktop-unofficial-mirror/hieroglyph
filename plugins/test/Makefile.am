@@ -33,3 +33,12 @@ libext_test_la_LDFLAGS =				\
 libext_test_la_LIBADD =					\
 	$(LDADDS)					\
 	$(NULL)
+
+hgpslibdir = $(HIEROGLYPH_LIBDIR)
+hgpslib_DATA =						\
+	hg_unittest.ps					\
+	$(NULL)
+
+EXTRA_DIST =						\
+	$(hgpslib_DATA)					\
+	$(NULL)

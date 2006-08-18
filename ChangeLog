@@ -1,5 +1,23 @@
 2006-08-18  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/operator.c (_hg_operator_op_private_hg_findlibfile):
+	new function.
+
+	* hieroglyph/vm.c (hg_vm_find_libfile): new function.
+
+	* lib/hg_init.ps (runlibfile): implemented.
+
+	* tests/run.sh: inherit HIEROGLYPH_LIB_PATH.
+
+	* plugins/test/hg_unittest.ps: new file.
+
+	* plugins/test/Makefile.am (hgpslib_DATA): add hg_unittest.ps.
+
+	* plugins/test/test-main.c (_test_op_validateunittest): new function.
+	(plugin_init): implemented.
+	(plugin_load): implemented.
+	(plugin_unload): implemented.
+
 	* hieroglyph/operator.c (_hg_operator_op_for): check the executeonly
 	flag.
 	(_hg_operator_op_forall): likewise.

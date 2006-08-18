@@ -27,6 +27,7 @@
 
 #include <errno.h>
 #include <string.h>
+#include <sys/stat.h>
 #include "vm.h"
 #include "hgallocator-bfit.h"
 #include "hgmem.h"
@@ -1339,6 +1340,45 @@ hg_vm_main(HgVM *vm)
 	}
 
 	return retval;
+}
+
+gchar *
+hg_vm_find_libfile(HgVM        *vm,
+		   const gchar *file)
+{
+	const gchar *env = g_getenv("HIEROGLYPH_LIB_PATH");
+	gchar **paths, *filename = NULL, *basename = g_path_get_basename(file);
+	gint i = 0;
+	struct stat st;
+
+	/* for the security reason, ignore the original path identifier */
+	if (env != NULL) {
+		paths = g_strsplit(env, ":", 0);
+		if (paths != NULL) {
+			while (paths[i] != NULL) {
+				filename = g_build_filename(paths[i], basename, NULL);
+				if (stat(filename, &st) == 0) {
+					break;
+				}
+				g_free(filename);
+				filename = NULL;
+				i++;
+			}
+		}
+		g_strfreev(paths);
+	}
+	if (filename == NULL) {
+		/* if the PS file couldn't load, try the default path. */
+		filename = g_build_filename(HIEROGLYPH_LIBDIR, basename, NULL);
+		if (stat(filename, &st) == -1) {
+			g_free(filename);
+			filename = NULL;
+		}
+	}
+	if (basename)
+		g_free(basename);
+
+	return filename;
 }
 
 gboolean

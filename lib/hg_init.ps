@@ -31,6 +31,12 @@ true .setglobal
 
 %%%
 %%% these aren't official operators/procedures for PostScript
+% -string- runlibfile -
+/runlibfile {
+    .findlibfile {
+	run
+    } if
+} bind odef
 % -file- any write=only -
 /write=only {
     .stringcvs writestring

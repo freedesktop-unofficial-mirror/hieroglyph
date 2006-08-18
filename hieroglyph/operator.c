@@ -7153,6 +7153,47 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
+DEFUNC_OP (private_hg_findlibfile)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgValueNode *node, *nresult;
+	HgString *s;
+	gchar *filename;
+	HgMemPool *pool = hg_vm_get_current_pool(vm);
+	gboolean result = FALSE;
+
+	while (1) {
+		if (depth < 1) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		node = hg_stack_index(ostack, 0);
+		if (!HG_IS_VALUE_STRING (node)) {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		s = HG_VALUE_GET_STRING (node);
+		filename = hg_vm_find_libfile(vm, hg_string_get_string(s));
+		hg_stack_pop(ostack);
+		if (filename) {
+			result = TRUE;
+			s = hg_string_new(pool, -1);
+			hg_string_append(s, filename, -1);
+			hg_string_fix_string_size(s);
+			HG_VALUE_MAKE_STRING(node, s);
+			hg_stack_push(ostack, node);
+		}
+		HG_VALUE_MAKE_BOOLEAN (pool, nresult, result);
+		retval = hg_stack_push(ostack, nresult);
+		if (!retval)
+			_hg_operator_set_error(vm, op, VM_e_stackoverflow);
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
+
 DEFUNC_OP (private_hg_hgrevision)
 G_STMT_START
 {
@@ -7779,6 +7820,7 @@ hg_operator_hieroglyph_init(HgVM      *vm,
 	BUILD_OP_ (vm, pool, dict, .clearerror, private_hg_clearerror);
 	BUILD_OP_ (vm, pool, dict, .currentglobal, private_hg_currentglobal);
 	BUILD_OP_ (vm, pool, dict, .execn, private_hg_execn);
+	BUILD_OP_ (vm, pool, dict, .findlibfile, private_hg_findlibfile);
 	BUILD_OP_ (vm, pool, dict, .hgrevision, private_hg_hgrevision);
 	BUILD_OP_ (vm, pool, dict, .initplugins, private_hg_initplugins);
 	BUILD_OP_ (vm, pool, dict, .product, private_hg_product);

@@ -1,0 +1,38 @@
+% initialize unittest dictionary
+7 dict dup begin
+    /.ostack null def
+    /expectederror null def
+    /expectedostack null def
+    /actualerror null def
+    /actualostack null def
+    /varbose true def
+    /expression null def
+end /.unittestdict exch def
+
+% proc unittest -bool-
+/unittest {
+    .dounittest
+    .unittestdict .validateunittest
+} bind odef
+
+% proc .dounittest -
+/.dounittest {
+    % back the ostack up into dict
+    count copy pop count 1 sub 2 idiv array astore .unittestdict /.ostack 3 -1 roll put
+    dup .unittestdict /expression 3 -1 roll put
+    {exec} stopped {
+	$error /newerror get {
+	    $error /errorname get .unittestdict /actualerror 3 -1 roll put
+	} {
+	    .unittestdict /actualerror /stop put
+	} ifelse
+    } {
+	.unittestdict /actualerror null put
+    } ifelse
+    count .unittestdict /.ostack get length sub copy
+    count .unittestdict /.ostack get length sub 2 idiv array astore
+    .unittestdict /actualostack 3 -1 roll put
+    % recover
+    clear .clearerror
+    .unittestdict /.ostack get aload pop
+} bind odef
