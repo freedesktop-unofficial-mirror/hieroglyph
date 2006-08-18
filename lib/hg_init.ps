@@ -159,6 +159,14 @@ systemdict /.statementedit known {
     } if
     exch type /realtype eq {cvr} if
 } bind odef
+% -key- load -value-
+/load {
+    dup where {
+	exch get
+    } {
+	/load errordict /undefined get exec
+    } ifelse
+} bind odef
 % matrix -matrix-
 /matrix {
     6 array identmatrix

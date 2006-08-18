@@ -1,7 +1,10 @@
 2006-08-19  Akira TAGOH  <at@gclab.org>
 
+	* lib/hg_init.ps (load): implemented in PostScript.
+
 	* hieroglyph/operator.c (hg_operator_level1_init): removed anchorsearch
 	implementation.
+	(_hg_operator_op_load): removed.
 
 	* lib/hg_init.ps (anchorsearch): implemented in PostScript.
 

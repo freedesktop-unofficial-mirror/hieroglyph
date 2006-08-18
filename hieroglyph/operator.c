@@ -4025,32 +4025,6 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_OP (load)
-G_STMT_START
-{
-	HgStack *ostack = hg_vm_get_ostack(vm);
-	guint depth = hg_stack_depth(ostack);
-	HgValueNode *nkey, *nval;
-
-	while (1) {
-		if (depth < 1) {
-			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
-			break;
-		}
-		nkey = hg_stack_index(ostack, 0);
-		nval = hg_vm_lookup(vm, nkey);
-		if (nval == NULL) {
-			_hg_operator_set_error(vm, op, VM_e_undefined);
-			break;
-		}
-		hg_stack_pop(ostack);
-		retval = hg_stack_push(ostack, nval);
-		/* it must be true */
-		break;
-	}
-} G_STMT_END;
-DEFUNC_OP_END
-
 DEFUNC_OP (log)
 G_STMT_START
 {
@@ -7576,7 +7550,6 @@ hg_operator_level1_init(HgVM      *vm,
 	BUILD_OP (vm, pool, dict, length, length);
 	BUILD_OP (vm, pool, dict, lineto, lineto);
 	BUILD_OP (vm, pool, dict, ln, ln);
-	BUILD_OP (vm, pool, dict, load, load);
 	BUILD_OP (vm, pool, dict, log, log);
 	BUILD_OP (vm, pool, dict, loop, loop);
 	BUILD_OP (vm, pool, dict, lt, lt);
