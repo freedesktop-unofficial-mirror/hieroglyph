@@ -1,5 +1,10 @@
 2006-08-19  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/operator.c (hg_operator_level1_init): removed anchorsearch
+	implementation.
+
+	* lib/hg_init.ps (anchorsearch): implemented in PostScript.
+
 	* hieroglyph/operator.c (_hg_operator_op_private_hg_undef):
 	implemented.
 

@@ -104,6 +104,16 @@ systemdict /.statementedit known {
 
 %%%
 %%% Level 1 operators
+% string seek anchorsearch post match true | string false
+/anchorsearch {
+    1 index 3 1 roll search {
+	length 0 eq {
+	    3 -1 roll pop true
+	} {
+	    pop pop false
+	} ifelse
+    } if
+} bind odef
 % any -string- cvs -substring-
 /cvs {
     exch .stringcvs exch copy

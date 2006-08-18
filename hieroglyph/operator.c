@@ -770,61 +770,6 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_OP (anchorsearch)
-G_STMT_START
-{
-	HgStack *ostack = hg_vm_get_ostack(vm);
-	guint depth = hg_stack_depth(ostack), length;
-	HgValueNode *n1, *n2, *result;
-	HgString *s, *seek, *post, *match;
-	HgMemObject *obj;
-	HgMemPool *pool = hg_vm_get_current_pool(vm);
-
-	while (1) {
-		if (depth < 2) {
-			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
-			break;
-		}
-		n2 = hg_stack_index(ostack, 0);
-		n1 = hg_stack_index(ostack, 1);
-		if (!HG_IS_VALUE_STRING (n1) ||
-		    !HG_IS_VALUE_STRING (n2)) {
-			_hg_operator_set_error(vm, op, VM_e_typecheck);
-			break;
-		}
-		if (!hg_object_is_readable((HgObject *)n1) ||
-		    !hg_object_is_readable((HgObject *)n2)) {
-			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
-			break;
-		}
-		s = HG_VALUE_GET_STRING (n1);
-		seek = HG_VALUE_GET_STRING (n2);
-		length = hg_string_length(seek);
-		if (hg_string_ncompare(s, seek, length)) {
-			hg_mem_get_object__inline(s, obj);
-			match = hg_string_make_substring(obj->pool, s, 0, length - 1);
-			HG_VALUE_MAKE_STRING (n2, match);
-			post = hg_string_make_substring(obj->pool, s, length, hg_string_length(s) - 1);
-			HG_VALUE_MAKE_STRING (n1, post);
-			hg_stack_pop(ostack);
-			hg_stack_pop(ostack);
-			HG_VALUE_MAKE_BOOLEAN (pool, result, TRUE);
-			hg_stack_push(ostack, n1);
-			hg_stack_push(ostack, n2);
-			retval = hg_stack_push(ostack, result);
-			if (!retval)
-				_hg_operator_set_error(vm, op, VM_e_stackoverflow);
-		} else {
-			hg_stack_pop(ostack);
-			HG_VALUE_MAKE_BOOLEAN (pool, result, FALSE);
-			retval = hg_stack_push(ostack, result);
-			/* it must be true */
-		}
-		break;
-	}
-} G_STMT_END;
-DEFUNC_OP_END
-
 DEFUNC_OP (and)
 G_STMT_START
 {
@@ -7521,7 +7466,6 @@ hg_operator_level1_init(HgVM      *vm,
 	BUILD_OP (vm, pool, dict, abs, abs);
 	BUILD_OP (vm, pool, dict, add, add);
 	BUILD_OP (vm, pool, dict, aload, aload);
-	BUILD_OP (vm, pool, dict, anchorsearch, anchorsearch);
 	BUILD_OP (vm, pool, dict, and, and);
 	BUILD_OP (vm, pool, dict, arc, arc);
 	BUILD_OP (vm, pool, dict, arcn, arcn);
