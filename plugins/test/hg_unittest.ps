@@ -5,9 +5,18 @@
     /expectedostack null def
     /actualerror null def
     /actualostack null def
-    /varbose true def
+    /verbose true def
     /expression null def
 end /.unittestdict exch def
+
+% -array- -name- -bool- initunittestdict -
+/initunittestdict {
+    .unittestdict begin
+	/verbose exch def
+	/expectederror exch def
+	/expectedostack exch def
+    end
+} bind odef
 
 % proc unittest -bool-
 /unittest {

@@ -1,5 +1,12 @@
 2006-08-18  Akira TAGOH  <at@gclab.org>
 
+	* tests/ps/test-abs.ps: new file.
+
+	* tests/ps/test-ps.sh: try to test the PostScript file on the same
+	directory to the test runner.
+
+	* plugins/test/hg_unittest.ps: fixed a typo.
+
 	* hieroglyph/hgarray.c (hg_array_compare): new function.
 
 	* hieroglyph/hgbtree.c (hg_btree_page_foreach): breaks the loop
