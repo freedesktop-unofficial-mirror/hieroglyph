@@ -628,11 +628,13 @@ _hg_scanner_get_object(HgVM         *vm,
 	}
 
 	node = hg_dict_lookup_with_string(hg_vm_get_dict_statusdict(vm), "%initialized");
+#if 0
 	if ((node == NULL ||
 	     HG_VALUE_GET_BOOLEAN (node) == FALSE) &&
 	    retval != NULL && !HG_IS_VALUE_STRING (retval)) {
 		hg_object_unwritable((HgObject *)retval);
 	}
+#endif
 
 	return retval;
 }

@@ -7220,6 +7220,50 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
+DEFUNC_OP (private_hg_odef)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	HgStack *estack = hg_vm_get_estack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgValueNode *n1, *n2, *n, *nself;
+	HgArray *array;
+	HgDict *systemdict = hg_vm_get_dict_systemdict(vm);
+
+	while (1) {
+		if (depth < 2) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
+		if (!HG_IS_VALUE_NAME (n1) ||
+		    !HG_IS_VALUE_ARRAY (n2)) {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		n = hg_dict_lookup_with_string(systemdict, "def");
+		if (n == NULL) {
+			_hg_operator_set_error(vm, op, VM_e_undefined);
+			break;
+		}
+		if (hg_object_is_executable((HgObject *)n2)) {
+			array = HG_VALUE_GET_ARRAY (n2);
+			hg_array_set_name(array, HG_VALUE_GET_NAME (n1));
+			hg_object_executeonly((HgObject *)n2);
+		}
+		nself = hg_stack_pop(estack);
+		hg_stack_push(estack, n);
+		retval = hg_stack_push(estack, nself);
+		if (!retval) {
+			_hg_operator_set_error(vm, op, VM_e_execstackoverflow);
+			break;
+		}
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
+
 DEFUNC_OP (private_hg_product)
 G_STMT_START
 {
@@ -7256,10 +7300,6 @@ G_STMT_START
 		n3 = hg_stack_index(ostack, 0);
 		n2 = hg_stack_index(ostack, 1);
 		n1 = hg_stack_index(ostack, 2);
-		if (!hg_object_is_writable((HgObject *)n1)) {
-			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
-			break;
-		}
 		if (HG_IS_VALUE_ARRAY (n1)) {
 			HgArray *array = HG_VALUE_GET_ARRAY (n1);
 
@@ -7277,10 +7317,6 @@ G_STMT_START
 		} else if (HG_IS_VALUE_DICT (n1)) {
 			HgDict *dict = HG_VALUE_GET_DICT (n1);
 
-			if (!hg_object_is_writable((HgObject *)dict)) {
-				_hg_operator_set_error(vm, op, VM_e_invalidaccess);
-				break;
-			}
 			hg_mem_get_object__inline(dict, obj);
 			retval = hg_dict_insert_forcibly(obj->pool, dict, n2, n3, TRUE);
 		} else if (HG_IS_VALUE_STRING (n1)) {
@@ -7825,6 +7861,7 @@ hg_operator_hieroglyph_init(HgVM      *vm,
 	BUILD_OP_ (vm, pool, dict, .findlibfile, private_hg_findlibfile);
 	BUILD_OP_ (vm, pool, dict, .hgrevision, private_hg_hgrevision);
 	BUILD_OP_ (vm, pool, dict, .initplugins, private_hg_initplugins);
+	BUILD_OP_ (vm, pool, dict, .odef, private_hg_odef);
 	BUILD_OP_ (vm, pool, dict, .product, private_hg_product);
 	BUILD_OP_ (vm, pool, dict, .forceput, private_hg_forceput);
 	BUILD_OP_ (vm, pool, dict, .revision, private_hg_revision);

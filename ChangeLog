@@ -1,3 +1,24 @@
+2006-08-19  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgarray.c (hg_array_set_name): new function.
+	(hg_array_get_name): new function.
+
+	* hieroglyph/operator.c (_hg_operator_op_private_hg_odef):
+	new function.
+	(_hg_operator_op_private_hg_forceput): ignore even readonly flag.
+
+	* hieroglyph/scanner.c (_hg_scanner_get_object): disabled making
+	an readonly object during initialization.
+
+	* hieroglyph/vm.c (hg_vm_set_error): dumps stacks if no handler
+	available.
+
+	* hieroglyph/hgvaluenode.c (_hg_value_node_real_to_string): return
+	the array name instead of -array- if it has.
+	(hg_value_node_debug_print): fixed a segfault issue.
+
+	* lib/hg_init.ps (odef): improved to deal with the error recovery.
+
 2006-08-18  Akira TAGOH  <at@gclab.org>
 
 	* tests/ps/test-abs.ps: new file.

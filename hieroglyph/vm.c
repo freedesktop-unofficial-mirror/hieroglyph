@@ -26,6 +26,7 @@
 #endif
 
 #include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include "vm.h"
@@ -1082,7 +1083,14 @@ hg_vm_set_error(HgVM        *vm,
 	_hg_stack_use_stack_validator(vm->dstack, FALSE);
 	proc = hg_dict_lookup(vm->errordict, __hg_vm_errorname[error]);
 	if (proc == NULL) {
-		g_error("[BUG] no error handler for /%s\n", HG_VALUE_GET_NAME (__hg_vm_errorname[error]));
+		g_warning("[BUG] no error handler for /%s\n", HG_VALUE_GET_NAME (__hg_vm_errorname[error]));
+		hg_file_object_printf(vm->stderr, "\nOperand stack:\n");
+		hg_stack_dump(vm->ostack, vm->stderr);
+		hg_file_object_printf(vm->stderr, "\nExecution stack:\n");
+		hg_stack_dump(vm->estack, vm->stderr);
+		hg_file_object_printf(vm->stderr, "\nDictionary stack:\n");
+		hg_stack_dump(vm->dstack, vm->stderr);
+		abort();
 	}
 	copy_proc = hg_object_copy((HgObject *)proc);
 	if (copy_proc == NULL) {

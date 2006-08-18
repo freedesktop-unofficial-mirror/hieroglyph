@@ -6,3 +6,22 @@
 
 [0] null true initunittestdict {0 abs} unittest not {
 } if
+
+[/foo] /typecheck true initunittestdict {/foo abs} unittest not {
+} if
+
+[[]] /typecheck true initunittestdict {[] abs} unittest not {
+} if
+
+[1 dict] /typecheck true initunittestdict {1 dict abs} unittest not {
+} if
+
+%1 array dup 0 mark put /typecheck true initunittestdict {mark abs} unittest not {
+{//mark} cvlit /typecheck true initunittestdict {mark abs} unittest not {
+} if
+
+[null] /typecheck true initunittestdict {null abs} unittest not {
+} if
+
+[] /stackunderflow true initunittestdict {abs} unittest not {
+} if

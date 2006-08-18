@@ -60,6 +60,9 @@ gboolean     hg_array_copy_as_subarray(HgArray       *src,
 				       guint          end_index);
 gboolean     hg_array_compare         (const HgArray *a,
 				       const HgArray *b);
+void         hg_array_set_name        (HgArray       *array,
+				       const gchar   *name);
+const gchar *hg_array_get_name        (const HgArray *array);
 
 
 G_END_DECLS

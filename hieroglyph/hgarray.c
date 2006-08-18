@@ -40,6 +40,7 @@ struct _HieroGlyphArray {
 	HgObject      object;
 	HgValueNode **current;
 	HgValueNode **arrays;
+	gchar        *name;
 	guint16       n_arrays;
 	guint16       allocated_arrays;
 	guint16       removed_arrays;
@@ -78,6 +79,14 @@ _hg_array_real_set_flags(gpointer data,
 	HgMemObject *obj;
 	guint i;
 
+	if (array->name) {
+		hg_mem_get_object__inline(array->name, obj);
+		if (obj == NULL) {
+			g_warning("[BUG] Invalid object %p to be marked: Array name", array->name);
+		} else {
+			hg_mem_add_flags__inline(obj, flags, TRUE);
+		}
+	}
 	for (i = 0; i < array->n_arrays; i++) {
 		hg_mem_get_object__inline(array->current[i], obj);
 		if (obj == NULL) {
@@ -122,6 +131,12 @@ _hg_array_real_relocate(gpointer           data,
 	HgArray *array = data;
 	guint i;
 
+	if (array->name) {
+		if ((gsize)array->name >= info->start &&
+		    (gsize)array->name <= info->end) {
+			array->name = (gchar *)((gsize)array->name + info->diff);
+		}
+	}
 	if ((gsize)array->arrays >= info->start &&
 	    (gsize)array->arrays <= info->end) {
 		array->arrays = (HgValueNode **)((gsize)array->arrays + info->diff);
@@ -151,6 +166,7 @@ _hg_array_real_dup(gpointer data)
 		return NULL;
 	}
 	memcpy(retval->arrays, array->current, sizeof (HgValueNode *) * array->n_arrays);
+	retval->name = array->name;
 	retval->n_arrays = array->n_arrays;
 
 	return retval;
@@ -180,6 +196,7 @@ _hg_array_real_copy(gpointer data)
 		hg_mem_unset_copying(obj);
 		return NULL;
 	}
+	retval->name = array->name;
 	for (i = 0; i < array->n_arrays; i++) {
 		p = hg_object_copy((HgObject *)array->current[i]);
 		if (p == NULL) {
@@ -207,6 +224,14 @@ _hg_array_real_to_string(gpointer data)
 	retval = hg_string_new(obj->pool, -1);
 	if (retval == NULL)
 		return NULL;
+	if (array->name && array->name[0] != 0) {
+		hg_string_append(retval, "--", 2);
+		hg_string_append(retval, array->name, -1);
+		hg_string_append(retval, "--", 2);
+		hg_string_fix_string_size(retval);
+
+		return retval;
+	}
 	if (!hg_object_is_readable(data)) {
 		hg_string_append(retval, "-array-", 7);
 		hg_string_fix_string_size(retval);
@@ -266,6 +291,7 @@ hg_array_new(HgMemPool *pool,
 	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
 	hg_object_set_vtable(&retval->object, &__hg_array_vtable);
 
+	retval->name = NULL;
 	retval->n_arrays = 0;
 	retval->removed_arrays = 0;
 	retval->subarray_offset = 0;
@@ -558,4 +584,33 @@ hg_array_compare(const HgArray *a,
 	hg_mem_unset_copying(obj);
 
 	return retval;
+}
+
+void
+hg_array_set_name(HgArray     *array,
+		  const gchar *name)
+{
+	HgMemObject *obj;
+	size_t len;
+
+	g_return_if_fail (array != NULL);
+	g_return_if_fail (name != NULL && name[0] != 0);
+
+	len = strlen(name);
+	hg_mem_get_object__inline(array, obj);
+	if (array->name)
+		hg_mem_free(array->name);
+	array->name = hg_mem_alloc_with_flags(obj->pool,
+					      sizeof (gchar) * (len + 1),
+					      HG_FL_RESTORABLE);
+	memcpy(array->name, name, len);
+	array->name[len] = 0;
+}
+
+const gchar *
+hg_array_get_name(const HgArray *array)
+{
+	g_return_val_if_fail (array != NULL, NULL);
+
+	return array->name;
 }

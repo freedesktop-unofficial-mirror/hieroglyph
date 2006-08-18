@@ -245,8 +245,10 @@ _hg_value_node_real_to_string(gpointer data)
 {
 	HgValueNode *node = data;
 	HgMemObject *obj;
-	HgString *retval, *str;
+	HgString *retval, *str = NULL;
+	HgArray *array;
 	gchar *tmp, start, end;
+	const gchar *name;
 	size_t len;
 
 	hg_mem_get_object__inline(data, obj);
@@ -302,7 +304,14 @@ _hg_value_node_real_to_string(gpointer data)
 			    hg_string_concat(retval, str);
 			    hg_string_append_c(retval, end);
 		    } else {
-			    hg_string_append(retval, "-array-", -1);
+			    array = HG_VALUE_GET_ARRAY (node);
+			    if ((name = hg_array_get_name(array)) != NULL) {
+				    hg_string_append(retval, "--", 2);
+				    hg_string_append(retval, name, -1);
+				    hg_string_append(retval, "--", 2);
+			    } else {
+				    hg_string_append(retval, "-array-", -1);
+			    }
 		    }
 		    break;
 	    case HG_TYPE_VALUE_STRING:
@@ -341,6 +350,8 @@ _hg_value_node_real_to_string(gpointer data)
 			      HG_VALUE_GET_VALUE_TYPE (node));
 		    break;
 	}
+	if (str)
+		hg_mem_free(str);
 	hg_string_fix_string_size(retval);
 
 	return retval;
@@ -562,8 +573,14 @@ hg_value_node_debug_print(HgFileObject    *file,
 		    }
 		    break;
 	    case HG_TYPE_VALUE_BOOLEAN:
+		    info = g_strdup_printf("%s", (((HgValueNode *)self)->v.boolean ? "true" : "false"));
+		    break;
 	    case HG_TYPE_VALUE_INTEGER:
+		    info = g_strdup_printf("%d", ((HgValueNode *)self)->v.integer);
+		    break;
 	    case HG_TYPE_VALUE_REAL:
+		    info = g_strdup_printf("%f", ((HgValueNode *)self)->v.real);
+		    break;
 	    case HG_TYPE_VALUE_NAME:
 		    info = g_strdup((gchar *)((HgValueNode *)self)->v.pointer);
 		    break;
