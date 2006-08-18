@@ -176,7 +176,7 @@ G_STMT_START
 				if (verbose) {
 				  ostack_mismatch:
 					hg_file_object_printf(hg_vm_get_io(vm, VM_IO_STDERR),
-							      "Expression: %s - expected ostack is %s, but actual ostack was %s",
+							      "Expression: %s - expected ostack is %s, but actual ostack was %s\n",
 							      hg_string_get_string(sexp),
 							      hg_string_get_string(se),
 							      hg_string_get_string(sa));
@@ -187,7 +187,7 @@ G_STMT_START
 					HgValueNode *nna = hg_array_index(actual, i);
 					HgValueNode *nne = hg_array_index(expected, i);
 
-					if (!hg_value_node_compare(nna, nne)) {
+					if (!hg_value_node_compare_content(nna, nne)) {
 						goto ostack_mismatch;
 					}
 				}

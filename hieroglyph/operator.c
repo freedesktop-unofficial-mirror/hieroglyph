@@ -1588,10 +1588,10 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-static void
+static gboolean
 _hg_operator_copy__traverse_dict(gpointer key,
-				       gpointer val,
-				       gpointer data)
+				 gpointer val,
+				 gpointer data)
 {
 	HgValueNode *nkey = key, *nval = val, *nnkey, *nnval;
 	HgDict *dict = data;
@@ -1601,6 +1601,8 @@ _hg_operator_copy__traverse_dict(gpointer key,
 	nnkey = hg_object_dup((HgObject *)nkey);
 	nnval = hg_object_dup((HgObject *)nval);
 	hg_dict_insert(obj->pool, dict, nnkey, nnval);
+
+	return TRUE;
 }
 
 DEFUNC_OP (copy)

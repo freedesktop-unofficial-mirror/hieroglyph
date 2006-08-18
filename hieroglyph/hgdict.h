@@ -42,18 +42,20 @@ gboolean     hg_dict_insert_forcibly   (HgMemPool      *pool,
 					gboolean        force);
 gboolean     hg_dict_remove            (HgDict         *dict,
 					HgValueNode    *key);
-HgValueNode *hg_dict_lookup            (HgDict         *dict,
+HgValueNode *hg_dict_lookup            (const HgDict   *dict,
 					HgValueNode    *key);
 HgValueNode *hg_dict_lookup_with_string(HgDict         *dict,
 					const gchar    *key);
-guint        hg_dict_length            (HgDict         *dict);
-guint        hg_dict_maxlength         (HgDict         *dict);
-gboolean     hg_dict_traverse          (HgDict         *dict,
+guint        hg_dict_length            (const HgDict   *dict);
+guint        hg_dict_maxlength         (const HgDict   *dict);
+gboolean     hg_dict_traverse          (const HgDict   *dict,
 					HgTraverseFunc  func,
 					gpointer        data);
 gboolean     hg_dict_first             (HgDict         *dict,
 					HgValueNode   **key,
 					HgValueNode   **val);
+gboolean     hg_dict_compare           (const HgDict   *a,
+					const HgDict   *b);
 
 
 G_END_DECLS

@@ -38,10 +38,15 @@
 
 typedef struct _HieroGlyphDictNode		HgDictNode;
 typedef struct _HieroGlyphDictTraverseInfo	HgDictTraverseInfo;
+typedef struct _HieroGlyphDictCompareData	HgDictCompareData;
 
 struct _HieroGlyphDictTraverseInfo {
 	HgTraverseFunc  func;
 	gpointer        data;
+};
+struct _HieroGlyphDictCompareData {
+	const HgDict *opposite_dict;
+	gboolean      result;
 };
 struct _HieroGlyphDictNode {
 	HgObject     object;
@@ -893,12 +898,14 @@ _hg_dict_get_prime(guint n)
 	return hg_dict_primes[i];
 }
 
-static void
+static gboolean
 _hg_dict_node_free(gpointer key,
 		   gpointer val,
 		   gpointer data)
 {
 	g_list_free(val);
+
+	return TRUE;
 }
 
 static void
@@ -912,7 +919,7 @@ _hg_dict_real_free(gpointer data)
 	}
 }
 
-static void
+static gboolean
 _hg_dict_traverse_set_flags(gpointer key,
 			    gpointer val,
 			    gpointer data)
@@ -944,6 +951,8 @@ _hg_dict_traverse_set_flags(gpointer key,
 				hg_mem_add_flags__inline(obj, flags, TRUE);
 		}
 	}
+
+	return TRUE;
 }
 
 static void
@@ -957,7 +966,7 @@ _hg_dict_real_set_flags(gpointer data,
 			 GUINT_TO_POINTER (flags));
 }
 
-static void
+static gboolean
 _hg_dict_traverse_relocate(gpointer key,
 			   gpointer val,
 			   gpointer data)
@@ -971,6 +980,8 @@ _hg_dict_traverse_relocate(gpointer key,
 			list->data = (gpointer)((gsize)list->data + info->diff);
 		}
 	}
+
+	return TRUE;
 }
 
 static void
@@ -982,7 +993,7 @@ _hg_dict_real_relocate(gpointer           data,
 	hg_btree_foreach(dict->dict, _hg_dict_traverse_relocate, info);
 }
 
-static void
+static gboolean
 _hg_dict_traverse_dup(gpointer key,
 		      gpointer val,
 		      gpointer data)
@@ -1003,6 +1014,8 @@ _hg_dict_traverse_dup(gpointer key,
 		nnval = nval;
 	}
 	hg_dict_insert(obj->pool, dict, nnkey, nnval);
+
+	return TRUE;
 }
 
 static gpointer
@@ -1147,7 +1160,7 @@ _hg_dict_node_compare_with_string(gconstpointer a,
 	return 1;
 }
 
-static void
+static gboolean
 _hg_dict_traverse_real_traverse(gpointer key,
 				gpointer val,
 				gpointer data)
@@ -1158,8 +1171,35 @@ _hg_dict_traverse_real_traverse(gpointer key,
 	for (l = val; l != NULL; l = g_list_next(l)) {
 		HgDictNode *node = l->data;
 
-		info->func(node->key, node->val, info->data);
+		if (!info->func(node->key, node->val, info->data))
+			return FALSE;
 	}
+
+	return TRUE;
+}
+
+static gboolean
+_hg_dict_compare_on_traverse(gpointer key,
+			     gpointer val,
+			     gpointer data)
+{
+	HgValueNode *nkey = key;
+	HgValueNode *nval = val;
+	HgValueNode *n;
+	HgDictCompareData *info = data;
+
+	if ((n = hg_dict_lookup(info->opposite_dict, nkey)) == NULL) {
+		info->result = FALSE;
+
+		return FALSE;
+	}
+	if (!hg_value_node_compare_content(nval, n)) {
+		info->result = FALSE;
+
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 /*
@@ -1308,8 +1348,8 @@ hg_dict_remove(HgDict      *dict,
 }
 
 HgValueNode *
-hg_dict_lookup(HgDict      *dict,
-	       HgValueNode *key)
+hg_dict_lookup(const HgDict *dict,
+	       HgValueNode  *key)
 {
 	gsize hash;
 	GList *l, *ll;
@@ -1362,7 +1402,7 @@ hg_dict_lookup_with_string(HgDict      *dict,
 }
 
 guint
-hg_dict_length(HgDict *dict)
+hg_dict_length(const HgDict *dict)
 {
 	g_return_val_if_fail (dict != NULL, 0);
 	g_return_val_if_fail (hg_object_is_readable((HgObject *)dict), 0);
@@ -1371,7 +1411,7 @@ hg_dict_length(HgDict *dict)
 }
 
 guint
-hg_dict_maxlength(HgDict *dict)
+hg_dict_maxlength(const HgDict *dict)
 
 {
 	g_return_val_if_fail (dict != NULL, 0);
@@ -1381,7 +1421,7 @@ hg_dict_maxlength(HgDict *dict)
 }
 
 gboolean
-hg_dict_traverse(HgDict         *dict,
+hg_dict_traverse(const HgDict   *dict,
 		 HgTraverseFunc  func,
 		 gpointer        data)
 {
@@ -1425,4 +1465,37 @@ hg_dict_first(HgDict       *dict,
 	hg_btree_iter_free(iter);
 
 	return TRUE;
+}
+
+gboolean
+hg_dict_compare(const HgDict *a,
+		const HgDict *b)
+{
+	HgDictCompareData info;
+	HgMemObject *obj;
+
+	g_return_val_if_fail (a != NULL, FALSE);
+	g_return_val_if_fail (b != NULL, FALSE);
+
+	if (a->n_keys != b->n_keys)
+		return FALSE;
+
+	hg_mem_get_object__inline(a, obj);
+	if (obj == NULL)
+		return FALSE;
+
+	if (hg_mem_is_copying(obj)) {
+		/* postpone the decision. leave it to later comparing so far */
+		return TRUE;
+	}
+	hg_mem_set_copying(obj);
+
+	info.opposite_dict = b;
+	info.result = TRUE;
+
+	hg_dict_traverse(a, _hg_dict_compare_on_traverse, &info);
+
+	hg_mem_unset_copying(obj);
+
+	return info.result;
 }

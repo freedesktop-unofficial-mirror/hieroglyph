@@ -79,7 +79,7 @@ typedef struct _HieroGlyphMatrix		HgMatrix;
 typedef struct _HieroGlyphDeviceVTable		HgDeviceVTable;
 typedef struct _HieroGlyphDevice		HgDevice;
 
-typedef void                (*HgTraverseFunc)      (gpointer    key,
+typedef gboolean            (*HgTraverseFunc)      (gpointer    key,
 						    gpointer    val,
 						    gpointer    data);
 typedef void                (*HgDebugFunc)         (gpointer    data);

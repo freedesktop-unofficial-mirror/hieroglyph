@@ -261,6 +261,7 @@ plugins/test/Makefile
 po/Makefile.in
 src/Makefile
 tests/Makefile
+tests/ps/Makefile
 hieroglyph.pc
 ])
 AC_OUTPUT

@@ -1,5 +1,23 @@
 2006-08-18  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgarray.c (hg_array_compare): new function.
+
+	* hieroglyph/hgbtree.c (hg_btree_page_foreach): breaks the loop
+	if the function returns false.
+
+	* hieroglyph/hgdict.c (_hg_dict_compare_on_traverse): new function.
+	(hg_dict_compare): new function.
+
+	* hieroglyph/hgvaluenode.c (hg_value_node_compare_content):
+	new function.
+
+	* tests/ps/Makefile.am: new file.
+
+	* tests/ps/test-ps.sh: new file.
+
+	* plugins/test/test-main.c (_test_op_validateunittest): use
+	hg_value_node_compare_content instead of hg_value_node_compare.
+
 	* hieroglyph/operator.c (_hg_operator_op_private_hg_findlibfile):
 	new function.
 

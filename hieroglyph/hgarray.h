@@ -30,34 +30,36 @@ G_BEGIN_DECLS
 
 #define hg_array_free(obj)	hg_mem_free(obj)
 
-HgArray     *hg_array_new             (HgMemPool   *pool,
-				       gint32       num);
-gboolean     hg_array_append          (HgArray     *array,
-				       HgValueNode *node);
-gboolean     hg_array_append_forcibly (HgArray     *array,
-				       HgValueNode *node,
-				       gboolean     force);
-gboolean     hg_array_replace         (HgArray     *array,
-				       HgValueNode *node,
-				       guint        index);
-gboolean     hg_array_replace_forcibly(HgArray     *array,
-				       HgValueNode *node,
-				       guint        index,
-				       gboolean     force);
-gboolean     hg_array_remove          (HgArray     *array,
-				       guint        index);
-HgValueNode *hg_array_index           (HgArray     *array,
-				       guint        index);
-guint        hg_array_length          (HgArray     *array);
-gboolean     hg_array_fix_array_size  (HgArray     *array);
-HgArray     *hg_array_make_subarray   (HgMemPool   *pool,
-				       HgArray     *array,
-				       guint        start_index,
-				       guint        end_index);
-gboolean     hg_array_copy_as_subarray(HgArray     *src,
-				       HgArray     *dest,
-				       guint        start_index,
-				       guint        end_index);
+HgArray     *hg_array_new             (HgMemPool     *pool,
+				       gint32         num);
+gboolean     hg_array_append          (HgArray       *array,
+				       HgValueNode   *node);
+gboolean     hg_array_append_forcibly (HgArray       *array,
+				       HgValueNode   *node,
+				       gboolean       force);
+gboolean     hg_array_replace         (HgArray       *array,
+				       HgValueNode   *node,
+				       guint          index);
+gboolean     hg_array_replace_forcibly(HgArray       *array,
+				       HgValueNode   *node,
+				       guint          index,
+				       gboolean       force);
+gboolean     hg_array_remove          (HgArray       *array,
+				       guint          index);
+HgValueNode *hg_array_index           (const HgArray *array,
+				       guint          index);
+guint        hg_array_length          (HgArray       *array);
+gboolean     hg_array_fix_array_size  (HgArray       *array);
+HgArray     *hg_array_make_subarray   (HgMemPool     *pool,
+				       HgArray       *array,
+				       guint          start_index,
+				       guint          end_index);
+gboolean     hg_array_copy_as_subarray(HgArray       *src,
+				       HgArray       *dest,
+				       guint          start_index,
+				       guint          end_index);
+gboolean     hg_array_compare         (const HgArray *a,
+				       const HgArray *b);
 
 
 G_END_DECLS

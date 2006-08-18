@@ -28,9 +28,11 @@
 #include <math.h>
 #include <string.h>
 #include "hgvaluenode.h"
+#include "hgarray.h"
+#include "hgdict.h"
+#include "hgfile.h"
 #include "hgmem.h"
 #include "hgstring.h"
-#include "hgfile.h"
 
 
 static void     _hg_value_node_real_set_flags(gpointer           data,
@@ -451,6 +453,57 @@ hg_value_node_compare(const HgValueNode *a,
 		    break;
 	    case HG_TYPE_VALUE_ARRAY:
 	    case HG_TYPE_VALUE_DICT:
+	    case HG_TYPE_VALUE_FILE:
+	    case HG_TYPE_VALUE_POINTER:
+	    case HG_TYPE_VALUE_SNAPSHOT:
+		    retval = (a->v.pointer == b->v.pointer);
+		    break;
+	    case HG_TYPE_VALUE_NULL:
+	    case HG_TYPE_VALUE_MARK:
+		    retval = TRUE;
+		    break;
+	    default:
+		    g_warning("[BUG] Unknown node type is given to compare: %d",
+			      HG_VALUE_GET_VALUE_TYPE (a));
+		    break;
+	}
+
+	return retval;
+}
+
+gboolean
+hg_value_node_compare_content(const HgValueNode *a,
+			      const HgValueNode *b)
+{
+	gboolean retval = FALSE;
+
+	g_return_val_if_fail (a != NULL, FALSE);
+	g_return_val_if_fail (b != NULL, FALSE);
+
+	if (HG_VALUE_GET_VALUE_TYPE (a) != HG_VALUE_GET_VALUE_TYPE (b))
+		return FALSE;
+	switch (HG_VALUE_GET_VALUE_TYPE (a)) {
+	    case HG_TYPE_VALUE_BOOLEAN:
+		    retval = (HG_VALUE_GET_BOOLEAN (a) == HG_VALUE_GET_BOOLEAN (b));
+		    break;
+	    case HG_TYPE_VALUE_INTEGER:
+		    retval = (HG_VALUE_GET_INTEGER (a) == HG_VALUE_GET_INTEGER (b));
+		    break;
+	    case HG_TYPE_VALUE_REAL:
+		    retval = (fabs(HG_VALUE_GET_REAL (a) - HG_VALUE_GET_REAL (b)) <= fabs(DBL_EPSILON * HG_VALUE_GET_REAL (a)));
+		    break;
+	    case HG_TYPE_VALUE_NAME:
+		    retval = (strcmp(HG_VALUE_GET_NAME (a), HG_VALUE_GET_NAME (b)) == 0);
+		    break;
+	    case HG_TYPE_VALUE_STRING:
+		    retval = hg_string_compare(HG_VALUE_GET_STRING (a), HG_VALUE_GET_STRING (b));
+		    break;
+	    case HG_TYPE_VALUE_ARRAY:
+		    retval = hg_array_compare(HG_VALUE_GET_ARRAY (a), HG_VALUE_GET_ARRAY (b));
+		    break;
+	    case HG_TYPE_VALUE_DICT:
+		    retval = hg_dict_compare(HG_VALUE_GET_DICT (a), HG_VALUE_GET_DICT (b));
+		    break;
 	    case HG_TYPE_VALUE_FILE:
 	    case HG_TYPE_VALUE_POINTER:
 	    case HG_TYPE_VALUE_SNAPSHOT:

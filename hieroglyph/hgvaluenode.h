@@ -208,17 +208,19 @@ G_BEGIN_DECLS
 #define hg_value_node_has_complex_object(node)	\
 	hg_mem_is_complex_mark(hg_mem_get_object__inline_nocheck(node))
 
-HgValueNode *hg_value_node_new     (HgMemPool         *pool);
-gsize        hg_value_node_get_hash(const HgValueNode *node);
-gboolean     hg_value_node_compare (const HgValueNode *a,
-				    const HgValueNode *b);
+HgValueNode *hg_value_node_new            (HgMemPool         *pool);
+gsize        hg_value_node_get_hash       (const HgValueNode *node);
+gboolean     hg_value_node_compare        (const HgValueNode *a,
+					   const HgValueNode *b);
+gboolean     hg_value_node_compare_content(const HgValueNode *a,
+					   const HgValueNode *b);
 
-void         hg_value_node_debug_print(HgFileObject    *file,
-				       HgDebugStateType type,
-				       HgValueType      vtype,
-				       gpointer         parent,
-				       gpointer         self,
-				       gpointer         extrainfo);
+void         hg_value_node_debug_print    (HgFileObject      *file,
+					   HgDebugStateType   type,
+					   HgValueType        vtype,
+					   gpointer           parent,
+					   gpointer           self,
+					   gpointer           extrainfo);
 
 G_END_DECLS
 

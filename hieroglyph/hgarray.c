@@ -425,8 +425,8 @@ hg_array_remove(HgArray *array,
 }
 
 HgValueNode *
-hg_array_index(HgArray *array,
-	       guint    index)
+hg_array_index(const HgArray *array,
+	       guint          index)
 {
 	g_return_val_if_fail (array != NULL, NULL);
 	g_return_val_if_fail (index < array->n_arrays, NULL);
@@ -520,4 +520,42 @@ hg_array_copy_as_subarray(HgArray *src,
 	dest->is_fixed_size = TRUE;
 
 	return TRUE;
+}
+
+gboolean
+hg_array_compare(const HgArray *a,
+		 const HgArray *b)
+{
+	guint i;
+	gboolean retval = TRUE;
+	HgMemObject *obj;
+
+	g_return_val_if_fail (a != NULL, FALSE);
+	g_return_val_if_fail (b != NULL, FALSE);
+
+	if (a->n_arrays != b->n_arrays)
+		return FALSE;
+
+	hg_mem_get_object__inline(a, obj);
+	if (obj == NULL)
+		return FALSE;
+
+	if (hg_mem_is_copying(obj)) {
+		/* postpone the decision. leave it to later comparing so far */
+		return TRUE;
+	}
+	hg_mem_set_copying(obj);
+
+	for (i = 0; i < a->n_arrays; i++) {
+		HgValueNode *na, *nb;
+
+		na = hg_array_index(a, i);
+		nb = hg_array_index(b, i);
+		if ((retval = hg_value_node_compare_content(na, nb)) == FALSE)
+			break;
+	}
+
+	hg_mem_unset_copying(obj);
+
+	return retval;
 }

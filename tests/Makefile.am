@@ -1,4 +1,5 @@
 NULL =
+SUBDIRS = ps
 
 INCLUDES =						\
 	-I$(top_srcdir)/hieroglyph			\

@@ -381,7 +381,8 @@ hg_btree_page_foreach(HgBTreePage    *page,
 
 		for (i = 0; i < page->n_data; i++) {
 			hg_btree_page_foreach(page->page[i], func, data);
-			func(page->key[i], page->val[i], data);
+			if (!func(page->key[i], page->val[i], data))
+				return;
 		}
 		hg_btree_page_foreach(page->page[page->n_data], func, data);
 	}
@@ -431,7 +432,7 @@ hg_btree_page_get_iter(HgBTreePage *page,
 	return retval;
 }
 
-static void
+static gboolean
 _hg_btree_count_traverse(gpointer key,
 			 gpointer val,
 			 gpointer data)
@@ -439,6 +440,8 @@ _hg_btree_count_traverse(gpointer key,
 	guint *len = data;
 
 	(*len)++;
+
+	return TRUE;
 }
 
 /*

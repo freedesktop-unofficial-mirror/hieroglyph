@@ -294,12 +294,14 @@ _hg_allocator_bfit_get_free_block(HgMemPool              *pool,
 	return retval;
 }
 
-static void
+static gboolean
 _hg_allocator_bfit_btree_traverse_in_destroy(gpointer key,
 					     gpointer val,
 					     gpointer data)
 {
 	g_slist_free(val);
+
+	return TRUE;
 }
 
 static void
