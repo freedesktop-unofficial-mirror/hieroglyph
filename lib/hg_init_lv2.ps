@@ -15,9 +15,7 @@ true .setglobal
 } if
 
 % - currentglobal bool
-/currentglobal {
-    .currentglobal
-} bind odef
+/currentglobal /.currentglobal load def
 % key font|cidfont definefont font|cidfont
 /definefont {
     /Font defineresource
@@ -26,16 +24,12 @@ true .setglobal
 /findfont {
     /Font findresource
 } bind odef
-/product {
-    .product
-} bind odef
-/revision {
-    .revision
-} bind odef
+/product /.product load def
+/revision /.revision load def
 % bool setglobal -
-/setglobal {
-    .setglobal
-} bind odef
+/setglobal /.setglobal load def
+% dict key undef -
+/undef /.undef load def
 % key undefinefont -
 /undefinefont {
     /Font undefineresource

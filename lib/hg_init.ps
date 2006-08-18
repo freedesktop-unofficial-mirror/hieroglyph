@@ -39,8 +39,8 @@ true .setglobal
     .odef
 } bind .odef
 %% disable .forceput for security reason
-/.forceput null def
-/.odef null def
+systemdict /.forceput .undef
+systemdict /.odef .undef
 
 %%%
 %%% these aren't official operators/procedures for PostScript

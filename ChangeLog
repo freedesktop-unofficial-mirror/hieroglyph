@@ -1,5 +1,12 @@
 2006-08-19  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/operator.c (_hg_operator_op_private_hg_undef):
+	implemented.
+
+	* lib/hg_init_lv2.ps (undef): defined.
+
+	* lib/hg_init.ps: undef .forceput and .odef.
+
 	* hieroglyph/hgarray.c (hg_array_set_name): new function.
 	(hg_array_get_name): new function.
 

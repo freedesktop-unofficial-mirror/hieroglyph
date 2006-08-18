@@ -7401,6 +7401,39 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
+DEFUNC_OP (private_hg_undef)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgValueNode *n1, *n2;
+	HgDict *dict;
+
+	while (1) {
+		if (depth < 2) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		n2 = hg_stack_index(ostack, 0);
+		n1 = hg_stack_index(ostack, 1);
+		if (!HG_IS_VALUE_DICT (n1)) {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		dict = HG_VALUE_GET_DICT (n1);
+		if (!hg_object_is_writable((HgObject *)dict)) {
+			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
+			break;
+		}
+		hg_dict_remove(dict, n2);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		retval = TRUE;
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
+
 #undef DEFUNC_UNIMPLEMENTED_OP
 #undef DEFUNC_OP
 #undef DEFUNC_OP_END
@@ -7867,6 +7900,7 @@ hg_operator_hieroglyph_init(HgVM      *vm,
 	BUILD_OP_ (vm, pool, dict, .revision, private_hg_revision);
 	BUILD_OP_ (vm, pool, dict, .setglobal, private_hg_setglobal);
 	BUILD_OP_ (vm, pool, dict, .startjobserver, private_hg_startjobserver);
+	BUILD_OP_ (vm, pool, dict, .undef, private_hg_undef);
 }
 
 /*
