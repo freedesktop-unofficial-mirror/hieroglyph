@@ -152,6 +152,9 @@ gboolean              hg_vm_eval                 (HgVM              *vm,
 						  HgStack           *estack,
 						  HgStack           *dstack,
 						  gboolean          *error);
+gint32                hg_vm_get_error_code       (HgVM              *vm);
+void                  hg_vm_shutdown             (HgVM              *vm,
+						  gint32             error_code);
 
 
 /* internal use */

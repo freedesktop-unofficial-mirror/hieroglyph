@@ -71,6 +71,8 @@ struct _HieroGlyphVirtualMachine {
 	HgDict            *name_dict;
 	GTimeVal           initialized_time;
 	GRand             *random_generator;
+	gint32             error_code;
+	gboolean           shutdown;
 
 	/* job management */
 	GList             *saved_jobs;
@@ -391,6 +393,8 @@ hg_vm_new(HgVMEmulationType type)
 	retval->emulation_type = type;
 	retval->use_global_pool = FALSE;
 	retval->has_error = FALSE;
+	retval->shutdown = FALSE;
+	retval->error_code = 0;
 
 	if (type >= VM_EMULATION_LEVEL_2) {
 		allow_resize = TRUE;
@@ -1171,7 +1175,7 @@ hg_vm_main(HgVM *vm)
 				  HG_FILE_MODE_READ,
 				  "%system",
 				  "", 0);
-	while (1) {
+	while (!vm->shutdown) {
 		depth = hg_stack_depth(vm->estack);
 		if (depth == 0)
 			break;
@@ -1489,4 +1493,31 @@ hg_vm_eval(HgVM        *vm,
 		hg_vm_set_dstack(vm, old_dstack);
 
 	return retval;
+}
+
+gint32
+hg_vm_get_error_code(HgVM *vm)
+{
+	g_return_val_if_fail (vm != NULL, -1);
+
+	return vm->error_code;
+}
+
+void
+hg_vm_set_error_code(HgVM   *vm,
+		     gint32  error_code)
+{
+	g_return_if_fail (vm != NULL);
+
+	vm->error_code = error_code;
+}
+
+void
+hg_vm_shutdown(HgVM   *vm,
+	       gint32  error_code)
+{
+	g_return_if_fail (vm != NULL);
+
+	vm->shutdown = TRUE;
+	hg_vm_set_error_code(vm, error_code);
 }

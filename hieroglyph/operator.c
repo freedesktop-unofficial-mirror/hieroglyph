@@ -4746,18 +4746,6 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_OP (quit)
-G_STMT_START
-{
-	HgStack *estack = hg_vm_get_estack(vm);
-	HgValueNode *self = hg_stack_index(estack, 0);
-
-	hg_stack_clear(estack);
-	retval = hg_stack_push(estack, self);
-	/* FIXME */
-} G_STMT_END;
-DEFUNC_OP_END
-
 DEFUNC_OP (rand)
 G_STMT_START
 {
@@ -7115,6 +7103,66 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
+/* almost code is shared to _hg_operator_op_put */
+DEFUNC_OP (private_hg_forceput)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack), len;
+	gint32 index;
+	HgValueNode *n1, *n2, *n3;
+	HgMemObject *obj;
+
+	while (1) {
+		if (depth < 3) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		n3 = hg_stack_index(ostack, 0);
+		n2 = hg_stack_index(ostack, 1);
+		n1 = hg_stack_index(ostack, 2);
+		if (HG_IS_VALUE_ARRAY (n1)) {
+			HgArray *array = HG_VALUE_GET_ARRAY (n1);
+
+			if (!HG_IS_VALUE_INTEGER (n2)) {
+				_hg_operator_set_error(vm, op, VM_e_typecheck);
+				break;
+			}
+			len = hg_array_length(array);
+			index = HG_VALUE_GET_INTEGER (n2);
+			if (index > len || index > 65535) {
+				_hg_operator_set_error(vm, op, VM_e_rangecheck);
+				break;
+			}
+			retval = hg_array_replace_forcibly(array, n3, index, TRUE);
+		} else if (HG_IS_VALUE_DICT (n1)) {
+			HgDict *dict = HG_VALUE_GET_DICT (n1);
+
+			hg_mem_get_object__inline(dict, obj);
+			retval = hg_dict_insert_forcibly(obj->pool, dict, n2, n3, TRUE);
+		} else if (HG_IS_VALUE_STRING (n1)) {
+			HgString *string = HG_VALUE_GET_STRING (n1);
+			gint32 c;
+
+			if (!HG_IS_VALUE_INTEGER (n2) || !HG_IS_VALUE_INTEGER (n3)) {
+				_hg_operator_set_error(vm, op, VM_e_typecheck);
+				break;
+			}
+			index = HG_VALUE_GET_INTEGER (n2);
+			c = HG_VALUE_GET_INTEGER (n3);
+			retval = hg_string_insert_c(string, c, index);
+		} else {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		hg_stack_pop(ostack);
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
+
 DEFUNC_OP (private_hg_hgrevision)
 G_STMT_START
 {
@@ -7201,61 +7249,25 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-/* almost code is shared to _hg_operator_op_put */
-DEFUNC_OP (private_hg_forceput)
+DEFUNC_OP (private_hg_quit)
 G_STMT_START
 {
 	HgStack *ostack = hg_vm_get_ostack(vm);
-	guint depth = hg_stack_depth(ostack), len;
-	gint32 index;
-	HgValueNode *n1, *n2, *n3;
-	HgMemObject *obj;
+	guint depth = hg_stack_depth(ostack);
+	HgValueNode *node;
 
 	while (1) {
-		if (depth < 3) {
+		if (depth < 1) {
 			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
 			break;
 		}
-		n3 = hg_stack_index(ostack, 0);
-		n2 = hg_stack_index(ostack, 1);
-		n1 = hg_stack_index(ostack, 2);
-		if (HG_IS_VALUE_ARRAY (n1)) {
-			HgArray *array = HG_VALUE_GET_ARRAY (n1);
-
-			if (!HG_IS_VALUE_INTEGER (n2)) {
-				_hg_operator_set_error(vm, op, VM_e_typecheck);
-				break;
-			}
-			len = hg_array_length(array);
-			index = HG_VALUE_GET_INTEGER (n2);
-			if (index > len || index > 65535) {
-				_hg_operator_set_error(vm, op, VM_e_rangecheck);
-				break;
-			}
-			retval = hg_array_replace_forcibly(array, n3, index, TRUE);
-		} else if (HG_IS_VALUE_DICT (n1)) {
-			HgDict *dict = HG_VALUE_GET_DICT (n1);
-
-			hg_mem_get_object__inline(dict, obj);
-			retval = hg_dict_insert_forcibly(obj->pool, dict, n2, n3, TRUE);
-		} else if (HG_IS_VALUE_STRING (n1)) {
-			HgString *string = HG_VALUE_GET_STRING (n1);
-			gint32 c;
-
-			if (!HG_IS_VALUE_INTEGER (n2) || !HG_IS_VALUE_INTEGER (n3)) {
-				_hg_operator_set_error(vm, op, VM_e_typecheck);
-				break;
-			}
-			index = HG_VALUE_GET_INTEGER (n2);
-			c = HG_VALUE_GET_INTEGER (n3);
-			retval = hg_string_insert_c(string, c, index);
-		} else {
+		node = hg_stack_index(ostack, 0);
+		if (!HG_IS_VALUE_INTEGER (node)) {
 			_hg_operator_set_error(vm, op, VM_e_typecheck);
 			break;
 		}
-		hg_stack_pop(ostack);
-		hg_stack_pop(ostack);
-		hg_stack_pop(ostack);
+		hg_vm_shutdown(vm, HG_VALUE_GET_INTEGER (node));
+		retval = TRUE;
 		break;
 	}
 } G_STMT_END;
@@ -7570,7 +7582,6 @@ hg_operator_level1_init(HgVM      *vm,
 	BUILD_OP (vm, pool, dict, pop, pop);
 	BUILD_OP (vm, pool, dict, print, print);
 	BUILD_OP (vm, pool, dict, put, put);
-	BUILD_OP (vm, pool, dict, quit, quit);
 	BUILD_OP (vm, pool, dict, rand, rand);
 	BUILD_OP (vm, pool, dict, rcheck, rcheck);
 	BUILD_OP (vm, pool, dict, rcurveto, rcurveto);
@@ -7809,11 +7820,12 @@ hg_operator_hieroglyph_init(HgVM      *vm,
 	BUILD_OP_ (vm, pool, dict, .currentglobal, private_hg_currentglobal);
 	BUILD_OP_ (vm, pool, dict, .execn, private_hg_execn);
 	BUILD_OP_ (vm, pool, dict, .findlibfile, private_hg_findlibfile);
+	BUILD_OP_ (vm, pool, dict, .forceput, private_hg_forceput);
 	BUILD_OP_ (vm, pool, dict, .hgrevision, private_hg_hgrevision);
 	BUILD_OP_ (vm, pool, dict, .initplugins, private_hg_initplugins);
 	BUILD_OP_ (vm, pool, dict, .odef, private_hg_odef);
 	BUILD_OP_ (vm, pool, dict, .product, private_hg_product);
-	BUILD_OP_ (vm, pool, dict, .forceput, private_hg_forceput);
+	BUILD_OP_ (vm, pool, dict, .quit, private_hg_quit);
 	BUILD_OP_ (vm, pool, dict, .revision, private_hg_revision);
 	BUILD_OP_ (vm, pool, dict, .setglobal, private_hg_setglobal);
 	BUILD_OP_ (vm, pool, dict, .startjobserver, private_hg_startjobserver);

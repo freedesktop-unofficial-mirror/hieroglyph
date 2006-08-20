@@ -1,3 +1,14 @@
+2006-08-20  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/operator.c (_hg_operator_op_private_hg_quit):
+	new function.
+
+	* hieroglyph/vm.c (hg_vm_get_error_code): new function.
+	(hg_vm_set_error_code): likewise.
+	(hg_vm_shutdown): likewise.
+
+	* lib/hg_init.ps (quit): implemented in PostScript.
+
 2006-08-19  Akira TAGOH  <at@gclab.org>
 
 	* lib/hg_init.ps (load): implemented in PostScript.

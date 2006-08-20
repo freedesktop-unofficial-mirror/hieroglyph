@@ -191,6 +191,10 @@ systemdict /.statementedit known {
     {2 index 2 index 3 -1 roll put 1 add} forall
     pop pop
 } bind odef
+% - quit -
+/quit {
+    0 .quit
+} bind odef
 % -string- run -
 /run {
     (r) file cvx exec
