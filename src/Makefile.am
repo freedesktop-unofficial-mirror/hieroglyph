@@ -11,12 +11,22 @@ DEPS =								\
 	$(top_builddir)/hieroglyph/libhieroglyph.la		\
 	$(NULL)
 
+bin_PROGRAMS =							\
+	hgs							\
+	$(NULL)
 noinst_PROGRAMS =						\
 	hgspy-bin						\
 	$(NULL)
 noinst_LTLIBRARIES =						\
 	libhgspy.la						\
 	libhgspy-helper.la					\
+	$(NULL)
+
+hgs_SOURCES =							\
+	hgs.c							\
+	$(NULL)
+hgs_LDADD =							\
+	$(top_builddir)/hieroglyph/libhieroglyph.la		\
 	$(NULL)
 
 hgspy_bin_SOURCES =						\

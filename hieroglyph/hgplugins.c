@@ -158,8 +158,7 @@ hg_plugin_open(HgMemPool    *pool,
 	const gchar *typenames[HG_PLUGIN_END] = {
 		"",
 		"extension",
-		"device",
-		NULL
+		"device"
 	};
 
 	g_return_val_if_fail (pool != NULL, NULL);
