@@ -153,8 +153,14 @@ hg_plugin_open(HgMemPool    *pool,
 	       HgPluginType  type)
 {
 	HgPlugin *retval = NULL;
-	gchar *realname, *modulename, *fullmodname, *typename = NULL;
+	gchar *realname, *modulename, *fullmodname;
 	const gchar *modpath;
+	const gchar *typenames[HG_PLUGIN_END] = {
+		"",
+		"extension",
+		"device",
+		NULL
+	};
 
 	g_return_val_if_fail (pool != NULL, NULL);
 	g_return_val_if_fail (name != NULL, NULL);
@@ -163,11 +169,9 @@ hg_plugin_open(HgMemPool    *pool,
 	switch (type) {
 	    case HG_PLUGIN_EXTENSION:
 		    modulename = g_strdup_printf("libext-%s.so", realname);
-		    typename = g_strdup("extension");
 		    break;
 	    case HG_PLUGIN_DEVICE:
 		    modulename = g_strdup_printf("libdevice-%s.so", realname);
-		    typename = g_strdup("device");
 		    break;
 	    default:
 		    g_warning("Unknown plugin type: %d", type);
@@ -208,7 +212,7 @@ hg_plugin_open(HgMemPool    *pool,
 		g_free(fullmodname);
 	}
 	if (retval == NULL) {
-		g_warning("No `%s' %s plugin module found.", realname, typename);
+		g_warning("No `%s' %s plugin module found.", realname, typenames[type]);
 	} else {
 		/* initialize a plugin */
 		if (retval->vtable->init == NULL ||
@@ -220,8 +224,6 @@ hg_plugin_open(HgMemPool    *pool,
 
 	g_free(realname);
 	g_free(modulename);
-	if (typename)
-		g_free(typename);
 
 	return retval;
 }

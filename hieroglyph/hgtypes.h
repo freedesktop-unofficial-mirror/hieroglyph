@@ -258,6 +258,7 @@ typedef enum {
 typedef enum {
 	HG_PLUGIN_EXTENSION = 1,
 	HG_PLUGIN_DEVICE,
+	HG_PLUGIN_END,
 } HgPluginType;
 
 struct _HieroGlyphAllocatorVTable {

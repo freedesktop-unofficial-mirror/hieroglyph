@@ -1,6 +1,7 @@
 2006-08-20  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgplugins.c (hg_plugin_unload): fixed a typo.
+	(hg_plugin_open): trivial improvement.
 
 	* hieroglyph/vm.c (hg_vm_main): make sure that VM isn't going to shut
 	down.
