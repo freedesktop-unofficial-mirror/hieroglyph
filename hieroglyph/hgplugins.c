@@ -254,7 +254,7 @@ hg_plugin_unload(HgPlugin *plugin,
 	g_return_val_if_fail (plugin->is_loaded == TRUE, FALSE);
 	g_return_val_if_fail (vm != NULL, FALSE);
 
-	retval = plugin->vtable->load(plugin, vm);
+	retval = plugin->vtable->unload(plugin, vm);
 	if (retval)
 		plugin->is_loaded = FALSE;
 
