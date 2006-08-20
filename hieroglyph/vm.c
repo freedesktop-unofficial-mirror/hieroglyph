@@ -1170,6 +1170,7 @@ hg_vm_main(HgVM *vm)
 
 	g_return_val_if_fail (vm != NULL, FALSE);
 
+	vm->shutdown = FALSE;
 	file = hg_file_object_new(hg_vm_get_current_pool(vm),
 				  HG_FILE_TYPE_BUFFER,
 				  HG_FILE_MODE_READ,

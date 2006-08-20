@@ -29,7 +29,7 @@
 G_BEGIN_DECLS
 
 #define HIEROGLYPH_VERSION	"@VERSION@"
-#define HIEROGLYPH_UUID		"59ac7fe3-ec49-4cf8-88c1-b97eea14a0dd"
+#define HIEROGLYPH_UUID		"b946a647-134e-4986-9cd4-7ea120bf0050"
 
 const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
 
