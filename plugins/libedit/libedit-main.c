@@ -93,10 +93,14 @@ static gboolean  plugin_load                             (HgPlugin *plugin,
 							  HgVM     *vm);
 static gboolean  plugin_unload                           (HgPlugin *plugin,
 							  HgVM     *vm);
-static gchar    *_hg_line_edit__libedit_real_get_line    (const gchar *prompt);
-static void      _hg_line_edit__libedit_real_add_history (const gchar *strings);
-static void      _hg_line_edit__libedit_real_load_history(const gchar *filename);
-static void      _hg_line_edit__libedit_real_save_history(const gchar *filename);
+static gchar    *_hg_line_edit__libedit_real_get_line    (HgLineEdit  *lineedit,
+							  const gchar *prompt);
+static void      _hg_line_edit__libedit_real_add_history (HgLineEdit  *lineedit,
+							  const gchar *strings);
+static void      _hg_line_edit__libedit_real_load_history(HgLineEdit  *lineedit,
+							  const gchar *filename);
+static void      _hg_line_edit__libedit_real_save_history(HgLineEdit  *lineedit,
+							  const gchar *filename);
 
 
 static HgPluginVTable vtable = {
@@ -288,7 +292,9 @@ plugin_load(HgPlugin *plugin,
 	plugin->user_data = hg_vm_get_line_editor(vm);
 
 	editor = hg_line_edit_new(hg_vm_get_current_pool(vm),
-				  &lineedit_vtable);
+				  &lineedit_vtable,
+				  __hg_file_stdin,
+				  __hg_file_stdout);
 	hg_vm_set_line_editor(vm, editor);
 
 	systemdict = hg_vm_get_dict_systemdict(vm);
@@ -349,7 +355,8 @@ plugin_unload(HgPlugin *plugin,
 }
 
 static gchar *
-_hg_line_edit__libedit_real_get_line(const gchar *prompt)
+_hg_line_edit__libedit_real_get_line(HgLineEdit  *lineedit,
+				     const gchar *prompt)
 {
 	gchar *retval;
 
@@ -362,7 +369,8 @@ _hg_line_edit__libedit_real_get_line(const gchar *prompt)
 }
 
 static void
-_hg_line_edit__libedit_real_add_history(const gchar *strings)
+_hg_line_edit__libedit_real_add_history(HgLineEdit  *lineedit,
+					const gchar *strings)
 {
 	g_return_if_fail (strings != NULL);
 
@@ -370,7 +378,8 @@ _hg_line_edit__libedit_real_add_history(const gchar *strings)
 }
 
 static void
-_hg_line_edit__libedit_real_load_history(const gchar *filename)
+_hg_line_edit__libedit_real_load_history(HgLineEdit  *lineedit,
+					 const gchar *filename)
 {
 	g_return_if_fail (filename != NULL);
 
@@ -378,7 +387,8 @@ _hg_line_edit__libedit_real_load_history(const gchar *filename)
 }
 
 static void
-_hg_line_edit__libedit_real_save_history(const gchar *filename)
+_hg_line_edit__libedit_real_save_history(HgLineEdit  *lineedit,
+					 const gchar *filename)
 {
 	g_return_if_fail (filename != NULL);
 

@@ -203,6 +203,10 @@ systemdict /.statementedit known {
 /stack {
     0 1 count 3 sub {index =} for
 } bind odef
+% - start -
+/start {
+    executive
+} bind odef
 % key value store -
 /store {
     1 index where {
@@ -365,14 +369,4 @@ end
 %%
 .printversion
 
-% if JOBSERVER isn't true, it means one gives the initializer to libretto_vm_startjob().
-% so no need to read PS from stdin.
-serverdict /JOBSERVER get {
-    systemdict /.loadhistory known {
-	(.hghistory) .loadhistory
-    } if
-    .startjobserver executive
-    systemdict /.savehistory known {
-	(.hghistory) .savehistory
-    } if
-} if
+% /start will be invoked.

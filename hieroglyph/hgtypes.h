@@ -441,10 +441,14 @@ struct _HieroGlyphPathBBox {
 };
 
 struct _HieroGlyphLineEditVTable {
-	gchar * (* get_line)     (const gchar *prompt);
-	void    (* add_history)  (const gchar *strings);
-	void    (* load_history) (const gchar *filename);
-	void    (* save_history) (const gchar *filename);
+	gchar * (* get_line)     (HgLineEdit  *lineedit,
+				  const gchar *prompt);
+	void    (* add_history)  (HgLineEdit  *lineedit,
+				  const gchar *strings);
+	void    (* load_history) (HgLineEdit  *lineedit,
+				  const gchar *filename);
+	void    (* save_history) (HgLineEdit  *lineedit,
+				  const gchar *filename);
 };
 
 struct _HieroGlyphGraphicState {

@@ -507,7 +507,8 @@ hg_vm_new(HgVMEmulationType type)
 	retval->stdin = __hg_file_stdin;
 	retval->stdout = __hg_file_stdout;
 	retval->stderr = __hg_file_stderr;
-	retval->lineeditor = hg_line_edit_new(retval->local_pool, NULL);
+	retval->lineeditor = hg_line_edit_new(retval->local_pool, NULL,
+					      retval->stdin, retval->stdout);
 	hg_mem_add_root_node(retval->local_pool, retval->lineeditor);
 
 	/* initialize graphics */
@@ -748,9 +749,11 @@ hg_vm_set_io(HgVM         *vm,
 	switch (type) {
 	    case VM_IO_STDIN:
 		    vm->stdin = file;
+		    hg_line_edit_set_stdin(vm->lineeditor, file);
 		    break;
 	    case VM_IO_STDOUT:
 		    vm->stdout = file;
+		    hg_line_edit_set_stdout(vm->lineeditor, file);
 		    break;
 	    case VM_IO_STDERR:
 		    vm->stderr = file;
@@ -940,7 +943,7 @@ hg_vm_startjob(HgVM        *vm,
 {
 	HgValueNode *node;
 	GList *l;
-	gboolean retval = FALSE;
+	gboolean retval = TRUE;
 
 	g_return_val_if_fail (vm != NULL, FALSE);
 
@@ -1002,10 +1005,14 @@ hg_vm_startjob(HgVM        *vm,
 		hg_object_unwritable((HgObject *)vm->systemdict);
 	}
 
-	if (initializer)
-		return hg_vm_run(vm, initializer);
-
-	return retval;
+	if (initializer) {
+		HgFileObject *file = hg_file_object_new(vm->local_pool,
+							HG_FILE_TYPE_FILE,
+							HG_FILE_MODE_READ,
+							initializer);
+		hg_vm_set_io(vm, VM_IO_STDIN, file);
+	}
+	return (retval ? hg_vm_eval(vm, "systemdict /.loadhistory known {(.hghistory) .loadhistory} if start systemdict /.savehistory known {(.hghistory) .savehistory} if", NULL, NULL, NULL, NULL) : FALSE);
 }
 
 gboolean

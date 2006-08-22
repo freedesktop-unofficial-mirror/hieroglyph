@@ -1,3 +1,20 @@
+2006-08-22  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/operator.c (_hg_operator_op_bind): ignore the writable check
+	during initialization.
+
+	* hieroglyph/vm.c (hg_vm_set_io): reflect the IO changes to HgLineEdit.
+	(hg_vm_startjob): just changes the IO with an initializer.
+
+	* hieroglyph/hglineedit.c (_hg_line_edit_real_set_flags): new function.
+	(_hg_line_edit_real_relocate): new function.
+	(_hg_line_edit__default_get_line): use HgFileObject instead of using low APIs.
+	(hg_line_edit_set_stdin): new function.
+	(hg_line_edit_set_stdout): new function.
+
+	* lib/hg_init.ps (start): implemented.
+	not entered into the loop here.
+
 2006-08-20  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgplugins.c (hg_plugin_unload): fixed a typo.

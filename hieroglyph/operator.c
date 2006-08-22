@@ -1103,10 +1103,13 @@ G_STMT_START
 			_hg_operator_set_error(vm, op, VM_e_typecheck);
 			break;
 		}
-		if (!hg_object_is_writable((HgObject *)n)) {
-			/* just ignore it */
-			retval = TRUE;
-			break;
+		node = hg_dict_lookup_with_string(hg_vm_get_dict_statusdict(vm), "%initialized");
+		if (node != NULL && HG_VALUE_GET_BOOLEAN (node) != FALSE) {
+			if (!hg_object_is_writable((HgObject *)n)) {
+				/* just ignore it */
+				retval = TRUE;
+				break;
+			}
 		}
 		array = HG_VALUE_GET_ARRAY (n);
 		array_len = hg_array_length(array);
@@ -1123,7 +1126,7 @@ G_STMT_START
 				} else if (HG_IS_VALUE_NAME (n)) {
 					node = hg_vm_lookup(vm, n);
 					if (node != NULL && HG_IS_VALUE_POINTER (node)) {
-						hg_array_replace(array, node, i);
+						hg_array_replace_forcibly(array, node, i, TRUE);
 					}
 				}
 			}
@@ -5962,7 +5965,6 @@ G_STMT_START
 DEFUNC_OP_END
 
 DEFUNC_UNIMPLEMENTED_OP (standardencoding);
-DEFUNC_UNIMPLEMENTED_OP (start);
 
 DEFUNC_OP (status)
 G_STMT_START
@@ -7626,7 +7628,6 @@ hg_operator_level1_init(HgVM      *vm,
 	BUILD_OP (vm, pool, dict, sqrt, sqrt);
 	BUILD_OP (vm, pool, dict, srand, srand);
 	BUILD_OP (vm, pool, dict, StandardEncoding, standardencoding);
-	BUILD_OP_ (vm, pool, dict, start, start);
 	BUILD_OP (vm, pool, dict, status, status);
 	BUILD_OP (vm, pool, dict, stop, stop);
 	BUILD_OP (vm, pool, dict, stopped, stopped);

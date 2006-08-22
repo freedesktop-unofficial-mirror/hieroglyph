@@ -31,7 +31,9 @@ G_BEGIN_DECLS
 
 
 HgLineEdit *hg_line_edit_new        (HgMemPool              *pool,
-				     const HgLineEditVTable *vtable);
+				     const HgLineEditVTable *vtable,
+				     HgFileObject           *stdin,
+				     HgFileObject           *stdout);
 gchar      *hg_line_edit_get_line   (HgLineEdit             *lineedit,
 				     const gchar            *prompt,
 				     gboolean                history);
@@ -41,6 +43,10 @@ gboolean  hg_line_edit_load_history (HgLineEdit             *lineedit,
 				     const gchar            *filename);
 gboolean  hg_line_edit_save_history (HgLineEdit             *lineedit,
 				     const gchar            *filename);
+void      hg_line_edit_set_stdin    (HgLineEdit             *lineedit,
+				     HgFileObject           *stdin);
+void      hg_line_edit_set_stdout   (HgLineEdit             *lineedit,
+				     HgFileObject           *stdout);
 
 
 G_END_DECLS
