@@ -1,5 +1,7 @@
 2006-08-22  Akira TAGOH  <at@gclab.org>
 
+	* lib/hg_init.ps (StandardEncoding): implemented.
+
 	* hieroglyph/operator.c (_hg_operator_op_bind): ignore the writable check
 	during initialization.
 

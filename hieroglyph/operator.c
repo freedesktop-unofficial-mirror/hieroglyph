@@ -5964,8 +5964,6 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
-DEFUNC_UNIMPLEMENTED_OP (standardencoding);
-
 DEFUNC_OP (status)
 G_STMT_START
 {
@@ -7627,7 +7625,6 @@ hg_operator_level1_init(HgVM      *vm,
 	BUILD_OP (vm, pool, dict, sin, sin);
 	BUILD_OP (vm, pool, dict, sqrt, sqrt);
 	BUILD_OP (vm, pool, dict, srand, srand);
-	BUILD_OP (vm, pool, dict, StandardEncoding, standardencoding);
 	BUILD_OP (vm, pool, dict, status, status);
 	BUILD_OP (vm, pool, dict, stop, stop);
 	BUILD_OP (vm, pool, dict, stopped, stopped);

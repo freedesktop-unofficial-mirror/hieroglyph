@@ -329,6 +329,73 @@ counttomark {
 } repeat
 cleartomark
 
+% create StandardEncoding vector table
+/StandardEncoding [
+    % \00x
+    /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+    % \01x
+    /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+    % \02x
+    /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+    % \03x
+    /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+    % \04x
+    /space /exclam /quotedbl /numbersign /dollar /percent /ampersand /quoteright
+    % \05x
+    /parenleft /parenright /asterisk /plus /comma /hyphen /period /slash
+    % \06x
+    /zero /one /two /three /four /five /six /seven
+    % \07x
+    /eight /nine /colon /semicolon /less /equal /greater /question
+    % \10x
+    /at /A /B /C /D /E /F /G
+    % \11x
+    /H /I /J /K /L /M /N /O
+    % \12x
+    /P /Q /R /S /T /U /V /W
+    % \13x
+    /X /Y /Z /bracketleft /backslash /bracketright /asciicircum /underscore
+    % \14x
+    /quoteleft /a /b /c /d /e /f /g
+    % \15x
+    /h /i /j /k /l /m /n /o
+    % \16x
+    /p /q /r /s /t /u /v /w
+    % \17x
+    /x /y /z /braceleft /bar /braceright /asciitilde /.notdef
+    % \20x
+    /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+    % \21x
+    /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+    % \22x
+    /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+    % \23x
+    /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+    % \24x
+    /.notdef /exclamdown /cent /sterling /fraction /yen /florin /section
+    % \25x
+    /currency /quotesingle /quotedblleft /guillemotleft /guilsingleft /guilsinglright /fi /fl
+    % \26x
+    /.notdef /endash /dagger /daggerdbl /periodcentered /.notdef /paragraph /bullet
+    % \27x
+    /.quotesinglbase /quotedblbase /quotedblright /guillemotright /ellipsis /perthousand /.notdef /questiondown
+    % \30x
+    /.notdef /grave /acute /circumflex /tilde /macron /breve /dotaccent
+    % \31x
+    /dieresis /.notdef /ring /cedilla /.notdef /hungarumlaut /ogonek /caron
+    % \32x
+    /emdash /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+    % \33x
+    /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+    % \34x
+    /.notdef /AE /.notdef /ordfeminine /.notdef /.notdef /.notdef /.notdef
+    % \35x
+    /Lslash /Oslash /OE /ordmasculine /.notdef /.notdef /.notdef /.notdef
+    % \36x
+    /.notdef /ae /.notdef /.notdef /.notdef /dotlessi /.notdef /.notdef
+    % \37x
+    /lslash /oslash /oe /germandbls /.notdef /.notdef /.notdef /.notdef] def
+
 % initialize PostScript Level specific things.
 systemdict /languagelevel known {
     languagelevel 2 gt {
