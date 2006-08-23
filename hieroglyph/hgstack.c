@@ -265,52 +265,42 @@ hg_stack_roll(HgStack *stack,
 	      guint    n_block,
 	      gint32   n_times)
 {
-	GList *oroll, *top, *iroll;
-	gint32 n;
+	GList *notargeted_before, *notargeted_after, *beginning, *ending;
+	gint32 n, i;
 
 	g_return_if_fail (stack != NULL);
 	g_return_if_fail (n_block <= stack->current_depth);
 
-	n = abs(n_times) % n_block;
+	if (n_block > 0)
+		n = abs(n_times) % n_block;
 	if (n_block > 0 && n_times != 0 && n != 0) {
-		for (oroll = stack->last_stack; n_block > 0; oroll = g_list_previous(oroll), n_block--);
-		if (oroll == NULL) {
-			top = stack->stack;
-			oroll = stack->last_stack;
-		} else {
-			top = g_list_next(oroll);
-			top->prev = NULL;
-			oroll->next = NULL;
-		}
-		if (top == stack->stack)
-			stack->stack = NULL;
-
+		/* find the place that isn't targeted for roll */
+		for (notargeted_before = stack->last_stack, i = n_block;
+		     i > 0;
+		     notargeted_before = g_list_previous(notargeted_before), i--);
+		if (!notargeted_before)
+			notargeted_after = stack->stack;
+		else
+			notargeted_after = notargeted_before->next;
+		/* try to find the place to cut off */
 		if (n_times > 0) {
-			for (iroll = stack->last_stack; n > 0; iroll = g_list_previous(iroll), n--);
-			oroll->next = iroll->next;
-			iroll->next->prev = oroll;
-			stack->last_stack->next = top;
-			top->prev = stack->last_stack;
-			stack->last_stack = iroll;
-			stack->last_stack->next = NULL;
-			if (stack->stack == NULL) {
-				stack->stack = oroll;
-				stack->stack->prev = NULL;
-			}
+			for (beginning = stack->last_stack; n > 1; beginning = g_list_previous(beginning), n--);
+			ending = beginning->prev;
 		} else {
-			for (iroll = top; n > 0; iroll = g_list_next(iroll), n--);
-			stack->last_stack->next = top;
-			top->prev = stack->last_stack;
-			stack->last_stack = iroll->prev;
-			stack->last_stack->next = NULL;
-			if (stack->stack == NULL) {
-				stack->stack = iroll;
-				stack->stack->prev = NULL;
-			} else {
-				oroll->next = iroll;
-				iroll->prev = oroll;
-			}
+			for (ending = notargeted_after; n > 1; ending = g_list_next(ending), n--);
+			beginning = ending->next;
 		}
+		stack->last_stack->next = notargeted_after;
+		stack->last_stack->next->prev = stack->last_stack;
+		if (notargeted_before) {
+			notargeted_before->next = beginning;
+			notargeted_before->next->prev = notargeted_before;
+		} else {
+			stack->stack = beginning;
+			stack->stack->prev = NULL;
+		}
+		stack->last_stack = ending;
+		stack->last_stack->next = NULL;
 	}
 }
 

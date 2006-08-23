@@ -29,10 +29,13 @@ if test "x$GCC" = "xyes"; then
 	*) CFLAGS="$CFLAGS -Wall"   ;;
 	esac
 
-	case " $CFLAGS " in
-	*[\ \	]-Werror[\ \	]*) ;;
-	*) CFLAGS="$CFLAGS -Werror" ;;
-	esac
+	if test "x$enable_maintainer_mode" = "xyes"; then
+		case " $CFLAGS " in
+		*[\ \	]-Werror[\ \	]*) ;;
+		*) CFLAGS="$CFLAGS -Werror" ;;
+		esac
+		CFLAGS="`echo $CFLAGS | sed -e 's/-O./-O0/'`"
+	fi
 
 	if test "x$enable_ansi" = "xyes"; then
 		case " $CFLAGS " in

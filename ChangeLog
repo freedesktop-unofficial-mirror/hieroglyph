@@ -1,3 +1,10 @@
+2006-08-23  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgstack.c (hg_stack_roll): fixed a segfault issue.
+
+	* configure.ac: disable -Werror when not specifying
+	--enable-maintainer-mode.
+
 2006-08-22  Akira TAGOH  <at@gclab.org>
 
 	* lib/hg_init.ps (StandardEncoding): implemented.
