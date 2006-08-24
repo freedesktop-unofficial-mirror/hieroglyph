@@ -1,3 +1,7 @@
+2006-08-25  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgstack.c (hg_stack_roll): trivial fix.
+
 2006-08-23  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgstack.c (hg_stack_roll): fixed a segfault issue.

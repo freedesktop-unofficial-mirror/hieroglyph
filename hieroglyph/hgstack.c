@@ -271,9 +271,11 @@ hg_stack_roll(HgStack *stack,
 	g_return_if_fail (stack != NULL);
 	g_return_if_fail (n_block <= stack->current_depth);
 
-	if (n_block > 0)
-		n = abs(n_times) % n_block;
-	if (n_block > 0 && n_times != 0 && n != 0) {
+	if (n_block == 0 ||
+	    n_times == 0)
+		return;
+	n = abs(n_times) % n_block;
+	if (n != 0) {
 		/* find the place that isn't targeted for roll */
 		for (notargeted_before = stack->last_stack, i = n_block;
 		     i > 0;
