@@ -7085,8 +7085,8 @@ G_STMT_START
 		}
 		s = HG_VALUE_GET_STRING (node);
 		filename = hg_vm_find_libfile(vm, hg_string_get_string(s));
-		hg_stack_pop(ostack);
 		if (filename) {
+			hg_stack_pop(ostack);
 			result = TRUE;
 			s = hg_string_new(pool, -1);
 			hg_string_append(s, filename, -1);

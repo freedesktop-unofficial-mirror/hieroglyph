@@ -1,5 +1,17 @@
 2006-08-27  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/operator.c (_hg_operator_op_private_hg_filelibfile):
+	push a filename into the stack even if no files found.
+
+	* hieroglyph/vm.c (hg_vm_startjob): add an error handler
+	when the external file is being invoked.
+	(hg_vm_set_error_from_file): just ignore an error code 0.
+
+	* hieroglyph/hglineedit.c (_hg_line_edit__default_get_line):
+	return NULL if EBADF happens.
+
+	* lib/hg_init.ps (runlibfile): trivial fix.
+
 	* README: updated.
 
 2006-08-25  Akira TAGOH  <at@gclab.org>

@@ -48,8 +48,10 @@ systemdict /.odef .undef
 /runlibfile {
     .findlibfile {
 	run
-    } if
-} bind odef
+    } {
+	errordict /undefinedfilename get exec
+    } ifelse
+} bind def
 % -file- any write=only -
 /write=only {
     .stringcvs writestring

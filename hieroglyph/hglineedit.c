@@ -128,6 +128,9 @@ _hg_line_edit__default_get_line(HgLineEdit  *lineedit,
 		if (error == EAGAIN) {
 			sleep(1);
 			continue;
+		} else if (error == EBADF) {
+			g_string_free(buf, TRUE);
+			return NULL;
 		} else if (error != 0) {
 			g_print("FIXME: errno %d: %s\n", errno, strerror(errno));
 			break;

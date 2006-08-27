@@ -941,7 +941,7 @@ hg_vm_startjob(HgVM        *vm,
 	       const gchar *initializer,
 	       gboolean     encapsulated)
 {
-	HgValueNode *node;
+	HgValueNode *node, *nkey;
 	GList *l;
 	gboolean retval = TRUE;
 
@@ -985,32 +985,29 @@ hg_vm_startjob(HgVM        *vm,
 
 	hg_vm_use_global_pool(vm, FALSE);
 
-	node = hg_dict_lookup_with_string(vm->statusdict, "%initialized");
+	HG_VALUE_MAKE_NAME_STATIC (vm->local_pool, nkey, "%initialized");
+	node = hg_dict_lookup(vm->statusdict, nkey);
 	if (node == NULL ||
 	    !HG_IS_VALUE_BOOLEAN (node) ||
 	    HG_VALUE_GET_BOOLEAN (node) == FALSE) {
-		HgValueNode *njobkey = hg_vm_get_name_node(vm, "JOBSERVER");
 		HgValueNode *ntrue = hg_dict_lookup_with_string(vm->systemdict, "true");
-		HgValueNode *nfalse = hg_dict_lookup_with_string(vm->systemdict, "false");
 
-		if (initializer) {
-			/* don't work as jobserver if initializer is given. */
-			hg_dict_insert(vm->local_pool, vm->serverdict, njobkey, nfalse);
-		} else {
-			hg_dict_insert(vm->local_pool, vm->serverdict, njobkey, ntrue);
-		}
 		retval = hg_vm_run(vm, "hg_init.ps");
 
 		/* set read-only attribute for systemdict */
 		hg_object_unwritable((HgObject *)vm->systemdict);
+
+		/* initialization is done */
+		hg_dict_insert(vm->local_pool, vm->serverdict, nkey, ntrue);
 	}
 
 	if (initializer) {
-		HgFileObject *file = hg_file_object_new(vm->local_pool,
-							HG_FILE_TYPE_FILE,
-							HG_FILE_MODE_READ,
-							initializer);
-		hg_vm_set_io(vm, VM_IO_STDIN, file);
+		gchar *eval = g_strdup_printf("{{prompt (%s)(r)file dup type /filetype eq {cvx exec} if} stopped {$error /newerror get {errordict /handleerror get exec 1 .quit} if} if} loop", initializer);
+
+		retval = hg_vm_eval(vm, eval, NULL, NULL, NULL, NULL);
+		g_free(eval);
+
+		return retval;
 	}
 	return (retval ? hg_vm_eval(vm, "systemdict /.loadhistory known {(.hghistory) .loadhistory} if start systemdict /.savehistory known {(.hghistory) .savehistory} if", NULL, NULL, NULL, NULL) : FALSE);
 }
@@ -1127,6 +1124,9 @@ hg_vm_set_error_from_file(HgVM         *vm,
 	g_return_if_fail (file != NULL);
 
 	switch (hg_file_object_get_error(file)) {
+	    case 0:
+		    /* no error */
+		    break;
 	    case EACCES:
 	    case EBADF:
 	    case EEXIST:
