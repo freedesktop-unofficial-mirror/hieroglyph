@@ -1,3 +1,7 @@
+2006-08-27  Akira TAGOH  <at@gclab.org>
+
+	* README: updated.
+
 2006-08-25  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgstack.c (hg_stack_roll): trivial fix.

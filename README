@@ -1,3 +1,27 @@
 Hieroglyph
 =============
-Hieroglyph is a PostScript rendering library with having an own PostScript interpreter engine and support for pluggable output devices and the extensions.
+Hieroglyph is a PostScript rendering library with having an
+own PostScript interpreter engine and support for pluggable
+output devices and the extensions.
+
+Why did you start this project now?
+======================================
+Because I am very interested in making a PostScript Virtual
+Machine.  However this is not a trigger of starting this
+project actually. I was/am sometimes working on around the
+printing stuff, because it was necessary to get them working
+on any languages. they had problems on dealing with the
+fonts, and they were sometimes easily broken on it. it
+finally became my frustration. I could help them out every
+time after the breakage, but I stoped to think about.
+
+There are a lot of similar softwares in the FOSS world. but
+are not in the PostScript interpreter/rendering library. you
+know that there are the forked project, such as ESP
+Ghostscript say, I would see that it is one software in the
+general meaning.  Right now PostScript specification is very
+stable and being perishing. and it may be unlikely to extend
+something like other softwares does since that specification
+may restricts it. but I believe that making another software
+will be helpful to improve/add momentum to the printing
+software area.
