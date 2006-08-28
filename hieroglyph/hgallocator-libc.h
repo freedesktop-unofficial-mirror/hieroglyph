@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
  * hgallocator-libc.h
  * Copyright (C) 2006 Akira TAGOH
