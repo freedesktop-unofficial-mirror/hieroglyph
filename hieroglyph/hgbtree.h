@@ -32,6 +32,23 @@ typedef struct _HieroGlyphBTreePage	HgBTreePage;
 typedef struct _HieroGlyphBTree		HgBTree;
 typedef struct _HieroGlyphBTreeIter	*HgBTreeIter;
 
+struct _HieroGlyphBTreePage {
+	HgObject      object;
+	HgBTree      *parent;
+	gpointer     *key;
+	gpointer     *val;
+	HgBTreePage **page;
+	guint16       n_data;
+};
+
+struct _HieroGlyphBTree {
+	HgObject        object;
+	HgBTreePage    *root;
+	GDestroyNotify  key_destroy_func;
+	GDestroyNotify  val_destroy_func;
+	guint16         page_size;
+};
+
 struct _HieroGlyphBTreeIter {
 	gpointer id;
 	gpointer stamp;
@@ -40,26 +57,13 @@ struct _HieroGlyphBTreeIter {
 	gpointer val;
 };
 
-struct _HieroGlyphBTreePage {
-	guint         n_data;
-	gpointer     *key;
-	gpointer     *val;
-	HgBTreePage **page;
-};
 
-struct _HieroGlyphBTree {
-	HgBTreePage    *root;
-	guint           page_size;
-	GDestroyNotify  key_destroy_func;
-	GDestroyNotify  val_destroy_func;
-};
-
-
-HgBTree    *hg_btree_new      (guint           page_size);
-HgBTree    *hg_btree_new_full (guint          page_size,
-			       GDestroyNotify key_destroy_func,
-			       GDestroyNotify val_destroy_func);
-void        hg_btree_destroy  (HgBTree        *tree);
+HgBTree    *hg_btree_new      (HgMemPool      *pool,
+			       guint16         page_size);
+HgBTree    *hg_btree_new_full (HgMemPool      *pool,
+			       guint16         page_size,
+			       GDestroyNotify  key_destroy_func,
+			       GDestroyNotify  val_destroy_func);
 void        hg_btree_add      (HgBTree        *tree,
 			       gpointer        key,
 			       gpointer        val);

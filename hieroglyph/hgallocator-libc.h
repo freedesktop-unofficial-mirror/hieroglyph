@@ -1,7 +1,6 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * version.h
- * Copyright (C) 2005-2006 Akira TAGOH
+ * hgallocator-libc.h
+ * Copyright (C) 2006 Akira TAGOH
  * 
  * Authors:
  *   Akira TAGOH  <at@gclab.org>
@@ -21,18 +20,15 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HG_VERSION_H__
-#define __HG_VERSION_H__
+#ifndef __HG_ALLOCATOR_LIBC_H__
+#define __HG_ALLOCATOR_LIBC_H__
 
-#include <glib/gmacros.h>
+#include <hieroglyph/hgtypes.h>
 
 G_BEGIN_DECLS
 
-#define HIEROGLYPH_VERSION	"@VERSION@"
-#define HIEROGLYPH_UUID		"d9a264d4-9463-428c-b9cd-7f9d51b9e0a9"
-
-const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
+HgAllocatorVTable *hg_allocator_libc_get_vtable(void) G_GNUC_CONST;
 
 G_END_DECLS
 
-#endif /* __HG_VERSION_H__ */
+#endif /* __HG_ALLOCATOR_LIBC_H__ */

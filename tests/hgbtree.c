@@ -1,12 +1,14 @@
 #include <stdio.h>
 #include <string.h>
+#include <hieroglyph/hgmem.h>
+#include <hieroglyph/hgallocator-libc.h>
 #include <hieroglyph/hgbtree.h>
 
 void
 tree2string(HgBTreePage *page, GString *string)
 {
 	static gint depth = 0;
-	guint i;
+	guint16 i;
 
 	if (page == NULL) {
 		g_string_append_c(string, '.');
@@ -26,7 +28,11 @@ tree2string(HgBTreePage *page, GString *string)
 int
 main(void)
 {
-	HgBTree *tree = hg_btree_new(2);
+	HG_MEM_INIT;
+
+	HgAllocator *allocator = hg_allocator_new(hg_allocator_libc_get_vtable());
+	HgMemPool *pool = hg_mem_pool_new(allocator, "btree_test", 256, FALSE);
+	HgBTree *tree = hg_btree_new(pool, 2);
 	GString *string = g_string_new(NULL);
 	gchar *test1 = "(.0.1.2.3.)";
 	gchar *test2 = "((.0.1.)2(.3.4.))";
@@ -98,7 +104,9 @@ main(void)
 	}
 	hg_btree_iter_free(iter);
 	g_string_free(string, TRUE);
-	hg_btree_destroy(tree);
+	hg_mem_free(tree);
+	hg_mem_pool_destroy(pool);
+	hg_allocator_destroy(allocator);
 
 	return 0;
 }

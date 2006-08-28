@@ -30,7 +30,6 @@
 #include <unistd.h>
 #include "hgmem.h"
 #include "hgallocator-private.h"
-#include "hgbtree.h"
 
 #define VTABLE_TREE_N_NODE	3
 
@@ -38,7 +37,7 @@ gpointer _hg_stack_start = NULL;
 gpointer _hg_stack_end = NULL;
 static gboolean hg_mem_is_initialized = FALSE;
 static GAllocator *hg_mem_g_list_allocator = NULL;
-static HgBTree *_hg_object_vtable_tree = NULL;
+static GHashTable *_hg_object_vtable_tree = NULL;
 static GPtrArray *_hg_object_vtable_array = NULL;
 
 G_LOCK_DEFINE_STATIC (hgobject);
@@ -182,7 +181,7 @@ hg_mem_init(void)
 			g_list_push_allocator(hg_mem_g_list_allocator);
 		}
 		if (!_hg_object_vtable_tree) {
-			_hg_object_vtable_tree = hg_btree_new(VTABLE_TREE_N_NODE);
+			_hg_object_vtable_tree = g_hash_table_new(NULL, g_direct_equal);
 			if (_hg_object_vtable_tree == NULL) {
 				g_warning("Failed to initialize VTable tree.");
 				return;
@@ -199,7 +198,7 @@ hg_mem_finalize(void)
 	if (hg_mem_is_initialized) {
 		g_list_pop_allocator();
 		g_allocator_free(hg_mem_g_list_allocator);
-		hg_btree_destroy(_hg_object_vtable_tree);
+		g_hash_table_destroy(_hg_object_vtable_tree);
 		g_ptr_array_free(_hg_object_vtable_array, TRUE);
 		hg_mem_g_list_allocator = NULL;
 		_hg_object_vtable_tree = NULL;
@@ -787,10 +786,10 @@ hg_object_set_vtable(HgObject                   *object,
 
 	G_LOCK (hgobject);
 
-	if ((id = GPOINTER_TO_UINT(hg_btree_find(_hg_object_vtable_tree, (gpointer)vtable))) == 0) {
+	if ((id = GPOINTER_TO_UINT(g_hash_table_lookup(_hg_object_vtable_tree, (gpointer)vtable))) == 0) {
 		g_ptr_array_add(_hg_object_vtable_array, (gpointer)vtable);
 		id = _hg_object_vtable_array->len;
-		hg_btree_add(_hg_object_vtable_tree, (gpointer)vtable, GUINT_TO_POINTER (id));
+		g_hash_table_insert(_hg_object_vtable_tree, (gpointer)vtable, GUINT_TO_POINTER (id));
 	}
 	if (id > 255) {
 		g_warning("[BUG] Invalid vtable ID found in tree: %p id %u\n", object, id);

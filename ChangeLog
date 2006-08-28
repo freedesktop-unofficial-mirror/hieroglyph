@@ -1,3 +1,32 @@
+2006-08-28  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/Makefile.am (hginclude_HEADERS): added hgallocator-libc.h
+	(libhieroglyph_la_SOURCES): added hgallocator-libc.c
+
+	* hieroglyph/hgbtree.c (_hg_btree_page_real_free): new function.
+	(_hg_btree_page_real_set_flags): new function.
+	(_hg_btree_page_real_relocate): new function.
+	(_hg_btree_real_free): new function.
+	(_hg_btree_real_set_flags): new function.
+	(_hg_btree_real_relocate): new function.
+
+	* hieroglyph/hgallocator-libc.[ch]: new files.
+
+	* hieroglyph/hgdict.c (_hg_dict_real_free): modified to use new HgBTree
+	that is now managed under the hieroglyph mm.
+	(_hg_dict_real_set_flags): likewise.
+	(_hg_dict_real_relocate): likewise.
+	(hg_dict_new): likewise.
+
+	* hieroglyph/hgmem.c (hg_mem_init): use GHashTable instead of HgBTree.
+	it can't be used before hg_mem_init finished.
+	(hg_mem_finalize): modified to use GHashTable.
+	(hg_object_set_vtable): likewise.
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_initialize):
+	modified to use HgBTree that is now managed under the hieroglyph mm.
+	(_hg_allocator_bfit_real_destroy): likewise.
+
 2006-08-27  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/operator.c (_hg_operator_op_private_hg_filelibfile):

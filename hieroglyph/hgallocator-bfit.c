@@ -28,6 +28,7 @@
 #include <string.h>
 #include <setjmp.h>
 #include "hgallocator-bfit.h"
+#include "hgallocator-libc.h"
 #include "hgallocator-private.h"
 #include "hgmem.h"
 #include "hgbtree.h"
@@ -42,10 +43,12 @@ typedef struct _HieroGlyphMemBFitBlock			HgMemBFitBlock;
 
 
 struct _HieroGlyphAllocatorBFitPrivate {
-	HgBTree   *free_block_tree;
-	GPtrArray *heap2block_array;
-	HgBTree   *obj2block_tree;
-	gint       age_of_snapshot;
+	HgBTree     *free_block_tree;
+	GPtrArray   *heap2block_array;
+	HgBTree     *obj2block_tree;
+	gint         age_of_snapshot;
+	HgAllocator *libc_allocator;
+	HgMemPool   *libc_pool;
 };
 
 struct _HieroGlyphMemBFitBlock {
@@ -405,9 +408,18 @@ _hg_allocator_bfit_real_initialize(HgMemPool *pool,
 		return FALSE;
 	}
 
-	priv->free_block_tree = hg_btree_new(BTREE_N_NODE);
+	priv->libc_allocator = hg_allocator_new(hg_allocator_libc_get_vtable());
+	priv->libc_pool = hg_mem_pool_new(priv->libc_allocator, "libc", 256, FALSE);
+	if (priv->libc_pool == NULL) {
+		hg_heap_free(heap);
+		hg_allocator_destroy(priv->libc_allocator);
+		g_free(priv);
+
+		return FALSE;
+	}
+	priv->free_block_tree = hg_btree_new(priv->libc_pool, BTREE_N_NODE);
 	priv->heap2block_array = g_ptr_array_new();
-	priv->obj2block_tree = hg_btree_new(BTREE_N_NODE);
+	priv->obj2block_tree = hg_btree_new(priv->libc_pool, BTREE_N_NODE);
 	priv->age_of_snapshot = 0;
 
 	g_ptr_array_add(priv->heap2block_array, block);
@@ -448,8 +460,10 @@ _hg_allocator_bfit_real_destroy(HgMemPool *pool)
 		g_ptr_array_free(priv->heap2block_array, TRUE);
 	}
 	hg_btree_foreach(priv->free_block_tree, _hg_allocator_bfit_btree_traverse_in_destroy, NULL);
-	hg_btree_destroy(priv->free_block_tree);
-	hg_btree_destroy(priv->obj2block_tree);
+	hg_mem_free(priv->free_block_tree);
+	hg_mem_free(priv->obj2block_tree);
+	hg_mem_pool_destroy(priv->libc_pool);
+	hg_allocator_destroy(priv->libc_allocator);
 	g_free(priv);
 
 	return TRUE;

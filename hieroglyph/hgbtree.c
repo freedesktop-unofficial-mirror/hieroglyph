@@ -26,105 +26,320 @@
 #endif
 
 #include "hgbtree.h"
+#include "hgmem.h"
 
 
-static HgBTreePage *hg_btree_page_new                 (HgBTree      *tree);
-static void         hg_btree_page_destroy             (HgBTree      *tree,
-						       HgBTreePage  *page);
-static void         hg_btree_page_free                (HgBTreePage  *page);
-static gboolean     hg_btree_page_insert              (HgBTree      *tree,
-						       HgBTreePage  *page,
-						       gpointer     *key,
-						       gpointer     *val,
-						       gboolean      replace,
-						       HgBTreePage **newpage);
-static void         hg_btree_page_insert_data         (HgBTree      *tree,
-						       HgBTreePage  *page,
-						       gpointer     *key,
-						       gpointer     *val,
-						       guint         pos,
-						       HgBTreePage **newpage);
-static void         hg_btree_page_blance              (HgBTree      *tree,
-						       HgBTreePage  *page,
-						       gpointer     *key,
-						       gpointer     *val,
-						       guint         pos,
-						       HgBTreePage **newpage);
-static gboolean     hg_btree_page_remove              (HgBTree      *tree,
-						       HgBTreePage  *page,
-						       gpointer     *key,
-						       gpointer     *val,
-						       gboolean     *need_restore);
-static gboolean     hg_btree_page_remove_data         (HgBTree      *tree,
-						       HgBTreePage  *page,
-						       guint         pos);
-static gboolean     hg_btree_page_restore             (HgBTree      *tree,
-						       HgBTreePage  *page,
-						       guint         pos);
-static void         hg_btree_page_restore_right_blance(HgBTree      *tree,
-						       HgBTreePage  *page,
-						       guint         pos);
-static void         hg_btree_page_restore_left_blance (HgBTree      *tree,
-						       HgBTreePage  *page,
-						       guint         pos);
-static gboolean     hg_btree_page_combine             (HgBTree      *tree,
-						       HgBTreePage  *page,
-						       guint         pos);
+static void         _hg_btree_page_real_free          (gpointer           data);
+static void         _hg_btree_page_real_set_flags     (gpointer           data,
+						       guint              flags);
+static void         _hg_btree_page_real_relocate      (gpointer           data,
+						       HgMemRelocateInfo *info);
+static void         _hg_btree_page_destroy            (HgBTreePage       *page);
+static void         _hg_btree_real_free               (gpointer           data);
+static void         _hg_btree_real_set_flags          (gpointer           data,
+						       guint              flags);
+static void         _hg_btree_real_relocate           (gpointer           data,
+						       HgMemRelocateInfo *info);
+static HgBTreePage *hg_btree_page_new                 (HgBTree           *tree);
+static gboolean     hg_btree_page_insert              (HgBTreePage       *page,
+						       gpointer          *key,
+						       gpointer          *val,
+						       gboolean           replace,
+						       HgBTreePage       **newpage);
+static void         hg_btree_page_insert_data         (HgBTreePage       *page,
+						       gpointer          *key,
+						       gpointer          *val,
+						       guint16            pos,
+						       HgBTreePage       **newpage);
+static void         hg_btree_page_blance              (HgBTreePage       *page,
+						       gpointer          *key,
+						       gpointer          *val,
+						       guint16            pos,
+						       HgBTreePage       **newpage);
+static gboolean     hg_btree_page_remove              (HgBTreePage       *page,
+						       gpointer          *key,
+						       gpointer          *val,
+						       gboolean          *need_restore);
+static gboolean     hg_btree_page_remove_data         (HgBTreePage       *page,
+						       guint16            pos);
+static gboolean     hg_btree_page_restore             (HgBTreePage       *page,
+						       guint16            pos);
+static void         hg_btree_page_restore_right_blance(HgBTreePage       *page,
+						       guint16            pos);
+static void         hg_btree_page_restore_left_blance (HgBTreePage       *page,
+						       guint16            pos);
+static gboolean     hg_btree_page_combine             (HgBTreePage       *page,
+						       guint16            pos);
+
+
+static HgObjectVTable __hg_btree_page_vtable = {
+	.free      = _hg_btree_page_real_free,
+	.set_flags = _hg_btree_page_real_set_flags,
+	.relocate  = _hg_btree_page_real_relocate,
+	.dup       = NULL,
+	.copy      = NULL,
+	.to_string = NULL,
+};
+static HgObjectVTable __hg_btree_vtable = {
+	.free      = _hg_btree_real_free,
+	.set_flags = _hg_btree_real_set_flags,
+	.relocate  = _hg_btree_real_relocate,
+	.dup       = NULL,
+	.copy      = NULL,
+	.to_string = NULL,
+};
 
 
 /*
  * Private Functions
  */
-static HgBTreePage *
-hg_btree_page_new(HgBTree *tree)
+static void
+_hg_btree_page_real_free(gpointer data)
 {
-	HgBTreePage *retval;
+	HgBTreePage *page = data;
+	guint16 i;
 
-	retval = g_new(HgBTreePage, 1);
-	retval->n_data = 0;
-	retval->key = g_new(gpointer, tree->page_size * 2);
-	retval->val = g_new(gpointer, tree->page_size * 2);
-	retval->page = g_new(HgBTreePage *, tree->page_size * 2 + 1);
-
-	return retval;
+	for (i = 0; i < page->n_data; i++) {
+		/* no need to destroy page->page[i] here. it will be destroyed
+		 * by GC sweeper.
+		 */
+		if (page->parent->key_destroy_func)
+			page->parent->key_destroy_func(page->key[i]);
+		if (page->parent->val_destroy_func)
+			page->parent->val_destroy_func(page->val[i]);
+	}
+	/* no need to destroy page->page[page->n_data] here. it will be
+	 * destroyed by GC sweeper.
+	 */
+	hg_mem_free(page->key);
+	hg_mem_free(page->val);
+	hg_mem_free(page->page);
+	page->n_data = 0;
+	page->key = NULL;
+	page->val = NULL;
+	page->page = NULL;
 }
 
 static void
-hg_btree_page_destroy(HgBTree *tree, HgBTreePage *page)
+_hg_btree_page_real_set_flags(gpointer data,
+			      guint    flags)
 {
-	guint i;
+	HgBTreePage *page = data;
+	guint16 i;
+	HgMemObject *obj;
 
-	if (page != NULL) {
-		for (i = 0; i < page->n_data; i++) {
-			hg_btree_page_destroy(tree, page->page[i]);
-			if (tree->key_destroy_func)
-				tree->key_destroy_func(page->key[i]);
-			if (tree->val_destroy_func)
-				tree->val_destroy_func(page->val[i]);
+	if (page->key) {
+		hg_mem_get_object__inline(page->key, obj);
+		if (obj == NULL) {
+			g_warning("[BUG] Invalid object %p to be marked: HgBTreePage key",
+				  page->key);
+		} else {
+			hg_mem_add_flags__inline(obj, flags, TRUE);
 		}
-		hg_btree_page_destroy(tree, page->page[page->n_data]);
-		hg_btree_page_free(page);
+	}
+	if (page->val) {
+		hg_mem_get_object__inline(page->val, obj);
+		if (obj == NULL) {
+			g_warning("[BUG] Invalid object %p to be marked: HgBTreePage val",
+				  page->val);
+		} else {
+			hg_mem_add_flags__inline(obj, flags, TRUE);
+		}
+	}
+	if (page->page == NULL && page->n_data > 0) {
+		g_warning("[BUG] HgBTree structure corruption. no real data, but it says there are %d item(s).",
+			  page->n_data);
+	} else if (page->page) {
+		hg_mem_get_object__inline(page->page, obj);
+		if (obj == NULL) {
+			g_warning("[BUG] Invalid object %p to be marked: HgBTreePage page",
+				  page->page);
+		} else {
+			hg_mem_add_flags__inline(obj, flags, TRUE);
+		}
+
+		for (i = 0; i < page->n_data; i++) {
+			hg_mem_get_object__inline(page->page[i], obj);
+			if (obj == NULL) {
+				g_warning("[BUG] Invalid object %p to be marked: HgBTreePage page[%d]",
+					  page->page[i], i);
+			} else {
+				hg_mem_add_flags__inline(obj, flags, TRUE);
+			}
+			hg_mem_get_object__inline(page->key[i], obj);
+			if (obj == NULL) {
+				g_warning("[BUG] Invalid object %p to be marked: HgBTreePage key[%d]",
+					  page->key[i], i);
+			} else {
+				hg_mem_add_flags__inline(obj, flags, TRUE);
+			}
+			hg_mem_get_object__inline(page->val[i], obj);
+			if (obj == NULL) {
+				g_warning("[BUG] Invalid object %p to be marked: HgBTreePage val[%d]",
+					  page->val[i], i);
+			} else {
+				hg_mem_add_flags__inline(obj, flags, TRUE);
+			}
+		}
+		hg_mem_get_object__inline(page->page[page->n_data], obj);
+		if (obj == NULL) {
+			g_warning("[BUG] Invalid object %p to be marked: HgBTreePage page[%d]",
+				  page->page[page->n_data], page->n_data);
+		} else {
+			hg_mem_add_flags__inline(obj, flags, TRUE);
+		}
 	}
 }
 
 static void
-hg_btree_page_free(HgBTreePage *page)
+_hg_btree_page_real_relocate(gpointer           data,
+			     HgMemRelocateInfo *info)
 {
-	g_free(page->key);
-	g_free(page->val);
-	g_free(page->page);
-	g_free(page);
+	HgBTreePage *page = data;
+	guint16 i;
+
+	if ((gsize)page->page >= info->start &&
+	    (gsize)page->page <= info->end) {
+		page->page = (gpointer)((gsize)page->page + info->diff);
+	}
+	if ((gsize)page->key >= info->start &&
+	    (gsize)page->key <= info->end) {
+		page->key = (gpointer)((gsize)page->key + info->diff);
+	}
+	if ((gsize)page->val >= info->start &&
+	    (gsize)page->val <= info->end) {
+		page->val = (gpointer)((gsize)page->val + info->diff);
+	}
+	for (i = 0; i < page->n_data; i++) {
+		if ((gsize)page->page[i] >= info->start &&
+		    (gsize)page->page[i] <= info->end) {
+			page->page[i] = (gpointer)((gsize)page->page[i] + info->diff);
+		}
+		if ((gsize)page->key[i] >= info->start &&
+		    (gsize)page->key[i] <= info->end) {
+			page->key[i] = (gpointer)((gsize)page->key[i] + info->diff);
+		}
+		if ((gsize)page->val[i] >= info->start &&
+		    (gsize)page->val[i] <= info->end) {
+			page->val[i] = (gpointer)((gsize)page->val[i] + info->diff);
+		}
+	}
+	if ((gsize)page->page[page->n_data] >= info->start &&
+	    (gsize)page->page[page->n_data] <= info->end) {
+		page->page[page->n_data] = (gpointer)((gsize)page->page[page->n_data] + info->diff);
+	}
+}
+
+static void
+_hg_btree_page_destroy(HgBTreePage *page)
+{
+	if (page != NULL) {
+		guint16 i;
+
+		if (page->n_data == 0 &&
+		    page->key == NULL &&
+		    page->val == NULL &&
+		    page->page == NULL) {
+			/* this may be already freed */
+		} else {
+			for (i = 0; i < page->n_data; i++) {
+				_hg_btree_page_destroy(page->page[i]);
+			}
+			_hg_btree_page_destroy(page->page[page->n_data]);
+			hg_mem_free(page);
+		}
+	}
+}
+
+static void
+_hg_btree_real_free(gpointer data)
+{
+	HgBTree *tree = data;
+
+	_hg_btree_page_destroy(tree->root);
+}
+
+static void
+_hg_btree_real_set_flags(gpointer data,
+			 guint    flags)
+{
+	HgBTree *tree = data;
+	HgMemObject *obj;
+
+	if (tree->root) {
+		hg_mem_get_object__inline(tree->root, obj);
+		if (obj == NULL) {
+			g_warning("[BUG] Invalid object %p to be marked: HgBTree", tree->root);
+		} else {
+			if (!hg_mem_is_flags__inline(obj, flags))
+				hg_mem_add_flags__inline(obj, flags, TRUE);
+		}
+	}
+}
+
+static void
+_hg_btree_real_relocate(gpointer           data,
+			HgMemRelocateInfo *info)
+{
+	HgBTree *tree = data;
+
+	if ((gsize)tree->root >= info->start &&
+	    (gsize)tree->root <= info->end) {
+		tree->root = (gpointer)((gsize)tree->root + info->diff);
+	}
+}
+
+static HgBTreePage *
+hg_btree_page_new(HgBTree *tree)
+{
+	HgBTreePage *retval;
+	HgMemObject *obj;
+
+	hg_mem_get_object__inline(tree, obj);
+	/* HgBTree's free method will takes care of this object age.
+	 * HG_FL_LOCK is necessary to avoid destroying object at GC
+	 */
+	retval = hg_mem_alloc_with_flags(obj->pool, sizeof (HgBTreePage),
+					 HG_FL_RESTORABLE | HG_FL_COMPLEX | HG_FL_LOCK | HG_FL_HGOBJECT);
+	if (retval == NULL)
+		return NULL;
+	HG_OBJECT_INIT_STATE (&retval->object);
+	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(obj->pool));
+	hg_object_set_vtable(&retval->object, &__hg_btree_page_vtable);
+
+	retval->parent = tree;
+	/* it may be entered into GC during allocating memory.
+	 * need to initialize with NULL to avoid corruption.
+	 */
+	retval->key = NULL;
+	retval->val = NULL;
+	retval->page = NULL;
+	retval->key = hg_mem_alloc_with_flags(obj->pool,
+					      sizeof (gpointer) * tree->page_size * 2,
+					      HG_FL_RESTORABLE | HG_FL_COMPLEX | HG_FL_LOCK);
+	retval->val = hg_mem_alloc_with_flags(obj->pool,
+					      sizeof (gpointer) * tree->page_size * 2,
+					      HG_FL_RESTORABLE | HG_FL_COMPLEX | HG_FL_LOCK);
+	retval->page = hg_mem_alloc_with_flags(obj->pool,
+					       sizeof (gpointer) * (tree->page_size * 2 + 1),
+					       HG_FL_RESTORABLE | HG_FL_COMPLEX | HG_FL_LOCK);
+	if (retval->key == NULL ||
+	    retval->val == NULL ||
+	    retval->page == NULL) {
+		return NULL;
+	}
+
+	return retval;
 }
 
 static gboolean
-hg_btree_page_insert(HgBTree      *tree,
-		     HgBTreePage  *page,
+hg_btree_page_insert(HgBTreePage  *page,
 		     gpointer     *key,
 		     gpointer     *val,
 		     gboolean      replace,
 		     HgBTreePage **newpage)
 {
-	guint i;
+	guint16 i;
 	gboolean retval;
 
 	if (page == NULL) {
@@ -135,8 +350,8 @@ hg_btree_page_insert(HgBTree      *tree,
 		for (i = 0; i < page->n_data && page->key[i] < *key; i++);
 		if (i < page->n_data && page->key[i] == *key) {
 			if (replace) {
-				if (tree->val_destroy_func)
-					tree->val_destroy_func(page->val[i]);
+				if (page->parent->val_destroy_func)
+					page->parent->val_destroy_func(page->val[i]);
 				page->key[i] = *key;
 				page->val[i] = *val;
 			}
@@ -145,13 +360,13 @@ hg_btree_page_insert(HgBTree      *tree,
 	} else {
 		i = page->n_data;
 	}
-	retval = hg_btree_page_insert(tree, page->page[i], key, val, replace, newpage);
+	retval = hg_btree_page_insert(page->page[i], key, val, replace, newpage);
 	if (!retval) {
-		if (page->n_data < tree->page_size * 2) {
-			hg_btree_page_insert_data(tree, page, key, val, i, newpage);
+		if (page->n_data < (page->parent->page_size * 2)) {
+			hg_btree_page_insert_data(page, key, val, i, newpage);
 			retval = TRUE;
 		} else {
-			hg_btree_page_blance(tree, page, key, val, i, newpage);
+			hg_btree_page_blance(page, key, val, i, newpage);
 			retval = FALSE;
 		}
 	}
@@ -159,14 +374,13 @@ hg_btree_page_insert(HgBTree      *tree,
 }
 
 static void
-hg_btree_page_insert_data(HgBTree      *tree,
-			  HgBTreePage  *page,
+hg_btree_page_insert_data(HgBTreePage  *page,
 			  gpointer     *key,
 			  gpointer     *val,
-			  guint         pos,
+			  guint16       pos,
 			  HgBTreePage **newpage)
 {
-	guint i;
+	guint16 i;
 
 	for (i = page->n_data; i > pos; i--) {
 		page->key[i] = page->key[i - 1];
@@ -180,36 +394,35 @@ hg_btree_page_insert_data(HgBTree      *tree,
 }
 
 static void
-hg_btree_page_blance(HgBTree      *tree,
-		     HgBTreePage  *page,
+hg_btree_page_blance(HgBTreePage  *page,
 		     gpointer     *key,
 		     gpointer     *val,
-		     guint         pos,
+		     guint16       pos,
 		     HgBTreePage **newpage)
 {
-	guint i, size;
+	guint16 i, size, page_size = page->parent->page_size;
 	HgBTreePage *new;
 
-	if (pos <= tree->page_size)
-		size = tree->page_size;
+	if (pos <= page_size)
+		size = page_size;
 	else
-		size = tree->page_size + 1;
-	new = hg_btree_page_new(tree);
+		size = page_size + 1;
+	new = hg_btree_page_new(page->parent);
 	if (new == NULL) {
 		g_warning("Failed to allocate a memory.");
 		return;
 	}
-	for (i = size + 1; i <= tree->page_size * 2; i++) {
+	for (i = size + 1; i <= page_size * 2; i++) {
 		new->key[i - size - 1] = page->key[i - 1];
 		new->val[i - size - 1] = page->val[i - 1];
 		new->page[i - size] = page->page[i];
 	}
-	new->n_data = tree->page_size * 2 - size;
+	new->n_data = page_size * 2 - size;
 	page->n_data = size;
-	if (pos <= tree->page_size)
-		hg_btree_page_insert_data(tree, page, key, val, pos, newpage);
+	if (pos <= page_size)
+		hg_btree_page_insert_data(page, key, val, pos, newpage);
 	else
-		hg_btree_page_insert_data(tree, new, key, val, pos - size, newpage);
+		hg_btree_page_insert_data(new, key, val, pos - size, newpage);
 	*key = page->key[page->n_data - 1];
 	*val = page->val[page->n_data - 1];
 	new->page[0] = page->page[page->n_data];
@@ -218,14 +431,13 @@ hg_btree_page_blance(HgBTree      *tree,
 }
 
 static gboolean
-hg_btree_page_remove(HgBTree     *tree,
-		     HgBTreePage *page,
+hg_btree_page_remove(HgBTreePage *page,
 		     gpointer    *key,
 		     gpointer    *val,
 		     gboolean    *need_restore)
 {
 	HgBTreePage *p;
-	guint i;
+	guint16 i;
 	gboolean removed = FALSE;
 
 	if (page == NULL)
@@ -236,34 +448,33 @@ hg_btree_page_remove(HgBTree     *tree,
 		i = page->n_data;
 	if (i < page->n_data && page->key[i] == *key) {
 		removed = TRUE;
-		if (tree->key_destroy_func)
-			tree->key_destroy_func(page->key[i]);
-		if (tree->val_destroy_func)
-			tree->val_destroy_func(page->val[i]);
+		if (page->parent->key_destroy_func)
+			page->parent->key_destroy_func(page->key[i]);
+		if (page->parent->val_destroy_func)
+			page->parent->val_destroy_func(page->val[i]);
 		if ((p = page->page[i + 1]) != NULL) {
 			while (p->page[0] != NULL)
 				p = p->page[0];
 			page->key[i] = *key = p->key[0];
 			page->val[i] = *val = p->val[0];
-			removed = hg_btree_page_remove(tree, page->page[i + 1], key, val, need_restore);
+			removed = hg_btree_page_remove(page->page[i + 1], key, val, need_restore);
 			if (*need_restore)
-				*need_restore = hg_btree_page_restore(tree, page, i + 1);
+				*need_restore = hg_btree_page_restore(page, i + 1);
 		} else {
-			*need_restore = hg_btree_page_remove_data(tree, page, i);
+			*need_restore = hg_btree_page_remove_data(page, i);
 		}
 	} else {
-		removed = hg_btree_page_remove(tree, page->page[i], key, val, need_restore);
+		removed = hg_btree_page_remove(page->page[i], key, val, need_restore);
 		if (*need_restore)
-			*need_restore = hg_btree_page_restore(tree, page, i);
+			*need_restore = hg_btree_page_restore(page, i);
 	}
 
 	return removed;
 }
 
 static gboolean
-hg_btree_page_remove_data(HgBTree     *tree,
-			  HgBTreePage *page,
-			  guint        pos)
+hg_btree_page_remove_data(HgBTreePage *page,
+			  guint16      pos)
 {
 	while (++pos < page->n_data) {
 		page->key[pos - 1] = page->key[pos];
@@ -271,34 +482,35 @@ hg_btree_page_remove_data(HgBTree     *tree,
 		page->page[pos] = page->page[pos + 1];
 	}
 
-	return --(page->n_data) < tree->page_size;
+	return --(page->n_data) < page->parent->page_size;
 }
 
 static gboolean
-hg_btree_page_restore(HgBTree     *tree,
-		      HgBTreePage *page,
-		      guint        pos)
+hg_btree_page_restore(HgBTreePage *page,
+		      guint16      pos)
 {
+	guint16 page_size = page->parent->page_size;
+
 	if (pos > 0) {
-		if (page->page[pos - 1]->n_data > tree->page_size)
-			hg_btree_page_restore_right_blance(tree, page, pos);
+		if (page->page[pos - 1]->n_data > page_size)
+			hg_btree_page_restore_right_blance(page, pos);
 		else
-			return hg_btree_page_combine(tree, page, pos);
+			return hg_btree_page_combine(page, pos);
 	} else {
-		if (page->page[1]->n_data > tree->page_size)
-			hg_btree_page_restore_left_blance(tree, page, 1);
+		if (page->page[1]->n_data > page_size)
+			hg_btree_page_restore_left_blance(page, 1);
 		else
-			return hg_btree_page_combine(tree, page, 1);
+			return hg_btree_page_combine(page, 1);
 	}
+
 	return FALSE;
 }
 
 static void
-hg_btree_page_restore_right_blance(HgBTree     *tree,
-				   HgBTreePage *page,
-				   guint        pos)
+hg_btree_page_restore_right_blance(HgBTreePage *page,
+				   guint16      pos)
 {
-	guint i;
+	guint16 i;
 	HgBTreePage *left, *right;
 
 	left = page->page[pos - 1];
@@ -320,11 +532,10 @@ hg_btree_page_restore_right_blance(HgBTree     *tree,
 }
 
 static void
-hg_btree_page_restore_left_blance(HgBTree     *tree,
-				  HgBTreePage *page,
-				  guint        pos)
+hg_btree_page_restore_left_blance(HgBTreePage *page,
+				  guint16      pos)
 {
-	guint i;
+	guint16 i;
 	HgBTreePage *left, *right;
 
 	left = page->page[pos - 1];
@@ -345,11 +556,10 @@ hg_btree_page_restore_left_blance(HgBTree     *tree,
 }
 
 static gboolean
-hg_btree_page_combine(HgBTree     *tree,
-		      HgBTreePage *page,
-		      guint        pos)
+hg_btree_page_combine(HgBTreePage *page,
+		      guint16      pos)
 {
-	guint i;
+	guint16 i;
 	HgBTreePage *left, *right;
 	gboolean need_restore;
 
@@ -365,8 +575,10 @@ hg_btree_page_combine(HgBTree     *tree,
 		left->val[left->n_data - 1] = right->val[i - 1];
 		left->page[left->n_data] = right->page[i];
 	}
-	need_restore = hg_btree_page_remove_data(tree, page, pos - 1);
-	hg_btree_page_free(right);
+	need_restore = hg_btree_page_remove_data(page, pos - 1);
+	/* 'right' page could be freed here though, it might be referred from
+	 * somewhere. so the actual destroying the page relies on GC.
+	 */
 
 	return need_restore;
 }
@@ -377,7 +589,7 @@ hg_btree_page_foreach(HgBTreePage    *page,
 		      gpointer        data)
 {
 	if (page != NULL) {
-		guint i;
+		guint16 i;
 
 		for (i = 0; i < page->n_data; i++) {
 			hg_btree_page_foreach(page->page[i], func, data);
@@ -397,7 +609,7 @@ hg_btree_page_get_iter(HgBTreePage *page,
 	gboolean retval = FALSE;
 
 	if (page != NULL) {
-		guint i;
+		guint16 i;
 
 		for (i = 0; i < page->n_data; i++) {
 			retval = hg_btree_page_get_iter(page->page[i], sequence, iter, valid_stamp);
@@ -448,34 +660,37 @@ _hg_btree_count_traverse(gpointer key,
  * Public Functions
  */
 HgBTree *
-hg_btree_new(guint page_size)
+hg_btree_new(HgMemPool *pool,
+	     guint16    page_size)
 {
-	return hg_btree_new_full(page_size, NULL, NULL);
+	return hg_btree_new_full(pool, page_size, NULL, NULL);
 }
 
 HgBTree *
-hg_btree_new_full(guint          page_size,
-		  GDestroyNotify key_destroy_func,
-		  GDestroyNotify val_destroy_func)
+hg_btree_new_full(HgMemPool      *pool,
+		  guint16         page_size,
+		  GDestroyNotify  key_destroy_func,
+		  GDestroyNotify  val_destroy_func)
 {
 	HgBTree *retval;
 
-	retval = g_new(HgBTree, 1);
+	g_return_val_if_fail (pool != NULL, NULL);
+	g_return_val_if_fail (page_size <= G_MAXINT16, NULL);
+
+	retval = hg_mem_alloc_with_flags(pool, sizeof (HgBTree),
+					 HG_FL_RESTORABLE | HG_FL_COMPLEX | HG_FL_HGOBJECT);
+	if (retval == NULL)
+		return NULL;
+	HG_OBJECT_INIT_STATE (&retval->object);
+	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
+	hg_object_set_vtable(&retval->object, &__hg_btree_vtable);
+
 	retval->page_size = page_size;
 	retval->root = NULL;
 	retval->key_destroy_func = key_destroy_func;
 	retval->val_destroy_func = val_destroy_func;
 
 	return retval;
-}
-
-void
-hg_btree_destroy(HgBTree *tree)
-{
-	g_return_if_fail (tree != NULL);
-
-	hg_btree_page_destroy(tree, tree->root);
-	g_free(tree);
 }
 
 void
@@ -491,9 +706,13 @@ hg_btree_add(HgBTree *tree,
 
 	pkey = key;
 	pval = val;
-	inserted = hg_btree_page_insert(tree, tree->root, &pkey, &pval, FALSE, &newpage);
+	inserted = hg_btree_page_insert(tree->root, &pkey, &pval, FALSE, &newpage);
 	if (!inserted) {
 		page = hg_btree_page_new(tree);
+		if (page == NULL) {
+			g_warning("Failed to allocate a tree page.");
+			return;
+		}
 		page->n_data = 1;
 		page->key[0] = pkey;
 		page->val[0] = pval;
@@ -516,7 +735,7 @@ hg_btree_replace(HgBTree *tree,
 
 	pkey = key;
 	pval = val;
-	inserted = hg_btree_page_insert(tree, tree->root, &pkey, &pval, TRUE, &newpage);
+	inserted = hg_btree_page_insert(tree->root, &pkey, &pval, TRUE, &newpage);
 	if (!inserted) {
 		page = hg_btree_page_new(tree);
 		page->n_data = 1;
@@ -539,12 +758,15 @@ hg_btree_remove(HgBTree *tree,
 	g_return_if_fail (tree != NULL);
 
 	pkey = key;
-	removed = hg_btree_page_remove(tree, tree->root, &pkey, &pval, &need_restore);
+	removed = hg_btree_page_remove(tree->root, &pkey, &pval, &need_restore);
 	if (removed) {
 		if (tree->root->n_data == 0) {
 			page = tree->root;
 			tree->root = tree->root->page[0];
-			hg_btree_page_free(page);
+			/* 'page' page could be freed here though, it might be
+			 * referred from somewhere. so the actual destroying
+			 * the page relies on GC.
+			 */
 		}
 	}
 }
@@ -554,12 +776,13 @@ hg_btree_find(HgBTree *tree,
 	      gpointer key)
 {
 	HgBTreePage *page;
-	guint i;
 
 	g_return_val_if_fail (tree != NULL, NULL);
 
 	page = tree->root;
 	while (page != NULL) {
+		guint16 i;
+
 		if (page->key[page->n_data - 1] >= key) {
 			for (i = 0; i < page->n_data && page->key[i] < key; i++);
 			if (i < page->n_data && page->key[i] == key)
@@ -578,7 +801,7 @@ hg_btree_find_near(HgBTree *tree,
 		   gpointer key)
 {
 	HgBTreePage *page, *prev = NULL;
-	guint i = 0, prev_pos = 0;
+	guint16 i = 0, prev_pos = 0;
 
 	g_return_val_if_fail (tree != NULL, NULL);
 

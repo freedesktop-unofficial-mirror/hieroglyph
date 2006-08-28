@@ -915,7 +915,7 @@ _hg_dict_real_free(gpointer data)
 
 	if (dict->dict) {
 		hg_btree_foreach(dict->dict, _hg_dict_node_free, NULL);
-		hg_btree_destroy(dict->dict);
+		/* relying on GC to free dict->dict */
 	}
 }
 
@@ -960,10 +960,18 @@ _hg_dict_real_set_flags(gpointer data,
 			guint    flags)
 {
 	HgDict *dict = data;
+	HgMemObject *obj;
 
-	hg_btree_foreach(dict->dict,
-			 _hg_dict_traverse_set_flags,
-			 GUINT_TO_POINTER (flags));
+	hg_mem_get_object__inline(dict->dict, obj);
+	if (obj == NULL) {
+		g_warning("[BUG] Invalid object %p to be marked: Dict tree", dict->dict);
+	} else {
+		if (!hg_mem_is_flags__inline(obj, flags))
+			hg_mem_add_flags__inline(obj, flags, TRUE);
+		hg_btree_foreach(dict->dict,
+				 _hg_dict_traverse_set_flags,
+				 GUINT_TO_POINTER (flags));
+	}
 }
 
 static gboolean
@@ -990,6 +998,10 @@ _hg_dict_real_relocate(gpointer           data,
 {
 	HgDict *dict = data;
 
+	if ((gsize)dict->dict >= info->start &&
+	    (gsize)dict->dict <= info->end) {
+		dict->dict = (gpointer)((gsize)dict->dict + info->diff);
+	}
 	hg_btree_foreach(dict->dict, _hg_dict_traverse_relocate, info);
 }
 
@@ -1225,7 +1237,7 @@ hg_dict_new(HgMemPool *pool,
 	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
 	hg_object_set_vtable(&retval->object, &__hg_dict_vtable);
 
-	retval->dict = hg_btree_new(BTREE_N_NODE);
+	retval->dict = hg_btree_new(pool, BTREE_N_NODE);
 	if (retval->dict == NULL) {
 		hg_mem_free(retval);
 		return NULL;
