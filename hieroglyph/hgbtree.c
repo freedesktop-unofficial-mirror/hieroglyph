@@ -149,7 +149,8 @@ _hg_btree_page_real_set_flags(gpointer data,
 	if (page->page == NULL && page->n_data > 0) {
 		g_warning("[BUG] HgBTree structure corruption. no real data, but it says there are %d item(s).",
 			  page->n_data);
-	} else if (page->page) {
+	}
+	if (page->page) {
 		hg_mem_get_object__inline(page->page, obj);
 		if (obj == NULL) {
 			g_warning("[BUG] Invalid object %p to be marked: HgBTreePage page",
@@ -157,21 +158,20 @@ _hg_btree_page_real_set_flags(gpointer data,
 		} else {
 			hg_mem_add_flags__inline(obj, flags, TRUE);
 		}
+	} else {
+		return;
+	}
 
+	if (!page->parent->disable_marking) {
 		for (i = 0; i < page->n_data; i++) {
-			hg_mem_get_object__inline(page->page[i], obj);
-			if (obj == NULL) {
-				g_warning("[BUG] Invalid object %p to be marked: HgBTreePage page[%d]",
-					  page->page[i], i);
-			} else {
-				hg_mem_add_flags__inline(obj, flags, TRUE);
-			}
-			hg_mem_get_object__inline(page->key[i], obj);
-			if (obj == NULL) {
-				g_warning("[BUG] Invalid object %p to be marked: HgBTreePage key[%d]",
-					  page->key[i], i);
-			} else {
-				hg_mem_add_flags__inline(obj, flags, TRUE);
+			if (page->page[i]) {
+				hg_mem_get_object__inline(page->page[i], obj);
+				if (obj == NULL) {
+					g_warning("[BUG] Invalid object %p to be marked: HgBTreePage page[%d]",
+						  page->page[i], i);
+				} else {
+					hg_mem_add_flags__inline(obj, flags, TRUE);
+				}
 			}
 			hg_mem_get_object__inline(page->val[i], obj);
 			if (obj == NULL) {
@@ -181,12 +181,14 @@ _hg_btree_page_real_set_flags(gpointer data,
 				hg_mem_add_flags__inline(obj, flags, TRUE);
 			}
 		}
-		hg_mem_get_object__inline(page->page[page->n_data], obj);
-		if (obj == NULL) {
-			g_warning("[BUG] Invalid object %p to be marked: HgBTreePage page[%d]",
-				  page->page[page->n_data], page->n_data);
-		} else {
-			hg_mem_add_flags__inline(obj, flags, TRUE);
+		if (page->page[page->n_data]) {
+			hg_mem_get_object__inline(page->page[page->n_data], obj);
+			if (obj == NULL) {
+				g_warning("[BUG] Invalid object %p to be marked: HgBTreePage page[%d]",
+					  page->page[page->n_data], page->n_data);
+			} else {
+				hg_mem_add_flags__inline(obj, flags, TRUE);
+			}
 		}
 	}
 }
@@ -210,23 +212,25 @@ _hg_btree_page_real_relocate(gpointer           data,
 	    (gsize)page->val <= info->end) {
 		page->val = (gpointer)((gsize)page->val + info->diff);
 	}
-	for (i = 0; i < page->n_data; i++) {
-		if ((gsize)page->page[i] >= info->start &&
-		    (gsize)page->page[i] <= info->end) {
-			page->page[i] = (gpointer)((gsize)page->page[i] + info->diff);
+	if (!page->parent->disable_marking) {
+		for (i = 0; i < page->n_data; i++) {
+			if (page->page[i]) {
+				if ((gsize)page->page[i] >= info->start &&
+				    (gsize)page->page[i] <= info->end) {
+					page->page[i] = (gpointer)((gsize)page->page[i] + info->diff);
+				}
+			}
+			if ((gsize)page->val[i] >= info->start &&
+			    (gsize)page->val[i] <= info->end) {
+				page->val[i] = (gpointer)((gsize)page->val[i] + info->diff);
+			}
 		}
-		if ((gsize)page->key[i] >= info->start &&
-		    (gsize)page->key[i] <= info->end) {
-			page->key[i] = (gpointer)((gsize)page->key[i] + info->diff);
+		if (page->page[page->n_data]) {
+			if ((gsize)page->page[page->n_data] >= info->start &&
+			    (gsize)page->page[page->n_data] <= info->end) {
+				page->page[page->n_data] = (gpointer)((gsize)page->page[page->n_data] + info->diff);
+			}
 		}
-		if ((gsize)page->val[i] >= info->start &&
-		    (gsize)page->val[i] <= info->end) {
-			page->val[i] = (gpointer)((gsize)page->val[i] + info->diff);
-		}
-	}
-	if ((gsize)page->page[page->n_data] >= info->start &&
-	    (gsize)page->page[page->n_data] <= info->end) {
-		page->page[page->n_data] = (gpointer)((gsize)page->page[page->n_data] + info->diff);
 	}
 }
 
@@ -689,6 +693,7 @@ hg_btree_new_full(HgMemPool      *pool,
 	retval->root = NULL;
 	retval->key_destroy_func = key_destroy_func;
 	retval->val_destroy_func = val_destroy_func;
+	retval->disable_marking = FALSE;
 
 	return retval;
 }
@@ -929,4 +934,13 @@ hg_btree_length(HgBTree *tree)
 	hg_btree_foreach(tree, _hg_btree_count_traverse, &retval);
 
 	return retval;
+}
+
+void
+hg_btree_allow_marking(HgBTree  *tree,
+		       gboolean  flag)
+{
+	g_return_if_fail (tree != NULL);
+
+	tree->disable_marking = (flag ? FALSE : TRUE);
 }

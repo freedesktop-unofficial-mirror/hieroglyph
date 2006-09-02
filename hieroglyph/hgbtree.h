@@ -47,6 +47,7 @@ struct _HieroGlyphBTree {
 	GDestroyNotify  key_destroy_func;
 	GDestroyNotify  val_destroy_func;
 	guint16         page_size;
+	gboolean        disable_marking : 1;
 };
 
 struct _HieroGlyphBTreeIter {
@@ -91,6 +92,8 @@ gboolean    hg_btree_is_iter_valid (HgBTree     *tree,
 				    HgBTreeIter  iter);
 gboolean    hg_btree_update_iter   (HgBTree     *tree,
 				    HgBTreeIter  iter);
+void        hg_btree_allow_marking (HgBTree     *tree,
+				    gboolean     flag);
 
 G_END_DECLS
 

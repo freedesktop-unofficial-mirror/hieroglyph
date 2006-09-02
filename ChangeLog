@@ -1,5 +1,14 @@
 2006-09-03  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgbtree.c (_hg_btree_page_real_set_flags): stop marking
+	if marking is disabled by request.
+	(_hg_btree_page_real_relocate): likewise.
+	(hg_btree_allow_marking): new function.
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_initialize):
+	disallow marking to avoid warnings so that the stored values aren't
+	any hieroglyph objects.
+
 	* hieroglyph/hgarray.c (_hg_array_real_set_flags): stop marking
 	if the object is already marked.
 

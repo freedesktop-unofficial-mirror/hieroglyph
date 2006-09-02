@@ -418,8 +418,10 @@ _hg_allocator_bfit_real_initialize(HgMemPool *pool,
 		return FALSE;
 	}
 	priv->free_block_tree = hg_btree_new(priv->libc_pool, BTREE_N_NODE);
+	hg_btree_allow_marking(priv->free_block_tree, FALSE);
 	priv->heap2block_array = g_ptr_array_new();
 	priv->obj2block_tree = hg_btree_new(priv->libc_pool, BTREE_N_NODE);
+	hg_btree_allow_marking(priv->obj2block_tree, FALSE);
 	priv->age_of_snapshot = 0;
 
 	g_ptr_array_add(priv->heap2block_array, block);
