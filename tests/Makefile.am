@@ -21,6 +21,7 @@ noinst_PROGRAMS =					\
 	test-hgdict					\
 	test-hgpage					\
 	test-hglineedit					\
+	test-hglist					\
 	test-snapshot					\
 	test-scanner					\
 	test-vm						\
@@ -69,6 +70,11 @@ test_hglineedit_SOURCES =				\
 	$(NULL)
 test_hglineedit_LDADD = $(LDADDS)
 
+test_hglist_SOURCES =					\
+	hglist.c					\
+	$(NULL)
+test_hglist_LDADD = $(LDADDS)
+
 test_snapshot_SOURCES =					\
 	snapshot.c					\
 	$(NULL)
@@ -108,6 +114,7 @@ bench2_hgallocator_bfit_LDADD = $(LDADDS)
 TESTS =							\
 	test-hgbtree					\
 	test-hgmem					\
+	test-hglist					\
 	test-hgfile					\
 	test-hgstring					\
 	test-hgarray					\

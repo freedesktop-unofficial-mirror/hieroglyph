@@ -42,6 +42,9 @@ typedef struct _HieroGlyphGraphicState		HgGraphicState;
 /* hglineedit.h */
 typedef struct _HieroGlyphLineEdit		HgLineEdit;
 typedef struct _HieroGlyphLineEditVTable	HgLineEditVTable;
+/* hglist.h */
+typedef struct _HieroGlyphList			HgList;
+typedef struct _HieroGlyphListIter		*HgListIter;
 /* hgmem.h */
 typedef struct _HieroGlyphAllocatorVTable	HgAllocatorVTable;
 typedef struct _HieroGlyphAllocator		HgAllocator;
@@ -348,6 +351,13 @@ struct _HieroGlyphFileObjectCallback {
 	gboolean (* is_eof)         (gpointer      user_data);
 	void     (* clear_eof)      (gpointer      uesr_data);
 	gint     (* get_error_code) (gpointer      user_data);
+};
+
+struct _HieroGlyphList {
+	HgObject  object;
+	HgList   *prev;
+	HgList   *next;
+	gpointer  data;
 };
 
 struct _HieroGlyphColor {
