@@ -1,5 +1,7 @@
 2006-09-03  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hglist.[ch]: new files.
+
 	* hieroglyph/hgbtree.c (_hg_btree_page_real_set_flags): stop marking
 	if marking is disabled by request.
 	(_hg_btree_page_real_relocate): likewise.
