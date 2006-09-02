@@ -84,7 +84,8 @@ _hg_array_real_set_flags(gpointer data,
 		if (obj == NULL) {
 			g_warning("[BUG] Invalid object %p to be marked: Array name", array->name);
 		} else {
-			hg_mem_add_flags__inline(obj, flags, TRUE);
+			if (!hg_mem_is_flags__inline(obj, flags))
+				hg_mem_add_flags__inline(obj, flags, TRUE);
 		}
 	}
 	for (i = 0; i < array->n_arrays; i++) {
