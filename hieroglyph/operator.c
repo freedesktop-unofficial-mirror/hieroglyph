@@ -7385,11 +7385,11 @@ _hg_operator_real_set_flags(gpointer data,
 	} else {
 #ifdef DEBUG_GC
 		G_STMT_START {
-			if ((flags & HG_FL_MARK) != 0) {
+			if ((flags & HG_MEMOBJ_MARK_AGE_MASK) != 0) {
 				if (!hg_mem_is_flags__inline(obj, flags)) {
-					hg_debug_print_gc_state(HG_DEBUG_GC_MARK, HG_TYPE_VALUE_POINTER, NULL, data, op->name);
+					hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_MARK, HG_TYPE_VALUE_POINTER, NULL, data, op->name);
 				} else {
-					hg_debug_print_gc_state(HG_DEBUG_GC_ALREADYMARK, HG_TYPE_VALUE_POINTER, NULL, data, op->name);
+					hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_ALREADYMARK, HG_TYPE_VALUE_POINTER, NULL, data, op->name);
 				}
 			}
 		} G_STMT_END;

@@ -126,14 +126,18 @@ hg_mem_alloc_with_flags(HgMemPool *pool,
 		hg_mem_get_object__inline(retval, obj);
 		if (obj) {
 			gint heap_id = HG_MEMOBJ_GET_HEAP_ID (obj);
-			HgHeap *h = g_ptr_array_index(obj->pool->heap_list, heap_id);
+			GPtrArray *a = obj->pool->heap_list;
+			HgHeap *h;
 
-			hg_memory_visualizer_set_chunk_state(HG_MEMORY_VISUALIZER (visual),
-							     hg_mem_pool_get_name(obj->pool),
-							     heap_id,
-							     (gsize)obj - (gsize)h->heaps,
-							     hg_mem_get_object_size(retval),
-							     HG_CHUNK_USED);
+			if (a && a->len > 0) {
+				h = g_ptr_array_index(a, heap_id);
+				hg_memory_visualizer_set_chunk_state(HG_MEMORY_VISUALIZER (visual),
+								     hg_mem_pool_get_name(obj->pool),
+								     heap_id,
+								     (gsize)obj - (gsize)h->heaps,
+								     hg_mem_get_object_size(retval),
+								     HG_CHUNK_USED);
+			}
 		}
 	}
 

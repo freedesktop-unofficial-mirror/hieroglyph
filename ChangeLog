@@ -1,3 +1,15 @@
+2006-09-04  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/operator.c (_hg_operator_real_set_flags): fixed outdated
+	function call.
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_initialize):
+	disable the unsuported features.
+	(_hg_allocator_bfit_real_garbage_collection): output more debugging
+	info.
+
+	* src/hgspy_helper.c (hg_mem_alloc_with_flags): fixed a segfault issue.
+
 2006-09-03  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hglist.[ch]: new files.

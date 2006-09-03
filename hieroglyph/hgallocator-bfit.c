@@ -417,6 +417,10 @@ _hg_allocator_bfit_real_initialize(HgMemPool *pool,
 
 		return FALSE;
 	}
+	hg_mem_pool_allow_resize(priv->libc_pool, FALSE);
+	hg_mem_pool_use_periodical_gc(priv->libc_pool, FALSE);
+	hg_mem_pool_use_garbage_collection(priv->libc_pool, FALSE);
+
 	priv->free_block_tree = hg_btree_new(priv->libc_pool, BTREE_N_NODE);
 	hg_btree_allow_marking(priv->free_block_tree, FALSE);
 	priv->heap2block_array = g_ptr_array_new();
@@ -672,6 +676,9 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 	guint i;
 	gboolean retval = FALSE;
 	GList *reflist;
+#ifdef DEBUG_GC
+	guint total = 0, swept = 0;
+#endif /* DEBUG_GC */
 
 	if (pool->is_collecting) {
 		/* just return without doing anything */
@@ -729,15 +736,23 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 				if (!hg_mem_is_gc_mark__inline(obj) &&
 				    (pool->destroyed || !hg_mem_is_locked(obj))) {
 #ifdef DEBUG_GC
+					swept++;
 					g_print("DEBUG_GC: sweeping %p (block: %p memobj: %p size: %" G_GSIZE_FORMAT ")\n", obj->data, obj->subid, obj, ((HgMemBFitBlock *)obj->subid)->length);
 #endif /* DEBUG_GC */
 					hg_mem_free(obj->data);
 					retval = TRUE;
 				}
 			}
+#ifdef DEBUG_GC
+			total++;
+#endif /* DEBUG_GC */
 			block = tmp;
 		}
 	}
+#ifdef DEBUG_GC
+	g_print("DEBUG_GC: GC finished (total: %d blocks swept: %d blocks)\n",
+		total, swept);
+#endif /* DEBUG_GC */
 	pool->is_collecting = FALSE;
 
 	return retval;
