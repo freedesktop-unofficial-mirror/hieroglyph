@@ -1,5 +1,10 @@
 2006-09-04  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgallocator-bfit.c: use HgList instead of GSList.
+	(_hg_allocator_bfit_btree_traverse_in_destroy): removed.
+	(_hg_allocator_bfit_real_initialize): libc pool is no longer needed.
+	(_hg_allocator_bfit_real_free_block_traverse): new function.
+
 	* hieroglyph/ilist.c (_hg_list_free): check NULL.
 	(_hg_list_iter_delete_link): fixed a memory leak.
 

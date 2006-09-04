@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <hieroglyph/hgmem.h>
-#include <hieroglyph/hgallocator-libc.h>
+#include <hieroglyph/hgallocator-bfit.h>
 #include <hieroglyph/hgbtree.h>
 
 void
@@ -30,8 +30,8 @@ main(void)
 {
 	HG_MEM_INIT;
 
-	HgAllocator *allocator = hg_allocator_new(hg_allocator_libc_get_vtable());
-	HgMemPool *pool = hg_mem_pool_new(allocator, "btree_test", 256, FALSE);
+	HgAllocator *allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
+	HgMemPool *pool = hg_mem_pool_new(allocator, "btree_test", 1024, TRUE);
 	HgBTree *tree = hg_btree_new(pool, 2);
 	GString *string = g_string_new(NULL);
 	gchar *test1 = "(.0.1.2.3.)";
@@ -40,6 +40,7 @@ main(void)
 	gint i;
 	HgBTreeIter iter = hg_btree_iter_new();
 
+	hg_btree_allow_marking(tree, FALSE);
 	hg_btree_add(tree, GINT_TO_POINTER (0), GINT_TO_POINTER (0));
 	hg_btree_add(tree, GINT_TO_POINTER (1), GINT_TO_POINTER (1));
 	hg_btree_add(tree, GINT_TO_POINTER (2), GINT_TO_POINTER (2));
