@@ -1,5 +1,9 @@
 2006-09-04  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/ilist.[ch]: new files.
+
+	* hieroglyph/ibtree.[ch]: new files.
+
 	* hieroglyph/hglist.c (_hg_list_iter_real_set_data): new function.
 	(hg_list_init): new function.
 	(hg_list_finalize): new function.
