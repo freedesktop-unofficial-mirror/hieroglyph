@@ -278,6 +278,7 @@ hg_graphics_new(HgMemPool *pool)
 		retval->current_gstate = hg_graphic_state_new(pool);
 		retval->current_page = hg_page_new_with_pagesize(HG_PAGE_A4);
 		retval->pages = g_list_append(NULL, retval->current_page);
+		retval->gstate_stack = NULL;
 		if (retval->current_page == NULL)
 			break;
 		hg_graphics_init(retval);

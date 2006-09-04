@@ -1,5 +1,7 @@
 2006-09-04  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hggraphics.c (hg_graphics_new): fixed uninitialized value.
+
 	* hieroglyph/ilist.h (hg_list_free): new macro.
 
 	* hieroglyph/ilist.[ch]: new files.
