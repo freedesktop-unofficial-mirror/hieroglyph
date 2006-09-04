@@ -28,6 +28,7 @@
 #include "hgdict.h"
 #include "hgbtree.h"
 #include "hgmem.h"
+#include "hglist.h"
 #include "hgstring.h"
 #include "hgvaluenode.h"
 #include "hgfile.h"
@@ -62,7 +63,6 @@ struct _HieroGlyphDict {
 };
 
 
-static void     _hg_dict_real_free          (gpointer           data);
 static void     _hg_dict_real_set_flags     (gpointer           data,
 					     guint              flags);
 static void     _hg_dict_real_relocate      (gpointer           data,
@@ -864,7 +864,7 @@ static guint hg_dict_primes[] = {
 };
 
 static HgObjectVTable __hg_dict_vtable = {
-	.free      = _hg_dict_real_free,
+	.free      = NULL,
 	.set_flags = _hg_dict_real_set_flags,
 	.relocate  = _hg_dict_real_relocate,
 	.dup       = _hg_dict_real_dup,
@@ -899,50 +899,37 @@ _hg_dict_get_prime(guint n)
 }
 
 static gboolean
-_hg_dict_node_free(gpointer key,
-		   gpointer val,
-		   gpointer data)
-{
-	g_list_free(val);
-
-	return TRUE;
-}
-
-static void
-_hg_dict_real_free(gpointer data)
-{
-	HgDict *dict = data;
-
-	if (dict->dict) {
-		hg_btree_foreach(dict->dict, _hg_dict_node_free, NULL);
-		/* relying on GC to free dict->dict */
-	}
-}
-
-static gboolean
 _hg_dict_traverse_set_flags(gpointer key,
 			    gpointer val,
 			    gpointer data)
 {
 	HgMemObject *obj;
 	guint flags = GPOINTER_TO_UINT (data);
-	GList *list;
+	HgList *list = val;
+	HgListIter iter = hg_list_iter_new(list);
 
+	if (iter == NULL) {
+		__asm__("int3");
+		g_warning("Failed to create an iter to set flags from Dict.");
+		return FALSE;
+	}
 	/* no need to mark a key because it's hash value here */
 
 	/* mark each nodes */
-	for (list = val; list != NULL; list = g_list_next(list)) {
-		hg_mem_get_object__inline(list->data, obj);
+	while (1) {
+		HgDictNode *node = hg_list_iter_get_data(iter);
+
+		hg_mem_get_object__inline(node, obj);
 		if (obj == NULL) {
-			g_warning("[BUG] Invalid object %p to be marked: DictNode [list %p]", list->data, list);
+			g_warning("[BUG] Invalid object %p to be marked: DictNode [list %p]", node, list);
 		} else {
 #ifdef DEBUG_GC
 			G_STMT_START {
 				if ((flags & HG_MEMOBJ_MARK_AGE_MASK) != 0) {
 					if (!hg_mem_is_flags__inline(obj, flags)) {
-						hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_MARK, HG_TYPE_VALUE_DICT, NULL, list->data, GINT_TO_POINTER (0));
+						hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_MARK, HG_TYPE_VALUE_DICT, NULL, node, GINT_TO_POINTER (0));
 					} else {
-						hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_ALREADYMARK, HG_TYPE_VALUE_DICT, NULL, list->data, GINT_TO_POINTER (0));
+						hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_ALREADYMARK, HG_TYPE_VALUE_DICT, NULL, node, GINT_TO_POINTER (0));
 					}
 				}
 			} G_STMT_END;
@@ -950,7 +937,10 @@ _hg_dict_traverse_set_flags(gpointer key,
 			if (!hg_mem_is_flags__inline(obj, flags))
 				hg_mem_add_flags__inline(obj, flags, TRUE);
 		}
+		if (!hg_list_get_iter_next(list, iter))
+			break;
 	}
+	hg_list_iter_free(iter);
 
 	return TRUE;
 }
@@ -974,24 +964,6 @@ _hg_dict_real_set_flags(gpointer data,
 	}
 }
 
-static gboolean
-_hg_dict_traverse_relocate(gpointer key,
-			   gpointer val,
-			   gpointer data)
-{
-	HgMemRelocateInfo *info = data;
-	GList *list;
-
-	for (list = val; list != NULL; list = g_list_next(list)) {
-		if ((gsize)list->data >= info->start &&
-		    (gsize)list->data <= info->end) {
-			list->data = (gpointer)((gsize)list->data + info->diff);
-		}
-	}
-
-	return TRUE;
-}
-
 static void
 _hg_dict_real_relocate(gpointer           data,
 		       HgMemRelocateInfo *info)
@@ -1002,7 +974,6 @@ _hg_dict_real_relocate(gpointer           data,
 	    (gsize)dict->dict <= info->end) {
 		dict->dict = (gpointer)((gsize)dict->dict + info->diff);
 	}
-	hg_btree_foreach(dict->dict, _hg_dict_traverse_relocate, info);
 }
 
 static gboolean
@@ -1146,17 +1117,17 @@ hg_dict_node_new(HgMemPool *pool)
 	return retval;
 }
 
-static gint
+static gboolean
 _hg_dict_node_compare(gconstpointer a,
 		      gconstpointer b)
 {
 	const HgDictNode *node = a;
 	const HgValueNode *key = b;
 
-	return hg_value_node_compare(node->key, key) == FALSE;
+	return hg_value_node_compare(node->key, key);
 }
 
-static gint
+static gboolean
 _hg_dict_node_compare_with_string(gconstpointer a,
 				  gconstpointer b)
 {
@@ -1164,12 +1135,12 @@ _hg_dict_node_compare_with_string(gconstpointer a,
 	const gchar *key = b;
 
 	if (HG_IS_VALUE_NAME (node->key)) {
-		return strcmp(HG_VALUE_GET_NAME (node->key), key);
+		return strcmp(HG_VALUE_GET_NAME (node->key), key) == 0;
 	} else if (HG_IS_VALUE_STRING (node->key)) {
-		return hg_string_compare_with_raw(HG_VALUE_GET_STRING (node->key), key, -1) == FALSE;
+		return hg_string_compare_with_raw(HG_VALUE_GET_STRING (node->key), key, -1);
 	}
 
-	return 1;
+	return FALSE;
 }
 
 static gboolean
@@ -1177,15 +1148,19 @@ _hg_dict_traverse_real_traverse(gpointer key,
 				gpointer val,
 				gpointer data)
 {
-	GList *l;
+	HgList *l = val;
+	HgListIter iter = hg_list_iter_new(l);
 	HgDictTraverseInfo *info = data;
 
-	for (l = val; l != NULL; l = g_list_next(l)) {
-		HgDictNode *node = l->data;
+	while (1) {
+		HgDictNode *node = hg_list_iter_get_data(iter);
 
 		if (!info->func(node->key, node->val, info->data))
 			return FALSE;
+		if (!hg_list_get_iter_next(l, iter))
+			break;
 	}
+	hg_list_iter_free(iter);
 
 	return TRUE;
 }
@@ -1266,8 +1241,8 @@ hg_dict_insert_forcibly(HgMemPool   *pool,
 			gboolean     force)
 {
 	gsize hash;
-	GList *l, *ll;
-	HgDictNode *node;
+	HgList *l;
+	HgDictNode *node = NULL;
 	HgMemObject *obj, *kobj, *vobj;
 
 	g_return_val_if_fail (dict != NULL, FALSE);
@@ -1304,22 +1279,26 @@ hg_dict_insert_forcibly(HgMemPool   *pool,
 		hg_mem_add_pool_reference(vobj->pool, obj->pool);
 
 	if ((l = hg_btree_find(dict->dict, GSIZE_TO_POINTER (hash))) != NULL) {
-		ll = g_list_find_custom(l, key, _hg_dict_node_compare);
-		if (ll != NULL) {
-			node = ll->data;
+		HgListIter iter;
+
+		iter = hg_list_find_iter_custom(l, key, _hg_dict_node_compare);
+		if (iter) {
+			node = hg_list_iter_get_data(iter);
 			node->val = val;
+			hg_list_iter_free(iter);
 		} else {
 			node = hg_dict_node_new(pool);
 			node->key = key;
 			node->val = val;
-			l = g_list_append(l, node);
+			l = hg_list_append_object(l, (HgObject *)node);
 			dict->n_keys++;
 		}
 	} else {
 		node = hg_dict_node_new(pool);
 		node->key = key;
 		node->val = val;
-		l = g_list_append(NULL, node);
+		l = hg_list_new(pool);
+		l = hg_list_append_object(l, (HgObject *)node);
 		hg_btree_add(dict->dict, GSIZE_TO_POINTER (hash), l);
 		dict->n_keys++;
 	}
@@ -1335,7 +1314,7 @@ hg_dict_remove(HgDict      *dict,
 	       HgValueNode *key)
 {
 	gsize hash;
-	GList *l, *ll;
+	HgList *l;
 	gboolean retval = FALSE;
 
 	g_return_val_if_fail (dict != NULL, FALSE);
@@ -1345,14 +1324,18 @@ hg_dict_remove(HgDict      *dict,
 
 	hash = HG_DICT_HASH (dict, key);
 	if ((l = hg_btree_find(dict->dict, GSIZE_TO_POINTER (hash))) != NULL) {
-		ll = g_list_find_custom(l, key, _hg_dict_node_compare);
-		if (ll != NULL) {
-			l = g_list_delete_link(l, ll);
-			hg_btree_replace(dict->dict, GSIZE_TO_POINTER (hash), l);
-			dict->n_keys--;
+		HgListIter iter;
+
+		iter = hg_list_find_iter_custom(l, key, _hg_dict_node_compare);
+		if (iter) {
+			l = hg_list_iter_delete_link(iter);
 			if (l == NULL)
 				hg_btree_remove(dict->dict, GSIZE_TO_POINTER (hash));
+			else
+				hg_btree_replace(dict->dict, GSIZE_TO_POINTER (hash), l);
+			dict->n_keys--;
 			retval = TRUE;
+			hg_list_iter_free(iter);
 		}
 	}
 
@@ -1364,8 +1347,9 @@ hg_dict_lookup(const HgDict *dict,
 	       HgValueNode  *key)
 {
 	gsize hash;
-	GList *l, *ll;
+	HgList *l;
 	HgDictNode *node;
+	HgValueNode *retval = NULL;
 
 	g_return_val_if_fail (dict != NULL, NULL);
 	g_return_val_if_fail (key != NULL, NULL);
@@ -1373,15 +1357,17 @@ hg_dict_lookup(const HgDict *dict,
 
 	hash = HG_DICT_HASH (dict, key);
 	if ((l = hg_btree_find(dict->dict, GSIZE_TO_POINTER (hash))) != NULL) {
-		ll = g_list_find_custom(l, key, _hg_dict_node_compare);
-		if (ll != NULL) {
-			node = ll->data;
+		HgListIter iter;
 
-			return hg_object_dup((HgObject *)node->val);
+		iter = hg_list_find_iter_custom(l, key, _hg_dict_node_compare);
+		if (iter) {
+			node = hg_list_iter_get_data(iter);
+			retval = hg_object_dup((HgObject *)node->val);
+			hg_list_iter_free(iter);
 		}
 	}
 
-	return NULL;
+	return retval;
 }
 
 HgValueNode *
@@ -1389,9 +1375,10 @@ hg_dict_lookup_with_string(HgDict      *dict,
 			   const gchar *key)
 {
 	gsize hash = 0;
-	GList *l, *ll;
+	HgList *l;
 	HgDictNode *node;
 	const gchar *p;
+	HgValueNode *retval = NULL;
 
 	g_return_val_if_fail (dict != NULL, NULL);
 	g_return_val_if_fail (key != NULL, NULL);
@@ -1402,15 +1389,17 @@ hg_dict_lookup_with_string(HgDict      *dict,
 	}
 	hash = (hash << 8) % dict->prime;
 	if ((l = hg_btree_find(dict->dict, GSIZE_TO_POINTER (hash))) != NULL) {
-		ll = g_list_find_custom(l, key, _hg_dict_node_compare_with_string);
-		if (ll != NULL) {
-			node = ll->data;
+		HgListIter iter;
 
-			return hg_object_dup((HgObject *)node->val);
+		iter = hg_list_find_iter_custom(l, key, _hg_dict_node_compare_with_string);
+		if (iter) {
+			node = hg_list_iter_get_data(iter);
+			retval = hg_object_dup((HgObject *)node->val);
+			hg_list_iter_free(iter);
 		}
 	}
 
-	return NULL;
+	return retval;
 }
 
 guint
@@ -1455,7 +1444,7 @@ hg_dict_first(HgDict       *dict,
 	      HgValueNode **val)
 {
 	HgBTreeIter iter;
-	GList *l;
+	HgListIter liter;
 	HgDictNode *node;
 
 	g_return_val_if_fail (dict != NULL, FALSE);
@@ -1467,14 +1456,22 @@ hg_dict_first(HgDict       *dict,
 		hg_btree_iter_free(iter);
 		return FALSE;
 	}
-	if ((l = iter->val) == NULL ||
-	    (node = l->data) == NULL) {
+	if (iter->val == NULL) {
+		/* FIXME: why does this happen? */
 		hg_btree_iter_free(iter);
 		return FALSE;
 	}
+	liter = hg_list_iter_new(iter->val);
+	if (liter == NULL) {
+		g_warning("Failed to create an iter to traverse a Dict.");
+		hg_btree_iter_free(iter);
+		return FALSE;
+	}
+	node = hg_list_iter_get_data(liter);
 	*key = node->key;
 	*val = node->val;
 	hg_btree_iter_free(iter);
+	hg_list_iter_free(liter);
 
 	return TRUE;
 }

@@ -1,5 +1,10 @@
 2006-09-04  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgdict.c: use HgList instead of GList.
+	(_hg_dict_node_free): removed.
+	(_hg_dict_real_free): removed.
+	(_hg_dict_traverse_relocate): removed.
+
 	* hieroglyph/hgallocator-libc.[ch]: removed.
 
 	* hieroglyph/hgallocator-bfit.c: use HgList instead of GSList.
