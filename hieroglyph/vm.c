@@ -1007,7 +1007,7 @@ hg_vm_startjob(HgVM        *vm,
 	}
 
 	if (initializer) {
-		gchar *eval = g_strdup_printf("{{prompt (%s)(r)file dup type /filetype eq {cvx exec} if} stopped {$error /newerror get {errordict /handleerror get exec 1 .quit} if} if} loop", initializer);
+		gchar *eval = g_strdup_printf("{prompt (%s)(r)file dup type /filetype eq {cvx exec} if} stopped {$error /newerror get {errordict /handleerror get exec 1 .quit} if} if", initializer);
 
 		retval = hg_vm_eval(vm, eval, NULL, NULL, NULL, NULL);
 		g_free(eval);
