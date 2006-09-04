@@ -250,14 +250,14 @@ plugin_load(HgPlugin *plugin,
 	BUILD_OP (vm, pool, systemdict, .validateunittest, validateunittest);
 
 	estack = hg_stack_new(pool, 256);
-	hg_vm_eval(vm, "(hg_unittest.ps) runlibfile",
+	hg_vm_eval(vm, "{(hg_unittest.ps) runlibfile} stopped pop",
 		   NULL, estack, NULL, &error);
 	hg_mem_free(estack);
 	hg_vm_use_global_pool(vm, is_global);
 
 	plugin->user_data = systemdict;
 
-	return TRUE;
+	return error == FALSE;
 }
 
 static gboolean

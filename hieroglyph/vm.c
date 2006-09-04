@@ -278,6 +278,8 @@ _hg_vm_eval_file(HgVM         *vm,
 					*error = TRUE;
 			} else {
 				retval = TRUE;
+				if (error)
+					*error = FALSE;
 			}
 		}
 		break;

@@ -1,7 +1,11 @@
 2006-09-05  Akira TAGOH  <at@gclab.org>
 
+	* plugins/test/test-main.c (plugin_load): load will be failed
+	if any errors happened during loading hg_unittest.ps.
+
 	* hieroglyph/vm.c (hg_vm_startjob): no need to enter in the loop
 	if the file is given.
+	(_hg_vm_eval_file): set FALSE if no errors happened.
 
 2006-09-04  Akira TAGOH  <at@gclab.org>
 
