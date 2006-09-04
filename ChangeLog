@@ -1,5 +1,27 @@
 2006-09-04  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hglist.c (_hg_list_iter_real_set_data): new function.
+	(hg_list_init): new function.
+	(hg_list_finalize): new function.
+	(hg_list_first): new function.
+	(hg_list_last): new function.
+	(hg_list_iter_new): use own memory pool to avoid an allocation failure,
+	because it's quite likely so that it's used under set_flags where could
+	be invoked during GC.
+	(hg_list_iter_get_data): renamed.
+	(hg_list_iter_set_data): new function.
+	(hg_list_iter_set_object): new function.
+	(hg_list_iter_delete_link): new function.
+	(hg_list_find_iter): new function.
+	(hg_list_find_iter_custom): new function.
+
+	* hieroglyph/vm.c (_hg_vm_eval_file): allow NULL to not want to get
+	an error result.
+
+	* src/hgspy.c (_hgspy_quit_cb): try to shutdown VM.
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_remove_block): 
+
 	* hieroglyph/operator.c (_hg_operator_real_set_flags): fixed outdated
 	function call.
 

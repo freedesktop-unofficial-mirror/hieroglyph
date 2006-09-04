@@ -29,6 +29,9 @@
 G_BEGIN_DECLS
 
 
+void hg_list_init    (void);
+void hg_list_finalize(void);
+
 HgList *hg_list_new           (HgMemPool *pool);
 HgList *hg_list_append        (HgList    *list,
 			       gpointer   data);
@@ -41,14 +44,27 @@ HgList *hg_list_prepend_object(HgList    *list,
 guint   hg_list_length        (HgList    *list);
 HgList *hg_list_remove        (HgList    *list,
 			       gpointer   data);
+HgList *hg_list_first         (HgList    *list);
+HgList *hg_list_last          (HgList    *list);
 
-HgListIter hg_list_iter_new      (HgList     *list);
-gboolean   hg_list_get_iter_first(HgList     *list,
-				  HgListIter  iter);
-gboolean   hg_list_get_iter_next (HgList     *list,
-				  HgListIter  iter);
-gpointer   hg_list_get_iter_data (HgList     *list,
-				  HgListIter  iter);
+#define hg_list_iter_free	hg_mem_free
+
+HgListIter hg_list_iter_new        (HgList        *list);
+gboolean   hg_list_get_iter_first  (HgList        *list,
+				    HgListIter     iter);
+gboolean   hg_list_get_iter_next   (HgList        *list,
+				    HgListIter     iter);
+HgListIter hg_list_find_iter       (HgList        *list,
+				    gconstpointer  data);
+HgListIter hg_list_find_iter_custom(HgList        *list,
+				    gconstpointer  data,
+				    HgCompareFunc  func);
+gpointer   hg_list_iter_get_data   (HgListIter     iter);
+void       hg_list_iter_set_data   (HgListIter     iter,
+				    gpointer       data);
+void       hg_list_iter_set_object (HgListIter     iter,
+				    HgObject      *hobject);
+HgList    *hg_list_iter_delete_link(HgListIter     iter);
 
 
 G_END_DECLS

@@ -82,6 +82,8 @@ typedef struct _HieroGlyphMatrix		HgMatrix;
 typedef struct _HieroGlyphDeviceVTable		HgDeviceVTable;
 typedef struct _HieroGlyphDevice		HgDevice;
 
+typedef gboolean            (*HgCompareFunc)       (gconstpointer a,
+						    gconstpointer b);
 typedef gboolean            (*HgTraverseFunc)      (gpointer    key,
 						    gpointer    val,
 						    gpointer    data);
@@ -351,13 +353,6 @@ struct _HieroGlyphFileObjectCallback {
 	gboolean (* is_eof)         (gpointer      user_data);
 	void     (* clear_eof)      (gpointer      uesr_data);
 	gint     (* get_error_code) (gpointer      user_data);
-};
-
-struct _HieroGlyphList {
-	HgObject  object;
-	HgList   *prev;
-	HgList   *next;
-	gpointer  data;
 };
 
 struct _HieroGlyphColor {

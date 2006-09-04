@@ -387,8 +387,10 @@ _hgspy_quit_cb(GtkWidget   *widget,
 
 	if (spy->vm) {
 		retval = _hgspy_ask_dialog(spy, N_("Hieroglyph VM is still running.\nAre you sure that you really want to quit?"));
+		if (retval)
+			hg_vm_shutdown(spy->vm, 0);
 	} else {
-		retval = FALSE;
+		retval = TRUE;
 	}
 	if (retval) {
 		gtk_widget_unrealize(spy->window);

@@ -36,6 +36,7 @@
 #include "hgdict.h"
 #include "hgfile.h"
 #include "hglineedit.h"
+#include "hglist.h"
 #include "hgplugins.h"
 #include "hgstack.h"
 #include "hgstring.h"
@@ -272,10 +273,12 @@ _hg_vm_eval_file(HgVM         *vm,
 			hg_vm_main(vm);
 			hg_mem_free(node);
 			hg_mem_free(file);
-			if (hg_vm_has_error(vm))
-				*error = TRUE;
-			else
+			if (hg_vm_has_error(vm)) {
+				if (error)
+					*error = TRUE;
+			} else {
 				retval = TRUE;
+			}
 		}
 		break;
 	}
@@ -338,6 +341,7 @@ hg_vm_init(void)
 	if (!__hg_vm_is_initialized) {
 		hg_mem_init();
 		hg_file_init();
+		hg_list_init();
 
 		__hg_vm_allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
 		__hg_vm_mem_pool = hg_mem_pool_new(__hg_vm_allocator,
@@ -357,6 +361,7 @@ hg_vm_finalize(void)
 		hg_mem_pool_destroy(__hg_vm_mem_pool);
 		hg_allocator_destroy(__hg_vm_allocator);
 
+		hg_list_finalize();
 		hg_file_finalize();
 		hg_mem_finalize();
 

@@ -38,9 +38,9 @@ main(void)
 	}
 
 	for (i = 0; ; i++) {
-		if (tc1[i] != GPOINTER_TO_INT (hg_list_get_iter_data(list, iter))) {
+		if (tc1[i] != GPOINTER_TO_INT (hg_list_iter_get_data(iter))) {
 			g_print("Failed to compare: expected %d, but actually %d",
-				tc1[i], GPOINTER_TO_INT (hg_list_get_iter_data(list, iter)));
+				tc1[i], GPOINTER_TO_INT (hg_list_iter_get_data(iter)));
 			return 1;
 		}
 		if (!hg_list_get_iter_next(list, iter))
@@ -53,9 +53,9 @@ main(void)
 	list = hg_list_remove(list, GINT_TO_POINTER (2));
 	hg_list_get_iter_first(list, iter);
 	for (i = 0; ; i++) {
-		if (tc2[i] != GPOINTER_TO_INT (hg_list_get_iter_data(list, iter))) {
+		if (tc2[i] != GPOINTER_TO_INT (hg_list_iter_get_data(iter))) {
 			g_print("Failed to compare: expected %d, but actually %d",
-				tc2[i], GPOINTER_TO_INT (hg_list_get_iter_data(list, iter)));
+				tc2[i], GPOINTER_TO_INT (hg_list_iter_get_data(iter)));
 			return 1;
 		}
 		if (!hg_list_get_iter_next(list, iter))

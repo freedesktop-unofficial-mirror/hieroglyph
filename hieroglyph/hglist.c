@@ -27,12 +27,20 @@
 
 #include "hglist.h"
 #include "hgmem.h"
+#include "hgallocator-bfit.h"
 
 
 enum {
 	HG_LIST_MASK_UNUSED      = 1 << 0,
 	HG_LIST_MASK_LAST_NODE   = 1 << 1,
 	HG_LIST_MASK_OBJECT_NODE = 1 << 2,
+};
+
+struct _HieroGlyphList {
+	HgObject  object;
+	HgList   *prev;
+	HgList   *next;
+	gpointer  data;
 };
 
 struct _HieroGlyphListIter {
@@ -97,6 +105,9 @@ static HgObjectVTable __hg_list_iter_vtable = {
 	.copy      = NULL,
 	.to_string = NULL,
 };
+static HgAllocator *__hg_list_allocator = NULL;
+static HgMemPool *__hg_list_pool = NULL;
+static gboolean __hg_list_initialized = FALSE;
 
 /*
  * Private Functions
@@ -223,7 +234,7 @@ _hg_list_get_last_node(HgList *list)
 
 	/* assume that the initial position may be the top node */
 	while (tmp) {
-		if (HG_LIST_IS_UNUSED ((HgObject *)tmp)) {
+		if (HG_LIST_IS_UNUSED (tmp)) {
 			/* validate node */
 			if (hg_list_next(tmp) != NULL ||
 			    hg_list_previous(tmp) != NULL) {
@@ -234,7 +245,7 @@ _hg_list_get_last_node(HgList *list)
 				return tmp;
 			}
 		} else {
-			if (HG_LIST_IS_LAST_NODE ((HgObject *)tmp)) {
+			if (HG_LIST_IS_LAST_NODE (tmp)) {
 				return tmp;
 			}
 		}
@@ -267,7 +278,7 @@ _hg_list_get_top_node(HgList *list)
 	return retval;
 }
 
-HgList *
+static HgList *
 _hg_list_real_append(HgList   *list,
 		     gpointer  data,
 		     gboolean  is_object)
@@ -278,7 +289,7 @@ _hg_list_real_append(HgList   *list,
 	g_return_val_if_fail (list != NULL, NULL);
 
 	if ((last = _hg_list_get_last_node(list)) != NULL) {
-		if (!HG_LIST_IS_UNUSED ((HgObject *)last)) {
+		if (!HG_LIST_IS_UNUSED (last)) {
 			hg_mem_get_object__inline(last, obj);
 			if (obj == NULL) {
 				g_warning("[BUG] Invalid object %p is given to append a list.",
@@ -307,7 +318,7 @@ _hg_list_real_append(HgList   *list,
 	return list;
 }
 
-HgList *
+static HgList *
 _hg_list_real_prepend(HgList   *list,
 		      gpointer  data,
 		      gboolean  is_object)
@@ -318,7 +329,7 @@ _hg_list_real_prepend(HgList   *list,
 	g_return_val_if_fail (list != NULL, NULL);
 
 	if ((top = _hg_list_get_top_node(list)) != NULL) {
-		if (!HG_LIST_IS_UNUSED ((HgObject *)top)) {
+		if (!HG_LIST_IS_UNUSED (top)) {
 			hg_mem_get_object__inline(top, obj);
 			if (obj == NULL) {
 				g_warning("[BUG] Invalid object %p is given to prepend a list.",
@@ -345,9 +356,44 @@ _hg_list_real_prepend(HgList   *list,
 	return list;
 }
 
+static void
+_hg_list_iter_real_set_data(HgListIter iter,
+			    gpointer   data,
+			    gboolean   is_object)
+{
+	g_return_if_fail (iter != NULL);
+
+	iter->current->data = data;
+	HG_LIST_SET_OBJECT_NODE (iter->current, is_object);
+}
+
 /*
  * Public Functions
  */
+void
+hg_list_init(void)
+{
+	if (!__hg_list_initialized) {
+		hg_mem_init();
+		__hg_list_allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
+		__hg_list_pool = hg_mem_pool_new(__hg_list_allocator,
+						 "HgList Pool",
+						 128, TRUE);
+		hg_mem_pool_use_garbage_collection(__hg_list_pool, FALSE);
+		__hg_list_initialized = TRUE;
+	}
+}
+
+void
+hg_list_finalize(void)
+{
+	if (__hg_list_initialized) {
+		hg_mem_pool_destroy(__hg_list_pool);
+		hg_allocator_destroy(__hg_list_allocator);
+		__hg_list_initialized = FALSE;
+	}
+}
+
 HgList *
 hg_list_new(HgMemPool *pool)
 {
@@ -427,12 +473,14 @@ hg_list_remove(HgList   *list,
 	g_return_val_if_fail (list != NULL, NULL);
 
 	do {
-		if (HG_LIST_IS_LAST_NODE (l)) {
-			top = hg_list_next(l);
-		} else {
-			prev = hg_list_previous(l);
-			if (prev && HG_LIST_IS_LAST_NODE (prev)) {
-				top = l;
+		if (top == NULL) {
+			if (HG_LIST_IS_LAST_NODE (l)) {
+				top = hg_list_next(l);
+			} else {
+				prev = hg_list_previous(l);
+				if (prev && HG_LIST_IS_LAST_NODE (prev)) {
+					top = l;
+				}
 			}
 		}
 		if (l->data == data) {
@@ -467,28 +515,36 @@ hg_list_remove(HgList   *list,
 	return top;
 }
 
+HgList *
+hg_list_first(HgList *list)
+{
+	return _hg_list_get_top_node(list);
+}
+
+HgList *
+hg_list_last(HgList *list)
+{
+	return _hg_list_get_last_node(list);
+}
+
+/* iterators */
 HgListIter
 hg_list_iter_new(HgList *list)
 {
-	HgMemObject *obj;
 	HgListIter iter;
 
 	g_return_val_if_fail (list != NULL, NULL);
 	g_return_val_if_fail (hg_list_previous(list) != NULL, NULL);
 	g_return_val_if_fail (HG_LIST_IS_LAST_NODE (hg_list_previous(list)), NULL);
 
-	hg_mem_get_object__inline(list, obj);
-	if (obj == NULL) {
-		g_warning("[BUG] Invalid object %p is given to create an iter for HgList.",
-			  list);
-		return NULL;
-	}
-	iter = hg_mem_alloc_with_flags(obj->pool, sizeof (struct _HieroGlyphListIter),
+	if (!__hg_list_initialized)
+		hg_list_init();
+	iter = hg_mem_alloc_with_flags(__hg_list_pool, sizeof (struct _HieroGlyphListIter),
 				       HG_FL_RESTORABLE | HG_FL_COMPLEX | HG_FL_HGOBJECT);
 	if (iter == NULL)
 		return NULL;
 	HG_OBJECT_INIT_STATE (&iter->object);
-	HG_OBJECT_SET_STATE (&iter->object, hg_mem_pool_get_default_access_mode(obj->pool));
+	HG_OBJECT_SET_STATE (&iter->object, hg_mem_pool_get_default_access_mode(__hg_list_pool));
 	hg_object_set_vtable(&iter->object, &__hg_list_iter_vtable);
 
 	iter->top = list;
@@ -529,13 +585,99 @@ hg_list_get_iter_next(HgList     *list,
 }
 
 gpointer
-hg_list_get_iter_data(HgList     *list,
-		      HgListIter  iter)
+hg_list_iter_get_data(HgListIter iter)
 {
-	g_return_val_if_fail (list != NULL, NULL);
 	g_return_val_if_fail (iter != NULL, NULL);
-	g_return_val_if_fail (iter->top == list, NULL);
-	g_return_val_if_fail (iter->last == hg_list_previous(list), NULL);
 
 	return iter->current->data;
+}
+
+void
+hg_list_iter_set_data(HgListIter iter,
+		      gpointer   data)
+{
+	_hg_list_iter_real_set_data(iter, data, FALSE);
+}
+
+void
+hg_list_iter_set_object(HgListIter  iter,
+			HgObject   *hobject)
+{
+	_hg_list_iter_real_set_data(iter, hobject, TRUE);
+}
+
+HgList *
+hg_list_iter_delete_link(HgListIter iter)
+{
+	HgList *list, *next, *prev;
+
+	g_return_val_if_fail (iter != NULL, NULL);
+
+	prev = hg_list_previous(iter->current);
+	next = hg_list_next(iter->current);
+	hg_list_next(prev) = next;
+	hg_list_previous(next) = prev;
+
+	if (HG_LIST_IS_LAST_NODE (iter->current)) {
+		HG_LIST_SET_LAST_NODE (iter->current, FALSE);
+		HG_LIST_SET_LAST_NODE (prev, TRUE);
+		HG_LIST_SET_UNUSED (iter->current, TRUE);
+	}
+	hg_list_next(iter->current) = NULL;
+	hg_list_previous(iter->current) = NULL;
+	if (iter->current == next)
+		iter->top = NULL;
+	else if (iter->current == iter->top)
+		iter->top = next;
+	list = iter->top;
+	iter->current = prev;
+
+	return list;
+}
+
+HgListIter
+hg_list_find_iter(HgList        *list,
+		  gconstpointer  data)
+{
+	gpointer p;
+	HgListIter iter;
+
+	g_return_val_if_fail (list != NULL, NULL);
+
+	iter = hg_list_iter_new(list);
+	while (iter) {
+		p = hg_list_iter_get_data(iter);
+		if (p == data)
+			return iter;
+		if (!hg_list_get_iter_next(list, iter))
+			break;
+	}
+	if (iter)
+		hg_list_iter_free(iter);
+
+	return NULL;
+}
+
+HgListIter
+hg_list_find_iter_custom(HgList        *list,
+			 gconstpointer  data,
+			 HgCompareFunc  func)
+{
+	gpointer p;
+	HgListIter iter;
+
+	g_return_val_if_fail (list != NULL, NULL);
+
+	iter = hg_list_iter_new(list);
+	while (iter) {
+		p = hg_list_iter_get_data(iter);
+		if (func(p, data))
+			return iter;
+		if (!hg_list_get_iter_next(list, iter))
+			break;
+	}
+	if (iter)
+		hg_list_iter_free(iter);
+
+	return NULL;
 }
