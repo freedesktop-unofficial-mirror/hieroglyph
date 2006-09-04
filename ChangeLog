@@ -1,5 +1,7 @@
 2006-09-04  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/ilist.h (hg_list_free): new macro.
+
 	* hieroglyph/ilist.[ch]: new files.
 
 	* hieroglyph/ibtree.[ch]: new files.

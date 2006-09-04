@@ -29,6 +29,7 @@
 G_BEGIN_DECLS
 
 #define hg_list_new(pool)		_hg_list_new()
+#define hg_list_free			g_free
 #define hg_list_append			_hg_list_append
 #define hg_list_prepend			_hg_list_prepend
 #define hg_list_length			_hg_list_length
