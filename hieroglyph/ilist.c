@@ -235,7 +235,8 @@ _hg_list_free(HgList *list)
 	HgList *tmp;
 
 	/* break the loop to detect the end of list. */
-	hg_list_next(hg_list_previous(list)) = NULL;
+	if (hg_list_previous(list))
+		hg_list_next(hg_list_previous(list)) = NULL;
 	while (list) {
 		tmp = hg_list_next(list);
 		g_free(list);
@@ -426,10 +427,12 @@ _hg_list_iter_delete_link(HgListIter iter)
 	}
 	hg_list_next(iter->current) = NULL;
 	hg_list_previous(iter->current) = NULL;
-	if (iter->current == next)
+	if (iter->current == next) {
+		hg_list_free(iter->current);
 		iter->top = NULL;
-	else if (iter->current == iter->top)
+	} else if (iter->current == iter->top) {
 		iter->top = next;
+	}
 	list = iter->top;
 	iter->current = prev;
 

@@ -1,5 +1,8 @@
 2006-09-04  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/ilist.c (_hg_list_free): check NULL.
+	(_hg_list_iter_delete_link): fixed a memory leak.
+
 	* hieroglyph/hggraphics.c (hg_graphics_new): fixed uninitialized value.
 
 	* hieroglyph/ilist.h (hg_list_free): new macro.
