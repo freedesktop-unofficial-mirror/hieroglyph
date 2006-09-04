@@ -37,7 +37,6 @@ hgincludedir = $(includedir)/hieroglyph
 hginclude_HEADERS =						\
 	$(built_headers)					\
 	hgallocator-bfit.h					\
-	hgallocator-libc.h					\
 	hgarray.h						\
 	hgbtree.h						\
 	hgdebug.h						\
@@ -75,8 +74,11 @@ lib_LTLIBRARIES =						\
 	$(NULL)
 
 libhieroglyph_la_SOURCES =					\
+	ibtree.c						\
+	ibtree.h						\
+	ilist.c							\
+	ilist.h							\
 	hgallocator-bfit.c					\
-	hgallocator-libc.c					\
 	hgarray.c						\
 	hgbtree.c						\
 	hgdebug.c						\

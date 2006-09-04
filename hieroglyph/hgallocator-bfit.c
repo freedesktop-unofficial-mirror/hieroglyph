@@ -28,10 +28,10 @@
 #include <string.h>
 #include <setjmp.h>
 #include "hgallocator-bfit.h"
-#include "hgallocator-libc.h"
 #include "hgallocator-private.h"
 #include "hgmem.h"
-#include "hgbtree.h"
+#include "ibtree.h"
+#include "ilist.h"
 #include "hgstring.h"
 
 
@@ -47,8 +47,6 @@ struct _HieroGlyphAllocatorBFitPrivate {
 	GPtrArray   *heap2block_array;
 	HgBTree     *obj2block_tree;
 	gint         age_of_snapshot;
-	HgAllocator *libc_allocator;
-	HgMemPool   *libc_pool;
 };
 
 struct _HieroGlyphMemBFitBlock {
@@ -153,7 +151,7 @@ _hg_allocator_bfit_remove_block(HgAllocatorBFitPrivate *priv,
 				HgMemBFitBlock         *block)
 {
 	gsize aligned;
-	GSList *l, *tmp = NULL;
+	HgList *l;
 
 	_hg_allocator_get_minimum_aligned_size__inline(block->length,
 						       HG_MEM_ALIGNMENT,
@@ -162,11 +160,13 @@ _hg_allocator_bfit_remove_block(HgAllocatorBFitPrivate *priv,
 		g_warning("[BUG] there are no memory chunks sized %" G_GSIZE_FORMAT " (aligned size: %" G_GSIZE_FORMAT ".\n",
 			  block->length, aligned);
 	} else {
-		if ((tmp = g_slist_find(l, block)) == NULL) {
+		HgListIter iter = hg_list_find_iter(l, block);
+
+		if (iter == NULL) {
 			g_warning("[BUG] can't find a memory block %p (size: %" G_GSIZE_FORMAT ", aligned size: %" G_GSIZE_FORMAT ".\n",
 				  block, block->length, aligned);
 		} else {
-			l = g_slist_delete_link(l, tmp);
+			l = hg_list_iter_delete_link(iter);
 			if (l == NULL) {
 				/* remove node from tree */
 				hg_btree_remove(priv->free_block_tree,
@@ -175,6 +175,7 @@ _hg_allocator_bfit_remove_block(HgAllocatorBFitPrivate *priv,
 				hg_btree_replace(priv->free_block_tree,
 						 GSIZE_TO_POINTER (aligned), l);
 			}
+			hg_list_iter_free(iter);
 		}
 	}
 }
@@ -184,7 +185,7 @@ _hg_allocator_bfit_add_free_block(HgAllocatorBFitPrivate *priv,
 				  HgMemBFitBlock         *block)
 {
 	gsize aligned;
-	GSList *l;
+	HgList *l;
 
 	block->in_use = 0;
 	/* clear data to avoid incomplete header detection */
@@ -231,12 +232,11 @@ _hg_allocator_bfit_add_free_block(HgAllocatorBFitPrivate *priv,
 						       HG_MEM_ALIGNMENT,
 						       aligned);
 	if ((l = hg_btree_find(priv->free_block_tree, GSIZE_TO_POINTER (aligned))) == NULL) {
-		l = g_slist_alloc();
-		l->data = block;
-		l->next = NULL;
+		l = _hg_list_new();
+		l = hg_list_append(l, block);
 		hg_btree_add(priv->free_block_tree, GSIZE_TO_POINTER (aligned), l);
 	} else {
-		l = g_slist_prepend(l, block);
+		l = hg_list_prepend(l, block);
 		hg_btree_replace(priv->free_block_tree, GSIZE_TO_POINTER (aligned), l);
 	}
 }
@@ -247,7 +247,8 @@ _hg_allocator_bfit_get_free_block(HgMemPool              *pool,
 				  gsize                   size)
 {
 	gsize aligned, real_aligned;
-	GSList *l;
+	HgList *l;
+	HgListIter iter;
 	HgMemBFitBlock *retval = NULL;
 
 	g_return_val_if_fail (size % HG_MEM_ALIGNMENT == 0, NULL);
@@ -255,11 +256,15 @@ _hg_allocator_bfit_get_free_block(HgMemPool              *pool,
 	_hg_allocator_get_minimum_aligned_size__inline(size, HG_MEM_ALIGNMENT, aligned);
 	if ((l = hg_btree_find_near(priv->free_block_tree, GSIZE_TO_POINTER (aligned))) == NULL)
 		return NULL;
-	retval = l->data;
+	iter = hg_list_iter_new(l);
+	if (iter == NULL)
+		return NULL;
+	retval = hg_list_iter_get_data(iter);
 	_hg_allocator_get_minimum_aligned_size__inline(retval->length,
 						       HG_MEM_ALIGNMENT,
 						       real_aligned);
-	l = g_slist_delete_link(l, l);
+	l = hg_list_iter_delete_link(iter);
+	hg_list_iter_free(iter);
 	if (l == NULL) {
 		hg_btree_remove(priv->free_block_tree,
 				GSIZE_TO_POINTER (real_aligned));
@@ -295,16 +300,6 @@ _hg_allocator_bfit_get_free_block(HgMemPool              *pool,
 	}
 
 	return retval;
-}
-
-static gboolean
-_hg_allocator_bfit_btree_traverse_in_destroy(gpointer key,
-					     gpointer val,
-					     gpointer data)
-{
-	g_slist_free(val);
-
-	return TRUE;
 }
 
 static void
@@ -408,24 +403,9 @@ _hg_allocator_bfit_real_initialize(HgMemPool *pool,
 		return FALSE;
 	}
 
-	priv->libc_allocator = hg_allocator_new(hg_allocator_libc_get_vtable());
-	priv->libc_pool = hg_mem_pool_new(priv->libc_allocator, "libc", 256, FALSE);
-	if (priv->libc_pool == NULL) {
-		hg_heap_free(heap);
-		hg_allocator_destroy(priv->libc_allocator);
-		g_free(priv);
-
-		return FALSE;
-	}
-	hg_mem_pool_allow_resize(priv->libc_pool, FALSE);
-	hg_mem_pool_use_periodical_gc(priv->libc_pool, FALSE);
-	hg_mem_pool_use_garbage_collection(priv->libc_pool, FALSE);
-
-	priv->free_block_tree = hg_btree_new(priv->libc_pool, BTREE_N_NODE);
-	hg_btree_allow_marking(priv->free_block_tree, FALSE);
+	priv->free_block_tree = hg_btree_new(BTREE_N_NODE);
 	priv->heap2block_array = g_ptr_array_new();
-	priv->obj2block_tree = hg_btree_new(priv->libc_pool, BTREE_N_NODE);
-	hg_btree_allow_marking(priv->obj2block_tree, FALSE);
+	priv->obj2block_tree = hg_btree_new(BTREE_N_NODE);
 	priv->age_of_snapshot = 0;
 
 	g_ptr_array_add(priv->heap2block_array, block);
@@ -433,6 +413,16 @@ _hg_allocator_bfit_real_initialize(HgMemPool *pool,
 	hg_mem_pool_add_heap(pool, heap);
 
 	pool->allocator->private = priv;
+
+	return TRUE;
+}
+
+static gboolean
+_hg_allocator_bfit_real_free_block_traverse(gpointer key,
+					    gpointer val,
+					    gpointer data)
+{
+	hg_list_free(val);
 
 	return TRUE;
 }
@@ -465,11 +455,11 @@ _hg_allocator_bfit_real_destroy(HgMemPool *pool)
 		}
 		g_ptr_array_free(priv->heap2block_array, TRUE);
 	}
-	hg_btree_foreach(priv->free_block_tree, _hg_allocator_bfit_btree_traverse_in_destroy, NULL);
-	hg_mem_free(priv->free_block_tree);
-	hg_mem_free(priv->obj2block_tree);
-	hg_mem_pool_destroy(priv->libc_pool);
-	hg_allocator_destroy(priv->libc_allocator);
+	hg_btree_foreach(priv->free_block_tree,
+			 _hg_allocator_bfit_real_free_block_traverse,
+			 NULL);
+	hg_btree_destroy(priv->free_block_tree);
+	hg_btree_destroy(priv->obj2block_tree);
 	g_free(priv);
 
 	return TRUE;
