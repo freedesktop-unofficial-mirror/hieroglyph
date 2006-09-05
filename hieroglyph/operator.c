@@ -5530,11 +5530,7 @@ G_STMT_START
 				if (hg_string_ncompare_offset_later(s, seek, i, 0, length2)) {
 					found = TRUE;
 					hg_mem_get_object__inline(s, obj);
-					if (i == 0) {
-						pre = hg_string_new(obj->pool, 0);
-					} else {
-						pre = hg_string_make_substring(obj->pool, s, 0, i - 1);
-					}
+					pre = hg_string_make_substring(obj->pool, s, 0, i - 1);
 					match = hg_string_make_substring(obj->pool, s, i, i + length2 - 1);
 					if ((i + length2) == length1) {
 						post = hg_string_new(obj->pool, 0);

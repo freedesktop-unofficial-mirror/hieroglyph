@@ -32,6 +32,7 @@
 #include "hgmem.h"
 
 #define HG_STRING_ALLOC_SIZE	256
+#define HG_STRING_MAX_SIZE	65535 /* defined as PostScript spec */
 
 struct _HieroGlyphString {
 	HgObject  object;
@@ -166,7 +167,7 @@ hg_string_new(HgMemPool *pool,
 	HgString *retval;
 
 	g_return_val_if_fail (pool != NULL, NULL);
-	g_return_val_if_fail (n_prealloc < 65536, NULL);
+	g_return_val_if_fail (n_prealloc < HG_STRING_MAX_SIZE + 1, NULL);
 
 	retval = hg_mem_alloc_with_flags(pool,
 					 sizeof (HgString),
@@ -244,7 +245,7 @@ hg_string_append_c(HgString *string,
 		string->current[string->length++] = c;
 	} else if (!string->is_fixed_size) {
 		/* max string size is 65535 */
-		g_return_val_if_fail (string->allocated_size < 65535, FALSE);
+		g_return_val_if_fail (string->allocated_size < HG_STRING_MAX_SIZE, FALSE);
 		/* resize */
 		gpointer p = hg_mem_resize(string->strings, string->allocated_size + HG_STRING_ALLOC_SIZE + 1);
 
@@ -278,7 +279,7 @@ hg_string_append(HgString    *string,
 	if (!string->is_fixed_size &&
 	    (string->length + length) >= string->allocated_size) {
 		/* max string size is 65535 */
-		g_return_val_if_fail ((string->length + length) < 65535, FALSE);
+		g_return_val_if_fail ((string->length + length) < HG_STRING_MAX_SIZE, FALSE);
 		/* resize */
 		gsize n_unit = (string->length + length + HG_STRING_ALLOC_SIZE + 1) / HG_STRING_ALLOC_SIZE;
 		gpointer p = hg_mem_resize(string->strings, n_unit * HG_STRING_ALLOC_SIZE);
@@ -476,8 +477,12 @@ hg_string_make_substring(HgMemPool *pool,
 	g_return_val_if_fail (pool != NULL, NULL);
 
 	retval = hg_string_new(pool, 0);
-	if (!hg_string_copy_as_substring(string, retval, start_index, end_index))
-		return NULL;
+	if (end_index > HG_STRING_MAX_SIZE) {
+		/* makes an empty string */
+	} else {
+		if (!hg_string_copy_as_substring(string, retval, start_index, end_index))
+			return NULL;
+	}
 
 	return retval;
 }

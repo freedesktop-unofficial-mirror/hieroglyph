@@ -33,7 +33,8 @@
 #include "hgvaluenode.h"
 #include "hgfile.h"
 
-#define HG_ARRAY_ALLOC_SIZE 65535
+#define HG_ARRAY_ALLOC_SIZE	65535
+#define HG_ARRAY_MAX_SIZE	65535
 
 
 struct _HieroGlyphArray {
@@ -281,7 +282,7 @@ hg_array_new(HgMemPool *pool,
 	HgArray *retval;
 
 	g_return_val_if_fail (pool != NULL, NULL);
-	g_return_val_if_fail (num < 65536, NULL);
+	g_return_val_if_fail (num < HG_ARRAY_MAX_SIZE + 1, NULL);
 
 	retval = hg_mem_alloc_with_flags(pool,
 					 sizeof (HgArray),
@@ -360,7 +361,7 @@ hg_array_append_forcibly(HgArray     *array,
 	if (!array->is_fixed_size &&
 	    array->n_arrays >= array->allocated_arrays) {
 		/* max array size is 65535 */
-		g_return_val_if_fail (array->n_arrays < 65535, FALSE);
+		g_return_val_if_fail (array->n_arrays < HG_ARRAY_MAX_SIZE, FALSE);
 		/* resize */
 		gpointer p = hg_mem_resize(array->arrays,
 					   sizeof (HgValueNode *) * (array->allocated_arrays + HG_ARRAY_ALLOC_SIZE));
@@ -510,8 +511,12 @@ hg_array_make_subarray(HgMemPool *pool,
 	g_return_val_if_fail (pool != NULL, NULL);
 
 	retval = hg_array_new(pool, 0);
-	if (!hg_array_copy_as_subarray(array, retval, start_index, end_index))
-		return NULL;
+	if (end_index > HG_ARRAY_MAX_SIZE) {
+		/* makes an empty array */
+	} else {
+		if (!hg_array_copy_as_subarray(array, retval, start_index, end_index))
+			return NULL;
+	}
 
 	return retval;
 }
