@@ -1,5 +1,9 @@
 2006-09-05  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgfile.c (hg_file_object_read): trivial warning message fix.
+	(hg_file_object_write): likewise.
+	(hg_file_object_getc): likewise.
+
 	* hieroglyph/hgarray.c (hg_array_make_subarray): make an empty array
 	if end_index is out of range.
 

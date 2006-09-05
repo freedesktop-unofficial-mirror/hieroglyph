@@ -593,7 +593,7 @@ hg_file_object_read(HgFileObject *object,
 		    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
 		    break;
 	    default:
-		    g_warning("Invalid file type %d was given to be read.", HG_FILE_GET_FILE_TYPE (object));
+		    g_warning("[BUG] Invalid file type %d was given to be read.", HG_FILE_GET_FILE_TYPE (object));
 		    object->error = EACCES;
 		    break;
 	}
@@ -640,7 +640,7 @@ hg_file_object_write(HgFileObject  *object,
 		    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
 		    break;
 	    default:
-		    g_warning("Invalid file type %d to be wrriten.", HG_FILE_GET_FILE_TYPE (object));
+		    g_warning("[BUG] Invalid file type %d to be wrriten.", HG_FILE_GET_FILE_TYPE (object));
 		    object->error = EACCES;
 		    break;
 	}
@@ -690,7 +690,7 @@ hg_file_object_getc(HgFileObject *object)
 			    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
 			    break;
 		    default:
-			    g_warning("Invalid file type %d was given to be get a character.", HG_FILE_GET_FILE_TYPE (object));
+			    g_warning("[BUG] Invalid file type %d was given to be get a character.", HG_FILE_GET_FILE_TYPE (object));
 			    break;
 		}
 	}
