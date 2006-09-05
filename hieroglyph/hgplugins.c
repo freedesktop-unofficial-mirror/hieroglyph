@@ -238,8 +238,12 @@ hg_plugin_load(HgPlugin *plugin,
 	g_return_val_if_fail (vm != NULL, FALSE);
 
 	retval = plugin->vtable->load(plugin, vm);
-	if (retval)
+	if (retval) {
 		plugin->is_loaded = TRUE;
+	} else {
+		g_warning("Failed to load a plugin `%s'",
+			  g_module_name(plugin->module));
+	}
 
 	return retval;
 }

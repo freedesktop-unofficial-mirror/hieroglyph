@@ -273,7 +273,10 @@ _hg_vm_eval_file(HgVM         *vm,
 			hg_vm_main(vm);
 			hg_mem_free(node);
 			hg_mem_free(file);
-			if (hg_vm_has_error(vm)) {
+			if (hg_vm_has_error(vm) ||
+			    ((node = hg_dict_lookup_with_string(vm->error, "newerror")) != NULL &&
+			     HG_IS_VALUE_BOOLEAN (node) &&
+			     HG_VALUE_GET_BOOLEAN (node) == TRUE)) {
 				if (error)
 					*error = TRUE;
 			} else {
