@@ -1,5 +1,18 @@
 2006-09-05  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgmem.h (hg_mem_is_flags__inline): use
+	hg_mem_is_gc_mark__inline if it goes to be marked for GC.
+	(hg_mem_set_flags__inline): don't inherit the age of gc mark to
+	the children.
+
+	* hieroglyph/hgmem.c (hg_mem_pool_get_age_of_mark): new function.
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_garbage_collection):
+	show the age of gc mark for debugging purpose.
+
+	* hieroglyph/hgvaluenode.c (hg_value_node_debug_print): show the age of
+	gc mark for debugging purpose.
+
 	* hieroglyph/hgfile.c (hg_file_object_read): trivial warning message fix.
 	(hg_file_object_write): likewise.
 	(hg_file_object_getc): likewise.

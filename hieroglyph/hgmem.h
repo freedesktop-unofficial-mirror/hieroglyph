@@ -92,7 +92,9 @@ gboolean       _hg_mem_pool_is_own_memobject      (HgMemPool     *pool,
 
 /* GC */
 #define hg_mem_is_flags__inline(__obj__, __flags__)			\
-	((((__obj__)->flags & (HG_MEMOBJ_MARK_AGE_MASK | HG_MEMOBJ_FLAGS_MASK)) & (__flags__)) == (__flags__))
+	(((__flags__) & HG_MEMOBJ_MARK_AGE_MASK) ?			\
+	 hg_mem_is_gc_mark__inline(__obj__) :				\
+	 (((__obj__)->flags & HG_MEMOBJ_FLAGS_MASK) & (__flags__)) == (__flags__))
 #define hg_mem_get_flags__inline(__obj__)				\
 	(HG_MEMOBJ_GET_FLAGS (__obj__))
 #define hg_mem_set_flags__inline(__obj__, __flags__, __notify__)	\
@@ -103,7 +105,10 @@ gboolean       _hg_mem_pool_is_own_memobject      (HgMemPool     *pool,
 		if ((__flags__) > HG_MEMOBJ_MARK_AGE_MASK) {		\
 			g_warning("[BUG] Invalid flags to not be set by hg_mem_set_flags: (possibly vtable id) %X", (__flags__)); \
 		} else if ((__flags__) > HG_MEMOBJ_HGOBJECT_MASK) {	\
-			HG_MEMOBJ_SET_MARK_AGE ((__obj__), (((__flags__) & HG_MEMOBJ_MARK_AGE_MASK) >> 16)); \
+			/* don't inherit the age to the children.	\
+			 * it causes the unexpected GC.			\
+			 */						\
+			HG_MEMOBJ_SET_MARK_AGE ((__obj__), hg_mem_pool_get_age_of_mark((__obj__)->pool)); \
 		} else if ((__flags__) > HG_MEMOBJ_FLAGS_MASK) {	\
 			g_warning("[BUG] Invalid flags to not be set by hg_mem_set_flags: (possibly hgobject id) %X", (__flags__)); \
 		} else {						\
@@ -136,7 +141,7 @@ gboolean       _hg_mem_pool_is_own_memobject      (HgMemPool     *pool,
 		HgObject *__hg_mem_hobj__ = (HgObject *)(_obj)->data;	\
 		const HgObjectVTable const *__hg_obj_vtable__;		\
 									\
-		HG_MEMOBJ_SET_MARK_AGE ((_obj), (_obj)->pool->age_of_gc_mark); \
+		HG_MEMOBJ_SET_MARK_AGE ((_obj), hg_mem_pool_get_age_of_mark((_obj)->pool)); \
 		if (HG_MEMOBJ_IS_HGOBJECT (_obj) &&			\
 		    (__hg_obj_vtable__ = hg_object_get_vtable(__hg_mem_hobj__)) != NULL && \
 		    __hg_obj_vtable__->set_flags) {			\
@@ -145,7 +150,7 @@ gboolean       _hg_mem_pool_is_own_memobject      (HgMemPool     *pool,
 		}							\
 	} G_STMT_END
 #define hg_mem_is_gc_mark__inline(_obj)					\
-	((_obj)->pool->age_of_gc_mark == HG_MEMOBJ_GET_MARK_AGE (_obj))
+	(hg_mem_pool_get_age_of_mark((_obj)->pool) == HG_MEMOBJ_GET_MARK_AGE (_obj))
 #define hg_mem_restorable(obj)		hg_mem_set_flags__inline(obj, hg_mem_get_flags__inline(obj) | HG_FL_RESTORABLE, FALSE)
 #define hg_mem_unrestorable(obj)	hg_mem_set_flags__inline(obj, hg_mem_get_flags__inline(obj) & ~HG_FL_RESTORABLE, FALSE)
 #define hg_mem_is_restorable(obj)	hg_mem_is_flags__inline(obj, HG_FL_RESTORABLE)
@@ -159,6 +164,7 @@ gboolean       _hg_mem_pool_is_own_memobject      (HgMemPool     *pool,
 #define hg_mem_unset_copying(obj)	hg_mem_set_flags__inline(obj, hg_mem_get_flags__inline(obj) & ~HG_FL_COPYING, FALSE)
 #define hg_mem_is_copying(obj)		hg_mem_is_flags__inline(obj, HG_FL_COPYING)
 
+guint8   hg_mem_pool_get_age_of_mark       (HgMemPool *pool);
 void     hg_mem_gc_mark_array_region       (HgMemPool *pool,
 					    gpointer   start,
 					    gpointer   end);

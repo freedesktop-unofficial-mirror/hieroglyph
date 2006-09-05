@@ -588,6 +588,14 @@ hg_mem_get_object_size(gpointer data)
 }
 
 /* GC */
+guint8
+hg_mem_pool_get_age_of_mark(HgMemPool *pool)
+{
+	g_return_val_if_fail (pool != NULL, 0);
+
+	return pool->age_of_gc_mark;
+}
+
 void
 hg_mem_gc_mark_array_region(HgMemPool *pool,
 			    gpointer   start,

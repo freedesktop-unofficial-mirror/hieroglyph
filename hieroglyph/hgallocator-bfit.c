@@ -727,7 +727,7 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 				    (pool->destroyed || !hg_mem_is_locked(obj))) {
 #ifdef DEBUG_GC
 					swept++;
-					g_print("DEBUG_GC: sweeping %p (block: %p memobj: %p size: %" G_GSIZE_FORMAT ")\n", obj->data, obj->subid, obj, ((HgMemBFitBlock *)obj->subid)->length);
+					g_print("DEBUG_GC: sweeping %p (block: %p memobj: %p size: %" G_GSIZE_FORMAT " age: %d[current %d])\n", obj->data, obj->subid, obj, ((HgMemBFitBlock *)obj->subid)->length, HG_MEMOBJ_GET_MARK_AGE (obj), obj->pool->age_of_gc_mark);
 #endif /* DEBUG_GC */
 					hg_mem_free(obj->data);
 					retval = TRUE;
@@ -772,10 +772,10 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 				g_warning("[BUG] Invalid object %p is in the root node.", list->data);
 			} else {
 				if (!hg_mem_is_gc_mark__inline(obj)) {
+					hg_mem_gc_mark__inline(obj);
 #ifdef DEBUG_GC
 					g_print("MARK: %p (mem: %p age: %d) from root node.\n", obj->data, obj, HG_MEMOBJ_GET_MARK_AGE (obj));
 #endif /* DEBUG_GC */
-					hg_mem_gc_mark__inline(obj);
 				} else {
 #ifdef DEBUG_GC
 					g_print("MARK[already]: %p (mem: %p age: %d) from root node.\n", obj->data, obj, HG_MEMOBJ_GET_MARK_AGE (obj));

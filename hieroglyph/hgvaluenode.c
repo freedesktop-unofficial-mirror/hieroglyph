@@ -558,7 +558,9 @@ hg_value_node_debug_print(HgFileObject    *file,
 	};
 	const gchar *dict_info[] = {"DictNode", "Key", "Val"};
 	gchar *info = NULL;
+	HgMemObject *obj;
 
+	hg_mem_get_object__inline(self, obj);
 	switch (vtype) {
 	    case 0:
 		    if (HG_VALUE_GET_VALUE_TYPE ((HgValueNode *)self) == HG_TYPE_VALUE_NAME) {
@@ -608,10 +610,10 @@ hg_value_node_debug_print(HgFileObject    *file,
 	}
 	switch (type) {
 	    case HG_DEBUG_GC_MARK:
-		    hg_file_object_printf(file, "MARK: [type: %s] parent: %p -- %p %s\n", value[vtype], parent, self, (info ? info : ""));
+		    hg_file_object_printf(file, "MARK: age: %d [type: %s] parent: %p -- %p %s\n", HG_MEMOBJ_GET_MARK_AGE (obj), value[vtype], parent, self, (info ? info : ""));
 		    break;
 	    case HG_DEBUG_GC_ALREADYMARK:
-		    hg_file_object_printf(file, "MARK[already]: [type: %s] parent: %p -- %p %s\n", value[vtype], parent, self, (info ? info : ""));
+		    hg_file_object_printf(file, "MARK[already]: age: %d [type: %s] parent: %p -- %p %s\n", HG_MEMOBJ_GET_MARK_AGE (obj), value[vtype], parent, self, (info ? info : ""));
 		    break;
 	    case HG_DEBUG_GC_UNMARK:
 		    hg_file_object_printf(file, "UNMARK: [type: %s] parent: %p -- %p %s\n", value[vtype], parent, self, (info ? info : ""));
