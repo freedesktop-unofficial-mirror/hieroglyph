@@ -73,11 +73,16 @@ lib_LTLIBRARIES =						\
 	libhieroglyph.la					\
 	$(NULL)
 
-libhieroglyph_la_SOURCES =					\
+libhieroglyph_private_SOURCES =					\
 	ibtree.c						\
 	ibtree.h						\
 	ilist.c							\
 	ilist.h							\
+	operator-private.h					\
+	$(NULL)
+
+libhieroglyph_la_SOURCES =					\
+	$(libhieroglyph_private_SOURCES)			\
 	hgallocator-bfit.c					\
 	hgarray.c						\
 	hgbtree.c						\

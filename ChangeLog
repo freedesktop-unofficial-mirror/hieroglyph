@@ -1,5 +1,7 @@
 2006-09-05  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/operator-private.h: moved macros from operator.c
+
 	* hieroglyph/vm.c (_hg_vm_eval_file): reflect an error result from
 	$error dict.
 

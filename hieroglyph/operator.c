@@ -31,6 +31,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include "operator.h"
+#include "operator-private.h"
 #include "version.h"
 #include "hgmem.h"
 #include "hgarray.h"
@@ -75,43 +76,6 @@ HgOperator *__hg_operator_list[HG_op_END];
 /*
  * Operators
  */
-#define DEFUNC_OP(func)					\
-	static gboolean					\
-	_hg_operator_op_##func(HgOperator *op,		\
-			       gpointer    data)	\
-	{						\
-		HgVM *vm = data;			\
-		gboolean retval = FALSE;
-#define DEFUNC_OP_END				\
-		return retval;			\
-	}
-#define DEFUNC_UNIMPLEMENTED_OP(func)			\
-	static gboolean					\
-	_hg_operator_op_##func(HgOperator *op,		\
-			       gpointer    data)	\
-	{						\
-		g_warning("%s isn't yet implemented.", __PRETTY_FUNCTION__); \
-							\
-		return FALSE;				\
-	}
-#define _hg_operator_build_operator(vm, pool, sdict, name, func, ret_op) \
-	hg_operator_build_operator__inline(_hg_operator_op_, vm, pool, sdict, name, func, ret_op)
-#define BUILD_OP(vm, pool, sdict, name, func)				\
-	G_STMT_START {							\
-		HgOperator *__hg_op;					\
-									\
-		_hg_operator_build_operator(vm, pool, sdict, name, func, __hg_op); \
-		if (__hg_op != NULL) {					\
-			__hg_operator_list[HG_op_##name] = __hg_op;	\
-		}							\
-	} G_STMT_END
-#define BUILD_OP_(vm, pool, sdict, name, func)				\
-	G_STMT_START {							\
-		HgOperator *__hg_op;					\
-									\
-		_hg_operator_build_operator(vm, pool, sdict, name, func, __hg_op); \
-	} G_STMT_END
-
 /* level 1 */
 DEFUNC_OP (private_arraytomark)
 G_STMT_START
