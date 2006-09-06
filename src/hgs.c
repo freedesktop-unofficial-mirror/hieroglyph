@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
  * hgs.c
  * Copyright (C) 2006 Akira TAGOH
@@ -20,18 +21,38 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#include <hieroglyph/hgdict.h>
 #include <hieroglyph/hgmem.h>
+#include <hieroglyph/hgvaluenode.h>
 #include <hieroglyph/vm.h>
 
-
-GList *plugin_list = NULL;
 
 static gboolean
 _hgs_arg_define_cb(const char *option_name,
 		   const char *value,
 		   gpointer    data)
 {
-	return TRUE;
+	gboolean retval = FALSE;
+	HgVM *vm = data;
+	HgValueNode *n1, *n2;
+	gboolean mode = hg_vm_is_global_pool_used(vm);
+	HgMemPool *pool;
+	HgDict *systemdict = hg_vm_get_dict_systemdict(vm);
+
+	if (value && *value) {
+		hg_vm_use_global_pool(vm, TRUE);
+		pool = hg_vm_get_current_pool(vm);
+
+		/* FIXME: validate characters in value */
+		n1 = hg_vm_get_name_node(vm, value);
+		HG_VALUE_MAKE_BOOLEAN (pool, n2, TRUE);
+		hg_dict_insert(pool, systemdict, n1, n2);
+
+		hg_vm_use_global_pool(vm, mode);
+		retval = TRUE;
+	}
+
+	return retval;
 }
 
 static gboolean
@@ -39,12 +60,11 @@ _hgs_arg_load_plugin_cb(const char *option_name,
 			const char *value,
 			gpointer    data)
 {
-	gboolean retval = TRUE;
+	gboolean retval = FALSE;
+	HgVM *vm = data;
 
 	if (value && *value) {
-		plugin_list = g_list_append(plugin_list, g_strdup(value));
-	} else {
-		retval = FALSE;
+		hg_vm_load_plugin(vm, value);
 	}
 
 	return retval;
@@ -56,32 +76,29 @@ main(int    argc,
 {
 	HgVM *vm;
 	GOptionContext *ctxt = g_option_context_new("<PostScript file>");
+	GOptionGroup *group;
 	GOptionEntry entries[] = {
-		{"define", 'd', 0, G_OPTION_ARG_CALLBACK, _hgs_arg_define_cb, "Define a variable in systemdict.", "SYMBOL[=VALUE]"},
+		{"define", 'd', 0, G_OPTION_ARG_CALLBACK, _hgs_arg_define_cb, "Define a variable in systemdict.", "SYMBOL"},
 		{"load-plugin", 'l', 0, G_OPTION_ARG_CALLBACK, _hgs_arg_load_plugin_cb, "Load a plugin", "NAME"},
 		{NULL}
 	};
 
 	GError *error = NULL;
 	const gchar *psfile = NULL;
-	GList *l;
-
-	g_option_context_add_main_entries(ctxt, entries, NULL);
-	if (!g_option_context_parse(ctxt, &argc, &argv, &error)) {
-		g_print("Option parse error.\n");
-		return 1;
-	}
 
 	HG_MEM_INIT;
 	hg_vm_init();
 
 	vm = hg_vm_new(VM_EMULATION_LEVEL_1);
-	for (l = plugin_list; l != NULL; l = g_list_next(l)) {
-		hg_vm_load_plugin(vm, l->data);
-		g_free(l->data);
+
+	group = g_option_group_new(NULL, NULL, NULL, vm, NULL);
+	g_option_context_set_main_group(ctxt, group);
+	g_option_context_add_main_entries(ctxt, entries, NULL);
+	if (!g_option_context_parse(ctxt, &argc, &argv, &error)) {
+		g_print("Option parse error.\n");
+		hg_vm_finalize();
+		return 1;
 	}
-	g_list_free(plugin_list);
-	plugin_list = NULL;
 
 	if (argc > 1)
 		psfile = argv[1];
