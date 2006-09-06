@@ -21,6 +21,7 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#include <hieroglyph/hgdevice.h>
 #include <hieroglyph/hgdict.h>
 #include <hieroglyph/hgmem.h>
 #include <hieroglyph/hgvaluenode.h>
@@ -74,15 +75,17 @@ int
 main(int    argc,
      char **argv)
 {
+	gchar *device_name = NULL;
 	HgVM *vm;
+	HgDevice *device = NULL;
 	GOptionContext *ctxt = g_option_context_new("<PostScript file>");
 	GOptionGroup *group;
 	GOptionEntry entries[] = {
 		{"define", 'd', 0, G_OPTION_ARG_CALLBACK, _hgs_arg_define_cb, "Define a variable in systemdict.", "SYMBOL"},
 		{"load-plugin", 'l', 0, G_OPTION_ARG_CALLBACK, _hgs_arg_load_plugin_cb, "Load a plugin", "NAME"},
+		{"device", 0, 0, G_OPTION_ARG_STRING, &device_name, "Output device that the rendering goes to", "DEVICE"},
 		{NULL}
 	};
-
 	GError *error = NULL;
 	const gchar *psfile = NULL;
 
@@ -100,12 +103,40 @@ main(int    argc,
 		return 1;
 	}
 
+	if (device_name) {
+		device = hg_device_new(device_name);
+		if (device == NULL) {
+			g_print("Failed to open `%s' device.\n", device_name);
+			return 1;
+		}
+	}
 	if (argc > 1)
 		psfile = argv[1];
 
 	if (!hg_vm_startjob(vm, psfile, TRUE)) {
 		g_print("Failed to start a job.\n");
 		return 1;
+	}
+
+	if (device) {
+		/* FIXME: need to support asynchronous rendering */
+		if (!hg_vm_has_error(vm)) {
+			HgGraphics *graphics = hg_vm_get_graphics(vm);
+			GList *l, *prev;
+			gint i;
+
+			for (l = graphics->pages, i = 1; l != NULL; l = g_list_next(l), i++) {
+				hg_device_draw(device, l->data);
+				g_print("%d page\n", i);
+				sleep(1);
+				prev = l;
+			}
+			if (prev != NULL &&
+			    graphics->current_page != prev->data &&
+			    graphics->current_page->node)
+				hg_device_draw(device, graphics->current_page);
+			sleep(5);
+		}
 	}
 
 	hg_vm_finalize();

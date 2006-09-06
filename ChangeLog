@@ -2,6 +2,7 @@
 
 	* src/hgs.c (_hgs_arg_define_cb): implemented.
 	(_hgs_arg_load_plugin_cb): simplified.
+	(main): added --device option.
 
 2006-09-05  Akira TAGOH  <at@gclab.org>
 
