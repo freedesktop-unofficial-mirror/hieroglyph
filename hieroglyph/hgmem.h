@@ -55,7 +55,7 @@ void         hg_heap_free        (HgHeap                  *heap);
 HgMemPool     *hg_mem_pool_new                    (HgAllocator   *allocator,
 						   const gchar   *identity,
 						   gsize          prealloc,
-						   gboolean       allow_resize);
+						   guint          flags);
 void           hg_mem_pool_destroy                (HgMemPool     *pool);
 const gchar   *hg_mem_pool_get_name               (HgMemPool     *pool);
 gboolean       hg_mem_pool_allow_resize           (HgMemPool     *pool,
@@ -68,8 +68,6 @@ guint          hg_mem_pool_get_default_access_mode(HgMemPool     *pool);
 void           hg_mem_pool_set_default_access_mode(HgMemPool     *pool,
 						   guint          state);
 gboolean       hg_mem_pool_is_global_mode         (HgMemPool     *pool);
-void           hg_mem_pool_use_global_mode        (HgMemPool     *pool,
-						   gboolean       flag);
 gboolean       hg_mem_pool_is_own_object          (HgMemPool     *pool,
 						   gpointer       data);
 HgMemSnapshot *hg_mem_pool_save_snapshot          (HgMemPool     *pool);

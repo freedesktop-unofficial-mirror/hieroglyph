@@ -16,7 +16,7 @@ main(void)
 	gint i;
 
 	allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
-	pool = hg_mem_pool_new(allocator, "test", 128, TRUE);
+	pool = hg_mem_pool_new(allocator, "test", 128, HG_MEM_RESIZABLE);
 	if (pool == NULL) {
 		g_print("Failed to create a memory pool.\n");
 		return 1;

@@ -1,3 +1,15 @@
+2006-09-09  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgallocator-private.h (HG_MEM_POOL_FLAGS_GET_FLAGS):
+	new macro.
+	(HG_MEM_POOL_GET_FLAGS): likewise.
+	(HG_MEM_POOL_SET_FLAGS): likewise.
+	(HG_MEM_POOL_FLAGS_HAS_FLAGS): likewise.
+	(HG_MEM_POOL_HAS_FLAGS): likewise.
+
+	* hieroglyph/hgmem.c (hg_mem_pool_new): take bitwise flags.
+	(hg_mem_pool_use_global_mode): removed.
+
 2006-09-06  Akira TAGOH  <at@gclab.org>
 
 	* src/hgs.c (_hgs_arg_define_cb): implemented.

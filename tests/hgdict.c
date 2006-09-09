@@ -14,7 +14,7 @@ main(void)
 	HgValueNode *key, *val, *node;
 
 	allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
-	pool = hg_mem_pool_new(allocator, "test", 3840, FALSE);
+	pool = hg_mem_pool_new(allocator, "test", 3840, 0);
 	if (pool == NULL) {
 		g_print("Failed to create a memory pool.\n");
 		return 1;

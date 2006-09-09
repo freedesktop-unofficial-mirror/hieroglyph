@@ -31,7 +31,7 @@ main(void)
 	HG_MEM_INIT;
 
 	HgAllocator *allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
-	HgMemPool *pool = hg_mem_pool_new(allocator, "btree_test", 1024, TRUE);
+	HgMemPool *pool = hg_mem_pool_new(allocator, "btree_test", 1024, HG_MEM_RESIZABLE);
 	HgBTree *tree = hg_btree_new(pool, 2);
 	GString *string = g_string_new(NULL);
 	gchar *test1 = "(.0.1.2.3.)";

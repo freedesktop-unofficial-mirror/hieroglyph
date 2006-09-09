@@ -218,7 +218,7 @@ HgMemPool *
 hg_mem_pool_new(HgAllocator *allocator,
 		const gchar *identity,
 		gsize        prealloc,
-		gboolean     allow_resize)
+		guint        flags)
 {
 	HgMemPool *pool;
 
@@ -229,8 +229,9 @@ hg_mem_pool_new(HgAllocator *allocator,
 			      allocator->vtable->free != NULL, NULL);
 	g_return_val_if_fail (identity != NULL, NULL);
 	g_return_val_if_fail (prealloc > 0, NULL);
-	g_return_val_if_fail (!allow_resize ||
-			      (allow_resize && allocator->vtable->resize_pool != NULL), NULL);
+	g_return_val_if_fail (!HG_MEM_POOL_FLAGS_HAS_FLAGS (flags, HG_MEM_RESIZABLE) ||
+			      (HG_MEM_POOL_FLAGS_HAS_FLAGS (flags, HG_MEM_RESIZABLE) &&
+			       allocator->vtable->resize_pool != NULL), NULL);
 	g_return_val_if_fail (!allocator->used, NULL);
 
 	pool = (HgMemPool *)g_new(HgMemPool, 1);
@@ -244,8 +245,8 @@ hg_mem_pool_new(HgAllocator *allocator,
 	pool->initial_heap_size = 0;
 	pool->total_heap_size = 0;
 	pool->used_heap_size = 0;
-	pool->allow_resize = allow_resize;
 	pool->access_mode = HG_ST_READABLE | HG_ST_WRITABLE | HG_ST_ACCESSIBLE;
+	pool->flags = flags;
 	pool->destroyed = FALSE;
 	pool->allocator = allocator;
 	pool->root_node = NULL;
@@ -253,7 +254,6 @@ hg_mem_pool_new(HgAllocator *allocator,
 	pool->periodical_gc = FALSE;
 	pool->gc_checked = FALSE;
 	pool->use_gc = TRUE;
-	pool->is_global_mode = FALSE;
 	pool->is_processing = FALSE;
 	pool->is_collecting = FALSE;
 	pool->gc_threshold = 50;
@@ -300,7 +300,7 @@ hg_mem_pool_allow_resize(HgMemPool *pool,
 	g_return_val_if_fail (!flag ||
 			      (flag && pool->allocator->vtable->resize_pool != NULL), FALSE);
 
-	pool->allow_resize = flag;
+	HG_MEM_POOL_SET_FLAGS (pool, HG_MEM_RESIZABLE, flag);
 
 	return TRUE;
 }
@@ -379,16 +379,7 @@ hg_mem_pool_is_global_mode(HgMemPool *pool)
 {
 	g_return_val_if_fail (pool != NULL, FALSE);
 
-	return pool->is_global_mode;
-}
-
-void
-hg_mem_pool_use_global_mode(HgMemPool *pool,
-			    gboolean   flag)
-{
-	g_return_if_fail (pool != NULL);
-
-	pool->is_global_mode = flag;
+	return HG_MEM_POOL_HAS_FLAGS (pool, HG_MEM_GLOBAL);
 }
 
 gboolean
@@ -512,7 +503,7 @@ hg_mem_alloc_with_flags(HgMemPool *pool,
 	}
 	if (!retval) {
 		/* try growing the heap up when still failed */
-		if (pool->allow_resize &&
+		if (HG_MEM_POOL_HAS_FLAGS (pool, HG_MEM_RESIZABLE) &&
 		    pool->allocator->vtable->resize_pool(pool, size)) {
 			hg_mem_garbage_collection(pool);
 			retval = pool->allocator->vtable->alloc(pool, size, flags);

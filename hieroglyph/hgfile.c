@@ -225,7 +225,7 @@ hg_file_init(void)
 		__hg_file_mem_pool = hg_mem_pool_new(__hg_file_allocator,
 						     "Memory pool for HgFileObject",
 						     sizeof (HgFileObject) * 128,
-						     FALSE);
+						     HG_MEM_GLOBAL);
 		__hg_file_stdin = hg_file_object_new(__hg_file_mem_pool,
 						     HG_FILE_TYPE_STDIN);
 		hg_mem_add_root_node(__hg_file_mem_pool, __hg_file_stdin);

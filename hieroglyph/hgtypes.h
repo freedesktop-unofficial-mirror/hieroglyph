@@ -93,6 +93,11 @@ typedef HgPlugin          * (*HgPluginNewFunc)     (HgMemPool  *pool);
 typedef gboolean            (*HgOperatorFunc)      (HgOperator *op,
 						    gpointer    vm);
 
+typedef enum {
+	HG_MEM_GLOBAL    = 1 << 0,  /* without this, that means the local pool */
+	HG_MEM_RESIZABLE = 1 << 1,
+} HgMemPoolTypes;
+
 /* 32bit variables */
 typedef enum {
 	HG_FL_RESTORABLE = 1 << 0,  /* no infect */

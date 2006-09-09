@@ -378,7 +378,7 @@ hg_list_init(void)
 		__hg_list_allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
 		__hg_list_pool = hg_mem_pool_new(__hg_list_allocator,
 						 "HgList Pool",
-						 128, TRUE);
+						 128, HG_MEM_GLOBAL | HG_MEM_RESIZABLE);
 		hg_mem_pool_use_garbage_collection(__hg_list_pool, FALSE);
 		__hg_list_initialized = TRUE;
 	}

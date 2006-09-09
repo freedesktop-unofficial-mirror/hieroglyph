@@ -352,7 +352,7 @@ hg_vm_init(void)
 		__hg_vm_mem_pool = hg_mem_pool_new(__hg_vm_allocator,
 						   "Hieroglyph VM Memory Pool",
 						   8192,
-						   TRUE);
+						   HG_MEM_GLOBAL | HG_MEM_RESIZABLE);
 		hg_mem_pool_use_garbage_collection(__hg_vm_mem_pool, FALSE);
 		_hg_vm_init_errorname();
 		__hg_vm_is_initialized = TRUE;
@@ -419,8 +419,7 @@ hg_vm_new(HgVMEmulationType type)
 	retval->local_pool = hg_mem_pool_new(retval->local_allocator,
 					     name,
 					     HG_LOCAL_POOL_SIZE,
-					     allow_resize);
-	hg_mem_pool_use_global_mode(retval->local_pool, FALSE);
+					     (allow_resize ? HG_MEM_RESIZABLE : 0));
 	g_free(name);
 	if (retval->local_pool == NULL) {
 		g_warning("Failed to create a local memory pool");
@@ -431,7 +430,7 @@ hg_vm_new(HgVMEmulationType type)
 	retval->global_pool = hg_mem_pool_new(retval->global_allocator,
 					      name,
 					      HG_GLOBAL_POOL_SIZE,
-					      allow_resize);
+					      HG_MEM_GLOBAL | (allow_resize ? HG_MEM_RESIZABLE : 0));
 	hg_mem_pool_use_global_mode(retval->global_pool, TRUE);
 	g_free(name);
 	if (retval->global_pool == NULL) {
@@ -445,7 +444,7 @@ hg_vm_new(HgVMEmulationType type)
 	retval->graphic_pool = hg_mem_pool_new(retval->graphic_allocator,
 					       name,
 					       HG_GRAPHIC_POOL_SIZE,
-					       allow_resize);
+					       (allow_resize ? HG_MEM_RESIZABLE : 0));
 	g_free(name);
 	if (retval->graphic_pool == NULL) {
 		g_warning("Failed to create a graphic memory pool");
