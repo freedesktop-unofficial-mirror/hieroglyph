@@ -65,7 +65,7 @@ _hgs_arg_load_plugin_cb(const char *option_name,
 	HgVM *vm = data;
 
 	if (value && *value) {
-		hg_vm_load_plugin(vm, value);
+		retval = hg_vm_load_plugin(vm, value);
 	}
 
 	return retval;

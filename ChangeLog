@@ -1,3 +1,8 @@
+2006-09-18  Akira TAGOH  <at@gclab.org>
+
+	* src/hgs.c (_hgs_arg_load_plugin_cb): reflect a return value from
+	hg_vm_load_plugin().
+
 2006-09-09  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hgallocator-private.h (HG_MEM_POOL_FLAGS_GET_FLAGS):
