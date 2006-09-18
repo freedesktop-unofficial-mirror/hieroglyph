@@ -533,14 +533,14 @@ G_STMT_START
 				    }
 			    } G_STMT_END;
 			    break;
-		    case HG_TYPE_VALUE_POINTER:
+		    case HG_TYPE_VALUE_OPERATOR:
 			    hs = hg_string_new(pool, -1);
 			    if (hs == NULL) {
 				    _hg_operator_set_error(vm, op, VM_e_VMerror);
 				    return retval;
 			    }
 			    hg_string_append(hs,
-					     hg_operator_get_name(HG_VALUE_GET_POINTER (node)),
+					     hg_operator_get_name(HG_VALUE_GET_OPERATOR (node)),
 					     -1);
 			    break;
 		    default:
@@ -1089,7 +1089,7 @@ G_STMT_START
 					}
 				} else if (HG_IS_VALUE_NAME (n)) {
 					node = hg_vm_lookup(vm, n);
-					if (node != NULL && HG_IS_VALUE_POINTER (node)) {
+					if (node != NULL && HG_IS_VALUE_OPERATOR (node)) {
 						hg_array_replace_forcibly(array, node, i, TRUE);
 					}
 				}
@@ -2778,12 +2778,12 @@ G_STMT_START
 
 	for (i = 0; i < depth; i++) {
 		node = hg_stack_index(estack, i);
-		if (HG_IS_VALUE_POINTER (node)) {
+		if (HG_IS_VALUE_OPERATOR (node)) {
 			/* target operators are:
 			 * cshow filenameforall for forall kshow loop pathforall
 			 * repeat resourceforall
 			 */
-			name = hg_operator_get_name(HG_VALUE_GET_POINTER (node));
+			name = hg_operator_get_name(HG_VALUE_GET_OPERATOR (node));
 			if (strcmp(name, "%for_pos_int_continue") == 0 ||
 			    strcmp(name, "%for_pos_real_continue") == 0) {
 				/* drop down ini inc limit proc in estack */
@@ -5988,8 +5988,8 @@ G_STMT_START
 
 	for (i = 0; i < edepth; i++) {
 		node = hg_stack_index(estack, i);
-		if (HG_IS_VALUE_POINTER (node) &&
-		    strcmp("%stopped_continue", hg_operator_get_name(HG_VALUE_GET_POINTER (node))) == 0) {
+		if (HG_IS_VALUE_OPERATOR (node) &&
+		    strcmp("%stopped_continue", hg_operator_get_name(HG_VALUE_GET_OPERATOR (node))) == 0) {
 			break;
 		}
 	}
@@ -6401,7 +6401,7 @@ G_STMT_START
 		    case HG_TYPE_VALUE_NULL:
 			    node = hg_vm_get_name_node(vm, "nulltype");
 			    break;
-		    case HG_TYPE_VALUE_POINTER:
+		    case HG_TYPE_VALUE_OPERATOR:
 			    node = hg_vm_get_name_node(vm, "operatortype");
 			    break;
 		    case HG_TYPE_VALUE_MARK:

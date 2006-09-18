@@ -13,6 +13,7 @@ main(void)
 	HgDict *d;
 	HgValueNode *key, *val, *node;
 
+	hg_value_node_init();
 	allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
 	pool = hg_mem_pool_new(allocator, "test", 3840, 0);
 	if (pool == NULL) {
@@ -45,6 +46,7 @@ main(void)
 //	hg_mem_free(d);
 	hg_mem_pool_destroy(pool);
 	hg_allocator_destroy(allocator);
+	hg_value_node_finalize();
 	hg_mem_finalize();
 
 	return 0;

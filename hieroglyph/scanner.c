@@ -51,7 +51,7 @@
 	G_STMT_START {							\
 		HgValueNode *__hg_op_node;				\
 									\
-		HG_VALUE_MAKE_POINTER (__hg_op_node, (o));		\
+		HG_VALUE_MAKE_OPERATOR (__hg_op_node, (o));		\
 		hg_vm_set_error((v), __hg_op_node, (e), FALSE);	\
 	} G_STMT_END
 		

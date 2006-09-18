@@ -50,7 +50,7 @@
 									\
 		HG_VALUE_MAKE_NAME_STATIC (pool, __hg_key, #name);	\
 		if ((__hg_node = hg_dict_lookup(sdict, __hg_key)) != NULL) { \
-			__hg_op = HG_VALUE_GET_POINTER (__hg_node);	\
+			__hg_op = HG_VALUE_GET_OPERATOR (__hg_node);	\
 			if (__hg_op == __debug_operator_list[HG_debug_op_##func]) { \
 				hg_dict_remove(sdict, __hg_key);	\
 			}						\

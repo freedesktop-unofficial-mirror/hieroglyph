@@ -50,14 +50,14 @@
 	G_STMT_START {							\
 		HgValueNode *__hg_op_node;				\
 									\
-		HG_VALUE_MAKE_POINTER (__hg_op_node, (o));		\
+		HG_VALUE_MAKE_OPERATOR (__hg_op_node, (o));		\
 		hg_vm_set_error((v), __hg_op_node, (e), (d));		\
 	} G_STMT_END
 #define _hg_vm_set_error_from_file(v, o, e, d)				\
 	G_STMT_START {							\
 		HgValueNode *__hg_op_node;				\
 									\
-		HG_VALUE_MAKE_POINTER (__hg_op_node, (o));		\
+		HG_VALUE_MAKE_OPERATOR (__hg_op_node, (o));		\
 		hg_vm_set_error_from_file((v), __hg_op_node, (e), (d)); \
 	} G_STMT_END
 
@@ -345,14 +345,22 @@ hg_vm_init(void)
 {
 	if (!__hg_vm_is_initialized) {
 		hg_mem_init();
+		hg_value_node_init();
 		hg_file_init();
 		hg_list_init();
 
 		__hg_vm_allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
+		/* XXX: Ordinarily this pool should be a global pool according
+		 *      to this purpose. However it causes the pool check error
+		 *      to store the objects to the object, such as the node to
+		 *      the array when it happens during the error handling
+		 *      so that hg_vm_get_current_pool() returns
+		 *      __hg_vm_mem_pool to avoid another VMerror.
+		 */
 		__hg_vm_mem_pool = hg_mem_pool_new(__hg_vm_allocator,
 						   "Hieroglyph VM Memory Pool",
 						   8192,
-						   HG_MEM_GLOBAL | HG_MEM_RESIZABLE);
+						   HG_MEM_RESIZABLE);
 		hg_mem_pool_use_garbage_collection(__hg_vm_mem_pool, FALSE);
 		_hg_vm_init_errorname();
 		__hg_vm_is_initialized = TRUE;
@@ -368,6 +376,7 @@ hg_vm_finalize(void)
 
 		hg_list_finalize();
 		hg_file_finalize();
+		hg_value_node_finalize();
 		hg_mem_finalize();
 
 		__hg_vm_is_initialized = FALSE;
@@ -668,7 +677,7 @@ hg_vm_is_global_object(HgVM        *vm,
 	    case HG_TYPE_VALUE_REAL:
 	    case HG_TYPE_VALUE_NAME:
 	    case HG_TYPE_VALUE_NULL:
-	    case HG_TYPE_VALUE_POINTER:
+	    case HG_TYPE_VALUE_OPERATOR:
 	    case HG_TYPE_VALUE_MARK:
 		    break;
 	    case HG_TYPE_VALUE_ARRAY:
@@ -676,7 +685,7 @@ hg_vm_is_global_object(HgVM        *vm,
 	    case HG_TYPE_VALUE_DICT:
 	    case HG_TYPE_VALUE_FILE:
 	    case HG_TYPE_VALUE_SNAPSHOT:
-		    p = HG_VALUE_GET_VALUE_NODE (node, pointer);
+		    p = HG_VALUE_GET_VALUE_NODE (node, Pointer);
 		    hg_mem_get_object__inline(p, obj);
 		    retval = (vm->local_pool != obj->pool);
 		    break;
@@ -808,7 +817,7 @@ hg_vm_load_plugin(HgVM        *vm,
 	plugin = hg_plugin_open(vm->local_pool, filename, HG_PLUGIN_EXTENSION);
 	if (plugin) {
 		HG_VALUE_MAKE_NAME_STATIC (vm->local_pool, key, filename);
-		HG_VALUE_MAKE_POINTER (val, plugin);
+		HG_VALUE_MAKE_PLUGIN (val, plugin);
 		hg_dict_insert(vm->local_pool, vm->plugin_table, key, val);
 		vm->plugin_list = g_list_append(vm->plugin_list, plugin);
 	}
@@ -843,7 +852,7 @@ hg_vm_unload_plugin(HgVM        *vm,
 		return FALSE;
 	}
 
-	return hg_plugin_unload((HgPlugin *)HG_VALUE_GET_POINTER (val), vm);
+	return hg_plugin_unload(HG_VALUE_GET_PLUGIN (val), vm);
 }
 
 guint
@@ -1093,7 +1102,7 @@ hg_vm_set_error(HgVM        *vm,
 		hg_mem_free(hs2);
 		hg_mem_free(hs);
 		proc = hg_dict_lookup_with_string(vm->systemdict, ".abort");
-		hg_operator_invoke(proc->v.pointer, vm);
+		hg_operator_invoke(HG_VALUE_GET_OPERATOR (proc), vm);
 	}
 	_hg_stack_use_stack_validator(vm->ostack, FALSE);
 	_hg_stack_use_stack_validator(vm->estack, FALSE);
@@ -1202,6 +1211,17 @@ hg_vm_main(HgVM *vm)
 			break;
 		}
 
+#ifdef DEBUG_VM
+		G_STMT_START {
+			HgString *s;
+
+			s = hg_object_to_string((HgObject *)node);
+			hg_file_object_printf(vm->stderr, "DEBUG: [%s] %s\n",
+					      hg_value_node_get_type_name(HG_VALUE_GET_VALUE_TYPE (node)),
+					      hg_string_get_string(s));
+			hg_mem_free(s);
+		} G_STMT_END;
+#endif /* DEBUG_VM */
 		switch (HG_VALUE_GET_VALUE_TYPE (node)) {
 		    case HG_TYPE_VALUE_BOOLEAN:
 		    case HG_TYPE_VALUE_INTEGER:
@@ -1233,7 +1253,7 @@ hg_vm_main(HgVM *vm)
 				    if (hg_array_length(array) == 0)
 					    hg_stack_pop(vm->estack);
 				    if (hg_object_is_executable((HgObject *)tmp) &&
-					(HG_IS_VALUE_NAME (tmp) || HG_IS_VALUE_POINTER (tmp))) {
+					(HG_IS_VALUE_NAME (tmp) || HG_IS_VALUE_OPERATOR (tmp))) {
 					    retval = hg_stack_push(vm->estack, tmp);
 					    if (!retval)
 						    _hg_vm_set_error(vm, file, VM_e_execstackoverflow, FALSE);
@@ -1310,8 +1330,8 @@ hg_vm_main(HgVM *vm)
 				    }
 			    }
 			    break;
-		    case HG_TYPE_VALUE_POINTER:
-			    op = HG_VALUE_GET_POINTER (node);
+		    case HG_TYPE_VALUE_OPERATOR:
+			    op = HG_VALUE_GET_OPERATOR (node);
 			    retval = hg_operator_invoke(op, vm);
 			    hg_stack_pop(vm->estack);
 			    break;
@@ -1335,7 +1355,7 @@ hg_vm_main(HgVM *vm)
 #endif /* DEBUG_SCANNER */
 						    if (hg_object_is_executable((HgObject *)tmp_node) &&
 							(HG_IS_VALUE_NAME (tmp_node) ||
-							 HG_IS_VALUE_POINTER (tmp_node))) {
+							 HG_IS_VALUE_OPERATOR (tmp_node))) {
 							    hg_stack_push(vm->estack, tmp_node);
 						    } else {
 							    hg_stack_push(vm->ostack, tmp_node);

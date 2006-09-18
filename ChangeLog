@@ -1,5 +1,28 @@
 2006-09-18  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/vm.c (_hg_vm_set_error): replace *POINTER to *OPERATOR.
+	(_hg_vm_set_error_from_file): likewise.
+	(hg_vm_init): makes a VM memory pool to be a local pool.
+
+	* hieroglyph/scanner.c (_hg_scanner_set_error): likewise.
+
+	* plugins/test/test-main.c (REMOVE_OP): replace *POINTER to *OPERATOR.
+
+	* plugins/debug/debug-main.c (REMOVE_OP): likewise.
+
+	* plugins/libedit/libedit-main.c (REMOVE_OP): likewise.
+
+	* hieroglyph/operator.[ch]: likewise.
+
+	* hieroglyph/hgvaluenode.[ch]: use separate structure instead of union.
+	(_hg_value_node_register_type): new function.
+	(hg_value_node_init): new function.
+	(hg_value_node_finalize): new function.
+	(hg_value_node_register_type): new function.
+	(hg_value_node_get_type_name): new function.
+
+	* src/hgspy.c (_hgspy_vm_thread): likewise.
+
 	* src/hgs.c (_hgs_arg_load_plugin_cb): reflect a return value from
 	hg_vm_load_plugin().
 

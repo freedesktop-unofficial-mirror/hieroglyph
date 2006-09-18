@@ -65,7 +65,22 @@ typedef struct _HieroGlyphStack			HgStack;
 /* hgstring.h */
 typedef struct _HieroGlyphString		HgString;
 /* hgvaluenode.h */
+typedef struct _HieroGlyphValueNodeTypeInfo	HgValueNodeTypeInfo;
 typedef struct _HieroGlyphValueNode		HgValueNode;
+typedef struct _HieroGlyphValueNodePointer	HgValueNodePointer;
+typedef struct _HieroGlyphValueNodeBoolean	HgValueNodeBoolean;
+typedef struct _HieroGlyphValueNodeInteger	HgValueNodeInteger;
+typedef struct _HieroGlyphValueNodeReal		HgValueNodeReal;
+typedef struct _HieroGlyphValueNodeName		HgValueNodeName;
+typedef struct _HieroGlyphValueNodeArray	HgValueNodeArray;
+typedef struct _HieroGlyphValueNodeString	HgValueNodeString;
+typedef struct _HieroGlyphValueNodeDict		HgValueNodeDict;
+typedef struct _HieroGlyphValueNodeNull		HgValueNodeNull;
+typedef struct _HieroGlyphValueNodeOperator	HgValueNodeOperator;
+typedef struct _HieroGlyphValueNodeMark		HgValueNodeMark;
+typedef struct _HieroGlyphValueNodeFile		HgValueNodeFile;
+typedef struct _HieroGlyphValueNodeSnapshot	HgValueNodeSnapshot;
+typedef struct _HieroGlyphValueNodePlugin	HgValueNodePlugin;
 /* vm.h */
 typedef struct _HieroGlyphVirtualMachine	HgVM;
 
@@ -165,10 +180,11 @@ typedef enum {
 	HG_TYPE_VALUE_STRING,
 	HG_TYPE_VALUE_DICT,
 	HG_TYPE_VALUE_NULL,
-	HG_TYPE_VALUE_POINTER,
+	HG_TYPE_VALUE_OPERATOR,
 	HG_TYPE_VALUE_MARK,
 	HG_TYPE_VALUE_FILE,
 	HG_TYPE_VALUE_SNAPSHOT,
+	HG_TYPE_VALUE_PLUGIN,
 	HG_TYPE_VALUE_END
 } HgValueType;
 
@@ -329,14 +345,84 @@ struct _HieroGlyphObject {
 	guint32 state;
 };
 
+struct _HieroGlyphValueNodeTypeInfo {
+	guint  type_id;
+	gchar *name;
+	gsize  struct_size;
+};
+
 struct _HieroGlyphValueNode {
 	HgObject    object;
-	union {
-		gboolean boolean;
-		gint32   integer;
-		gdouble  real;
-		gpointer pointer;
-	} v;
+};
+
+struct _HieroGlyphValueNodeBoolean {
+	HgValueNode node;
+	gboolean    value;
+};
+
+struct _HieroGlyphValueNodeInteger {
+	HgValueNode node;
+	gint32      value;
+};
+
+struct _HieroGlyphValueNodeReal {
+	HgValueNode node;
+	gdouble     value;
+};
+
+struct _HieroGlyphValueNodePointer {
+	HgValueNode node;
+	gpointer    value;
+};
+
+struct _HieroGlyphValueNodeName {
+	HgValueNode  node;
+	gchar       *value;
+};
+
+struct _HieroGlyphValueNodeArray {
+	HgValueNode  node;
+	HgArray     *value;
+};
+
+struct _HieroGlyphValueNodeString {
+	HgValueNode  node;
+	HgString    *value;
+};
+
+struct _HieroGlyphValueNodeDict {
+	HgValueNode  node;
+	HgDict      *value;
+};
+
+struct _HieroGlyphValueNodeOperator {
+	HgValueNode node;
+	gpointer    value;
+};
+
+struct _HieroGlyphValueNodeNull {
+	HgValueNode node;
+	gpointer    value;
+};
+
+struct _HieroGlyphValueNodeMark {
+	HgValueNode node;
+	gpointer    value;
+};
+
+struct _HieroGlyphValueNodeFile {
+	HgValueNode   node;
+	HgFileObject *value;
+};
+
+struct _HieroGlyphValueNodeSnapshot {
+	HgValueNode    node;
+	HgMemSnapshot *value;
+};
+
+struct _HieroGlyphValueNodePlugin {
+	HgValueNode  node;
+	HgPlugin    *value;
 };
 
 struct _HieroGlyphFileObjectCallback {

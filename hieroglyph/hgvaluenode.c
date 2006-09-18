@@ -28,12 +28,15 @@
 #include <math.h>
 #include <string.h>
 #include "hgvaluenode.h"
+#include "hgallocator-bfit.h"
 #include "hgarray.h"
+#include "hgbtree.h"
 #include "hgdict.h"
 #include "hgfile.h"
 #include "hgmem.h"
 #include "hgstring.h"
 
+#define BTREE_N_NODE	3
 
 static void     _hg_value_node_real_set_flags(gpointer           data,
 					      guint              flags);
@@ -52,16 +55,37 @@ static HgObjectVTable __hg_value_node_vtable = {
 	.copy      = _hg_value_node_real_copy,
 	.to_string = _hg_value_node_real_to_string,
 };
+static HgBTree *__hg_value_node_type_tree = NULL;
+static HgAllocator *__hg_value_node_allocator = NULL;
+static HgMemPool *__hg_value_node_mem_pool = NULL;
+static gboolean __hg_value_node_is_initialized = FALSE;
+
 
 /*
  * Private Functions
  */
+static gboolean
+_hg_value_node_register_type(const HgValueNodeTypeInfo *info)
+{
+	g_return_val_if_fail (__hg_value_node_is_initialized, FALSE);
+
+	if (hg_btree_find(__hg_value_node_type_tree, GUINT_TO_POINTER (info->type_id))) {
+		g_warning("type_id %d already registered.", info->type_id);
+		return FALSE;
+	}
+	hg_btree_add(__hg_value_node_type_tree,
+		     GUINT_TO_POINTER (info->type_id),
+		     GSIZE_TO_POINTER (info));
+
+	return TRUE;
+}
+
 static void
 _hg_value_node_real_set_flags(gpointer data,
 			      guint    flags)
 {
 	HgValueNode *node = data;
-	HgMemObject *obj;
+	HgMemObject *obj = NULL;
 
 	switch (HG_VALUE_GET_VALUE_TYPE (node)) {
 	    case HG_TYPE_VALUE_BOOLEAN:
@@ -73,28 +97,16 @@ _hg_value_node_real_set_flags(gpointer data,
 	    case HG_TYPE_VALUE_ARRAY:
 	    case HG_TYPE_VALUE_STRING:
 	    case HG_TYPE_VALUE_DICT:
-	    case HG_TYPE_VALUE_POINTER:
+	    case HG_TYPE_VALUE_OPERATOR:
 	    case HG_TYPE_VALUE_FILE:
 	    case HG_TYPE_VALUE_SNAPSHOT:
-		    if (node->v.pointer) {
-			    hg_mem_get_object__inline(node->v.pointer, obj);
+	    case HG_TYPE_VALUE_PLUGIN:
+		    if (((HgValueNodePointer *)node)->value) {
+			    hg_mem_get_object__inline(((HgValueNodePointer *)node)->value, obj);
 			    if (obj == NULL) {
 				    g_warning("[BUG] Invalid object %p with node type %d",
-					      node->v.pointer, HG_VALUE_GET_VALUE_TYPE (node));
-			    } else {
-#ifdef DEBUG_GC
-				    G_STMT_START {
-					    if ((flags & HG_MEMOBJ_MARK_AGE_MASK) != 0) {
-						    if (!hg_mem_is_flags__inline(obj, flags)) {
-							    hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_MARK, 0, NULL, node, NULL);
-						    } else {
-							    hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_ALREADYMARK, 0, NULL, node, NULL);
-						    }
-					    }
-				    } G_STMT_END;
-#endif /* DEBUG_GC */
-				    if (!hg_mem_is_flags__inline(obj, flags))
-					    hg_mem_add_flags__inline(obj, flags, TRUE);
+					      ((HgValueNodePointer *)node)->value,
+					      HG_VALUE_GET_VALUE_TYPE (node));
 			    }
 		    }
 		    break;
@@ -104,6 +116,22 @@ _hg_value_node_real_set_flags(gpointer data,
 	    default:
 		    g_warning("Unknown node type %d to set flags", HG_VALUE_GET_VALUE_TYPE (node));
 		    break;
+	}
+
+	if (obj != NULL) {
+#ifdef DEBUG_GC
+		G_STMT_START {
+			if ((flags & HG_MEMOBJ_MARK_AGE_MASK) != 0) {
+				if (!hg_mem_is_flags__inline(obj, flags)) {
+					hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_MARK, 0, NULL, node, NULL);
+				} else {
+					hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_ALREADYMARK, 0, NULL, node, NULL);
+				}
+			}
+		} G_STMT_END;
+#endif /* DEBUG_GC */
+		if (!hg_mem_is_flags__inline(obj, flags))
+			hg_mem_add_flags__inline(obj, flags, TRUE);
 	}
 }
 
@@ -125,12 +153,13 @@ _hg_value_node_real_relocate(gpointer           data,
 	    case HG_TYPE_VALUE_DICT:
 	    case HG_TYPE_VALUE_FILE:
 	    case HG_TYPE_VALUE_SNAPSHOT:
-		    if ((gsize)node->v.pointer >= info->start &&
-			(gsize)node->v.pointer <= info->end) {
-			    node->v.pointer = (gpointer)((gsize)node->v.pointer + info->diff);
+	    case HG_TYPE_VALUE_PLUGIN:
+		    if ((gsize)((HgValueNodePointer *)node)->value >= info->start &&
+			(gsize)((HgValueNodePointer *)node)->value <= info->end) {
+			    ((HgValueNodePointer *)node)->value = (gpointer)((gsize)((HgValueNodePointer *)node)->value + info->diff);
 		    }
 		    break;
-	    case HG_TYPE_VALUE_POINTER:
+	    case HG_TYPE_VALUE_OPERATOR:
 	    case HG_TYPE_VALUE_NULL:
 	    case HG_TYPE_VALUE_MARK:
 		    break;
@@ -154,13 +183,12 @@ _hg_value_node_real_dup(gpointer data)
 	    HG_VALUE_GET_VALUE_TYPE (node) == HG_TYPE_VALUE_MARK) {
 		return node;
 	}
-	retval = hg_value_node_new(obj->pool);
+	retval = hg_value_node_new(obj->pool, HG_VALUE_GET_VALUE_TYPE (node));
 	if (retval == NULL) {
 		g_warning("Failed to duplicate a node.");
 		return NULL;
 	}
 	HG_OBJECT_SET_STATE (&retval->object, HG_OBJECT_GET_STATE (&node->object));
-	retval->v.pointer = NULL;
 	switch (HG_VALUE_GET_VALUE_TYPE (node)) {
 	    case HG_TYPE_VALUE_BOOLEAN:
 		    HG_VALUE_SET_BOOLEAN (retval, HG_VALUE_GET_BOOLEAN (node));
@@ -172,18 +200,33 @@ _hg_value_node_real_dup(gpointer data)
 		    HG_VALUE_SET_REAL (retval, HG_VALUE_GET_REAL (node));
 		    break;
 	    case HG_TYPE_VALUE_NAME:
+		    HG_VALUE_SET_NAME (retval, HG_VALUE_GET_NAME (node));
+		    break;
 	    case HG_TYPE_VALUE_ARRAY:
+		    HG_VALUE_SET_ARRAY (retval, HG_VALUE_GET_ARRAY (node));
+		    break;
 	    case HG_TYPE_VALUE_STRING:
+		    HG_VALUE_SET_STRING (retval, HG_VALUE_GET_STRING (node));
+		    break;
 	    case HG_TYPE_VALUE_DICT:
+		    HG_VALUE_SET_DICT (retval, HG_VALUE_GET_DICT (node));
+		    break;
 	    case HG_TYPE_VALUE_FILE:
-	    case HG_TYPE_VALUE_POINTER:
+		    HG_VALUE_SET_FILE (retval, HG_VALUE_GET_FILE (node));
+		    break;
+	    case HG_TYPE_VALUE_OPERATOR:
+		    HG_VALUE_SET_OPERATOR (retval, HG_VALUE_GET_OPERATOR (node));
+		    break;
 	    case HG_TYPE_VALUE_SNAPSHOT:
-		    HG_VALUE_SET_VALUE_TYPE (retval, HG_VALUE_GET_VALUE_TYPE (node));
-		    retval->v.pointer = node->v.pointer;
+		    HG_VALUE_SET_SNAPSHOT (retval, HG_VALUE_GET_SNAPSHOT (node));
+		    break;
+	    case HG_TYPE_VALUE_PLUGIN:
+		    HG_VALUE_SET_PLUGIN (retval, HG_VALUE_GET_PLUGIN (node));
 		    break;
 	    default:
 		    g_warning("Unknown node type %d to be duplicated", HG_VALUE_GET_VALUE_TYPE (node));
-		    break;
+		    hg_mem_free(retval);
+		    return NULL;
 	}
 
 	return retval;
@@ -194,6 +237,15 @@ _hg_value_node_real_copy(gpointer data)
 {
 	HgValueNode *node = data, *retval;
 	HgMemObject *obj;
+	gpointer p;
+
+#define _copy_object(_node, _type, _obj)		\
+	G_STMT_START {					\
+		p = hg_object_copy((HgObject *)(_obj));	\
+		if (p == NULL)				\
+			return NULL;			\
+		HG_VALUE_SET_ ## _type (_node, p);	\
+	} G_STMT_END
 
 	hg_mem_get_object__inline(node, obj);
 	if (obj == NULL)
@@ -203,13 +255,12 @@ _hg_value_node_real_copy(gpointer data)
 	    HG_VALUE_GET_VALUE_TYPE (node) == HG_TYPE_VALUE_MARK) {
 		return node;
 	}
-	retval = hg_value_node_new(obj->pool);
+	retval = hg_value_node_new(obj->pool, HG_VALUE_GET_VALUE_TYPE (node));
 	if (retval == NULL) {
 		g_warning("Failed to duplicate a node.");
 		return NULL;
 	}
 	HG_OBJECT_SET_STATE (&retval->object, HG_OBJECT_GET_STATE (&node->object));
-	retval->v.pointer = NULL;
 	switch (HG_VALUE_GET_VALUE_TYPE (node)) {
 	    case HG_TYPE_VALUE_BOOLEAN:
 		    HG_VALUE_SET_BOOLEAN (retval, HG_VALUE_GET_BOOLEAN (node));
@@ -221,21 +272,36 @@ _hg_value_node_real_copy(gpointer data)
 		    HG_VALUE_SET_REAL (retval, HG_VALUE_GET_REAL (node));
 		    break;
 	    case HG_TYPE_VALUE_NAME:
+		    _copy_object (retval, NAME, HG_VALUE_GET_NAME (node));
+		    break;
 	    case HG_TYPE_VALUE_ARRAY:
+		    _copy_object (retval, ARRAY, HG_VALUE_GET_ARRAY (node));
+		    break;
 	    case HG_TYPE_VALUE_STRING:
+		    _copy_object (retval, STRING, HG_VALUE_GET_STRING (node));
+		    break;
 	    case HG_TYPE_VALUE_DICT:
+		    _copy_object (retval, DICT, HG_VALUE_GET_DICT (node));
+		    break;
 	    case HG_TYPE_VALUE_FILE:
-	    case HG_TYPE_VALUE_POINTER:
+		    _copy_object (retval, FILE, HG_VALUE_GET_FILE (node));
+		    break;
+	    case HG_TYPE_VALUE_OPERATOR:
+		    _copy_object (retval, OPERATOR, HG_VALUE_GET_OPERATOR (node));
+		    break;
 	    case HG_TYPE_VALUE_SNAPSHOT:
-		    HG_VALUE_SET_VALUE_TYPE (retval, HG_VALUE_GET_VALUE_TYPE (node));
-		    retval->v.pointer = hg_object_copy((HgObject *)node->v.pointer);
-		    if (retval->v.pointer == NULL)
-			    return NULL;
+		    _copy_object (retval, SNAPSHOT, HG_VALUE_GET_SNAPSHOT (node));
+		    break;
+	    case HG_TYPE_VALUE_PLUGIN:
+		    _copy_object (retval, PLUGIN, HG_VALUE_GET_PLUGIN (node));
 		    break;
 	    default:
 		    g_warning("Unknown node type %d to be duplicated", HG_VALUE_GET_VALUE_TYPE (node));
-		    break;
+		    hg_mem_free(retval);
+		    return NULL;
 	}
+
+#undef _copy_object
 
 	return retval;
 }
@@ -330,9 +396,10 @@ _hg_value_node_real_to_string(gpointer data)
 		    break;
 	    case HG_TYPE_VALUE_DICT:
 	    case HG_TYPE_VALUE_FILE:
-	    case HG_TYPE_VALUE_POINTER:
+	    case HG_TYPE_VALUE_OPERATOR:
 	    case HG_TYPE_VALUE_SNAPSHOT:
-		    str = hg_object_to_string(node->v.pointer);
+	    case HG_TYPE_VALUE_PLUGIN:
+		    str = hg_object_to_string((HgObject *)((HgValueNodePointer *)node)->value);
 		    if (str == NULL) {
 			    hg_mem_free(retval);
 			    return NULL;
@@ -360,15 +427,105 @@ _hg_value_node_real_to_string(gpointer data)
 /*
  * Public Functions
  */
+void
+hg_value_node_init(void)
+{
+	hg_mem_init();
+
+	if (!__hg_value_node_is_initialized) {
+		__hg_value_node_allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
+		__hg_value_node_mem_pool = hg_mem_pool_new(__hg_value_node_allocator,
+							   "Memory pool for HgValueNode",
+							   1024, HG_MEM_GLOBAL); // | HG_MEM_RESIZABLE);
+
+		__hg_value_node_type_tree = hg_btree_new(__hg_value_node_mem_pool,
+							 BTREE_N_NODE);
+		hg_mem_add_root_node(__hg_value_node_mem_pool, __hg_value_node_type_tree);
+		hg_btree_allow_marking(__hg_value_node_type_tree, FALSE);
+
+		__hg_value_node_is_initialized = TRUE;
+
+		/* register the reserved type IDs */
+#define _register_type(_t, _s)						\
+		G_STMT_START {						\
+			static HgValueNodeTypeInfo type_info = {	\
+				.name = # _t,				\
+				.type_id = HG_TYPE_VALUE_ ## _t,	\
+				.struct_size = sizeof (HgValueNode ## _s), \
+			};						\
+									\
+			_hg_value_node_register_type(&type_info);	\
+		} G_STMT_END
+
+		_register_type(BOOLEAN, Boolean);
+		_register_type(INTEGER, Integer);
+		_register_type(REAL, Real);
+		_register_type(NAME, Name);
+		_register_type(ARRAY, Array);
+		_register_type(STRING, String);
+		_register_type(DICT, Dict);
+		_register_type(NULL, Null);
+		_register_type(OPERATOR, Operator);
+		_register_type(MARK, Mark);
+		_register_type(FILE, File);
+		_register_type(SNAPSHOT, Snapshot);
+		_register_type(PLUGIN, Plugin);
+	}
+}
+
+void
+hg_value_node_finalize(void)
+{
+	if (__hg_value_node_is_initialized) {
+		hg_mem_pool_destroy(__hg_value_node_mem_pool);
+		hg_allocator_destroy(__hg_value_node_allocator);
+
+		__hg_value_node_is_initialized = FALSE;
+	}
+}
+
+gboolean
+hg_value_node_register_type(const HgValueNodeTypeInfo *info)
+{
+	g_return_val_if_fail (info != NULL, FALSE);
+	g_return_val_if_fail (info->type_id > HG_TYPE_VALUE_END, FALSE);
+
+	return _hg_value_node_register_type(info);
+}
+
+const gchar *
+hg_value_node_get_type_name(guint type_id)
+{
+	HgValueNodeTypeInfo *info;
+
+	g_return_val_if_fail (__hg_value_node_is_initialized, NULL);
+
+	if ((info = hg_btree_find(__hg_value_node_type_tree,
+				  GUINT_TO_POINTER (type_id))) == NULL) {
+		g_warning("Unknown type ID %d. Failed to get a type name.",
+			  type_id);
+		return NULL;
+	}
+
+	return info->name;
+}
+
 HgValueNode *
-hg_value_node_new(HgMemPool *pool)
+hg_value_node_new(HgMemPool   *pool,
+		  guint        type_id)
 {
 	HgValueNode *retval;
+	HgValueNodeTypeInfo *info;
 
 	g_return_val_if_fail (pool != NULL, NULL);
+	g_return_val_if_fail (__hg_value_node_is_initialized, NULL);
 
-	retval = hg_mem_alloc_with_flags(pool,
-					 sizeof (HgValueNode),
+	if ((info = hg_btree_find(__hg_value_node_type_tree,
+				  GUINT_TO_POINTER (type_id))) == NULL) {
+		g_warning("Unknown type ID %d. Failed to create a HgValueNode.", type_id);
+		return NULL;
+	}
+	retval = hg_mem_alloc_with_flags(pool, info->struct_size,
 					 HG_FL_HGOBJECT | HG_FL_RESTORABLE);
 	if (retval == NULL) {
 		g_warning("Failed to create a node.");
@@ -385,6 +542,9 @@ gsize
 hg_value_node_get_hash(const HgValueNode *node)
 {
 	gsize retval = 0;
+
+#define _get_hash(_node, _type)				\
+	(gsize)HG_VALUE_GET_ ## _type (_node);
 
 	switch (HG_VALUE_GET_VALUE_TYPE (node)) {
 	    case HG_TYPE_VALUE_BOOLEAN:
@@ -418,19 +578,36 @@ hg_value_node_get_hash(const HgValueNode *node)
 		    } G_STMT_END;
 		    break;
 	    case HG_TYPE_VALUE_ARRAY:
+		    retval = _get_hash(node, ARRAY);
+		    break;
 	    case HG_TYPE_VALUE_DICT:
+		    retval = _get_hash(node, DICT);
+		    break;
 	    case HG_TYPE_VALUE_NULL:
-	    case HG_TYPE_VALUE_POINTER:
+		    retval = _get_hash(node, NULL);
+		    break;
+	    case HG_TYPE_VALUE_OPERATOR:
+		    retval = _get_hash(node, OPERATOR);
+		    break;
 	    case HG_TYPE_VALUE_MARK:
+		    retval = _get_hash(node, MARK);
+		    break;
 	    case HG_TYPE_VALUE_FILE:
+		    retval = _get_hash(node, FILE);
+		    break;
 	    case HG_TYPE_VALUE_SNAPSHOT:
-		    retval = (gsize)node->v.pointer;
+		    retval = _get_hash(node, SNAPSHOT);
+		    break;
+	    case HG_TYPE_VALUE_PLUGIN:
+		    retval = _get_hash(node, PLUGIN);
 		    break;
 	    default:
 		    g_warning("[BUG] Unknown node type %d to generate hash",
 			      HG_VALUE_GET_VALUE_TYPE (node));
 		    break;
 	}
+
+#undef _get_hash
 
 	return retval;
 }
@@ -443,6 +620,9 @@ hg_value_node_compare(const HgValueNode *a,
 
 	g_return_val_if_fail (a != NULL, FALSE);
 	g_return_val_if_fail (b != NULL, FALSE);
+
+#define _compare(_a, _b, _type)			\
+	(HG_VALUE_GET_ ## _type (_a) == HG_VALUE_GET_ ## _type (_b))
 
 	if (HG_VALUE_GET_VALUE_TYPE (a) != HG_VALUE_GET_VALUE_TYPE (b))
 		return FALSE;
@@ -463,11 +643,22 @@ hg_value_node_compare(const HgValueNode *a,
 		    retval = hg_string_compare(HG_VALUE_GET_STRING (a), HG_VALUE_GET_STRING (b));
 		    break;
 	    case HG_TYPE_VALUE_ARRAY:
+		    retval = _compare (a, b, ARRAY);
+		    break;
 	    case HG_TYPE_VALUE_DICT:
+		    retval = _compare (a, b, DICT);
+		    break;
 	    case HG_TYPE_VALUE_FILE:
-	    case HG_TYPE_VALUE_POINTER:
+		    retval = _compare (a, b, FILE);
+		    break;
+	    case HG_TYPE_VALUE_OPERATOR:
+		    retval = _compare (a, b, OPERATOR);
+		    break;
 	    case HG_TYPE_VALUE_SNAPSHOT:
-		    retval = (a->v.pointer == b->v.pointer);
+		    retval = _compare (a, b, SNAPSHOT);
+		    break;
+	    case HG_TYPE_VALUE_PLUGIN:
+		    retval = _compare (a, b, PLUGIN);
 		    break;
 	    case HG_TYPE_VALUE_NULL:
 	    case HG_TYPE_VALUE_MARK:
@@ -478,6 +669,8 @@ hg_value_node_compare(const HgValueNode *a,
 			      HG_VALUE_GET_VALUE_TYPE (a));
 		    break;
 	}
+
+#undef _compare
 
 	return retval;
 }
@@ -490,6 +683,9 @@ hg_value_node_compare_content(const HgValueNode *a,
 
 	g_return_val_if_fail (a != NULL, FALSE);
 	g_return_val_if_fail (b != NULL, FALSE);
+
+#define _compare(_a, _b, _type)			\
+	(HG_VALUE_GET_ ## _type (_a) == HG_VALUE_GET_ ## _type (_b))
 
 	if (HG_VALUE_GET_VALUE_TYPE (a) != HG_VALUE_GET_VALUE_TYPE (b))
 		return FALSE;
@@ -516,9 +712,16 @@ hg_value_node_compare_content(const HgValueNode *a,
 		    retval = hg_dict_compare(HG_VALUE_GET_DICT (a), HG_VALUE_GET_DICT (b));
 		    break;
 	    case HG_TYPE_VALUE_FILE:
-	    case HG_TYPE_VALUE_POINTER:
+		    retval = _compare (a, b, FILE);
+		    break;
+	    case HG_TYPE_VALUE_OPERATOR:
+		    retval = _compare (a, b, OPERATOR);
+		    break;
 	    case HG_TYPE_VALUE_SNAPSHOT:
-		    retval = (a->v.pointer == b->v.pointer);
+		    retval = _compare (a, b, SNAPSHOT);
+		    break;
+	    case HG_TYPE_VALUE_PLUGIN:
+		    retval = _compare (a, b, PLUGIN);
 		    break;
 	    case HG_TYPE_VALUE_NULL:
 	    case HG_TYPE_VALUE_MARK:
@@ -529,6 +732,8 @@ hg_value_node_compare_content(const HgValueNode *a,
 			      HG_VALUE_GET_VALUE_TYPE (a));
 		    break;
 	}
+
+#undef _compare
 
 	return retval;
 }
@@ -566,25 +771,25 @@ hg_value_node_debug_print(HgFileObject    *file,
 		    if (HG_VALUE_GET_VALUE_TYPE ((HgValueNode *)self) == HG_TYPE_VALUE_NAME) {
 			    info = g_strdup_printf("[type: %s %p (%s)]",
 						   value[HG_VALUE_GET_VALUE_TYPE ((HgValueNode *)self)],
-						   ((HgValueNode *)self)->v.pointer,
-						   (gchar *)((HgValueNode *)self)->v.pointer);
+						   HG_VALUE_GET_NAME (self),
+						   (gchar *)HG_VALUE_GET_NAME (self));
 		    } else {
 			    info = g_strdup_printf("[type: %s %p]",
 						   value[HG_VALUE_GET_VALUE_TYPE ((HgValueNode *)self)],
-						   ((HgValueNode *)self)->v.pointer);
+						   ((HgValueNodePointer *)self)->value);
 		    }
 		    break;
 	    case HG_TYPE_VALUE_BOOLEAN:
-		    info = g_strdup_printf("%s", (((HgValueNode *)self)->v.boolean ? "true" : "false"));
+		    info = g_strdup_printf("%s", (HG_VALUE_GET_BOOLEAN (self) ? "true" : "false"));
 		    break;
 	    case HG_TYPE_VALUE_INTEGER:
-		    info = g_strdup_printf("%d", ((HgValueNode *)self)->v.integer);
+		    info = g_strdup_printf("%d", HG_VALUE_GET_INTEGER (self));
 		    break;
 	    case HG_TYPE_VALUE_REAL:
-		    info = g_strdup_printf("%f", ((HgValueNode *)self)->v.real);
+		    info = g_strdup_printf("%f", HG_VALUE_GET_REAL (self));
 		    break;
 	    case HG_TYPE_VALUE_NAME:
-		    info = g_strdup((gchar *)((HgValueNode *)self)->v.pointer);
+		    info = g_strdup((gchar *)HG_VALUE_GET_NAME (self));
 		    break;
 	    case HG_TYPE_VALUE_ARRAY:
 		    if (GPOINTER_TO_UINT (extrainfo) == G_MAXUINT)
@@ -599,12 +804,13 @@ hg_value_node_debug_print(HgFileObject    *file,
 		    break;
 	    case HG_TYPE_VALUE_NULL:
 		    break;
-	    case HG_TYPE_VALUE_POINTER:
+	    case HG_TYPE_VALUE_OPERATOR:
 		    info = g_strdup_printf("[%s]", (gchar *)extrainfo);
 		    break;
 	    case HG_TYPE_VALUE_MARK:
 	    case HG_TYPE_VALUE_FILE:
 	    case HG_TYPE_VALUE_SNAPSHOT:
+	    case HG_TYPE_VALUE_PLUGIN:
 	    default:
 		    break;
 	}

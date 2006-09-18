@@ -329,7 +329,7 @@ _hgspy_vm_thread(gpointer data)
 		return NULL;
 	}
 	key = hg_vm_get_name_node(spy->vm, "...statementedit");
-	HG_VALUE_MAKE_POINTER (val, op);
+	HG_VALUE_MAKE_OPERATOR (val, op);
 	if (val == NULL) {
 		hg_vm_set_error(spy->vm, key, VM_e_VMerror, FALSE);
 	} else {

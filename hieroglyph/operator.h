@@ -542,7 +542,7 @@ typedef enum {
 			g_warning("Failed to create an operator %s", #name); \
 		} else {						\
 			__hg_key = hg_vm_get_name_node((vm), #name);	\
-			HG_VALUE_MAKE_POINTER (__hg_val, (ret_op));	\
+			HG_VALUE_MAKE_OPERATOR (__hg_val, (ret_op));	\
 			if (__hg_val == NULL) {				\
 				hg_vm_set_error((vm), __hg_key, VM_e_VMerror, FALSE); \
 			} else {					\
@@ -561,14 +561,14 @@ typedef enum {
 	G_STMT_START {							\
 		HgValueNode *__lb_op_node;				\
 									\
-		HG_VALUE_MAKE_POINTER (__lb_op_node, (o));		\
+		HG_VALUE_MAKE_OPERATOR (__lb_op_node, (o));		\
 		hg_vm_set_error((v), __lb_op_node, (e), TRUE);		\
 	} G_STMT_END
 #define _hg_operator_set_error_from_file(v, o, e)			\
 	G_STMT_START {							\
 		HgValueNode *__lb_op_node;				\
 									\
-		HG_VALUE_MAKE_POINTER (__lb_op_node, (o));		\
+		HG_VALUE_MAKE_OPERATOR (__lb_op_node, (o));		\
 		hg_vm_set_error_from_file((v), __lb_op_node, (e), TRUE); \
 	} G_STMT_END
 
