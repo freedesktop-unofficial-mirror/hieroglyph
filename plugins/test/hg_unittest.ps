@@ -1,5 +1,8 @@
 % initialize unittest dictionary
-7 dict dup begin
+10 dict dup begin
+    /nunit 0 def
+    /nsuccess 0 def
+    /nfailure 0 def
     /.ostack null def
     /expectederror null def
     /expectedostack null def
@@ -8,6 +11,15 @@
     /verbose true def
     /expression null def
 end /.unittestdict exch def
+
+% - initunittest -
+/initunittest {
+    .unittestdict begin
+	/nunit 0 def
+	/nsuccess 0 def
+	/nfailure 0 def
+    end
+} bind odef
 
 % -array- -name- -bool- initunittestdict -
 /initunittestdict {
@@ -22,6 +34,14 @@ end /.unittestdict exch def
 /unittest {
     .dounittest
     .unittestdict .validateunittest
+    .unittestdict begin
+	/nunit nunit 1 add def
+	{
+	    /nsuccess nsuccess 1 add def
+	} {
+	    /nfailure nfailure 1 add def
+	} ifelse
+    end
 } bind odef
 
 % proc .dounittest -
@@ -44,4 +64,15 @@ end /.unittestdict exch def
     % recover
     clear .clearerror
     .unittestdict /.ostack get aload pop
+} bind odef
+
+% - unittestresult -
+/unittestresult {
+    .unittestdict begin
+	nunit 128 string cvs ( Unit(s) / )
+	nsuccess 128 string cvs ( Success(es) / )
+	nfailure 128 string cvs ( Failure(s))
+	.concatstring .concatstring .concatstring .concatstring .concatstring
+	=
+    end
 } bind odef

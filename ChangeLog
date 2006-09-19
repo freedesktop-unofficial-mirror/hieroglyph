@@ -1,5 +1,9 @@
 2006-09-20  Akira TAGOH  <at@gclab.org>
 
+	* plugins/test/hg_unittest.ps (initunittest): new proc.
+	(unittest): updated the result in dict.
+	(unittestresult): new proc.
+
 	* hieroglyph/hgmem.h (hg_mem_set_dead): new macro.
 	(hg_mem_unset_dead): likewise.
 	(hg_mem_is_dead): likewise.
