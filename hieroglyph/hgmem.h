@@ -149,18 +149,21 @@ gboolean       _hg_mem_pool_is_own_memobject      (HgMemPool     *pool,
 	} G_STMT_END
 #define hg_mem_is_gc_mark__inline(_obj)					\
 	(hg_mem_pool_get_age_of_mark((_obj)->pool) == HG_MEMOBJ_GET_MARK_AGE (_obj))
-#define hg_mem_restorable(obj)		hg_mem_set_flags__inline(obj, hg_mem_get_flags__inline(obj) | HG_FL_RESTORABLE, FALSE)
-#define hg_mem_unrestorable(obj)	hg_mem_set_flags__inline(obj, hg_mem_get_flags__inline(obj) & ~HG_FL_RESTORABLE, FALSE)
-#define hg_mem_is_restorable(obj)	hg_mem_is_flags__inline(obj, HG_FL_RESTORABLE)
-#define hg_mem_complex_mark(obj)	hg_mem_set_flags__inline(obj, hg_mem_get_flags__inline(obj) | HG_FL_COMPLEX, FALSE)
-#define hg_mem_complex_unmark(obj)	hg_mem_set_flags__inline(obj, hg_mem_get_flags__inline(obj) & ~HG_FL_COMPLEX, FALSE)
-#define hg_mem_is_complex_mark(obj)	hg_mem_is_flags__inline(obj, HG_FL_COMPLEX)
-#define hg_mem_set_lock(obj)		hg_mem_set_flags__inline(obj, hg_mem_get_flags__inline(obj) | HG_FL_LOCK, FALSE)
-#define hg_mem_set_unlock(obj)		hg_mem_set_flags__inline(obj, hg_mem_get_flags__inline(obj) & ~HG_FL_LOCK, FALSE)
-#define hg_mem_is_locked(obj)		hg_mem_is_flags__inline(obj, HG_FL_LOCK)
-#define hg_mem_set_copying(obj)		hg_mem_set_flags__inline(obj, hg_mem_get_flags__inline(obj) | HG_FL_COPYING, FALSE)
-#define hg_mem_unset_copying(obj)	hg_mem_set_flags__inline(obj, hg_mem_get_flags__inline(obj) & ~HG_FL_COPYING, FALSE)
-#define hg_mem_is_copying(obj)		hg_mem_is_flags__inline(obj, HG_FL_COPYING)
+#define hg_mem_restorable(_obj)		hg_mem_set_flags__inline(_obj, hg_mem_get_flags__inline(_obj) | HG_FL_RESTORABLE, FALSE)
+#define hg_mem_unrestorable(_obj)	hg_mem_set_flags__inline(_obj, hg_mem_get_flags__inline(_obj) & ~HG_FL_RESTORABLE, FALSE)
+#define hg_mem_is_restorable(_obj)	hg_mem_is_flags__inline(_obj, HG_FL_RESTORABLE)
+#define hg_mem_complex_mark(_obj)	hg_mem_set_flags__inline(_obj, hg_mem_get_flags__inline(_obj) | HG_FL_COMPLEX, FALSE)
+#define hg_mem_complex_unmark(_obj)	hg_mem_set_flags__inline(_obj, hg_mem_get_flags__inline(_obj) & ~HG_FL_COMPLEX, FALSE)
+#define hg_mem_is_complex_mark(_obj)	hg_mem_is_flags__inline(_obj, HG_FL_COMPLEX)
+#define hg_mem_set_lock(_obj)		hg_mem_set_flags__inline(_obj, hg_mem_get_flags__inline(_obj) | HG_FL_LOCK, FALSE)
+#define hg_mem_set_unlock(_obj)		hg_mem_set_flags__inline(_obj, hg_mem_get_flags__inline(_obj) & ~HG_FL_LOCK, FALSE)
+#define hg_mem_is_locked(_obj)		hg_mem_is_flags__inline(_obj, HG_FL_LOCK)
+#define hg_mem_set_copying(_obj)	hg_mem_set_flags__inline(_obj, hg_mem_get_flags__inline(_obj) | HG_FL_COPYING, FALSE)
+#define hg_mem_unset_copying(_obj)	hg_mem_set_flags__inline(_obj, hg_mem_get_flags__inline(_obj) & ~HG_FL_COPYING, FALSE)
+#define hg_mem_is_copying(_obj)		hg_mem_is_flags__inline(_obj, HG_FL_COPYING)
+#define hg_mem_set_dead(_obj)		hg_mem_set_flags__inline(_obj, hg_mem_get_flags__inline(_obj) | HG_FL_DEAD, FALSE)
+#define hg_mem_unset_dead(_obj)		hg_mem_set_flags__inline(_obj, hg_mem_get_flags__inline(_obj) & ~HG_FL_DEAD, FALSE)
+#define hg_mem_is_dead(_obj)		hg_mem_is_flags__inline(_obj, HG_FL_DEAD)
 
 guint8   hg_mem_pool_get_age_of_mark       (HgMemPool *pool);
 void     hg_mem_gc_mark_array_region       (HgMemPool *pool,
@@ -180,19 +183,19 @@ void     hg_mem_pool_use_garbage_collection(HgMemPool *pool,
 					    gboolean   flag);
 
 /* HgObject */
-#define hg_object_readable(obj)		hg_object_add_state(obj, HG_ST_READABLE | HG_ST_ACCESSIBLE)
-#define hg_object_unreadable(obj)	hg_object_set_state(obj, hg_object_get_state(obj) & ~HG_ST_READABLE)
-#define hg_object_is_readable(obj)	hg_object_is_state(obj, HG_ST_READABLE | HG_ST_ACCESSIBLE)
-#define hg_object_writable(obj)		hg_object_add_state(obj, HG_ST_WRITABLE | HG_ST_ACCESSIBLE)
-#define hg_object_unwritable(obj)	hg_object_set_state(obj, hg_object_get_state(obj) & ~HG_ST_WRITABLE)
-#define hg_object_is_writable(obj)	hg_object_is_state(obj, HG_ST_WRITABLE | HG_ST_ACCESSIBLE)
-#define hg_object_executable(obj)	hg_object_add_state(obj, HG_ST_EXECUTABLE)
-#define hg_object_inexecutable(obj)	hg_object_set_state(obj, hg_object_get_state(obj) & ~HG_ST_EXECUTABLE)
-#define hg_object_is_executable(obj)	hg_object_is_state(obj, HG_ST_EXECUTABLE)
-#define hg_object_executeonly(obj)	hg_object_set_state(obj, (hg_object_get_state(obj) & ~(HG_ST_READABLE | HG_ST_WRITABLE)) | HG_ST_EXECUTEONLY)
-#define hg_object_is_executeonly(obj)	hg_object_is_state(obj, HG_ST_EXECUTEONLY)
-#define hg_object_inaccessible(obj)	hg_object_set_state(obj, hg_object_get_state(obj) & ~(HG_ST_READABLE | HG_ST_WRITABLE | HG_ST_EXECUTEONLY | HG_ST_ACCESSIBLE))
-#define hg_object_is_accessible(obj)	hg_object_is_state(obj, HG_ST_ACCESSIBLE)
+#define hg_object_readable(_obj)	hg_object_add_state(_obj, HG_ST_READABLE | HG_ST_ACCESSIBLE)
+#define hg_object_unreadable(_obj)	hg_object_set_state(_obj, hg_object_get_state(_obj) & ~HG_ST_READABLE)
+#define hg_object_is_readable(_obj)	hg_object_is_state(_obj, HG_ST_READABLE | HG_ST_ACCESSIBLE)
+#define hg_object_writable(_obj)	hg_object_add_state(_obj, HG_ST_WRITABLE | HG_ST_ACCESSIBLE)
+#define hg_object_unwritable(_obj)	hg_object_set_state(_obj, hg_object_get_state(_obj) & ~HG_ST_WRITABLE)
+#define hg_object_is_writable(_obj)	hg_object_is_state(_obj, HG_ST_WRITABLE | HG_ST_ACCESSIBLE)
+#define hg_object_executable(_obj)	hg_object_add_state(_obj, HG_ST_EXECUTABLE)
+#define hg_object_inexecutable(_obj)	hg_object_set_state(_obj, hg_object_get_state(_obj) & ~HG_ST_EXECUTABLE)
+#define hg_object_is_executable(_obj)	hg_object_is_state(_obj, HG_ST_EXECUTABLE)
+#define hg_object_executeonly(_obj)	hg_object_set_state(_obj, (hg_object_get_state(_obj) & ~(HG_ST_READABLE | HG_ST_WRITABLE)) | HG_ST_EXECUTEONLY)
+#define hg_object_is_executeonly(_obj)	hg_object_is_state(_obj, HG_ST_EXECUTEONLY)
+#define hg_object_inaccessible(_obj)	hg_object_set_state(_obj, hg_object_get_state(_obj) & ~(HG_ST_READABLE | HG_ST_WRITABLE | HG_ST_EXECUTEONLY | HG_ST_ACCESSIBLE))
+#define hg_object_is_accessible(_obj)	hg_object_is_state(_obj, HG_ST_ACCESSIBLE)
 
 guint                       hg_object_get_state (HgObject                   *object);
 void                        hg_object_set_state (HgObject                   *object,

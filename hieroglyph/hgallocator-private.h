@@ -76,6 +76,7 @@ struct _HieroGlyphMemSnapshot {
 	gsize      id;
 	GPtrArray *heap_list;
 	gint       n_heaps;
+	gint       age;
 	gpointer   private;
 };
 

@@ -431,6 +431,9 @@ void
 hg_value_node_init(void)
 {
 	hg_mem_init();
+#ifdef DEBUG
+	hg_file_init();
+#endif /* DEBUG */
 
 	if (!__hg_value_node_is_initialized) {
 		__hg_value_node_allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
@@ -479,6 +482,9 @@ hg_value_node_finalize(void)
 	if (__hg_value_node_is_initialized) {
 		hg_mem_pool_destroy(__hg_value_node_mem_pool);
 		hg_allocator_destroy(__hg_value_node_allocator);
+#ifdef DEBUG
+		hg_file_finalize();
+#endif /* DEBUG */
 
 		__hg_value_node_is_initialized = FALSE;
 	}

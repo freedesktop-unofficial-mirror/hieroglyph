@@ -119,6 +119,7 @@ typedef enum {
 	HG_FL_COMPLEX    = 1 << 1,  /* no infect */
 	HG_FL_LOCK       = 1 << 2,  /* no infect */
 	HG_FL_COPYING    = 1 << 3,  /* no infect */
+	HG_FL_DEAD       = 1 << 4,  /* no infect */
 	HG_FL_HGOBJECT   = 1 << 15, /* mark for HgObject */
 	HG_FL_MARK1      = 1 << 16, /* infect all child objects - reserved for age of mark */
 	HG_FL_MARK2      = 1 << 17, /* infect all child objects - reserved for age of mark */

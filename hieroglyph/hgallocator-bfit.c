@@ -40,6 +40,7 @@
 
 typedef struct _HieroGlyphAllocatorBFitPrivate		HgAllocatorBFitPrivate;
 typedef struct _HieroGlyphMemBFitBlock			HgMemBFitBlock;
+typedef struct _HieroGlyphSnapshotChunk			HgSnapshotChunk;
 
 
 struct _HieroGlyphAllocatorBFitPrivate {
@@ -57,6 +58,15 @@ struct _HieroGlyphMemBFitBlock {
 	gsize           length;
 	gint            in_use;
 };
+
+struct _HieroGlyphSnapshotChunk {
+	gint             heap_id;
+	gsize            offset;
+	gsize            length;
+	gpointer         heap_chunks;
+	HgSnapshotChunk *next;
+};
+
 
 static gboolean       _hg_allocator_bfit_real_initialize        (HgMemPool         *pool,
 								 gsize              prealloc);
@@ -145,6 +155,33 @@ _hg_bfit_block_new(gpointer heap,
 }
 
 #define _hg_bfit_block_free	g_free
+
+static HgSnapshotChunk *
+_hg_bfit_snapshot_chunk_new(gint     heap_id,
+			    gsize    offset,
+			    gsize    length,
+			    gpointer heap_chunks)
+{
+	HgSnapshotChunk *retval = g_new(HgSnapshotChunk, 1);
+
+	retval->heap_id     = heap_id;
+	retval->offset      = offset;
+	retval->length      = length;
+	retval->heap_chunks = g_new(gchar, length + 1);
+	retval->next        = NULL;
+
+	memcpy(retval->heap_chunks, heap_chunks, length);
+
+	return retval;
+}
+
+static void
+_hg_bfit_snapshot_chunk_free(HgSnapshotChunk *chunk)
+{
+	if (chunk->heap_chunks)
+		g_free(chunk->heap_chunks);
+	g_free(chunk);
+}
 
 static void
 _hg_allocator_bfit_remove_block(HgAllocatorBFitPrivate *priv,
@@ -613,7 +650,16 @@ _hg_allocator_bfit_real_resize(HgMemObject *object,
 			hobj = (HgObject *)object->data;
 			HG_OBJECT_SET_VTABLE_ID (hobj, 0);
 		}
-		hg_mem_free(object->data);
+		/* set HG_FL_DEAD flag instead of freeing a object.
+		 * the object may be still used where is in snapshot.
+		 */
+		/* XXX: in PostScript spec, it may be unlikely to happen,
+		 *      so that this process is really machine-dependant code.
+		 *      and PostScript itself doesn't support to extend
+		 *      the object size.
+		 */
+		hg_mem_set_dead(object);
+
 		_hg_allocator_bfit_relocate(pool, &info);
 		hobj = (HgObject *)p;
 		hg_mem_get_object__inline(hobj, obj);
@@ -823,8 +869,54 @@ _hg_allocator_bfit_real_is_safe_object(HgMemPool   *pool,
 static HgMemSnapshot *
 _hg_allocator_bfit_real_save_snapshot(HgMemPool *pool)
 {
+	HgAllocatorBFitPrivate *priv = pool->allocator->private;
 	HgMemSnapshot *retval;
+	GPtrArray *heaps_list = g_ptr_array_new();
 	guint i;
+
+	hg_mem_garbage_collection(pool);
+	for (i = 0; i < pool->n_heaps; i++) {
+		gpointer start, end, top;
+		HgMemBFitBlock *block, *prev;
+		HgSnapshotChunk *chunk, *beginning_of_chunk = NULL, *prev_chunk = NULL;
+
+#define _is_targeted_block(_heap)					\
+		((HG_MEMOBJ_GET_FLAGS ((HgMemObject *)_heap) &		\
+		  HG_FL_RESTORABLE) == HG_FL_RESTORABLE)
+
+		block = g_ptr_array_index(priv->heap2block_array, i);
+		while (block != NULL &&
+		       (block->in_use == 0 ||
+			!_is_targeted_block (block->heap_fragment)))
+			block = block->next;
+		if (block != NULL)
+			top = block->heap_fragment;
+
+		while (block != NULL) {
+			start = block->heap_fragment;
+			while (block != NULL &&
+			       block->in_use == 1 &&
+			       _is_targeted_block (block->heap_fragment)) {
+				prev = block;
+				block = block->next;
+			}
+			end = prev->heap_fragment + prev->length;
+
+			chunk = _hg_bfit_snapshot_chunk_new(i, start - top, end - start, start);
+			if (beginning_of_chunk == NULL)
+				beginning_of_chunk = chunk;
+			if (prev_chunk) {
+				prev_chunk->next = chunk;
+			}
+			prev_chunk = chunk;
+
+			while (block != NULL &&
+			       (block->in_use == 0 ||
+				!_is_targeted_block (block->heap_fragment)))
+				block = block->next;
+		}
+		g_ptr_array_add(heaps_list, beginning_of_chunk);
+	}
 
 	retval = hg_mem_alloc_with_flags(pool, sizeof (HgMemSnapshot),
 					 HG_FL_HGOBJECT | HG_FL_COMPLEX);
@@ -834,39 +926,13 @@ _hg_allocator_bfit_real_save_snapshot(HgMemPool *pool)
 	}
 	HG_OBJECT_INIT_STATE (&retval->object);
 	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
-	/* set NULL to avoid the call before finishing an initialization. */
-	HG_OBJECT_SET_VTABLE_ID (&retval->object, 0);
-
-	retval->id = (gsize)pool;
-	retval->heap_list = g_ptr_array_new();
-	if (retval->heap_list == NULL) {
-		g_warning("Failed to allocate a memory for snapshot.");
-		hg_mem_free(retval);
-
-		return NULL;
-	}
-	retval->n_heaps = 0;
-	for (i = 0; i < pool->n_heaps; i++) {
-		HgHeap *heap;
-		HgHeap *origheap = g_ptr_array_index(pool->heap_list, i);
-
-		heap = hg_heap_new(pool, origheap->total_heap_size);
-		if (heap == NULL) {
-			g_warning("Failed to allocate a heap for snapshot.");
-			hg_mem_free(retval);
-
-			return NULL;
-		}
-		heap->serial = origheap->serial;
-		/* need to decrease the number of heap in pool */
-		pool->n_heaps--;
-		retval->n_heaps++;
-		g_ptr_array_add(retval->heap_list, heap);
-	}
-
-	/* FIXME */
-
 	hg_object_set_vtable(&retval->object, &__hg_snapshot_vtable);
+	retval->id = (gsize)pool;
+	retval->heap_list = heaps_list;
+	retval->n_heaps = pool->n_heaps;
+	retval->age = priv->age_of_snapshot++;
+
+#undef _is_targeted_block
 
 	return retval;
 }
@@ -875,25 +941,96 @@ static gboolean
 _hg_allocator_bfit_real_restore_snapshot(HgMemPool     *pool,
 					 HgMemSnapshot *snapshot)
 {
-	return FALSE;
+	HgAllocatorBFitPrivate *priv = pool->allocator->private;
+	gboolean retval = TRUE;
+	gint i;
+
+	/* just ignore the older children snapshots */
+	if (snapshot->age < priv->age_of_snapshot) {
+		for (i = 0; i < snapshot->n_heaps; i++) {
+			HgSnapshotChunk *chunk = g_ptr_array_index(snapshot->heap_list, i), *tmp;
+			HgMemBFitBlock *block = g_ptr_array_index(priv->heap2block_array, i);
+
+			while (chunk != NULL) {
+				memcpy(block->heap_fragment + chunk->offset,
+				       chunk->heap_chunks,
+				       chunk->length);
+				tmp = chunk;
+				chunk = chunk->next;
+				_hg_bfit_snapshot_chunk_free(tmp);
+			}
+		}
+		priv->age_of_snapshot = snapshot->age;
+
+		snapshot->n_heaps = 0;
+		g_ptr_array_free(snapshot->heap_list, TRUE);
+		snapshot->heap_list = NULL;
+		snapshot->age = 0;
+		retval = TRUE;
+	}
+	hg_mem_garbage_collection(pool);
+
+	return retval;
 }
 
 /* snapshot */
 static void
 _hg_allocator_bfit_snapshot_real_free(gpointer data)
 {
+	HgMemSnapshot *snapshot = data;
+	HgSnapshotChunk *chunk, *tmp;
+	gint i;
+
+	if (snapshot->heap_list) {
+		for (i = 0; i < snapshot->n_heaps; i++) {
+			chunk = g_ptr_array_index(snapshot->heap_list, i);
+			while (chunk) {
+				tmp = chunk;
+				chunk = chunk->next;
+				_hg_bfit_snapshot_chunk_free(tmp);
+			}
+		}
+		g_ptr_array_free(snapshot->heap_list, TRUE);
+	}
 }
 
 static void
 _hg_allocator_bfit_snapshot_real_set_flags(gpointer data,
 					   guint    flags)
 {
+	HgMemSnapshot *snapshot = data;
+	HgSnapshotChunk *chunk;
+	gint i;
+	HgMemObject *obj;
+
+	for (i = 0; i < snapshot->n_heaps; i++) {
+		chunk = g_ptr_array_index(snapshot->heap_list, i);
+
+		while (chunk) {
+			obj = chunk->heap_chunks;
+
+			if (!HG_CHECK_MAGIC_CODE (obj, HG_MEM_HEADER)) {
+				g_warning("[BUG] Invalid object %p to be marked in snapshot.", obj);
+			} else {
+				if (!hg_mem_is_flags__inline(obj, flags))
+					hg_mem_add_flags__inline(obj, flags, TRUE);
+			}
+
+			chunk = chunk->next;
+		}
+	}
 }
 
 static void
 _hg_allocator_bfit_snapshot_real_relocate(gpointer           data,
 					  HgMemRelocateInfo *info)
 {
+	/* XXX: is this really necessary?
+	 *      the snapshot objects and the chunks in it will be just
+	 *      discarded when any complex objects that was created after made
+	 *      this snapshot is there. and the relocation won't happens for
+	 *      the simple objects.
+	 */
 }
 
 static gpointer

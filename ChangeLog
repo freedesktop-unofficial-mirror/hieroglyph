@@ -1,3 +1,19 @@
+2006-09-20  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgmem.h (hg_mem_set_dead): new macro.
+	(hg_mem_unset_dead): likewise.
+	(hg_mem_is_dead): likewise.
+
+	* hieroglyph/hgallocator-bfit.c (_hg_bfit_snapshot_chunk_new):
+	new function.
+	(_hg_bfit_snapshot_chunk_free): new function.
+	(_hg_allocator_bfit_real_save_snapshot): implemented.
+	(_hg_allocator_bfit_real_restore_snapshot): implemented.
+	(_hg_allocator_bfit_real_resize): set a HG_FL_DEAD flag instead of
+	hg_mem_free().
+	(_hg_allocator_bfit_snapshot_real_free): implemented.
+	(_hg_allocator_bfit_snapshot_real_set_flags): implemented.
+
 2006-09-18  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/vm.c (_hg_vm_set_error): replace *POINTER to *OPERATOR.

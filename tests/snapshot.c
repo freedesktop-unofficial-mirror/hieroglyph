@@ -1,16 +1,15 @@
 #include <hieroglyph/hgallocator-bfit.h>
 #include <hieroglyph/hgmem.h>
 #include <hieroglyph/hgarray.h>
+#include <hieroglyph/hgfile.h>
 #include <hieroglyph/hgvaluenode.h>
 #include <hieroglyph/hgstring.h>
 #include <hieroglyph/hgdict.h>
 
 
 int
-main(void)
+foo(void)
 {
-	HG_MEM_INIT;
-
 	HgAllocator *allocator;
 	HgMemPool *pool;
 	HgMemSnapshot *snap;
@@ -19,6 +18,7 @@ main(void)
 	HgString *string;
 	HgDict *dict;
 
+	hg_file_init();
 	hg_value_node_init();
 	allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
 	pool = hg_mem_pool_new(allocator, "test", 256, HG_MEM_RESIZABLE);
@@ -85,7 +85,17 @@ main(void)
 	hg_mem_pool_destroy(pool);
 	hg_allocator_destroy(allocator);
 	hg_value_node_finalize();
+	hg_file_finalize();
 	hg_mem_finalize();
 
 	return 0;
+}
+
+int
+main(void)
+{
+	HG_MEM_INIT;
+
+
+	return foo();
 }
