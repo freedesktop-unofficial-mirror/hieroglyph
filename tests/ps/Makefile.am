@@ -1,12 +1,13 @@
 NULL =
 
 DEPS =					\
-	$(top_builddir)/examples/pse	\
+	$(top_builddir)/src/hgs		\
 	$(NULL)
-
-TESTS_ENVIRONMENT = test-ps.sh
 
 EXTRA_DIST =				\
 	test-ps.sh			\
 	*.ps				\
 	$(NULL)
+
+check:
+	$(srcdir)/test-ps.sh

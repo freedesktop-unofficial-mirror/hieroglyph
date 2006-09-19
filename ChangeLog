@@ -1,5 +1,9 @@
 2006-09-20  Akira TAGOH  <at@gclab.org>
 
+	* tests/ps/test-ps.sh: depends on hgs instead of pse.
+
+	* tests/ps/Makefile.am (check): run test-ps.sh.
+
 	* plugins/test/hg_unittest.ps (initunittest): new proc.
 	(unittest): updated the result in dict.
 	(unittestresult): new proc.
