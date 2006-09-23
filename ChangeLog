@@ -1,5 +1,9 @@
 2006-09-24  Akira TAGOH  <at@gclab.org>
 
+	* tests/ps/test-aload.ps: new testcase.
+
+	* tests/ps/test-anchorsearch.ps: new testcase.
+
 	* plugins/test/hg_unittest.ps (typecheck): new procedure to test
 	if /typecheck happens.
 	(.dotypecheck): new.

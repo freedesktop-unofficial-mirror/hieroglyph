@@ -1,0 +1,13 @@
+initunittest
+
+true /anchorsearch [[/stringtype] dup] typecheck
+false /anchorsearch [[/booleantype /integertype /realtype /nametype /arraytype /dicttype /nulltype /operatortype /marktype /filetype /savetype /proctype] dup] typecheck
+
+[] /stackunderflow true initunittestdict {anchorsearch} unittest
+[(foo)] /stackunderflow true initunittestdict {(foo) anchorsearch} unittest
+[(bc) (ab) true] null true initunittestdict {(abbc) (ab) anchorsearch} unittest
+[(abbc) false] null true initunittestdict {(abbc) (bb) anchorsearch} unittest
+[(abbc) false] null true initunittestdict {(abbc) (bc) anchorsearch} unittest
+[(abbc) false] null true initunittestdict {(abbc) (B) anchorsearch} unittest
+
+unittestresult
