@@ -1,3 +1,9 @@
+2006-09-24  Akira TAGOH  <at@gclab.org>
+
+	* plugins/test/hg_unittest.ps (typecheck): new procedure to test
+	if /typecheck happens.
+	(.dotypecheck): new.
+
 2006-09-23  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/operator.c (_hg_operator_op_add): fixed a overflow.

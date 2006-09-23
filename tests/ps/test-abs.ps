@@ -1,14 +1,11 @@
 initunittest
 
+true /abs [[/integertype /realtype]] typecheck
+false /abs [[/nametype /arraytype /dicttype /marktype /nulltype /proctype]] typecheck
+
+[] /stackunderflow true initunittestdict {abs} unittest
 [4.5] null true initunittestdict {4.5 abs} unittest
 [3] null true initunittestdict {-3 abs} unittest
 [0] null true initunittestdict {0 abs} unittest
-[/foo] /typecheck true initunittestdict {/foo abs} unittest
-[[]] /typecheck true initunittestdict {[] abs} unittest
-[1 dict] /typecheck true initunittestdict {1 dict abs} unittest
-%1 array dup 0 mark put /typecheck true initunittestdict {mark abs} unittest
-{//mark} cvlit /typecheck true initunittestdict {mark abs} unittest
-[null] /typecheck true initunittestdict {null abs} unittest
-[] /stackunderflow true initunittestdict {abs} unittest
 
 unittestresult

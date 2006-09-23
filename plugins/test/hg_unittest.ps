@@ -1,5 +1,5 @@
 % initialize unittest dictionary
-10 dict dup begin
+15 dict dup begin
     /nunit 0 def
     /nsuccess 0 def
     /nfailure 0 def
@@ -10,6 +10,11 @@
     /actualostack null def
     /verbose true def
     /expression null def
+    /operator null def
+    /arguments null def
+    /testargs null def
+    /testargssymbol null def
+    /typecheckresult false def
 end /.unittestdict exch def
 
 % - initunittest -
@@ -65,6 +70,123 @@ end /.unittestdict exch def
     clear .clearerror
     .unittestdict /.ostack get aload pop
 } bind odef
+
+% bool name [[type ...] ...] typecheck -
+/typecheck {
+    .unittestdict begin
+	/arguments exch def
+	/operator exch def
+	/testargs arguments length array def
+	/testargssymbol arguments length array def
+	dup {
+	    /verbose true def
+	} {
+	    % has to be silent. assuming that it should be output a lot of error messages.
+	    /verbose false def
+	} ifelse
+	/typecheckresult true def
+	arguments length 1 sub .dotypecheck
+	typecheckresult ne {
+	    1 .quit
+	} if
+    end
+} bind def
+
+% -num- .dotypecheck -
+/.dotypecheck {
+    arguments 1 index get {
+	dup /booleantype eq {
+	    testargs 2 index true put
+	    testargssymbol 2 index 3 -1 roll put
+	} {
+	    dup /integertype eq {
+		testargs 2 index 0 put
+		testargssymbol 2 index 3 -1 roll put
+	    } {
+		dup /realtype eq {
+		    testargs 2 index 0.1 put
+		    testargssymbol 2 index 3 -1 roll put
+		} {
+		    dup /nametype eq {
+			testargs 2 index /foo put
+			testargssymbol 2 index 3 -1 roll put
+		    } {
+			dup /arraytype eq {
+			    testargs 2 index [] put
+			    testargssymbol 2 index 3 -1 roll put
+			} {
+			    dup /stringtype eq {
+				testargs 2 index (foo) put
+				testargssymbol 2 index 3 -1 roll put
+			    } {
+				dup /dicttype eq {
+				    testargs 2 index 1 dict put
+				    testargssymbol 2 index 3 -1 roll put
+				} {
+				    dup /nulltype eq {
+					testargs 2 index null put
+					testargssymbol 2 index 3 -1 roll put
+				    } {
+					dup /operatortype eq {
+					    testargs 2 index /add load put
+					    testargssymbol 2 index 3 -1 roll put
+					} {
+					    dup /marktype eq {
+						testargs 2 index mark put
+						testargssymbol 2 index 3 -1 roll put
+					    } {
+						dup /filetype eq {
+						    testargs 2 index currentfile put
+						    testargssymbol 2 index 3 -1 roll put
+						} {
+						    dup /savetype eq {
+							testargs 2 index save put
+							testargssymbol 2 index 3 -1 roll put
+						    } {
+							% this is not correct type.
+							dup /proctype eq {
+							    testargs 2 index {} put
+							    testargssymbol 2 index 3 -1 roll put
+							} {
+							    % error
+							    (Unknown type ) ==only
+							    == 1 .quit
+							} ifelse
+						    } ifelse
+						} ifelse
+					    } ifelse
+					} ifelse
+				    } ifelse
+				} ifelse
+			    } ifelse
+			} ifelse
+		    } ifelse
+		} ifelse
+	    } ifelse
+	} ifelse
+	dup 0 eq {
+	    [testargs /aload load /pop load operator load] cvx .dounittest
+	    actualerror dup /stackunderflow eq
+	    exch dup /typecheck eq
+	    exch dup /limitcheck eq
+	    exch pop
+	    or or {
+		verbose {
+		    (ERROR: ) =only
+		    actualerror ==only
+		    ( in ) =only
+		    operator cvx ==only
+		    ( with ) =only
+		    testargssymbol ==
+		} if
+		/typecheckresult false def
+	    } if
+	} {
+	    dup 1 sub .dotypecheck
+	} ifelse
+    } forall
+    pop
+} bind def
 
 % - unittestresult -
 /unittestresult {
