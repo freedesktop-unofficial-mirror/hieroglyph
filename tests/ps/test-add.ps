@@ -1,0 +1,20 @@
+initunittest
+
+[7] null true initunittestdict {3 4 add} unittest
+[11.0] null true initunittestdict {9.9 1.1 add} unittest
+[/foo 1] /typecheck true initunittestdict {/foo 1 add} unittest
+[1 /foo] /typecheck true initunittestdict {1 /foo add} unittest
+[[] 1] /typecheck true initunittestdict {[] 1 add} unittest
+[1 []] /typecheck true initunittestdict {1 [] add} unittest
+[1 dict 1] /typecheck true initunittestdict {1 dict 1 add} unittest
+[1 1 dict] /typecheck true initunittestdict {1 1 dict add} unittest
+{//mark 1} cvlit /typecheck true initunittestdict {mark 1 add} unittest
+{1 //mark} cvlit /typecheck true initunittestdict {1 mark add} unittest
+[null 1] /typecheck true initunittestdict {null 1 add} unittest
+[1 null] /typecheck true initunittestdict {1 null add} unittest
+[] /stackunderflow true initunittestdict {add} unittest
+[1] /stackunderflow true initunittestdict {1 add} unittest
+[4.29490176e+09] null true initunittestdict {2147450880 2147450880 add} unittest
+[] null true initunittestdict {2.25176549e+38 2.25176549e+38 add} unittest
+
+unittestresult

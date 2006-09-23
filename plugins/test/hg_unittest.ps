@@ -74,5 +74,8 @@ end /.unittestdict exch def
 	nfailure 128 string cvs ( Failure(s))
 	.concatstring .concatstring .concatstring .concatstring .concatstring
 	=
+	nfailure 0 gt {
+	    1 .quit
+	} if
     end
 } bind odef

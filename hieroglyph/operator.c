@@ -653,7 +653,7 @@ G_STMT_START
 	HgMemPool *pool = hg_vm_get_current_pool(vm);
 	guint depth = hg_stack_depth(ostack);
 	gboolean integer = TRUE;
-	gdouble d1, d2;
+	gdouble d1, d2, dr;
 
 	while (1) {
 		if (depth < 2) {
@@ -680,10 +680,11 @@ G_STMT_START
 			_hg_operator_set_error(vm, op, VM_e_typecheck);
 			break;
 		}
-		if (integer) {
-			HG_VALUE_MAKE_INTEGER (pool, n1, (gint32)(d1 + d2));
+		dr = d1 + d2;
+		if (integer && dr < G_MAXINT32) {
+			HG_VALUE_MAKE_INTEGER (pool, n1, (gint32)dr);
 		} else {
-			HG_VALUE_MAKE_REAL (pool, n1, d1 + d2);
+			HG_VALUE_MAKE_REAL (pool, n1, dr);
 		}
 		if (n1 == NULL) {
 			_hg_operator_set_error(vm, op, VM_e_VMerror);

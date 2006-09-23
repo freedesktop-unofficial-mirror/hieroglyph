@@ -1,3 +1,16 @@
+2006-09-23  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/operator.c (_hg_operator_op_add): fixed a overflow.
+
+	* hieroglyph/hgvaluenode.c (hg_value_node_compare): use macro.
+
+	* tests/ps/test-add.ps: new test case.
+
+	* src/hgs.c (main): returns an error code.
+
+	* plugins/test/hg_unittest.ps (unittestresult): stop with an error code
+	when unit test failed.
+
 2006-09-20  Akira TAGOH  <at@gclab.org>
 
 	* tests/ps/test-ps.sh: depends on hgs instead of pse.

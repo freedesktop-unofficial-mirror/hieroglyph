@@ -88,6 +88,7 @@ main(int    argc,
 	};
 	GError *error = NULL;
 	const gchar *psfile = NULL;
+	gint32 errcode = 0;
 
 	HG_MEM_INIT;
 	hg_vm_init();
@@ -139,8 +140,10 @@ main(int    argc,
 		}
 	}
 
+	errcode = hg_vm_get_error_code(vm);
+
 	hg_vm_finalize();
 	g_option_context_free(ctxt);
 
-	return 0;
+	return errcode;
 }
