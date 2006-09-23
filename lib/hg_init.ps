@@ -108,7 +108,15 @@ systemdict /.statementedit known {
 %%% Level 1 operators
 % string seek anchorsearch post match true | string false
 /anchorsearch {
-    1 index 3 1 roll search {
+    {1 index 3 1 roll} stopped {
+	$error /newerror get {
+	    $error /errorname get /rangecheck eq {
+		$error /errorname /stackunderflow put
+	    } if
+	    stop
+	} if
+    } if
+    search {
 	length 0 eq {
 	    3 -1 roll pop true
 	} {
