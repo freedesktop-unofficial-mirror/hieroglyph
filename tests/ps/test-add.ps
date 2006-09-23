@@ -1,7 +1,7 @@
 initunittest
 
 true /add [[/integertype /realtype] dup] typecheck
-false /add [[/nametype /arraytype /dicttype /marktype /nulltype /proctype] dup] typecheck
+false /add [[/booleantype /nametype /arraytype /stringtype /dicttype /nulltype /operatortype /marktype /filetype /savetype /proctype] dup] typecheck
 
 [] /stackunderflow true initunittestdict {add} unittest
 [1] /stackunderflow true initunittestdict {1 add} unittest

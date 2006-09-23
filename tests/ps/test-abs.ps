@@ -1,7 +1,7 @@
 initunittest
 
 true /abs [[/integertype /realtype]] typecheck
-false /abs [[/nametype /arraytype /dicttype /marktype /nulltype /proctype]] typecheck
+false /abs [[/booleantype /nametype /arraytype /stringtype /dicttype /nulltype /operatortype /marktype /filetype /savetype /proctype]] typecheck
 
 [] /stackunderflow true initunittestdict {abs} unittest
 [4.5] null true initunittestdict {4.5 abs} unittest
