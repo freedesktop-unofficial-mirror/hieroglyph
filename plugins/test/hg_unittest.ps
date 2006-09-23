@@ -1,5 +1,5 @@
 % initialize unittest dictionary
-15 dict dup begin
+16 dict dup begin
     /nunit 0 def
     /nsuccess 0 def
     /nfailure 0 def
@@ -15,6 +15,7 @@
     /testargs null def
     /testargssymbol null def
     /typecheckresult false def
+    /expectedtypecheckresult false def
 end /.unittestdict exch def
 
 % - initunittest -
@@ -78,15 +79,10 @@ end /.unittestdict exch def
 	/operator exch def
 	/testargs arguments length array def
 	/testargssymbol arguments length array def
-	dup {
-	    /verbose true def
-	} {
-	    % has to be silent. assuming that it should be output a lot of error messages.
-	    /verbose false def
-	} ifelse
+	/expectedtypecheckresult exch def
 	/typecheckresult true def
 	arguments length 1 sub .dotypecheck
-	typecheckresult ne {
+	expectedtypecheckresult typecheckresult ne {
 	    1 .quit
 	} if
     end
@@ -165,13 +161,13 @@ end /.unittestdict exch def
 	    } ifelse
 	} ifelse
 	dup 0 eq {
-	    [testargs /aload load /pop load operator load] cvx .dounittest
+	    [testargs /aload load /pop load operator cvx] cvx .dounittest
 	    actualerror dup /stackunderflow eq
 	    exch dup /typecheck eq
 	    exch dup /limitcheck eq
 	    exch pop
 	    or or {
-		verbose {
+		expectedtypecheckresult {
 		    (ERROR: ) =only
 		    actualerror ==only
 		    ( in ) =only
@@ -180,7 +176,15 @@ end /.unittestdict exch def
 		    testargssymbol ==
 		} if
 		/typecheckresult false def
-	    } if
+	    } {
+		expectedtypecheckresult not {
+		    actualerror ==
+		    (ERROR: no errors happened in ) =only
+		    operator cvx ==only
+		    ( with ) =only
+		    testargssymbol ==
+		} if
+	    } ifelse
 	} {
 	    dup 1 sub .dotypecheck
 	} ifelse
