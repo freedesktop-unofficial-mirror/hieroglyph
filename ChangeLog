@@ -1,5 +1,7 @@
 2006-09-24  Akira TAGOH  <at@gclab.org>
 
+	* lib/hg_init.ps (anchorsearch): fixed wrong return value.
+
 	* tests/ps/test-aload.ps: new testcase.
 
 	* tests/ps/test-anchorsearch.ps: new testcase.

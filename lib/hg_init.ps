@@ -114,7 +114,9 @@ systemdict /.statementedit known {
 	} {
 	    pop pop false
 	} ifelse
-    } if
+    } {
+	pop false
+    } ifelse
 } bind odef
 % any -string- cvs -substring-
 /cvs {
