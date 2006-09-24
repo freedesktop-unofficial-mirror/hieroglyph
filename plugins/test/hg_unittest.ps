@@ -1,5 +1,5 @@
 % initialize unittest dictionary
-16 dict dup begin
+17 dict dup begin
     /nunit 0 def
     /nsuccess 0 def
     /nfailure 0 def
@@ -16,6 +16,7 @@
     /testargssymbol null def
     /typecheckresult false def
     /expectedtypecheckresult false def
+    /anytypes [/booleantype /integertype /realtype /nametype /arraytype /stringtype /dicttype /nulltype /operatortype /marktype /filetype /savetype /proctype] def
 end /.unittestdict exch def
 
 % - initunittest -

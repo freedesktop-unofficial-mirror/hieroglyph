@@ -5,6 +5,9 @@ false /anchorsearch [[/booleantype /integertype /realtype /nametype /arraytype /
 
 [] /stackunderflow true initunittestdict {anchorsearch} unittest
 [(foo)] /stackunderflow true initunittestdict {(foo) anchorsearch} unittest
+[(abbc) (ab)] /invalidaccess true initunittestdict {(abbc) noaccess (ab) anchorsearch} unittest
+[(abbc) (ab)] /invalidaccess true initunittestdict {(abbc) (ab) noaccess anchorsearch} unittest
+[(abbc) (ab)] /invalidaccess true initunittestdict {(abbc) noaccess (ab) noaccess anchorsearch} unittest
 [(bc) (ab) true] null true initunittestdict {(abbc) (ab) anchorsearch} unittest
 [(abbc) false] null true initunittestdict {(abbc) (bb) anchorsearch} unittest
 [(abbc) false] null true initunittestdict {(abbc) (bc) anchorsearch} unittest

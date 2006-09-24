@@ -1,0 +1,13 @@
+initunittest
+
+true /astore [.unittestdict /anytypes get [/arraytype /proctype]] typecheck
+false /astore [.unittestdict /anytypes get [/booleantype /integertype /realtype /nametype /stringtype /dicttype /nulltype /operatortype /marktype /filetype /savetype]] typecheck
+
+[] /stackunderflow true initunittestdict {astore} unittest
+[1 2 [null null null]] /stackunderflow true initunittestdict {1 2 3 array astore} unittest
+[1 [null]] /invalidaccess true initunittestdict {1 1 array noaccess astore} unittest
+[1 [null]] /invalidaccess true initunittestdict {1 1 array readonly astore} unittest
+[1 [2]] null true initunittestdict {1 2 1 array astore} unittest
+[[(a) (bcd) (ef)]] null true initunittestdict {(a) (bcd) (ef) 3 array astore} unittest
+
+unittestresult

@@ -1,0 +1,13 @@
+initunittest
+
+true /bitshift [[/integertype] dup] typecheck
+false /bitshift [[/booleantype /realtype /nametype /arraytype /stringtype /dicttype /nulltype /operatortype /marktype /filetype /savetype /proctype] dup] typecheck
+false /bitshift [[/integertype] [/booleantype /realtype /nametype /arraytype /stringtype /dicttype /nulltype /operatortype /marktype /filetype /savetype /proctype]] typecheck
+false /bitshift [[/booleantype /realtype /nametype /arraytype /stringtype /dicttype /nulltype /operatortype /marktype /filetype /savetype /proctype] [/integertype]] typecheck
+
+[] /stackunderflow true initunittestdict {bitshift} unittest
+[1] /stackunderflow true initunittestdict {1 bitshift} unittest
+[56] null true initunittestdict {7 3 bitshift} unittest
+[17] null true initunittestdict {142 -3 bitshift} unittest
+
+unittestresult
