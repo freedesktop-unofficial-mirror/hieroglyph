@@ -1559,16 +1559,16 @@ G_STMT_START
 				break;
 			}
 			n2 = hg_stack_index(ostack, 1);
-			if (!hg_object_is_readable((HgObject *)node) ||
-			    !hg_object_is_writable((HgObject *)n2)) {
-				_hg_operator_set_error(vm, op, VM_e_invalidaccess);
-				break;
-			}
 			if (HG_IS_VALUE_ARRAY (node) &&
 			    HG_IS_VALUE_ARRAY (n2)) {
 				HgArray *a1, *a2;
 				guint len1, len2, i;
 
+				if (!hg_object_is_writable((HgObject *)node) ||
+				    !hg_object_is_readable((HgObject *)n2)) {
+					_hg_operator_set_error(vm, op, VM_e_invalidaccess);
+					break;
+				}
 				a2 = HG_VALUE_GET_ARRAY (node);
 				a1 = HG_VALUE_GET_ARRAY (n2);
 				len1 = hg_array_length(a1);
@@ -1621,6 +1621,11 @@ G_STMT_START
 				guint len1, mlen1, mlen2, i;
 				gchar c;
 
+				if (!hg_object_is_writable((HgObject *)node) ||
+				    !hg_object_is_readable((HgObject *)n2)) {
+					_hg_operator_set_error(vm, op, VM_e_invalidaccess);
+					break;
+				}
 				s2 = HG_VALUE_GET_STRING (node);
 				s1 = HG_VALUE_GET_STRING (n2);
 				len1 = hg_string_length(s1);

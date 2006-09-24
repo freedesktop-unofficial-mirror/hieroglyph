@@ -1,8 +1,11 @@
 2006-09-24  Akira TAGOH  <at@gclab.org>
 
+	* tests/ps/test-copy.ps: new testcase.
+
 	* hieroglyph/operator.c (_hg_operator_op_concatmatrix):
 	create new node to store the result. array may has the same instance
 	for node.
+	(_hg_operator_op_copy): fixed a typo. and check /typecheck first.
 
 	* plugins/test/hg_unittest.ps (.dotypecheck): create another file
 	object to avoid any breakages.

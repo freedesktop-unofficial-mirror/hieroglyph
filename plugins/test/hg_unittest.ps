@@ -179,11 +179,12 @@ end /.unittestdict exch def
 		/typecheckresult false def
 	    } {
 		expectedtypecheckresult not {
-		    actualerror ==
-		    (ERROR: no errors happened in ) =only
+		    (ERROR: no errors or no expected errors happened in ) =only
 		    operator cvx ==only
 		    ( with ) =only
-		    testargssymbol ==
+		    testargssymbol ==only
+		    ( actualerror was ) =only
+		    actualerror ==
 		} if
 	    } ifelse
 	} {

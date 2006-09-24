@@ -1,0 +1,29 @@
+initunittest
+
+true /copy [.unittestdict /anytypes get [/integertype]] typecheck
+true /copy [[/arraytype /proctype] dup] typecheck
+true /copy [[/dicttype] dup] typecheck
+true /copy [[/stringtype] dup] typecheck
+% FIXME: packedarray
+% FIXME: gstate
+false /copy [.unittestdict /anytypes get [/booleantype /realtype /nametype /nulltype /operatortype /marktype /filetype /savetype]] typecheck
+
+[] /stackunderflow true initunittestdict {copy} unittest
+[[]] /stackunderflow true initunittestdict {[] copy} unittest
+[1 dict] /stackunderflow true initunittestdict {1 dict copy} unittest
+[()] /stackunderflow true initunittestdict {() copy} unittest
+[[][]] /invalidaccess true initunittestdict {[] noaccess [] copy} unittest
+[[][]] /invalidaccess true initunittestdict {[] [] noaccess copy} unittest
+[[][]] /invalidaccess true initunittestdict {[] [] readonly copy} unittest
+[1 dict 1 dict] /invalidaccess true initunittestdict {1 dict noaccess 1 dict copy} unittest
+[1 dict 1 dict] /invalidaccess true initunittestdict {1 dict 1 dict noaccess copy} unittest
+[1 dict 1 dict] /invalidaccess true initunittestdict {1 dict 1 dict readonly copy} unittest
+[() ()] /invalidaccess true initunittestdict {() noaccess () copy} unittest
+[() ()] /invalidaccess true initunittestdict {() () noaccess copy} unittest
+[() ()] /invalidaccess true initunittestdict {() () readonly copy} unittest
+[1] /rangecheck true initunittestdict {1 copy} unittest
+[[1] []] /rangecheck true initunittestdict {[1] [] copy} unittest
+[2 dict 1 dict] /rangecheck true initunittestdict {2 dict 1 dict copy} unittest
+[(a) ()] /rangecheck true initunittestdict {(a) () copy} unittest
+
+unittestresult
