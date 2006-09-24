@@ -1419,6 +1419,7 @@ G_STMT_START
 	gdouble d1[6], d2[6];
 	HgMatrix *mtx1, *mtx2, *mtx3;
 	HgMemPool *pool = hg_vm_get_current_pool(vm);
+	HgMemObject *obj;
 
 	while (1) {
 		if (depth < 3) {
@@ -1476,18 +1477,19 @@ G_STMT_START
 			break;
 		}
 		mtx3 = hg_matrix_multiply(pool, mtx1, mtx2);
-		node = hg_array_index(m3, 0);
-		HG_VALUE_SET_REAL (node, mtx3->xx);
-		node = hg_array_index(m3, 1);
-		HG_VALUE_SET_REAL (node, mtx3->yx);
-		node = hg_array_index(m3, 2);
-		HG_VALUE_SET_REAL (node, mtx3->xy);
-		node = hg_array_index(m3, 3);
-		HG_VALUE_SET_REAL (node, mtx3->yy);
-		node = hg_array_index(m3, 4);
-		HG_VALUE_SET_REAL (node, mtx3->x0);
-		node = hg_array_index(m3, 5);
-		HG_VALUE_SET_REAL (node, mtx3->y0);
+		hg_mem_get_object__inline(m3, obj);
+		HG_VALUE_MAKE_REAL (obj->pool, node, mtx3->xx);
+		hg_array_replace(m3, node, 0);
+		HG_VALUE_MAKE_REAL (obj->pool, node, mtx3->yx);
+		hg_array_replace(m3, node, 1);
+		HG_VALUE_MAKE_REAL (obj->pool, node, mtx3->xy);
+		hg_array_replace(m3, node, 2);
+		HG_VALUE_MAKE_REAL (obj->pool, node, mtx3->yy);
+		hg_array_replace(m3, node, 3);
+		HG_VALUE_MAKE_REAL (obj->pool, node, mtx3->x0);
+		hg_array_replace(m3, node, 4);
+		HG_VALUE_MAKE_REAL (obj->pool, node, mtx3->y0);
+		hg_array_replace(m3, node, 5);
 		hg_mem_free(mtx1);
 		hg_mem_free(mtx2);
 		hg_mem_free(mtx3);

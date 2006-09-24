@@ -1,5 +1,18 @@
 2006-09-24  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/operator.c (_hg_operator_op_concatmatrix):
+	create new node to store the result. array may has the same instance
+	for node.
+
+	* plugins/test/hg_unittest.ps (.dotypecheck): create another file
+	object to avoid any breakages.
+
+	* tests/ps/test-ceiling.ps:
+	* tests/ps/test-clear.ps:
+	* tests/ps/test-cleartomark.ps:
+	* tests/ps/test-closefile.ps:
+	* tests/ps/test-concatmatrix.ps: new testcases.
+
 	* hieroglyph/hgplugins.c (_hg_plugin_load): silence the debug output.
 
 	* tests/ps/test-and.ps:

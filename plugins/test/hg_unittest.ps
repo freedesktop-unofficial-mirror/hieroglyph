@@ -133,7 +133,7 @@ end /.unittestdict exch def
 						testargssymbol 2 index 3 -1 roll put
 					    } {
 						dup /filetype eq {
-						    testargs 2 index currentfile put
+						    testargs 2 index (.) (r) file put
 						    testargssymbol 2 index 3 -1 roll put
 						} {
 						    dup /savetype eq {

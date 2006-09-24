@@ -1,0 +1,17 @@
+initunittest
+
+true /concatmatrix [[/arraytype /proctype] dup dup] typecheck
+false /concatmatrix [[/booleantype /integertype /realtype /nametype /stringtype /dicttype /nulltype /operatortype /marktype /filetype /savetype] dup dup] typecheck
+false /concatmatrix [[/arraytype /proctype] [/booleantype /integertype /realtype /nametype /stringtype /dicttype /nulltype /operatortype /marktype /filetype /savetype] dup] typecheck
+false /concatmatrix [[/booleantype /integertype /realtype /nametype /stringtype /dicttype /nulltype /operatortype /marktype /filetype /savetype] [/arraytype /proctype] dup] typecheck
+false /concatmatrix [[/booleantype /integertype /realtype /nametype /stringtype /dicttype /nulltype /operatortype /marktype /filetype /savetype] dup [/arraytype /proctype]] typecheck
+
+[] /stackunderflow true initunittestdict {concatmatrix} unittest
+[[]] /stackunderflow true initunittestdict {[] concatmatrix} unittest clear
+[[] []] /stackunderflow true initunittestdict {[] [] concatmatrix} unittest
+[[] [] []] /rangecheck true initunittestdict {[] [] [] concatmatrix} unittest
+[[null null null null null null] [] []] /rangecheck true initunittestdict {6 array [] [] concatmatrix} unittest
+[[null null null null null null] [null null null null null null]  []] /rangecheck true initunittestdict {6 array 6 array [] concatmatrix} unittest
+[[.5 .0 .0 .5 5.0 5.0]] null true initunittestdict {[1 0 0 1 10 10] [.5 0 0 .5 0 0] 6 array concatmatrix} unittest
+
+unittestresult
