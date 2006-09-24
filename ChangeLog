@@ -1,5 +1,13 @@
 2006-09-24  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgarray.c (hg_array_set_name): don't free array->name
+	here. it may be likely that older objects in snapshot may still refers
+	to it.
+
+	* hieroglyph/hgstring.c (hg_string_new): fixed the uninitialized value.
+
+	* plugins/debug/debug-main.c (_debug_op_breakpoint): new function.
+
 	* lib/hg_init.ps (anchorsearch): fixed wrong return value.
 	treat /rangecheck as /stackunderflow when it happens in index or roll.
 

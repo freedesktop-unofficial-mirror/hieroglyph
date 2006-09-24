@@ -188,6 +188,7 @@ hg_string_new(HgMemPool *pool,
 		retval->is_fixed_size = TRUE;
 	}
 	retval->length = 0;
+	retval->substring_offset = 0;
 	/* initialize this first to avoid a warning message */
 	retval->strings = NULL;
 	retval->strings = hg_mem_alloc(pool, sizeof (gchar) * (retval->allocated_size + 1));

@@ -71,7 +71,8 @@
 	}
 
 typedef enum {
-	HG_debug_op_startgc = 0,
+	HG_debug_op_breakpoint = 0,
+	HG_debug_op_startgc,
 	HG_debug_op_END
 } HgOperatorDebugEncoding;
 
@@ -96,6 +97,15 @@ HgOperator *__debug_operator_list[HG_debug_op_END];
 /*
  * Private Functions
  */
+DEFUNC_OP (breakpoint)
+G_STMT_START
+{
+	(void)vm;
+	retval = TRUE;
+	G_BREAKPOINT();
+} G_STMT_END;
+DEFUNC_OP_END
+
 DEFUNC_OP (startgc)
 G_STMT_START
 {
@@ -155,6 +165,7 @@ plugin_load(HgPlugin *plugin,
 	hg_vm_use_global_pool(vm, TRUE);
 	pool = hg_vm_get_current_pool(vm);
 
+	BUILD_OP (vm, pool, systemdict, .breakpoint, breakpoint);
 	BUILD_OP (vm, pool, systemdict, .startgc, startgc);
 
 	hg_vm_use_global_pool(vm, is_global);

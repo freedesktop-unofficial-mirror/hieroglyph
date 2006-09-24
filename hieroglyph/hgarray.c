@@ -604,8 +604,9 @@ hg_array_set_name(HgArray     *array,
 
 	len = strlen(name);
 	hg_mem_get_object__inline(array, obj);
-	if (array->name)
-		hg_mem_free(array->name);
+	/* don't free 'name' here.
+	 * it could be in the snapshot.
+	 */
 	array->name = hg_mem_alloc_with_flags(obj->pool,
 					      sizeof (gchar) * (len + 1),
 					      HG_FL_RESTORABLE);
