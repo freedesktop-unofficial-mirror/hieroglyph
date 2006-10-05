@@ -1687,7 +1687,7 @@ G_STMT_START
 		}
 		HG_VALUE_MAKE_REAL (hg_vm_get_current_pool(vm),
 				    node,
-				    cos(d * (2 * M_PI / 360)));
+				    cos(d / 180 * M_PI));
 		if (node == NULL) {
 			_hg_operator_set_error(vm, op, VM_e_VMerror);
 			break;

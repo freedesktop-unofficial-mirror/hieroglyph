@@ -703,7 +703,7 @@ hg_value_node_compare_content(const HgValueNode *a,
 		    retval = (HG_VALUE_GET_INTEGER (a) == HG_VALUE_GET_INTEGER (b));
 		    break;
 	    case HG_TYPE_VALUE_REAL:
-		    retval = (fabs(HG_VALUE_GET_REAL (a) - HG_VALUE_GET_REAL (b)) <= fabs(DBL_EPSILON * HG_VALUE_GET_REAL (a)));
+		    retval = HG_VALUE_REAL_SIMILAR (HG_VALUE_GET_REAL (a), HG_VALUE_GET_REAL (b));
 		    break;
 	    case HG_TYPE_VALUE_NAME:
 		    retval = (strcmp(HG_VALUE_GET_NAME (a), HG_VALUE_GET_NAME (b)) == 0);

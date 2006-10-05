@@ -80,8 +80,8 @@ end /.unittestdict exch def
 	/operator exch def
 	/testargs arguments length array def
 	/testargssymbol arguments length array def
-	/expectedtypecheckresult exch def
-	/typecheckresult true def
+	dup /expectedtypecheckresult exch def
+	/typecheckresult exch def
 	arguments length 1 sub .dotypecheck
 	expectedtypecheckresult typecheckresult ne {
 	    1 .quit
@@ -163,6 +163,7 @@ end /.unittestdict exch def
 	} ifelse
 	dup 0 eq {
 	    [testargs /aload load /pop load operator cvx] cvx .dounittest
+	    /nunit nunit 1 add def
 	    actualerror dup /stackunderflow eq
 	    exch dup /typecheck eq
 	    exch dup /limitcheck eq
@@ -175,8 +176,11 @@ end /.unittestdict exch def
 		    operator cvx ==only
 		    ( with ) =only
 		    testargssymbol ==
-		} if
-		/typecheckresult false def
+		    /typecheckresult false def
+		    /nfailure nfailure 1 add def
+		} {
+		    /nsuccess nsuccess 1 add def
+		} ifelse
 	    } {
 		expectedtypecheckresult not {
 		    (ERROR: no errors or no expected errors happened in ) =only
@@ -185,7 +189,11 @@ end /.unittestdict exch def
 		    testargssymbol ==only
 		    ( actualerror was ) =only
 		    actualerror ==
-		} if
+		    /typecheckresult true def
+		    /nfailure nfailure 1 add def
+		} {
+		    /nsuccess nsuccess 1 add def
+		} ifelse
 	    } ifelse
 	} {
 	    dup 1 sub .dotypecheck
