@@ -187,6 +187,7 @@ G_BEGIN_DECLS
 #define HG_IS_VALUE_SNAPSHOT(_obj)		HG_VALUE_IS (_obj, HG_TYPE_VALUE_SNAPSHOT)
 #define HG_IS_VALUE_PLUGIN(_obj)		HG_VALUE_IS (_obj, HG_TYPE_VALUE_PLUGIN)
 
+/* this is not stricter checking though, we may not need that precision */
 #define HG_VALUE_REAL_SIMILAR(_x, _y)		(fabs((_x) - (_y)) <= DBL_EPSILON)
 
 #define hg_value_node_restorable(_node)				\
