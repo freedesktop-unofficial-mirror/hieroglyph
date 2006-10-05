@@ -1,5 +1,15 @@
 2006-10-05  Akira TAGOH  <at@gclab.org>
 
+	* tests/ps/test-ps.sh: change the current dir during testing to ensure
+	the expected behavior.
+
+	* tests/ps/test-count.ps:
+	* tests/ps/test-countdictstack.ps:
+	* tests/ps/test-counttomark.ps:
+	* tests/ps/test-currentdict.ps:
+	* tests/ps/test-currentfile.ps:
+	* tests/ps/testtest-currentfile.ps: new testcases.
+
 	* hieroglyph/hgvaluenode.h (HG_VALUE_REAL_SIMILAR): need to decrease
 	the precision to ensure "90 cos" is 0.
 
