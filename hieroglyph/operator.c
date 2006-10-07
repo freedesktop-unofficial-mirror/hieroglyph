@@ -681,7 +681,7 @@ G_STMT_START
 			break;
 		}
 		dr = d1 + d2;
-		if (integer && dr < G_MAXINT32) {
+		if (integer && dr <= G_MAXINT32 && dr >= -G_MAXINT32) {
 			HG_VALUE_MAKE_INTEGER (pool, n1, (gint32)dr);
 		} else {
 			HG_VALUE_MAKE_REAL (pool, n1, dr);

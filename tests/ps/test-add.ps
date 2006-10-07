@@ -7,6 +7,10 @@ false /add [[/booleantype /nametype /arraytype /stringtype /dicttype /nulltype /
 [1] /stackunderflow true initunittestdict {1 add} unittest
 [7] null true initunittestdict {3 4 add} unittest
 [11.0] null true initunittestdict {9.9 1.1 add} unittest
+[2147483647] null true initunittestdict {2147483646 1 add} unittest
+[-2147483648] null true initunittestdict {-2147483647 -1 add} unittest
+[2147483648.0] null true initunittestdict {2147483647 1 add} unittest
+[-2147483649.0] null true initunittestdict {-2147483648 -1 add} unittest
 %[4.29490176e+09] null true initunittestdict {2147450880 2147450880 add} unittest
 %[] null true initunittestdict {2.25176549e+38 2.25176549e+38 add} unittest
 
