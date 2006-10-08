@@ -1,0 +1,19 @@
+initunittest
+
+true /cvi [[/integertype /realtype]] typecheck
+false /cvi [[/booleantype /nametype /arraytype /dicttype /nulltype /operatortype /marktype /filetype /savetype /proctype]] typecheck
+
+[] /stackunderflow true initunittestdict {cvi} unittest
+[(foo) noaccess] /invalidaccess true initunittestdict {(foo) noaccess cvi} unittest
+[2147483648.0] /rangecheck true initunittestdict {2147483648.0 cvi} unittest
+[-2147483649.0] /rangecheck true initunittestdict {-2147483649.0 cvi} unittest
+% XXX: what causes /undefinedresult?
+[(foo)] /typecheck true initunittestdict {(foo) cvi} unittest
+[()] /syntaxerror true initunittestdict {() cvi} unittest
+[33] null true initunittestdict {(3.3E1) cvi} unittest
+[-47] null true initunittestdict {-47.8 cvi} unittest
+[520] null true initunittestdict {520.9 cvi} unittest
+[2147483647] null true initunittestdict {2147483647.0 cvi} unittest
+[-2147483648] null true initunittestdict {-2147483648.0 cvi} unittest
+
+unittestresult

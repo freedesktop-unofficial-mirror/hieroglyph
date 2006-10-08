@@ -1,3 +1,18 @@
+2006-10-09  Akira TAGOH  <at@gclab.org>
+
+	* tests/ps/test-0base.ps: new testcase.
+
+	* hieroglyph/operator.c (_hg_operator_op_cvi): check the overflow.
+
+	* hieroglyph/scanner.c (_hg_scanner_get_object): split up the numeral
+	parser.
+	(_hg_scanner_parse_number): new function.
+
+	* hieroglyph/Makefile.am (libhieroglyph_private_SOURCES):
+	add iarray.[ch].
+
+	* hieroglyph/iarray.[ch]: new files.
+
 2006-10-08  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/operator.c (_hg_operator_op_add): correct the overflow

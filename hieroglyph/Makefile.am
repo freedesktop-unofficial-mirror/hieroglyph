@@ -74,6 +74,8 @@ lib_LTLIBRARIES =						\
 	$(NULL)
 
 libhieroglyph_private_SOURCES =					\
+	iarray.c						\
+	iarray.h						\
 	ibtree.c						\
 	ibtree.h						\
 	ilist.c							\

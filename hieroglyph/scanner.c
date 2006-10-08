@@ -25,6 +25,7 @@
 #include <config.h>
 #endif
 
+#include <ctype.h>
 #include "scanner.h"
 #include "hgmem.h"
 #include "hgarray.h"
@@ -32,9 +33,20 @@
 #include "hgfile.h"
 #include "hgstring.h"
 #include "hgvaluenode.h"
+#include "iarray.h"
 #include "operator.h"
 #include "vm.h"
 
+
+static gboolean _hg_scanner_parse_number(HgVM          *vm,
+					 HgFileObject  *file,
+					 gint           token_type,
+					 gint           radix,
+					 gint           sign,
+					 gboolean       is_integer,
+					 HgString      *string,
+					 HgValueNode  **node,
+					 gboolean      *error);
 
 #define _hg_scanner_is_sign(__hg_scanner_c)		\
 	((__hg_scanner_c) == '+' ||			\
@@ -68,7 +80,7 @@ typedef enum {
 enum {
 	HG_SCAN_TOKEN_LITERAL = 1,
 	HG_SCAN_TOKEN_EVAL_NAME,
-	HG_SCAN_TOKEN_REAL,
+	HG_SCAN_TOKEN_NUMERIC,
 	HG_SCAN_TOKEN_STRING,
 	HG_SCAN_TOKEN_NAME,
 	HG_SCAN_TOKEN_MARK,
@@ -221,13 +233,10 @@ _hg_scanner_get_object(HgVM         *vm,
 	HgDict *systemdict;
 	HgValueNode *node, *retval = NULL;
 	guchar c;
-	gboolean need_loop = TRUE, sign = FALSE, negate = FALSE, numeral = FALSE;
-	gboolean power = FALSE, psign = FALSE, pnegate = FALSE;
-	gint token_type = 0, string_depth = 0;
+	gboolean need_loop = TRUE, maybe_real = FALSE, error = FALSE;
+	gint token_type = 0, string_depth = 0, sign = 0;
 	HgString *string = NULL;
 	HgArray *array = NULL;
-	gdouble d = 0.0L, real = 0.0L, de;
-	gint32 radix = 10, i = 0, e = 0;
 
 	pool = hg_vm_get_current_pool(vm);
 	ostack = hg_vm_get_ostack(vm);
@@ -444,48 +453,23 @@ _hg_scanner_get_object(HgVM         *vm,
 						return NULL;
 					}
 					if (_hg_scanner_is_sign(c)) {
-						numeral = TRUE;
-						sign = TRUE;
+						sign = 1;
 						if (c == '-')
-							negate = TRUE;
+							sign = -sign;
 					} else if (c == '.') {
-						numeral = TRUE;
-						real = 10.0L;
-						d = i;
+						maybe_real = TRUE;
 					}
 					token_type = HG_SCAN_TOKEN_NAME;
+					if (_hg_scanner_parse_number(vm, file, token_type,
+								     10, sign, !maybe_real,
+								     string, &retval, &error)) {
+						if (error)
+							return NULL;
+						token_type = HG_SCAN_TOKEN_NUMERIC;
+						need_loop = FALSE;
+					}
 					break;
 				case HG_SCAN_TOKEN_NAME:
-					if (!power && HG_VALUE_REAL_SIMILAR (real, 0) && c == '.') {
-						real = 10.0L;
-						d = i;
-					} else if (!power && (c == 'e' || c == 'E')) {
-						power = TRUE;
-						if (HG_VALUE_REAL_SIMILAR (real, 0)) {
-							real = 10.0L;
-							d = i;
-						}
-						if (!hg_string_append_c(string, c)) {
-							_hg_scanner_set_error(vm,
-									      __hg_operator_list[HG_op_token],
-									      VM_e_VMerror);
-							return NULL;
-						}
-						c = hg_file_object_getc(file);
-						if (_hg_scanner_is_sign(c)) {
-							psign = TRUE;
-							if (c == '-') {
-								pnegate = TRUE;
-							}
-						} else {
-							if (c < '0' || c > '9')
-								numeral = FALSE;
-							hg_file_object_ungetc(file, c);
-							break;
-						}
-					} else {
-						numeral = FALSE;
-					}
 				case HG_SCAN_TOKEN_LITERAL:
 				case HG_SCAN_TOKEN_EVAL_NAME:
 				case HG_SCAN_TOKEN_STRING:
@@ -497,6 +481,7 @@ _hg_scanner_get_object(HgVM         *vm,
 					}
 					break;
 				default:
+					g_warning("[BUG] it may be unlikely to appear HG_SCAN_C_NAME in token type %d\n", token_type);
 					break;
 			    }
 			    break;
@@ -517,32 +502,21 @@ _hg_scanner_get_object(HgVM         *vm,
 				case 0:
 					/* it might be a numeral, but possibly name. */
 					string = hg_string_new(pool, -1);
-					if (!hg_string_append_c(string, c)) {
-						_hg_scanner_set_error(vm,
-								      __hg_operator_list[HG_op_token],
-								      VM_e_VMerror);
-						return NULL;
-					}
+					hg_file_object_ungetc(file, c);
 					token_type = HG_SCAN_TOKEN_NAME;
-					numeral = TRUE;
-					i = c - '0';
+					if (_hg_scanner_parse_number(vm, file, token_type,
+								     10, sign, !maybe_real,
+								     string, &retval, &error)) {
+						if (error)
+							return NULL;
+						token_type = HG_SCAN_TOKEN_NUMERIC;
+						need_loop = FALSE;
+					}
 					break;
 				case HG_SCAN_TOKEN_LITERAL:
 				case HG_SCAN_TOKEN_EVAL_NAME:
 				case HG_SCAN_TOKEN_STRING:
 				case HG_SCAN_TOKEN_NAME:
-					if (numeral) {
-						if (power) {
-							e *= 10;
-							e += c - '0';
-						} else if (!HG_VALUE_REAL_SIMILAR (real, 0)) {
-							d += (c - '0') / real;
-							real *= 10.0L;
-						} else {
-							i *= radix;
-							i += c - '0';
-						}
-					}
 					if (!hg_string_append_c(string, c)) {
 						_hg_scanner_set_error(vm,
 								      __hg_operator_list[HG_op_token],
@@ -567,6 +541,11 @@ _hg_scanner_get_object(HgVM         *vm,
 		    hg_object_inexecutable((HgObject *)retval);
 		    hg_mem_free(string);
 		    break;
+	    case HG_SCAN_TOKEN_NAME:
+		    retval = hg_vm_get_name_node(vm, hg_string_get_string(string));
+		    hg_object_executable((HgObject *)retval);
+		    hg_mem_free(string);
+		    break;
 	    case HG_SCAN_TOKEN_EVAL_NAME:
 		    node = hg_vm_get_name_node(vm, hg_string_get_string(string));
 		    retval = hg_vm_lookup(vm, node);
@@ -577,27 +556,7 @@ _hg_scanner_get_object(HgVM         *vm,
 		    }
 		    hg_mem_free(string);
 		    break;
-	    case HG_SCAN_TOKEN_NAME:
-		    if (numeral) {
-			    if (pnegate)
-				    e = -e;
-			    if (!HG_VALUE_REAL_SIMILAR (real, 0)) {
-				    if (power) {
-					    de = exp10((double)e);
-					    d *= de;
-				    }
-				    if (negate)
-					    d = -d;
-				    HG_VALUE_MAKE_REAL (pool, retval, d);
-			    } else {
-				    if (negate)
-					    i = -i;
-				    HG_VALUE_MAKE_INTEGER (pool, retval, i);
-			    }
-		    } else {
-			    retval = hg_vm_get_name_node(vm, hg_string_get_string(string));
-			    hg_object_executable((HgObject *)retval);
-		    }
+	    case HG_SCAN_TOKEN_NUMERIC:
 		    hg_mem_free(string);
 		    break;
 	    case HG_SCAN_TOKEN_MARK:
@@ -639,6 +598,275 @@ _hg_scanner_get_object(HgVM         *vm,
 	}
 
 	return retval;
+}
+
+static gboolean
+_hg_scanner_parse_number(HgVM          *vm,
+			 HgFileObject  *file,
+			 gint           token_type,
+			 gint           radix,
+			 gint           sign,
+			 gboolean       is_integer,
+			 HgString      *string,
+			 HgValueNode  **node,
+			 gboolean      *error)
+{
+	HgMemPool *pool = hg_vm_get_current_pool(vm);
+	guchar c;
+	gboolean need_loop = TRUE, is_valid = FALSE, is_power = FALSE;
+	gboolean has_radix = (radix == 10 ? FALSE : TRUE);
+	HgIntArray *intarray, *floatarray = NULL;
+	gint32 i = 0, power = 0, di = 0;
+	gint power_sign = 0;
+	static const gchar *const radix_index = "0123456789abcdefghijklmnopqrstuvwxyz";
+
+	intarray = hg_int_array_new(pool, -1);
+	if (!is_integer) {
+		/* value may be less than 1 */
+		hg_int_array_append(intarray, 0);
+		floatarray = hg_int_array_new(pool, -1);
+	}
+	while (need_loop) {
+		c = hg_file_object_getc(file);
+		switch (__hg_scanner_token[c]) {
+		    case HG_SCAN_C_CONTROL:
+			    hg_file_object_ungetc(file, c);
+		    case HG_SCAN_C_NULL:
+		    case HG_SCAN_C_SPACE:
+			    need_loop = FALSE;
+			    break;
+		    case HG_SCAN_C_NAME:
+			    is_valid = TRUE;
+			    if (c != '\\') {
+				    switch (token_type) {
+					case HG_SCAN_TOKEN_NAME:
+						if (c == '.') {
+							if (!is_integer || is_power || has_radix) {
+								is_valid = FALSE;
+								break;
+							}
+							di = i;
+							floatarray = hg_int_array_new(pool, -1);
+							is_integer = FALSE;
+							i = 0;
+						} else if ((c == 'e' || c == 'E') && !has_radix) {
+							if (is_power) {
+								is_valid = FALSE;
+								break;
+							}
+							is_power = TRUE;
+							if (!hg_string_append_c(string, c)) {
+								_hg_scanner_set_error(vm,
+										      __hg_operator_list[HG_op_token],
+										      VM_e_VMerror);
+								*error = TRUE;
+								return FALSE;
+							}
+							c = hg_file_object_getc(file);
+							if (_hg_scanner_is_sign(c)) {
+								power_sign = 1;
+								if (c == '-')
+									power_sign = -power_sign;
+							} else if (c < '0' || c > '9') {
+								is_valid = FALSE;
+								break;
+							} else {
+								hg_file_object_ungetc(file, c);
+							}
+						} else if (c == '#') {
+							if (is_power || !is_integer || has_radix ||
+							    hg_int_array_length(intarray) > 0 ||
+							    i > 36) {
+								is_valid = FALSE;
+								break;
+							}
+							has_radix = TRUE;
+							radix = i;
+							i = 0;
+						} else if ((c >= 'a' && c <= 'z') ||
+							   (c >= 'A' && c <= 'Z')) {
+							char *p;
+							gint index;
+
+							if (is_power || !is_integer) {
+								is_valid = FALSE;
+								break;
+							}
+							p = strchr(radix_index, tolower(c));
+							index = p - radix_index;
+							if (index >= radix) {
+								is_valid = FALSE;
+								break;
+							}
+							if ((i > 0 && (i * radix) < 0) ||
+							    (i < 0 && (i * radix) > 0)) {
+								/* the overflow may happens but we can't
+								 * fallback to real.
+								 */
+								_hg_scanner_set_error(vm,
+										      __hg_operator_list[HG_op_token],
+										      VM_e_limitcheck);
+								*error = TRUE;
+								return FALSE;
+							}
+							i *= radix;
+							i += index;
+						} else {
+							is_valid = FALSE;
+							break;
+						}
+
+						if (!hg_string_append_c(string, c)) {
+							_hg_scanner_set_error(vm,
+									      __hg_operator_list[HG_op_token],
+									      VM_e_VMerror);
+							*error = TRUE;
+							return FALSE;
+						}
+						break;
+					case HG_SCAN_TOKEN_LITERAL:
+					case HG_SCAN_TOKEN_EVAL_NAME:
+					case HG_SCAN_TOKEN_STRING:
+						/* it may be unlikely */
+						is_valid = FALSE;
+						break;
+					default:
+						g_warning("[BUG] it may be unlikely to appear HG_SCAN_C_NAME in token type %d\n", token_type);
+						is_valid = FALSE;
+						break;
+				    }
+				    if (is_valid)
+					    break;
+			    }
+			    goto non_numeral_handler;
+		    case HG_SCAN_C_NUMERAL:
+			    is_valid = TRUE;
+			    switch (token_type) {
+				case HG_SCAN_TOKEN_LITERAL:
+				case HG_SCAN_TOKEN_EVAL_NAME:
+				case HG_SCAN_TOKEN_STRING:
+					/* it may be unlikely */
+					goto non_numeral_handler;
+				case HG_SCAN_TOKEN_NAME:
+					if (is_power) {
+						power *= 10;
+						power += c - '0';
+					} else {
+						if (has_radix &&
+						    ((i > 0 && (i * radix) < 0) ||
+						     (i < 0 && (i * radix) > 0))) {
+							/* the overflow may happens but we can't
+							 * fallback to real.
+							 */
+							_hg_scanner_set_error(vm,
+									      __hg_operator_list[HG_op_token],
+									      VM_e_limitcheck);
+							*error = TRUE;
+							return FALSE;
+						} else if (!has_radix &&
+							   i > 100000000) {
+							/* it could has 10 digits in 32bit integer though,
+							 * it may be complicated to convert it to real,
+							 * so that the overflow will happens within 10 digits.
+							 */
+							if (floatarray) {
+								hg_int_array_append(floatarray, i);
+								i = 0;
+							} else {
+								hg_int_array_append(intarray, i);
+								i = 0;
+							}
+						}
+						i *= radix;
+						i += c - '0';
+					}
+					if (!hg_string_append_c(string, c)) {
+						_hg_scanner_set_error(vm,
+								      __hg_operator_list[HG_op_token],
+								      VM_e_VMerror);
+						*error = TRUE;
+						return FALSE;
+					}
+					break;
+				default:
+					g_warning("[BUG] it may be unlikely to appear HG_SCAN_C_NUMERAL in token type %d\n", token_type);
+					goto non_numeral_handler;
+			    }
+			    break;
+		    case HG_SCAN_C_BINARY:
+		    default:
+		    non_numeral_handler:
+			    /* postpone dealing with this */
+			    hg_file_object_ungetc(file, c);
+			    need_loop = FALSE;
+			    is_valid = FALSE;
+			    break;
+		}
+	}
+	if (is_valid) {
+		if (hg_int_array_length(intarray) == 0 && floatarray == NULL && !is_power) {
+			/* integer */
+			if (sign < 0)
+				i = -i;
+			HG_VALUE_MAKE_INTEGER (pool, *node, i);
+		} else {
+			guint j, length, digits = (guint)log10(i) + 1, intdigits = 0;
+			gdouble d = 0.0L, dd = 0.0L;
+
+			if (di > 0)
+				intdigits = (guint)log10(di) + 1;
+			if (has_radix) {
+				/* this is unlikely */
+				g_warning("[BUG] numeric with radix is going to be the real.");
+				return FALSE;
+			}
+			if (floatarray) {
+				length = hg_int_array_length(floatarray);
+				for (j = 0; j < length; j++) {
+					dd += ((gdouble)hg_int_array_index(floatarray, j) * exp10((gdouble)-((j + 1) * 9)));
+				}
+				dd += (i * exp10(-(gdouble)digits));
+				digits = 0;
+				i = 0;
+			}
+			length = hg_int_array_length(intarray);
+			for (j = 0; j < length; j++) {
+				d += ((gdouble)hg_int_array_index(intarray, j) * exp10((gdouble)((length - j - 1) * 9 + digits + intdigits)));
+				if (isinf(d) != 0 || isnan(d) != 0) {
+					_hg_scanner_set_error(vm,
+							      __hg_operator_list[HG_op_token],
+							      VM_e_limitcheck);
+					*error = TRUE;
+					return FALSE;
+				}
+			}
+			if (di != 0) {
+				d += (gdouble)di;
+			} else {
+				d += (gdouble)i;
+			}
+			d += dd;
+			if (is_power) {
+				if (power_sign < 0)
+					power = -power;
+				dd = exp10((gdouble)power);
+				d *= dd;
+			}
+			if (sign < 0)
+				d = -d;
+			if (is_integer && d <= G_MAXINT32 && d >= G_MININT32)
+				HG_VALUE_MAKE_INTEGER (pool, *node, (gint32)d);
+			else
+				HG_VALUE_MAKE_REAL (pool, *node, d);
+		}
+	}
+
+	if (intarray)
+		hg_int_array_free(intarray);
+	if (floatarray)
+		hg_int_array_free(floatarray);
+
+	return is_valid;
 }
 
 /*

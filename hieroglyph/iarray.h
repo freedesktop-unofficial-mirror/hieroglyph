@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * version.h
- * Copyright (C) 2005-2006 Akira TAGOH
+ * iarray.h
+ * Copyright (C) 2006 Akira TAGOH
  * 
  * Authors:
  *   Akira TAGOH  <at@gclab.org>
@@ -21,18 +21,31 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HG_VERSION_H__
-#define __HG_VERSION_H__
+#ifndef __HG_INT_ARRAY_H__
+#define __HG_INT_ARRAY_H__
 
-#include <glib/gmacros.h>
+#include <hieroglyph/hgtypes.h>
 
 G_BEGIN_DECLS
 
-#define HIEROGLYPH_VERSION	"@VERSION@"
-#define HIEROGLYPH_UUID		"620a4e97-323b-4ee9-9bf5-b683dc4cf41a"
+typedef struct _HieroGlyphIntArray	HgIntArray;
 
-const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
+#define hg_int_array_free(obj)	hg_mem_free(obj)
+
+HgIntArray *hg_int_array_new    (HgMemPool        *pool,
+				 gint32            num);
+gboolean    hg_int_array_append (HgIntArray       *array,
+				 gint32            i);
+gboolean    hg_int_array_replace(HgIntArray       *array,
+				 gint32            i,
+				 guint             index);
+gboolean    hg_int_array_remove (HgIntArray       *array,
+				 guint             index);
+gint32      hg_int_array_index  (const HgIntArray *array,
+				 guint             index);
+guint       hg_int_array_length (HgIntArray       *array);
+
 
 G_END_DECLS
 
-#endif /* __HG_VERSION_H__ */
+#endif /* __HG_INT_ARRAY_H__ */
