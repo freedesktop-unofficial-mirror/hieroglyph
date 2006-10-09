@@ -465,11 +465,11 @@ _hg_scanner_get_object(HgVM         *vm,
 					if (_hg_scanner_parse_number(vm, file, token_type,
 								     10, sign, !maybe_real,
 								     string, &retval, &error)) {
-						if (error)
-							return NULL;
 						token_type = HG_SCAN_TOKEN_NUMERIC;
 						need_loop = FALSE;
 					}
+					if (error)
+						return NULL;
 					break;
 				case HG_SCAN_TOKEN_NAME:
 				case HG_SCAN_TOKEN_LITERAL:
@@ -509,11 +509,11 @@ _hg_scanner_get_object(HgVM         *vm,
 					if (_hg_scanner_parse_number(vm, file, token_type,
 								     10, sign, !maybe_real,
 								     string, &retval, &error)) {
-						if (error)
-							return NULL;
 						token_type = HG_SCAN_TOKEN_NUMERIC;
 						need_loop = FALSE;
 					}
+					if (error)
+						return NULL;
 					break;
 				case HG_SCAN_TOKEN_LITERAL:
 				case HG_SCAN_TOKEN_EVAL_NAME:
@@ -836,13 +836,6 @@ _hg_scanner_parse_number(HgVM          *vm,
 			length = hg_int_array_length(intarray);
 			for (j = 0; j < length; j++) {
 				d += ((gdouble)hg_int_array_index(intarray, j) * exp10((gdouble)((length - j - 1) * 9 + digits + intdigits)));
-				if (isinf(d) != 0 || isnan(d) != 0) {
-					_hg_scanner_set_error(vm,
-							      __hg_operator_list[HG_op_token],
-							      VM_e_limitcheck);
-					*error = TRUE;
-					return FALSE;
-				}
 			}
 			if (di != 0) {
 				d += (gdouble)di;
@@ -858,6 +851,13 @@ _hg_scanner_parse_number(HgVM          *vm,
 			}
 			if (sign < 0)
 				d = -d;
+			if (isinf(d) != 0 || isnan(d) != 0) {
+				_hg_scanner_set_error(vm,
+						      __hg_operator_list[HG_op_token],
+						      VM_e_limitcheck);
+				*error = TRUE;
+				return FALSE;
+			}
 			if (is_integer && d <= G_MAXINT32 && d >= G_MININT32)
 				HG_VALUE_MAKE_INTEGER (pool, *node, (gint32)d);
 			else
