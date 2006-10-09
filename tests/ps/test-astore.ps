@@ -5,8 +5,9 @@ false /astore [.unittestdict /anytypes get [/booleantype /integertype /realtype 
 
 [] /stackunderflow true initunittestdict {astore} unittest
 [1 2 [null null null]] /stackunderflow true initunittestdict {1 2 3 array astore} unittest
-[1 [null]] /invalidaccess true initunittestdict {1 1 array noaccess astore} unittest
-[1 [null]] /invalidaccess true initunittestdict {1 1 array readonly astore} unittest
+[1 [null] noaccess] /invalidaccess true initunittestdict /readable /writable 2 setunittestmask {1 1 array noaccess astore} unittest
+[1 [null] readonly] /invalidaccess true initunittestdict /readable /writable 2 setunittestmask {1 1 array readonly astore} unittest
+[1 [null] executeonly] /invalidaccess true initunittestdict /executeonly /readable /writable 3 setunittestmask {1 1 array executeonly astore} unittest
 [1 [2]] null true initunittestdict {1 2 1 array astore} unittest
 [[(a) (bcd) (ef)]] null true initunittestdict {(a) (bcd) (ef) 3 array astore} unittest
 

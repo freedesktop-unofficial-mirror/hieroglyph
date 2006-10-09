@@ -47,6 +47,7 @@ struct _HieroGlyphDictTraverseInfo {
 };
 struct _HieroGlyphDictCompareData {
 	const HgDict *opposite_dict;
+	guint         attributes_mask;
 	gboolean      result;
 };
 struct _HieroGlyphDictNode {
@@ -1180,7 +1181,7 @@ _hg_dict_compare_on_traverse(gpointer key,
 
 		return FALSE;
 	}
-	if (!hg_value_node_compare_content(nval, n)) {
+	if (!hg_value_node_compare_content(nval, n, info->attributes_mask)) {
 		info->result = FALSE;
 
 		return FALSE;
@@ -1478,7 +1479,8 @@ hg_dict_first(HgDict       *dict,
 
 gboolean
 hg_dict_compare(const HgDict *a,
-		const HgDict *b)
+		const HgDict *b,
+		guint         attributes_mask)
 {
 	HgDictCompareData info;
 	HgMemObject *obj;
@@ -1500,6 +1502,7 @@ hg_dict_compare(const HgDict *a,
 	hg_mem_set_copying(obj);
 
 	info.opposite_dict = b;
+	info.attributes_mask = attributes_mask;
 	info.result = TRUE;
 
 	hg_dict_traverse(a, _hg_dict_compare_on_traverse, &info);

@@ -234,6 +234,7 @@ _hg_scanner_get_object(HgVM         *vm,
 	HgValueNode *node, *retval = NULL;
 	guchar c;
 	gboolean need_loop = TRUE, maybe_real = FALSE, error = FALSE;
+	gboolean was_comment = FALSE;
 	gint token_type = 0, string_depth = 0, sign = 0;
 	HgString *string = NULL;
 	HgArray *array = NULL;
@@ -390,6 +391,7 @@ _hg_scanner_get_object(HgVM         *vm,
 					}
 					_hg_scanner_skip_spaces(file, c);
 					hg_file_object_ungetc(file, c);
+					was_comment = TRUE;
 					break;
 				default:
 					g_warning("[BUG] unknown control object %c.", c);
@@ -582,7 +584,9 @@ _hg_scanner_get_object(HgVM         *vm,
 		    }
 		    break;
 	    default:
-		    g_warning("FIXME: unknown token type %d\n", token_type);
+		    /* XXX */
+		    if (!was_comment)
+			    g_warning("FIXME: unknown token type %d\n", token_type);
 		    break;
 	}
 

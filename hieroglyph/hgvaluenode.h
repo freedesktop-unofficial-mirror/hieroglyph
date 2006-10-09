@@ -229,7 +229,8 @@ gsize        hg_value_node_get_hash       (const HgValueNode *node);
 gboolean     hg_value_node_compare        (const HgValueNode *a,
 					   const HgValueNode *b);
 gboolean     hg_value_node_compare_content(const HgValueNode *a,
-					   const HgValueNode *b);
+					   const HgValueNode *b,
+					   guint              attributes_mask);
 
 void         hg_value_node_debug_print    (HgFileObject      *file,
 					   HgDebugStateType   type,

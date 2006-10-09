@@ -55,7 +55,8 @@ gboolean     hg_dict_first             (HgDict         *dict,
 					HgValueNode   **key,
 					HgValueNode   **val);
 gboolean     hg_dict_compare           (const HgDict   *a,
-					const HgDict   *b);
+					const HgDict   *b,
+					guint           attributes_mask);
 
 
 G_END_DECLS

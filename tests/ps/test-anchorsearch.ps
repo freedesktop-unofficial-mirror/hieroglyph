@@ -5,9 +5,12 @@ false /anchorsearch [[/booleantype /integertype /realtype /nametype /arraytype /
 
 [] /stackunderflow true initunittestdict {anchorsearch} unittest
 [(foo)] /stackunderflow true initunittestdict {(foo) anchorsearch} unittest
-[(abbc) (ab)] /invalidaccess true initunittestdict {(abbc) noaccess (ab) anchorsearch} unittest
-[(abbc) (ab)] /invalidaccess true initunittestdict {(abbc) (ab) noaccess anchorsearch} unittest
-[(abbc) (ab)] /invalidaccess true initunittestdict {(abbc) noaccess (ab) noaccess anchorsearch} unittest
+[(abbc) noaccess (ab)] /invalidaccess true initunittestdict /readable /writable 2 setunittestmask {(abbc) noaccess (ab) anchorsearch} unittest
+[(abbc) (ab) noaccess] /invalidaccess true initunittestdict /readable /writable 2 setunittestmask {(abbc) (ab) noaccess anchorsearch} unittest
+[(abbc) noaccess (ab) noaccess] /invalidaccess true initunittestdict /readable /writable 2 setunittestmask {(abbc) noaccess (ab) noaccess anchorsearch} unittest
+[(abbc) executeonly (ab)] /invalidaccess true initunittestdict /readable /writable /executeonly 3 setunittestmask {(abbc) executeonly (ab) anchorsearch} unittest
+[(abbc) (ab) executeonly ] /invalidaccess true initunittestdict /readable /writable /executeonly 3 setunittestmask {(abbc) (ab) executeonly anchorsearch} unittest
+[(abbc) executeonly (ab) executeonly] /invalidaccess true initunittestdict /readable /writable /executeonly 3 setunittestmask {(abbc) executeonly (ab) executeonly anchorsearch} unittest
 [(bc) (ab) true] null true initunittestdict {(abbc) (ab) anchorsearch} unittest
 [(abbc) false] null true initunittestdict {(abbc) (bb) anchorsearch} unittest
 [(abbc) false] null true initunittestdict {(abbc) (bc) anchorsearch} unittest

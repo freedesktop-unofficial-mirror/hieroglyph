@@ -1,5 +1,5 @@
 % initialize unittest dictionary
-17 dict dup begin
+19 dict dup begin
     /nunit 0 def
     /nsuccess 0 def
     /nfailure 0 def
@@ -16,7 +16,15 @@
     /testargssymbol null def
     /typecheckresult false def
     /expectedtypecheckresult false def
-    /anytypes [/booleantype /integertype /realtype /nametype /arraytype /stringtype /dicttype /nulltype /operatortype /marktype /filetype /savetype /proctype] def
+    /anytypes [/booleantype /integertype /realtype /nametype /arraytype /stringtype /dicttype /nulltype /operatortype /marktype /filetype /savetype /proctype] readonly def
+    /attributes <<
+	/readable 1
+	/writable 2
+	/executable 4
+	/executeonly 8
+	/accessible 16
+    >> readonly def
+    /attrsmask 0 def
 end /.unittestdict exch def
 
 % - initunittest -
@@ -34,6 +42,18 @@ end /.unittestdict exch def
 	/verbose exch def
 	/expectederror exch def
 	/expectedostack exch def
+	/attrsmask 0 def
+    end
+} bind odef
+
+% -name- ... n setunittestmask -integer-
+/setunittestmask {
+    .unittestdict begin
+	/attrsmask 0 def
+	{
+	    attributes exch get
+	    attrsmask or /attrsmask exch def
+	} repeat
     end
 } bind odef
 

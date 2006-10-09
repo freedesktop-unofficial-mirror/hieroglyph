@@ -556,7 +556,8 @@ hg_array_copy_as_subarray(HgArray *src,
 
 gboolean
 hg_array_compare(const HgArray *a,
-		 const HgArray *b)
+		 const HgArray *b,
+		 guint          attributes_mask)
 {
 	guint i;
 	gboolean retval = TRUE;
@@ -583,7 +584,7 @@ hg_array_compare(const HgArray *a,
 
 		na = hg_array_index(a, i);
 		nb = hg_array_index(b, i);
-		if ((retval = hg_value_node_compare_content(na, nb)) == FALSE)
+		if ((retval = hg_value_node_compare_content(na, nb, attributes_mask)) == FALSE)
 			break;
 	}
 

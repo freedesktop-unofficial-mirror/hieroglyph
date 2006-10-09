@@ -444,8 +444,13 @@ end
 .initplugins
 
 %%
+%% Set the default value for system parapeters
+%%
+/QUIET where not {/QUIET false def} if pop
+
+%%
 %% ready to go
 %%
-.printversion
+QUIET not {.printversion} if
 
 % /start will be invoked.

@@ -14,12 +14,16 @@ false /copy [.unittestdict /anytypes get [/booleantype /realtype /nametype /null
 [()] /stackunderflow true initunittestdict {() copy} unittest
 [[][]] /invalidaccess true initunittestdict {[] noaccess [] copy} unittest
 [[][]] /invalidaccess true initunittestdict {[] [] noaccess copy} unittest
+[[][]] /invalidaccess true initunittestdict {[] executeonly [] copy} unittest
+[[][]] /invalidaccess true initunittestdict {[] [] executeonly copy} unittest
 [[][]] /invalidaccess true initunittestdict {[] [] readonly copy} unittest
 [1 dict 1 dict] /invalidaccess true initunittestdict {1 dict noaccess 1 dict copy} unittest
 [1 dict 1 dict] /invalidaccess true initunittestdict {1 dict 1 dict noaccess copy} unittest
 [1 dict 1 dict] /invalidaccess true initunittestdict {1 dict 1 dict readonly copy} unittest
 [() ()] /invalidaccess true initunittestdict {() noaccess () copy} unittest
 [() ()] /invalidaccess true initunittestdict {() () noaccess copy} unittest
+[() ()] /invalidaccess true initunittestdict {() executeonly () copy} unittest
+[() ()] /invalidaccess true initunittestdict {() () executeonly copy} unittest
 [() ()] /invalidaccess true initunittestdict {() () readonly copy} unittest
 [1] /rangecheck true initunittestdict {1 copy} unittest
 [[1] []] /rangecheck true initunittestdict {[1] [] copy} unittest

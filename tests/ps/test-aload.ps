@@ -4,7 +4,8 @@ true /aload [[/arraytype /proctype]] typecheck
 false /aload [[/booleantype /integertype /realtype /nametype /stringtype /dicttype /nulltype /marktype /operatortype /marktype /filetype /savetype]] typecheck
 
 [] /stackunderflow true initunittestdict {aload} unittest
-[[1 2 3]] /invalidaccess true initunittestdict {[1 2 3] noaccess aload} unittest
+[[1 2 3] noaccess] /invalidaccess true initunittestdict /readable /writable 2 setunittestmask {[1 2 3] noaccess aload} unittest
+[[1 2 3] executeonly] /invalidaccess true initunittestdict /executeonly /readable /writable 3 setunittestmask {[1 2 3] executeonly aload} unittest
 [1 2 3 [1 2 3]] null true initunittestdict {[1 2 3] aload} unittest
 [23 (ab) -6 [23 (ab) -6]] null true initunittestdict {[23 (ab) -6] aload} unittest
 [23 (ab) -6 {23 (ab) -6}] null true initunittestdict {{23 (ab) -6} aload} unittest

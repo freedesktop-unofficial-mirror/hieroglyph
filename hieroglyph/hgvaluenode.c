@@ -683,7 +683,8 @@ hg_value_node_compare(const HgValueNode *a,
 
 gboolean
 hg_value_node_compare_content(const HgValueNode *a,
-			      const HgValueNode *b)
+			      const HgValueNode *b,
+			      guint              attributes_mask)
 {
 	gboolean retval = FALSE;
 
@@ -712,10 +713,14 @@ hg_value_node_compare_content(const HgValueNode *a,
 		    retval = hg_string_compare(HG_VALUE_GET_STRING (a), HG_VALUE_GET_STRING (b));
 		    break;
 	    case HG_TYPE_VALUE_ARRAY:
-		    retval = hg_array_compare(HG_VALUE_GET_ARRAY (a), HG_VALUE_GET_ARRAY (b));
+		    retval = hg_array_compare(HG_VALUE_GET_ARRAY (a),
+					      HG_VALUE_GET_ARRAY (b),
+					      attributes_mask);
 		    break;
 	    case HG_TYPE_VALUE_DICT:
-		    retval = hg_dict_compare(HG_VALUE_GET_DICT (a), HG_VALUE_GET_DICT (b));
+		    retval = hg_dict_compare(HG_VALUE_GET_DICT (a),
+					     HG_VALUE_GET_DICT (b),
+					     attributes_mask);
 		    break;
 	    case HG_TYPE_VALUE_FILE:
 		    retval = _compare (a, b, FILE);
@@ -740,6 +745,14 @@ hg_value_node_compare_content(const HgValueNode *a,
 	}
 
 #undef _compare
+
+#define _state_comp(_a_, _b_, _mask_)					\
+	((hg_object_get_state((HgObject *)(_a_)) & (_mask_)) ==		\
+	 (hg_object_get_state((HgObject *)(_b_)) & (_mask_)))
+
+	retval &= _state_comp(a, b, attributes_mask);
+
+#undef _state_comp
 
 	return retval;
 }

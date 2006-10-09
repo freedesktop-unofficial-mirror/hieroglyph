@@ -65,7 +65,7 @@ test(HgVM        *vm,
 	node = hg_scanner_get_object(vm, file);
 	if (node != NULL) {
 		if (expected_node != NULL &&
-		    !hg_value_node_compare_content(expected_node, node)) {
+		    !hg_value_node_compare_content(expected_node, node, 0)) {
 			actual_string = hg_object_to_string((HgObject *)node);
 			g_print("Expression: %s, Expected result is %s [%s] but Actual result was %s [%s]\n",
 				expression, hg_string_get_string(expected_string),

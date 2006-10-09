@@ -1,0 +1,14 @@
+initunittest
+
+true /cvn [[/stringtype]] typecheck
+false /cvn [[/booleantype /integertype /realtype /nametype /arraytype /dicttype /nulltype /operatortype /marktype /filetype /savetype /proctype]] typecheck
+
+[] /stackunderflow true initunittestdict {cvn} unittest
+[(foo)] /invalidaccess true initunittestdict {(foo) noaccess cvn} unittest
+[(foo)] /invalidaccess true initunittestdict {(foo) executeonly cvn} unittest
+% XXX: how does /limitcheck happen?
+%[(foooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo)] /limitcheck true initunittestdict {(foooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo) cvn} unittest
+[/abc] null true initunittestdict /executable 1 setunittestmask {(abc) cvn} unittest
+[{abc} 0 get] null true initunittestdict /executable 1 setunittestmask {(abc) cvx cvn} unittest
+
+unittestresult

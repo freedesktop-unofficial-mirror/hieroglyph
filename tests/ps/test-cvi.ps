@@ -5,6 +5,7 @@ false /cvi [[/booleantype /nametype /arraytype /dicttype /nulltype /operatortype
 
 [] /stackunderflow true initunittestdict {cvi} unittest
 [(foo) noaccess] /invalidaccess true initunittestdict {(foo) noaccess cvi} unittest
+[(foo) noaccess] /invalidaccess true initunittestdict {(foo) executeonly cvi} unittest
 [2147483648.0] /rangecheck true initunittestdict {2147483648.0 cvi} unittest
 [-2147483649.0] /rangecheck true initunittestdict {-2147483649.0 cvi} unittest
 % XXX: what causes /undefinedresult?

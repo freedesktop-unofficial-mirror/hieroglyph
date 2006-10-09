@@ -104,13 +104,14 @@ G_STMT_START
 {
 	HgStack *ostack = hg_vm_get_ostack(vm);
 	guint depth = hg_stack_depth(ostack);
-	HgValueNode *n, *ndict, *nverbose, *nexp, *nactual, *nexpected;
+	HgValueNode *n, *ndict, *nverbose, *nexp, *nactual, *nexpected, *nattrs;
 	HgDict *dict;
 	HgMemPool *pool = hg_vm_get_current_pool(vm);
 	gboolean result = TRUE, verbose = FALSE;
 	HgString *sexp;
 	HgArray *actual, *expected;
 	guint length, i;
+	gint32 attrs = 0;
 
 	while (1) {
 		if (depth < 1) {
@@ -130,6 +131,10 @@ G_STMT_START
 		nverbose = hg_dict_lookup_with_string(dict, "verbose");
 		if (nverbose != NULL && HG_IS_VALUE_BOOLEAN (nverbose)) {
 			verbose = HG_VALUE_GET_BOOLEAN (nverbose);
+		}
+		nattrs = hg_dict_lookup_with_string(dict, "attrsmask");
+		if (nattrs != NULL && HG_IS_VALUE_INTEGER (nattrs)) {
+			attrs = HG_VALUE_GET_INTEGER (nattrs);
 		}
 		nexp = hg_dict_lookup_with_string(dict, "expression");
 		sexp = hg_object_to_string((HgObject *)nexp);
@@ -187,7 +192,7 @@ G_STMT_START
 					HgValueNode *nna = hg_array_index(actual, i);
 					HgValueNode *nne = hg_array_index(expected, i);
 
-					if (!hg_value_node_compare_content(nna, nne)) {
+					if (!hg_value_node_compare_content(nna, nne, attrs)) {
 						goto ostack_mismatch;
 					}
 				}
