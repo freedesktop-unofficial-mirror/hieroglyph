@@ -1,5 +1,11 @@
 2006-10-09  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/operator.c (_hg_operator_op_cvi): fixed not catching
+	an exception in some cases.
+	(_hg_operator_op_cvr): likewise.
+
+	* tests/ps/test-cvr.ps: new testcase.
+
 	* hieroglyph/scanner.c (_hg_scanner_get_object): shut up the warning.
 
 	* hieroglyph/hgvaluenode.c (hg_value_node_compare_content):

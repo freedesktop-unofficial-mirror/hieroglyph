@@ -2001,8 +2001,9 @@ DEFUNC_OP (cvi)
 G_STMT_START
 {
 	HgStack *ostack = hg_vm_get_ostack(vm);
+	HgStack *estack = hg_vm_get_estack(vm);
 	guint depth = hg_stack_depth(ostack);
-	HgValueNode *node;
+	HgValueNode *node, *self;
 	HgMemPool *pool = hg_vm_get_current_pool(vm);
 
 	while (1) {
@@ -2039,8 +2040,15 @@ G_STMT_START
 						  hg_string_maxlength(str));
 			n = hg_scanner_get_object(vm, file);
 			if (n == NULL) {
-				if (!hg_vm_has_error(vm))
+				if (!hg_vm_has_error(vm)) {
 					_hg_operator_set_error(vm, op, VM_e_syntaxerror);
+				} else {
+					/* --token-- should be there in the top of ostack.
+					 * stacks self again to correct the error place.
+					 */
+					/* XXX */
+					hg_stack_push(estack, self);
+				}
 				break;
 			} else if (HG_IS_VALUE_INTEGER (n)) {
 				HG_VALUE_MAKE_INTEGER (pool, node, HG_VALUE_GET_INTEGER (n));
@@ -2137,8 +2145,9 @@ DEFUNC_OP (cvr)
 G_STMT_START
 {
 	HgStack *ostack = hg_vm_get_ostack(vm);
+	HgStack *estack = hg_vm_get_estack(vm);
 	guint depth = hg_stack_depth(ostack);
-	HgValueNode *node;
+	HgValueNode *node, *self;
 	HgMemPool *pool = hg_vm_get_current_pool(vm);
 
 	while (1) {
@@ -2171,8 +2180,15 @@ G_STMT_START
 						  hg_string_maxlength(str));
 			n = hg_scanner_get_object(vm, file);
 			if (n == NULL) {
-				if (!hg_vm_has_error(vm))
+				if (!hg_vm_has_error(vm)) {
 					_hg_operator_set_error(vm, op, VM_e_syntaxerror);
+				} else {
+					/* --token-- should be there in the top of ostack.
+					 * stacks self again to correct the error place.
+					 */
+					/* XXX */
+					hg_stack_push(estack, self);
+				}
 				break;
 			} else if (HG_IS_VALUE_REAL (n)) {
 				HG_VALUE_MAKE_REAL (pool, node, HG_VALUE_GET_REAL (n));
