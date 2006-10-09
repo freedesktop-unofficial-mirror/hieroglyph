@@ -1,3 +1,10 @@
+2006-10-10  Akira TAGOH  <at@gclab.org>
+
+	* lib/hg_init.ps (cvs): better error handling.
+
+	* tests/ps/test-cvs.ps:
+	* tests/ps/test-cvrs.ps: new testcases.
+
 2006-10-09  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/operator.c (_hg_operator_op_cvi): fixed not catching

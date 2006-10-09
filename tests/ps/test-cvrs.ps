@@ -1,0 +1,22 @@
+initunittest
+
+true /cvrs [[/integertype /realtype] [/integertype] [/stringtype]] typecheck
+false /cvrs [[/booleantype /nametype /arraytype /stringtype /dicttype /nulltype /operatortype /marktype /filetype /savetype /proctype] [/booleantype /realtype /nametype /arraytype /stringtype /dicttype /nulltype /operatortype /marktype /filetype /savetype /proctype] [/booleantype /integertype /realtype /nametype /arraytype /dicttype /nulltype /operatortype /marktype /filetype /savetype /proctype]] typecheck
+
+[] /stackunderflow true initunittestdict {cvrs} unittest
+[1] /stackunderflow true initunittestdict {1 cvrs} unittest
+[1 1] /stackunderflow true initunittestdict {1 1 cvrs} unittest
+[1 10 (foo) noaccess] /invalidaccess true initunittestdict /readable /writable 2 setunittestmask {1 10 (foo) noaccess cvrs} unittest
+[1 10 (foo) executeonly] /invalidaccess true initunittestdict /readable /writable /executeonly 3 setunittestmask {1 10 (foo) executeonly cvrs} unittest
+[1 10 (foo) readonly] /invalidaccess true initunittestdict /readable /writable 2 setunittestmask {1 10 (foo) readonly cvrs} unittest
+[100 10 2 string] /rangecheck true initunittestdict {100 10 2 string cvrs} unittest
+[1 1 (foo)] /rangecheck true initunittestdict {1 1 (foo) cvrs} unittest
+[1 37 (foo)] /rangecheck true initunittestdict {1 37 (foo) cvrs} unittest
+[(123)] null true initunittestdict {123 10 12 string cvrs} unittest
+[(-123)] null true initunittestdict {-123 10 12 string cvrs} unittest
+[(123.4)] null true initunittestdict {123.4 10 12 string cvrs} unittest
+[(7B)] null true initunittestdict {123 16 12 string cvrs} unittest
+[(FFFFFF85)] null true initunittestdict {-123 16 12 string cvrs} unittest
+[(7B)] null true initunittestdict {123.4 16 12 string cvrs} unittest
+
+unittestresult

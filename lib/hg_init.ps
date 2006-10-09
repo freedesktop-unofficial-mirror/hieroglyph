@@ -128,7 +128,14 @@ systemdict /.statementedit known {
 } bind odef
 % any -string- cvs -substring-
 /cvs {
-    exch .stringcvs exch copy
+    count 2 lt {
+	/cvs errordict /stackunderflow get exec
+    } if
+    dup type /stringtype ne {
+	/cvs errordict /typecheck get exec
+    } {
+	exch .stringcvs exch copy
+    } ifelse
 } bind odef
 % key font|cidfont definefont font|cidfont
 /definefont {
