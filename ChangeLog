@@ -1,3 +1,15 @@
+2006-10-11  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/operator.c (_hg_operator_op_dict): detect /dictfull
+	if it's running on PS1 VM.
+
+	* hieroglyph/hgdict.c (hg_dict_new): allow to create an empty dict.
+
+	* plugins/test/hg_unittest.ps (.dotypecheck): fixed /dictfull error.
+
+	* tests/ps/test-cvx.ps:
+	* tests/ps/test-def.ps: new testcases.
+
 2006-10-10  Akira TAGOH  <at@gclab.org>
 
 	* lib/hg_init.ps (cvs): better error handling.

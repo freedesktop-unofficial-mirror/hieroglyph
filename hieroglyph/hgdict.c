@@ -1200,7 +1200,7 @@ hg_dict_new(HgMemPool *pool,
 	HgDict *retval;
 
 	g_return_val_if_fail (pool != NULL, NULL);
-	g_return_val_if_fail (n_prealloc > 0 && n_prealloc < 65536, NULL);
+	g_return_val_if_fail (n_prealloc >= 0 && n_prealloc <= 65535, NULL);
 
 	retval = hg_mem_alloc_with_flags(pool,
 					 sizeof (HgDict),

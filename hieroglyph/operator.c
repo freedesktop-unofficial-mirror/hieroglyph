@@ -2353,6 +2353,12 @@ G_STMT_START
 			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
 			break;
 		}
+		if (hg_vm_get_emulation_level(vm) == VM_EMULATION_LEVEL_1 &&
+		    hg_dict_length(dict) == hg_dict_maxlength(dict) &&
+		    hg_dict_lookup(dict, nk) == NULL) {
+			_hg_operator_set_error(vm, op, VM_e_dictfull);
+			break;
+		}
 		retval = hg_dict_insert(hg_vm_get_current_pool(vm),
 					dict, nk, nv);
 		hg_stack_pop(ostack);

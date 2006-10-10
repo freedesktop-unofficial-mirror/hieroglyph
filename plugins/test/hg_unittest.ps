@@ -183,38 +183,40 @@ end /.unittestdict exch def
 	} ifelse
 	dup 0 eq {
 	    [testargs /aload load /pop load operator cvx] cvx .dounittest
-	    /nunit nunit 1 add def
-	    actualerror dup /stackunderflow eq
-	    exch dup /typecheck eq
-	    exch dup /limitcheck eq
-	    exch pop
-	    or or {
-		expectedtypecheckresult {
-		    (ERROR: ) =only
-		    actualerror ==only
-		    ( in ) =only
-		    operator cvx ==only
-		    ( with ) =only
-		    testargssymbol ==
-		    /typecheckresult false def
-		    /nfailure nfailure 1 add def
+	    .unittestdict begin
+		/nunit nunit 1 add def
+		actualerror dup /stackunderflow eq
+		exch dup /typecheck eq
+		exch dup /limitcheck eq
+		exch pop
+		or or {
+		    expectedtypecheckresult {
+			(ERROR: ) =only
+			actualerror ==only
+			( in ) =only
+			operator cvx ==only
+			( with ) =only
+			testargssymbol ==
+			/typecheckresult false def
+			/nfailure nfailure 1 add def
+		    } {
+			/nsuccess nsuccess 1 add def
+		    } ifelse
 		} {
-		    /nsuccess nsuccess 1 add def
+		    expectedtypecheckresult not {
+			(ERROR: no errors or no expected errors happened in ) =only
+			operator cvx ==only
+			( with ) =only
+			testargssymbol ==only
+			( actualerror was ) =only
+			actualerror ==
+			/typecheckresult true def
+			/nfailure nfailure 1 add def
+		    } {
+			/nsuccess nsuccess 1 add def
+		    } ifelse
 		} ifelse
-	    } {
-		expectedtypecheckresult not {
-		    (ERROR: no errors or no expected errors happened in ) =only
-		    operator cvx ==only
-		    ( with ) =only
-		    testargssymbol ==only
-		    ( actualerror was ) =only
-		    actualerror ==
-		    /typecheckresult true def
-		    /nfailure nfailure 1 add def
-		} {
-		    /nsuccess nsuccess 1 add def
-		} ifelse
-	    } ifelse
+	    end
 	} {
 	    dup 1 sub .dotypecheck
 	} ifelse
