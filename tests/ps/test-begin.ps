@@ -5,6 +5,7 @@ false /begin [[/booleantype /integertype /realtype /nametype /arraytype /stringt
 
 [] /stackunderflow true initunittestdict {begin} unittest
 [0 dict] /invalidaccess true initunittestdict {0 dict noaccess begin} unittest
+[-1] null true initunittestdict {5 array dictstack length 1 dict begin 5 array dictstack length sub} unittest
 % FIXME
 
 unittestresult

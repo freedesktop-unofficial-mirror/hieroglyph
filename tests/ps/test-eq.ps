@@ -1,0 +1,39 @@
+initunittest
+
+[] /stackunderflow true initunittestdict {eq} unittest
+[1] /stackunderflow true initunittestdict {1 eq} unittest
+[(foo) noaccess (foo)] /invalidaccess true initunittestdict /readable 1 setunittestmask {(foo) noaccess (foo) eq} unittest
+[(foo) (foo) noaccess] /invalidaccess true initunittestdict /readable 1 setunittestmask {(foo) (foo) noaccess eq} unittest
+[(foo) noaccess (foo) noaccess] /invalidaccess true initunittestdict /readable 1 setunittestmask {(foo) noaccess (foo) noaccess eq} unittest
+[true] null true initunittestdict {true true eq} unittest
+[false] null true initunittestdict {false true eq} unittest
+[true] null true initunittestdict {5 5 eq} unittest
+[false] null true initunittestdict {5 5.01 eq} unittest
+[true] null true initunittestdict {5 5.0 eq} unittest
+[false] null true initunittestdict {5.1 5.0 eq} unittest
+[true] null true initunittestdict {/name /name eq} unittest
+[false] null true initunittestdict {/namea /name eq} unittest
+[true] null true initunittestdict {[1] dup eq} unittest
+[false] null true initunittestdict {[1][1] eq} unittest
+[true] null true initunittestdict {[1] noaccess dup eq} unittest
+[false] null true initunittestdict {[1] noaccess [1] eq} unittest
+[true] null true initunittestdict {1 dict dup eq} unittest
+[false] null true initunittestdict {1 dict 1 dict eq} unittest
+[true] null true initunittestdict {1 dict noaccess dup eq} unittest
+[false] null true initunittestdict {1 dict noaccess 1 dict eq} unittest
+[true] null true initunittestdict {(foo)(foo) eq} unittest
+[false] null true initunittestdict {(foo)(fooo) eq} unittest
+[true] null true initunittestdict {null null eq} unittest
+[false] null true initunittestdict {null () eq} unittest
+[true] null true initunittestdict {{moveto} 0 get {moveto} 0 get eq} unittest
+[false] null true initunittestdict {{moveto} 0 get {rmoveto} 0 get eq} unittest
+[true] null true initunittestdict {mark mark eq} unittest
+[false] null true initunittestdict {mark null eq} unittest
+[true] null true initunittestdict {currentfile currentfile eq} unittest
+[false] null true initunittestdict {currentfile (.)(r) file eq} unittest
+[true] null true initunittestdict {save dup eq} unittest
+[false] null true initunittestdict {save save eq} unittest
+[true] null true initunittestdict {{foo} dup eq} unittest
+[false] null true initunittestdict {{foo} {foo} eq} unittest
+
+unittestresult

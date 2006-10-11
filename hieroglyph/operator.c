@@ -2597,8 +2597,10 @@ G_STMT_START
 		}
 		n2 = hg_stack_index(ostack, 0);
 		n1 = hg_stack_index(ostack, 1);
-		if (!hg_object_is_readable((HgObject *)n1) ||
-		    !hg_object_is_readable((HgObject *)n2)) {
+		if (((HG_IS_VALUE_NAME (n1) || HG_IS_VALUE_STRING (n1)) &&
+		     !hg_object_is_readable((HgObject *)n1)) ||
+		    ((HG_IS_VALUE_NAME (n2) || HG_IS_VALUE_STRING (n2)) &&
+		     !hg_object_is_readable((HgObject *)n2))) {
 			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
 			break;
 		}

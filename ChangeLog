@@ -1,5 +1,18 @@
 2006-10-11  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/operator.c (_hg_operator_op_eq): check /invalidaccess for
+	only name/string objects.
+
+	* hieroglyph/hgvaluenode.c (hg_value_node_compare): just fails
+	if objects isn't readable.
+
+	* tests/ps/test-dup.ps:
+	* tests/ps/test-end.ps:
+	* tests/ps/test-dictstack.ps:
+	* tests/ps/test-div.ps:
+	* tests/ps/test-errordict.ps:
+	* tests/ps/test-eq.ps: new testcases.
+
 	* tests/ps/test-dict.ps: new testcase.
 
 	* hieroglyph/operator.c (_hg_operator_op_put): check /dictfull.
