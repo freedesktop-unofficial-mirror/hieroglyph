@@ -2800,6 +2800,7 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
+/* almost code is shared to _hg_operator_op_private_hg_exit */
 DEFUNC_OP (exit)
 G_STMT_START
 {
@@ -2837,6 +2838,9 @@ G_STMT_START
 				hg_stack_pop(estack);
 				hg_stack_pop(estack);
 				hg_stack_pop(estack);
+			} else if (strcmp(name, "%stopped_continue") == 0) {
+				_hg_operator_set_error(vm, op, VM_e_invalidexit);
+				break;
 			} else {
 				continue;
 			}
@@ -7060,6 +7064,61 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
+/* almost code is shared to _hg_operator_op_exit */
+DEFUNC_OP (private_hg_exit)
+G_STMT_START
+{
+	HgStack *estack = hg_vm_get_estack(vm);
+	guint depth = hg_stack_depth(estack), i, j;
+	const gchar *name;
+	HgValueNode *node;
+
+	for (i = 0; i < depth; i++) {
+		node = hg_stack_index(estack, i);
+		if (HG_IS_VALUE_OPERATOR (node)) {
+			/* target operators are:
+			 * cshow filenameforall for forall kshow loop pathforall
+			 * repeat resourceforall
+			 */
+			name = hg_operator_get_name(HG_VALUE_GET_OPERATOR (node));
+			if (strcmp(name, "%for_pos_int_continue") == 0 ||
+			    strcmp(name, "%for_pos_real_continue") == 0) {
+				/* drop down ini inc limit proc in estack */
+				hg_stack_pop(estack);
+				hg_stack_pop(estack);
+				hg_stack_pop(estack);
+				hg_stack_pop(estack);
+			} else if (strcmp(name, "%loop_continue") == 0) {
+				/* drop down proc in estack */
+				hg_stack_pop(estack);
+			} else if (strcmp(name, "%repeat_continue") == 0) {
+				/* drop down n proc in estack */
+				hg_stack_pop(estack);
+				hg_stack_pop(estack);
+			} else if (strcmp(name, "%forall_array_continue") == 0 ||
+				   strcmp(name, "%forall_dict_continue") == 0 ||
+				   strcmp(name, "%forall_string_continue") == 0) {
+				/* drop down n val proc in estack */
+				hg_stack_pop(estack);
+				hg_stack_pop(estack);
+				hg_stack_pop(estack);
+			} else {
+				continue;
+			}
+			for (j = 0; j < i; j++)
+				hg_stack_pop(estack);
+			retval = TRUE;
+			break;
+		} else if (HG_IS_VALUE_FILE (node)) {
+			_hg_operator_set_error(vm, op, VM_e_invalidexit);
+			break;
+		}
+	}
+	if (i == depth)
+		_hg_operator_set_error(vm, op, VM_e_invalidexit);
+} G_STMT_END;
+DEFUNC_OP_END
+
 DEFUNC_OP (private_hg_findlibfile)
 G_STMT_START
 {
@@ -7815,6 +7874,7 @@ hg_operator_hieroglyph_init(HgVM      *vm,
 	BUILD_OP_ (vm, pool, dict, .clearerror, private_hg_clearerror);
 	BUILD_OP_ (vm, pool, dict, .currentglobal, private_hg_currentglobal);
 	BUILD_OP_ (vm, pool, dict, .execn, private_hg_execn);
+	BUILD_OP_ (vm, pool, dict, .exit, private_hg_exit);
 	BUILD_OP_ (vm, pool, dict, .findlibfile, private_hg_findlibfile);
 	BUILD_OP_ (vm, pool, dict, .forceput, private_hg_forceput);
 	BUILD_OP_ (vm, pool, dict, .hgrevision, private_hg_hgrevision);

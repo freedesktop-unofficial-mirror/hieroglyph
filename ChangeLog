@@ -1,3 +1,20 @@
+2006-10-12  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/operator.c (_hg_operator_op_exit): throw /invalidexit
+	if it's going to jump stopped context.
+	(_hg_operator_op_private_hg_exit): new function to not check
+	/invalidexit for stopped.
+
+	* lib/hg_init.ps (executive): use .exit instead of exit.
+
+	* tests/ps/test-exec.ps:
+	* tests/ps/test-executeonly.ps:
+	* tests/ps/test-execstack.ps:
+	* tests/ps/test-eq.ps:
+	* tests/ps/test-exch.ps:
+	* tests/ps/test-exit.ps:
+	* tests/ps/testtest-exit.ps: new testcases.
+
 2006-10-11  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/operator.c (_hg_operator_op_eq): check /invalidaccess for

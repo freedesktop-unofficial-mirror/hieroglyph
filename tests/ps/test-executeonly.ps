@@ -1,0 +1,14 @@
+initunittest
+
+true /executeonly [[/arraytype /proctype /filetype /stringtype]] typecheck
+false /executeonly [[/booleantype /integertype /realtype /nametype /dicttype /nulltype /operatortype /marktype /savetype]] typecheck
+
+[] /stackunderflow true initunittestdict {executeonly} unittest
+[[] noaccess] /invalidaccess true initunittestdict /readable /writable 2 setunittestmask {[] noaccess executeonly} unittest
+[{} noaccess] /invalidaccess true initunittestdict /readable /writable 2 setunittestmask {{} noaccess executeonly} unittest
+/foo (.)(r) file def
+[foo noaccess] /invalidaccess true initunittestdict /readable /writable 2 setunittestmask {//foo noaccess executeonly} unittest
+[(foo) noaccess] /invalidaccess true initunittestdict /readable /writable 2 setunittestmask {(foo) noaccess executeonly} unittest
+% XXX: FIXME
+
+unittestresult

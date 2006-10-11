@@ -1,0 +1,22 @@
+initunittest
+
+{
+    % XXX: cshow
+    % XXX: filenameforall
+    [1] null true initunittestdict {1 1 10 {exit} for} unittest
+    [1] null true initunittestdict {[1 2 3] {exit} forall} unittest
+    % XXX: kshow
+    [1] null true initunittestdict {{1 exit 2} loop} unittest
+    % XXX: pathforall
+    [1] null true initunittestdict {10 {1 exit 2} repeat} unittest
+    % XXX: resourceforall
+    [-1] null true initunittestdict {10 array dictstack length {1 dict begin exit} loop 10 array dictstack length sub} unittest
+    [] /invalidexit true initunittestdict {{exit} stopped {stop} if} unittest
+    [(tests/ps/testtest-exit.ps)] /invalidexit true initunittestdict {(tests/ps/testtest-exit.ps) run} unittest
+} stopped {
+    % to ensure this unittest works
+    (unexpected behavior happened during testing /exit.) =
+    1 .quit
+} if
+
+unittestresult

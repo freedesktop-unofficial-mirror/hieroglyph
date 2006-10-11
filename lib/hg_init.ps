@@ -149,7 +149,7 @@ systemdict /.statementedit known {
 		% need to detect an empty line separately to take care of /undefinedfilename.
 		$error /newerror get {
 		    $error /errorname get /undefinedfilename eq {
-			pop pop .clearerror exit
+			pop pop .clearerror .exit
 		    } {
 			% we don't care of this error here.
 			stop
