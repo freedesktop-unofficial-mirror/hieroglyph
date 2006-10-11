@@ -3,9 +3,6 @@
 	* hieroglyph/operator.c (_hg_operator_op_eq): check /invalidaccess for
 	only name/string objects.
 
-	* hieroglyph/hgvaluenode.c (hg_value_node_compare): just fails
-	if objects isn't readable.
-
 	* tests/ps/test-dup.ps:
 	* tests/ps/test-end.ps:
 	* tests/ps/test-dictstack.ps:

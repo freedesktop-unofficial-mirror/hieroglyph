@@ -643,8 +643,6 @@ hg_value_node_compare(const HgValueNode *a,
 		    retval = HG_VALUE_REAL_SIMILAR (HG_VALUE_GET_REAL (a), HG_VALUE_GET_REAL (b));
 		    break;
 	    case HG_TYPE_VALUE_NAME:
-		    g_return_val_if_fail (hg_object_is_readable((HgObject *)a), FALSE);
-		    g_return_val_if_fail (hg_object_is_readable((HgObject *)b), FALSE);
 		    retval = (strcmp(HG_VALUE_GET_NAME (a), HG_VALUE_GET_NAME (b)) == 0);
 		    break;
 	    case HG_TYPE_VALUE_STRING:
