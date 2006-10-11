@@ -1,5 +1,12 @@
 2006-10-11  Akira TAGOH  <at@gclab.org>
 
+	* tests/ps/test-dict.ps: new testcase.
+
+	* hieroglyph/operator.c (_hg_operator_op_put): check /dictfull.
+
+	* hieroglyph/scanner.c (_hg_scanner_get_object): exclude dict object
+	to make a readonly object.
+
 	* hieroglyph/operator.c (_hg_operator_op_dict): detect /dictfull
 	if it's running on PS1 VM.
 

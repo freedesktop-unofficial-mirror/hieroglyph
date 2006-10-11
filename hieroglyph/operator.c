@@ -4719,6 +4719,12 @@ G_STMT_START
 				_hg_operator_set_error(vm, op, VM_e_invalidaccess);
 				break;
 			}
+			if (hg_vm_get_emulation_level(vm) == VM_EMULATION_LEVEL_1 &&
+			    hg_dict_length(dict) == hg_dict_maxlength(dict) &&
+			    hg_dict_lookup(dict, n2) == NULL) {
+				_hg_operator_set_error(vm, op, VM_e_dictfull);
+				break;
+			}
 			retval = hg_dict_insert_forcibly(obj->pool, dict, n2, n3, TRUE);
 		} else if (HG_IS_VALUE_STRING (n1)) {
 			HgString *string = HG_VALUE_GET_STRING (n1);
