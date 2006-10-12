@@ -1,0 +1,12 @@
+initunittest
+
+true /exp [[/integertype /realtype] dup] typecheck
+false /exp [[/booleantype /nametype /arraytype /stringtype /dicttype /nulltype /operatortype /marktype /filetype /savetype /proctype]] typecheck
+
+[] /stackunderflow true initunittestdict {exp} unittest
+[1] /stackunderflow true initunittestdict {1 exp} unittest
+[0 0] /undefinedresult true initunittestdict {0 0 exp} unittest
+[3.0] null true initunittestdict {9 0.5 exp} unittest
+[-0.1111111111111111] null true initunittestdict {-9 -1 exp} unittest
+
+unittestresult

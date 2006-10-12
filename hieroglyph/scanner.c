@@ -828,9 +828,9 @@ _hg_scanner_parse_number(HgVM          *vm,
 			if (floatarray) {
 				length = hg_int_array_length(floatarray);
 				for (j = 0; j < length; j++) {
-					dd += ((gdouble)hg_int_array_index(floatarray, j) * exp10((gdouble)-((j + 1) * 9)));
+					dd += ((gdouble)hg_int_array_index(floatarray, j) * exp10(-(gdouble)((j + 1) * 9)));
 				}
-				dd += (i * exp10(-(gdouble)digits));
+				dd += (i * exp10(-(gdouble)(j * 9 + digits)));
 				digits = 0;
 				i = 0;
 			}

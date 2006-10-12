@@ -1,5 +1,11 @@
 2006-10-12  Akira TAGOH  <at@gclab.org>
 
+	* tests/ps/test-exp.ps: new testcase.
+
+	* tests/ps/test-ps.sh (run_test): new function.
+
+	* hieroglyph/scanner.c (_hg_scanner_parse_number): fixed a typo.
+
 	* hieroglyph/operator.c (_hg_operator_op_exit): throw /invalidexit
 	if it's going to jump stopped context.
 	(_hg_operator_op_private_hg_exit): new function to not check
