@@ -23,6 +23,7 @@
  */
 #include <hieroglyph/hgdevice.h>
 #include <hieroglyph/hgdict.h>
+#include <hieroglyph/hgfile.h>
 #include <hieroglyph/hgmem.h>
 #include <hieroglyph/hgvaluenode.h>
 #include <hieroglyph/vm.h>
@@ -76,6 +77,7 @@ main(int    argc,
      char **argv)
 {
 	gchar *device_name = NULL;
+	gboolean opt_io_sync = FALSE;
 	HgVM *vm;
 	HgDevice *device = NULL;
 	GOptionContext *ctxt = g_option_context_new("<PostScript file>");
@@ -83,6 +85,7 @@ main(int    argc,
 	GOptionEntry entries[] = {
 		{"define", 'd', 0, G_OPTION_ARG_CALLBACK, _hgs_arg_define_cb, "Define a variable in systemdict.", "SYMBOL"},
 		{"load-plugin", 'l', 0, G_OPTION_ARG_CALLBACK, _hgs_arg_load_plugin_cb, "Load a plugin", "NAME"},
+		{"sync", 0, 0, G_OPTION_ARG_NONE, &opt_io_sync, "Make I/O calls synchronous", NULL},
 		{"device", 0, 0, G_OPTION_ARG_STRING, &device_name, "Output device that the rendering goes to", "DEVICE"},
 		{NULL}
 	};
@@ -104,6 +107,8 @@ main(int    argc,
 		return 1;
 	}
 
+	if (opt_io_sync)
+		hg_file_io_synchronous(TRUE);
 	if (device_name) {
 		device = hg_device_new(device_name);
 		if (device == NULL) {

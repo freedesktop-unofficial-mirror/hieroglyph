@@ -1,5 +1,7 @@
 2006-10-15  Akira TAGOH  <at@gclab.org>
 
+	* src/hgs.c (main): add --sync option.
+
 	* hieroglyph/hgfile.c (hg_file_io_synchronous): new function.
 	(hg_file_object_write): call fsync after writing according to
 	the current state of I/O synchronous.
