@@ -1,5 +1,8 @@
 2006-10-15  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgstring.c (hg_string_append_printf): new function.
+	(hg_string_append_vprintf): new function.
+
 	* hieroglyph/hgdict.c (_hg_dict_traverse_set_flags): removed
 	the unnecessary debugging code.
 

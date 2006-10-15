@@ -38,7 +38,13 @@ gboolean  hg_string_append_c             (HgString       *string,
 					  gchar           c);
 gboolean  hg_string_append               (HgString       *string,
 					  const gchar    *str,
-					 gint            length);
+					  gint            length);
+void      hg_string_append_printf        (HgString       *string,
+					  const gchar    *format,
+					  ...);
+void      hg_string_append_vprintf       (HgString       *string,
+					  const gchar    *format,
+					  va_list         va_args);
 gboolean  hg_string_insert_c             (HgString       *string,
 					  gchar           c,
 					  guint           index);

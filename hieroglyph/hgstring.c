@@ -555,6 +555,35 @@ hg_string_convert_from_integer(HgString *string,
 	return TRUE;
 }
 
+void
+hg_string_append_printf(HgString    *string,
+			const gchar *format,
+			...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	hg_string_append_vprintf(string, format, ap);
+	va_end(ap);
+}
+
+void
+hg_string_append_vprintf(HgString    *string,
+			 const gchar *format,
+			 va_list      va_args)
+{
+	gchar *buffer;
+
+	g_return_if_fail (string != NULL);
+	g_return_if_fail (format != NULL);
+	g_return_if_fail (hg_object_is_readable((HgObject *)string));
+	g_return_if_fail (hg_object_is_writable((HgObject *)string));
+
+	buffer = g_strdup_vprintf(format, va_args);
+	hg_string_append(string, buffer, strlen(buffer));
+	g_free(buffer);
+}
+
 /* HgObject */
 HgString *
 hg_object_to_string(HgObject *object)
