@@ -910,7 +910,6 @@ _hg_dict_traverse_set_flags(gpointer key,
 	HgListIter iter = hg_list_iter_new(list);
 
 	if (iter == NULL) {
-		__asm__("int3");
 		g_warning("Failed to create an iter to set flags from Dict.");
 		return FALSE;
 	}
