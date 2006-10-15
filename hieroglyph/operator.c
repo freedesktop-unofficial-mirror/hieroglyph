@@ -5212,6 +5212,7 @@ G_STMT_START
 			_hg_operator_set_error(vm, op, VM_e_invalidrestore);
 			break;
 		}
+		hg_stack_pop(ostack);
 		break;
 	}
 } G_STMT_END;

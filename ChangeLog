@@ -1,5 +1,8 @@
 2006-10-15  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/operator.c (_hg_operator_op_restore): drop the save object
+	out of ostack if restore successfully complete.
+
 	* hieroglyph/vm.c (hg_vm_startjob): allow an empty initializer to
 	just makes VM initialization.
 
