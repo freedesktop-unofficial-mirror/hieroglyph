@@ -7,6 +7,8 @@
 
  * [MUST] complete to implement operators for PostScript Level 1 compliant.
 
+ * [MUST] support the security restriction feature.
+
 * need work for future release.
 
  * complete to implement operators for PostScript Level 2 compliant.
