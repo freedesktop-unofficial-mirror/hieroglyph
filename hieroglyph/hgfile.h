@@ -40,6 +40,7 @@ extern HgFileObject *__hg_file_stderr;
 void     hg_file_init          (void);
 void     hg_file_finalize      (void);
 gboolean hg_file_is_initialized(void);
+void     hg_file_io_synchronous(gboolean flag);
 
 /* file object */
 HgFileObject *hg_file_object_new        (HgMemPool     *pool,

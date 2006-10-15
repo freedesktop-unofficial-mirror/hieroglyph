@@ -79,6 +79,7 @@ HgFileObject *__hg_file_stdin = NULL;
 HgFileObject *__hg_file_stdout = NULL;
 HgFileObject *__hg_file_stderr = NULL;
 static gboolean __hg_file_is_initialized = FALSE;
+static gboolean __hg_file_is_io_synchronous = FALSE;
 static HgMemPool *__hg_file_mem_pool = NULL;
 static HgAllocator *__hg_file_allocator = NULL;
 static HgObjectVTable __hg_file_vtable = {
@@ -257,6 +258,12 @@ gboolean
 hg_file_is_initialized(void)
 {
 	return __hg_file_is_initialized;
+}
+
+void
+hg_file_io_synchronous(gboolean flag)
+{
+	__hg_file_is_io_synchronous = flag;
 }
 
 /* file object */
@@ -622,6 +629,8 @@ hg_file_object_write(HgFileObject  *object,
 		    errno = 0;
 		    retval = write(object->is.file.fd, buffer, size * n);
 		    object->error = errno;
+		    if (__hg_file_is_io_synchronous)
+			    fsync(object->is.file.fd);
 		    break;
 	    case HG_FILE_TYPE_BUFFER:
 		    if ((object->is.buf.bufsize - object->is.buf.pos) < (size * n))
