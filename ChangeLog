@@ -1,5 +1,8 @@
 2006-10-15  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/vm.c (hg_vm_startjob): allow an empty initializer to
+	just makes VM initialization.
+
 	* src/hgs.c (main): add --sync option.
 
 	* hieroglyph/hgfile.c (hg_file_io_synchronous): new function.

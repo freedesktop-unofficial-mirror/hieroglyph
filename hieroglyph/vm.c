@@ -1019,7 +1019,10 @@ hg_vm_startjob(HgVM        *vm,
 		hg_dict_insert(vm->local_pool, vm->serverdict, nkey, ntrue);
 	}
 
-	if (initializer) {
+	if (initializer && initializer[0] == 0) {
+		/* just initialize VM */
+		return TRUE;
+	} else if (initializer) {
 		gchar *eval = g_strdup_printf("{prompt (%s)(r)file dup type /filetype eq {cvx exec} if} stopped {$error /newerror get {errordict /handleerror get exec 1 .quit} if} if", initializer);
 
 		retval = hg_vm_eval(vm, eval, NULL, NULL, NULL, NULL);
