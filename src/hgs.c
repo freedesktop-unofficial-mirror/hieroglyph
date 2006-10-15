@@ -85,7 +85,7 @@ main(int    argc,
 	GOptionEntry entries[] = {
 		{"define", 'd', 0, G_OPTION_ARG_CALLBACK, _hgs_arg_define_cb, "Define a variable in systemdict.", "SYMBOL"},
 		{"load-plugin", 'l', 0, G_OPTION_ARG_CALLBACK, _hgs_arg_load_plugin_cb, "Load a plugin", "NAME"},
-		{"sync", 0, 0, G_OPTION_ARG_NONE, &opt_io_sync, "Make I/O calls synchronous", NULL},
+		{"sync-io", 0, 0, G_OPTION_ARG_NONE, &opt_io_sync, "Make I/O calls synchronous", NULL},
 		{"device", 0, 0, G_OPTION_ARG_STRING, &device_name, "Output device that the rendering goes to", "DEVICE"},
 		{NULL}
 	};
