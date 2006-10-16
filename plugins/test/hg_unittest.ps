@@ -34,6 +34,9 @@ end /.unittestdict exch def
 	/nsuccess 0 def
 	/nfailure 0 def
     end
+    .promptmsg length 2 add dup string 1 1 4 -1 roll 2 sub {1 index exch 32 put} for
+    dup 0 13 put
+    dup dup length 1 sub 13 put =only
 } bind odef
 
 % -array- -name- -bool- initunittestdict -
@@ -57,6 +60,12 @@ end /.unittestdict exch def
     end
 } bind odef
 
+/.updateunittestprogress {
+    [(|) (/) (-) (\\)]
+    .unittestdict /nunit get 4 mod
+    get (\r) .concatstring =only flush
+} bind odef
+
 % proc unittest -bool-
 /unittest {
     .dounittest
@@ -73,6 +82,7 @@ end /.unittestdict exch def
 
 % proc .dounittest -
 /.dounittest {
+    .updateunittestprogress
     % back the ostack up into dict
     count copy pop count 1 sub 2 idiv array astore .unittestdict /.ostack 3 -1 roll put
     dup .unittestdict /expression 3 -1 roll put
