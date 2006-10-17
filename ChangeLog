@@ -1,5 +1,12 @@
 2006-10-18  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/operator.c (_hg_operator_op_exec): save the current
+	security level and rollback it after finished the object's execution.
+
+	* hieroglyph/vm.c (_hg_vm_op_rollbacksecuritylevel): new function.
+	(hg_vm_set_security_level): implemented.
+	(hg_vm_get_security_level): implemented.
+
 	* hieroglyph/operator.c (_hg_operator_op_countdictstack):
 	check VMerror.
 	(_hg_operator_op_countexecstack): likewise.

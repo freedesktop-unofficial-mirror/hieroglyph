@@ -2700,7 +2700,7 @@ G_STMT_START
 	HgStack *ostack = hg_vm_get_ostack(vm);
 	HgStack *estack = hg_vm_get_estack(vm);
 	guint depth = hg_stack_depth(ostack);
-	HgValueNode *node, *self, *tmp;
+	HgValueNode *node, *self, *tmp, *slnode, *scnode;
 
 	while (1) {
 		if (depth < 1) {
@@ -2715,11 +2715,19 @@ G_STMT_START
 				break;
 			}
 			self = hg_stack_pop(estack);
+			/* save the current security level */
+			HG_VALUE_MAKE_INTEGER (hg_vm_get_current_pool(vm),
+					       slnode,
+					       hg_vm_get_security_level(vm));
+			hg_stack_push(estack, slnode);
+			scnode = hg_dict_lookup_with_string(hg_vm_get_dict_systemdict(vm),
+							    "%rollback_securitylevel");
+			hg_stack_push(estack, scnode);
 			tmp = hg_object_copy((HgObject *)node);
 			if (tmp)
 				hg_stack_push(estack, tmp);
 			retval = hg_stack_push(estack, self);
-			if (!tmp)
+			if (!tmp || !slnode)
 				_hg_operator_set_error(vm, op, VM_e_VMerror);
 			else if (!retval)
 				_hg_operator_set_error(vm, op, VM_e_execstackoverflow);

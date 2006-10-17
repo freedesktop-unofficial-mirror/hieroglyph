@@ -74,6 +74,7 @@ struct _HieroGlyphVirtualMachine {
 	GRand             *random_generator;
 	gint32             error_code;
 	gboolean           shutdown;
+	gint32             security_level;
 
 	/* job management */
 	GList             *saved_jobs;
@@ -136,6 +137,29 @@ static HgObjectVTable __hg_vm_vtable = {
 	.copy      = NULL,
 	.to_string = NULL,
 };
+
+/*
+ * special operators
+ */
+static gboolean
+_hg_vm_op_rollbacksecuritylevel(HgOperator *op,
+				gpointer    data)
+{
+	HgVM *vm = data;
+	gboolean retval = FALSE;
+	HgStack *estack = hg_vm_get_estack(vm);
+	HgValueNode *nself, *node;
+
+	nself = hg_stack_index(estack, 0);
+	node = hg_stack_index(estack, 1);
+	vm->security_level = HG_VALUE_GET_INTEGER (node);
+	hg_stack_pop(estack);
+	hg_stack_pop(estack);
+	retval = hg_stack_push(estack, nself); /* dummy */
+	/* it must be true */
+
+	return retval;
+}
 
 /*
  * Private Functions
@@ -999,6 +1023,18 @@ hg_vm_startjob(HgVM        *vm,
 	if (!hg_operator_init(vm))
 		return FALSE;
 
+	/* initialize the special operators */
+#define BUILD_OP(_vm_, _pool_, _sdict_, _name_, _func_)			\
+	G_STMT_START {							\
+		HgOperator *__hg_op;					\
+									\
+		hg_operator_build_operator__inline(_hg_vm_op_, (_vm_), (_pool_), (_sdict_), _name_, _func_, __hg_op); \
+	} G_STMT_END
+
+	BUILD_OP (vm, vm->global_pool, vm->systemdict, %rollback_securitylevel, rollbacksecuritylevel);
+
+#undef BUILD_OP
+
 	/* FIXME: initialize graphics */
 
 	hg_vm_use_global_pool(vm, FALSE);
@@ -1565,12 +1601,21 @@ hg_vm_shutdown(HgVM   *vm,
 gint32
 hg_vm_get_security_level(HgVM *vm)
 {
-	return 0;
+	g_return_val_if_fail(vm != NULL, G_MAXINT32);
+
+	return vm->security_level;
 }
 
 gboolean
 hg_vm_set_security_level(HgVM   *vm,
 			 gint32  level)
 {
-	return FALSE;
+	g_return_val_if_fail (vm != NULL, FALSE);
+
+	if (hg_vm_get_security_level(vm) > level)
+		return FALSE;
+
+	vm->security_level = level;
+
+	return TRUE;
 }
