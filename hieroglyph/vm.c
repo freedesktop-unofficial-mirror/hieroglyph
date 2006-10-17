@@ -1561,3 +1561,16 @@ hg_vm_shutdown(HgVM   *vm,
 	vm->shutdown = TRUE;
 	hg_vm_set_error_code(vm, error_code);
 }
+
+gint32
+hg_vm_get_security_level(HgVM *vm)
+{
+	return 0;
+}
+
+gboolean
+hg_vm_set_security_level(HgVM   *vm,
+			 gint32  level)
+{
+	return FALSE;
+}

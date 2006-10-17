@@ -457,6 +457,7 @@ G_STMT_START
 		hg_stack_pop(estack);
 		hg_stack_pop(estack);
 		retval = hg_stack_push(estack, nself);
+		/* it must be true */
 		break;
 	}
 } G_STMT_END;
@@ -1727,9 +1728,13 @@ G_STMT_START
 	HgValueNode *node;
 
 	HG_VALUE_MAKE_INTEGER (hg_vm_get_current_pool(vm), node, ddepth);
-	retval = hg_stack_push(ostack, node);
-	if (!retval)
-		_hg_operator_set_error(vm, op, VM_e_stackoverflow);
+	if (node == NULL) {
+		_hg_operator_set_error(vm, op, VM_e_VMerror);
+	} else {
+		retval = hg_stack_push(ostack, node);
+		if (!retval)
+			_hg_operator_set_error(vm, op, VM_e_stackoverflow);
+	}
 } G_STMT_END;
 DEFUNC_OP_END
 
@@ -1742,9 +1747,13 @@ G_STMT_START
 	HgValueNode *node;
 
 	HG_VALUE_MAKE_INTEGER (hg_vm_get_current_pool(vm), node, edepth);
-	retval = hg_stack_push(ostack, node);
-	if (!retval)
-		_hg_operator_set_error(vm, op, VM_e_stackoverflow);
+	if (node == NULL) {
+		_hg_operator_set_error(vm, op, VM_e_VMerror);
+	} else {
+		retval = hg_stack_push(ostack, node);
+		if (!retval)
+			_hg_operator_set_error(vm, op, VM_e_stackoverflow);
+	}
 } G_STMT_END;
 DEFUNC_OP_END
 
@@ -1785,9 +1794,13 @@ G_STMT_START
 
 	node = hg_stack_index(dstack, 0);
 	dup_node = hg_object_dup((HgObject *)node);
-	retval = hg_stack_push(ostack, dup_node);
-	if (!retval)
-		_hg_operator_set_error(vm, op, VM_e_stackoverflow);
+	if (dup_node == NULL) {
+		_hg_operator_set_error(vm, op, VM_e_VMerror);
+	} else {
+		retval = hg_stack_push(ostack, dup_node);
+		if (!retval)
+			_hg_operator_set_error(vm, op, VM_e_stackoverflow);
+	}
 } G_STMT_END;
 DEFUNC_OP_END
 
@@ -1813,9 +1826,13 @@ G_STMT_START
 		file = hg_file_object_new(pool, HG_FILE_TYPE_BUFFER, HG_FILE_MODE_READ, "%invalid", "", 0);
 	}
 	HG_VALUE_MAKE_FILE (n, file);
-	retval = hg_stack_push(ostack, n);
-	if (!retval)
-		_hg_operator_set_error(vm, op, VM_e_stackoverflow);
+	if (n == NULL) {
+		_hg_operator_set_error(vm, op, VM_e_VMerror);
+	} else {
+		retval = hg_stack_push(ostack, n);
+		if (!retval)
+			_hg_operator_set_error(vm, op, VM_e_stackoverflow);
+	}
 } G_STMT_END;
 DEFUNC_OP_END
 
@@ -2518,6 +2535,7 @@ G_STMT_START
 		hg_stack_pop(ostack);
 		hg_stack_pop(ostack);
 		retval = hg_stack_push(ostack, n1);
+		/* it must be true */
 		break;
 	}
 } G_STMT_END;
@@ -2539,9 +2557,13 @@ G_STMT_START
 		}
 		node = hg_stack_index(ostack, 0);
 		dup_node = hg_object_dup((HgObject *)node);
-		retval = hg_stack_push(ostack, dup_node);
-		if (!retval)
-			_hg_operator_set_error(vm, op, VM_e_stackoverflow);
+		if (dup_node == NULL) {
+			_hg_operator_set_error(vm, op, VM_e_VMerror);
+		} else {
+			retval = hg_stack_push(ostack, dup_node);
+			if (!retval)
+				_hg_operator_set_error(vm, op, VM_e_stackoverflow);
+		}
 		break;
 	}
 } G_STMT_END;
@@ -2665,8 +2687,8 @@ G_STMT_START
 		n2 = hg_stack_pop(ostack);
 		n1 = hg_stack_pop(ostack);
 		hg_stack_push(ostack, n2);
-		hg_stack_push(ostack, n1);
-		retval = TRUE;
+		retval = hg_stack_push(ostack, n1);
+		/* it must be true */
 		break;
 	}
 } G_STMT_END;
@@ -3632,6 +3654,7 @@ G_STMT_START
 		hg_stack_pop(ostack);
 		hg_stack_pop(ostack);
 		retval = hg_stack_push(ostack, n1);
+		/* it must be true */
 		break;
 	}
 } G_STMT_END;
@@ -5516,6 +5539,7 @@ G_STMT_START
 			hg_stack_pop(ostack);
 			hg_stack_pop(ostack);
 			retval = hg_stack_push(ostack, nmatrix);
+			/* it must be true */
 		} else {
 			retval = hg_graphics_matrix_scale(hg_vm_get_graphics(vm),
 							  dx, dy);
@@ -6355,6 +6379,7 @@ G_STMT_START
 			hg_stack_pop(ostack);
 			hg_stack_pop(ostack);
 			retval = hg_stack_push(ostack, nmatrix);
+			/* it must be true */
 		} else {
 			retval = hg_graphics_matrix_translate(hg_vm_get_graphics(vm),
 							      dx, dy);
@@ -6467,6 +6492,7 @@ G_STMT_START
 		hg_object_executable((HgObject *)node);
 		hg_stack_pop(ostack);
 		retval = hg_stack_push(ostack, node);
+		/* it must be true */
 		break;
 	}
 } G_STMT_END;
@@ -7060,6 +7086,7 @@ G_STMT_START
 				hg_stack_pop(ostack);
 		}
 		retval = hg_stack_push(estack, self);
+		/* it must be true */
 		break;
 	}
 } G_STMT_END;
@@ -7221,6 +7248,20 @@ G_STMT_START
 } G_STMT_END;
 DEFUNC_OP_END
 
+DEFUNC_OP (private_hg_getsecuritylevel)
+G_STMT_START
+{
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	HgValueNode *node;
+	HgMemPool *pool = hg_vm_get_current_pool(vm);
+
+	HG_VALUE_MAKE_INTEGER (pool, node, hg_vm_get_security_level(vm));
+	retval = hg_stack_push(ostack, node);
+	if (!retval)
+		_hg_operator_set_error(vm, op, VM_e_stackoverflow);
+} G_STMT_END;
+DEFUNC_OP_END
+
 DEFUNC_OP (private_hg_hgrevision)
 G_STMT_START
 {
@@ -7365,6 +7406,35 @@ G_STMT_START
 			break;
 		}
 		hg_vm_use_global_pool(vm, HG_VALUE_GET_BOOLEAN (node));
+		hg_stack_pop(ostack);
+		retval = TRUE;
+		break;
+	}
+} G_STMT_END;
+DEFUNC_OP_END
+
+DEFUNC_OP (private_hg_setsecuritylevel)
+G_STMT_START
+{
+
+	HgStack *ostack = hg_vm_get_ostack(vm);
+	guint depth = hg_stack_depth(ostack);
+	HgValueNode *node;
+
+	while (1) {
+		if (depth < 1) {
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
+			break;
+		}
+		node = hg_stack_index(ostack, 0);
+		if (!HG_IS_VALUE_INTEGER (node)) {
+			_hg_operator_set_error(vm, op, VM_e_typecheck);
+			break;
+		}
+		if (!hg_vm_set_security_level(vm, HG_VALUE_GET_INTEGER (node))) {
+			_hg_operator_set_error(vm, op, VM_e_invalidaccess);
+			break;
+		}
 		hg_stack_pop(ostack);
 		retval = TRUE;
 		break;
@@ -7878,6 +7948,7 @@ hg_operator_hieroglyph_init(HgVM      *vm,
 	BUILD_OP_ (vm, pool, dict, .exit, private_hg_exit);
 	BUILD_OP_ (vm, pool, dict, .findlibfile, private_hg_findlibfile);
 	BUILD_OP_ (vm, pool, dict, .forceput, private_hg_forceput);
+	BUILD_OP_ (vm, pool, dict, .getsecuritylevel, private_hg_getsecuritylevel);
 	BUILD_OP_ (vm, pool, dict, .hgrevision, private_hg_hgrevision);
 	BUILD_OP_ (vm, pool, dict, .initplugins, private_hg_initplugins);
 	BUILD_OP_ (vm, pool, dict, .odef, private_hg_odef);
@@ -7885,6 +7956,7 @@ hg_operator_hieroglyph_init(HgVM      *vm,
 	BUILD_OP_ (vm, pool, dict, .quit, private_hg_quit);
 	BUILD_OP_ (vm, pool, dict, .revision, private_hg_revision);
 	BUILD_OP_ (vm, pool, dict, .setglobal, private_hg_setglobal);
+	BUILD_OP_ (vm, pool, dict, .setsecuritylevel, private_hg_setsecuritylevel);
 	BUILD_OP_ (vm, pool, dict, .startjobserver, private_hg_startjobserver);
 	BUILD_OP_ (vm, pool, dict, .undef, private_hg_undef);
 }

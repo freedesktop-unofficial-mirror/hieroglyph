@@ -155,6 +155,9 @@ gboolean              hg_vm_eval                 (HgVM              *vm,
 gint32                hg_vm_get_error_code       (HgVM              *vm);
 void                  hg_vm_shutdown             (HgVM              *vm,
 						  gint32             error_code);
+gint32                hg_vm_get_security_level   (HgVM              *vm);
+gboolean              hg_vm_set_security_level   (HgVM              *vm,
+						  gint32             level);
 
 
 /* internal use */

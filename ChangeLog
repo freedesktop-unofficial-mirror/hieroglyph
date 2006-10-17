@@ -1,3 +1,14 @@
+2006-10-18  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/operator.c (_hg_operator_op_countdictstack):
+	check VMerror.
+	(_hg_operator_op_countexecstack): likewise.
+	(_hg_operator_op_currentdict): likewise.
+	(_hg_operator_op_currentfile): likewise.
+	(_hg_operator_op_dup): likewise.
+	(_hg_operator_op_private_hg_getsecuritylevel): new function.
+	(_hg_operator_op_private_hg_setsecuritylevel): new function.
+
 2006-10-16  Akira TAGOH  <at@gclab.org>
 
 	* plugins/test/hg_unittest.ps (initunittest): erase a prompt.
