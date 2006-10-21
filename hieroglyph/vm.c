@@ -146,17 +146,23 @@ _hg_vm_op_rollbacksecuritylevel(HgOperator *op,
 				gpointer    data)
 {
 	HgVM *vm = data;
-	gboolean retval = FALSE;
+	gboolean retval = TRUE;
 	HgStack *estack = hg_vm_get_estack(vm);
+	guint edepth = hg_stack_depth(estack);
 	HgValueNode *nself, *node;
 
-	nself = hg_stack_index(estack, 0);
-	node = hg_stack_index(estack, 1);
-	vm->security_level = HG_VALUE_GET_INTEGER (node);
-	hg_stack_pop(estack);
-	hg_stack_pop(estack);
-	retval = hg_stack_push(estack, nself); /* dummy */
-	/* it must be true */
+	/* ignore the errors */
+	if (edepth > 2) {
+		nself = hg_stack_index(estack, 0);
+		node = hg_stack_index(estack, 1);
+		if (HG_IS_VALUE_INTEGER (node)) {
+			vm->security_level = HG_VALUE_GET_INTEGER (node);
+			hg_stack_pop(estack);
+			hg_stack_pop(estack);
+			retval = hg_stack_push(estack, nself); /* dummy */
+			/* it must be true */
+		}
+	}
 
 	return retval;
 }
