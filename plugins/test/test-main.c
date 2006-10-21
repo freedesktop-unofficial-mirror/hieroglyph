@@ -28,6 +28,7 @@
 #include <hieroglyph/hgarray.h>
 #include <hieroglyph/hgdict.h>
 #include <hieroglyph/hgfile.h>
+#include <hieroglyph/hglog.h>
 #include <hieroglyph/hgmem.h>
 #include <hieroglyph/hgplugins.h>
 #include <hieroglyph/hgstack.h>
@@ -244,7 +245,7 @@ plugin_load(HgPlugin *plugin,
 	g_return_val_if_fail (vm != NULL, FALSE);
 
 	if (plugin->user_data != NULL) {
-		g_warning("already loaded.");
+		hg_log_warning("already loaded.");
 		return FALSE;
 	}
 	systemdict = hg_vm_get_dict_systemdict(vm);
@@ -277,7 +278,7 @@ plugin_unload(HgPlugin *plugin,
 	g_return_val_if_fail (vm != NULL, FALSE);
 
 	if (plugin->user_data != NULL) {
-		g_warning("not yet loaded.");
+		hg_log_warning("not yet loaded.");
 		return FALSE;
 	}
 

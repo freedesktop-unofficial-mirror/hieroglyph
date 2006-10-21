@@ -31,6 +31,7 @@
 #include "hgarray.h"
 #include "hgdict.h"
 #include "hgfile.h"
+#include "hglog.h"
 #include "hgstring.h"
 #include "hgvaluenode.h"
 #include "iarray.h"
@@ -312,9 +313,9 @@ _hg_scanner_get_object(HgVM         *vm,
 						need_loop = FALSE;
 					} else if (c == '~') {
 						/* ASCII85 encoding */
-						g_warning("FIXME: implement me");
+						hg_log_warning("FIXME: implement me");
 					} else {
-						g_warning("FIXME: implement me");
+						hg_log_warning("FIXME: implement me");
 						hg_file_object_ungetc(file, c);
 					}
 					break;
@@ -325,9 +326,9 @@ _hg_scanner_get_object(HgVM         *vm,
 						need_loop = FALSE;
 					} else if (c == '~') {
 						/* ASCII85 encoding */
-						g_warning("FIXME: implement me");
+						hg_log_warning("FIXME: implement me");
 					} else {
-						g_warning("FIXME: implement me");
+						hg_log_warning("FIXME: implement me");
 						hg_file_object_ungetc(file, c);
 					}
 					break;
@@ -394,7 +395,7 @@ _hg_scanner_get_object(HgVM         *vm,
 					was_comment = TRUE;
 					break;
 				default:
-					g_warning("[BUG] unknown control object %c.", c);
+					hg_log_warning("[BUG] unknown control object %c.", c);
 					break;
 			    }
 			    break;
@@ -483,7 +484,7 @@ _hg_scanner_get_object(HgVM         *vm,
 					}
 					break;
 				default:
-					g_warning("[BUG] it may be unlikely to appear HG_SCAN_C_NAME in token type %d\n", token_type);
+					hg_log_warning("[BUG] it may be unlikely to appear HG_SCAN_C_NAME in token type %d\n", token_type);
 					break;
 			    }
 			    break;
@@ -533,7 +534,7 @@ _hg_scanner_get_object(HgVM         *vm,
 		    case HG_SCAN_C_BINARY:
 			    break;
 		    default:
-			    g_warning("Unknown character %c(%d)[%d]", c, c, __hg_scanner_token[c]);
+			    hg_log_warning("Unknown character %c(%d)[%d]", c, c, __hg_scanner_token[c]);
 			    break;
 		}
 	}
@@ -586,7 +587,7 @@ _hg_scanner_get_object(HgVM         *vm,
 	    default:
 		    /* XXX */
 		    if (!was_comment)
-			    g_warning("FIXME: unknown token type %d\n", token_type);
+			    hg_log_warning("FIXME: unknown token type %d\n", token_type);
 		    break;
 	}
 
@@ -736,7 +737,7 @@ _hg_scanner_parse_number(HgVM          *vm,
 						is_valid = FALSE;
 						break;
 					default:
-						g_warning("[BUG] it may be unlikely to appear HG_SCAN_C_NAME in token type %d\n", token_type);
+						hg_log_warning("[BUG] it may be unlikely to appear HG_SCAN_C_NAME in token type %d\n", token_type);
 						is_valid = FALSE;
 						break;
 				    }
@@ -794,7 +795,7 @@ _hg_scanner_parse_number(HgVM          *vm,
 					}
 					break;
 				default:
-					g_warning("[BUG] it may be unlikely to appear HG_SCAN_C_NUMERAL in token type %d\n", token_type);
+					hg_log_warning("[BUG] it may be unlikely to appear HG_SCAN_C_NUMERAL in token type %d\n", token_type);
 					goto non_numeral_handler;
 			    }
 			    break;
@@ -822,7 +823,7 @@ _hg_scanner_parse_number(HgVM          *vm,
 				intdigits = (guint)log10(di) + 1;
 			if (has_radix) {
 				/* this is unlikely */
-				g_warning("[BUG] numeric with radix is going to be the real.");
+				hg_log_warning("[BUG] numeric with radix is going to be the real.");
 				return FALSE;
 			}
 			if (floatarray) {

@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
  * cairo-ps-main.c
- * Copyright (C) 2005 Akira TAGOH
+ * Copyright (C) 2005,2006 Akira TAGOH
  * 
  * Authors:
  *   Akira TAGOH  <at@gclab.org>
@@ -29,6 +29,7 @@
 #include <cairo/cairo-ps.h>
 #include <glib.h>
 #include <hieroglyph/debug.h>
+#include <hieroglyph/hglog.h>
 #include "hgdevice-cairo.h"
 
 
@@ -62,7 +63,7 @@ device_open(HgPageInfo *info)
 
 	fd = g_file_open_tmp("ps-embedded-XXXXXX", &filename, NULL);
 	if (fd == -1) {
-		g_warning("Failed to open a file descriptor.");
+		hg_log_warning("Failed to open a file descriptor.");
 		if (filename)
 			g_free(filename);
 
@@ -80,7 +81,7 @@ device_open(HgPageInfo *info)
 	cdev->u.ps.fd = fd;
 
 	if (cairo_status(cdev->reference) != CAIRO_STATUS_SUCCESS) {
-		g_warning("Failed to create an reference of cairo.");
+		hg_log_warning("Failed to create an reference of cairo.");
 	}
 
 	TRACE_LEAVE;

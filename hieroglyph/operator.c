@@ -39,6 +39,7 @@
 #include "hgdict.h"
 #include "hgfile.h"
 #include "hglineedit.h"
+#include "hglog.h"
 #include "hgmatrix.h"
 #include "hgpath.h"
 #include "hgstack.h"
@@ -1244,7 +1245,7 @@ G_STMT_START
 		    i = depth - 3;
 		    break;
 	    default:
-		    g_warning("Unknown emulation level %d\n", type);
+		    hg_log_warning("Unknown emulation level %d\n", type);
 		    break;
 	}
 	if (i < 0) {
@@ -3074,7 +3075,7 @@ G_STMT_START
 				break;
 			}
 		} else {
-			g_warning("unknown open type: %d", file_type);
+			hg_log_warning("unknown open type: %d", file_type);
 		}
 		if (file == NULL) {
 			_hg_operator_set_error(vm, op, VM_e_VMerror);
@@ -6491,8 +6492,8 @@ G_STMT_START
 			    break;
 		    case HG_TYPE_VALUE_END:
 		    default:
-			    g_warning("[BUG] Unknown node type %d was given.",
-				      HG_VALUE_GET_VALUE_TYPE (node));
+			    hg_log_warning("[BUG] Unknown node type %d was given.",
+					   HG_VALUE_GET_VALUE_TYPE (node));
 			    _hg_operator_set_error(vm, op, VM_e_typecheck);
 
 			    return retval;
@@ -6612,7 +6613,7 @@ G_STMT_START
 		for (i = 0; i < ddepth; i++) {
 			ndict = hg_stack_index(dstack, i);
 			if (!HG_IS_VALUE_DICT (ndict)) {
-				g_warning("[BUG] Invalid dictionary was in the dictionary stack.");
+				hg_log_warning("[BUG] Invalid dictionary was in the dictionary stack.");
 				return retval;
 			}
 			dict = HG_VALUE_GET_DICT (ndict);
@@ -7517,7 +7518,7 @@ _hg_operator_real_set_flags(gpointer data,
 
 	hg_mem_get_object__inline(op->name, obj);
 	if (obj == NULL) {
-		g_warning("Invalid object %p to be marked: HgOperator->name", op->name);
+		hg_log_warning("Invalid object %p to be marked: HgOperator->name", op->name);
 	} else {
 #ifdef DEBUG_GC
 		G_STMT_START {
@@ -7987,7 +7988,7 @@ hg_operator_new(HgMemPool      *pool,
 	retval = hg_mem_alloc_with_flags(pool, sizeof (HgOperator),
 					 HG_FL_HGOBJECT);
 	if (retval == NULL) {
-		g_warning("Failed to create an operator.");
+		hg_log_warning("Failed to create an operator.");
 		return NULL;
 	}
 	HG_OBJECT_INIT_STATE (&retval->object);
@@ -7997,7 +7998,7 @@ hg_operator_new(HgMemPool      *pool,
 	len = strlen(name);
 	retval->name = hg_mem_alloc(pool, len + 1);
 	if (retval->name == NULL) {
-		g_warning("Failed to create an operator.");
+		hg_log_warning("Failed to create an operator.");
 		return NULL;
 	}
 	strncpy(retval->name, name, len);
@@ -8022,7 +8023,7 @@ hg_operator_init(HgVM *vm)
 	type = hg_vm_get_emulation_level(vm);
 	if (type < VM_EMULATION_LEVEL_1 ||
 	    type > VM_EMULATION_LEVEL_3) {
-		g_warning("[BUG] Unknown emulation level %d", type);
+		hg_log_warning("[BUG] Unknown emulation level %d", type);
 
 		return FALSE;
 	}

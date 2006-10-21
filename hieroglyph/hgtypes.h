@@ -45,6 +45,7 @@ typedef struct _HieroGlyphLineEditVTable	HgLineEditVTable;
 /* hglist.h */
 typedef struct _HieroGlyphList			HgList;
 typedef struct _HieroGlyphListIter		*HgListIter;
+/* hglog.h */
 /* hgmem.h */
 typedef struct _HieroGlyphAllocatorVTable	HgAllocatorVTable;
 typedef struct _HieroGlyphAllocator		HgAllocator;
@@ -99,14 +100,14 @@ typedef struct _HieroGlyphDevice		HgDevice;
 
 typedef gboolean            (*HgCompareFunc)       (gconstpointer a,
 						    gconstpointer b);
-typedef gboolean            (*HgTraverseFunc)      (gpointer    key,
-						    gpointer    val,
-						    gpointer    data);
-typedef void                (*HgDebugFunc)         (gpointer    data);
+typedef gboolean            (*HgTraverseFunc)      (gpointer      key,
+						    gpointer      val,
+						    gpointer      data);
+typedef void                (*HgDebugFunc)         (gpointer      data);
 typedef HgAllocatorVTable * (*HgAllocatorTypeFunc) (void);
-typedef HgPlugin          * (*HgPluginNewFunc)     (HgMemPool  *pool);
-typedef gboolean            (*HgOperatorFunc)      (HgOperator *op,
-						    gpointer    vm);
+typedef HgPlugin          * (*HgPluginNewFunc)     (HgMemPool    *pool);
+typedef gboolean            (*HgOperatorFunc)      (HgOperator   *op,
+						    gpointer      vm);
 
 typedef enum {
 	HG_MEM_GLOBAL    = 1 << 0,  /* without this, that means the local pool */
@@ -212,6 +213,14 @@ typedef enum {
 	HG_FILE_POS_CURRENT = SEEK_CUR,
 	HG_FILE_POS_END     = SEEK_END
 } HgFilePosType;
+
+/* hglog.h */
+typedef enum {
+	HG_LOG_TYPE_INFO    = 0,
+	HG_LOG_TYPE_DEBUG   = 1,
+	HG_LOG_TYPE_WARNING = 2,
+	HG_LOG_TYPE_ERROR   = 3,
+} HgLogType;
 
 typedef enum {
 	HG_PAGE_4A0 = 1,

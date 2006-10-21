@@ -26,6 +26,7 @@
 #endif
 
 #include "hglist.h"
+#include "hglog.h"
 #include "hgmem.h"
 #include "hgallocator-bfit.h"
 
@@ -122,8 +123,8 @@ _hg_list_real_set_flags(gpointer data,
 	if (list->data && HG_LIST_IS_OBJECT_NODE (list)) {
 		hg_mem_get_object__inline(list->data, obj);
 		if (obj == NULL) {
-			g_warning("[BUG] Invalid object %p to be marked: HgList data",
-				  list->data);
+			hg_log_warning("[BUG] Invalid object %p to be marked: HgList data",
+				       list->data);
 		} else {
 			if (!hg_mem_is_flags__inline(obj, flags))
 				hg_mem_add_flags__inline(obj, flags, TRUE);
@@ -132,7 +133,7 @@ _hg_list_real_set_flags(gpointer data,
 	if ((tmp = hg_list_next(list)) != NULL) {
 		hg_mem_get_object__inline(tmp, obj);
 		if (obj == NULL) {
-			g_warning("[BUG] Invalid object %p to be marked: HgList next node", tmp);
+			hg_log_warning("[BUG] Invalid object %p to be marked: HgList next node", tmp);
 		} else {
 			if (!hg_mem_is_flags__inline(obj, flags))
 				hg_mem_add_flags__inline(obj, flags, TRUE);
@@ -141,7 +142,7 @@ _hg_list_real_set_flags(gpointer data,
 	if ((tmp = hg_list_previous(list)) != NULL) {
 		hg_mem_get_object__inline(tmp, obj);
 		if (obj == NULL) {
-			g_warning("[BUG] Invalid object %p to be marked: HgList previous node", tmp);
+			hg_log_warning("[BUG] Invalid object %p to be marked: HgList previous node", tmp);
 		} else {
 			if (!hg_mem_is_flags__inline(obj, flags))
 				hg_mem_add_flags__inline(obj, flags, TRUE);
@@ -184,21 +185,21 @@ _hg_list_iter_real_set_flags(gpointer data,
 
 	hg_mem_get_object__inline(iter->top, obj);
 	if (obj == NULL) {
-		g_warning("[BUG] Invalid object %p to be marked: HgListIter top node", iter->top);
+		hg_log_warning("[BUG] Invalid object %p to be marked: HgListIter top node", iter->top);
 	} else {
 		if (!hg_mem_is_flags__inline(obj, flags))
 			hg_mem_add_flags__inline(obj, flags, TRUE);
 	}
 	hg_mem_get_object__inline(iter->last, obj);
 	if (obj == NULL) {
-		g_warning("[BUG] Invalid object %p to be marked: HgListIter last node", iter->last);
+		hg_log_warning("[BUG] Invalid object %p to be marked: HgListIter last node", iter->last);
 	} else {
 		if (!hg_mem_is_flags__inline(obj, flags))
 			hg_mem_add_flags__inline(obj, flags, TRUE);
 	}
 	hg_mem_get_object__inline(iter->current, obj);
 	if (obj == NULL) {
-		g_warning("[BUG] Invalid object %p to be marked: HgListIter current node", iter->current);
+		hg_log_warning("[BUG] Invalid object %p to be marked: HgListIter current node", iter->current);
 	} else {
 		if (!hg_mem_is_flags__inline(obj, flags))
 			hg_mem_add_flags__inline(obj, flags, TRUE);
@@ -239,7 +240,7 @@ _hg_list_get_last_node(HgList *list)
 			if (hg_list_next(tmp) != NULL ||
 			    hg_list_previous(tmp) != NULL) {
 				/* found incomplete node */
-				g_warning("[BUG] incomplete HgList node %p found.", tmp);
+				hg_log_warning("[BUG] incomplete HgList node %p found.", tmp);
 			} else {
 				/* this can be used as the last node */
 				return tmp;
@@ -253,8 +254,8 @@ _hg_list_get_last_node(HgList *list)
 		/* validate node */
 		if (tmp == list) {
 			/* detected the circular reference */
-			g_warning("[BUG] Circular reference happened without the last node mark: %p",
-				  list);
+			hg_log_warning("[BUG] Circular reference happened without the last node mark: %p",
+				       list);
 			/* workaround */
 			return hg_list_previous(list);
 		}
@@ -292,8 +293,8 @@ _hg_list_real_append(HgList   *list,
 		if (!HG_LIST_IS_UNUSED (last)) {
 			hg_mem_get_object__inline(last, obj);
 			if (obj == NULL) {
-				g_warning("[BUG] Invalid object %p is given to append a list.",
-					  last);
+				hg_log_warning("[BUG] Invalid object %p is given to append a list.",
+					       last);
 				return NULL;
 			}
 			tmp = hg_list_new(obj->pool);
@@ -332,8 +333,8 @@ _hg_list_real_prepend(HgList   *list,
 		if (!HG_LIST_IS_UNUSED (top)) {
 			hg_mem_get_object__inline(top, obj);
 			if (obj == NULL) {
-				g_warning("[BUG] Invalid object %p is given to prepend a list.",
-					  top);
+				hg_log_warning("[BUG] Invalid object %p is given to prepend a list.",
+					       top);
 				return NULL;
 			}
 			tmp = hg_list_new(obj->pool);
@@ -458,7 +459,7 @@ hg_list_length(HgList *list)
 
 	/* validate node */
 	if (l == NULL) {
-		g_warning("[BUG] no loop detected in HgList %p", list);
+		hg_log_warning("[BUG] no loop detected in HgList %p", list);
 	}
 
 	return retval;
@@ -504,8 +505,8 @@ hg_list_remove(HgList   *list,
 
 	/* validate node */
 	if (l == NULL) {
-		g_warning("[BUG] no loop detected in HgList %p during removing %p",
-			  list, data);
+		hg_log_warning("[BUG] no loop detected in HgList %p during removing %p",
+			       list, data);
 		top = list;
 	} else {
 		if (!top)

@@ -26,6 +26,7 @@
 #endif
 
 #include <hieroglyph/hgarray.h>
+#include <hieroglyph/hglog.h>
 #include <hieroglyph/hgvaluenode.h>
 #include "hgdevice-cairo.h"
 
@@ -85,7 +86,7 @@ _hg_cairo_device_print_path(HgPathNode    *node)
 				    g_print("%f %f %f %f %f %f curveto\n", node->x, node->y, node->next->x, node->next->y, node->next->next->x, node->next->next->y);
 				    node = node->next->next;
 			    } else {
-				    g_warning("[BUG] Invalid path for curve.");
+				    hg_log_warning("[BUG] Invalid path for curve.");
 			    }
 			    break;
 		    case HG_PATH_ARC:
@@ -93,7 +94,7 @@ _hg_cairo_device_print_path(HgPathNode    *node)
 				    g_print("%f %f %f %f %f arc\n", node->x, node->y, node->next->x, node->next->next->x, node->next->next->y);
 				    node = node->next->next;
 			    } else {
-				    g_warning("[BUG] Invalid path for arc.");
+				    hg_log_warning("[BUG] Invalid path for arc.");
 			    }
 			    break;
 		    case HG_PATH_MATRIX:
@@ -101,11 +102,11 @@ _hg_cairo_device_print_path(HgPathNode    *node)
 				    g_print("[%f %f %f %f %f %f] matrix\n", node->x, node->y, node->next->x, node->next->y, node->next->next->x, node->next->next->y);
 				    node = node->next->next;
 			    } else {
-				    g_warning("[BUG] Invalid matrix was given.");
+				    hg_log_warning("[BUG] Invalid matrix was given.");
 			    }
 			    break;
 		    default:
-			    g_warning("[BUG] Unknown path type %d was given.", node->type);
+			    hg_log_warning("[BUG] Unknown path type %d was given.", node->type);
 			    break;
 		}
 		node = node->next;
@@ -244,7 +245,7 @@ _hg_cairo_device_real_finalize(HgDevice *device)
 {
 	HgCairoDevice *cdev = (HgCairoDevice *)device;
 
-	g_warning("%s: FIXME: implement me.", __FUNCTION__);
+	hg_log_warning("%s: FIXME: implement me.", __FUNCTION__);
 	cairo_show_page(cdev->reference);
 	XFlush(cdev->u.xlib.dpy);
 
@@ -361,8 +362,8 @@ _hg_cairo_device_real_stroke(HgDevice       *device,
 		} else if (HG_IS_VALUE_REAL (node)) {
 			d = HG_VALUE_GET_REAL (node);
 		} else {
-			g_warning("[BUG] Invalid object type %d was given for dashline pattern.",
-				  HG_VALUE_GET_VALUE_TYPE (node));
+			hg_log_warning("[BUG] Invalid object type %d was given for dashline pattern.",
+				       HG_VALUE_GET_VALUE_TYPE (node));
 			d = 0.0;
 		}
 		dashes[i] = d;
@@ -421,7 +422,7 @@ _hg_cairo_device_set_path(HgCairoDevice *device,
 						   node->next->next->x, node->next->next->y);
 				    node = node->next->next;
 			    } else {
-				    g_warning("[BUG] Invalid path for curve.");
+				    hg_log_warning("[BUG] Invalid path for curve.");
 				    retval = FALSE;
 			    }
 			    break;
@@ -432,7 +433,7 @@ _hg_cairo_device_set_path(HgCairoDevice *device,
 					      node->next->next->x, node->next->next->y);
 				    node = node->next->next;
 			    } else {
-				    g_warning("[BUG] Invalid path for arc.");
+				    hg_log_warning("[BUG] Invalid path for arc.");
 				    retval = FALSE;
 			    }
 			    break;
@@ -449,12 +450,12 @@ _hg_cairo_device_set_path(HgCairoDevice *device,
 				    cairo_set_matrix(device->reference, &trans);
 				    node = node->next->next;
 			    } else {
-				    g_warning("[BUG] Invalid matrix was given.");
+				    hg_log_warning("[BUG] Invalid matrix was given.");
 				    retval = FALSE;
 			    }
 			    break;
 		    default:
-			    g_warning("[BUG] Unknown path type %d was given.", node->type);
+			    hg_log_warning("[BUG] Unknown path type %d was given.", node->type);
 			    retval = FALSE;
 			    break;
 		}
@@ -481,7 +482,7 @@ _hg_cairo_device_set_line_cap(HgCairoDevice *device,
 		    cap = CAIRO_LINE_CAP_SQUARE;
 		    break;
 	    default:
-		    g_warning("[BUG] Invalid linecap type %d", line_cap);
+		    hg_log_warning("[BUG] Invalid linecap type %d", line_cap);
 		    cap = CAIRO_LINE_CAP_BUTT;
 		    break;
 	}
@@ -505,7 +506,7 @@ _hg_cairo_device_set_line_join(HgCairoDevice *device,
 		    join = CAIRO_LINE_JOIN_BEVEL;
 		    break;
 	    default:
-		    g_warning("[BUG] Invalid linejoin type %d", line_join);
+		    hg_log_warning("[BUG] Invalid linejoin type %d", line_join);
 		    join = CAIRO_LINE_JOIN_MITER;
 		    break;
 	}

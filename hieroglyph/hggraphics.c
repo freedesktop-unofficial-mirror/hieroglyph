@@ -27,6 +27,7 @@
 
 #include <string.h>
 #include "hggraphics.h"
+#include "hglog.h"
 #include "hgmem.h"
 #include "hgarray.h"
 #include "hgdict.h"
@@ -80,7 +81,7 @@ _hg_graphic_state_real_set_flags(gpointer data,
 	if (gstate->member) {						\
 		hg_mem_get_object__inline(gstate->member, obj);		\
 		if (obj == NULL) {					\
-			g_warning("Invalid object %p to be marked: Graphics", gstate->member); \
+			hg_log_warning("Invalid object %p to be marked: Graphics", gstate->member); \
 		} else {						\
 			hg_mem_add_flags__inline(obj, flags, TRUE);	\
 		}							\
@@ -127,7 +128,7 @@ _hg_graphic_state_real_copy(gpointer data)
 		return NULL;
 	retval = hg_graphic_state_new(obj->pool);
 	if (retval == NULL) {
-		g_warning("Failed to duplicate a graphic state.");
+		hg_log_warning("Failed to duplicate a graphic state.");
 		return NULL;
 	}
 	memcpy(retval, data, sizeof (HgGraphicState));
@@ -177,7 +178,7 @@ _hg_graphics_real_set_flags(gpointer data,
 	if (member) {							\
 		hg_mem_get_object__inline(member, obj);			\
 		if (obj == NULL) {					\
-			g_warning("Invalid object %p to be marked: Graphics", member); \
+			hg_log_warning("Invalid object %p to be marked: Graphics", member); \
 		} else {						\
 			hg_mem_add_flags__inline(obj, flags, TRUE);	\
 		}							\
@@ -253,7 +254,7 @@ hg_graphic_state_new(HgMemPool *pool)
 
 		return retval;
 	}
-	g_warning("Failed to create a graphic state.");
+	hg_log_warning("Failed to create a graphic state.");
 
 	return NULL;
 }
@@ -285,7 +286,7 @@ hg_graphics_new(HgMemPool *pool)
 
 		return retval;
 	}
-	g_warning("Failed to create a graphic state.");
+	hg_log_warning("Failed to create a graphic state.");
 
 	return NULL;
 }
@@ -359,7 +360,7 @@ hg_graphics_set_graphic_size(HgGraphics *graphics,
 	g_return_val_if_fail (graphics->current_gstate != NULL, FALSE);
 
 	if (graphics->current_page->node) {
-		g_warning("Can't change the page size after the rendering code is invoked.");
+		hg_log_warning("Can't change the page size after the rendering code is invoked.");
 		return FALSE;
 	}
 

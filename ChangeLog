@@ -1,3 +1,9 @@
+2006-10-22  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/Makefile.am (libhieroglyph_la_SOURCES): added hglog.c.
+
+	* hieroglyph/hglog.[ch]: new files for logger.
+
 2006-10-21  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/vm.c (_hg_vm_op_rollbacksecuritylevel): ignore the errors.

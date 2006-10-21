@@ -28,6 +28,7 @@
 #include <string.h>
 #include "hgplugins.h"
 #include "hgmem.h"
+#include "hglog.h"
 
 
 static void _hg_plugin_real_free     (gpointer data);
@@ -88,7 +89,7 @@ _hg_plugin_load(HgMemPool   *pool,
 #define _CHECK_SYMBOL(_sym)						\
 		g_module_symbol(module, #_sym, &(_sym));		\
 		if ((_sym) == NULL) {					\
-			g_warning(g_module_error());			\
+			hg_log_warning(g_module_error());			\
 			g_module_close(module);				\
 			return NULL;					\
 		}
@@ -100,11 +101,11 @@ _hg_plugin_load(HgMemPool   *pool,
 		/* initialize a plugin and get a HgPlugin instance */
 		retval = ((HgPluginNewFunc)plugin_new) (pool);
 		if (retval == NULL) {
-			g_warning("Failed to create an instance of the plugin `%s'", filename);
+			hg_log_warning("Failed to create an instance of the plugin `%s'", filename);
 			g_module_close(module);
 		} else if (retval->version < HG_PLUGIN_VERSION ||
 			   retval->vtable == NULL) {
-			g_warning("`%s' is an invalid plugin.", filename);
+			hg_log_warning("`%s' is an invalid plugin.", filename);
 			g_module_close(module);
 			retval = NULL;
 		} else {
@@ -112,7 +113,7 @@ _hg_plugin_load(HgMemPool   *pool,
 		}
 #ifdef DEBUG_PLUGIN
 	} else {
-		g_warning(g_module_error());
+		hg_log_warning(g_module_error());
 #endif
 	}
 
@@ -134,7 +135,7 @@ hg_plugin_new(HgMemPool    *pool,
 					 sizeof (HgPlugin),
 					 HG_FL_HGOBJECT | HG_FL_COMPLEX);
 	if (retval == NULL) {
-		g_warning("Failed to create a plugin.");
+		hg_log_warning("Failed to create a plugin.");
 		return NULL;
 	}
 	HG_OBJECT_INIT_STATE (&retval->object);
@@ -175,7 +176,7 @@ hg_plugin_open(HgMemPool    *pool,
 		    modulename = g_strdup_printf("libdevice-%s.so", realname);
 		    break;
 	    default:
-		    g_warning("Unknown plugin type: %d", type);
+		    hg_log_warning("Unknown plugin type: %d", type);
 		    return NULL;
 	}
 	if ((modpath = g_getenv("HIEROGLYPH_PLUGIN_PATH")) != NULL) {
@@ -213,12 +214,12 @@ hg_plugin_open(HgMemPool    *pool,
 		g_free(fullmodname);
 	}
 	if (retval == NULL) {
-		g_warning("No `%s' %s plugin module found.", realname, typenames[type]);
+		hg_log_warning("No `%s' %s plugin module found.", realname, typenames[type]);
 	} else {
 		/* initialize a plugin */
 		if (retval->vtable->init == NULL ||
 		    !retval->vtable->init()) {
-			g_warning("Failed to initialize a plugin `%s'", realname);
+			hg_log_warning("Failed to initialize a plugin `%s'", realname);
 			retval = NULL;
 		}
 	}
@@ -243,8 +244,8 @@ hg_plugin_load(HgPlugin *plugin,
 	if (retval) {
 		plugin->is_loaded = TRUE;
 	} else {
-		g_warning("Failed to load a plugin `%s'",
-			  g_module_name(plugin->module));
+		hg_log_warning("Failed to load a plugin `%s'",
+			       g_module_name(plugin->module));
 	}
 
 	return retval;

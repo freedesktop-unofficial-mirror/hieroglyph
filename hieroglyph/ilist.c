@@ -26,6 +26,7 @@
 #endif
 
 #include "ilist.h"
+#include "hglog.h"
 
 /*
  * Most code are duplicate from HgList.
@@ -95,7 +96,7 @@ _hg_list_get_last_node(HgList *list)
 			if (hg_list_next(tmp) != NULL ||
 			    hg_list_previous(tmp) != NULL) {
 				/* found incomplete node */
-				g_warning("[BUG] incomplete HgList node %p found.", tmp);
+				hg_log_warning("[BUG] incomplete HgList node %p found.", tmp);
 			} else {
 				/* this can be used as the last node */
 				return tmp;
@@ -109,8 +110,8 @@ _hg_list_get_last_node(HgList *list)
 		/* validate node */
 		if (tmp == list) {
 			/* detected the circular reference */
-			g_warning("[BUG] Circular reference happened without the last node mark: %p",
-				  list);
+			hg_log_warning("[BUG] Circular reference happened without the last node mark: %p",
+				       list);
 			/* workaround */
 			return hg_list_previous(list);
 		}
@@ -273,7 +274,7 @@ _hg_list_length(HgList *list)
 
 	/* validate node */
 	if (l == NULL) {
-		g_warning("[BUG] no loop detected in HgList %p", list);
+		hg_log_warning("[BUG] no loop detected in HgList %p", list);
 	}
 
 	return retval;
@@ -319,8 +320,8 @@ _hg_list_remove(HgList   *list,
 
 	/* validate node */
 	if (l == NULL) {
-		g_warning("[BUG] no loop detected in HgList %p during removing %p",
-			  list, data);
+		hg_log_warning("[BUG] no loop detected in HgList %p during removing %p",
+			       list, data);
 		top = list;
 	} else {
 		if (!top)

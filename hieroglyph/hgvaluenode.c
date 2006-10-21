@@ -33,6 +33,7 @@
 #include "hgbtree.h"
 #include "hgdict.h"
 #include "hgfile.h"
+#include "hglog.h"
 #include "hgmem.h"
 #include "hgstring.h"
 
@@ -70,7 +71,7 @@ _hg_value_node_register_type(const HgValueNodeTypeInfo *info)
 	g_return_val_if_fail (__hg_value_node_is_initialized, FALSE);
 
 	if (hg_btree_find(__hg_value_node_type_tree, GUINT_TO_POINTER (info->type_id))) {
-		g_warning("type_id %d already registered.", info->type_id);
+		hg_log_warning("type_id %d already registered.", info->type_id);
 		return FALSE;
 	}
 	hg_btree_add(__hg_value_node_type_tree,
@@ -104,9 +105,9 @@ _hg_value_node_real_set_flags(gpointer data,
 		    if (((HgValueNodePointer *)node)->value) {
 			    hg_mem_get_object__inline(((HgValueNodePointer *)node)->value, obj);
 			    if (obj == NULL) {
-				    g_warning("[BUG] Invalid object %p with node type %d",
-					      ((HgValueNodePointer *)node)->value,
-					      HG_VALUE_GET_VALUE_TYPE (node));
+				    hg_log_warning("[BUG] Invalid object %p with node type %d",
+						   ((HgValueNodePointer *)node)->value,
+						   HG_VALUE_GET_VALUE_TYPE (node));
 			    }
 		    }
 		    break;
@@ -114,7 +115,7 @@ _hg_value_node_real_set_flags(gpointer data,
 	    case HG_TYPE_VALUE_MARK:
 		    break;
 	    default:
-		    g_warning("Unknown node type %d to set flags", HG_VALUE_GET_VALUE_TYPE (node));
+		    hg_log_warning("Unknown node type %d to set flags", HG_VALUE_GET_VALUE_TYPE (node));
 		    break;
 	}
 
@@ -164,7 +165,7 @@ _hg_value_node_real_relocate(gpointer           data,
 	    case HG_TYPE_VALUE_MARK:
 		    break;
 	    default:
-		    g_warning("Unknown node type %d to be relocated", HG_VALUE_GET_VALUE_TYPE (node));
+		    hg_log_warning("Unknown node type %d to be relocated", HG_VALUE_GET_VALUE_TYPE (node));
 		    break;
 	}
 }
@@ -185,7 +186,7 @@ _hg_value_node_real_dup(gpointer data)
 	}
 	retval = hg_value_node_new(obj->pool, HG_VALUE_GET_VALUE_TYPE (node));
 	if (retval == NULL) {
-		g_warning("Failed to duplicate a node.");
+		hg_log_warning("Failed to duplicate a node.");
 		return NULL;
 	}
 	HG_OBJECT_SET_STATE (&retval->object, HG_OBJECT_GET_STATE (&node->object));
@@ -224,7 +225,7 @@ _hg_value_node_real_dup(gpointer data)
 		    HG_VALUE_SET_PLUGIN (retval, HG_VALUE_GET_PLUGIN (node));
 		    break;
 	    default:
-		    g_warning("Unknown node type %d to be duplicated", HG_VALUE_GET_VALUE_TYPE (node));
+		    hg_log_warning("Unknown node type %d to be duplicated", HG_VALUE_GET_VALUE_TYPE (node));
 		    hg_mem_free(retval);
 		    return NULL;
 	}
@@ -257,7 +258,7 @@ _hg_value_node_real_copy(gpointer data)
 	}
 	retval = hg_value_node_new(obj->pool, HG_VALUE_GET_VALUE_TYPE (node));
 	if (retval == NULL) {
-		g_warning("Failed to duplicate a node.");
+		hg_log_warning("Failed to duplicate a node.");
 		return NULL;
 	}
 	HG_OBJECT_SET_STATE (&retval->object, HG_OBJECT_GET_STATE (&node->object));
@@ -296,7 +297,7 @@ _hg_value_node_real_copy(gpointer data)
 		    _copy_object (retval, PLUGIN, HG_VALUE_GET_PLUGIN (node));
 		    break;
 	    default:
-		    g_warning("Unknown node type %d to be duplicated", HG_VALUE_GET_VALUE_TYPE (node));
+		    hg_log_warning("Unknown node type %d to be duplicated", HG_VALUE_GET_VALUE_TYPE (node));
 		    hg_mem_free(retval);
 		    return NULL;
 	}
@@ -413,8 +414,8 @@ _hg_value_node_real_to_string(gpointer data)
 		    hg_string_append(retval, "-mark-", -1);
 		    break;
 	    default:
-		    g_warning("Unknown node type %d to be converted to string.",
-			      HG_VALUE_GET_VALUE_TYPE (node));
+		    hg_log_warning("Unknown node type %d to be converted to string.",
+				   HG_VALUE_GET_VALUE_TYPE (node));
 		    break;
 	}
 	if (str)
@@ -508,8 +509,8 @@ hg_value_node_get_type_name(guint type_id)
 
 	if ((info = hg_btree_find(__hg_value_node_type_tree,
 				  GUINT_TO_POINTER (type_id))) == NULL) {
-		g_warning("Unknown type ID %d. Failed to get a type name.",
-			  type_id);
+		hg_log_warning("Unknown type ID %d. Failed to get a type name.",
+			       type_id);
 		return NULL;
 	}
 
@@ -528,13 +529,13 @@ hg_value_node_new(HgMemPool   *pool,
 
 	if ((info = hg_btree_find(__hg_value_node_type_tree,
 				  GUINT_TO_POINTER (type_id))) == NULL) {
-		g_warning("Unknown type ID %d. Failed to create a HgValueNode.", type_id);
+		hg_log_warning("Unknown type ID %d. Failed to create a HgValueNode.", type_id);
 		return NULL;
 	}
 	retval = hg_mem_alloc_with_flags(pool, info->struct_size,
 					 HG_FL_HGOBJECT | HG_FL_RESTORABLE);
 	if (retval == NULL) {
-		g_warning("Failed to create a node.");
+		hg_log_warning("Failed to create a node.");
 		return NULL;
 	}
 	HG_OBJECT_INIT_STATE (&retval->object);
@@ -608,8 +609,8 @@ hg_value_node_get_hash(const HgValueNode *node)
 		    retval = _get_hash(node, PLUGIN);
 		    break;
 	    default:
-		    g_warning("[BUG] Unknown node type %d to generate hash",
-			      HG_VALUE_GET_VALUE_TYPE (node));
+		    hg_log_warning("[BUG] Unknown node type %d to generate hash",
+				   HG_VALUE_GET_VALUE_TYPE (node));
 		    break;
 	}
 
@@ -671,8 +672,8 @@ hg_value_node_compare(const HgValueNode *a,
 		    retval = TRUE;
 		    break;
 	    default:
-		    g_warning("[BUG] Unknown node type is given to compare: %d",
-			      HG_VALUE_GET_VALUE_TYPE (a));
+		    hg_log_warning("[BUG] Unknown node type is given to compare: %d",
+				   HG_VALUE_GET_VALUE_TYPE (a));
 		    break;
 	}
 
@@ -739,8 +740,8 @@ hg_value_node_compare_content(const HgValueNode *a,
 		    retval = TRUE;
 		    break;
 	    default:
-		    g_warning("[BUG] Unknown node type is given to compare: %d",
-			      HG_VALUE_GET_VALUE_TYPE (a));
+		    hg_log_warning("[BUG] Unknown node type is given to compare: %d",
+				   HG_VALUE_GET_VALUE_TYPE (a));
 		    break;
 	}
 

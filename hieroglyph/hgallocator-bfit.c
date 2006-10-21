@@ -29,6 +29,7 @@
 #include <setjmp.h>
 #include "hgallocator-bfit.h"
 #include "hgallocator-private.h"
+#include "hglog.h"
 #include "hgmem.h"
 #include "ibtree.h"
 #include "ilist.h"
@@ -194,14 +195,14 @@ _hg_allocator_bfit_remove_block(HgAllocatorBFitPrivate *priv,
 						       HG_MEM_ALIGNMENT,
 						       aligned);
 	if ((l = hg_btree_find(priv->free_block_tree, GSIZE_TO_POINTER (aligned))) == NULL) {
-		g_warning("[BUG] there are no memory chunks sized %" G_GSIZE_FORMAT " (aligned size: %" G_GSIZE_FORMAT ".\n",
-			  block->length, aligned);
+		hg_log_warning("[BUG] there are no memory chunks sized %" G_GSIZE_FORMAT " (aligned size: %" G_GSIZE_FORMAT ".\n",
+			       block->length, aligned);
 	} else {
 		HgListIter iter = hg_list_find_iter(l, block);
 
 		if (iter == NULL) {
-			g_warning("[BUG] can't find a memory block %p (size: %" G_GSIZE_FORMAT ", aligned size: %" G_GSIZE_FORMAT ".\n",
-				  block, block->length, aligned);
+			hg_log_warning("[BUG] can't find a memory block %p (size: %" G_GSIZE_FORMAT ", aligned size: %" G_GSIZE_FORMAT ".\n",
+				       block, block->length, aligned);
 		} else {
 			l = hg_list_iter_delete_link(iter);
 			if (l == NULL) {
@@ -236,7 +237,7 @@ _hg_allocator_bfit_add_free_block(HgAllocatorBFitPrivate *priv,
 		HgMemBFitBlock *b = block->prev;
 
 		if (((gsize)b->heap_fragment + b->length) != (gsize)block->heap_fragment) {
-			g_warning("[BUG] wrong block chain detected. (block: %p heap: %p length: %" G_GSIZE_FORMAT ") is chained from (block: %p heap: %p length: %" G_GSIZE_FORMAT ")", block, block->heap_fragment, block->length, b, b->heap_fragment, b->length);
+			hg_log_warning("[BUG] wrong block chain detected. (block: %p heap: %p length: %" G_GSIZE_FORMAT ") is chained from (block: %p heap: %p length: %" G_GSIZE_FORMAT ")", block, block->heap_fragment, block->length, b, b->heap_fragment, b->length);
 			break;
 		}
 		/* block must be removed from array because available size is increased. */
@@ -253,7 +254,7 @@ _hg_allocator_bfit_add_free_block(HgAllocatorBFitPrivate *priv,
 		HgMemBFitBlock *b = block->next;
 
 		if (((gsize)block->heap_fragment + block->length) != (gsize)b->heap_fragment) {
-			g_warning("[BUG] wrong block chain detected. (block: %p heap: %p length: %" G_GSIZE_FORMAT ") is chained to (block: %p heap: %p length: %" G_GSIZE_FORMAT ")", block, block->heap_fragment, block->length, b, b->heap_fragment, b->length);
+			hg_log_warning("[BUG] wrong block chain detected. (block: %p heap: %p length: %" G_GSIZE_FORMAT ") is chained to (block: %p heap: %p length: %" G_GSIZE_FORMAT ")", block, block->heap_fragment, block->length, b, b->heap_fragment, b->length);
 			break;
 		}
 		/* it could be merged now */
@@ -591,17 +592,17 @@ _hg_allocator_bfit_real_free(HgMemPool *pool,
 
 	hg_mem_get_object__inline(data, obj);
 	if (obj == NULL) {
-		g_warning("[BUG] Unknown object %p is going to be destroyed.", data);
+		hg_log_warning("[BUG] Unknown object %p is going to be destroyed.", data);
 		return;
 	}
 	block = obj->subid;
 	if (block == NULL) {
-		g_warning("[BUG] Broken object %p is going to be destroyed.", data);
+		hg_log_warning("[BUG] Broken object %p is going to be destroyed.", data);
 		return;
 	}
 	if (hg_btree_find(priv->obj2block_tree, block->heap_fragment) == NULL) {
-		g_warning("[BUG] Failed to remove an object %p (block: %p) from list.",
-			  data, block);
+		hg_log_warning("[BUG] Failed to remove an object %p (block: %p) from list.",
+			       data, block);
 		return;
 	}
 	hg_btree_remove(priv->obj2block_tree, block->heap_fragment);
@@ -681,7 +682,7 @@ _hg_allocator_bfit_real_resize(HgMemObject *object,
 		HgAllocatorBFitPrivate *priv = pool->allocator->private;
 
 		if (block == NULL) {
-			g_warning("Failed to allocate a block for resizing.");
+			hg_log_warning("Failed to allocate a block for resizing.");
 			return NULL;
 		}
 		block->prev = blk;
@@ -815,7 +816,7 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 		for (list = pool->root_node; list != NULL; list = g_list_next(list)) {
 			hg_mem_get_object__inline(list->data, obj);
 			if (obj == NULL) {
-				g_warning("[BUG] Invalid object %p is in the root node.", list->data);
+				hg_log_warning("[BUG] Invalid object %p is in the root node.", list->data);
 			} else {
 				if (!hg_mem_is_gc_mark__inline(obj)) {
 					hg_mem_gc_mark__inline(obj);
@@ -921,7 +922,7 @@ _hg_allocator_bfit_real_save_snapshot(HgMemPool *pool)
 	retval = hg_mem_alloc_with_flags(pool, sizeof (HgMemSnapshot),
 					 HG_FL_HGOBJECT | HG_FL_COMPLEX);
 	if (retval == NULL) {
-		g_warning("Failed to allocate a memory for snapshot.");
+		hg_log_warning("Failed to allocate a memory for snapshot.");
 		return NULL;
 	}
 	HG_OBJECT_INIT_STATE (&retval->object);
@@ -1010,7 +1011,7 @@ _hg_allocator_bfit_snapshot_real_set_flags(gpointer data,
 			obj = chunk->heap_chunks;
 
 			if (!HG_CHECK_MAGIC_CODE (obj, HG_MEM_HEADER)) {
-				g_warning("[BUG] Invalid object %p to be marked in snapshot.", obj);
+				hg_log_warning("[BUG] Invalid object %p to be marked in snapshot.", obj);
 			} else {
 				if (!hg_mem_is_flags__inline(obj, flags))
 					hg_mem_add_flags__inline(obj, flags, TRUE);

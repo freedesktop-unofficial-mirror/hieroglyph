@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "hgstring.h"
+#include "hglog.h"
 #include "hgmem.h"
 
 #define HG_STRING_ALLOC_SIZE	256
@@ -76,7 +77,7 @@ _hg_string_real_set_flags(gpointer data,
 		flags &= ~HG_FL_RESTORABLE;
 		hg_mem_get_object__inline(string->strings, obj);
 		if (obj == NULL) {
-			g_warning("[BUG] Invalid object %p to be marked: String", string->strings);
+			hg_log_warning("[BUG] Invalid object %p to be marked: String", string->strings);
 		} else {
 #ifdef DEBUG_GC
 			G_STMT_START {
@@ -173,7 +174,7 @@ hg_string_new(HgMemPool *pool,
 					 sizeof (HgString),
 					 HG_FL_HGOBJECT | HG_FL_COMPLEX);
 	if (retval == NULL) {
-		g_warning("Failed to create a string.");
+		hg_log_warning("Failed to create a string.");
 		return NULL;
 	}
 	HG_OBJECT_INIT_STATE (&retval->object);
@@ -195,7 +196,7 @@ hg_string_new(HgMemPool *pool,
 	retval->current = retval->strings;
 	if (retval->strings == NULL) {
 		hg_mem_free(retval);
-		g_warning("Failed to create a string.");
+		hg_log_warning("Failed to create a string.");
 		return NULL;
 	}
 
@@ -251,7 +252,7 @@ hg_string_append_c(HgString *string,
 		gpointer p = hg_mem_resize(string->strings, string->allocated_size + HG_STRING_ALLOC_SIZE + 1);
 
 		if (p == NULL) {
-			g_warning("Failed to resize a string.");
+			hg_log_warning("Failed to resize a string.");
 			return FALSE;
 		}
 		string->current = string->strings = p;
@@ -286,7 +287,7 @@ hg_string_append(HgString    *string,
 		gpointer p = hg_mem_resize(string->strings, n_unit * HG_STRING_ALLOC_SIZE);
 
 		if (p == NULL) {
-			g_warning("Failed to resize a string.");
+			hg_log_warning("Failed to resize a string.");
 			return FALSE;
 		}
 		string->current = string->strings = p;
@@ -374,7 +375,7 @@ hg_string_fix_string_size(HgString *string)
 
 		p = hg_mem_resize(string->strings, string->length + 1);
 		if (p == NULL) {
-			g_warning("Failed to resize a string.");
+			hg_log_warning("Failed to resize a string.");
 			return FALSE;
 		}
 		string->strings = p;

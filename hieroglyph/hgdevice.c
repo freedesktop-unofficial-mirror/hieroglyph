@@ -28,6 +28,7 @@
 #include <string.h>
 #include <gmodule.h>
 #include "hgdevice.h"
+#include "hglog.h"
 
 /*
  * Private Functions
@@ -45,14 +46,14 @@ _hg_device_open(const gchar *filename)
 		if (open_symbol && close_symbol) {
 			retval = ((HgDeviceOpenFunc)open_symbol) ();
 		} else {
-			g_warning(g_module_error());
+			hg_log_warning(g_module_error());
 			g_module_close(module);
 
 			return NULL;
 		}
 #ifdef DEBUG_MODULES
 	} else {
-		g_warning(g_module_error());
+		hg_log_warning(g_module_error());
 #endif /* DEBUG_MODULES */
 	}
 
@@ -107,7 +108,7 @@ hg_device_new(const gchar *name)
 		g_free(fullmodname);
 	}
 	if (retval == NULL)
-		g_warning("No `%s' device module found.", realname);
+		hg_log_warning("No `%s' device module found.", realname);
 
 	g_free(realname);
 	g_free(modulename);
@@ -164,7 +165,7 @@ hg_device_draw(HgDevice *device,
 				    render->u.debug.func(render->u.debug.data);
 			    break;
 		    default:
-			    g_warning("Unknown rendering code %d\n", render->u.type);
+			    hg_log_warning("Unknown rendering code %d\n", render->u.type);
 			    break;
 		}
 	}

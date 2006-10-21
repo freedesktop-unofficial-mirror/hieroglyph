@@ -46,6 +46,7 @@ hginclude_HEADERS =						\
 	hggraphics.h						\
 	hglineedit.h						\
 	hglist.h						\
+	hglog.h							\
 	hgmacros.h						\
 	hgmatrix.h						\
 	hgmem.h							\
@@ -95,6 +96,7 @@ libhieroglyph_la_SOURCES =					\
 	hggraphics.c						\
 	hglineedit.c						\
 	hglist.c						\
+	hglog.c							\
 	hgmatrix.c						\
 	hgmem.c							\
 	hgpage.c						\

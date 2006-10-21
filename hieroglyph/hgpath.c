@@ -28,6 +28,7 @@
 #include <math.h>
 #include <string.h>
 #include "hgpath.h"
+#include "hglog.h"
 #include "hgmem.h"
 
 
@@ -74,7 +75,7 @@ _hg_path_node_real_set_flags(gpointer data,
 	if (node->next) {
 		hg_mem_get_object__inline(node->next, obj);
 		if (obj == NULL) {
-			g_warning("[BUG] Invalid object %p to be marked: HgPathNode", node->next);
+			hg_log_warning("[BUG] Invalid object %p to be marked: HgPathNode", node->next);
 		} else {
 			if (!hg_mem_is_flags__inline(obj, flags))
 				hg_mem_add_flags__inline(obj, flags, TRUE);
@@ -126,7 +127,7 @@ _hg_path_real_set_flags(gpointer data,
 	if (path->node) {
 		hg_mem_get_object__inline(path->node, obj);
 		if (obj == NULL) {
-			g_warning("[BUG] Invalid object %p to be marked: HgPathNode (in HgPath)", path->node);
+			hg_log_warning("[BUG] Invalid object %p to be marked: HgPathNode (in HgPath)", path->node);
 		} else {
 			if (!hg_mem_is_flags__inline(obj, flags))
 				hg_mem_add_flags__inline(obj, flags, TRUE);
@@ -333,18 +334,18 @@ hg_path_compute_current_point(HgPath  *path,
 		switch (node->type) {
 		    case HG_PATH_CURVETO:
 			    if (!currentpoint) {
-				    g_warning("[BUG] no current point found in %d.", node->type);
+				    hg_log_warning("[BUG] no current point found in %d.", node->type);
 				    return FALSE;
 			    }
 			    if (node->next == NULL ||
 				node->next->next == NULL) {
-				    g_warning("[BUG] Invalid path found in %d.", node->type);
+				    hg_log_warning("[BUG] Invalid path found in %d.", node->type);
 				    return FALSE;
 			    }
 			    node = node->next->next;
 		    case HG_PATH_LINETO:
 			    if (!currentpoint) {
-				    g_warning("[BUG] no current point found in %d.", node->type);
+				    hg_log_warning("[BUG] no current point found in %d.", node->type);
 				    return FALSE;
 			    }
 		    case HG_PATH_MOVETO:
@@ -355,14 +356,14 @@ hg_path_compute_current_point(HgPath  *path,
 		    case HG_PATH_RCURVETO:
 			    if (node->next == NULL ||
 				node->next->next == NULL) {
-				    g_warning("[BUG] Invalid path found in %d.", node->type);
+				    hg_log_warning("[BUG] Invalid path found in %d.", node->type);
 				    return FALSE;
 			    }
 			    node = node->next->next;
 		    case HG_PATH_RMOVETO:
 		    case HG_PATH_RLINETO:
 			    if (!currentpoint) {
-				    g_warning("[BUG] no current point found in %d.", node->type);
+				    hg_log_warning("[BUG] no current point found in %d.", node->type);
 				    return FALSE;
 			    }
 			    *x = *x + node->x;
@@ -371,7 +372,7 @@ hg_path_compute_current_point(HgPath  *path,
 		    case HG_PATH_ARC:
 			    if (node->next == NULL ||
 				node->next->next == NULL) {
-				    g_warning("[BUG] Invalid path found in %d.\n", node->type);
+				    hg_log_warning("[BUG] Invalid path found in %d.\n", node->type);
 				    return FALSE;
 			    }
 			    G_STMT_START {
@@ -391,7 +392,7 @@ hg_path_compute_current_point(HgPath  *path,
 		    case HG_PATH_MATRIX:
 			    break;
 		    default:
-			    g_warning("[BUG] Unknown path %d was given.", node->type);
+			    hg_log_warning("[BUG] Unknown path %d was given.", node->type);
 			    return FALSE;
 		}
 	}
@@ -495,7 +496,7 @@ hg_path_get_bbox(HgPath     *path,
 		    case HG_PATH_ARC:
 			    flag = TRUE;
 			    if (node->next == NULL || node->next->next == NULL) {
-				    g_warning("[BUG] Invalid path for arc.");
+				    hg_log_warning("[BUG] Invalid path for arc.");
 				    break;
 			    }
 			    G_STMT_START {
@@ -543,7 +544,7 @@ hg_path_get_bbox(HgPath     *path,
 			    /* this isn't used to calculate bbox at all */
 			    break;
 		    default:
-			    g_warning("[BUG] Unknown path type %d to examine current bbox.", node->type);
+			    hg_log_warning("[BUG] Unknown path type %d to examine current bbox.", node->type);
 			    return FALSE;
 		}
 	}

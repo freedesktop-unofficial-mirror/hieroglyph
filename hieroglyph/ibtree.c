@@ -26,6 +26,7 @@
 #endif
 
 #include "ibtree.h"
+#include "hglog.h"
 
 
 static HgBTreePage *hg_btree_page_new                 (HgBTree      *tree);
@@ -196,7 +197,7 @@ hg_btree_page_blance(HgBTree      *tree,
 		size = tree->page_size + 1;
 	new = hg_btree_page_new(tree);
 	if (new == NULL) {
-		g_warning("Failed to allocate a memory.");
+		hg_log_warning("Failed to allocate a memory.");
 		return;
 	}
 	for (i = size + 1; i <= tree->page_size * 2; i++) {

@@ -29,6 +29,7 @@
 #include "hgarray.h"
 #include "hgstring.h"
 #include "hgbtree.h"
+#include "hglog.h"
 #include "hgmem.h"
 #include "hgvaluenode.h"
 #include "hgfile.h"
@@ -83,7 +84,7 @@ _hg_array_real_set_flags(gpointer data,
 	if (array->name) {
 		hg_mem_get_object__inline(array->name, obj);
 		if (obj == NULL) {
-			g_warning("[BUG] Invalid object %p to be marked: Array name", array->name);
+			hg_log_warning("[BUG] Invalid object %p to be marked: Array name", array->name);
 		} else {
 			if (!hg_mem_is_flags__inline(obj, flags))
 				hg_mem_add_flags__inline(obj, flags, TRUE);
@@ -92,7 +93,7 @@ _hg_array_real_set_flags(gpointer data,
 	for (i = 0; i < array->n_arrays; i++) {
 		hg_mem_get_object__inline(array->current[i], obj);
 		if (obj == NULL) {
-			g_warning("[BUG] Invalid object %p to be marked: Array %d", array->current[i], i);
+			hg_log_warning("[BUG] Invalid object %p to be marked: Array %d", array->current[i], i);
 		} else {
 #ifdef DEBUG_GC
 			G_STMT_START {
@@ -112,7 +113,7 @@ _hg_array_real_set_flags(gpointer data,
 	if (array->arrays) {
 		hg_mem_get_object__inline(array->arrays, obj);
 		if (obj == NULL) {
-			g_warning("[BUG] Invalid object %p to be marked: Array", array->arrays);
+			hg_log_warning("[BUG] Invalid object %p to be marked: Array", array->arrays);
 		} else {
 #ifdef DEBUG_GC
 			G_STMT_START {
@@ -164,7 +165,7 @@ _hg_array_real_dup(gpointer data)
 
 	retval = hg_array_new(obj->pool, array->n_arrays);
 	if (retval == NULL) {
-		g_warning("Failed to duplicate an array.");
+		hg_log_warning("Failed to duplicate an array.");
 		return NULL;
 	}
 	memcpy(retval->arrays, array->current, sizeof (HgValueNode *) * array->n_arrays);
@@ -188,13 +189,13 @@ _hg_array_real_copy(gpointer data)
 
 	if (hg_mem_is_copying(obj)) {
 		/* circular reference happened. */
-		g_warning("Circular reference happened in %p (mem: %p). copying entire object is impossible.", data, obj);
+		hg_log_warning("Circular reference happened in %p (mem: %p). copying entire object is impossible.", data, obj);
 		return array;
 	}
 	hg_mem_set_copying(obj);
 	retval = hg_array_new(obj->pool, array->n_arrays);
 	if (retval == NULL) {
-		g_warning("Failed to copy an array.");
+		hg_log_warning("Failed to copy an array.");
 		hg_mem_unset_copying(obj);
 		return NULL;
 	}
@@ -345,7 +346,7 @@ hg_array_append_forcibly(HgArray     *array,
 
 	if (!force) {
 		if (!hg_mem_pool_is_own_object(obj->pool, node)) {
-			g_warning("node %p isn't allocated from a pool %s\n", node, hg_mem_pool_get_name(obj->pool));
+			hg_log_warning("node %p isn't allocated from a pool %s\n", node, hg_mem_pool_get_name(obj->pool));
 
 			return FALSE;
 		}
@@ -367,7 +368,7 @@ hg_array_append_forcibly(HgArray     *array,
 					   sizeof (HgValueNode *) * (array->allocated_arrays + HG_ARRAY_ALLOC_SIZE));
 
 		if (p == NULL) {
-			g_warning("Failed to resize an array.");
+			hg_log_warning("Failed to resize an array.");
 			return FALSE;
 		} else {
 			array->current = array->arrays = p;
@@ -412,7 +413,7 @@ hg_array_replace_forcibly(HgArray     *array,
 
 	if (!force) {
 		if (!hg_mem_pool_is_own_object(obj->pool, node)) {
-			g_warning("node %p isn't allocated from a pool %s\n", node, hg_mem_pool_get_name(obj->pool));
+			hg_log_warning("node %p isn't allocated from a pool %s\n", node, hg_mem_pool_get_name(obj->pool));
 
 			return FALSE;
 		}
@@ -489,7 +490,7 @@ hg_array_fix_array_size(HgArray *array)
 		}
 		p = hg_mem_resize(array->arrays, sizeof (gpointer) * array->n_arrays);
 		if (p == NULL) {
-			g_warning("Failed to resize an array.");
+			hg_log_warning("Failed to resize an array.");
 			return FALSE;
 		}
 		array->current = array->arrays = p;

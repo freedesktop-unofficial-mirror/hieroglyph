@@ -27,6 +27,7 @@
 
 #include <string.h>
 #include "hgrender.h"
+#include "hglog.h"
 #include "hgmem.h"
 
 
@@ -81,7 +82,7 @@ _hg_render_fill_real_set_flags(gpointer data,
 
 	hg_mem_get_object__inline(render->u.fill.path, obj);
 	if (obj == NULL) {
-		g_warning("[BUG] Invalid object %p to be marked: HgRenderFill.", render->u.fill.path);
+		hg_log_warning("[BUG] Invalid object %p to be marked: HgRenderFill.", render->u.fill.path);
 	} else {
 		if (!hg_mem_is_flags__inline(obj, flags))
 			hg_mem_add_flags__inline(obj, flags, TRUE);
@@ -109,14 +110,14 @@ _hg_render_stroke_real_set_flags(gpointer data,
 
 	hg_mem_get_object__inline(render->u.stroke.path, obj);
 	if (obj == NULL) {
-		g_warning("[BUG] Invalid object %p to be marked: HgRenderStroke->path.", render->u.stroke.path);
+		hg_log_warning("[BUG] Invalid object %p to be marked: HgRenderStroke->path.", render->u.stroke.path);
 	} else {
 		if (!hg_mem_is_flags__inline(obj, flags))
 			hg_mem_add_flags__inline(obj, flags, TRUE);
 	}
 	hg_mem_get_object__inline(render->u.stroke.dashline_pattern, obj);
 	if (obj == NULL) {
-		g_warning("[BUG] Invalid object %p to be marked: HgRenderStroke->dashline_pattern.", render->u.stroke.dashline_pattern);
+		hg_log_warning("[BUG] Invalid object %p to be marked: HgRenderStroke->dashline_pattern.", render->u.stroke.dashline_pattern);
 	} else {
 		if (!hg_mem_is_flags__inline(obj, flags))
 			hg_mem_add_flags__inline(obj, flags, TRUE);

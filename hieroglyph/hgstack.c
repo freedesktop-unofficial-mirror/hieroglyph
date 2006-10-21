@@ -27,6 +27,7 @@
 
 #include <stdlib.h>
 #include "hgstack.h"
+#include "hglog.h"
 #include "hgmem.h"
 #include "hgfile.h"
 #include "hgstring.h"
@@ -82,7 +83,7 @@ _hg_stack_real_set_flags(gpointer data,
 	for (list = stack->stack; list != NULL; list = g_list_next(list)) {
 		hg_mem_get_object__inline(list->data, obj);
 		if (obj == NULL) {
-			g_warning("Invalid object %p to be marked: HgValueNode in stack.", list->data);
+			hg_log_warning("Invalid object %p to be marked: HgValueNode in stack.", list->data);
 		} else {
 			if (!hg_mem_is_flags__inline(obj, flags))
 				hg_mem_set_flags__inline(obj, flags, TRUE);
@@ -117,7 +118,7 @@ _hg_stack_real_dup(gpointer data)
 
 	retval = hg_stack_new(obj->pool, stack->max_depth);
 	if (retval == NULL) {
-		g_warning("Failed to duplicate a stack.");
+		hg_log_warning("Failed to duplicate a stack.");
 		return NULL;
 	}
 	retval->stack = g_list_copy(stack->stack);
@@ -141,7 +142,7 @@ hg_stack_new(HgMemPool *pool,
 	retval = hg_mem_alloc_with_flags(pool, sizeof (HgStack),
 					 HG_FL_HGOBJECT);
 	if (retval == NULL) {
-		g_warning("Failed to create a stack.");
+		hg_log_warning("Failed to create a stack.");
 		return NULL;
 	}
 	HG_OBJECT_INIT_STATE (&retval->object);

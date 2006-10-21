@@ -32,6 +32,7 @@
 #include <sys/stat.h>
 #include "hgfile.h"
 #include "hgallocator-bfit.h"
+#include "hglog.h"
 #include "hgmem.h"
 #include "hgstring.h"
 #include "hglineedit.h"
@@ -114,7 +115,7 @@ _hg_file_object_real_set_flags(gpointer data,
 	if (file->filename) {
 		hg_mem_get_object__inline(file->filename, obj);
 		if (obj == NULL) {
-			g_warning("Invalid object %p to be marked: HgFileObject->filename", file->filename);
+			hg_log_warning("Invalid object %p to be marked: HgFileObject->filename", file->filename);
 		} else {
 #ifdef DEBUG_GC
 			G_STMT_START {
@@ -133,7 +134,7 @@ _hg_file_object_real_set_flags(gpointer data,
 	    file->is.buf.buffer) {
 		hg_mem_get_object__inline(file->is.buf.buffer, obj);
 		if (obj == NULL) {
-			g_warning("Invalid object %p to be marked: HgFileObject->buffer", file->is.buf.buffer);
+			hg_log_warning("Invalid object %p to be marked: HgFileObject->buffer", file->is.buf.buffer);
 		} else {
 #ifdef DEBUG_GC
 		G_STMT_START {
@@ -284,7 +285,7 @@ hg_file_object_new(HgMemPool  *pool,
 	retval = hg_mem_alloc_with_flags(pool, sizeof (HgFileObject),
 					 HG_FL_HGOBJECT | HG_FL_COMPLEX);
 	if (retval == NULL) {
-		g_warning("Failed to create a file object.");
+		hg_log_warning("Failed to create a file object.");
 		return NULL;
 	}
 	HG_OBJECT_INIT_STATE (&retval->object);
@@ -306,7 +307,7 @@ hg_file_object_new(HgMemPool  *pool,
 		    len = strlen(p);
 		    retval->filename = hg_mem_alloc(pool, len + 1);
 		    if (retval->filename == NULL) {
-			    g_warning("Failed to allocate a memory for file object.");
+			    hg_log_warning("Failed to allocate a memory for file object.");
 			    return NULL;
 		    }
 		    strncpy(retval->filename, p, len);
@@ -340,7 +341,7 @@ hg_file_object_new(HgMemPool  *pool,
 		    len = strlen(p);
 		    retval->filename = hg_mem_alloc(pool, len + 1);
 		    if (retval->filename == NULL) {
-			    g_warning("Failed to allocate a memory for file object.");
+			    hg_log_warning("Failed to allocate a memory for file object.");
 			    return NULL;
 		    }
 		    strncpy(retval->filename, p, len);
@@ -352,7 +353,7 @@ hg_file_object_new(HgMemPool  *pool,
 		    retval->is.buf.buffer = NULL;
 		    retval->is.buf.buffer = hg_mem_alloc(pool, retval->is.buf.bufsize);
 		    if (retval->is.buf.buffer == NULL) {
-			    g_warning("Failed to allocate a memory for file object.");
+			    hg_log_warning("Failed to allocate a memory for file object.");
 			    return NULL;
 		    }
 		    memcpy(retval->is.buf.buffer, p, retval->is.buf.bufsize);
@@ -361,7 +362,7 @@ hg_file_object_new(HgMemPool  *pool,
 	    case HG_FILE_TYPE_STDIN:
 		    retval->filename = hg_mem_alloc(pool, 6);
 		    if (retval->filename == NULL) {
-			    g_warning("Failed to allocate a memory for file object.");
+			    hg_log_warning("Failed to allocate a memory for file object.");
 			    return NULL;
 		    }
 		    strncpy(retval->filename, "stdin", 5);
@@ -375,7 +376,7 @@ hg_file_object_new(HgMemPool  *pool,
 	    case HG_FILE_TYPE_STDOUT:
 		    retval->filename = hg_mem_alloc(pool, 7);
 		    if (retval->filename == NULL) {
-			    g_warning("Failed to allocate a memory for file object.");
+			    hg_log_warning("Failed to allocate a memory for file object.");
 			    return NULL;
 		    }
 		    strncpy(retval->filename, "stdout", 6);
@@ -387,7 +388,7 @@ hg_file_object_new(HgMemPool  *pool,
 	    case HG_FILE_TYPE_STDERR:
 		    retval->filename = hg_mem_alloc(pool, 7);
 		    if (retval->filename == NULL) {
-			    g_warning("Failed to allocate a memory for file object.");
+			    hg_log_warning("Failed to allocate a memory for file object.");
 			    return NULL;
 		    }
 		    strncpy(retval->filename, "stderr", 6);
@@ -399,19 +400,19 @@ hg_file_object_new(HgMemPool  *pool,
 	    case HG_FILE_TYPE_STATEMENT_EDIT:
 		    lineedit = (HgLineEdit *)va_arg(ap, HgLineEdit *);
 		    if (lineedit == NULL) {
-			    g_warning("[BUG] No HgLineEdit instance.");
+			    hg_log_warning("[BUG] No HgLineEdit instance.");
 			    return NULL;
 		    }
 		    retval->filename = hg_mem_alloc(pool, 15);
 		    if (retval->filename == NULL) {
-			    g_warning("Failed to allocate a memory for file object.");
+			    hg_log_warning("Failed to allocate a memory for file object.");
 			    return NULL;
 		    }
 		    strncpy(retval->filename, "%statementedit", 14);
 		    retval->filename[14] = 0;
 		    p = hg_line_edit_get_statement(lineedit, NULL);
 		    if (p == NULL) {
-			    g_warning("Failed to read a statement.");
+			    hg_log_warning("Failed to read a statement.");
 			    return NULL;
 		    }
 		    retval->access_mode = HG_FILE_MODE_READ;
@@ -419,7 +420,7 @@ hg_file_object_new(HgMemPool  *pool,
 		    retval->is.buf.buffer = NULL;
 		    retval->is.buf.buffer = hg_mem_alloc(pool, retval->is.buf.bufsize);
 		    if (retval->is.buf.buffer == NULL) {
-			    g_warning("Failed to allocate a memory for file object.");
+			    hg_log_warning("Failed to allocate a memory for file object.");
 			    return NULL;
 		    }
 		    memcpy(retval->is.buf.buffer, p, retval->is.buf.bufsize);
@@ -429,19 +430,19 @@ hg_file_object_new(HgMemPool  *pool,
 	    case HG_FILE_TYPE_LINE_EDIT:
 		    lineedit = (HgLineEdit *)va_arg(ap, HgLineEdit *);
 		    if (lineedit == NULL) {
-			    g_warning("[BUG] No HgLineEdit instance.");
+			    hg_log_warning("[BUG] No HgLineEdit instance.");
 			    return NULL;
 		    }
 		    retval->filename = hg_mem_alloc(pool, 10);
 		    if (retval->filename == NULL) {
-			    g_warning("Failed to allocate a memory for file object.");
+			    hg_log_warning("Failed to allocate a memory for file object.");
 			    return NULL;
 		    }
 		    strncpy(retval->filename, "%lineedit", 9);
 		    retval->filename[9] = 0;
 		    p = hg_line_edit_get_line(lineedit, NULL, TRUE);
 		    if (p == NULL) {
-			    g_warning("Failed to read a statement.");
+			    hg_log_warning("Failed to read a statement.");
 			    return NULL;
 		    }
 		    retval->access_mode = HG_FILE_MODE_READ;
@@ -449,7 +450,7 @@ hg_file_object_new(HgMemPool  *pool,
 		    retval->is.buf.buffer = NULL;
 		    retval->is.buf.buffer = hg_mem_alloc(pool, retval->is.buf.bufsize);
 		    if (retval->is.buf.buffer == NULL) {
-			    g_warning("Failed to allocate a memory for file object.");
+			    hg_log_warning("Failed to allocate a memory for file object.");
 			    return NULL;
 		    }
 		    memcpy(retval->is.buf.buffer, p, retval->is.buf.bufsize);
@@ -462,7 +463,7 @@ hg_file_object_new(HgMemPool  *pool,
 		    len = strlen(p);
 		    retval->filename = hg_mem_alloc(pool, len + 1);
 		    if (retval->filename == NULL) {
-			    g_warning("Failed to allocate a memory for file object.");
+			    hg_log_warning("Failed to allocate a memory for file object.");
 			    return NULL;
 		    }
 		    strncpy(retval->filename, p, len);
@@ -471,7 +472,7 @@ hg_file_object_new(HgMemPool  *pool,
 		    retval->is.callback.user_data = (gpointer)va_arg(ap, gpointer);
 		    break;
 	    default:
-		    g_warning("Unknown file type %d\n", HG_FILE_GET_FILE_TYPE (retval));
+		    hg_log_warning("Unknown file type %d\n", HG_FILE_GET_FILE_TYPE (retval));
 		    retval = NULL;
 		    break;
 	}
@@ -510,7 +511,7 @@ hg_file_object_has_error(HgFileObject *object)
 		    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
 		    break;
 	    default:
-		    g_warning("[BUG] Invalid file type %d was given to check the error.", HG_FILE_GET_FILE_TYPE (object));
+		    hg_log_warning("[BUG] Invalid file type %d was given to check the error.", HG_FILE_GET_FILE_TYPE (object));
 		    return TRUE;
 	}
 
@@ -556,7 +557,7 @@ hg_file_object_read(HgFileObject *object,
 
 	/* FIXME: need to handle ungetc here properly */
 	if (object->ungetc != 0) {
-		g_warning("FIXME: ungetc handling not yet implemented!!");
+		hg_log_warning("FIXME: ungetc handling not yet implemented!!");
 	}
 	switch (HG_FILE_GET_FILE_TYPE (object)) {
 	    case HG_FILE_TYPE_FILE:
@@ -600,7 +601,7 @@ hg_file_object_read(HgFileObject *object,
 		    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
 		    break;
 	    default:
-		    g_warning("[BUG] Invalid file type %d was given to be read.", HG_FILE_GET_FILE_TYPE (object));
+		    hg_log_warning("[BUG] Invalid file type %d was given to be read.", HG_FILE_GET_FILE_TYPE (object));
 		    object->error = EACCES;
 		    break;
 	}
@@ -649,7 +650,7 @@ hg_file_object_write(HgFileObject  *object,
 		    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
 		    break;
 	    default:
-		    g_warning("[BUG] Invalid file type %d to be wrriten.", HG_FILE_GET_FILE_TYPE (object));
+		    hg_log_warning("[BUG] Invalid file type %d to be wrriten.", HG_FILE_GET_FILE_TYPE (object));
 		    object->error = EACCES;
 		    break;
 	}
@@ -699,7 +700,7 @@ hg_file_object_getc(HgFileObject *object)
 			    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
 			    break;
 		    default:
-			    g_warning("[BUG] Invalid file type %d was given to be get a character.", HG_FILE_GET_FILE_TYPE (object));
+			    hg_log_warning("[BUG] Invalid file type %d was given to be get a character.", HG_FILE_GET_FILE_TYPE (object));
 			    break;
 		}
 	}
@@ -760,7 +761,7 @@ hg_file_object_flush(HgFileObject *object)
 		    retval = object->is.callback.vtable->flush(object->is.callback.user_data);
 		    break;
 	    default:
-		    g_warning("Invalid file type %d was given to be flushed.", HG_FILE_GET_FILE_TYPE (object));
+		    hg_log_warning("Invalid file type %d was given to be flushed.", HG_FILE_GET_FILE_TYPE (object));
 		    break;
 	}
 
@@ -805,7 +806,7 @@ hg_file_object_seek(HgFileObject  *object,
 						object->is.file.mmap.pos = object->is.file.mmap.bufsize;
 					break;
 				default:
-					g_warning("Invalid whence `%d' was given.", whence);
+					hg_log_warning("Invalid whence `%d' was given.", whence);
 					object->error = EINVAL;
 					break;
 			    }
@@ -844,7 +845,7 @@ hg_file_object_seek(HgFileObject  *object,
 					object->is.buf.pos = object->is.buf.bufsize;
 				break;
 			default:
-				g_warning("Invalid whence `%d' was given.", whence);
+				hg_log_warning("Invalid whence `%d' was given.", whence);
 				object->error = EINVAL;
 				break;
 		    }
@@ -853,7 +854,7 @@ hg_file_object_seek(HgFileObject  *object,
 	    case HG_FILE_TYPE_STDIN:
 	    case HG_FILE_TYPE_STDOUT:
 	    case HG_FILE_TYPE_STDERR:
-		    g_warning("Not supported to be sought.");
+		    hg_log_warning("Not supported to be sought.");
 		    object->error = ESPIPE;
 		    break;
 	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
@@ -861,8 +862,8 @@ hg_file_object_seek(HgFileObject  *object,
 		    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
 		    break;
 	    default:
-		    g_warning("Unknown file type %d was given to be sought.",
-			      HG_FILE_GET_FILE_TYPE (object));
+		    hg_log_warning("Unknown file type %d was given to be sought.",
+				   HG_FILE_GET_FILE_TYPE (object));
 		    break;
 	}
 	object->ungetc = 0;
@@ -903,8 +904,8 @@ hg_file_object_close(HgFileObject *object)
 		    object->is.callback.vtable->close(object->is.callback.user_data);
 		    break;
 	    default:
-		    g_warning("Unknown file type %d was given to be closed.",
-			      HG_FILE_GET_FILE_TYPE (object));
+		    hg_log_warning("Unknown file type %d was given to be closed.",
+				   HG_FILE_GET_FILE_TYPE (object));
 		    break;
 	}
 }
@@ -934,8 +935,8 @@ hg_file_object_is_closed(HgFileObject *object)
 		    retval = object->is.callback.vtable->is_closed(object->is.callback.user_data);
 		    break;
 	    default:
-		    g_warning("Unknown file type %d was given to be closed.",
-			      HG_FILE_GET_FILE_TYPE (object));
+		    hg_log_warning("Unknown file type %d was given to be closed.",
+				   HG_FILE_GET_FILE_TYPE (object));
 		    break;
 	}
 

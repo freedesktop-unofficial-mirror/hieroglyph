@@ -30,6 +30,7 @@
 #include <errno.h>
 #include "hglineedit.h"
 #include "hgfile.h"
+#include "hglog.h"
 #include "hgmem.h"
 
 
@@ -81,13 +82,13 @@ _hg_line_edit_real_set_flags(gpointer data,
 
 	hg_mem_get_object__inline(lineedit->stdin, obj);
 	if (obj == NULL) {
-		g_warning("[BUG] Invalid object %p to be marked: HgLineEdit", lineedit->stdin);
+		hg_log_warning("[BUG] Invalid object %p to be marked: HgLineEdit", lineedit->stdin);
 	} else {
 		hg_mem_add_flags__inline(obj, flags, TRUE);
 	}
 	hg_mem_get_object__inline(lineedit->stdout, obj);
 	if (obj == NULL) {
-		g_warning("[BUG] Invalid object %p to be marked: HgLineEdit", lineedit->stdout);
+		hg_log_warning("[BUG] Invalid object %p to be marked: HgLineEdit", lineedit->stdout);
 	} else {
 		hg_mem_add_flags__inline(obj, flags, TRUE);
 	}

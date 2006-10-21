@@ -37,6 +37,7 @@
 #include "hgfile.h"
 #include "hglineedit.h"
 #include "hglist.h"
+#include "hglog.h"
 #include "hgplugins.h"
 #include "hgstack.h"
 #include "hgstring.h"
@@ -432,7 +433,7 @@ hg_vm_new(HgVMEmulationType type)
 	retval = hg_mem_alloc_with_flags(__hg_vm_mem_pool, sizeof (HgVM),
 					 HG_FL_HGOBJECT);
 	if (retval == NULL) {
-		g_warning("Failed to create a virtual machine.");
+		hg_log_warning("Failed to create a virtual machine.");
 		return NULL;
 	}
 	HG_OBJECT_INIT_STATE (&retval->object);
@@ -461,7 +462,7 @@ hg_vm_new(HgVMEmulationType type)
 					     (allow_resize ? HG_MEM_RESIZABLE : 0));
 	g_free(name);
 	if (retval->local_pool == NULL) {
-		g_warning("Failed to create a local memory pool");
+		hg_log_warning("Failed to create a local memory pool");
 		return NULL;
 	}
 #ifdef ENABLE_GLOBAL_POOL
@@ -473,7 +474,7 @@ hg_vm_new(HgVMEmulationType type)
 	hg_mem_pool_use_global_mode(retval->global_pool, TRUE);
 	g_free(name);
 	if (retval->global_pool == NULL) {
-		g_warning("Failed to create a global memory pool");
+		hg_log_warning("Failed to create a global memory pool");
 		return NULL;
 	}
 #else
@@ -486,14 +487,14 @@ hg_vm_new(HgVMEmulationType type)
 					       (allow_resize ? HG_MEM_RESIZABLE : 0));
 	g_free(name);
 	if (retval->graphic_pool == NULL) {
-		g_warning("Failed to create a graphic memory pool");
+		hg_log_warning("Failed to create a graphic memory pool");
 		return NULL;
 	}
 
 	/* internal use */
 	retval->name_dict = hg_dict_new(retval->global_pool, 1024);
 	if (retval->name_dict == NULL) {
-		g_warning("Failed to create a name dict.");
+		hg_log_warning("Failed to create a name dict.");
 		return NULL;
 	}
 	hg_mem_add_root_node(retval->global_pool, retval->name_dict);
@@ -513,7 +514,7 @@ hg_vm_new(HgVMEmulationType type)
 	if (retval->ostack == NULL ||
 	    retval->estack == NULL ||
 	    retval->dstack == NULL) {
-		g_warning("Failed to create stacks.");
+		hg_log_warning("Failed to create stacks.");
 		return NULL;
 	}
 	hg_mem_add_root_node(retval->local_pool, retval->ostack);
@@ -531,7 +532,7 @@ hg_vm_new(HgVMEmulationType type)
 	    retval->statusdict == NULL ||
 	    retval->serverdict == NULL ||
 	    retval->font == NULL) {
-		g_warning("Failed to create local dictionaries.");
+		hg_log_warning("Failed to create local dictionaries.");
 		return NULL;
 	}
 	hg_mem_add_root_node(retval->local_pool, retval->errordict);
@@ -545,7 +546,7 @@ hg_vm_new(HgVMEmulationType type)
 	retval->globalfont = hg_dict_new(retval->global_pool, 128);
 	if (retval->systemdict == NULL ||
 	    retval->globalfont == NULL) {
-		g_warning("Failed to create global dictionaries.");
+		hg_log_warning("Failed to create global dictionaries.");
 		return NULL;
 	}
 	hg_mem_add_root_node(retval->global_pool, retval->systemdict);
@@ -720,7 +721,7 @@ hg_vm_is_global_object(HgVM        *vm,
 		    retval = (vm->local_pool != obj->pool);
 		    break;
 	    default:
-		    g_warning("Failed to consider if the object is a global object due to the unknown type ID: %d", HG_VALUE_GET_VALUE_TYPE (node));
+		    hg_log_warning("Failed to consider if the object is a global object due to the unknown type ID: %d", HG_VALUE_GET_VALUE_TYPE (node));
 		    break;
 	}
 
@@ -779,7 +780,7 @@ hg_vm_get_io(HgVM       *vm,
 	    case VM_IO_STDERR:
 		    return vm->stderr;
 	    default:
-		    g_warning("Unknown I/O type %d", type);
+		    hg_log_warning("Unknown I/O type %d", type);
 		    break;
 	}
 
@@ -807,7 +808,7 @@ hg_vm_set_io(HgVM         *vm,
 		    vm->stderr = file;
 		    break;
 	    default:
-		    g_warning("Unknown I/O type %d", type);
+		    hg_log_warning("Unknown I/O type %d", type);
 		    break;
 	}
 }
@@ -841,7 +842,7 @@ hg_vm_load_plugin(HgVM        *vm,
 	g_return_val_if_fail (filename != NULL, FALSE);
 
 	if (hg_dict_lookup_with_string(vm->plugin_table, filename) != NULL) {
-		g_warning("`%s' plugin is already loaded.", filename);
+		hg_log_warning("`%s' plugin is already loaded.", filename);
 		return FALSE;
 	}
 	plugin = hg_plugin_open(vm->local_pool, filename, HG_PLUGIN_EXTENSION);
@@ -878,7 +879,7 @@ hg_vm_unload_plugin(HgVM        *vm,
 	g_return_val_if_fail (filename != NULL, FALSE);
 
 	if ((val = hg_dict_lookup_with_string(vm->plugin_table, filename)) == NULL) {
-		g_warning("`%s' plugin isn't yet loaded.", filename);
+		hg_log_warning("`%s' plugin isn't yet loaded.", filename);
 		return FALSE;
 	}
 
@@ -1138,9 +1139,9 @@ hg_vm_set_error(HgVM        *vm,
 		}
 		hs2 = hg_object_to_string((HgObject *)errnode);
 		if (enode == NULL) {
-			g_warning("Multiple errors occurred.\n  prevoius error: unknown or this happened before set /errorname in %s\n  current error: %s in %s\n", name, HG_VALUE_GET_NAME (__hg_vm_errorname[error]), hg_string_get_string(hs2));
+			hg_log_warning("Multiple errors occurred.\n  prevoius error: unknown or this happened before set /errorname in %s\n  current error: %s in %s\n", name, HG_VALUE_GET_NAME (__hg_vm_errorname[error]), hg_string_get_string(hs2));
 		} else {
-			g_warning("Multiple errors occurred.\n  previous error: %s in %s\n  current error: %s in %s\n", HG_VALUE_GET_NAME (enode), name, HG_VALUE_GET_NAME (__hg_vm_errorname[error]), hg_string_get_string(hs2));
+			hg_log_warning("Multiple errors occurred.\n  previous error: %s in %s\n  current error: %s in %s\n", HG_VALUE_GET_NAME (enode), name, HG_VALUE_GET_NAME (__hg_vm_errorname[error]), hg_string_get_string(hs2));
 		}
 		if (p)
 			g_free(p);
@@ -1154,7 +1155,7 @@ hg_vm_set_error(HgVM        *vm,
 	_hg_stack_use_stack_validator(vm->dstack, FALSE);
 	proc = hg_dict_lookup(vm->errordict, __hg_vm_errorname[error]);
 	if (proc == NULL) {
-		g_warning("[BUG] no error handler for /%s\n", HG_VALUE_GET_NAME (__hg_vm_errorname[error]));
+		hg_log_warning("[BUG] no error handler for /%s\n", HG_VALUE_GET_NAME (__hg_vm_errorname[error]));
 		hg_file_object_printf(vm->stderr, "\nOperand stack:\n");
 		hg_stack_dump(vm->ostack, vm->stderr);
 		hg_file_object_printf(vm->stderr, "\nExecution stack:\n");
@@ -1222,8 +1223,8 @@ hg_vm_set_error_from_file(HgVM         *vm,
 		    break;
 	    default:
 		    strerror_r(hg_file_object_get_error(file), buffer, 4096);
-		    g_warning("%s: need to support errno %d\n  %s\n",
-			      __FUNCTION__, hg_file_object_get_error(file), buffer);
+		    hg_log_warning("%s: need to support errno %d\n  %s\n",
+				   __FUNCTION__, hg_file_object_get_error(file), buffer);
 		    break;
 	}
 	hg_file_object_clear_error(file);
@@ -1274,8 +1275,8 @@ hg_vm_main(HgVM *vm)
 		    case HG_TYPE_VALUE_DICT:
 		    case HG_TYPE_VALUE_NULL:
 		    case HG_TYPE_VALUE_MARK:
-			    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.",
-				      __FUNCTION__, HG_VALUE_GET_VALUE_TYPE (node));
+			    hg_log_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.",
+					   __FUNCTION__, HG_VALUE_GET_VALUE_TYPE (node));
 			    hg_stack_pop(vm->estack);
 			    retval = hg_stack_push(vm->ostack, node);
 			    if (!retval) {
@@ -1308,8 +1309,8 @@ hg_vm_main(HgVM *vm)
 						    _hg_vm_set_error(vm, file, VM_e_stackoverflow, FALSE);
 				    }
 			    } else {
-				    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.",
-					      __FUNCTION__, HG_VALUE_GET_VALUE_TYPE (node));
+				    hg_log_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.",
+						   __FUNCTION__, HG_VALUE_GET_VALUE_TYPE (node));
 				    hg_stack_pop(vm->estack);
 				    retval = hg_stack_push(vm->ostack, node);
 				    if (!retval) {
@@ -1333,8 +1334,8 @@ hg_vm_main(HgVM *vm)
 				    hg_object_set_state((HgObject *)node, state);
 				    retval = hg_stack_push(vm->estack, node);
 			    } else {
-				    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.",
-					      __FUNCTION__, HG_VALUE_GET_VALUE_TYPE (node));
+				    hg_log_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.",
+						   __FUNCTION__, HG_VALUE_GET_VALUE_TYPE (node));
 				    hg_stack_pop(vm->estack);
 				    retval = hg_stack_push(vm->ostack, node);
 			    }
@@ -1366,8 +1367,8 @@ hg_vm_main(HgVM *vm)
 					    }
 				    }
 			    } else {
-				    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.",
-					      __FUNCTION__, HG_VALUE_GET_VALUE_TYPE (node));
+				    hg_log_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.",
+						   __FUNCTION__, HG_VALUE_GET_VALUE_TYPE (node));
 				    hg_stack_pop(vm->estack);
 				    retval = hg_stack_push(vm->ostack, node);
 				    if (!retval) {
@@ -1412,8 +1413,8 @@ hg_vm_main(HgVM *vm)
 					    }
 				    }
 			    } else {
-				    g_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.",
-					      __FUNCTION__, HG_VALUE_GET_VALUE_TYPE (node));
+				    hg_log_warning("[BUG] %s: an object (node type %d) which isn't actually executable, was pushed into the estack.",
+						   __FUNCTION__, HG_VALUE_GET_VALUE_TYPE (node));
 				    hg_stack_pop(vm->estack);
 				    retval = hg_stack_push(vm->ostack, node);
 				    if (!retval) {
@@ -1422,13 +1423,13 @@ hg_vm_main(HgVM *vm)
 			    }
 			    break;
 		    default:
-			    g_warning("[BUG] Unknown node type %d was given into the estack.",
-				      HG_VALUE_GET_VALUE_TYPE (node));
+			    hg_log_warning("[BUG] Unknown node type %d was given into the estack.",
+					   HG_VALUE_GET_VALUE_TYPE (node));
 			    hg_stack_pop(vm->estack);
 			    break;
 		}
 		if (!retval && !hg_vm_has_error(vm)) {
-			g_warning("[BUG] probably unknown error happened.");
+			hg_log_warning("[BUG] probably unknown error happened.");
 			break;
 		}
 	}

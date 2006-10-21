@@ -26,6 +26,7 @@
 #endif
 
 #include "hgpage.h"
+#include "hglog.h"
 
 
 /*
@@ -60,7 +61,7 @@ hg_page_new_with_pagesize(HgPageSize size)
 	gdouble width, height;
 
 	if (!hg_page_get_size(size, &width, &height)) {
-		g_warning("Failed to get a paper size.");
+		hg_log_warning("Failed to get a paper size.");
 		return NULL;
 	}
 	return hg_page_new_with_size(width, height);
@@ -74,7 +75,7 @@ hg_page_new_with_size(gdouble width,
 
 	retval = _hg_page_new();
 	if (retval == NULL) {
-		g_warning("Failed to create a page object.");
+		hg_log_warning("Failed to create a page object.");
 		return NULL;
 	}
 	retval->width = width;
@@ -217,7 +218,7 @@ hg_page_get_size(HgPageSize  size,
 		    *height = 148;
 		    break;
 	    default:
-		    g_warning("Unknown page size type %d", size);
+		    hg_log_warning("Unknown page size type %d", size);
 		    *width = 0;
 		    *height = 0;
 		    return FALSE;

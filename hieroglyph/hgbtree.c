@@ -26,6 +26,7 @@
 #endif
 
 #include "hgbtree.h"
+#include "hglog.h"
 #include "hgmem.h"
 
 
@@ -131,8 +132,8 @@ _hg_btree_page_real_set_flags(gpointer data,
 	if (page->key) {
 		hg_mem_get_object__inline(page->key, obj);
 		if (obj == NULL) {
-			g_warning("[BUG] Invalid object %p to be marked: HgBTreePage key",
-				  page->key);
+			hg_log_warning("[BUG] Invalid object %p to be marked: HgBTreePage key",
+				       page->key);
 		} else {
 			hg_mem_add_flags__inline(obj, flags, TRUE);
 		}
@@ -140,21 +141,21 @@ _hg_btree_page_real_set_flags(gpointer data,
 	if (page->val) {
 		hg_mem_get_object__inline(page->val, obj);
 		if (obj == NULL) {
-			g_warning("[BUG] Invalid object %p to be marked: HgBTreePage val",
-				  page->val);
+			hg_log_warning("[BUG] Invalid object %p to be marked: HgBTreePage val",
+				       page->val);
 		} else {
 			hg_mem_add_flags__inline(obj, flags, TRUE);
 		}
 	}
 	if (page->page == NULL && page->n_data > 0) {
-		g_warning("[BUG] HgBTree structure corruption. no real data, but it says there are %d item(s).",
-			  page->n_data);
+		hg_log_warning("[BUG] HgBTree structure corruption. no real data, but it says there are %d item(s).",
+			       page->n_data);
 	}
 	if (page->page) {
 		hg_mem_get_object__inline(page->page, obj);
 		if (obj == NULL) {
-			g_warning("[BUG] Invalid object %p to be marked: HgBTreePage page",
-				  page->page);
+			hg_log_warning("[BUG] Invalid object %p to be marked: HgBTreePage page",
+				       page->page);
 		} else {
 			hg_mem_add_flags__inline(obj, flags, TRUE);
 		}
@@ -167,16 +168,16 @@ _hg_btree_page_real_set_flags(gpointer data,
 			if (page->page[i]) {
 				hg_mem_get_object__inline(page->page[i], obj);
 				if (obj == NULL) {
-					g_warning("[BUG] Invalid object %p to be marked: HgBTreePage page[%d]",
-						  page->page[i], i);
+					hg_log_warning("[BUG] Invalid object %p to be marked: HgBTreePage page[%d]",
+						       page->page[i], i);
 				} else {
 					hg_mem_add_flags__inline(obj, flags, TRUE);
 				}
 			}
 			hg_mem_get_object__inline(page->val[i], obj);
 			if (obj == NULL) {
-				g_warning("[BUG] Invalid object %p to be marked: HgBTreePage val[%d]",
-					  page->val[i], i);
+				hg_log_warning("[BUG] Invalid object %p to be marked: HgBTreePage val[%d]",
+					       page->val[i], i);
 			} else {
 				hg_mem_add_flags__inline(obj, flags, TRUE);
 			}
@@ -184,8 +185,8 @@ _hg_btree_page_real_set_flags(gpointer data,
 		if (page->page[page->n_data]) {
 			hg_mem_get_object__inline(page->page[page->n_data], obj);
 			if (obj == NULL) {
-				g_warning("[BUG] Invalid object %p to be marked: HgBTreePage page[%d]",
-					  page->page[page->n_data], page->n_data);
+				hg_log_warning("[BUG] Invalid object %p to be marked: HgBTreePage page[%d]",
+					       page->page[page->n_data], page->n_data);
 			} else {
 				hg_mem_add_flags__inline(obj, flags, TRUE);
 			}
@@ -273,7 +274,7 @@ _hg_btree_real_set_flags(gpointer data,
 	if (tree->root) {
 		hg_mem_get_object__inline(tree->root, obj);
 		if (obj == NULL) {
-			g_warning("[BUG] Invalid object %p to be marked: HgBTree", tree->root);
+			hg_log_warning("[BUG] Invalid object %p to be marked: HgBTree", tree->root);
 		} else {
 			if (!hg_mem_is_flags__inline(obj, flags))
 				hg_mem_add_flags__inline(obj, flags, TRUE);
@@ -413,7 +414,7 @@ hg_btree_page_blance(HgBTreePage  *page,
 		size = page_size + 1;
 	new = hg_btree_page_new(page->parent);
 	if (new == NULL) {
-		g_warning("Failed to allocate a memory.");
+		hg_log_warning("Failed to allocate a memory.");
 		return;
 	}
 	for (i = size + 1; i <= page_size * 2; i++) {
@@ -715,7 +716,7 @@ hg_btree_add(HgBTree *tree,
 	if (!inserted) {
 		page = hg_btree_page_new(tree);
 		if (page == NULL) {
-			g_warning("Failed to allocate a tree page.");
+			hg_log_warning("Failed to allocate a tree page.");
 			return;
 		}
 		page->n_data = 1;

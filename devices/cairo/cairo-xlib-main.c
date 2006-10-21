@@ -26,6 +26,7 @@
 #endif
 
 #include <cairo/cairo-xlib.h>
+#include <hieroglyph/hglog.h>
 #include "hgdevice-cairo.h"
 
 
@@ -44,7 +45,7 @@ _cairo_xlib_real_set_page_size(HgCairoDevice *device,
 		      width, height);
 	cairo_xlib_surface_set_size(device->surface, width, height);
 	XFlush(device->u.xlib.dpy);
-	g_warning("%s: FIXME: implement me", __FUNCTION__);
+	hg_log_warning("%s: FIXME: implement me", __FUNCTION__);
 
 	return TRUE;
 }
@@ -68,7 +69,7 @@ device_open(void)
 	cdev->u.type = HG_DEVICE_CAIRO_XLIB_SURFACE;
 	cdev->u.xlib.dpy = XOpenDisplay(NULL);
 	if (cdev->u.xlib.dpy == NULL) {
-		g_warning("Failed to open a display.");
+		hg_log_warning("Failed to open a display.");
 		hg_device_destroy(dev);
 		return NULL;
 	}
@@ -89,7 +90,7 @@ device_open(void)
 						  400, 400);
 	cdev->reference = cairo_create(cdev->surface);
 	if (cairo_status(cdev->reference) != CAIRO_STATUS_SUCCESS) {
-		g_warning("Failed to create an reference of cairo.");
+		hg_log_warning("Failed to create an reference of cairo.");
 		hg_device_destroy(dev);
 		return NULL;
 	}

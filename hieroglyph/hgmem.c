@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include "hgmem.h"
 #include "hgallocator-private.h"
+#include "hglog.h"
 
 #define VTABLE_TREE_N_NODE	3
 
@@ -183,7 +184,7 @@ hg_mem_init(void)
 		if (!_hg_object_vtable_tree) {
 			_hg_object_vtable_tree = g_hash_table_new(NULL, g_direct_equal);
 			if (_hg_object_vtable_tree == NULL) {
-				g_warning("Failed to initialize VTable tree.");
+				hg_log_warning("Failed to initialize VTable tree.");
 				return;
 			}
 			_hg_object_vtable_array = g_ptr_array_new();
@@ -523,7 +524,7 @@ hg_mem_free(gpointer data)
 
 	hg_mem_get_object__inline(data, obj);
 	if (obj == NULL) {
-		g_warning("[BUG] Invalid object %p is given to be freed.", data);
+		hg_log_warning("[BUG] Invalid object %p is given to be freed.", data);
 		return FALSE;
 	} else {
 		const HgObjectVTable const *vtable;
@@ -555,7 +556,7 @@ hg_mem_resize(gpointer data,
 
 	hg_mem_get_object__inline(data, obj);
 	if (obj == NULL) {
-		g_warning("Invalid object %p was about to be resized.", data);
+		hg_log_warning("Invalid object %p was about to be resized.", data);
 		return NULL;
 	}
 
@@ -571,7 +572,7 @@ hg_mem_get_object_size(gpointer data)
 
 	hg_mem_get_object__inline(data, obj);
 	if (obj == NULL) {
-		g_warning("Invalid object %p was about to get an object size.", data);
+		hg_log_warning("Invalid object %p was about to get an object size.", data);
 		return 0;
 	}
 
@@ -763,8 +764,8 @@ hg_object_get_vtable(HgObject *object)
 		return NULL;
 	}
 	if (id > _hg_object_vtable_array->len) {
-		g_warning("[BUG] Invalid vtable ID found: %p id: %d latest id: %u\n",
-			  object, id, _hg_object_vtable_array->len);
+		hg_log_warning("[BUG] Invalid vtable ID found: %p id: %d latest id: %u\n",
+			       object, id, _hg_object_vtable_array->len);
 
 		return NULL;
 	}
@@ -791,7 +792,7 @@ hg_object_set_vtable(HgObject                   *object,
 		g_hash_table_insert(_hg_object_vtable_tree, (gpointer)vtable, GUINT_TO_POINTER (id));
 	}
 	if (id > 255) {
-		g_warning("[BUG] Invalid vtable ID found in tree: %p id %u\n", object, id);
+		hg_log_warning("[BUG] Invalid vtable ID found in tree: %p id %u\n", object, id);
 		id = 0;
 	}
 	HG_OBJECT_SET_VTABLE_ID (object, id);

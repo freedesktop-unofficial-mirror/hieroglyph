@@ -26,6 +26,7 @@
 #endif
 
 #include "iarray.h"
+#include "hglog.h"
 #include "hgmem.h"
 
 #define HG_INT_ARRAY_ALLOC_SIZE		256
@@ -67,7 +68,7 @@ _hg_int_array_real_set_flags(gpointer data,
 	if (iarray->arrays) {
 		hg_mem_get_object__inline(iarray->arrays, obj);
 		if (obj == NULL) {
-			g_warning("[BUG] Invalid object %p to be marked: IntArray", iarray->arrays);
+			hg_log_warning("[BUG] Invalid object %p to be marked: IntArray", iarray->arrays);
 		} else {
 			if (!hg_mem_is_flags__inline(obj, flags))
 				hg_mem_add_flags__inline(obj, flags, TRUE);
@@ -146,7 +147,7 @@ hg_int_array_append(HgIntArray *iarray,
 					   sizeof (gint32) * (iarray->allocated_arrays + HG_INT_ARRAY_ALLOC_SIZE));
 
 		if (p == NULL) {
-			g_warning("Failed to resize an int array.");
+			hg_log_warning("Failed to resize an int array.");
 			return FALSE;
 		} else {
 			iarray->arrays = p;

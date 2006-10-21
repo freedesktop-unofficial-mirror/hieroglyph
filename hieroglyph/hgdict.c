@@ -27,6 +27,7 @@
 
 #include "hgdict.h"
 #include "hgbtree.h"
+#include "hglog.h"
 #include "hgmem.h"
 #include "hglist.h"
 #include "hgstring.h"
@@ -910,7 +911,7 @@ _hg_dict_traverse_set_flags(gpointer key,
 	HgListIter iter = hg_list_iter_new(list);
 
 	if (iter == NULL) {
-		g_warning("Failed to create an iter to set flags from Dict.");
+		hg_log_warning("Failed to create an iter to set flags from Dict.");
 		return FALSE;
 	}
 	/* no need to mark a key because it's hash value here */
@@ -921,7 +922,7 @@ _hg_dict_traverse_set_flags(gpointer key,
 
 		hg_mem_get_object__inline(node, obj);
 		if (obj == NULL) {
-			g_warning("[BUG] Invalid object %p to be marked: DictNode [list %p]", node, list);
+			hg_log_warning("[BUG] Invalid object %p to be marked: DictNode [list %p]", node, list);
 		} else {
 #ifdef DEBUG_GC
 			G_STMT_START {
@@ -954,7 +955,7 @@ _hg_dict_real_set_flags(gpointer data,
 
 	hg_mem_get_object__inline(dict->dict, obj);
 	if (obj == NULL) {
-		g_warning("[BUG] Invalid object %p to be marked: Dict tree", dict->dict);
+		hg_log_warning("[BUG] Invalid object %p to be marked: Dict tree", dict->dict);
 	} else {
 		if (!hg_mem_is_flags__inline(obj, flags))
 			hg_mem_add_flags__inline(obj, flags, TRUE);
@@ -988,12 +989,12 @@ _hg_dict_traverse_dup(gpointer key,
 	hg_mem_get_object__inline(key, obj);
 	nnkey = hg_object_dup((HgObject *)nkey);
 	if (nnkey == NULL) {
-		g_warning("[BUG] Failed to duplicate a key during traversing dict.");
+		hg_log_warning("[BUG] Failed to duplicate a key during traversing dict.");
 		nnkey = nkey;
 	}
 	nnval = hg_object_dup((HgObject *)nval);
 	if (nnval == NULL) {
-		g_warning("[BUG] Failed to duplicate a val during traversing dict.");
+		hg_log_warning("[BUG] Failed to duplicate a val during traversing dict.");
 		nnval = nval;
 	}
 	hg_dict_insert(obj->pool, dict, nnkey, nnval);
@@ -1013,7 +1014,7 @@ _hg_dict_real_dup(gpointer data)
 
 	retval = hg_dict_new(obj->pool, dict->n_prealloc);
 	if (retval == NULL) {
-		g_warning("Failed to duplicate a dict.");
+		hg_log_warning("Failed to duplicate a dict.");
 		return NULL;
 	}
 	hg_dict_traverse(dict, _hg_dict_traverse_dup, retval);
@@ -1046,7 +1047,7 @@ _hg_dict_node_real_set_flags(gpointer data,
 
 	hg_mem_get_object__inline(node->key, obj);
 	if (obj == NULL) {
-		g_warning("[BUG] Invalid object %p to be marked: Dict key", node->key);
+		hg_log_warning("[BUG] Invalid object %p to be marked: Dict key", node->key);
 	} else {
 #ifdef DEBUG_GC
 		G_STMT_START {
@@ -1064,7 +1065,7 @@ _hg_dict_node_real_set_flags(gpointer data,
 	}
 	hg_mem_get_object__inline(node->val, obj);
 	if (obj == NULL) {
-		g_warning("[BUG] Invalid object %p to be marked: Dict val", node->val);
+		hg_log_warning("[BUG] Invalid object %p to be marked: Dict val", node->val);
 	} else {
 #ifdef DEBUG_GC
 		G_STMT_START {
@@ -1105,7 +1106,7 @@ hg_dict_node_new(HgMemPool *pool)
 					 sizeof (HgDictNode),
 					 HG_FL_HGOBJECT | HG_FL_RESTORABLE);
 	if (retval == NULL) {
-		g_warning("Failed to create a dict node.");
+		hg_log_warning("Failed to create a dict node.");
 		return NULL;
 	}
 	HG_OBJECT_INIT_STATE (&retval->object);
@@ -1205,7 +1206,7 @@ hg_dict_new(HgMemPool *pool,
 					 sizeof (HgDict),
 					 HG_FL_HGOBJECT | HG_FL_RESTORABLE | HG_FL_COMPLEX);
 	if (retval == NULL) {
-		g_warning("Failed to create a dict.");
+		hg_log_warning("Failed to create a dict.");
 		return NULL;
 	}
 	HG_OBJECT_INIT_STATE (&retval->object);
@@ -1261,12 +1262,12 @@ hg_dict_insert_forcibly(HgMemPool   *pool,
 
 	if (!force) {
 		if (!hg_mem_pool_is_own_object(obj->pool, key)) {
-			g_warning("key %p isn't allocated from a pool %s\n", key, hg_mem_pool_get_name(obj->pool));
+			hg_log_warning("key %p isn't allocated from a pool %s\n", key, hg_mem_pool_get_name(obj->pool));
 
 			return FALSE;
 		}
 		if (!hg_mem_pool_is_own_object(obj->pool, val)) {
-			g_warning("value %p isn't allocated from a pool %s\n", val, hg_mem_pool_get_name(obj->pool));
+			hg_log_warning("value %p isn't allocated from a pool %s\n", val, hg_mem_pool_get_name(obj->pool));
 
 			return FALSE;
 		}
@@ -1303,7 +1304,7 @@ hg_dict_insert_forcibly(HgMemPool   *pool,
 		dict->n_keys++;
 	}
 	if (dict->n_keys > dict->n_prealloc) {
-		g_warning("FIXME: need to recalculate the prime.");
+		hg_log_warning("FIXME: need to recalculate the prime.");
 	}
 
 	return TRUE;
@@ -1463,7 +1464,7 @@ hg_dict_first(HgDict       *dict,
 	}
 	liter = hg_list_iter_new(iter->val);
 	if (liter == NULL) {
-		g_warning("Failed to create an iter to traverse a Dict.");
+		hg_log_warning("Failed to create an iter to traverse a Dict.");
 		hg_btree_iter_free(iter);
 		return FALSE;
 	}
