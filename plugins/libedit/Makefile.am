@@ -23,7 +23,7 @@ libext_libedit_la_SOURCES =				\
 	libedit-main.c					\
 	$(NULL)
 libext_libedit_la_CFLAGS =				\
-	-DG_LOG_DOMAIN="\"Libedit-Extension\""		\
+	-DHG_LOG_DOMAIN="\"Libedit-Extension\""		\
 	$(CFLAGS)					\
 	$(NULL)
 libext_libedit_la_LDFLAGS =				\

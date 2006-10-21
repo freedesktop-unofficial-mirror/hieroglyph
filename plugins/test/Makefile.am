@@ -22,7 +22,7 @@ libext_test_la_SOURCES =				\
 	test-main.c					\
 	$(NULL)
 libext_test_la_CFLAGS =					\
-	-DG_LOG_DOMAIN="\"Test-Extension\""		\
+	-DHG_LOG_DOMAIN="\"Test-Extension\""		\
 	$(CFLAGS)					\
 	$(NULL)
 libext_test_la_LDFLAGS =				\

@@ -22,6 +22,10 @@ libhieroglyph_cairo_la_SOURCES =			\
 	hgdevice-cairo.c				\
 	hgdevice-cairo.h				\
 	$(NULL)
+libhieroglyph_cairo_la_CFLAGS =				\
+	-DHG_LOG_DOMAIN="\"Hieroglyph-Cairo\""		\
+	$(CFLAGS)					\
+	$(NULL)
 libhieroglyph_cairo_la_LIBADD =				\
 	$(LDADDS)					\
 	$(NULL)
@@ -35,7 +39,7 @@ libx11_device_la_SOURCES =				\
 	cairo-xlib-main.c				\
 	$(NULL)
 libx11_device_la_CFLAGS =				\
-	-DG_LOG_DOMAIN="\"X11-Device\""			\
+	-DHG_LOG_DOMAIN="\"X11-Device\""		\
 	$(CFLAGS)					\
 	$(NULL)
 libx11_device_la_LDFLAGS =				\

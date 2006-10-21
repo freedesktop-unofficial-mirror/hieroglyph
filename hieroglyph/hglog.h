@@ -30,32 +30,37 @@ G_BEGIN_DECLS
 
 
 typedef void (*HgLogFunc)(HgLogType     log_type,
+			  const gchar  *domain,
 			  const gchar  *subtype,
 			  const gchar  *message);
 
-#define hg_log_info(...)				\
-	hg_log(HG_LOG_TYPE_INFO, NULL, __VA_ARGS__)
+#define hg_log_info(...)						\
+	hg_log(HG_LOG_TYPE_INFO, HG_LOG_DOMAIN, NULL, __VA_ARGS__)
 #ifdef DEBUG
-#define hg_log_debug(_type_, ...)				\
-	hg_log(HG_LOG_TYPE_DEBUG, (_type_), __VA_ARGS__)
+#define hg_log_debug(_type_, ...)					\
+	hg_log(HG_LOG_TYPE_DEBUG, HG_LOG_DOMAIN, #_type_, __VA_ARGS__)
 #else
 #define hg_log_debug(_type_, ...)
 #endif /* DEBUG */
-#define hg_log_warning(...)				\
-	hg_log(HG_LOG_TYPE_WARNING, NULL, __VA_ARGS__)
-#define hg_log_error(...)				\
-	hg_log(HG_LOG_TYPE_ERROR, NULL, __VA_ARGS__)
+#define hg_log_warning(...)						\
+	hg_log(HG_LOG_TYPE_WARNING, HG_LOG_DOMAIN, NULL, __VA_ARGS__)
+#define hg_log_error(...)						\
+	hg_log(HG_LOG_TYPE_ERROR, HG_LOG_DOMAIN, NULL, __VA_ARGS__)
 
 
 gboolean hg_log_init               (HgVM        *vm,
 				    HgDict      *dict);
 void     hg_log_finalize           (void);
 void     hg_log_set_default_handler(HgLogFunc    func);
+gchar   *hg_log_get_log_type_header(HgLogType    log_type,
+				    const gchar *domain) G_GNUC_MALLOC;
 void     hg_log                    (HgLogType    log_type,
+				    const gchar *domain,
 				    const gchar *subtype,
 				    const gchar *format,
 				    ...);
 void     hg_logv                   (HgLogType    log_type,
+				    const gchar *domain,
 				    const gchar *subtype,
 				    const gchar *format,
 				    va_list      va_args);

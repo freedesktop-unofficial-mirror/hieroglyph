@@ -33,7 +33,7 @@ libx11_embedded_device_la_SOURCES =			\
 	x11-embedded-main.c				\
 	$(NULL)
 libx11_embedded_device_la_CFLAGS =			\
-	-DG_LOG_DOMAIN="\"X11-Embedded-Device\""	\
+	-DHG_LOG_DOMAIN="\"X11-Embedded-Device\""	\
 	$(CFLAGS)					\
 	$(NULL)
 libx11_embedded_device_la_LDFLAGS =			\

@@ -35,6 +35,7 @@
 
 
 static void _hg_log_default_handler(HgLogType    log_type,
+				    const gchar *domain,
 				    const gchar *subtype,
 				    const gchar *message);
 
@@ -54,10 +55,12 @@ static HgLogFunc __hg_log_handler = _hg_log_default_handler;
  */
 static void
 _hg_log_default_handler(HgLogType    log_type,
+			const gchar *domain,
 			const gchar *subtype,
 			const gchar *message)
 {
 	HgFileObject *file;
+	gchar *header;
 
 	if (__hg_log_vm) {
 		file = hg_vm_get_io(__hg_log_vm, VM_IO_STDERR);
@@ -66,8 +69,9 @@ _hg_log_default_handler(HgLogType    log_type,
 			hg_file_init();
 		file = __hg_file_stderr;
 	}
+	header = hg_log_get_log_type_header(log_type, domain);
 	hg_file_object_printf(file, "%s ***%s%s%s %s\n",
-			      log_type_to_string[log_type],
+			      header,
 			      (subtype ? " " : ""),
 			      (subtype ? subtype : ""),
 			      (subtype ? ":" : ""),
@@ -140,8 +144,23 @@ hg_log_set_default_handler(HgLogFunc func)
 	__hg_log_handler = func;
 }
 
+gchar *
+hg_log_get_log_type_header(HgLogType    log_type,
+			   const gchar *domain)
+{
+	gchar *retval;
+
+	if (domain)
+		retval = g_strdup_printf("%s-%s", domain, log_type_to_string[log_type]);
+	else
+		retval = g_strdup(log_type_to_string[log_type]);
+
+	return retval;
+}
+
 void
 hg_log(HgLogType    log_type,
+       const gchar *domain,
        const gchar *subtype,
        const gchar *format,
        ...)
@@ -149,12 +168,13 @@ hg_log(HgLogType    log_type,
 	va_list ap;
 
 	va_start(ap, format);
-	hg_logv(log_type, subtype, format, ap);
+	hg_logv(log_type, domain, subtype, format, ap);
 	va_end(ap);
 }
 
 void
 hg_logv(HgLogType    log_type,
+	const gchar *domain,
 	const gchar *subtype,
 	const gchar *format,
 	va_list      va_args)
@@ -168,7 +188,7 @@ hg_logv(HgLogType    log_type,
 		gchar *buffer = g_strdup_vprintf(format, va_args);
 
 		/* just invoke a default handler */
-		__hg_log_handler(log_type, subtype, buffer);
+		__hg_log_handler(log_type, domain, subtype, buffer);
 		g_free(buffer);
 		return;
 	}
@@ -184,7 +204,7 @@ hg_logv(HgLogType    log_type,
 		if (HG_IS_VALUE_BOOLEAN (node)) {
 			if (HG_VALUE_GET_BOOLEAN (node)) {
 				/* just invoke a default handler */
-				__hg_log_handler(log_type, subtype, hg_string_get_string(string));
+				__hg_log_handler(log_type, domain, subtype, hg_string_get_string(string));
 			}
 		} else if (HG_IS_VALUE_OPERATOR (node) ||
 			   (HG_IS_VALUE_ARRAY (node) && hg_object_is_executable((HgObject *)node))) {

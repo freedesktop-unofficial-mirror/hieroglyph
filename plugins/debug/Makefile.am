@@ -22,7 +22,7 @@ libext_debug_la_SOURCES =				\
 	debug-main.c					\
 	$(NULL)
 libext_debug_la_CFLAGS =				\
-	-DG_LOG_DOMAIN="\"Debug-Extension\""		\
+	-DHG_LOG_DOMAIN="\"Debug-Extension\""		\
 	$(CFLAGS)					\
 	$(NULL)
 libext_debug_la_LDFLAGS =				\
