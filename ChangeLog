@@ -1,5 +1,29 @@
 2006-11-04  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/vm.c (hg_vm_lookup): ues logger facility.
+	(hg_vm_lookup_with_string): likewise.
+	(hg_vm_set_error): likewise.
+
+	* hieroglyph/hgplugins.c (_hg_plugin_load): use logger facility.
+
+	* hieroglyph/hgmem.c (_hg_mem_init_stack_start): use logger facility.
+	(hg_mem_pool_new): likewise.
+	(hg_mem_gc_mark_array_region): likewise.
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_real_garbage_collection):
+	use logger facility.
+	(_hg_allocator_bfit_real_gc_mark): likewise.
+
+	* src/hgs.c (main): set flags from HIEROGLYPH_DEBUG environment
+	variable.
+
+	* devices/cairo/hgdevice-cairo.c (_hg_cairo_device_print_path):
+	use logger facility.
+	(_hg_cairo_device_real_eofill): likewise.
+	(_hg_cairo_device_real_fill): likewise.
+	(_hg_cairo_device_real_stroke): likewise.
+	(_hg_cairo_device_set_matrix): likewise.
+
 	* hieroglyph/vm.c (hg_vm_init): initialize logger facility.
 	(hg_vm_finalize): finalize logger.
 

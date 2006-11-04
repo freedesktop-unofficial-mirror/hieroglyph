@@ -713,9 +713,9 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 	guint i;
 	gboolean retval = FALSE;
 	GList *reflist;
-#ifdef DEBUG_GC
+#ifdef DEBUG
 	guint total = 0, swept = 0;
-#endif /* DEBUG_GC */
+#endif /* DEBUG */
 
 	if (pool->is_collecting) {
 		/* just return without doing anything */
@@ -737,24 +737,18 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 				p->age_of_gc_mark++;
 		}
 	}
-#ifdef DEBUG_GC
-	g_print("DEBUG_GC: starting GC for %s\n", pool->name);
-#endif /* DEBUG_GC */
+	hg_log_debug(DEBUG_GC, "starting GC for %s", pool->name);
 	if (!pool->destroyed) {
 		if (!pool->use_gc) {
 			pool->is_collecting = FALSE;
 
 			return FALSE;
 		}
-#ifdef DEBUG_GC
-		g_print("DEBUG_GC: marking start.\n");
-#endif /* DEBUG_GC */
+		hg_log_debug(DEBUG_GC, "marking start.");
 		/* mark phase */
 		pool->allocator->vtable->gc_mark(pool);
 	}
-#ifdef DEBUG_GC
-	g_print("DEBUG_GC: sweeping start.\n");
-#endif /* DEBUG_GC */
+	hg_log_debug(DEBUG_GC, "sweeping start.");
 	/* sweep phase */
 	for (i = 0; i < priv->heap2block_array->len; i++) {
 		HgMemBFitBlock *block = g_ptr_array_index(priv->heap2block_array, i), *tmp;
@@ -772,24 +766,22 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 			if (block->in_use > 0) {
 				if (!hg_mem_is_gc_mark__inline(obj) &&
 				    (pool->destroyed || !hg_mem_is_locked(obj))) {
-#ifdef DEBUG_GC
+#ifdef DEBUG
 					swept++;
-					g_print("DEBUG_GC: sweeping %p (block: %p memobj: %p size: %" G_GSIZE_FORMAT " age: %d[current %d])\n", obj->data, obj->subid, obj, ((HgMemBFitBlock *)obj->subid)->length, HG_MEMOBJ_GET_MARK_AGE (obj), obj->pool->age_of_gc_mark);
-#endif /* DEBUG_GC */
+					hg_log_debug(DEBUG_GC, "sweeping %p (block: %p memobj: %p size: %" G_GSIZE_FORMAT " age: %d[current %d])", obj->data, obj->subid, obj, ((HgMemBFitBlock *)obj->subid)->length, HG_MEMOBJ_GET_MARK_AGE (obj), obj->pool->age_of_gc_mark);
+#endif /* DEBUG */
 					hg_mem_free(obj->data);
 					retval = TRUE;
 				}
 			}
-#ifdef DEBUG_GC
+#ifdef DEBUG
 			total++;
-#endif /* DEBUG_GC */
+#endif /* DEBUG */
 			block = tmp;
 		}
 	}
-#ifdef DEBUG_GC
-	g_print("DEBUG_GC: GC finished (total: %d blocks swept: %d blocks)\n",
-		total, swept);
-#endif /* DEBUG_GC */
+	hg_log_debug(DEBUG_GC, "GC finished (total: %d blocks swept: %d blocks)",
+		     total, swept);
 	pool->is_collecting = FALSE;
 
 	return retval;
@@ -804,9 +796,7 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 		return;
 	pool->is_processing = TRUE;
 
-#ifdef DEBUG_GC
-	g_print("MARK AGE: %d (%s)\n", pool->age_of_gc_mark, pool->name);
-#endif /* DEBUG_GC */
+	hg_log_debug(DEBUG_GC, "MARK AGE: %d (%s)", pool->age_of_gc_mark, pool->name);
 	G_STMT_START {
 		GList *list, *reflist;
 		HgMemObject *obj;
@@ -820,13 +810,9 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 			} else {
 				if (!hg_mem_is_gc_mark__inline(obj)) {
 					hg_mem_gc_mark__inline(obj);
-#ifdef DEBUG_GC
-					g_print("MARK: %p (mem: %p age: %d) from root node.\n", obj->data, obj, HG_MEMOBJ_GET_MARK_AGE (obj));
-#endif /* DEBUG_GC */
+					hg_log_debug(DEBUG_GC, "MARK: %p (mem: %p age: %d) from root node.", obj->data, obj, HG_MEMOBJ_GET_MARK_AGE (obj));
 				} else {
-#ifdef DEBUG_GC
-					g_print("MARK[already]: %p (mem: %p age: %d) from root node.\n", obj->data, obj, HG_MEMOBJ_GET_MARK_AGE (obj));
-#endif /* DEBUG_GC */
+					hg_log_debug(DEBUG_GC, "MARK[already]: %p (mem: %p age: %d) from root node.", obj->data, obj, HG_MEMOBJ_GET_MARK_AGE (obj));
 				}
 			}
 		}
@@ -834,24 +820,16 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 		for (reflist = pool->other_pool_ref_list;
 		     reflist != NULL;
 		     reflist = g_list_next(reflist)) {
-#ifdef DEBUG_GC
-			g_print("DEBUG_GC: entering %s\n", ((HgMemPool *)reflist->data)->name);
-#endif /* DEBUG_GC */
+			hg_log_debug(DEBUG_GC, "entering %s", ((HgMemPool *)reflist->data)->name);
 			((HgMemPool *)reflist->data)->allocator->vtable->gc_mark(reflist->data);
-#ifdef DEBUG_GC
-			g_print("DEBUG_GC: leaving %s\n", ((HgMemPool *)reflist->data)->name);
-#endif /* DEBUG_GC */
+			hg_log_debug(DEBUG_GC, "leaving %s", ((HgMemPool *)reflist->data)->name);
 		}
 		/* trace in the registers */
 		setjmp(env);
-#ifdef DEBUG_GC
-		g_print("DEBUG_GC: marking from registers.\n");
-#endif /* DEBUG_GC */
+		hg_log_debug(DEBUG_GC, "marking from registers.");
 		hg_mem_gc_mark_array_region(pool, (gpointer)env, (gpointer)env + sizeof (env));
 		/* trace the stack */
-#ifdef DEBUG_GC
-		g_print("DEBUG_GC: marking from stacks.\n");
-#endif /* DEBUG_GC */
+		hg_log_debug(DEBUG_GC, "marking from stacks.");
 		hg_mem_gc_mark_array_region(pool, _hg_stack_start, _hg_stack_end);
 	} G_STMT_END;
 

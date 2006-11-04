@@ -62,28 +62,28 @@ static HgDeviceVTable __hg_cairo_device_vtable = {
 /*
  * Private Functions
  */
-#ifdef DEBUG_PATH
+#ifdef DEBUG
 static void
 _hg_cairo_device_print_path(HgPathNode    *node)
 {
-	g_print("\n");
+	hg_log_debug(DEBUG_PATH, "");
 	while (node) {
 		switch (node->type) {
 		    case HG_PATH_CLOSE:
-			    g_print("closepath\n");
+			    hg_log_debug(DEBUG_PATH, "closepath");
 			    break;
 		    case HG_PATH_MOVETO:
-			    g_print("%f %f moveto\n", node->x, node->y);
+			    hg_log_debug(DEBUG_PATH, "%f %f moveto", node->x, node->y);
 			    break;
 		    case HG_PATH_LINETO:
-			    g_print("%f %f lineto\n", node->x, node->y);
+			    hg_log_debug(DEBUG_PATH, "%f %f lineto", node->x, node->y);
 			    break;
 		    case HG_PATH_RLINETO:
-			    g_print("%f %f rlineto\n", node->x, node->y);
+			    hg_log_debug(DEBUG_PATH, "%f %f rlineto", node->x, node->y);
 			    break;
 		    case HG_PATH_CURVETO:
 			    if (node->next && node->next->next) {
-				    g_print("%f %f %f %f %f %f curveto\n", node->x, node->y, node->next->x, node->next->y, node->next->next->x, node->next->next->y);
+				    hg_log_debug(DEBUG_PATH, "%f %f %f %f %f %f curveto", node->x, node->y, node->next->x, node->next->y, node->next->next->x, node->next->next->y);
 				    node = node->next->next;
 			    } else {
 				    hg_log_warning("[BUG] Invalid path for curve.");
@@ -91,7 +91,7 @@ _hg_cairo_device_print_path(HgPathNode    *node)
 			    break;
 		    case HG_PATH_ARC:
 			    if (node->next && node->next->next) {
-				    g_print("%f %f %f %f %f arc\n", node->x, node->y, node->next->x, node->next->next->x, node->next->next->y);
+				    hg_log_debug(DEBUG_PATH, "%f %f %f %f %f arc", node->x, node->y, node->next->x, node->next->next->x, node->next->next->y);
 				    node = node->next->next;
 			    } else {
 				    hg_log_warning("[BUG] Invalid path for arc.");
@@ -99,7 +99,7 @@ _hg_cairo_device_print_path(HgPathNode    *node)
 			    break;
 		    case HG_PATH_MATRIX:
 			    if (node->next && node->next->next) {
-				    g_print("[%f %f %f %f %f %f] matrix\n", node->x, node->y, node->next->x, node->next->y, node->next->next->x, node->next->next->y);
+				    hg_log_debug(DEBUG_PATH, "[%f %f %f %f %f %f] matrix", node->x, node->y, node->next->x, node->next->y, node->next->next->x, node->next->next->y);
 				    node = node->next->next;
 			    } else {
 				    hg_log_warning("[BUG] Invalid matrix was given.");
@@ -111,9 +111,11 @@ _hg_cairo_device_print_path(HgPathNode    *node)
 		}
 		node = node->next;
 	}
-	g_print("%% end\n\n");
+	hg_log_debug(DEBUG_PATH, "%% end\n");
 }
-#endif /* DEBUG_PATH */
+#else
+#define _hg_cairo_device_print_path(_node_)
+#endif /* DEBUG */
 
 /*
  * hsv_to_rgb() is borrowed from GTK+
@@ -258,10 +260,8 @@ _hg_cairo_device_real_eofill(HgDevice     *device,
 {
 	HgCairoDevice *cdev = (HgCairoDevice *)device;
 
-#ifdef DEBUG_PATH
-	g_print("eofill\n");
+	hg_log_debug(DEBUG_PATH, "%% eofill");
 	_hg_cairo_device_print_path(render->path);
-#endif /* DEBUG_PATH */
 	_hg_cairo_device_set_matrix(cdev, &render->mtx);
 	if (!_hg_cairo_device_set_path(cdev, render->path))
 		return FALSE;
@@ -291,10 +291,8 @@ _hg_cairo_device_real_fill(HgDevice     *device,
 {
 	HgCairoDevice *cdev = (HgCairoDevice *)device;
 
-#ifdef DEBUG_PATH
-	g_print("fill\n");
+	hg_log_debug(DEBUG_PATH, "%% fill");
 	_hg_cairo_device_print_path(render->path);
-#endif /* DEBUG_PATH */
 	_hg_cairo_device_set_matrix(cdev, &render->mtx);
 	if (!_hg_cairo_device_set_path(cdev, render->path))
 		return FALSE;
@@ -327,10 +325,8 @@ _hg_cairo_device_real_stroke(HgDevice       *device,
 	guint len, i;
 	HgValueNode *node;
 
-#ifdef DEBUG_PATH
-	g_print("stroke\n");
+	hg_log_debug(DEBUG_PATH, "%% stroke");
 	_hg_cairo_device_print_path(render->path);
-#endif /* DEBUG_PATH */
 	_hg_cairo_device_set_matrix(cdev, &render->mtx);
 	if (!_hg_cairo_device_set_path(cdev, render->path))
 		return FALSE;
@@ -387,9 +383,7 @@ _hg_cairo_device_set_matrix(HgCairoDevice *device,
 	cairo_matrix_init(&trans, 1.0, 0.0, 0.0,
 			  -1.0, 0.0, device->device.height);
 	cairo_matrix_multiply(&trans, &mtx_, &trans);
-#ifdef DEBUG_PATH
-	g_print("[%f %f %f %f %f %f] setmatrix\n", trans.xx, trans.yx, trans.xy, trans.yy, trans.x0, trans.y0);
-#endif /* DEBUG_PATH */
+	hg_log_debug(DEBUG_PATH, "[%f %f %f %f %f %f] setmatrix\n", trans.xx, trans.yx, trans.xy, trans.yy, trans.x0, trans.y0);
 	cairo_set_matrix(device->reference, &trans);
 }
 

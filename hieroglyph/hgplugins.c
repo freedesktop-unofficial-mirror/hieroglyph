@@ -111,10 +111,8 @@ _hg_plugin_load(HgMemPool   *pool,
 		} else {
 			retval->module = module;
 		}
-#ifdef DEBUG_PLUGIN
 	} else {
-		hg_log_warning(g_module_error());
-#endif
+		hg_log_debug(DEBUG_PLUGIN, g_module_error());
 	}
 
 	return retval;

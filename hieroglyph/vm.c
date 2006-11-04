@@ -952,7 +952,7 @@ hg_vm_lookup(HgVM        *vm,
 
 		node = hg_stack_index(vm->dstack, i);
 		if (node == NULL || !HG_IS_VALUE_DICT (node)) {
-			g_error("dictionary stack was broken.");
+			hg_log_error("dictionary stack was broken.");
 			break;
 		}
 		dict = HG_VALUE_GET_DICT (node);
@@ -977,7 +977,7 @@ hg_vm_lookup_with_string(HgVM        *vm,
 	for (i = 0; i < depth; i++) {
 		node = hg_stack_index(vm->dstack, i);
 		if (node == NULL || !HG_IS_VALUE_DICT (node)) {
-			g_error("dictionary stack was broken.");
+			hg_log_error("dictionary stack was broken.");
 			break;
 		}
 		if ((retval = hg_dict_lookup_with_string(HG_VALUE_GET_DICT (node), key)) != NULL)
@@ -1168,7 +1168,8 @@ hg_vm_set_error(HgVM        *vm,
 	}
 	copy_proc = hg_object_copy((HgObject *)proc);
 	if (copy_proc == NULL) {
-		g_error("FATAL: failed to allocate a memory for an error handler. there are no way to recover it unfortunately.");
+		hg_log_error("FATAL: failed to allocate a memory for an error handler. there are no way to recover it unfortunately.");
+		abort();
 	}
 	self = hg_stack_pop(vm->estack);
 	_hg_stack_push(vm->estack, copy_proc);

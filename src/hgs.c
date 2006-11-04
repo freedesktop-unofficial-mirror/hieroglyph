@@ -24,6 +24,7 @@
 #include <hieroglyph/hgdevice.h>
 #include <hieroglyph/hgdict.h>
 #include <hieroglyph/hgfile.h>
+#include <hieroglyph/hglog.h>
 #include <hieroglyph/hgmem.h>
 #include <hieroglyph/hgvaluenode.h>
 #include <hieroglyph/vm.h>
@@ -90,11 +91,26 @@ main(int    argc,
 		{NULL}
 	};
 	GError *error = NULL;
-	const gchar *psfile = NULL;
+	const gchar *psfile = NULL, *env;
 	gint32 errcode = 0;
 
 	HG_MEM_INIT;
 	hg_vm_init();
+
+	/* set debugging flags prior to initialize VM */
+	if ((env = g_getenv("HIEROGLYPH_DEBUG")) != NULL) {
+		gchar **flags = g_strsplit(env, ",:", 0);
+		int i;
+
+		for (i = 0; flags[i] != NULL; i++) {
+			gchar *key = g_strdup_printf("DEBUG_%s", flags[i]);
+
+			hg_log_set_flag(key, TRUE);
+			g_free(key);
+		}
+
+		g_strfreev(flags);
+	}
 
 	vm = hg_vm_new(VM_EMULATION_LEVEL_1);
 

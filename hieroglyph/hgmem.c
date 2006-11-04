@@ -65,7 +65,8 @@ _hg_mem_init_stack_start(void)
 
 	if ((fd = open("/proc/self/stat", O_RDONLY)) == -1 ||
 	    read(fd, stat_buffer, STAT_BUFSIZE) < 2 * STAT_SKIP) {
-		g_error("Failed to read /proc/self/stat");
+		hg_log_error("Failed to read /proc/self/stat");
+		abort();
 	} else {
 		c = stat_buffer[offset++];
 		for (i = 0; i < STAT_SKIP; i++) {
@@ -79,8 +80,10 @@ _hg_mem_init_stack_start(void)
 			c = stat_buffer[offset++];
 		}
 		close(fd);
-		if (result < 0x10000000)
-			g_error("the stack bottom may be invalid: %x.", result);
+		if (result < 0x10000000) {
+			hg_log_error("the stack bottom may be invalid: %x.", result);
+			abort();
+		}
 		_hg_stack_start = (gpointer)result;
 	}
 #else
@@ -237,7 +240,7 @@ hg_mem_pool_new(HgAllocator *allocator,
 
 	pool = (HgMemPool *)g_new(HgMemPool, 1);
 	if (pool == NULL) {
-		g_error("Failed to allocate a memory pool for %s", identity);
+		hg_log_error("Failed to allocate a memory pool for %s", identity);
 		return NULL;
 	}
 	pool->name = g_strdup(identity);
@@ -607,27 +610,19 @@ hg_mem_gc_mark_array_region(HgMemPool *pool,
 		obj = hg_mem_get_object__inline_nocheck(*(gsize *)p);
 		if (pool->allocator->vtable->is_safe_object(pool, obj)) {
 			if (!hg_mem_is_gc_mark__inline(obj)) {
-#ifdef DEBUG_GC
-				g_print("MARK: %p (mem: %p age: %d) from array region.\n", obj->data, obj, HG_MEMOBJ_GET_MARK_AGE (obj));
-#endif /* DEBUG_GC */
+				hg_log_debug(DEBUG_GC, "MARK: %p (mem: %p age: %d) from array region.\n", obj->data, obj, HG_MEMOBJ_GET_MARK_AGE (obj));
 				hg_mem_gc_mark__inline(obj);
 			} else {
-#ifdef DEBUG_GC
-				g_print("MARK[already]: %p (mem: %p) from array region.\n", obj->data, obj);
-#endif /* DEBUG_GC */
+				hg_log_debug(DEBUG_GC, "MARK[already]: %p (mem: %p) from array region.\n", obj->data, obj);
 			}
 		}
 		obj = p;
 		if (pool->allocator->vtable->is_safe_object(pool, obj)) {
 			if (!hg_mem_is_gc_mark__inline(obj)) {
-#ifdef DEBUG_GC
-				g_print("MARK: %p (mem: %p) from array region.\n", obj->data, obj);
-#endif /* DEBUG_GC */
+				hg_log_debug(DEBUG_GC, "MARK: %p (mem: %p) from array region.\n", obj->data, obj);
 				hg_mem_gc_mark__inline(obj);
 			} else {
-#ifdef DEBUG_GC
-				g_print("MARK[already]: %p (mem: %p) from array region.\n", obj->data, obj);
-#endif /* DEBUG_GC */
+				hg_log_debug(DEBUG_GC, "MARK[already]: %p (mem: %p) from array region.\n", obj->data, obj);
 			}
 		}
 	}
