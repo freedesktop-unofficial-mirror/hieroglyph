@@ -69,14 +69,14 @@ _hg_log_default_handler(HgLogType    log_type,
 
 	header = hg_log_get_log_type_header(log_type, domain);
 	if (!hg_file_is_initialized()) {
-		g_printerr("%s ***%s%s%s %s\n",
+		g_printerr("%s ***%s%s%s %s\n\n",
 			   header,
 			   (subtype ? " " : ""),
 			   (subtype ? subtype : ""),
 			   (subtype ? ":" : ""),
 			   message);
 	} else {
-		hg_stderr_printf("%s ***%s%s%s %s\n",
+		hg_stderr_printf("%s ***%s%s%s %s\n\n",
 				 header,
 				 (subtype ? " " : ""),
 				 (subtype ? subtype : ""),
@@ -101,6 +101,7 @@ hg_log_init(void)
 						    HG_MEM_GLOBAL);
 		__hg_log_options_dict = hg_dict_new(__hg_log_mem_pool,
 						    65535);
+		hg_mem_add_root_node(__hg_log_mem_pool, __hg_log_options_dict);
 		__hg_log_handler = _hg_log_default_handler;
 
 		__hg_log_initialized = TRUE;
@@ -114,6 +115,13 @@ hg_log_finalize(void)
 {
 	if (__hg_log_initialized) {
 		__hg_log_initialized = FALSE;
+#ifdef DEBUG
+#ifdef DEBUG_LOG_WITHOUT_LOGGER
+		hg_log_info("Masking logs are disabled now.");
+#else
+		hg_log_info("Logging facilities are disabled now.");
+#endif /* DEBUG_LOG_WITHOUT_LOGGER */
+#endif /* DEBUG */
 		__hg_log_options_dict = NULL;
 		hg_mem_pool_destroy(__hg_log_mem_pool);
 		hg_allocator_destroy(__hg_log_allocator);
@@ -183,32 +191,28 @@ hg_logv(HgLogType    log_type,
 	va_list      va_args)
 {
 	HgValueNode *node;
-	HgString *string = NULL;
+	gchar *buffer = NULL;
 
 	g_return_if_fail (format != NULL);
 
+	buffer = g_strdup_vprintf(format, va_args);
 	if (subtype == NULL) {
-	  default_logger:;
-		gchar *buffer = g_strdup_vprintf(format, va_args);
-
 		/* just invoke a default handler */
 		__hg_log_handler(log_type, domain, subtype, buffer, __hg_log_handler_data);
-		g_free(buffer);
-		return;
+		goto finalize;
 	}
 
 	if (!__hg_log_initialized) {
-#ifdef DEBUG
-		goto default_logger;
+#if defined(DEBUG) && defined(DEBUG_LOG_WITHOUT_LOGGER)
+		/* just invoke a default handler */
+		__hg_log_handler(log_type, domain, subtype, buffer, __hg_log_handler_data);
+		goto finalize;
 #endif /* DEBUG */
 	} else if ((node = hg_dict_lookup_with_string(__hg_log_options_dict, subtype)) != NULL) {
-		string = hg_string_new(__hg_log_mem_pool, -1);
-		hg_string_append_vprintf(string, format, va_args);
-
 		if (HG_IS_VALUE_BOOLEAN (node)) {
 			if (HG_VALUE_GET_BOOLEAN (node)) {
 				/* just invoke a default handler */
-				__hg_log_handler(log_type, domain, subtype, hg_string_get_string(string), __hg_log_handler_data);
+				__hg_log_handler(log_type, domain, subtype, buffer, __hg_log_handler_data);
 			}
 		} else if (HG_IS_VALUE_OPERATOR (node) ||
 			   (HG_IS_VALUE_ARRAY (node) && hg_object_is_executable((HgObject *)node))) {
@@ -216,8 +220,8 @@ hg_logv(HgLogType    log_type,
 		} else {
 			hg_log_warning("Invalid object specified for logger.");
 		}
-
-		if (string)
-			hg_mem_free(string);
 	}
+  finalize:;
+	if (buffer)
+		g_free(buffer);
 }

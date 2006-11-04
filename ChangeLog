@@ -1,5 +1,10 @@
 2006-11-04  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/vm.c (hg_vm_finalize): change the order of fnalization.
+
+	* hieroglyph/hglog.c (hg_logv): don't use HgString to get it working
+	even when memory allocation error happens.
+
 	* hieroglyph/vm.c (hg_vm_lookup): ues logger facility.
 	(hg_vm_lookup_with_string): likewise.
 	(hg_vm_set_error): likewise.
