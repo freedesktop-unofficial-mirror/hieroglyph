@@ -1,3 +1,11 @@
+2006-11-04  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/vm.c (hg_vm_init): initialize logger facility.
+	(hg_vm_finalize): finalize logger.
+
+	* hieroglyph/hglog.c (hg_log_set_flag): new function.
+	(hg_logv): allow to output a message without initialization.
+
 2006-10-22  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/Makefile.am (libhieroglyph_la_SOURCES): added hglog.c.

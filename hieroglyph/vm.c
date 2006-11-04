@@ -378,6 +378,7 @@ hg_vm_init(void)
 		hg_mem_init();
 		hg_value_node_init();
 		hg_file_init();
+		hg_log_init();
 		hg_list_init();
 
 		__hg_vm_allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
@@ -408,6 +409,7 @@ hg_vm_finalize(void)
 		hg_list_finalize();
 		hg_file_finalize();
 		hg_value_node_finalize();
+		hg_log_finalize();
 		hg_mem_finalize();
 
 		__hg_vm_is_initialized = FALSE;

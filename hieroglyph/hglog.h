@@ -32,7 +32,8 @@ G_BEGIN_DECLS
 typedef void (*HgLogFunc)(HgLogType     log_type,
 			  const gchar  *domain,
 			  const gchar  *subtype,
-			  const gchar  *message);
+			  const gchar  *message,
+			  gpointer      user_data);
 
 #define hg_log_info(...)						\
 	hg_log(HG_LOG_TYPE_INFO, HG_LOG_DOMAIN, NULL, __VA_ARGS__)
@@ -48,10 +49,12 @@ typedef void (*HgLogFunc)(HgLogType     log_type,
 	hg_log(HG_LOG_TYPE_ERROR, HG_LOG_DOMAIN, NULL, __VA_ARGS__)
 
 
-gboolean hg_log_init               (HgVM        *vm,
-				    HgDict      *dict);
+gboolean hg_log_init               (void);
 void     hg_log_finalize           (void);
-void     hg_log_set_default_handler(HgLogFunc    func);
+void     hg_log_set_default_handler(HgLogFunc    func,
+				    gpointer     user_data);
+void     hg_log_set_flag           (const gchar *key,
+				    gboolean     val);
 gchar   *hg_log_get_log_type_header(HgLogType    log_type,
 				    const gchar *domain) G_GNUC_MALLOC;
 void     hg_log                    (HgLogType    log_type,

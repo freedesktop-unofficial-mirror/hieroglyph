@@ -26,22 +26,26 @@
 #endif
 
 #include "hglog.h"
+#include "hgallocator-bfit.h"
 #include "hgdict.h"
 #include "hgfile.h"
 #include "hgmem.h"
 #include "hgstring.h"
 #include "hgvaluenode.h"
-#include "vm.h"
 
+
+#define HG_LOG_POOL_SIZE 3000000
 
 static void _hg_log_default_handler(HgLogType    log_type,
 				    const gchar *domain,
 				    const gchar *subtype,
-				    const gchar *message);
+				    const gchar *message,
+				    gpointer     data);
 
 static gboolean __hg_log_initialized = FALSE;
 static HgDict *__hg_log_options_dict = NULL;
-static HgVM *__hg_log_vm = NULL;
+static HgMemPool *__hg_log_mem_pool = NULL;
+static HgAllocator *__hg_log_allocator = NULL;
 static gchar const *log_type_to_string[] = {
 	"Info",
 	"Debug",
@@ -49,6 +53,7 @@ static gchar const *log_type_to_string[] = {
 	"Error",
 };
 static HgLogFunc __hg_log_handler = _hg_log_default_handler;
+static gpointer __hg_log_handler_data = NULL;
 
 /*
  * Private Functions
@@ -57,25 +62,28 @@ static void
 _hg_log_default_handler(HgLogType    log_type,
 			const gchar *domain,
 			const gchar *subtype,
-			const gchar *message)
+			const gchar *message,
+			gpointer     data)
 {
-	HgFileObject *file;
 	gchar *header;
 
-	if (__hg_log_vm) {
-		file = hg_vm_get_io(__hg_log_vm, VM_IO_STDERR);
-	} else {
-		if (!hg_file_is_initialized())
-			hg_file_init();
-		file = __hg_file_stderr;
-	}
 	header = hg_log_get_log_type_header(log_type, domain);
-	hg_file_object_printf(file, "%s ***%s%s%s %s\n",
-			      header,
-			      (subtype ? " " : ""),
-			      (subtype ? subtype : ""),
-			      (subtype ? ":" : ""),
-			      message);
+	if (!hg_file_is_initialized()) {
+		g_printerr("%s ***%s%s%s %s\n",
+			   header,
+			   (subtype ? " " : ""),
+			   (subtype ? subtype : ""),
+			   (subtype ? ":" : ""),
+			   message);
+	} else {
+		hg_stderr_printf("%s ***%s%s%s %s\n",
+				 header,
+				 (subtype ? " " : ""),
+				 (subtype ? subtype : ""),
+				 (subtype ? ":" : ""),
+				 message);
+	}
+	g_free(header);
 }
 
 /*
@@ -83,30 +91,16 @@ _hg_log_default_handler(HgLogType    log_type,
  */
 /* initializer */
 gboolean
-hg_log_init(HgVM   *vm,
-	    HgDict *dict)
+hg_log_init(void)
 {
-	HgMemObject *obj;
-
-	g_return_val_if_fail (vm != NULL, FALSE);
-	g_return_val_if_fail (dict != NULL, FALSE);
-
-	if (__hg_log_options_dict == NULL) {
-		hg_mem_get_object__inline(dict, obj);
-		if (obj == NULL) {
-			hg_log_warning("Invalid object %p to be set as Log Dict.", dict);
-			return FALSE;
-		}
-		hg_mem_set_lock(obj);
-		__hg_log_options_dict = dict;
-
-		hg_mem_get_object__inline(vm, obj);
-		if (obj == NULL) {
-			hg_log_warning("Invalid object %p to be set as Log VM.", vm);
-			return FALSE;
-		}
-		hg_mem_set_lock(obj);
-		__hg_log_vm = vm;
+	if (!__hg_log_initialized) {
+		__hg_log_allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
+		__hg_log_mem_pool = hg_mem_pool_new(__hg_log_allocator,
+						    "Memory pool for HgLog",
+						    HG_LOG_POOL_SIZE,
+						    HG_MEM_GLOBAL);
+		__hg_log_options_dict = hg_dict_new(__hg_log_mem_pool,
+						    65535);
 		__hg_log_handler = _hg_log_default_handler;
 
 		__hg_log_initialized = TRUE;
@@ -118,30 +112,39 @@ hg_log_init(HgVM   *vm,
 void
 hg_log_finalize(void)
 {
-	HgMemObject *obj;
-
 	if (__hg_log_initialized) {
-		hg_mem_get_object__inline(__hg_log_options_dict, obj);
-		if (obj != NULL) {
-			hg_mem_set_unlock(obj);
-		}
-		__hg_log_options_dict = NULL;
-		hg_mem_get_object__inline(__hg_log_vm, obj);
-		if (obj != NULL) {
-			hg_mem_set_unlock(obj);
-		}
-		__hg_log_vm = NULL;
 		__hg_log_initialized = FALSE;
+		__hg_log_options_dict = NULL;
+		hg_mem_pool_destroy(__hg_log_mem_pool);
+		hg_allocator_destroy(__hg_log_allocator);
+		__hg_log_mem_pool = NULL;
+		__hg_log_allocator = NULL;
 	}
 }
 
 /* utilities */
 void
-hg_log_set_default_handler(HgLogFunc func)
+hg_log_set_default_handler(HgLogFunc func,
+			   gpointer  user_data)
 {
 	g_return_if_fail (func);
 
 	__hg_log_handler = func;
+	__hg_log_handler_data = user_data;
+}
+
+void
+hg_log_set_flag(const gchar *key,
+		gboolean     val)
+{
+	HgValueNode *k, *v;
+
+	g_return_if_fail (__hg_log_initialized);
+	g_return_if_fail (key != NULL);
+
+	HG_VALUE_MAKE_NAME_STATIC (__hg_log_mem_pool, k, key);
+	HG_VALUE_MAKE_BOOLEAN (__hg_log_mem_pool, v, val);
+	hg_dict_insert(__hg_log_mem_pool, __hg_log_options_dict, k, v);
 }
 
 gchar *
@@ -185,37 +188,31 @@ hg_logv(HgLogType    log_type,
 	g_return_if_fail (format != NULL);
 
 	if (subtype == NULL) {
+	  default_logger:;
 		gchar *buffer = g_strdup_vprintf(format, va_args);
 
 		/* just invoke a default handler */
-		__hg_log_handler(log_type, domain, subtype, buffer);
+		__hg_log_handler(log_type, domain, subtype, buffer, __hg_log_handler_data);
 		g_free(buffer);
 		return;
 	}
 
-	g_return_if_fail (__hg_log_initialized);
-
-	if ((node = hg_dict_lookup_with_string(__hg_log_options_dict, subtype)) != NULL) {
-		HgMemPool *pool = hg_vm_get_current_pool(__hg_log_vm);
-
-		string = hg_string_new(pool, -1);
+	if (!__hg_log_initialized) {
+#ifdef DEBUG
+		goto default_logger;
+#endif /* DEBUG */
+	} else if ((node = hg_dict_lookup_with_string(__hg_log_options_dict, subtype)) != NULL) {
+		string = hg_string_new(__hg_log_mem_pool, -1);
 		hg_string_append_vprintf(string, format, va_args);
 
 		if (HG_IS_VALUE_BOOLEAN (node)) {
 			if (HG_VALUE_GET_BOOLEAN (node)) {
 				/* just invoke a default handler */
-				__hg_log_handler(log_type, domain, subtype, hg_string_get_string(string));
+				__hg_log_handler(log_type, domain, subtype, hg_string_get_string(string), __hg_log_handler_data);
 			}
 		} else if (HG_IS_VALUE_OPERATOR (node) ||
 			   (HG_IS_VALUE_ARRAY (node) && hg_object_is_executable((HgObject *)node))) {
-			HgValueNode *strnode = NULL, *subnode, *lognode;
-			HG_VALUE_MAKE_STRING (strnode, string);
-			lognode = hg_vm_get_name_node(__hg_log_vm, log_type_to_string[log_type]);
-			subnode = hg_vm_get_name_node(__hg_log_vm, subtype);
 			hg_log_warning("FIXME: not yet supported.");
-
-			if (strnode)
-				hg_mem_free(strnode);
 		} else {
 			hg_log_warning("Invalid object specified for logger.");
 		}
