@@ -268,7 +268,7 @@ _hg_list_length(HgList *list)
 	g_return_val_if_fail (list != NULL, 0);
 
 	do {
-		l = hg_list_next(list);
+		l = hg_list_next(l);
 		retval++;
 	} while (l && l != list);
 
@@ -284,51 +284,20 @@ HgList *
 _hg_list_remove(HgList   *list,
 		gpointer  data)
 {
-	HgList *l = list, *top = NULL, *prev, *next;
+	HgListIter iter;
 
 	g_return_val_if_fail (list != NULL, NULL);
 
+	iter = hg_list_iter_new(list);
 	do {
-		if (top == NULL) {
-			if (HG_LIST_IS_LAST_NODE (l)) {
-				top = hg_list_next(l);
-			} else {
-				prev = hg_list_previous(l);
-				if (prev && HG_LIST_IS_LAST_NODE (prev)) {
-					top = l;
-				}
-			}
-		}
-		if (l->data == data) {
-			prev = hg_list_previous(l);
-			next = hg_list_next(l);
-			hg_list_next(prev) = next;
-			hg_list_previous(next) = prev;
-			if (HG_LIST_IS_LAST_NODE (l)) {
-				HG_LIST_SET_LAST_NODE (l, FALSE);
-				HG_LIST_SET_LAST_NODE (prev, TRUE);
-				top = next;
-			}
-			HG_LIST_SET_UNUSED (l, TRUE);
-			hg_list_next(l) = NULL;
-			hg_list_previous(l) = NULL;
-			/* relying on GC to be really freed. */
+		if (hg_list_iter_get_data(iter) == data) {
+			list = hg_list_iter_delete_link(iter);
 			break;
 		}
-		l = hg_list_next(l);
-	} while (l && l != list);
+	} while (hg_list_get_iter_next(list, iter));
+	hg_list_iter_free(iter);
 
-	/* validate node */
-	if (l == NULL) {
-		hg_log_warning("[BUG] no loop detected in HgList %p during removing %p",
-			       list, data);
-		top = list;
-	} else {
-		if (!top)
-			top = _hg_list_get_top_node(l);
-	}
-
-	return top;
+	return list;
 }
 
 HgList *

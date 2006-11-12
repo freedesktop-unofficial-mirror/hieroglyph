@@ -13,6 +13,8 @@ main(void)
 	HgListIter iter;
 	gint tc1[] = {1, 2, 3, 0};
 	gint tc2[] = {1, 3, 0};
+	gint tc3[] = {2, 3, 0};
+	gint tc4[] = {1, 2, 0};
 	gint i;
 
 	allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
@@ -63,6 +65,83 @@ main(void)
 	}
 	if (i != 1) {
 		g_print("Expected list size 2 but actually was %d\n", i + 1);
+		return 1;
+	}
+
+	/* testcase 2 */
+	list = hg_list_new(pool);
+	if (list == NULL) {
+		g_print("Failed to create an list.\n");
+		return 1;
+	}
+
+	list = hg_list_append(list, GINT_TO_POINTER (1));
+	list = hg_list_append(list, GINT_TO_POINTER (2));
+	list = hg_list_append(list, GINT_TO_POINTER (3));
+
+	list = hg_list_remove(list, GINT_TO_POINTER (1));
+	iter = hg_list_iter_new(list);
+	if (iter == NULL) {
+		g_print("Failed to create an iter.\n");
+		return 1;
+	}
+	for (i = 0; ; i++) {
+		if (tc3[i] != GPOINTER_TO_INT (hg_list_iter_get_data(iter))) {
+			g_print("Failed to compare: expected %d, but actually %d",
+				tc3[i], GPOINTER_TO_INT (hg_list_iter_get_data(iter)));
+			return 1;
+		}
+		if (!hg_list_get_iter_next(list, iter))
+			break;
+	}
+	if (i != 1) {
+		g_print("Expected list size 2 but actually was %d\n", i + 1);
+		return 1;
+	}
+
+	/* testcase 3 */
+	list = hg_list_new(pool);
+	if (list == NULL) {
+		g_print("Failed to create an list.\n");
+		return 1;
+	}
+
+	list = hg_list_append(list, GINT_TO_POINTER (1));
+	list = hg_list_append(list, GINT_TO_POINTER (2));
+	list = hg_list_append(list, GINT_TO_POINTER (3));
+
+	list = hg_list_remove(list, GINT_TO_POINTER (3));
+	iter = hg_list_iter_new(list);
+	if (iter == NULL) {
+		g_print("Failed to create an iter.\n");
+		return 1;
+	}
+	for (i = 0; ; i++) {
+		if (tc4[i] != GPOINTER_TO_INT (hg_list_iter_get_data(iter))) {
+			g_print("Failed to compare: expected %d, but actually %d",
+				tc4[i], GPOINTER_TO_INT (hg_list_iter_get_data(iter)));
+			return 1;
+		}
+		if (!hg_list_get_iter_next(list, iter))
+			break;
+	}
+	if (i != 1) {
+		g_print("Expected list size 2 but actually was %d\n", i + 1);
+		return 1;
+	}
+
+	/* testcase 4 */
+	list = hg_list_new(pool);
+	if (list == NULL) {
+		g_print("Failed to create an list.\n");
+		return 1;
+	}
+
+	list = hg_list_append(list, GINT_TO_POINTER (1));
+
+	list = hg_list_remove(list, GINT_TO_POINTER (1));
+	if (list != NULL) {
+		g_print("Expected list size 0 but actually was %d\n", hg_list_length(list));
 		return 1;
 	}
 

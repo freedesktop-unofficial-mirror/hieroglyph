@@ -1,3 +1,11 @@
+2006-11-12  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hglist.c (hg_list_length): fixed an infinite loop issue.
+	(hg_list_remove): reimplement with iterator to be simplified.
+
+	* hieroglyph/ilist.c (_hg_list_length): fixed an infinite loop issue.
+	(_hg_list_remove): reimplement with iterator to be simplified.
+
 2006-11-04  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/vm.c (hg_vm_finalize): change the order of fnalization.
