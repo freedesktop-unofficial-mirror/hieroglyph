@@ -444,7 +444,7 @@ hg_value_node_init(void)
 
 		__hg_value_node_type_tree = hg_btree_new(__hg_value_node_mem_pool,
 							 BTREE_N_NODE);
-		hg_mem_add_root_node(__hg_value_node_mem_pool, __hg_value_node_type_tree);
+		hg_mem_pool_add_root_node(__hg_value_node_mem_pool, __hg_value_node_type_tree);
 		hg_btree_allow_marking(__hg_value_node_type_tree, FALSE);
 
 		__hg_value_node_is_initialized = TRUE;

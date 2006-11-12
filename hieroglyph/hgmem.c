@@ -463,6 +463,49 @@ hg_mem_pool_restore_snapshot(HgMemPool     *pool,
 	return pool->allocator->vtable->restore_snapshot(pool, snapshot, adjuster);
 }
 
+guint
+hg_mem_pool_get_n_snapshots(HgMemPool *pool)
+{
+	g_return_val_if_fail (pool != NULL, 0);
+
+	if (pool->snapshot_list == NULL)
+		return 0;
+	return hg_list_length(pool->snapshot_list);
+}
+
+HgMemSnapshot *
+hg_mem_pool_get_snapshot(HgMemPool *pool,
+			 guint      n)
+{
+	HgMemSnapshot *retval = NULL;
+	HgListIter iter;
+	int i;
+
+	g_return_val_if_fail (pool != NULL, NULL);
+	g_return_val_if_fail (hg_mem_pool_get_n_snapshots(pool) > n, NULL);
+
+	iter = hg_list_iter_new(pool->snapshot_list);
+	for (i = 1; i <= n; i++) {
+		if (!hg_list_get_iter_next(pool->snapshot_list, iter)) {
+			hg_log_warning("Failed to look up the snapshot image.");
+			return NULL;
+		}
+	}
+	retval = hg_list_iter_get_data(iter);
+	hg_list_iter_free(iter);
+
+	return retval;
+}
+
+void
+hg_mem_pool_clear_snapshot(HgMemPool *pool)
+{
+	g_return_if_fail (pool != NULL);
+
+	hg_list_free(pool->snapshot_list);
+	pool->snapshot_list = NULL;
+}
+
 gboolean
 hg_mem_garbage_collection(HgMemPool *pool)
 {
@@ -654,8 +697,8 @@ hg_mem_gc_mark_array_region(HgMemPool *pool,
 }
 
 void
-hg_mem_add_root_node(HgMemPool *pool,
-		     gpointer   data)
+hg_mem_pool_add_root_node(HgMemPool *pool,
+			  gpointer   data)
 {
 	if (pool->root_node == NULL)
 		pool->root_node = hg_list_new();
@@ -663,8 +706,8 @@ hg_mem_add_root_node(HgMemPool *pool,
 }
 
 void
-hg_mem_remove_root_node(HgMemPool *pool,
-			gpointer   data)
+hg_mem_pool_remove_root_node(HgMemPool *pool,
+			     gpointer   data)
 {
 	HgMemObject *obj;
 
@@ -678,8 +721,8 @@ hg_mem_remove_root_node(HgMemPool *pool,
 }
 
 void
-hg_mem_add_pool_reference(HgMemPool *pool,
-			  HgMemPool *other_pool)
+hg_mem_pool_add_pool_reference(HgMemPool *pool,
+			       HgMemPool *other_pool)
 {
 	HgListIter iter = NULL;
 
@@ -701,8 +744,8 @@ hg_mem_add_pool_reference(HgMemPool *pool,
 }
 
 void
-hg_mem_remove_pool_reference(HgMemPool *pool,
-			     HgMemPool *other_pool)
+hg_mem_pool_remove_pool_reference(HgMemPool *pool,
+				  HgMemPool *other_pool)
 {
 	g_return_if_fail (pool != NULL);
 	g_return_if_fail (other_pool != NULL);

@@ -77,11 +77,6 @@ struct _HieroGlyphVirtualMachine {
 	gboolean           shutdown;
 	gint32             security_level;
 
-	/* job management */
-	GList             *saved_jobs;
-	GList             *global_snapshot;
-	GList             *local_snapshot;
-
 	/* memory pool */
 	HgAllocator       *local_allocator;
 	HgAllocator       *global_allocator;
@@ -182,7 +177,7 @@ _hg_vm_init_errorname(void)
 					   __hg_vm_err_node,		\
 					   #sym);			\
 		__hg_vm_errorname[VM_e_##sym] = __hg_vm_err_node;	\
-		hg_mem_add_root_node(__hg_vm_mem_pool, __hg_vm_err_node); \
+		hg_mem_pool_add_root_node(__hg_vm_mem_pool, __hg_vm_err_node); \
 	} G_STMT_END
 
 	MAKE_ERRNAME(dictfull);
@@ -222,14 +217,8 @@ _hg_vm_real_free(gpointer data)
 {
 	HgVM *vm = data;
 
-	if (vm->saved_jobs)
-		g_list_free(vm->saved_jobs);
 	if (vm->random_generator)
 		g_rand_free(vm->random_generator);
-	if (vm->global_snapshot)
-		g_list_free(vm->global_snapshot);
-	if (vm->local_snapshot)
-		g_list_free(vm->local_snapshot);
 	if (vm->local_pool)
 		hg_mem_pool_destroy(vm->local_pool);
 #ifdef ENABLE_GLOBAL_POOL
@@ -502,15 +491,10 @@ hg_vm_new(HgVMEmulationType type)
 		hg_log_warning("Failed to create a name dict.");
 		return NULL;
 	}
-	hg_mem_add_root_node(retval->global_pool, retval->name_dict);
+	hg_mem_pool_add_root_node(retval->global_pool, retval->name_dict);
 
 	g_get_current_time(&retval->initialized_time);
 	retval->random_generator = g_rand_new();
-
-	/* snapshots */
-	retval->saved_jobs = NULL;
-	retval->global_snapshot = NULL;
-	retval->local_snapshot = NULL;
 
 	/* initialize the stacks */
 	retval->ostack = hg_stack_new(retval->local_pool, 500);
@@ -522,9 +506,9 @@ hg_vm_new(HgVMEmulationType type)
 		hg_log_warning("Failed to create stacks.");
 		return NULL;
 	}
-	hg_mem_add_root_node(retval->local_pool, retval->ostack);
-	hg_mem_add_root_node(retval->local_pool, retval->estack);
-	hg_mem_add_root_node(retval->local_pool, retval->dstack);
+	hg_mem_pool_add_root_node(retval->local_pool, retval->ostack);
+	hg_mem_pool_add_root_node(retval->local_pool, retval->estack);
+	hg_mem_pool_add_root_node(retval->local_pool, retval->dstack);
 
 	/* initialize local dictionaries */
 	retval->errordict = hg_dict_new(retval->local_pool, 128);
@@ -540,11 +524,11 @@ hg_vm_new(HgVMEmulationType type)
 		hg_log_warning("Failed to create local dictionaries.");
 		return NULL;
 	}
-	hg_mem_add_root_node(retval->local_pool, retval->errordict);
-	hg_mem_add_root_node(retval->local_pool, retval->error);
-	hg_mem_add_root_node(retval->local_pool, retval->statusdict);
-	hg_mem_add_root_node(retval->local_pool, retval->serverdict);
-	hg_mem_add_root_node(retval->local_pool, retval->font);
+	hg_mem_pool_add_root_node(retval->local_pool, retval->errordict);
+	hg_mem_pool_add_root_node(retval->local_pool, retval->error);
+	hg_mem_pool_add_root_node(retval->local_pool, retval->statusdict);
+	hg_mem_pool_add_root_node(retval->local_pool, retval->serverdict);
+	hg_mem_pool_add_root_node(retval->local_pool, retval->font);
 
 	/* initialize global dictionaries */
 	retval->systemdict = hg_dict_new(retval->global_pool, 384);
@@ -554,8 +538,8 @@ hg_vm_new(HgVMEmulationType type)
 		hg_log_warning("Failed to create global dictionaries.");
 		return NULL;
 	}
-	hg_mem_add_root_node(retval->global_pool, retval->systemdict);
-	hg_mem_add_root_node(retval->global_pool, retval->globalfont);
+	hg_mem_pool_add_root_node(retval->global_pool, retval->systemdict);
+	hg_mem_pool_add_root_node(retval->global_pool, retval->globalfont);
 
 	/* initialize file object */
 	retval->stdin = __hg_file_stdin;
@@ -563,18 +547,18 @@ hg_vm_new(HgVMEmulationType type)
 	retval->stderr = __hg_file_stderr;
 	retval->lineeditor = hg_line_edit_new(retval->local_pool, NULL,
 					      retval->stdin, retval->stdout);
-	hg_mem_add_root_node(retval->local_pool, retval->lineeditor);
+	hg_mem_pool_add_root_node(retval->local_pool, retval->lineeditor);
 
 	/* initialize graphics */
 	retval->graphics = hg_graphics_new(retval->graphic_pool);
-	hg_mem_add_root_node(retval->graphic_pool, retval->graphics);
+	hg_mem_pool_add_root_node(retval->graphic_pool, retval->graphics);
 
 	/* plugin support */
 	retval->plugin_table = hg_dict_new(retval->local_pool, 256);
 	retval->plugin_list = NULL;
-	hg_mem_add_root_node(retval->local_pool, retval->plugin_table);
+	hg_mem_pool_add_root_node(retval->local_pool, retval->plugin_table);
 
-	hg_mem_add_root_node(__hg_vm_mem_pool, retval);
+	hg_mem_pool_add_root_node(__hg_vm_mem_pool, retval);
 
 	return retval;
 }
@@ -894,17 +878,9 @@ hg_vm_unload_plugin(HgVM        *vm,
 guint
 hg_vm_get_save_level(HgVM *vm)
 {
-	guint retval;
-
 	g_return_val_if_fail (vm != NULL, 0);
 
-	if (hg_vm_is_global_pool_used(vm)) {
-		retval = g_list_length(vm->global_snapshot) + g_list_length(vm->saved_jobs);
-	} else {
-		retval = g_list_length(vm->local_snapshot) + g_list_length(vm->saved_jobs);
-	}
-
-	return retval;
+	return hg_mem_pool_get_n_snapshots(hg_vm_get_current_pool(vm));
 }
 
 HgValueNode *
@@ -996,24 +972,10 @@ hg_vm_startjob(HgVM        *vm,
 	       gboolean     encapsulated)
 {
 	HgValueNode *node, *nkey;
-	GList *l;
+	HgMemSnapshot *snap;
 	gboolean retval = TRUE;
 
 	g_return_val_if_fail (vm != NULL, FALSE);
-
-	if (vm->saved_jobs) {
-		g_list_free(vm->saved_jobs);
-	}
-	if (g_list_length(vm->global_snapshot) > 0) {
-		l = g_list_last(vm->global_snapshot);
-		hg_mem_pool_restore_snapshot(vm->global_pool, l->data, 0);
-		vm->global_snapshot = g_list_delete_link(vm->global_snapshot, l);
-	}
-	if (g_list_length(vm->local_snapshot) > 0) {
-		l = g_list_last(vm->local_snapshot);
-		hg_mem_pool_restore_snapshot(vm->local_pool, l->data, 0);
-		vm->local_snapshot = g_list_delete_link(vm->local_snapshot, l);
-	}
 
 	hg_stack_clear(vm->ostack);
 	hg_stack_clear(vm->dstack);
@@ -1021,12 +983,29 @@ hg_vm_startjob(HgVM        *vm,
 	hg_mem_garbage_collection(vm->global_pool);
 	hg_mem_garbage_collection(vm->local_pool);
 
+	if (hg_mem_pool_get_n_snapshots(vm->global_pool) > 0) {
+		snap = hg_mem_pool_get_snapshot(vm->global_pool, 0);
+		hg_mem_pool_remove_root_node(vm->global_pool, snap);
+		if (!hg_mem_pool_restore_snapshot(vm->global_pool, snap, 0)) {
+			hg_log_warning("[BUG] failed to rollback the VM state.");
+		}
+		hg_mem_pool_clear_snapshot(vm->global_pool);
+	}
+	if (hg_mem_pool_get_n_snapshots(vm->local_pool) > 0) {
+		snap = hg_mem_pool_get_snapshot(vm->local_pool, 0);
+		hg_mem_pool_remove_root_node(vm->local_pool, snap);
+		if (!hg_mem_pool_restore_snapshot(vm->local_pool, snap, 0)) {
+			hg_log_warning("[BUG] failed to rollback the VM state.");
+		}
+		hg_mem_pool_clear_snapshot(vm->local_pool);
+	}
+
 	if (encapsulated) {
 		HgMemSnapshot *gsnapshot = hg_mem_pool_save_snapshot(vm->global_pool);
 		HgMemSnapshot *lsnapshot = hg_mem_pool_save_snapshot(vm->local_pool);
 
-		vm->global_snapshot = g_list_append(vm->global_snapshot, gsnapshot);
-		vm->local_snapshot = g_list_append(vm->local_snapshot, lsnapshot);
+		hg_mem_pool_add_root_node(vm->global_pool, gsnapshot);
+		hg_mem_pool_add_root_node(vm->local_pool, lsnapshot);
 	}
 
 	HG_VALUE_MAKE_DICT (node, vm->systemdict);

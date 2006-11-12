@@ -352,7 +352,7 @@ hg_array_append_forcibly(HgArray     *array,
 		}
 	}
 	if (obj->pool != nobj->pool)
-		hg_mem_add_pool_reference(nobj->pool, obj->pool);
+		hg_mem_pool_add_pool_reference(nobj->pool, obj->pool);
 	if (array->removed_arrays > 0) {
 		/* remove the nodes forever */
 		memmove(array->arrays, array->current, sizeof (gpointer) * array->n_arrays);
@@ -419,7 +419,7 @@ hg_array_replace_forcibly(HgArray     *array,
 		}
 	}
 	if (obj->pool != nobj->pool)
-		hg_mem_add_pool_reference(nobj->pool, obj->pool);
+		hg_mem_pool_add_pool_reference(nobj->pool, obj->pool);
 	array->current[index] = node;
 
 	return TRUE;

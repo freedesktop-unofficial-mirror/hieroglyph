@@ -915,7 +915,7 @@ _hg_allocator_bfit_real_save_snapshot(HgMemPool *pool)
 	 *      right now the snapshot age depends on the order of releasing
 	 *      a snapshot image. need better to manage the age of snapshot.
 	 */
-	if (pool->snapshot_list && hg_list_length(pool->snapshot_list) >= 255) {
+	if (hg_mem_pool_get_n_snapshots(pool) >= 255) {
 		hg_log_warning("Too many snapshot are creating.");
 		return NULL;
 	}

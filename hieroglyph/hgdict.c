@@ -1275,9 +1275,9 @@ hg_dict_insert_forcibly(HgMemPool   *pool,
 
 	hash = HG_DICT_HASH (dict, key);
 	if (obj->pool != kobj->pool)
-		hg_mem_add_pool_reference(kobj->pool, obj->pool);
+		hg_mem_pool_add_pool_reference(kobj->pool, obj->pool);
 	if (obj->pool != vobj->pool)
-		hg_mem_add_pool_reference(vobj->pool, obj->pool);
+		hg_mem_pool_add_pool_reference(vobj->pool, obj->pool);
 
 	if ((l = hg_btree_find(dict->dict, GSIZE_TO_POINTER (hash))) != NULL) {
 		HgListIter iter;

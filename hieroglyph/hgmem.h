@@ -75,6 +75,10 @@ gboolean       hg_mem_pool_restore_snapshot       (HgMemPool     *pool,
 						   HgMemSnapshot *snapshot,
 						   guint          adjuster);
 guint8         hg_mem_pool_get_age_of_snapshot    (HgMemPool     *pool);
+guint          hg_mem_pool_get_n_snapshots        (HgMemPool     *pool);
+HgMemSnapshot *hg_mem_pool_get_snapshot           (HgMemPool     *pool,
+						   guint          n);
+void           hg_mem_pool_clear_snapshot         (HgMemPool     *pool);
 gboolean       hg_mem_garbage_collection          (HgMemPool     *pool);
 gpointer       hg_mem_alloc                       (HgMemPool     *pool,
 						   gsize          size);
@@ -173,13 +177,13 @@ guint8   hg_mem_pool_get_age_of_mark       (HgMemPool *pool);
 void     hg_mem_gc_mark_array_region       (HgMemPool *pool,
 					    gpointer   start,
 					    gpointer   end);
-void     hg_mem_add_root_node              (HgMemPool *pool,
+void     hg_mem_pool_add_root_node         (HgMemPool *pool,
 					    gpointer   data);
-void     hg_mem_remove_root_node           (HgMemPool *pool,
+void     hg_mem_pool_remove_root_node      (HgMemPool *pool,
 					    gpointer   data);
-void     hg_mem_add_pool_reference         (HgMemPool *pool,
+void     hg_mem_pool_add_pool_reference    (HgMemPool *pool,
 					    HgMemPool *other_pool);
-void     hg_mem_remove_pool_reference      (HgMemPool *pool,
+void     hg_mem_pool_remove_pool_reference (HgMemPool *pool,
 					    HgMemPool *other_pool);
 void     hg_mem_pool_use_periodical_gc     (HgMemPool *pool,
 					    gboolean   flag);

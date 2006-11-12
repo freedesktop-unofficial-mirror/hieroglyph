@@ -1,5 +1,16 @@
 2006-11-13  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/vm.c (hg_vm_get_save_level): just ask HgMemPool instead of
+	managing snapshot in VM.
+
+	* hieroglyph/hgmem.c (hg_mem_pool_get_n_snapshots): new function.
+	(hg_mem_pool_get_snapshot): new function.
+	(hg_mem_pool_clear_snapshot): new function.
+	(hg_mem_pool_add_root_node): renamed.
+	(hg_mem_pool_remove_root_node): likewise.
+	(hg_mem_pool_add_pool_reference): likewise.
+	(hg_mem_pool_remove_pool_reference): likewise.
+
 	* hieroglyph/ilist.c (_hg_list_iter_delete_link): fix a memory leak.
 
 	* hieroglyph/scanner.c (_hg_scanner_parse_number): push back a space

@@ -101,7 +101,7 @@ hg_log_init(void)
 						    HG_MEM_GLOBAL);
 		__hg_log_options_dict = hg_dict_new(__hg_log_mem_pool,
 						    65535);
-		hg_mem_add_root_node(__hg_log_mem_pool, __hg_log_options_dict);
+		hg_mem_pool_add_root_node(__hg_log_mem_pool, __hg_log_options_dict);
 		__hg_log_handler = _hg_log_default_handler;
 
 		__hg_log_initialized = TRUE;

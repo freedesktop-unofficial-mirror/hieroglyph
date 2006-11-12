@@ -230,15 +230,15 @@ hg_file_init(void)
 						     HG_MEM_GLOBAL);
 		__hg_file_stdin = hg_file_object_new(__hg_file_mem_pool,
 						     HG_FILE_TYPE_STDIN);
-		hg_mem_add_root_node(__hg_file_mem_pool, __hg_file_stdin);
+		hg_mem_pool_add_root_node(__hg_file_mem_pool, __hg_file_stdin);
 		__hg_file_stdout = hg_file_object_new(__hg_file_mem_pool,
 						      HG_FILE_TYPE_STDOUT);
 		hg_object_writable((HgObject *)__hg_file_stdout);
-		hg_mem_add_root_node(__hg_file_mem_pool, __hg_file_stdout);
+		hg_mem_pool_add_root_node(__hg_file_mem_pool, __hg_file_stdout);
 		__hg_file_stderr = hg_file_object_new(__hg_file_mem_pool,
 						      HG_FILE_TYPE_STDERR);
 		hg_object_writable((HgObject *)__hg_file_stderr);
-		hg_mem_add_root_node(__hg_file_mem_pool, __hg_file_stderr);
+		hg_mem_pool_add_root_node(__hg_file_mem_pool, __hg_file_stderr);
 
 		__hg_file_is_initialized = TRUE;
 	}

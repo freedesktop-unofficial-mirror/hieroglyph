@@ -41,7 +41,7 @@
 		hg_operator_build_operator__inline(_debug_op_, vm, pool, sdict, name, func, __hg_op); \
 		if (__hg_op != NULL) {					\
 			__debug_operator_list[HG_debug_op_##func] = __hg_op; \
-			hg_mem_add_root_node(pool, __hg_op);		\
+			hg_mem_pool_add_root_node(pool, __hg_op);	\
 		}							\
 	} G_STMT_END
 #define REMOVE_OP(pool, sdict, name, func)				\
@@ -55,7 +55,7 @@
 			if (__hg_op == __debug_operator_list[HG_debug_op_##func]) { \
 				hg_dict_remove(sdict, __hg_key);	\
 			}						\
-			hg_mem_remove_root_node(pool, __hg_op);		\
+			hg_mem_pool_remove_root_node(pool, __hg_op);	\
 			hg_mem_free(__hg_op);				\
 		}							\
 		hg_mem_free(__hg_key);					\
