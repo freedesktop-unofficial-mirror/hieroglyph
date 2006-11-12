@@ -57,12 +57,14 @@ struct _HieroGlyphMemPool {
 	gsize        total_heap_size;
 	gsize        used_heap_size;
 	HgAllocator *allocator;
-	GList       *root_node;
-	GList       *other_pool_ref_list;
+	HgList      *root_node;
+	HgList      *other_pool_ref_list;
+	HgList      *snapshot_list;
 	guint        access_mode;
 	guint        flags;
 	gshort       gc_threshold;
 	guint8       age_of_gc_mark;
+	guint8       age_of_snapshot;
 	gboolean     destroyed : 1;
 	gboolean     periodical_gc : 1;
 	gboolean     gc_checked : 1;

@@ -57,13 +57,13 @@ foo(void)
 	node = hg_dict_lookup(dict, key);
 
 	if (node == NULL || !HG_IS_VALUE_INTEGER (node) || HG_VALUE_GET_INTEGER (node) != 20) {
-		g_print("Failed to lookup dict.");
+		g_print("Failed to lookup dict.\n");
 		return 1;
 	}
 
 	g_print("restoring snapshot...\n");
-	if (!hg_mem_pool_restore_snapshot(pool, snap)) {
-		g_print("Failed to restore from snapshot.");
+	if (!hg_mem_pool_restore_snapshot(pool, snap, 0)) {
+		g_print("Failed to restore from snapshot.\n");
 		return 1;
 	}
 	node = hg_array_index(array, 0);
@@ -79,9 +79,31 @@ foo(void)
 	node = hg_dict_lookup(dict, key);
 
 	if (node == NULL || !HG_IS_VALUE_BOOLEAN (node) || HG_VALUE_GET_BOOLEAN (node) != TRUE) {
-		g_print("Failed to lookup dict after restoring.");
+		g_print("Failed to lookup dict after restoring.\n");
 		return 1;
 	}
+
+	/* stage 2 */
+	g_print("creating snapshot...\n");
+	snap = hg_mem_pool_save_snapshot(pool);
+	string = hg_string_new(pool, 32);
+	{
+		HgMemObject *obj;
+
+		hg_mem_get_object__inline(string, obj);
+		hg_mem_set_lock(obj);
+	}
+	if (hg_mem_pool_restore_snapshot(pool, snap, 0)) {
+		g_print("shouldn't be successful restoring.\n");
+		return 1;
+	}
+	hg_mem_free(string);
+	g_print("restoring snapshot...\n");
+	if (!hg_mem_pool_restore_snapshot(pool, snap, 0)) {
+		g_print("Failed to restore from snapshot.\n");
+		return 1;
+	}
+
 	hg_mem_pool_destroy(pool);
 	hg_allocator_destroy(allocator);
 	hg_value_node_finalize();

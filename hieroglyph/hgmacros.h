@@ -53,31 +53,43 @@ G_BEGIN_DECLS
 /* HgMemObject */
 #define HG_MEMOBJ_HEAP_ID_MASK		0xff000000
 #define HG_MEMOBJ_MARK_AGE_MASK		0x00ff0000
-#define HG_MEMOBJ_HGOBJECT_MASK		0x00008000
-#define HG_MEMOBJ_FLAGS_MASK		0x00007fff
+#define HG_MEMOBJ_SNAPSHOT_AGE_MASK	0x0000ff00
+#define HG_MEMOBJ_HGOBJECT_MASK		0x00000080
+#define HG_MEMOBJ_FLAGS_MASK		0x0000007f
 #define HG_MEMOBJ_GET_HEAP_ID(_obj)		(((_obj)->flags & HG_MEMOBJ_HEAP_ID_MASK) >> 24)
 #define HG_MEMOBJ_SET_HEAP_ID(_obj, _id)				\
 	((_obj)->flags = (((_id) << 24) & HG_MEMOBJ_HEAP_ID_MASK)	\
 	 | (HG_MEMOBJ_GET_MARK_AGE (_obj) << 16)			\
-	 | (HG_MEMOBJ_GET_HGOBJECT_ID (_obj) << 15)			\
+	 | (HG_MEMOBJ_GET_SNAPSHOT_AGE (_obj) << 8)			\
+	 | (HG_MEMOBJ_GET_HGOBJECT_ID (_obj) << 7)			\
 	 | HG_MEMOBJ_GET_FLAGS (_obj))
 #define HG_MEMOBJ_GET_MARK_AGE(_obj)		(((_obj)->flags & HG_MEMOBJ_MARK_AGE_MASK) >> 16)
 #define HG_MEMOBJ_SET_MARK_AGE(_obj, _age)				\
 	((_obj)->flags = (HG_MEMOBJ_GET_HEAP_ID (_obj) << 24)		\
 	 | (((_age) << 16) & HG_MEMOBJ_MARK_AGE_MASK)			\
-	 | (HG_MEMOBJ_GET_HGOBJECT_ID (_obj) << 15)			\
+	 | (HG_MEMOBJ_GET_SNAPSHOT_AGE (_obj) << 8)			\
+	 | (HG_MEMOBJ_GET_HGOBJECT_ID (_obj) << 7)			\
 	 | HG_MEMOBJ_GET_FLAGS (_obj))
-#define HG_MEMOBJ_GET_HGOBJECT_ID(_obj)		(((_obj)->flags & HG_MEMOBJ_HGOBJECT_MASK) >> 15)
+#define HG_MEMOBJ_GET_SNAPSHOT_AGE(_obj)	(((_obj)->flags & HG_MEMOBJ_SNAPSHOT_AGE_MASK) >> 8)
+#define HG_MEMOBJ_SET_SNAPSHOT_AGE(_obj, _age)				\
+	((_obj)->flags = (HG_MEMOBJ_GET_HEAP_ID (_obj) << 24)		\
+	 | (HG_MEMOBJ_GET_MARK_AGE (_obj) << 16)			\
+	 | (((_age) << 8) & HG_MEMOBJ_SNAPSHOT_AGE_MASK)		\
+	 | (HG_MEMOBJ_GET_HGOBJECT_ID (_obj) << 7)			\
+	 | HG_MEMOBJ_GET_FLAGS (_obj))
+#define HG_MEMOBJ_GET_HGOBJECT_ID(_obj)		(((_obj)->flags & HG_MEMOBJ_HGOBJECT_MASK) >> 7)
 #define HG_MEMOBJ_SET_HGOBJECT_ID(_obj)					\
 	((_obj)->flags = (HG_MEMOBJ_GET_HEAP_ID (_obj) << 24)		\
 	 | (HG_MEMOBJ_GET_MARK_AGE (_obj) << 16)			\
+	 | (HG_MEMOBJ_GET_SNAPSHOT_AGE (_obj) << 8)			\
 	 | HG_FL_HGOBJECT						\
 	 | HG_MEMOBJ_GET_FLAGS (_obj))
 #define HG_MEMOBJ_GET_FLAGS(_obj)		((_obj)->flags & HG_MEMOBJ_FLAGS_MASK)
 #define HG_MEMOBJ_SET_FLAGS(_obj, _flags)				\
 	((_obj)->flags = (HG_MEMOBJ_GET_HEAP_ID (_obj) << 24)		\
 	 | (HG_MEMOBJ_GET_MARK_AGE (_obj) << 16)			\
-	 | (HG_MEMOBJ_GET_HGOBJECT_ID (_obj) << 15)			\
+	 | (HG_MEMOBJ_GET_SNAPSHOT_AGE (_obj) << 8)			\
+	 | (HG_MEMOBJ_GET_HGOBJECT_ID (_obj) << 7)			\
 	 | ((_flags) & HG_MEMOBJ_FLAGS_MASK))
 #define HG_MEMOBJ_INIT_FLAGS(_obj)		(_obj)->flags = 0;
 #define HG_MEMOBJ_IS_HGOBJECT(_obj)		(HG_MEMOBJ_GET_HGOBJECT_ID (_obj) == 1)

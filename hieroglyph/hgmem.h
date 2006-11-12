@@ -72,7 +72,9 @@ gboolean       hg_mem_pool_is_own_object          (HgMemPool     *pool,
 						   gpointer       data);
 HgMemSnapshot *hg_mem_pool_save_snapshot          (HgMemPool     *pool);
 gboolean       hg_mem_pool_restore_snapshot       (HgMemPool     *pool,
-						   HgMemSnapshot *snapshot);
+						   HgMemSnapshot *snapshot,
+						   guint          adjuster);
+guint8         hg_mem_pool_get_age_of_snapshot    (HgMemPool     *pool);
 gboolean       hg_mem_garbage_collection          (HgMemPool     *pool);
 gpointer       hg_mem_alloc                       (HgMemPool     *pool,
 						   gsize          size);
@@ -87,6 +89,8 @@ gsize          hg_mem_get_object_size             (gpointer       data);
 /* internal use */
 gboolean       _hg_mem_pool_is_own_memobject      (HgMemPool     *pool,
 						   HgMemObject   *obj);
+void           _hg_mem_set_flags                  (HgMemObject   *object,
+						   guint          flags);
 
 /* GC */
 #define hg_mem_is_flags__inline(__obj__, __flags__)			\
@@ -110,7 +114,7 @@ gboolean       _hg_mem_pool_is_own_memobject      (HgMemPool     *pool,
 		} else if ((__flags__) > HG_MEMOBJ_FLAGS_MASK) {	\
 			g_warning("[BUG] Invalid flags to not be set by hg_mem_set_flags: (possibly hgobject id) %X", (__flags__)); \
 		} else {						\
-			HG_MEMOBJ_SET_FLAGS ((__obj__), (__flags__));	\
+			_hg_mem_set_flags((__obj__), (__flags__));	\
 		}							\
 		if ((__notify__) &&					\
 		    HG_MEMOBJ_IS_HGOBJECT (__obj__) &&			\

@@ -1,5 +1,33 @@
 2006-11-12  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgmem.c (hg_mem_init): remove GAllocator initialization
+	code.
+	(hg_mem_finalize): remove GAllocator finalization code.
+	(hg_mem_pool_destroy): use HgList instead of GList.
+	(hg_mem_pool_is_own_object): likewise.
+	(hg_mem_pool_save_snapshot): save an snapshot image to the list in pool.
+	(hg_mem_pool_get_age_of_snapshot): new function.
+	(_hg_mem_set_flags): new function.
+	(hg_mem_add_root_node): use HgList instead of GList.
+	(hg_mem_remove_root_node): likewise.
+	(hg_mem_add_pool_reference): likewise.
+	(hg_mem_remove_pool_reference): likewise.
+
+	* hieroglyph/hgallocator-bfit.c (_hg_allocator_bfit_relocate):
+	use HgList instead of GList.
+	(_hg_allocator_bfit_real_set_flags): new function to avoid a fail of
+	restoring a snapshot when the unused complex objects are freed after
+	snapping shot, because snapshot image doesn't take care of mere
+	complex objects.
+	
+	(_hg_allocator_bfit_real_garbage_collection):
+	use HgList instead of GList.
+	(_hg_allocator_bfit_real_restore_snapshot): take an argument to adjust
+	the amount of objects for the fudge factor.
+
+	* hieroglyph/hgmacros.h (HG_MEMOBJ_GET_SNAPSHOT_AGE): add a new macro.
+	(HG_MEMOBJ_SET_SNAPSHOT_AGE): add a new macro.
+
 	* hieroglyph/hglist.c (hg_list_length): fixed an infinite loop issue.
 	(hg_list_remove): reimplement with iterator to be simplified.
 

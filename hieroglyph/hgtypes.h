@@ -121,7 +121,15 @@ typedef enum {
 	HG_FL_LOCK       = 1 << 2,  /* no infect */
 	HG_FL_COPYING    = 1 << 3,  /* no infect */
 	HG_FL_DEAD       = 1 << 4,  /* no infect */
-	HG_FL_HGOBJECT   = 1 << 15, /* mark for HgObject */
+	HG_FL_HGOBJECT   = 1 << 7,  /* mark for HgObject */
+	HG_FL_SNAPSHOT1  = 1 << 8,  /* reserved for age of snapshot */
+	HG_FL_SNAPSHOT2  = 1 << 9,  /* reserved for age of snapshot */
+	HG_FL_SNAPSHOT3  = 1 << 10, /* reserved for age of snapshot */
+	HG_FL_SNAPSHOT4  = 1 << 11, /* reserved for age of snapshot */
+	HG_FL_SNAPSHOT5  = 1 << 12, /* reserved for age of snapshot */
+	HG_FL_SNAPSHOT6  = 1 << 13, /* reserved for age of snapshot */
+	HG_FL_SNAPSHOT7  = 1 << 14, /* reserved for age of snapshot */
+	HG_FL_SNAPSHOT8  = 1 << 15, /* reserved for age of snapshot */
 	HG_FL_MARK1      = 1 << 16, /* infect all child objects - reserved for age of mark */
 	HG_FL_MARK2      = 1 << 17, /* infect all child objects - reserved for age of mark */
 	HG_FL_MARK3      = 1 << 18, /* infect all child objects - reserved for age of mark */
@@ -311,13 +319,16 @@ struct _HieroGlyphAllocatorVTable {
 	gpointer        (* resize)             (HgMemObject   *object,
 						gsize          size);
 	gsize           (* get_size)           (HgMemObject   *object);
+	void            (* set_flags)          (HgMemObject   *object,
+						guint          flags);
 	gboolean        (* garbage_collection) (HgMemPool     *pool);
 	void            (* gc_mark)            (HgMemPool     *pool);
 	gboolean        (* is_safe_object)     (HgMemPool     *pool,
 						HgMemObject   *object);
 	HgMemSnapshot * (* save_snapshot)      (HgMemPool     *pool);
 	gboolean        (* restore_snapshot)   (HgMemPool     *pool,
-						HgMemSnapshot *snapshot);
+						HgMemSnapshot *snapshot,
+						guint          adjuster);
 };
 
 struct _HieroGlyphAllocator {

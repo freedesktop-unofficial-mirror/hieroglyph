@@ -1006,12 +1006,12 @@ hg_vm_startjob(HgVM        *vm,
 	}
 	if (g_list_length(vm->global_snapshot) > 0) {
 		l = g_list_last(vm->global_snapshot);
-		hg_mem_pool_restore_snapshot(vm->global_pool, l->data);
+		hg_mem_pool_restore_snapshot(vm->global_pool, l->data, 0);
 		vm->global_snapshot = g_list_delete_link(vm->global_snapshot, l);
 	}
 	if (g_list_length(vm->local_snapshot) > 0) {
 		l = g_list_last(vm->local_snapshot);
-		hg_mem_pool_restore_snapshot(vm->local_pool, l->data);
+		hg_mem_pool_restore_snapshot(vm->local_pool, l->data, 0);
 		vm->local_snapshot = g_list_delete_link(vm->local_snapshot, l);
 	}
 

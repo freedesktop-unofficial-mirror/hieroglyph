@@ -48,7 +48,7 @@ struct _HieroGlyphAllocatorBFitPrivate {
 	HgBTree     *free_block_tree;
 	GPtrArray   *heap2block_array;
 	HgBTree     *obj2block_tree;
-	gint         age_of_snapshot;
+	guint        n_complex_objects;
 };
 
 struct _HieroGlyphMemBFitBlock {
@@ -82,13 +82,16 @@ static void           _hg_allocator_bfit_real_free              (HgMemPool      
 static gpointer       _hg_allocator_bfit_real_resize            (HgMemObject       *object,
 								 gsize              size);
 static gsize          _hg_allocator_bfit_real_get_size          (HgMemObject       *object);
+static void           _hg_allocator_bfit_real_set_flags         (HgMemObject       *object,
+								 guint              flags);
 static gboolean       _hg_allocator_bfit_real_garbage_collection(HgMemPool         *pool);
 static void           _hg_allocator_bfit_real_gc_mark           (HgMemPool         *pool);
 static gboolean       _hg_allocator_bfit_real_is_safe_object    (HgMemPool         *pool,
 								 HgMemObject       *object);
 static HgMemSnapshot *_hg_allocator_bfit_real_save_snapshot     (HgMemPool         *pool);
 static gboolean       _hg_allocator_bfit_real_restore_snapshot  (HgMemPool         *pool,
-								 HgMemSnapshot     *snapshot);
+								 HgMemSnapshot     *snapshot,
+								 guint              adjuster);
 static void           _hg_allocator_bfit_snapshot_real_free     (gpointer           data);
 static void           _hg_allocator_bfit_snapshot_real_set_flags(gpointer           data,
 								 guint              flags);
@@ -105,6 +108,7 @@ static HgAllocatorVTable __hg_allocator_bfit_vtable = {
 	.free               = _hg_allocator_bfit_real_free,
 	.resize             = _hg_allocator_bfit_real_resize,
 	.get_size           = _hg_allocator_bfit_real_get_size,
+	.set_flags          = _hg_allocator_bfit_real_set_flags,
 	.garbage_collection = _hg_allocator_bfit_real_garbage_collection,
 	.gc_mark            = _hg_allocator_bfit_real_gc_mark,
 	.is_safe_object     = _hg_allocator_bfit_real_is_safe_object,
@@ -195,13 +199,13 @@ _hg_allocator_bfit_remove_block(HgAllocatorBFitPrivate *priv,
 						       HG_MEM_ALIGNMENT,
 						       aligned);
 	if ((l = hg_btree_find(priv->free_block_tree, GSIZE_TO_POINTER (aligned))) == NULL) {
-		hg_log_warning("[BUG] there are no memory chunks sized %" G_GSIZE_FORMAT " (aligned size: %" G_GSIZE_FORMAT ".\n",
+		hg_log_warning("[BUG] there are no memory chunks sized %" G_GSIZE_FORMAT " (aligned size: %" G_GSIZE_FORMAT ".",
 			       block->length, aligned);
 	} else {
 		HgListIter iter = hg_list_find_iter(l, block);
 
 		if (iter == NULL) {
-			hg_log_warning("[BUG] can't find a memory block %p (size: %" G_GSIZE_FORMAT ", aligned size: %" G_GSIZE_FORMAT ".\n",
+			hg_log_warning("[BUG] can't find a memory block %p (size: %" G_GSIZE_FORMAT ", aligned size: %" G_GSIZE_FORMAT ".",
 				       block, block->length, aligned);
 		} else {
 			l = hg_list_iter_delete_link(iter);
@@ -346,43 +350,50 @@ _hg_allocator_bfit_relocate(HgMemPool         *pool,
 {
 	HgAllocatorBFitPrivate *priv = pool->allocator->private;
 	gsize header_size = sizeof (HgMemObject);
-	GList *list, *reflist;
 	HgMemObject *obj, *new_obj;
 	HgObject *hobj;
-	gpointer p;
+	gpointer p, data;
+	HgListIter iter;
 
 	if (pool->is_processing)
 		return;
 	pool->is_processing = TRUE;
 
 	/* relocate the addresses in the root node */
-	for (list = pool->root_node; list != NULL; list = g_list_next(list)) {
-		if ((gsize)list->data >= info->start &&
-		    (gsize)list->data <= info->end) {
-			list->data = (gpointer)((gsize)list->data + info->diff);
-		} else {
-			const HgObjectVTable const *vtable;
-			HgMemObject *obj;
+	if (pool->root_node) {
+		iter = hg_list_iter_new(pool->root_node);
+		do {
+			data = hg_list_iter_get_data(iter);
+			if ((gsize)data >= info->start &&
+			    (gsize)data <= info->end) {
+				hg_list_iter_set_data(iter, (gpointer)((gsize)data + info->diff));
+			} else {
+				const HgObjectVTable const *vtable;
+				HgMemObject *obj;
 
-			/* object that is targetted for relocation will relocates
-			 * their member variables later. so we need to ensure
-			 * the relocation for others.
-			 */
-			hobj = (HgObject *)list->data;
-			hg_mem_get_object__inline(hobj, obj);
-			if (obj != NULL && HG_MEMOBJ_IS_HGOBJECT (obj) &&
-			    (vtable = hg_object_get_vtable(hobj)) != NULL &&
-			    vtable->relocate) {
-				vtable->relocate(hobj, info);
+				/* object that is targetted for relocation will relocates
+				 * their member variables later. so we need to ensure
+				 * the relocation for others.
+				 */
+				hobj = (HgObject *)data;
+				hg_mem_get_object__inline(hobj, obj);
+				if (obj != NULL && HG_MEMOBJ_IS_HGOBJECT (obj) &&
+				    (vtable = hg_object_get_vtable(hobj)) != NULL &&
+				    vtable->relocate) {
+					vtable->relocate(hobj, info);
+				}
 			}
-		}
+		} while (hg_list_get_iter_next(pool->root_node, iter));
+		hg_list_iter_free(iter);
 	}
 	/* relocate the addresses in another pool */
-	for (reflist = pool->other_pool_ref_list;
-	     reflist != NULL;
-	     reflist = g_list_next(reflist)) {
-		/* recursively invoke relocate in another pool. */
-		_hg_allocator_bfit_relocate(reflist->data, info);
+	if (pool->other_pool_ref_list) {
+		iter = hg_list_iter_new(pool->other_pool_ref_list);
+		do {
+			/* recursively invoke relocate in another pool. */
+			_hg_allocator_bfit_relocate(hg_list_iter_get_data(iter), info);
+		} while (hg_list_get_iter_next(pool->other_pool_ref_list, iter));
+		hg_list_iter_free(iter);
 	}
 	/* relocate the addresses in the stack */
 	for (p = _hg_stack_start; p > _hg_stack_end; p--) {
@@ -444,7 +455,7 @@ _hg_allocator_bfit_real_initialize(HgMemPool *pool,
 	priv->free_block_tree = hg_btree_new(BTREE_N_NODE);
 	priv->heap2block_array = g_ptr_array_new();
 	priv->obj2block_tree = hg_btree_new(BTREE_N_NODE);
-	priv->age_of_snapshot = 0;
+	priv->n_complex_objects = 0;
 
 	g_ptr_array_add(priv->heap2block_array, block);
 	_hg_allocator_bfit_add_free_block(priv, block);
@@ -573,6 +584,9 @@ _hg_allocator_bfit_real_alloc(HgMemPool *pool,
 		HG_MEMOBJ_SET_HEAP_ID (obj, block->heap_id);
 		if ((flags & HG_FL_HGOBJECT) != 0)
 			HG_MEMOBJ_SET_HGOBJECT_ID (obj);
+		if ((flags & HG_FL_COMPLEX) != 0)
+			priv->n_complex_objects++;
+		HG_MEMOBJ_SET_SNAPSHOT_AGE (obj, hg_mem_pool_get_age_of_snapshot(pool));
 		HG_MEMOBJ_SET_FLAGS (obj, flags);
 		hg_btree_add(priv->obj2block_tree, block->heap_fragment, block);
 
@@ -604,6 +618,22 @@ _hg_allocator_bfit_real_free(HgMemPool *pool,
 		hg_log_warning("[BUG] Failed to remove an object %p (block: %p) from list.",
 			       data, block);
 		return;
+	}
+	if ((HG_MEMOBJ_GET_FLAGS (obj) & HG_FL_COMPLEX) == HG_FL_COMPLEX) {
+		guint8 age = HG_MEMOBJ_GET_SNAPSHOT_AGE (obj);
+		HgListIter iter;
+
+		priv->n_complex_objects--;
+		if (pool->snapshot_list) {
+			iter = hg_list_iter_new(pool->snapshot_list);
+			do {
+				HgMemSnapshot *snap = hg_list_iter_get_data(iter);
+
+				if (snap->age > age)
+					snap->private = GUINT_TO_POINTER (GPOINTER_TO_UINT (snap->private) - 1);
+			} while (hg_list_get_iter_next(pool->snapshot_list, iter));
+			hg_list_iter_free(iter);
+		}
 	}
 	hg_btree_remove(priv->obj2block_tree, block->heap_fragment);
 	pool->used_heap_size -= block->length;
@@ -706,13 +736,27 @@ _hg_allocator_bfit_real_get_size(HgMemObject *object)
 	return block->length;
 }
 
+static void
+_hg_allocator_bfit_real_set_flags(HgMemObject *object,
+				  guint        flags)
+{
+	HgAllocatorBFitPrivate *priv = object->pool->allocator->private;
+
+	if ((flags & HG_FL_COMPLEX) == HG_FL_COMPLEX) {
+		if ((HG_MEMOBJ_GET_FLAGS (object) & HG_FL_COMPLEX) == 0)
+			priv->n_complex_objects++;
+	} else if ((HG_MEMOBJ_GET_FLAGS (object) & HG_FL_COMPLEX) == HG_FL_COMPLEX) {
+		priv->n_complex_objects--;
+	}
+}
+
 static gboolean
 _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 {
 	HgAllocatorBFitPrivate *priv = pool->allocator->private;
 	guint i;
 	gboolean retval = FALSE;
-	GList *reflist;
+	HgListIter iter;
 #ifdef DEBUG
 	guint total = 0, swept = 0;
 #endif /* DEBUG */
@@ -727,14 +771,16 @@ _hg_allocator_bfit_real_garbage_collection(HgMemPool *pool)
 		pool->age_of_gc_mark++;
 	if (!pool->destroyed) {
 		/* increase an age of mark in another pool too */
-		for (reflist = pool->other_pool_ref_list;
-		     reflist != NULL;
-		     reflist = g_list_next(reflist)) {
-			HgMemPool *p = reflist->data;
+		if (pool->other_pool_ref_list) {
+			iter = hg_list_iter_new(pool->other_pool_ref_list);
+			do {
+				HgMemPool *p = hg_list_iter_get_data(iter);
 
-			p->age_of_gc_mark++;
-			if (p->age_of_gc_mark == 0)
 				p->age_of_gc_mark++;
+				if (p->age_of_gc_mark == 0)
+					p->age_of_gc_mark++;
+			} while (hg_list_get_iter_next(pool->other_pool_ref_list, iter));
+			hg_list_iter_free(iter);
 		}
 	}
 	hg_log_debug(DEBUG_GC, "starting GC for %s", pool->name);
@@ -798,31 +844,42 @@ _hg_allocator_bfit_real_gc_mark(HgMemPool *pool)
 
 	hg_log_debug(DEBUG_GC, "MARK AGE: %d (%s)", pool->age_of_gc_mark, pool->name);
 	G_STMT_START {
-		GList *list, *reflist;
+		HgListIter iter;
 		HgMemObject *obj;
 		jmp_buf env;
 
 		/* trace the root node */
-		for (list = pool->root_node; list != NULL; list = g_list_next(list)) {
-			hg_mem_get_object__inline(list->data, obj);
-			if (obj == NULL) {
-				hg_log_warning("[BUG] Invalid object %p is in the root node.", list->data);
-			} else {
-				if (!hg_mem_is_gc_mark__inline(obj)) {
-					hg_mem_gc_mark__inline(obj);
-					hg_log_debug(DEBUG_GC, "MARK: %p (mem: %p age: %d) from root node.", obj->data, obj, HG_MEMOBJ_GET_MARK_AGE (obj));
+		if (pool->root_node) {
+			iter = hg_list_iter_new(pool->root_node);
+			do {
+				gpointer p = hg_list_iter_get_data(iter);
+
+				hg_mem_get_object__inline(p, obj);
+				if (obj == NULL) {
+					hg_log_warning("[BUG] Invalid object %p is in the root node.",
+						       p);
 				} else {
-					hg_log_debug(DEBUG_GC, "MARK[already]: %p (mem: %p age: %d) from root node.", obj->data, obj, HG_MEMOBJ_GET_MARK_AGE (obj));
+					if (!hg_mem_is_gc_mark__inline(obj)) {
+						hg_mem_gc_mark__inline(obj);
+						hg_log_debug(DEBUG_GC, "MARK: %p (mem: %p age: %d) from root node.", obj->data, obj, HG_MEMOBJ_GET_MARK_AGE (obj));
+					} else {
+						hg_log_debug(DEBUG_GC, "MARK[already]: %p (mem: %p age: %d) from root node.", obj->data, obj, HG_MEMOBJ_GET_MARK_AGE (obj));
+					}
 				}
-			}
+			} while (hg_list_get_iter_next(pool->root_node, iter));
+			hg_list_iter_free(iter);
 		}
 		/* trace another pool */
-		for (reflist = pool->other_pool_ref_list;
-		     reflist != NULL;
-		     reflist = g_list_next(reflist)) {
-			hg_log_debug(DEBUG_GC, "entering %s", ((HgMemPool *)reflist->data)->name);
-			((HgMemPool *)reflist->data)->allocator->vtable->gc_mark(reflist->data);
-			hg_log_debug(DEBUG_GC, "leaving %s", ((HgMemPool *)reflist->data)->name);
+		if (pool->other_pool_ref_list) {
+			iter = hg_list_iter_new(pool->other_pool_ref_list);
+			do {
+				gpointer p = hg_list_iter_get_data(iter);
+
+				hg_log_debug(DEBUG_GC, "entering %s", ((HgMemPool *)p)->name);
+				((HgMemPool *)p)->allocator->vtable->gc_mark(p);
+				hg_log_debug(DEBUG_GC, "leaving %s", ((HgMemPool *)p)->name);
+			} while (hg_list_get_iter_next(pool->other_pool_ref_list, iter));
+			hg_list_iter_free(iter);
 		}
 		/* trace in the registers */
 		setjmp(env);
@@ -854,6 +911,14 @@ _hg_allocator_bfit_real_save_snapshot(HgMemPool *pool)
 	guint i;
 
 	hg_mem_garbage_collection(pool);
+	/* XXX: maybe need to improve this detection.
+	 *      right now the snapshot age depends on the order of releasing
+	 *      a snapshot image. need better to manage the age of snapshot.
+	 */
+	if (pool->snapshot_list && hg_list_length(pool->snapshot_list) >= 255) {
+		hg_log_warning("Too many snapshot are creating.");
+		return NULL;
+	}
 	for (i = 0; i < pool->n_heaps; i++) {
 		gpointer start, end, top;
 		HgMemBFitBlock *block, *prev;
@@ -862,12 +927,14 @@ _hg_allocator_bfit_real_save_snapshot(HgMemPool *pool)
 #define _is_targeted_block(_heap)					\
 		((HG_MEMOBJ_GET_FLAGS ((HgMemObject *)_heap) &		\
 		  HG_FL_RESTORABLE) == HG_FL_RESTORABLE)
+#define _skip_non_restorable_block(_block)				\
+		while ((_block) != NULL &&				\
+		       ((_block)->in_use == 0 ||			\
+			!_is_targeted_block ((_block)->heap_fragment)))	\
+			(_block) = (_block)->next;
 
 		block = g_ptr_array_index(priv->heap2block_array, i);
-		while (block != NULL &&
-		       (block->in_use == 0 ||
-			!_is_targeted_block (block->heap_fragment)))
-			block = block->next;
+		_skip_non_restorable_block(block);
 		if (block != NULL)
 			top = block->heap_fragment;
 
@@ -889,10 +956,7 @@ _hg_allocator_bfit_real_save_snapshot(HgMemPool *pool)
 			}
 			prev_chunk = chunk;
 
-			while (block != NULL &&
-			       (block->in_use == 0 ||
-				!_is_targeted_block (block->heap_fragment)))
-				block = block->next;
+			_skip_non_restorable_block(block);
 		}
 		g_ptr_array_add(heaps_list, beginning_of_chunk);
 	}
@@ -909,8 +973,10 @@ _hg_allocator_bfit_real_save_snapshot(HgMemPool *pool)
 	retval->id = (gsize)pool;
 	retval->heap_list = heaps_list;
 	retval->n_heaps = pool->n_heaps;
-	retval->age = priv->age_of_snapshot++;
+	retval->age = ++pool->age_of_snapshot;
+	retval->private = GUINT_TO_POINTER (priv->n_complex_objects);
 
+#undef _skip_non_restorable_block
 #undef _is_targeted_block
 
 	return retval;
@@ -918,14 +984,20 @@ _hg_allocator_bfit_real_save_snapshot(HgMemPool *pool)
 
 static gboolean
 _hg_allocator_bfit_real_restore_snapshot(HgMemPool     *pool,
-					 HgMemSnapshot *snapshot)
+					 HgMemSnapshot *snapshot,
+					 guint          adjuster)
 {
 	HgAllocatorBFitPrivate *priv = pool->allocator->private;
 	gboolean retval = TRUE;
 	gint i;
 
+	hg_mem_garbage_collection(pool);
 	/* just ignore the older children snapshots */
-	if (snapshot->age < priv->age_of_snapshot) {
+	if (snapshot->age <= hg_mem_pool_get_age_of_snapshot(pool)) {
+		if ((GPOINTER_TO_UINT (snapshot->private) + adjuster) != priv->n_complex_objects) {
+			hg_log_debug(DEBUG_SNAPSHOT, "there are complex objects being alive. [%u %u]", GPOINTER_TO_UINT (snapshot->private) + adjuster, priv->n_complex_objects);
+			return FALSE;
+		}
 		for (i = 0; i < snapshot->n_heaps; i++) {
 			HgSnapshotChunk *chunk = g_ptr_array_index(snapshot->heap_list, i), *tmp;
 			HgMemBFitBlock *block = g_ptr_array_index(priv->heap2block_array, i);
@@ -939,7 +1011,7 @@ _hg_allocator_bfit_real_restore_snapshot(HgMemPool     *pool,
 				_hg_bfit_snapshot_chunk_free(tmp);
 			}
 		}
-		priv->age_of_snapshot = snapshot->age;
+		pool->age_of_snapshot = snapshot->age;
 
 		snapshot->n_heaps = 0;
 		g_ptr_array_free(snapshot->heap_list, TRUE);
@@ -947,7 +1019,6 @@ _hg_allocator_bfit_real_restore_snapshot(HgMemPool     *pool,
 		snapshot->age = 0;
 		retval = TRUE;
 	}
-	hg_mem_garbage_collection(pool);
 
 	return retval;
 }
@@ -959,6 +1030,11 @@ _hg_allocator_bfit_snapshot_real_free(gpointer data)
 	HgMemSnapshot *snapshot = data;
 	HgSnapshotChunk *chunk, *tmp;
 	gint i;
+	HgMemObject *obj;
+
+	hg_mem_get_object__inline(data, obj);
+	if (obj->pool->snapshot_list)
+		obj->pool->snapshot_list = hg_list_remove(obj->pool->snapshot_list, snapshot);
 
 	if (snapshot->heap_list) {
 		for (i = 0; i < snapshot->n_heaps; i++) {

@@ -5239,7 +5239,7 @@ G_STMT_START
 		hg_vm_use_global_pool(vm, FALSE);
 		pool = hg_vm_get_current_pool(vm);
 		hg_vm_use_global_pool(vm, global_mode);
-		retval = hg_mem_pool_restore_snapshot(pool, snapshot);
+		retval = hg_mem_pool_restore_snapshot(pool, snapshot, 1);
 		if (!retval) {
 			_hg_operator_set_error(vm, op, VM_e_invalidrestore);
 			break;

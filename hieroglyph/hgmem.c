@@ -29,6 +29,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include "hgmem.h"
+#include "ilist.h"
 #include "hgallocator-private.h"
 #include "hglog.h"
 
@@ -37,7 +38,6 @@
 gpointer _hg_stack_start = NULL;
 gpointer _hg_stack_end = NULL;
 static gboolean hg_mem_is_initialized = FALSE;
-static GAllocator *hg_mem_g_list_allocator = NULL;
 static GHashTable *_hg_object_vtable_tree = NULL;
 static GPtrArray *_hg_object_vtable_array = NULL;
 
@@ -180,10 +180,6 @@ hg_mem_init(void)
 	g_return_if_fail (_hg_stack_start != NULL);
 
 	if (!hg_mem_is_initialized) {
-		if (!hg_mem_g_list_allocator) {
-			hg_mem_g_list_allocator = g_allocator_new("Default GAllocator for GList", 128);
-			g_list_push_allocator(hg_mem_g_list_allocator);
-		}
 		if (!_hg_object_vtable_tree) {
 			_hg_object_vtable_tree = g_hash_table_new(NULL, g_direct_equal);
 			if (_hg_object_vtable_tree == NULL) {
@@ -200,11 +196,8 @@ void
 hg_mem_finalize(void)
 {
 	if (hg_mem_is_initialized) {
-		g_list_pop_allocator();
-		g_allocator_free(hg_mem_g_list_allocator);
 		g_hash_table_destroy(_hg_object_vtable_tree);
 		g_ptr_array_free(_hg_object_vtable_array, TRUE);
-		hg_mem_g_list_allocator = NULL;
 		_hg_object_vtable_tree = NULL;
 		_hg_object_vtable_array = NULL;
 		hg_mem_is_initialized = FALSE;
@@ -255,6 +248,7 @@ hg_mem_pool_new(HgAllocator *allocator,
 	pool->allocator = allocator;
 	pool->root_node = NULL;
 	pool->other_pool_ref_list = NULL;
+	pool->snapshot_list = NULL;
 	pool->periodical_gc = FALSE;
 	pool->gc_checked = FALSE;
 	pool->use_gc = TRUE;
@@ -262,6 +256,7 @@ hg_mem_pool_new(HgAllocator *allocator,
 	pool->is_collecting = FALSE;
 	pool->gc_threshold = 50;
 	pool->age_of_gc_mark = 0;
+	pool->age_of_snapshot = 0;
 	allocator->used = TRUE;
 	if (!allocator->vtable->initialize(pool, prealloc)) {
 		_hg_mem_pool_free(pool);
@@ -281,10 +276,13 @@ hg_mem_pool_destroy(HgMemPool *pool)
 		pool->allocator->vtable->destroy(pool);
 	}
 	if (pool->root_node) {
-		g_list_free(pool->root_node);
+		hg_list_free(pool->root_node);
 	}
 	if (pool->other_pool_ref_list) {
-		g_list_free(pool->other_pool_ref_list);
+		hg_list_free(pool->other_pool_ref_list);
+	}
+	if (pool->snapshot_list) {
+		hg_list_free(pool->snapshot_list);
 	}
 	pool->allocator->used = FALSE;
 	_hg_mem_pool_free(pool);
@@ -411,6 +409,7 @@ hg_mem_pool_is_own_object(HgMemPool *pool,
 			  gpointer   data)
 {
 	HgMemObject *obj;
+	HgListIter iter;
 
 	g_return_val_if_fail (pool != NULL, FALSE);
 
@@ -419,8 +418,9 @@ hg_mem_pool_is_own_object(HgMemPool *pool,
 		return TRUE;
 	}
 	hg_mem_get_object__inline(data, obj);
-	if (g_list_find(obj->pool->root_node, data) != NULL) {
+	if ((iter = hg_list_find_iter(obj->pool->root_node, data)) != NULL) {
 		/* We privilege the object that is already in the root node */
+		hg_list_iter_free(iter);
 		return TRUE;
 	}
 
@@ -430,21 +430,37 @@ hg_mem_pool_is_own_object(HgMemPool *pool,
 HgMemSnapshot *
 hg_mem_pool_save_snapshot(HgMemPool *pool)
 {
+	HgMemSnapshot *retval;
+
 	g_return_val_if_fail (pool != NULL, NULL);
 	g_return_val_if_fail (pool->allocator->vtable->save_snapshot != NULL, NULL);
 
-	return pool->allocator->vtable->save_snapshot(pool);
+	retval = pool->allocator->vtable->save_snapshot(pool);
+	if (pool->snapshot_list == NULL)
+		pool->snapshot_list = hg_list_new();
+	pool->snapshot_list = hg_list_append(pool->snapshot_list, retval);
+
+	return retval;
+}
+
+guint8
+hg_mem_pool_get_age_of_snapshot(HgMemPool *pool)
+{
+	g_return_val_if_fail (pool != NULL, 0);
+
+	return pool->age_of_snapshot;
 }
 
 gboolean
 hg_mem_pool_restore_snapshot(HgMemPool     *pool,
-			     HgMemSnapshot *snapshot)
+			     HgMemSnapshot *snapshot,
+			     guint          adjuster)
 {
 	g_return_val_if_fail (pool != NULL, FALSE);
 	g_return_val_if_fail (snapshot != NULL, FALSE);
 	g_return_val_if_fail (pool->allocator->vtable->restore_snapshot != NULL, FALSE);
 
-	return pool->allocator->vtable->restore_snapshot(pool, snapshot);
+	return pool->allocator->vtable->restore_snapshot(pool, snapshot, adjuster);
 }
 
 gboolean
@@ -582,6 +598,15 @@ hg_mem_get_object_size(gpointer data)
 	return obj->pool->allocator->vtable->get_size(obj);
 }
 
+void
+_hg_mem_set_flags(HgMemObject *object,
+		  guint        flags)
+{
+	if (object->pool->allocator->vtable->set_flags)
+		object->pool->allocator->vtable->set_flags(object, flags);
+	HG_MEMOBJ_SET_FLAGS (object, flags);
+}
+
 /* GC */
 guint8
 hg_mem_pool_get_age_of_mark(HgMemPool *pool)
@@ -610,19 +635,19 @@ hg_mem_gc_mark_array_region(HgMemPool *pool,
 		obj = hg_mem_get_object__inline_nocheck(*(gsize *)p);
 		if (pool->allocator->vtable->is_safe_object(pool, obj)) {
 			if (!hg_mem_is_gc_mark__inline(obj)) {
-				hg_log_debug(DEBUG_GC, "MARK: %p (mem: %p age: %d) from array region.\n", obj->data, obj, HG_MEMOBJ_GET_MARK_AGE (obj));
+				hg_log_debug(DEBUG_GC, "MARK: %p (mem: %p age: %d) from array region.", obj->data, obj, HG_MEMOBJ_GET_MARK_AGE (obj));
 				hg_mem_gc_mark__inline(obj);
 			} else {
-				hg_log_debug(DEBUG_GC, "MARK[already]: %p (mem: %p) from array region.\n", obj->data, obj);
+				hg_log_debug(DEBUG_GC, "MARK[already]: %p (mem: %p) from array region.", obj->data, obj);
 			}
 		}
 		obj = p;
 		if (pool->allocator->vtable->is_safe_object(pool, obj)) {
 			if (!hg_mem_is_gc_mark__inline(obj)) {
-				hg_log_debug(DEBUG_GC, "MARK: %p (mem: %p) from array region.\n", obj->data, obj);
+				hg_log_debug(DEBUG_GC, "MARK: %p (mem: %p) from array region.", obj->data, obj);
 				hg_mem_gc_mark__inline(obj);
 			} else {
-				hg_log_debug(DEBUG_GC, "MARK[already]: %p (mem: %p) from array region.\n", obj->data, obj);
+				hg_log_debug(DEBUG_GC, "MARK[already]: %p (mem: %p) from array region.", obj->data, obj);
 			}
 		}
 	}
@@ -632,7 +657,9 @@ void
 hg_mem_add_root_node(HgMemPool *pool,
 		     gpointer   data)
 {
-	pool->root_node = g_list_append(pool->root_node, data);
+	if (pool->root_node == NULL)
+		pool->root_node = hg_list_new();
+	pool->root_node = hg_list_append(pool->root_node, data);
 }
 
 void
@@ -647,20 +674,30 @@ hg_mem_remove_root_node(HgMemPool *pool,
 	g_return_if_fail (obj != NULL);
 	g_return_if_fail (_hg_mem_pool_is_own_memobject(pool, obj));
 
-	pool->root_node = g_list_remove(pool->root_node, data);
+	pool->root_node = hg_list_remove(pool->root_node, data);
 }
 
 void
 hg_mem_add_pool_reference(HgMemPool *pool,
 			  HgMemPool *other_pool)
 {
+	HgListIter iter = NULL;
+
 	g_return_if_fail (pool != NULL);
 	g_return_if_fail (other_pool != NULL);
 	g_return_if_fail (pool != other_pool); /* to avoid the loop */
 
-	if (g_list_find(pool->other_pool_ref_list, other_pool) == NULL)
-		pool->other_pool_ref_list = g_list_append(pool->other_pool_ref_list,
-							  other_pool);
+	if (pool->other_pool_ref_list == NULL) {
+		pool->other_pool_ref_list = hg_list_new();
+		pool->other_pool_ref_list = hg_list_append(pool->other_pool_ref_list,
+							   other_pool);
+	} else {
+		if ((iter = hg_list_find_iter(pool->other_pool_ref_list, other_pool)) == NULL)
+			pool->other_pool_ref_list = hg_list_append(pool->other_pool_ref_list,
+								   other_pool);
+		if (iter)
+			hg_list_iter_free(iter);
+	}
 }
 
 void
@@ -670,7 +707,7 @@ hg_mem_remove_pool_reference(HgMemPool *pool,
 	g_return_if_fail (pool != NULL);
 	g_return_if_fail (other_pool != NULL);
 
-	pool->other_pool_ref_list = g_list_remove(pool->other_pool_ref_list, other_pool);
+	pool->other_pool_ref_list = hg_list_remove(pool->other_pool_ref_list, other_pool);
 }
 
 /* HgObject */
@@ -759,7 +796,7 @@ hg_object_get_vtable(HgObject *object)
 		return NULL;
 	}
 	if (id > _hg_object_vtable_array->len) {
-		hg_log_warning("[BUG] Invalid vtable ID found: %p id: %d latest id: %u\n",
+		hg_log_warning("[BUG] Invalid vtable ID found: %p id: %d latest id: %u",
 			       object, id, _hg_object_vtable_array->len);
 
 		return NULL;
@@ -787,7 +824,7 @@ hg_object_set_vtable(HgObject                   *object,
 		g_hash_table_insert(_hg_object_vtable_tree, (gpointer)vtable, GUINT_TO_POINTER (id));
 	}
 	if (id > 255) {
-		hg_log_warning("[BUG] Invalid vtable ID found in tree: %p id %u\n", object, id);
+		hg_log_warning("[BUG] Invalid vtable ID found in tree: %p id %u", object, id);
 		id = 0;
 	}
 	HG_OBJECT_SET_VTABLE_ID (object, id);
