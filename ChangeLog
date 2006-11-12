@@ -1,5 +1,7 @@
 2006-11-13  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/ilist.c (_hg_list_iter_delete_link): fix a memory leak.
+
 	* hieroglyph/scanner.c (_hg_scanner_parse_number): push back a space
 	to deal with it later.
 
