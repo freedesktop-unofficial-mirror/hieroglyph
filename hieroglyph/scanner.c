@@ -640,6 +640,8 @@ _hg_scanner_parse_number(HgVM          *vm,
 		    case HG_SCAN_C_NULL:
 		    case HG_SCAN_C_SPACE:
 			    need_loop = FALSE;
+			    if (!is_valid)
+				    goto non_numeral_handler;
 			    break;
 		    case HG_SCAN_C_NAME:
 			    is_valid = TRUE;
