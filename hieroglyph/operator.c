@@ -793,7 +793,7 @@ G_STMT_START
 
 	while (1) {
 		if (depth < 5) {
-			_hg_operator_set_error(vm, op, VM_e_VMerror);
+			_hg_operator_set_error(vm, op, VM_e_stackunderflow);
 			break;
 		}
 		nangle2 = hg_stack_index(ostack, 0);

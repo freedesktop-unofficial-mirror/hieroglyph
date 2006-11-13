@@ -1,5 +1,7 @@
 2006-11-13  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/operator.c (_hg_operator_op_arc): fix a typo.
+
 	* hieroglyph/hgfile.c (hg_file_object_ungetc): improve dealing with
 	ungetc.
 
