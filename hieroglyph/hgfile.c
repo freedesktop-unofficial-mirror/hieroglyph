@@ -712,14 +712,33 @@ void
 hg_file_object_ungetc(HgFileObject *object,
 		      gchar         c)
 {
+	gssize retval;
+
 	g_return_if_fail (object != NULL);
 	g_return_if_fail ((object->access_mode & HG_FILE_MODE_READ) != 0);
 	g_return_if_fail (object->ungetc == 0);
 	g_return_if_fail (hg_object_is_readable((HgObject *)object));
 	g_return_if_fail (hg_object_is_writable((HgObject *)object));
 
-	object->is_eof = FALSE;
-	object->ungetc = c;
+	switch (HG_FILE_GET_FILE_TYPE (object)) {
+	    case HG_FILE_TYPE_FILE:
+	    case HG_FILE_TYPE_BUFFER:
+	    case HG_FILE_TYPE_STATEMENT_EDIT:
+	    case HG_FILE_TYPE_LINE_EDIT:
+	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
+		    object->is_eof = FALSE;
+		    retval = hg_file_object_seek(object, -1, HG_FILE_POS_CURRENT);
+		    if (retval > 0)
+			    break;
+		    hg_log_debug(DEBUG_FILE, "Failed to push back a character to a file stream.");
+	    case HG_FILE_TYPE_STDIN:
+		    object->is_eof = FALSE;
+		    object->ungetc = c;
+		    break;
+	    default:
+		    hg_log_warning("[BUG] Invalid file type %d was given to be unget a character.", HG_FILE_GET_FILE_TYPE (object));
+		    break;
+	}
 }
 
 gboolean
