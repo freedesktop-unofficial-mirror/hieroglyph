@@ -556,6 +556,36 @@ hg_list_get_iter_next(HgList     *list,
 	return TRUE;
 }
 
+gboolean
+hg_list_get_iter_previous(HgList     *list,
+			  HgListIter  iter)
+{
+	g_return_val_if_fail (list != NULL, FALSE);
+	g_return_val_if_fail (iter != NULL, FALSE);
+	g_return_val_if_fail (iter->top == list, FALSE);
+	g_return_val_if_fail (iter->last == hg_list_previous(list), FALSE);
+
+	iter->current = hg_list_previous(iter->current);
+	if (iter->current == iter->last)
+		return FALSE;
+
+	return TRUE;
+}
+
+gboolean
+hg_list_get_iter_last(HgList     *list,
+		      HgListIter  iter)
+{
+	g_return_val_if_fail (list != NULL, FALSE);
+	g_return_val_if_fail (iter != NULL, FALSE);
+	g_return_val_if_fail (iter->top == list, FALSE);
+	g_return_val_if_fail (iter->last == hg_list_previous(list), FALSE);
+
+	iter->current = hg_list_last(iter->current);
+
+	return TRUE;
+}
+
 gpointer
 hg_list_iter_get_data(HgListIter iter)
 {

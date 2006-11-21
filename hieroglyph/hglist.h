@@ -49,22 +49,26 @@ HgList *hg_list_last          (HgList    *list);
 
 #define hg_list_iter_free	hg_mem_free
 
-HgListIter hg_list_iter_new        (HgList        *list);
-gboolean   hg_list_get_iter_first  (HgList        *list,
-				    HgListIter     iter);
-gboolean   hg_list_get_iter_next   (HgList        *list,
-				    HgListIter     iter);
-HgListIter hg_list_find_iter       (HgList        *list,
-				    gconstpointer  data);
-HgListIter hg_list_find_iter_custom(HgList        *list,
-				    gconstpointer  data,
-				    HgCompareFunc  func);
-gpointer   hg_list_iter_get_data   (HgListIter     iter);
-void       hg_list_iter_set_data   (HgListIter     iter,
-				    gpointer       data);
-void       hg_list_iter_set_object (HgListIter     iter,
-				    HgObject      *hobject);
-HgList    *hg_list_iter_delete_link(HgListIter     iter);
+HgListIter hg_list_iter_new         (HgList        *list);
+gboolean   hg_list_get_iter_first   (HgList        *list,
+				     HgListIter     iter);
+gboolean   hg_list_get_iter_next    (HgList        *list,
+				     HgListIter     iter);
+gboolean   hg_list_get_iter_previous(HgList        *list,
+				     HgListIter     iter);
+gboolean   hg_list_get_iter_last    (HgList        *list,
+				     HgListIter     iter);
+HgListIter hg_list_find_iter        (HgList        *list,
+				     gconstpointer  data);
+HgListIter hg_list_find_iter_custom (HgList        *list,
+				     gconstpointer  data,
+				     HgCompareFunc  func);
+gpointer   hg_list_iter_get_data    (HgListIter     iter);
+void       hg_list_iter_set_data    (HgListIter     iter,
+				     gpointer       data);
+void       hg_list_iter_set_object  (HgListIter     iter,
+				     HgObject      *hobject);
+HgList    *hg_list_iter_delete_link (HgListIter     iter);
 
 
 G_END_DECLS
