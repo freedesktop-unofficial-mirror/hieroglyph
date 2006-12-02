@@ -1242,17 +1242,16 @@ hg_vm_main(HgVM *vm)
 			break;
 		}
 
-#ifdef DEBUG_VM
+#ifdef DEBUG
 		G_STMT_START {
 			HgString *s;
 
 			s = hg_object_to_string((HgObject *)node);
-			hg_file_object_printf(vm->stderr, "DEBUG: [%s] %s\n",
-					      hg_value_node_get_type_name(HG_VALUE_GET_VALUE_TYPE (node)),
-					      hg_string_get_string(s));
+			hg_log_debug(DEBUG_VM, "processing %s on %s", hg_string_get_string(s),
+				     hg_value_node_get_type_name(HG_VALUE_GET_VALUE_TYPE (node)));
 			hg_mem_free(s);
 		} G_STMT_END;
-#endif /* DEBUG_VM */
+#endif /* DEBUG */
 		switch (HG_VALUE_GET_VALUE_TYPE (node)) {
 		    case HG_TYPE_VALUE_BOOLEAN:
 		    case HG_TYPE_VALUE_INTEGER:
@@ -1377,13 +1376,15 @@ hg_vm_main(HgVM *vm)
 
 					    tmp_node = hg_scanner_get_object(vm, file);
 					    if (tmp_node != NULL) {
-#ifdef DEBUG_SCANNER
+#ifdef DEBUG
 						    G_STMT_START {
 							    HgString *__str__ = hg_object_to_string((HgObject *)tmp_node);
 
-							    g_print("SCANNER: %s\n", hg_string_get_string(__str__));
+							    hg_log_debug(DEBUG_SCANNER, "scanning %s",
+									 hg_string_get_string(__str__));
+							    hg_mem_free(__str__);
 						    } G_STMT_END;
-#endif /* DEBUG_SCANNER */
+#endif /* DEBUG */
 						    if (hg_object_is_executable((HgObject *)tmp_node) &&
 							(HG_IS_VALUE_NAME (tmp_node) ||
 							 HG_IS_VALUE_OPERATOR (tmp_node))) {

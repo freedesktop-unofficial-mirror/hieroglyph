@@ -51,6 +51,7 @@ struct _HieroGlyphListIter {
 	HgList   *top;
 	HgList   *last;
 	HgList   *current;
+	gint32    index;
 };
 
 #define hg_list_next(_list)	((_list)->next)
@@ -522,6 +523,7 @@ hg_list_iter_new(HgList *list)
 	iter->top = list;
 	iter->last = hg_list_previous(list);
 	iter->current = list;
+	iter->index = 0;
 
 	return iter;
 }
@@ -536,6 +538,7 @@ hg_list_get_iter_first(HgList     *list,
 	g_return_val_if_fail (iter->last == hg_list_previous(list), FALSE);
 
 	iter->current = iter->top;
+	iter->index = 0;
 
 	return TRUE;
 }
@@ -548,10 +551,12 @@ hg_list_get_iter_next(HgList     *list,
 	g_return_val_if_fail (iter != NULL, FALSE);
 	g_return_val_if_fail (iter->top == list, FALSE);
 	g_return_val_if_fail (iter->last == hg_list_previous(list), FALSE);
+	g_return_val_if_fail (iter->index < G_MAXINT32, FALSE);
 
 	iter->current = hg_list_next(iter->current);
 	if (iter->current == iter->top)
 		return FALSE;
+	iter->index++;
 
 	return TRUE;
 }
@@ -564,10 +569,12 @@ hg_list_get_iter_previous(HgList     *list,
 	g_return_val_if_fail (iter != NULL, FALSE);
 	g_return_val_if_fail (iter->top == list, FALSE);
 	g_return_val_if_fail (iter->last == hg_list_previous(list), FALSE);
+	g_return_val_if_fail (iter->index != 0, FALSE);
 
 	iter->current = hg_list_previous(iter->current);
 	if (iter->current == iter->last)
 		return FALSE;
+	iter->index--;
 
 	return TRUE;
 }
@@ -582,6 +589,8 @@ hg_list_get_iter_last(HgList     *list,
 	g_return_val_if_fail (iter->last == hg_list_previous(list), FALSE);
 
 	iter->current = hg_list_last(iter->current);
+	/* postpone to calculate current index */
+	iter->index = -1;
 
 	return TRUE;
 }
@@ -633,8 +642,96 @@ hg_list_iter_delete_link(HgListIter iter)
 		iter->top = next;
 	list = iter->top;
 	iter->current = prev;
+	iter->index--;
 
 	return list;
+}
+
+gint32
+hg_list_iter_get_index(HgListIter iter)
+{
+	g_return_val_if_fail (iter != NULL, -1);
+
+	if (iter->index < 0)
+		iter->index += hg_list_length(iter->top);
+
+	return iter->index;
+}
+
+HgList *
+hg_list_iter_roll(HgListIter start,
+		  HgListIter end,
+		  guint      n)
+{
+	guint n_blocks, start_offset, end_offset;
+	HgList *l, *beginning = NULL, *ending = NULL, *out_beginning = NULL, *out_ending = NULL;
+
+	g_return_val_if_fail (start != NULL, NULL);
+	g_return_val_if_fail (end != NULL, NULL);
+	g_return_val_if_fail (start->top == end->top, NULL);
+	g_return_val_if_fail (start->last == end->last, NULL);
+
+	if (n == 0)
+		return start->top;
+
+	start_offset = hg_list_iter_get_index(start);
+	end_offset = hg_list_iter_get_index(end);
+	if (start_offset < end_offset)
+		n_blocks = end_offset - start_offset + 1;
+	else
+		n_blocks = start_offset - end_offset + 1;
+
+	if (n_blocks == 0)
+		return start->top;
+	n %= n_blocks;
+	if (n != 0) {
+		HG_LIST_SET_LAST_NODE (start->last, FALSE);
+		if (start_offset < end_offset) {
+			out_beginning = hg_list_previous(start->current);
+			out_ending = hg_list_next(end->current);
+			hg_list_next(end->current) = start->current;
+			hg_list_previous(start->current) = end->current;
+		} else {
+			out_beginning = hg_list_previous(end->current);
+			out_ending = hg_list_next(start->current);
+			hg_list_previous(end->current) = start->current;
+			hg_list_next(start->current) = end->current;
+		}
+		if (out_beginning == start->last &&
+		    out_ending == start->top) {
+			out_beginning = NULL;
+			out_ending = NULL;
+		}
+
+		if (start_offset > end_offset) {
+			for (l = start->current; n > 0; l = hg_list_next(l), n--);
+			beginning = hg_list_next(l);
+			ending = l;
+		} else {
+			for (l = start->current; n > 0; l = hg_list_previous(l), n--);
+			beginning = l;
+			ending = hg_list_previous(l);
+		}
+		if (out_beginning) {
+			hg_list_next(out_beginning) = beginning;
+			hg_list_previous(beginning) = out_beginning;
+		}
+		if (out_ending) {
+			hg_list_previous(out_ending) = ending;
+			hg_list_next(ending) = out_ending;
+		}
+		if (start_offset < end_offset) {
+			if (start->current == start->top)
+				start->top = end->top = beginning;
+		} else {
+			if (end->current == end->top)
+				start->top = end->top = beginning;
+		}
+		start->last = end->last = hg_list_previous(start->top);
+		HG_LIST_SET_LAST_NODE (start->last, TRUE);
+	}
+
+	return start->top;
 }
 
 HgListIter

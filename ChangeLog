@@ -1,3 +1,20 @@
+2006-12-03  Akira TAGOH  <at@gclab.org>
+
+	* hieroglyph/hgstack.c (_hg_stack_real_set_flags): modify due to using
+	HgList instead of GList.
+	(_hg_stack_real_relocate): likewise.
+	(_hg_stack_real_dup): likewise.
+	(hg_stack_new): likewise.
+	(_hg_stack_push): likewise.
+	(hg_stack_pop): likewise.
+	(hg_stack_clear): likewise.
+	(hg_stack_index): likewise.
+	(hg_stack_roll): likewise.
+	(hg_stack_dump): likewise.
+
+	* hieroglyph/hglist.c (hg_list_iter_get_index): new function.
+	(hg_list_iter_roll): new function.
+
 2006-11-21  Akira TAGOH  <at@gclab.org>
 
 	* hieroglyph/hglist.c (hg_list_get_iter_previous): new function.

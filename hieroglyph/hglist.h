@@ -69,6 +69,10 @@ void       hg_list_iter_set_data    (HgListIter     iter,
 void       hg_list_iter_set_object  (HgListIter     iter,
 				     HgObject      *hobject);
 HgList    *hg_list_iter_delete_link (HgListIter     iter);
+gint32     hg_list_iter_get_index   (HgListIter     iter);
+HgList    *hg_list_iter_roll        (HgListIter     start,
+				     HgListIter     end,
+				     guint          n);
 
 
 G_END_DECLS
