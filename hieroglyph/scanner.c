@@ -636,7 +636,6 @@ _hg_scanner_parse_number(HgVM          *vm,
 		c = hg_file_object_getc(file);
 		switch (__hg_scanner_token[c]) {
 		    case HG_SCAN_C_CONTROL:
-			    hg_file_object_ungetc(file, c);
 		    case HG_SCAN_C_NULL:
 		    case HG_SCAN_C_SPACE:
 			    need_loop = FALSE;

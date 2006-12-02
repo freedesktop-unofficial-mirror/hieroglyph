@@ -1,5 +1,8 @@
 2006-12-03  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/scanner.c (_hg_scanner_parse_number): remove
+	an unnecessary push back.
+
 	* hieroglyph/hgstack.c (_hg_stack_real_set_flags): modify due to using
 	HgList instead of GList.
 	(_hg_stack_real_relocate): likewise.
