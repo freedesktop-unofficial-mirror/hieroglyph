@@ -638,9 +638,7 @@ _hg_scanner_parse_number(HgVM          *vm,
 		    case HG_SCAN_C_CONTROL:
 		    case HG_SCAN_C_NULL:
 		    case HG_SCAN_C_SPACE:
-			    need_loop = FALSE;
-			    if (!is_valid)
-				    goto non_numeral_handler;
+			    goto non_numeral_handler;
 			    break;
 		    case HG_SCAN_C_NAME:
 			    is_valid = TRUE;
@@ -744,6 +742,8 @@ _hg_scanner_parse_number(HgVM          *vm,
 				    }
 				    if (is_valid)
 					    break;
+			    } else {
+				    is_valid = FALSE;
 			    }
 			    goto non_numeral_handler;
 		    case HG_SCAN_C_NUMERAL:
@@ -753,6 +753,7 @@ _hg_scanner_parse_number(HgVM          *vm,
 				case HG_SCAN_TOKEN_EVAL_NAME:
 				case HG_SCAN_TOKEN_STRING:
 					/* it may be unlikely */
+					is_valid = FALSE;
 					goto non_numeral_handler;
 				case HG_SCAN_TOKEN_NAME:
 					if (is_power) {
@@ -797,6 +798,7 @@ _hg_scanner_parse_number(HgVM          *vm,
 					break;
 				default:
 					hg_log_warning("[BUG] it may be unlikely to appear HG_SCAN_C_NUMERAL in token type %d\n", token_type);
+					is_valid = FALSE;
 					goto non_numeral_handler;
 			    }
 			    break;
@@ -806,7 +808,6 @@ _hg_scanner_parse_number(HgVM          *vm,
 			    /* postpone dealing with this */
 			    hg_file_object_ungetc(file, c);
 			    need_loop = FALSE;
-			    is_valid = FALSE;
 			    break;
 		}
 	}
