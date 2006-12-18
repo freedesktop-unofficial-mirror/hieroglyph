@@ -1,5 +1,7 @@
 2006-12-19  Akira TAGOH  <at@gclab.org>
 
+	* hieroglyph/hgstring.c (hg_string_erase): new function.
+
 	* hieroglyph/scanner.c (_hg_scanner_parse_number): fix a parser to
 	recognize a special character after numeric.
 

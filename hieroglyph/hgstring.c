@@ -327,6 +327,25 @@ hg_string_insert_c(HgString *string,
 }
 
 gboolean
+hg_string_erase(HgString *string,
+		guint     pos,
+		guint     length)
+{
+	guint i, j;
+
+	g_return_val_if_fail (string != NULL, FALSE);
+	g_return_val_if_fail (pos < string->length, FALSE);
+	g_return_val_if_fail ((pos + length) <= string->length, FALSE);
+
+	for (i = pos, j = (pos + length); j < string->length; i++, j++) {
+		string->current[j] = string->current[i];
+	}
+	string->length -= length;
+
+	return TRUE;
+}
+
+gboolean
 hg_string_concat(HgString *string1,
 		 HgString *string2)
 {

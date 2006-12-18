@@ -52,6 +52,9 @@ gboolean  hg_string_concat               (HgString       *string1,
 					  HgString       *string2);
 gchar     hg_string_index                (HgString       *string,
 					  guint           index);
+gboolean  hg_string_erase                (HgString       *string,
+					  guint           pos,
+					  guint           length);
 gchar    *hg_string_get_string           (HgString       *string);
 gboolean  hg_string_fix_string_size      (HgString       *string);
 gboolean  hg_string_compare              (const HgString *a,
