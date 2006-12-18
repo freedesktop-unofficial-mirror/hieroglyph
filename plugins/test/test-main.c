@@ -143,7 +143,7 @@ G_STMT_START
 		nexpected = hg_dict_lookup_with_string(dict, "expectederror");
 		if (nactual == NULL || nexpected == NULL) {
 			hg_file_object_printf(hg_vm_get_io(vm, VM_IO_STDERR),
-					      "[BUG] Uknown result happened during testing an exception at `%s'\n",
+					      "[BUG] Unknown result happened during testing an exception at `%s'\n",
 					      hg_string_get_string(sexp));
 			result = FALSE;
 		} else if (!hg_value_node_compare(nactual, nexpected)) {
