@@ -731,6 +731,7 @@ hg_file_object_ungetc(HgFileObject *object,
 		    if (retval > 0)
 			    break;
 		    hg_log_debug(DEBUG_FILE, "Failed to push back a character to a file stream.");
+		    break;
 	    case HG_FILE_TYPE_STDIN:
 		    object->is_eof = FALSE;
 		    object->ungetc = c;
