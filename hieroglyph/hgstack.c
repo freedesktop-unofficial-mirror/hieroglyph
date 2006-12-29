@@ -27,7 +27,6 @@
 
 #include <stdlib.h>
 #include "hgstack.h"
-#include "hglist.h"
 #include "hglog.h"
 #include "hgmem.h"
 #include "hgfile.h"
@@ -37,7 +36,8 @@
 
 struct _HieroGlyphStack {
 	HgObject  object;
-	HgList   *stack;
+	GList    *stack;
+	GList    *last_stack;
 	guint     max_depth;
 	guint     current_depth;
 	gboolean  use_validator;
@@ -69,8 +69,7 @@ _hg_stack_real_free(gpointer data)
 {
 	HgStack *stack = data;
 
-	if (stack->stack)
-		hg_mem_free(stack->stack);
+	g_list_free(stack->stack);
 }
 
 static void
@@ -78,23 +77,17 @@ _hg_stack_real_set_flags(gpointer data,
 			 guint    flags)
 {
 	HgStack *stack = data;
+	GList *list;
 	HgMemObject *obj;
-	HgListIter iter;
 
-	if (stack->stack) {
-		iter = hg_list_iter_new(stack->stack);
-		do {
-			gpointer p = hg_list_iter_get_data(iter);
-
-			hg_mem_get_object__inline(p, obj);
-			if (obj == NULL) {
-				hg_log_warning("Invalid object %p to be marked: HgValueNode in stack.", p);
-			} else {
-				if (!hg_mem_is_flags__inline(obj, flags))
-					hg_mem_set_flags__inline(obj, flags, TRUE);
-			}
-		} while (hg_list_get_iter_next(stack->stack, iter));
-		hg_list_iter_free(iter);
+	for (list = stack->stack; list != NULL; list = g_list_next(list)) {
+		hg_mem_get_object__inline(list->data, obj);
+		if (obj == NULL) {
+			hg_log_warning("Invalid object %p to be marked: HgValueNode in stack.", list->data);
+		} else {
+			if (!hg_mem_is_flags__inline(obj, flags))
+				hg_mem_set_flags__inline(obj, flags, TRUE);
+		}
 	}
 }
 
@@ -103,19 +96,13 @@ _hg_stack_real_relocate(gpointer           data,
 			HgMemRelocateInfo *info)
 {
 	HgStack *stack = data;
-	HgListIter iter;
+	GList *list;
 
-	if (stack->stack) {
-		iter = hg_list_iter_new(stack->stack);
-		do {
-			gpointer p = hg_list_iter_get_data(iter);
-
-			if ((gsize)p >= info->start &&
-			    (gsize)p <= info->end) {
-				hg_list_iter_set_data(iter, (gpointer)((gsize)p + info->diff));
-			}
-		} while (hg_list_get_iter_next(stack->stack, iter));
-		hg_list_iter_free(iter);
+	for (list = stack->stack; list != NULL; list = g_list_next(list)) {
+		if ((gsize)list->data >= info->start &&
+		    (gsize)list->data <= info->end) {
+			list->data = (gpointer)((gsize)list->data + info->diff);
+		}
 	}
 }
 
@@ -134,7 +121,8 @@ _hg_stack_real_dup(gpointer data)
 		hg_log_warning("Failed to duplicate a stack.");
 		return NULL;
 	}
-	retval->stack = hg_object_dup((HgObject *)stack->stack);
+	retval->stack = g_list_copy(stack->stack);
+	retval->last_stack = g_list_last(retval->stack);
 
 	return retval;
 }
@@ -162,6 +150,7 @@ hg_stack_new(HgMemPool *pool,
 	retval->current_depth = 0;
 	retval->max_depth = max_depth;
 	retval->stack = NULL;
+	retval->last_stack = NULL;
 	retval->use_validator = TRUE;
 
 	return retval;
@@ -188,16 +177,20 @@ gboolean
 _hg_stack_push(HgStack     *stack,
 	       HgValueNode *node)
 {
+	GList *list;
+
 	g_return_val_if_fail (stack != NULL, FALSE);
 	g_return_val_if_fail (node != NULL, FALSE);
 
+	list = g_list_alloc();
+	list->data = node;
 	if (stack->stack == NULL) {
-		HgMemObject *obj;
-
-		hg_mem_get_object__inline(stack, obj);
-		stack->stack = hg_list_new(obj->pool);
+		stack->stack = stack->last_stack = list;
+	} else {
+		stack->last_stack->next = list;
+		list->prev = stack->last_stack;
+		stack->last_stack = list;
 	}
-	stack->stack = hg_list_append(stack->stack, node);
 	stack->current_depth++;
 
 	return TRUE;
@@ -221,18 +214,24 @@ HgValueNode *
 hg_stack_pop(HgStack *stack)
 {
 	HgValueNode *retval;
-	HgListIter iter;
+	GList *list;
 
 	g_return_val_if_fail (stack != NULL, NULL);
 
-	if (stack->stack == NULL)
+	if (stack->last_stack == NULL)
 		return NULL;
 
-	iter = hg_list_iter_new(stack->stack);
-	hg_list_get_iter_last(stack->stack, iter);
-	retval = hg_list_iter_get_data(iter);
-	stack->stack = hg_list_iter_delete_link(iter);
-	hg_list_iter_free(iter);
+	list = stack->last_stack;
+	stack->last_stack = list->prev;
+	if (list->prev) {
+		list->prev->next = NULL;
+		list->prev = NULL;
+	}
+	if (stack->stack == list) {
+		stack->stack = NULL;
+	}
+	retval = list->data;
+	g_list_free_1(list);
 	stack->current_depth--;
 
 	return retval;
@@ -243,8 +242,7 @@ hg_stack_clear(HgStack *stack)
 {
 	g_return_if_fail (stack != NULL);
 
-	if (stack->stack)
-		hg_mem_free(stack->stack);
+	g_list_free(stack->stack);
 	stack->stack = NULL;
 	stack->current_depth = 0;
 }
@@ -253,25 +251,14 @@ HgValueNode *
 hg_stack_index(HgStack *stack,
 	       guint    index_from_top)
 {
-	HgListIter iter;
-	HgValueNode *retval;
+	GList *list;
 
 	g_return_val_if_fail (stack != NULL, NULL);
 	g_return_val_if_fail (index_from_top < stack->current_depth, NULL);
 
-	iter = hg_list_iter_new(stack->stack);
-	hg_list_get_iter_last(stack->stack, iter);
-	while (index_from_top > 0) {
-		if (!hg_list_get_iter_previous(stack->stack, iter)) {
-			hg_log_warning("Detected inconsistency of stack during getting with index.");
-			return NULL;
-		}
-		index_from_top--;
-	}
-	retval = hg_list_iter_get_data(iter);
-	hg_list_iter_free(iter);
+	for (list = stack->last_stack; index_from_top > 0; list = g_list_previous(list), index_from_top--);
 
-	return retval;
+	return list->data;
 }
 
 void
@@ -279,7 +266,7 @@ hg_stack_roll(HgStack *stack,
 	      guint    n_block,
 	      gint32   n_times)
 {
-	HgListIter start, end;
+	GList *notargeted_before, *notargeted_after, *beginning, *ending;
 	gint32 n, i;
 
 	g_return_if_fail (stack != NULL);
@@ -290,20 +277,33 @@ hg_stack_roll(HgStack *stack,
 		return;
 	n = abs(n_times) % n_block;
 	if (n != 0) {
-		start = hg_list_iter_new(stack->stack);
-		end = hg_list_iter_new(stack->stack);
-		hg_list_get_iter_last(stack->stack, start);
-		hg_list_get_iter_last(stack->stack, end);
-		for (i = n_block; i > 1; i--, hg_list_get_iter_previous(stack->stack, start));
-		if (n_times < 0) {
-			HgListIter tmp = start;
-
-			start = end;
-			end = tmp;
+		/* find the place that isn't targeted for roll */
+		for (notargeted_before = stack->last_stack, i = n_block;
+		     i > 0;
+		     notargeted_before = g_list_previous(notargeted_before), i--);
+		if (!notargeted_before)
+			notargeted_after = stack->stack;
+		else
+			notargeted_after = notargeted_before->next;
+		/* try to find the place to cut off */
+		if (n_times > 0) {
+			for (beginning = stack->last_stack; n > 1; beginning = g_list_previous(beginning), n--);
+			ending = beginning->prev;
+		} else {
+			for (ending = notargeted_after; n > 1; ending = g_list_next(ending), n--);
+			beginning = ending->next;
 		}
-		stack->stack = hg_list_iter_roll(start, end, n);
-		hg_list_iter_free(start);
-		hg_list_iter_free(end);
+		stack->last_stack->next = notargeted_after;
+		stack->last_stack->next->prev = stack->last_stack;
+		if (notargeted_before) {
+			notargeted_before->next = beginning;
+			notargeted_before->next->prev = notargeted_before;
+		} else {
+			stack->stack = beginning;
+			stack->stack->prev = NULL;
+		}
+		stack->last_stack = ending;
+		stack->last_stack->next = NULL;
 	}
 }
 
@@ -311,22 +311,18 @@ void
 hg_stack_dump(HgStack      *stack,
 	      HgFileObject *file)
 {
-	HgListIter iter;
+	GList *l;
 	HgValueNode *node;
 
 	g_return_if_fail (stack != NULL);
 
 	hg_file_object_printf(file, "   address|   type|content\n");
 	hg_file_object_printf(file, "----------+-------+-------------------------------\n");
-	if (stack->stack) {
-		iter = hg_list_iter_new(stack->stack);
-		do {
-			node = hg_list_iter_get_data(iter);
-			hg_value_node_debug_print(file,
-						  HG_DEBUG_DUMP,
-						  HG_VALUE_GET_VALUE_TYPE (node),
-						  stack, node, NULL);
-		} while (hg_list_get_iter_next(stack->stack, iter));
-		hg_list_iter_free(iter);
+	for (l = stack->stack; l != NULL; l = g_list_next(l)) {
+		node = l->data;
+		hg_value_node_debug_print(file,
+					  HG_DEBUG_DUMP,
+					  HG_VALUE_GET_VALUE_TYPE (node),
+					  stack, node, NULL);
 	}
 }
