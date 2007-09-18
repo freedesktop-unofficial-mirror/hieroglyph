@@ -1,10 +1,10 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
  * vm.h
- * Copyright (C) 2005-2006 Akira TAGOH
+ * Copyright (C) 2005-2007 Akira TAGOH
  * 
  * Authors:
- *   Akira TAGOH  <at@gclab.org>
+ *   Akira TAGOH  <akira@tagoh.org>
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,149 +21,47 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __LIBRETTO_VM_H__
-#define __LIBRETTO_VM_H__
+#ifndef __HIEROGLYPH__VM_H__
+#define __HIEROGLYPH__VM_H__
 
 #include <hieroglyph/hgtypes.h>
 
-G_BEGIN_DECLS
 
-#define HG_LOCAL_POOL_SIZE	240000 * 100
-#define HG_GLOBAL_POOL_SIZE	240000 * 100
-#define HG_GRAPHIC_POOL_SIZE	240000 * 50
-
-
-typedef enum {
-	VM_EMULATION_LEVEL_1 = 1,
-	VM_EMULATION_LEVEL_2,
-	VM_EMULATION_LEVEL_3
-} HgVMEmulationType;
-
-typedef enum {
-	VM_IO_STDIN = 1,
-	VM_IO_STDOUT,
-	VM_IO_STDERR,
-} HgVMIOType;
-
-typedef enum {
-	VM_e_dictfull = 1,
-	VM_e_dictstackoverflow,
-	VM_e_dictstackunderflow,
-	VM_e_execstackoverflow,
-	VM_e_handleerror,
-	VM_e_interrupt,
-	VM_e_invalidaccess,
-	VM_e_invalidexit,
-	VM_e_invalidfileaccess,
-	VM_e_invalidfont,
-	VM_e_invalidrestore,
-	VM_e_ioerror,
-	VM_e_limitcheck,
-	VM_e_nocurrentpoint,
-	VM_e_rangecheck,
-	VM_e_stackoverflow,
-	VM_e_stackunderflow,
-	VM_e_syntaxerror,
-	VM_e_timeout,
-	VM_e_typecheck,
-	VM_e_undefined,
-	VM_e_undefinedfilename,
-	VM_e_undefinedresult,
-	VM_e_unmatchedmark,
-	VM_e_unregistered,
-	VM_e_VMerror,
-	VM_e_configurationerror,
-	VM_e_undefinedresource,
-	VM_e_END,
-} HgVMError;
+hg_vm_t             *hg_vm_new                (void) G_GNUC_WARN_UNUSED_RESULT;
+void                 hg_vm_destroy            (hg_vm_t             *vm);
+gpointer             hg_vm_malloc             (hg_vm_t             *vm,
+                                               gsize                size) G_GNUC_WARN_UNUSED_RESULT;
+gpointer             hg_vm_realloc            (hg_vm_t             *vm,
+                                               gpointer             object,
+                                               gsize                size) G_GNUC_WARN_UNUSED_RESULT;
+void                 hg_vm_mfree              (hg_vm_t             *vm,
+                                               gpointer             data);
+guchar               hg_vm_get_object_format  (hg_vm_t             *vm);
+void                 hg_vm_get_attributes     (hg_vm_t             *vm,
+                                               hg_attribute_t      *attr);
+void                 hg_vm_set_error          (hg_vm_t             *vm,
+                                               hg_error_t           error);
+hg_error_t           hg_vm_get_error          (hg_vm_t             *vm);
+void                 hg_vm_clear_error        (hg_vm_t             *vm);
+hg_object_t         *hg_vm_get_io             (hg_vm_t             *vm,
+                                               hg_filetype_t        iotype);
+void                 hg_vm_set_io             (hg_vm_t             *vm,
+                                               hg_object_t         *object);
+gboolean             hg_vm_initialize         (hg_vm_t             *vm);
+gboolean             hg_vm_finalize           (hg_vm_t             *vm);
+hg_emulation_type_t  hg_vm_get_emulation_level(hg_vm_t             *vm);
+gboolean             hg_vm_set_emulation_level(hg_vm_t             *vm,
+                                               hg_emulation_type_t  level);
+gboolean             hg_vm_step               (hg_vm_t             *vm);
+hg_object_t         *hg_vm_get_dict           (hg_vm_t             *vm);
+hg_object_t         *hg_vm_dict_lookup        (hg_vm_t             *vm,
+                                               hg_object_t         *object);
+gboolean             hg_vm_dict_remove        (hg_vm_t             *vm,
+                                               const gchar         *name,
+                                               gboolean             remove_all);
+hg_object_t         *hg_vm_get_currentdict    (hg_vm_t             *vm);
+hg_object_t         *hg_vm_name_lookup        (hg_vm_t             *vm,
+                                               const gchar         *name) G_GNUC_WARN_UNUSED_RESULT;
 
 
-/* initializer */
-void     hg_vm_init          (void);
-void     hg_vm_finalize      (void);
-gboolean hg_vm_is_initialized(void);
-
-/* virtual machine */
-HgVM                 *hg_vm_new                  (HgVMEmulationType  type);
-void                  hg_vm_set_emulation_level  (HgVM              *vm,
-						  HgVMEmulationType  type);
-HgVMEmulationType     hg_vm_get_emulation_level  (HgVM              *vm);
-HgStack              *hg_vm_get_ostack           (HgVM              *vm);
-HgStack              *hg_vm_get_estack           (HgVM              *vm);
-HgStack              *hg_vm_get_dstack           (HgVM              *vm);
-HgDict               *hg_vm_get_dict_errordict   (HgVM              *vm);
-HgDict               *hg_vm_get_dict_error       (HgVM              *vm);
-HgDict               *hg_vm_get_dict_statusdict  (HgVM              *vm);
-HgDict               *hg_vm_get_dict_serverdict  (HgVM              *vm);
-HgDict               *hg_vm_get_dict_font        (HgVM              *vm);
-HgDict               *hg_vm_get_dict_systemdict  (HgVM              *vm);
-HgDict               *hg_vm_get_dict_globalfont  (HgVM              *vm);
-HgMemPool            *hg_vm_get_current_pool     (HgVM              *vm);
-gboolean              hg_vm_is_global_pool_used  (HgVM              *vm);
-void                  hg_vm_use_global_pool      (HgVM              *vm,
-						  gboolean           use_global);
-gboolean              hg_vm_is_global_object     (HgVM              *vm,
-						  HgValueNode       *node);
-HgGraphics           *hg_vm_get_graphics         (HgVM              *vm);
-gint32                hg_vm_get_current_time     (HgVM              *vm);
-GRand                *hg_vm_get_random_generator (HgVM              *vm);
-HgFileObject         *hg_vm_get_io               (HgVM              *vm,
-						  HgVMIOType         type);
-void                  hg_vm_set_io               (HgVM              *vm,
-						  HgVMIOType         type,
-						  HgFileObject      *file);
-HgLineEdit           *hg_vm_get_line_editor      (HgVM              *vm);
-void                  hg_vm_set_line_editor      (HgVM              *vm,
-						  HgLineEdit        *editor);
-gboolean              hg_vm_load_plugin          (HgVM              *vm,
-						  const gchar       *filename);
-gboolean              hg_vm_unload_plugin        (HgVM              *vm,
-						  const gchar       *filename);
-void                  hg_vm_load_plugins_all     (HgVM              *vm);
-guint                 hg_vm_get_save_level       (HgVM              *vm);
-HgValueNode          *hg_vm_get_name_node        (HgVM              *vm,
-						  const gchar       *name);
-HgValueNode          *hg_vm_lookup               (HgVM              *vm,
-						  HgValueNode       *key);
-HgValueNode          *hg_vm_lookup_with_string   (HgVM              *vm,
-						  const gchar       *key);
-gboolean              hg_vm_startjob             (HgVM              *vm,
-						  const gchar       *initializer,
-						  gboolean           encapsulated);
-gboolean              hg_vm_has_error            (HgVM              *vm);
-void                  hg_vm_clear_error          (HgVM              *vm);
-void                  hg_vm_reset_error          (HgVM              *vm);
-void                  hg_vm_set_error            (HgVM              *vm,
-						  HgValueNode       *errnode,
-						  HgVMError          error,
-						  gboolean           drop_self);
-void                  hg_vm_set_error_from_file  (HgVM              *vm,
-						  HgValueNode       *errnode,
-						  HgFileObject      *file,
-						  gboolean           drop_self);
-gboolean              hg_vm_main                 (HgVM              *vm);
-gchar                *hg_vm_find_libfile         (HgVM              *vm,
-						  const gchar       *file);
-gboolean              hg_vm_run                  (HgVM              *vm,
-						  const gchar       *file);
-gboolean              hg_vm_eval                 (HgVM              *vm,
-						  const gchar       *expression,
-						  HgStack           *ostack,
-						  HgStack           *estack,
-						  HgStack           *dstack,
-						  gboolean          *error);
-gint32                hg_vm_get_error_code       (HgVM              *vm);
-void                  hg_vm_shutdown             (HgVM              *vm,
-						  gint32             error_code);
-gint32                hg_vm_get_security_level   (HgVM              *vm);
-gboolean              hg_vm_set_security_level   (HgVM              *vm,
-						  gint32             level);
-
-
-/* internal use */
-HgValueNode *_hg_vm_get_name_node(HgVM        *vm,
-				  const gchar *name);
-
-G_END_DECLS
-
-#endif /* __HG_VM_H__ */
+#endif /* __HIEROGLYPH__VM_H__ */

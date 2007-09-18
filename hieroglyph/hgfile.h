@@ -1,10 +1,10 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
  * hgfile.h
- * Copyright (C) 2006 Akira TAGOH
+ * Copyright (C) 2006-2007 Akira TAGOH
  * 
  * Authors:
- *   Akira TAGOH  <at@gclab.org>
+ *   Akira TAGOH  <akira@tagoh.org>
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,66 +21,33 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HG_FILE_H__
-#define __HG_FILE_H__
+#ifndef __HIEROGLYPH_HGFILE_H__
+#define __HIEROGLYPH_HGFILE_H__
 
 #include <hieroglyph/hgtypes.h>
 
+
 G_BEGIN_DECLS
 
-#define HG_FILE_GET_FILE_TYPE(_obj)		((HgFileType)HG_OBJECT_GET_USER_DATA ((HgObject *)_obj))
-#define HG_FILE_SET_FILE_TYPE(_obj, _type)	(HG_OBJECT_SET_USER_DATA ((HgObject *)(_obj), (_type)))
-
-extern HgFileObject *__hg_file_stdin;
-extern HgFileObject *__hg_file_stdout;
-extern HgFileObject *__hg_file_stderr;
-
-
-/* initializer */
-void     hg_file_init          (void);
-void     hg_file_finalize      (void);
-gboolean hg_file_is_initialized(void);
-void     hg_file_io_synchronous(gboolean flag);
-
-/* file object */
-HgFileObject *hg_file_object_new        (HgMemPool     *pool,
-					 HgFileType     file_type,
-					 ...);
-gboolean      hg_file_object_has_error  (HgFileObject  *object);
-gint          hg_file_object_get_error  (HgFileObject  *object);
-void          hg_file_object_clear_error(HgFileObject  *object);
-gboolean      hg_file_object_is_eof     (HgFileObject  *object);
-gsize         hg_file_object_read       (HgFileObject  *object,
-					 gpointer       buffer,
-					 gsize          size,
-					 gsize          n);
-gsize         hg_file_object_write      (HgFileObject  *object,
-					 gconstpointer  buffer,
-					 gsize          size,
-					 gsize          n);
-gchar         hg_file_object_getc       (HgFileObject  *object);
-void          hg_file_object_ungetc     (HgFileObject  *object,
-					 gchar          c);
-gboolean      hg_file_object_flush      (HgFileObject  *object);
-gssize        hg_file_object_seek       (HgFileObject  *object,
-					 gssize         offset,
-					 HgFilePosType  whence);
-void          hg_file_object_close      (HgFileObject  *object);
-gboolean      hg_file_object_is_closed  (HgFileObject  *object);
-gboolean      hg_file_object_is_readable(HgFileObject  *object);
-gboolean      hg_file_object_is_writable(HgFileObject  *object);
-void          hg_file_object_printf     (HgFileObject  *object,
-					 gchar const   *format,
-					 ...) G_GNUC_PRINTF (2, 3);
-void          hg_file_object_vprintf    (HgFileObject  *object,
-					 gchar const   *format,
-					 va_list        va_args);
-
-/* for information */
-void          hg_stdout_printf        (gchar const *format, ...) G_GNUC_PRINTF (1, 2);
-void          hg_stderr_printf        (gchar const *format, ...) G_GNUC_PRINTF (1, 2);
+hg_object_t *hg_object_file_new            (hg_vm_t        *vm,
+					    const gchar    *filename,
+					    hg_filemode_t   mode) G_GNUC_WARN_UNUSED_RESULT;
+hg_object_t *hg_object_file_new_from_string(hg_vm_t        *vm,
+					    hg_object_t    *string,
+					    hg_filemode_t   mode) G_GNUC_WARN_UNUSED_RESULT;
+hg_object_t *hg_object_file_new_with_custom(hg_vm_t        *vm,
+					    hg_filetable_t *table,
+					    hg_filemode_t   mode) G_GNUC_WARN_UNUSED_RESULT;
+void         hg_object_file_free           (hg_vm_t        *vm,
+					    hg_object_t    *object);
+void         hg_object_file_notify_error   (hg_vm_t        *vm,
+					    error_t         _errno);
+gboolean     hg_object_file_compare        (hg_object_t    *object1,
+					    hg_object_t    *object2);
+gchar       *hg_object_file_dump           (hg_object_t    *object,
+					    gboolean        verbose) G_GNUC_MALLOC;
 
 
 G_END_DECLS
 
-#endif /* __HG_FILE_H__ */
+#endif /* __HIEROGLYPH_HGFILE_H__ */

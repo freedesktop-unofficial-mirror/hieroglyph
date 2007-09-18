@@ -1,10 +1,10 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
  * hgtypes.h
- * Copyright (C) 2005-2006 Akira TAGOH
+ * Copyright (C) 2005-2007 Akira TAGOH
  * 
  * Authors:
- *   Akira TAGOH  <at@gclab.org>
+ *   Akira TAGOH  <akira@tagoh.org>
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,596 +21,791 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HG_TYPES_H__
-#define __HG_TYPES_H__
+#ifndef __HIEROGLYPH__HGTYPES_H__
+#define __HIEROGLYPH__HGTYPES_H__
 
-#include <sys/unistd.h>
+#include <errno.h>
 #include <hieroglyph/hgmacros.h>
+
 
 G_BEGIN_DECLS
 
-/* hgarray.h */
-typedef struct _HieroGlyphArray			HgArray;
-/* hgdict.h */
-typedef struct _HieroGlyphDict			HgDict;
-/* hgfile.h */
-typedef struct _HieroGlyphFileObject		HgFileObject;
-typedef struct _HieroGlyphFileObjectCallback	HgFileObjectCallback;
-/* hggraphics.h */
-typedef struct _HieroGlyphGraphics		HgGraphics;
-typedef struct _HieroGlyphGraphicState		HgGraphicState;
-/* hglineedit.h */
-typedef struct _HieroGlyphLineEdit		HgLineEdit;
-typedef struct _HieroGlyphLineEditVTable	HgLineEditVTable;
-/* hglist.h */
-typedef struct _HieroGlyphList			HgList;
-typedef struct _HieroGlyphListIter		*HgListIter;
-/* hglog.h */
-/* hgmem.h */
-typedef struct _HieroGlyphAllocatorVTable	HgAllocatorVTable;
-typedef struct _HieroGlyphAllocator		HgAllocator;
-typedef struct _HieroGlyphMemRelocateInfo	HgMemRelocateInfo;
-typedef struct _HieroGlyphMemObject		HgMemObject;
-typedef struct _HieroGlyphHeap			HgHeap;
-typedef struct _HieroGlyphMemPool		HgMemPool;
-typedef struct _HieroGlyphObjectVTable		HgObjectVTable;
-typedef struct _HieroGlyphObject		HgObject;
-typedef struct _HieroGlyphMemSnapshot		HgMemSnapshot;
-/* operator.h */
-typedef struct _HieroGlyphOperator		HgOperator;
-/* hgplugins.h */
-typedef struct _HieroGlyphPluginVTable		HgPluginVTable;
-typedef struct _HieroGlyphPlugin		HgPlugin;
-/* hgstack.h */
-typedef struct _HieroGlyphStack			HgStack;
-/* hgstring.h */
-typedef struct _HieroGlyphString		HgString;
-/* hgvaluenode.h */
-typedef struct _HieroGlyphValueNodeTypeInfo	HgValueNodeTypeInfo;
-typedef struct _HieroGlyphValueNode		HgValueNode;
-typedef struct _HieroGlyphValueNodePointer	HgValueNodePointer;
-typedef struct _HieroGlyphValueNodeBoolean	HgValueNodeBoolean;
-typedef struct _HieroGlyphValueNodeInteger	HgValueNodeInteger;
-typedef struct _HieroGlyphValueNodeReal		HgValueNodeReal;
-typedef struct _HieroGlyphValueNodeName		HgValueNodeName;
-typedef struct _HieroGlyphValueNodeArray	HgValueNodeArray;
-typedef struct _HieroGlyphValueNodeString	HgValueNodeString;
-typedef struct _HieroGlyphValueNodeDict		HgValueNodeDict;
-typedef struct _HieroGlyphValueNodeNull		HgValueNodeNull;
-typedef struct _HieroGlyphValueNodeOperator	HgValueNodeOperator;
-typedef struct _HieroGlyphValueNodeMark		HgValueNodeMark;
-typedef struct _HieroGlyphValueNodeFile		HgValueNodeFile;
-typedef struct _HieroGlyphValueNodeSnapshot	HgValueNodeSnapshot;
-typedef struct _HieroGlyphValueNodePlugin	HgValueNodePlugin;
-/* vm.h */
-typedef struct _HieroGlyphVirtualMachine	HgVM;
+/**
+ * typedefs
+ */
+typedef struct hg_object_header_s		hg_object_header_t;
+typedef gint32					hg_integer_t;
+typedef gfloat					hg_real_t;
+typedef struct hg_name_s			hg_name_t;
+typedef struct hg_encoding_name_s		hg_encoding_name_t;
+typedef gboolean				hg_boolean_t;
+typedef struct hg_string_s			hg_string_t;
+typedef struct hg_stringdata_s			hg_stringdata_t;
+typedef struct hg_array_s			hg_array_t;
+typedef struct hg_arraydata_s			hg_arraydata_t;
+typedef struct hg_dict_s			hg_dict_t;
+typedef struct hg_dictdata_s			hg_dictdata_t;
+typedef struct hg_file_s			hg_file_t;
+typedef struct hg_filedata_s			hg_filedata_t;
+typedef struct hg_filetable_s			hg_filetable_t;
+typedef enum hg_filetype_e			hg_filetype_t;
+typedef enum hg_filemode_e			hg_filemode_t;
+typedef enum hg_filepos_e			hg_filepos_t;
+typedef struct hg_operator_s			hg_operator_t;
+typedef struct hg_operatordata_s		hg_operatordata_t;
+typedef union hg_attribute_u			hg_attribute_t;
+typedef struct _hg_object_s			_hg_object_t;
+typedef struct hg_object_s			hg_object_t;
+typedef enum hg_object_type_e			hg_object_type_t;
+typedef enum hg_stack_type_e			hg_stack_type_t;
+typedef struct hg_stackdata_s			hg_stackdata_t;
+typedef struct hg_stack_s			hg_stack_t;
+typedef enum hg_error_e				hg_error_t;
+typedef enum hg_system_encoding_e		hg_system_encoding_t;
+typedef enum hg_emulation_type_e		hg_emulation_type_t;
+typedef struct hg_vm_s				hg_vm_t;
 
-typedef struct _HieroGlyphColor			HgColor;
-typedef struct _HieroGlyphRenderFill		HgRenderFill;
-typedef struct _HieroGlyphRenderStroke		HgRenderStroke;
-typedef struct _HieroGlyphRenderDebug		HgRenderDebug;
-typedef struct _HieroGlyphRender		HgRender;
-typedef struct _HieroGlyphPage			HgPage;
-typedef struct _HieroGlyphPathNode		HgPathNode;
-typedef struct _HieroGlyphPath			HgPath;
-typedef struct _HieroGlyphPathBBox		HgPathBBox;
-typedef struct _HieroGlyphMatrix		HgMatrix;
-typedef struct _HieroGlyphDeviceVTable		HgDeviceVTable;
-typedef struct _HieroGlyphDevice		HgDevice;
+typedef gboolean (* hg_operator_func_t) (hg_vm_t     *vm,
+					 hg_object_t *data);
 
-typedef gboolean            (*HgCompareFunc)       (gconstpointer a,
-						    gconstpointer b);
-typedef gboolean            (*HgTraverseFunc)      (gpointer      key,
-						    gpointer      val,
-						    gpointer      data);
-typedef void                (*HgDebugFunc)         (gpointer      data);
-typedef HgAllocatorVTable * (*HgAllocatorTypeFunc) (void);
-typedef HgPlugin          * (*HgPluginNewFunc)     (HgMemPool    *pool);
-typedef gboolean            (*HgOperatorFunc)      (HgOperator   *op,
-						    gpointer      vm);
 
-typedef enum {
-	HG_MEM_GLOBAL    = 1 << 0,  /* without this, that means the local pool */
-	HG_MEM_RESIZABLE = 1 << 1,
-} HgMemPoolTypes;
+/**
+ * Structures
+ */
+struct hg_object_header_s {
+	guchar  token_type;
+	guint16 n_objects;
+	guint32 total_length;
+};
+struct hg_name_s {
+	guint16 reserved1;
+	guint16 length;
+};
+struct hg_encoding_name_s {
+	gint16  representation;
+	guint16 index;
+};
+struct hg_string_s {
+	guint16 length;
+	guint16 real_length;
+};
+struct hg_array_s {
+	guint16 length;
+	guint16 real_length;
+};
+struct hg_dict_s {
+	guint16 length;
+	guint16 used;
+};
+struct hg_file_s {
+	guint16 reserved1;
+	guint16 reserved2;
+};
+struct hg_operator_s {
+	guint16 length;
+	guint16 reserved1;
+};
+struct hg_operatordata_s {
+	hg_operator_func_t func;
+	gchar *name[];
+};
+union hg_attribute_u {
+	struct {
+		guint8 is_accessible:1;  /* flagging off this bit means noaccess */
+		guint8 is_readable:1;    /* flagging off this bit means readonly */
+		guint8 is_executeonly:1; /* flagging on this bit means executeonly */
+		guint8 is_locked:1;      /* flagging on this bit means the object is locked. */
+		guint8 reserved4:1;
+		guint8 reserved5:1;
+		guint8 is_global:1;      /* flagging on this bit means the object was allocated at the global memory */
+		guint8 is_checked:1;     /* for checking the circular reference */
+	} bit;
+	guint8 attributes;
+};
+struct _hg_object_s {
+	hg_attribute_t attr;
+	union {
+		struct {
+			guint is_executable:1;
+			guint object_type:7;
+		} v;
+		guchar  type;
+	} t;
+	union {
+		hg_integer_t       integer;
+		hg_real_t          real;
+		hg_name_t          name;
+		hg_encoding_name_t encoding;
+		hg_boolean_t       boolean;
+		hg_string_t        string;
+		hg_array_t         array;
+		hg_dict_t          dict;
+		hg_file_t          file;
+		hg_operator_t      operator;
+	} v;
+};
+struct hg_object_s {
+	hg_object_header_t header;
+	_hg_object_t       object;
+	gpointer           data[];
+};
 
-/* 32bit variables */
-typedef enum {
-	HG_FL_RESTORABLE = 1 << 0,  /* no infect */
-	HG_FL_COMPLEX    = 1 << 1,  /* no infect */
-	HG_FL_LOCK       = 1 << 2,  /* no infect */
-	HG_FL_COPYING    = 1 << 3,  /* no infect */
-	HG_FL_DEAD       = 1 << 4,  /* no infect */
-	HG_FL_HGOBJECT   = 1 << 7,  /* mark for HgObject */
-	HG_FL_SNAPSHOT1  = 1 << 8,  /* reserved for age of snapshot */
-	HG_FL_SNAPSHOT2  = 1 << 9,  /* reserved for age of snapshot */
-	HG_FL_SNAPSHOT3  = 1 << 10, /* reserved for age of snapshot */
-	HG_FL_SNAPSHOT4  = 1 << 11, /* reserved for age of snapshot */
-	HG_FL_SNAPSHOT5  = 1 << 12, /* reserved for age of snapshot */
-	HG_FL_SNAPSHOT6  = 1 << 13, /* reserved for age of snapshot */
-	HG_FL_SNAPSHOT7  = 1 << 14, /* reserved for age of snapshot */
-	HG_FL_SNAPSHOT8  = 1 << 15, /* reserved for age of snapshot */
-	HG_FL_MARK1      = 1 << 16, /* infect all child objects - reserved for age of mark */
-	HG_FL_MARK2      = 1 << 17, /* infect all child objects - reserved for age of mark */
-	HG_FL_MARK3      = 1 << 18, /* infect all child objects - reserved for age of mark */
-	HG_FL_MARK4      = 1 << 19, /* infect all child objects - reserved for age of mark */
-	HG_FL_MARK5      = 1 << 20, /* infect all child objects - reserved for age of mark */
-	HG_FL_MARK6      = 1 << 21, /* infect all child objects - reserved for age of mark */
-	HG_FL_MARK7      = 1 << 22, /* infect all child objects - reserved for age of mark */
-	HG_FL_MARK8      = 1 << 23, /* infect all child objects - reserved for age of mark */
-	HG_FL_RESERVED1  = 1 << 24, /* reserved for heap id */
-	HG_FL_RESERVED2  = 1 << 25, /* reserved for heap id */
-	HG_FL_RESERVED3  = 1 << 26, /* reserved for heap id */
-	HG_FL_RESERVED4  = 1 << 27, /* reserved for heap id */
-	HG_FL_RESERVED5  = 1 << 28, /* reserved for heap id */
-	HG_FL_RESERVED6  = 1 << 29, /* reserved for heap id */
-	HG_FL_RESERVED7  = 1 << 30, /* reserved for heap id */
-	HG_FL_RESERVED8  = 1 << 31, /* reserved for heap id */
-	HG_FL_END
-} HgMemFlags;
-
-typedef enum {
-	HG_ST_READABLE    = 1 << 0,
-	HG_ST_WRITABLE    = 1 << 1,
-	HG_ST_EXECUTABLE  = 1 << 2,
-	HG_ST_EXECUTEONLY = 1 << 3,
-	HG_ST_ACCESSIBLE  = 1 << 4,
-	HG_ST_RESERVED1   = 1 << 16, /* reserved for object-specific data */
-	HG_ST_RESERVED2   = 1 << 17, /* reserved for object-specific data */
-	HG_ST_RESERVED3   = 1 << 18, /* reserved for object-specific data */
-	HG_ST_RESERVED4   = 1 << 19, /* reserved for object-specific data */
-	HG_ST_RESERVED5   = 1 << 20, /* reserved for object-specific data */
-	HG_ST_RESERVED6   = 1 << 21, /* reserved for object-specific data */
-	HG_ST_RESERVED7   = 1 << 22, /* reserved for object-specific data */
-	HG_ST_RESERVED8   = 1 << 23, /* reserved for object-specific data */
-	HG_ST_RESERVED9   = 1 << 24, /* reserved for vtable ID */
-	HG_ST_RESERVED10  = 1 << 25, /* reserved for vtable ID */
-	HG_ST_RESERVED11  = 1 << 26, /* reserved for vtable ID */
-	HG_ST_RESERVED12  = 1 << 27, /* reserved for vtable ID */
-	HG_ST_RESERVED13  = 1 << 28, /* reserved for vtable ID */
-	HG_ST_RESERVED14  = 1 << 29, /* reserved for vtable ID */
-	HG_ST_RESERVED15  = 1 << 30, /* reserved for vtable ID */
-	HG_ST_RESERVED16  = 1 << 31, /* reserved for vtable ID */
-	HG_ST_END
-} HgObjectStateFlags;
-
-typedef enum {
-	HG_DEBUG_GC_MARK = 0,
-	HG_DEBUG_GC_ALREADYMARK,
-	HG_DEBUG_GC_UNMARK,
-	HG_DEBUG_DUMP,
-} HgDebugStateType;
-
-typedef enum {
-	HG_TYPE_VALUE_BOOLEAN = 1,
-	HG_TYPE_VALUE_INTEGER,
-	HG_TYPE_VALUE_REAL,
-	HG_TYPE_VALUE_NAME,
-	HG_TYPE_VALUE_ARRAY,
-	HG_TYPE_VALUE_STRING,
-	HG_TYPE_VALUE_DICT,
-	HG_TYPE_VALUE_NULL,
-	HG_TYPE_VALUE_OPERATOR,
-	HG_TYPE_VALUE_MARK,
-	HG_TYPE_VALUE_FILE,
-	HG_TYPE_VALUE_SNAPSHOT,
-	HG_TYPE_VALUE_PLUGIN,
-	HG_TYPE_VALUE_END
-} HgValueType;
-
-typedef enum {
-	HG_FILE_TYPE_FILE = 1,
+struct hg_arraydata_s {
+	gchar                   name[256];
+	gpointer                array;
+	gpointer                data[];
+};
+struct hg_stringdata_s {
+	gpointer string;
+	gpointer data[];
+};
+struct hg_dictdata_s {
+	hg_object_t *key;
+	hg_object_t *value;
+};
+enum hg_filetype_e {
+	HG_FILE_TYPE_FILE_IO = 1,
+	HG_FILE_TYPE_MMAPPED_IO,
 	HG_FILE_TYPE_BUFFER,
 	HG_FILE_TYPE_STDIN,
 	HG_FILE_TYPE_STDOUT,
 	HG_FILE_TYPE_STDERR,
-	HG_FILE_TYPE_STATEMENT_EDIT,
-	HG_FILE_TYPE_LINE_EDIT,
-	HG_FILE_TYPE_BUFFER_WITH_CALLBACK,
+	HG_FILE_TYPE_LINEEDIT,
+	HG_FILE_TYPE_STATEMENTEDIT,
+	HG_FILE_TYPE_CALLBACK,
 	HG_FILE_TYPE_END
-} HgFileType;
-
-typedef enum {
+};
+enum hg_filemode_e {
 	HG_FILE_MODE_READ      = 1 << 0,
 	HG_FILE_MODE_WRITE     = 1 << 1,
 	HG_FILE_MODE_READWRITE = 1 << 2
-} HgFileModeType;
-
-typedef enum {
-	HG_FILE_POS_BEGIN   = SEEK_SET,
-	HG_FILE_POS_CURRENT = SEEK_CUR,
-	HG_FILE_POS_END     = SEEK_END
-} HgFilePosType;
-
-/* hglog.h */
-typedef enum {
-	HG_LOG_TYPE_INFO    = 0,
-	HG_LOG_TYPE_DEBUG   = 1,
-	HG_LOG_TYPE_WARNING = 2,
-	HG_LOG_TYPE_ERROR   = 3,
-} HgLogType;
-
-typedef enum {
-	HG_PAGE_4A0 = 1,
-	HG_PAGE_2A0 = 2,
-
-	HG_PAGE_A0  = 10,
-	HG_PAGE_A1  = 11,
-	HG_PAGE_A2  = 12,
-	HG_PAGE_A3  = 13,
-	HG_PAGE_A4  = 14,
-	HG_PAGE_A5  = 15,
-	HG_PAGE_A6  = 16,
-	HG_PAGE_A7  = 17,
-
-	HG_PAGE_B0  = 20,
-	HG_PAGE_B1  = 21,
-	HG_PAGE_B2  = 22,
-	HG_PAGE_B3  = 23,
-	HG_PAGE_B4  = 24,
-	HG_PAGE_B5  = 25,
-	HG_PAGE_B6  = 26,
-	HG_PAGE_B7  = 27,
-
-	HG_PAGE_JIS_B0 = 30,
-	HG_PAGE_JIS_B1 = 31,
-	HG_PAGE_JIS_B2 = 32,
-	HG_PAGE_JIS_B3 = 33,
-	HG_PAGE_JIS_B4 = 34,
-	HG_PAGE_JIS_B5 = 35,
-	HG_PAGE_JIS_B6 = 36,
-
-	HG_PAGE_C0 = 40,
-	HG_PAGE_C1 = 41,
-	HG_PAGE_C2 = 42,
-	HG_PAGE_C3 = 43,
-	HG_PAGE_C4 = 44,
-	HG_PAGE_C5 = 45,
-	HG_PAGE_C6 = 46,
-	HG_PAGE_C7 = 47,
-
-	HG_PAGE_LETTER = 50,
-	HG_PAGE_LEGAL  = 51,
-
-	HG_PAGE_JAPAN_POSTCARD = 60,
-} HgPageSize;
-
-typedef enum {
-	HG_PATH_SETBBOX = 0,
-	HG_PATH_MOVETO,
-	HG_PATH_RMOVETO,
-	HG_PATH_LINETO,
-	HG_PATH_RLINETO,
-	HG_PATH_CURVETO,
-	HG_PATH_RCURVETO,
-	HG_PATH_ARC,
-	HG_PATH_ARCN,
-	HG_PATH_ARCT,
-	HG_PATH_CLOSE,
-	HG_PATH_UCACHE,
-
-	HG_PATH_MATRIX = 50,
-} HgPathType;
-
-typedef enum {
-	HG_RENDER_EOFILL = 1,
-	HG_RENDER_FILL,
-	HG_RENDER_STROKE,
-	HG_RENDER_DEBUG,
-} HgRenderType;
-
-typedef enum {
-	HG_PLUGIN_EXTENSION = 1,
-	HG_PLUGIN_DEVICE,
-	HG_PLUGIN_END,
-} HgPluginType;
-
-struct _HieroGlyphAllocatorVTable {
-	gboolean        (* initialize)         (HgMemPool     *pool,
-						gsize          prealloc);
-	gboolean        (* destroy)            (HgMemPool     *pool);
-	gboolean        (* resize_pool)        (HgMemPool     *pool,
-						gsize          size);
-	gpointer        (* alloc)              (HgMemPool     *pool,
-						gsize          size,
-						guint          flags);
-	void            (* free)               (HgMemPool     *pool,
-						gpointer       data);
-	gpointer        (* resize)             (HgMemObject   *object,
-						gsize          size);
-	gsize           (* get_size)           (HgMemObject   *object);
-	void            (* set_flags)          (HgMemObject   *object,
-						guint          flags);
-	gboolean        (* garbage_collection) (HgMemPool     *pool);
-	void            (* gc_mark)            (HgMemPool     *pool);
-	gboolean        (* is_safe_object)     (HgMemPool     *pool,
-						HgMemObject   *object);
-	HgMemSnapshot * (* save_snapshot)      (HgMemPool     *pool);
-	gboolean        (* restore_snapshot)   (HgMemPool     *pool,
-						HgMemSnapshot *snapshot,
-						guint          adjuster);
 };
-
-struct _HieroGlyphAllocator {
-	gpointer                 private;
-	gboolean                 used;
-	const HgAllocatorVTable *vtable;
+enum hg_filepos_e {
+	HG_FILE_SEEK_SET = SEEK_SET,
+	HG_FILE_SEEK_CUR = SEEK_CUR,
+	HG_FILE_SEEK_END = SEEK_END
 };
-
-struct _HieroGlyphMemRelocateInfo {
-	gsize diff;
-	gsize start;
-	gsize end;
+struct hg_filetable_s {
+	gboolean (* open)      (gpointer       user_data,
+				error_t       *error);
+	gsize    (* read)      (gpointer       user_data,
+				gpointer       buffer,
+				gsize          size,
+				gsize          n,
+				error_t       *error);
+	gsize    (* write)     (gpointer       user_data,
+				gconstpointer  buffer,
+				gsize          size,
+				gsize          n,
+				error_t       *error);
+	gboolean (* flush)     (gpointer       user_data,
+				error_t       *error);
+	gssize   (* seek)      (gpointer       user_data,
+				gssize         offset,
+				hg_filepos_t   whence,
+				error_t       *error);
+	void     (* close)     (gpointer       user_data,
+				error_t       *error);
+	gboolean (* is_closed) (gpointer       user_data);
+	gboolean (* is_eof)    (gpointer       user_data);
+	void     (* clear_eof) (gpointer       user_data);
 };
-
-struct _HieroGlyphMemObject {
-	gint32     magic;
-	gpointer   subid;
-	HgMemPool *pool;
-	guint32    flags;
-	gpointer   data[];
-};
-
-struct _HieroGlyphObjectVTable {
-	void     (* free)      (gpointer           data);
-	void     (* set_flags) (gpointer           data,
-				guint              flags);
-	void     (* relocate)  (gpointer           data,
-				HgMemRelocateInfo *info);
-	gpointer (* dup)       (gpointer           data);
-	gpointer (* copy)      (gpointer           data);
-	gpointer (* to_string) (gpointer           data);
-};
-
-struct _HieroGlyphObject {
-	guint32 state;
-};
-
-struct _HieroGlyphValueNodeTypeInfo {
-	guint  type_id;
-	gchar *name;
-	gsize  struct_size;
-};
-
-struct _HieroGlyphValueNode {
-	HgObject    object;
-};
-
-struct _HieroGlyphValueNodeBoolean {
-	HgValueNode node;
-	gboolean    value;
-};
-
-struct _HieroGlyphValueNodeInteger {
-	HgValueNode node;
-	gint32      value;
-};
-
-struct _HieroGlyphValueNodeReal {
-	HgValueNode node;
-	gdouble     value;
-};
-
-struct _HieroGlyphValueNodePointer {
-	HgValueNode node;
-	gpointer    value;
-};
-
-struct _HieroGlyphValueNodeName {
-	HgValueNode  node;
-	gchar       *value;
-};
-
-struct _HieroGlyphValueNodeArray {
-	HgValueNode  node;
-	HgArray     *value;
-};
-
-struct _HieroGlyphValueNodeString {
-	HgValueNode  node;
-	HgString    *value;
-};
-
-struct _HieroGlyphValueNodeDict {
-	HgValueNode  node;
-	HgDict      *value;
-};
-
-struct _HieroGlyphValueNodeOperator {
-	HgValueNode node;
-	gpointer    value;
-};
-
-struct _HieroGlyphValueNodeNull {
-	HgValueNode node;
-	gpointer    value;
-};
-
-struct _HieroGlyphValueNodeMark {
-	HgValueNode node;
-	gpointer    value;
-};
-
-struct _HieroGlyphValueNodeFile {
-	HgValueNode   node;
-	HgFileObject *value;
-};
-
-struct _HieroGlyphValueNodeSnapshot {
-	HgValueNode    node;
-	HgMemSnapshot *value;
-};
-
-struct _HieroGlyphValueNodePlugin {
-	HgValueNode  node;
-	HgPlugin    *value;
-};
-
-struct _HieroGlyphFileObjectCallback {
-	gsize    (* read)           (gpointer      user_data,
-				     gpointer      buffer,
-				     gsize         size,
-				     gsize         n);
-	gsize    (* write)          (gpointer      user_data,
-				     gconstpointer buffer,
-				     gsize         size,
-				     gsize         n);
-	gchar    (* getc)           (gpointer      user_data);
-	gboolean (* flush)          (gpointer      user_data);
-	gssize   (* seek)           (gpointer      user_data,
-				     gssize        offset,
-				     HgFilePosType whence);
-	void     (* close)          (gpointer      user_data);
-	gboolean (* is_closed)      (gpointer      user_data);
-	gboolean (* is_eof)         (gpointer      user_data);
-	void     (* clear_eof)      (gpointer      uesr_data);
-	gint     (* get_error_code) (gpointer      user_data);
-};
-
-struct _HieroGlyphColor {
-	gboolean is_rgb;
+struct hg_filedata_s {
 	union {
-		struct {
-			gdouble r;
-			gdouble g;
-			gdouble b;
-		} rgb;
-		struct {
-			gdouble h;
-			gdouble s;
-			gdouble v;
-		} hsv;
-	} is;
+		gpointer        buffer;
+		hg_filetable_t *table;
+	} v;
+	gint           fd;
+	gsize          filesize;
+	gsize          current_position;
+	gsize          current_line;
+	hg_filetype_t  iotype;
+	hg_filemode_t  mode;
+	gsize          filename_length;
+	gchar         *filename[];
 };
 
-struct _HieroGlyphMatrix {
-	gdouble xx;
-	gdouble yx;
-	gdouble xy;
-	gdouble yy;
-	gdouble x0;
-	gdouble y0;
+enum hg_object_type_e {
+	HG_OBJECT_TYPE_NULL = 0,
+	HG_OBJECT_TYPE_INTEGER,
+	HG_OBJECT_TYPE_REAL,
+	HG_OBJECT_TYPE_NAME,
+	HG_OBJECT_TYPE_BOOLEAN,
+	HG_OBJECT_TYPE_STRING,
+	HG_OBJECT_TYPE_EVAL,
+	HG_OBJECT_TYPE_ARRAY = 9,
+	HG_OBJECT_TYPE_MARK,
+	/* extended for hieroglyph */
+	HG_OBJECT_TYPE_DICT = 65,
+	HG_OBJECT_TYPE_FILE,
+	HG_OBJECT_TYPE_OPERATOR,
+	HG_OBJECT_TYPE_END = (1 << 7) - 1
 };
 
-struct _HieroGlyphRenderFill {
-	HgRenderType  type;
-	HgMatrix      mtx;
-	HgPathNode   *path;
-	HgColor       color;
+enum hg_stack_type_e {
+	HG_STACK_TYPE_OSTACK,
+	HG_STACK_TYPE_ESTACK,
+	HG_STACK_TYPE_DSTACK,
+	HG_STACK_TYPE_END
+};
+struct hg_stackdata_s {
+	gpointer        data;
+	hg_stackdata_t *next;
+	hg_stackdata_t *prev;
+};
+struct hg_stack_s {
+	hg_stackdata_t *stack_top;
+	gsize           stack_depth;
+	gsize		current_depth;
+	gpointer        data[];
 };
 
-struct _HieroGlyphRenderStroke {
-	HgRenderType  type;
-	HgMatrix      mtx;
-	HgPathNode   *path;
-	HgColor       color;
-	gdouble       line_width;
-	gint          line_cap;
-	gint          line_join;
-	gdouble       miter_limit;
-	gdouble       dashline_offset;
-	HgArray      *dashline_pattern;
+enum hg_error_e {
+	HG_e_dictfull = 1,
+	HG_e_dictstackoverflow,
+	HG_e_dictstackunderflow,
+	HG_e_execstackoverflow,
+	HG_e_handleerror,
+	HG_e_interrupt,
+	HG_e_invalidaccess,
+	HG_e_invalidexit,
+	HG_e_invalidfileaccess,
+	HG_e_invalidfont,
+	HG_e_invalidrestore,
+	HG_e_ioerror,
+	HG_e_limitcheck,
+	HG_e_nocurrentpoint,
+	HG_e_rangecheck,
+	HG_e_stackoverflow,
+	HG_e_stackunderflow,
+	HG_e_syntaxerror,
+	HG_e_timeout,
+	HG_e_typecheck,
+	HG_e_undefined,
+	HG_e_undefinedfilename,
+	HG_e_undefinedresult,
+	HG_e_unmatchedmark,
+	HG_e_unregistered,
+	HG_e_VMerror,
+	HG_e_configurationerror,
+	HG_e_undefinedresource,
+	HG_e_END,
 };
 
-struct _HieroGlyphRenderDebug {
-	HgRenderType  type;
-	HgDebugFunc   func;
-	gpointer      data;
+enum hg_system_encoding_e {
+	HG_enc_abs = 0,
+	HG_enc_add,
+	HG_enc_aload,
+	HG_enc_anchorsearch,
+	HG_enc_and,
+	HG_enc_arc,
+	HG_enc_arcn,
+	HG_enc_arct,
+	HG_enc_arcto,
+	HG_enc_array,
+
+	HG_enc_ashow,
+	HG_enc_astore,
+	HG_enc_awidthshow,
+	HG_enc_begin,
+	HG_enc_bind,
+	HG_enc_bitshift,
+	HG_enc_ceiling,
+	HG_enc_charpath,
+	HG_enc_clear,
+	HG_enc_cleartomark,
+
+	HG_enc_clip,
+	HG_enc_clippath,
+	HG_enc_closepath,
+	HG_enc_concat,
+	HG_enc_concatmatrix,
+	HG_enc_copy,
+	HG_enc_count,
+	HG_enc_counttomark,
+	HG_enc_currentcmykcolor,
+	HG_enc_currentdash,
+
+	HG_enc_currentdict,
+	HG_enc_currentfile,
+	HG_enc_currentfont,
+	HG_enc_currentgray,
+	HG_enc_currentgstate,
+	HG_enc_currenthsbcolor,
+	HG_enc_currentlinecap,
+	HG_enc_currentlinejoin,
+	HG_enc_currentlinewidth,
+	HG_enc_currentmatrix,
+
+	HG_enc_currentpoint,
+	HG_enc_currentrgbcolor,
+	HG_enc_currentshared,
+	HG_enc_curveto,
+	HG_enc_cvi,
+	HG_enc_cvlit,
+	HG_enc_cvn,
+	HG_enc_cvr,
+	HG_enc_cvrs,
+	HG_enc_cvs,
+
+	HG_enc_cvx,
+	HG_enc_def,
+	HG_enc_defineusername,
+	HG_enc_dict,
+	HG_enc_div,
+	HG_enc_dtransform,
+	HG_enc_dup,
+	HG_enc_end,
+	HG_enc_eoclip,
+	HG_enc_eofill,
+
+	HG_enc_eoviewclip,
+	HG_enc_eq,
+	HG_enc_exch,
+	HG_enc_exec,
+	HG_enc_exit,
+	HG_enc_file,
+	HG_enc_fill,
+	HG_enc_findfont,
+	HG_enc_flattenpath,
+	HG_enc_floor,
+
+	HG_enc_flush,
+	HG_enc_flushfile,
+	HG_enc_for,
+	HG_enc_forall,
+	HG_enc_ge,
+	HG_enc_get,
+	HG_enc_getinterval,
+	HG_enc_grestore,
+	HG_enc_gsave,
+	HG_enc_gstate,
+
+	HG_enc_gt,
+	HG_enc_identmatrix,
+	HG_enc_idiv,
+	HG_enc_idtransform,
+	HG_enc_if,
+	HG_enc_ifelse,
+	HG_enc_image,
+	HG_enc_imagemask,
+	HG_enc_index,
+	HG_enc_ineofill,
+
+	HG_enc_infill,
+	HG_enc_initviewclip,
+	HG_enc_inueofill,
+	HG_enc_inufill,
+	HG_enc_invertmatrix,
+	HG_enc_itransform,
+	HG_enc_known,
+	HG_enc_le,
+	HG_enc_length,
+	HG_enc_lineto,
+
+	HG_enc_load,
+	HG_enc_loop,
+	HG_enc_lt,
+	HG_enc_makefont,
+	HG_enc_matrix,
+	HG_enc_maxlength,
+	HG_enc_mod,
+	HG_enc_moveto,
+	HG_enc_mul,
+	HG_enc_ne,
+
+	HG_enc_neg,
+	HG_enc_newpath,
+	HG_enc_not,
+	HG_enc_null,
+	HG_enc_or,
+	HG_enc_pathbbox,
+	HG_enc_pathforall,
+	HG_enc_pop,
+	HG_enc_print,
+	HG_enc_printobject,
+
+	HG_enc_put,
+	HG_enc_putinterval,
+	HG_enc_rcurveto,
+	HG_enc_read,
+	HG_enc_readhexstring,
+	HG_enc_readline,
+	HG_enc_readstring,
+	HG_enc_rectclip,
+	HG_enc_rectfill,
+	HG_enc_rectstroke,
+
+	HG_enc_rectviewclip,
+	HG_enc_repeat,
+	HG_enc_restore,
+	HG_enc_rlineto,
+	HG_enc_rmoveto,
+	HG_enc_roll,
+	HG_enc_rotate,
+	HG_enc_round,
+	HG_enc_save,
+	HG_enc_scale,
+
+	HG_enc_scalefont,
+	HG_enc_search,
+	HG_enc_selectfont,
+	HG_enc_setbbox,
+	HG_enc_setcachedevice,
+	HG_enc_setcachedevice2,
+	HG_enc_setcharwidth,
+	HG_enc_setcmykcolor,
+	HG_enc_setdash,
+	HG_enc_setfont,
+
+	HG_enc_setgray,
+	HG_enc_setgstate,
+	HG_enc_sethsbcolor,
+	HG_enc_setlinecap,
+	HG_enc_setlinejoin,
+	HG_enc_setlinewidth,
+	HG_enc_setmatrix,
+	HG_enc_setrgbcolor,
+	HG_enc_setshared,
+	HG_enc_shareddict,
+
+	HG_enc_show,
+	HG_enc_showpage,
+	HG_enc_stop,
+	HG_enc_stopped,
+	HG_enc_store,
+	HG_enc_string,
+	HG_enc_stringwidth,
+	HG_enc_stroke,
+	HG_enc_strokepath,
+	HG_enc_sub,
+
+	HG_enc_systemdict,
+	HG_enc_token,
+	HG_enc_transform,
+	HG_enc_translate,
+	HG_enc_truncate,
+	HG_enc_type,
+	HG_enc_uappend,
+	HG_enc_ucache,
+	HG_enc_ueofill,
+	HG_enc_ufill,
+
+	HG_enc_undef,
+	HG_enc_upath,
+	HG_enc_userdict,
+	HG_enc_ustroke,
+	HG_enc_viewclip,
+	HG_enc_viewclippath,
+	HG_enc_where,
+	HG_enc_widthshow,
+	HG_enc_write,
+	HG_enc_writehexstring,
+
+	HG_enc_writeobject,
+	HG_enc_writestring,
+	HG_enc_wtranslation,
+	HG_enc_xor,
+	HG_enc_xshow,
+	HG_enc_xyshow,
+	HG_enc_yshow,
+	HG_enc_FontDirectory,
+	HG_enc_SharedFontDirectory,
+	HG_enc_Courier,
+
+	HG_enc_Courier_Bold,
+	HG_enc_Courier_BoldOblique,
+	HG_enc_Courier_Oblique,
+	HG_enc_Helvetica,
+	HG_enc_Helvetica_Bold,
+	HG_enc_Helvetica_BoldOblique,
+	HG_enc_Helvetica_Oblique,
+	HG_enc_Symbol,
+	HG_enc_Times_Bold,
+	HG_enc_Times_BoldItalic,
+
+	HG_enc_Times_Italic,
+	HG_enc_Times_Roman,
+	HG_enc_execuserobject,
+	HG_enc_currentcolor,
+	HG_enc_currentcolorspace,
+	HG_enc_currentglobal,
+	HG_enc_execform,
+	HG_enc_filter,
+	HG_enc_findresource,
+	HG_enc_globaldict,
+
+	HG_enc_makepattern,
+	HG_enc_setcolor,
+	HG_enc_setcolorspace,
+	HG_enc_setglobal,
+	HG_enc_setpagedevice,
+	HG_enc_setpattern,
+
+	HG_enc_sym_eq = 256,
+	HG_enc_sym_eqeq,
+	HG_enc_ISOLatin1Encoding,
+	HG_enc_StandardEncoding,
+
+	HG_enc_sym_left_square_bracket,
+	HG_enc_sym_right_square_bracket,
+	HG_enc_atan,
+	HG_enc_banddevice,
+	HG_enc_bytesavailable,
+	HG_enc_cachestatus,
+	HG_enc_closefile,
+	HG_enc_colorimage,
+	HG_enc_condition,
+	HG_enc_copypage,
+
+	HG_enc_cos,
+	HG_enc_countdictstack,
+	HG_enc_countexecstack,
+	HG_enc_cshow,
+	HG_enc_currentblackgeneration,
+	HG_enc_currentcacheparams,
+	HG_enc_currentcolorscreen,
+	HG_enc_currentcolortransfer,
+	HG_enc_currentcontext,
+	HG_enc_currentflat,
+
+	HG_enc_currenthalftone,
+	HG_enc_currenthalftonephase,
+	HG_enc_currentmiterlimit,
+	HG_enc_currentobjectformat,
+	HG_enc_currentpacking,
+	HG_enc_currentscreen,
+	HG_enc_currentstrokeadjust,
+	HG_enc_currenttransfer,
+	HG_enc_currentundercolorremoval,
+	HG_enc_defaultmatrix,
+
+	HG_enc_definefont,
+	HG_enc_deletefile,
+	HG_enc_detach,
+	HG_enc_deviceinfo,
+	HG_enc_dictstack,
+	HG_enc_echo,
+	HG_enc_erasepage,
+	HG_enc_errordict,
+	HG_enc_execstack,
+	HG_enc_executeonly,
+
+	HG_enc_exp,
+	HG_enc_false,
+	HG_enc_filenameforall,
+	HG_enc_fileposition,
+	HG_enc_fork,
+	HG_enc_framedevice,
+	HG_enc_grestoreall,
+	HG_enc_handleerror,
+	HG_enc_initclip,
+	HG_enc_initgraphics,
+
+	HG_enc_initmatrix,
+	HG_enc_instroke,
+	HG_enc_inustroke,
+	HG_enc_join,
+	HG_enc_kshow,
+	HG_enc_ln,
+	HG_enc_lock,
+	HG_enc_log,
+	HG_enc_mark,
+	HG_enc_monitor,
+
+	HG_enc_noaccess,
+	HG_enc_notify,
+	HG_enc_nulldevice,
+	HG_enc_packedarray,
+	HG_enc_quit,
+	HG_enc_rand,
+	HG_enc_rcheck,
+	HG_enc_readonly,
+	HG_enc_realtime,
+	HG_enc_renamefile,
+
+	HG_enc_renderbands,
+	HG_enc_resetfile,
+	HG_enc_reversepath,
+	HG_enc_rootfont,
+	HG_enc_rrand,
+	HG_enc_run,
+	HG_enc_scheck,
+	HG_enc_setblackgeneration,
+	HG_enc_setcachelimit,
+	HG_enc_setcacheparams,
+
+	HG_enc_setcolorscreen,
+	HG_enc_setcolortransfer,
+	HG_enc_setfileposition,
+	HG_enc_setflat,
+	HG_enc_sethalftone,
+	HG_enc_sethalftonephase,
+	HG_enc_setmiterlimit,
+	HG_enc_setobjectformat,
+	HG_enc_setpacking,
+	HG_enc_setscreen,
+
+	HG_enc_setstrokeadjust,
+	HG_enc_settransfer,
+	HG_enc_setucacheparams,
+	HG_enc_setundercolorremoval,
+	HG_enc_sin,
+	HG_enc_sqrt,
+	HG_enc_srand,
+	HG_enc_stack,
+	HG_enc_status,
+	HG_enc_statusdict,
+
+	HG_enc_true,
+	HG_enc_ucachestatus,
+	HG_enc_undefinefont,
+	HG_enc_usertime,
+	HG_enc_ustrokepath,
+	HG_enc_version,
+	HG_enc_vmreclaim,
+	HG_enc_vmstatus,
+	HG_enc_wait,
+	HG_enc_wcheck,
+
+	HG_enc_xcheck,
+	HG_enc_yield,
+	HG_enc_defineuserobject,
+	HG_enc_undefineuserobject,
+	HG_enc_UserObjects,
+	HG_enc_cleardictstack,
+	HG_enc_A,
+	HG_enc_B,
+	HG_enc_C,
+	HG_enc_D,
+
+	HG_enc_E,
+	HG_enc_F,
+	HG_enc_G,
+	HG_enc_H,
+	HG_enc_I,
+	HG_enc_J,
+	HG_enc_K,
+	HG_enc_L,
+	HG_enc_M,
+	HG_enc_N,
+
+	HG_enc_O,
+	HG_enc_P,
+	HG_enc_Q,
+	HG_enc_R,
+	HG_enc_S,
+	HG_enc_T,
+	HG_enc_U,
+	HG_enc_V,
+	HG_enc_W,
+	HG_enc_X,
+
+	HG_enc_Y,
+	HG_enc_Z,
+	HG_enc_a,
+	HG_enc_b,
+	HG_enc_c,
+	HG_enc_d,
+	HG_enc_e,
+	HG_enc_f,
+	HG_enc_g,
+	HG_enc_h,
+
+	HG_enc_i,
+	HG_enc_j,
+	HG_enc_k,
+	HG_enc_l,
+	HG_enc_m,
+	HG_enc_n,
+	HG_enc_o,
+	HG_enc_p,
+	HG_enc_q,
+	HG_enc_r,
+
+	HG_enc_s,
+	HG_enc_t,
+	HG_enc_u,
+	HG_enc_v,
+	HG_enc_w,
+	HG_enc_x,
+	HG_enc_y,
+	HG_enc_z,
+	HG_enc_setvmthreshold,
+	HG_enc_sym_begin_dict_mark,
+
+	HG_enc_sym_end_dict_mark,
+	HG_enc_currentcolorrendering,
+	HG_enc_currentdevparams,
+	HG_enc_currentoverprint,
+	HG_enc_currentpagedevice,
+	HG_enc_currentsystemparams,
+	HG_enc_currentuserparams,
+	HG_enc_defineresource,
+	HG_enc_findencoding,
+	HG_enc_gcheck,
+
+	HG_enc_glyphshow,
+	HG_enc_languagelevel,
+	HG_enc_product,
+	HG_enc_pstack,
+	HG_enc_resourceforall,
+	HG_enc_resourcestatus,
+	HG_enc_revision,
+	HG_enc_serialnumber,
+	HG_enc_setcolorrendering,
+	HG_enc_setdevparams,
+
+	HG_enc_setoverprint,
+	HG_enc_setsystemparams,
+	HG_enc_setuserparams,
+	HG_enc_startjob,
+	HG_enc_undefineresource,
+	HG_enc_GlobalFontDirectory,
+	HG_enc_ASCII85Decode,
+	HG_enc_ASCII85Encode,
+	HG_enc_ASCIIHexDecode,
+	HG_enc_ASCIIHexEncode,
+
+	HG_enc_CCITTFaxDecode,
+	HG_enc_CCITTFaxEncode,
+	HG_enc_DCTDecode,
+	HG_enc_DCTEncode,
+	HG_enc_LZWDecode,
+	HG_enc_LZWEncode,
+	HG_enc_NullEncode,
+	HG_enc_RunLengthDecode,
+	HG_enc_RunLengthEncode,
+	HG_enc_SubFileDecode,
+
+	HG_enc_CIEBasedA,
+	HG_enc_CIEBasedABC,
+	HG_enc_DeviceCMYK,
+	HG_enc_DeviceGray,
+	HG_enc_DeviceRGB,
+	HG_enc_Indexed,
+	HG_enc_Pattern,
+	HG_enc_Separation,
+	HG_enc_CIEBasedDEF,
+	HG_enc_CIEBasedDEFG,
+
+	HG_enc_DeviceN,
+
+	HG_enc_POSTSCRIPT_RESERVED_END,
+
+	HG_enc_END
+};
+enum hg_emulation_type_e {
+	HG_EMU_BEGIN,
+	HG_EMU_PS_LEVEL_1,
+	HG_EMU_PS_LEVEL_2,
+	HG_EMU_PS_LEVEL_3,
+	HG_EMU_END
 };
 
-struct _HieroGlyphRender {
-	HgObject  object;
-	union {
-		HgRenderType      type;
-		HgRenderFill      fill;
-		HgRenderStroke    stroke;
-		HgRenderDebug     debug;
-	} u;
-};
-
-struct _HieroGlyphPage {
-	gdouble       width;
-	gdouble       height;
-	GList        *node;
-	GList        *last_node;
-};
-
-struct _HieroGlyphPathNode {
-	HgObject    object;
-	HgPathType  type;
-	gdouble     x;
-	gdouble     y;
-	HgPathNode *prev;
-	HgPathNode *next;
-};
-
-struct _HieroGlyphPath {
-	HgObject    object;
-	HgPathNode *node;
-	HgPathNode *last_node;
-};
-
-struct _HieroGlyphPathBBox {
-	gdouble llx;
-	gdouble lly;
-	gdouble urx;
-	gdouble ury;
-};
-
-struct _HieroGlyphLineEditVTable {
-	gchar * (* get_line)     (HgLineEdit  *lineedit,
-				  const gchar *prompt);
-	void    (* add_history)  (HgLineEdit  *lineedit,
-				  const gchar *strings);
-	void    (* load_history) (HgLineEdit  *lineedit,
-				  const gchar *filename);
-	void    (* save_history) (HgLineEdit  *lineedit,
-				  const gchar *filename);
-};
-
-struct _HieroGlyphGraphicState {
-	HgObject  object;
-
-	/* device independent parameters */
-	HgMatrix   ctm;
-	HgMatrix   snapshot_matrix;
-	gdouble    x;
-	gdouble    y;
-	HgPath    *path;
-	HgPath    *clip_path;
-	/* FIXME: clip path stack */
-	HgArray   *color_space;
-	HgColor    color;
-	HgDict    *font;
-	gdouble    line_width;
-	gint       line_cap;
-	gint       line_join;
-	gdouble    miter_limit;
-	gdouble    dashline_offset;
-	HgArray   *dashline_pattern;
-	gboolean   stroke_correction;
-
-	/* device dependent parameters */
-	HgDict    *color_rendering;
-	gboolean   over_printing;
-	HgArray   *black_generator;
-	HgArray   *black_corrector;
-	HgArray   *transfer;
-	/* FIXME: halftone */
-	gdouble    smoothing;
-	gdouble    shading;
-	gpointer   device;
-};
-
-struct _HieroGlyphGraphics {
-	HgObject        object;
-	HgMemPool      *pool;
-	HgPage         *current_page;
-	GList          *pages;
-	HgGraphicState *current_gstate;
-	GList          *gstate_stack;
+struct hg_vm_s {
 };
 
 G_END_DECLS
 
-#endif /* __HG_TYPES_H__ */
+#endif /* __HIEROGLYPH__HGTYPES_H__ */

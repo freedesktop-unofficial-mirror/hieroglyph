@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([hieroglyph], 0.0.1, [at@gclab.org])
+AC_INIT([hieroglyph], 0.0.1, [akira@tagoh.org])
 
 . ./requires
 
@@ -52,6 +52,17 @@ fi
 changequote([,])dnl
 
 dnl ======================================================================
+dnl testing functionalities
+dnl ======================================================================
+dnl alignment
+AC_CHECK_ALIGNOF(char)
+AC_CHECK_ALIGNOF(short)
+AC_CHECK_ALIGNOF(int)
+AC_CHECK_ALIGNOF(long)
+AC_CHECK_ALIGNOF(void *)
+AC_CHECK_ALIGNOF(long long)
+
+dnl ======================================================================
 dnl functions testing
 dnl ======================================================================
 AC_CHECK_FUNC(exp10,,[
@@ -86,6 +97,7 @@ PKG_CHECK_MODULES(HG, glib-2.0)
 PKG_CHECK_MODULES(HG_MODULE, gmodule-2.0)
 PKG_CHECK_MODULES(GTK2, gtk+-2.0)
 PKG_CHECK_MODULES(GTHREAD, gthread-2.0)
+PKG_CHECK_MODULES(CHECK, check >= 0.9.4)
 AC_SUBST(HG_CFLAGS)
 AC_SUBST(HG_LIBS)
 AC_SUBST(HG_MODULE_CFLAGS)
@@ -94,6 +106,8 @@ AC_SUBST(GTK2_CFLAGS)
 AC_SUBST(GTK2_LIBS)
 AC_SUBST(GTHREAD_CFLAGS)
 AC_SUBST(GTHREAD_LIBS)
+AC_SUBST(CHECK_CFLAGS)
+AC_SUBST(CHECK_LIBS)
 
 dnl ======================================================================
 dnl check glib-2.0 stuff

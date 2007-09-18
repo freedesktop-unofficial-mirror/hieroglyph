@@ -1,10 +1,10 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
  * hgarray.c
- * Copyright (C) 2005-2006 Akira TAGOH
+ * Copyright (C) 2005-2007 Akira TAGOH
  * 
  * Authors:
- *   Akira TAGOH  <at@gclab.org>
+ *   Akira TAGOH  <akira@tagoh.org>
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,604 +22,187 @@
  * Boston, MA 02111-1307, USA.
  */
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 
-#include <string.h>
+#include <glib/gstrfuncs.h>
+#include <glib/gthread.h>
+#include <hieroglyph/hgobject.h>
+#include <hieroglyph/vm.h>
 #include "hgarray.h"
-#include "hgstring.h"
-#include "hgbtree.h"
-#include "hglog.h"
-#include "hgmem.h"
-#include "hgvaluenode.h"
-#include "hgfile.h"
-
-#define HG_ARRAY_ALLOC_SIZE	65535
-#define HG_ARRAY_MAX_SIZE	65535
 
 
-struct _HieroGlyphArray {
-	HgObject      object;
-	HgValueNode **current;
-	HgValueNode **arrays;
-	gchar        *name;
-	guint16       n_arrays;
-	guint16       allocated_arrays;
-	guint16       removed_arrays;
-	guint16       subarray_offset;
-	gboolean      is_subarray : 1;
-	gboolean      is_fixed_size : 1;
-};
-
-
-static void     _hg_array_real_set_flags(gpointer           data,
-					 guint              flags);
-static void     _hg_array_real_relocate (gpointer           data,
-					 HgMemRelocateInfo *info);
-static gpointer _hg_array_real_dup      (gpointer           data);
-static gpointer _hg_array_real_copy     (gpointer           data);
-static gpointer _hg_array_real_to_string(gpointer           data);
-
-
-static HgObjectVTable __hg_array_vtable = {
-	.free      = NULL,
-	.set_flags = _hg_array_real_set_flags,
-	.relocate  = _hg_array_real_relocate,
-	.dup       = _hg_array_real_dup,
-	.copy      = _hg_array_real_copy,
-	.to_string = _hg_array_real_to_string,
-};
+G_LOCK_DEFINE_STATIC (hgarray);
 
 /*
- * Private Functions
+ * private functions
  */
-static void
-_hg_array_real_set_flags(gpointer data,
-			 guint    flags)
-{
-	HgArray *array = data;
-	HgMemObject *obj;
-	guint i;
-
-	if (array->name) {
-		hg_mem_get_object__inline(array->name, obj);
-		if (obj == NULL) {
-			hg_log_warning("[BUG] Invalid object %p to be marked: Array name", array->name);
-		} else {
-			if (!hg_mem_is_flags__inline(obj, flags))
-				hg_mem_add_flags__inline(obj, flags, TRUE);
-		}
-	}
-	for (i = 0; i < array->n_arrays; i++) {
-		hg_mem_get_object__inline(array->current[i], obj);
-		if (obj == NULL) {
-			hg_log_warning("[BUG] Invalid object %p to be marked: Array %d", array->current[i], i);
-		} else {
-#ifdef DEBUG_GC
-			G_STMT_START {
-				if ((flags & HG_MEMOBJ_MARK_AGE_MASK) != 0) {
-					if (!hg_mem_is_flags__inline(obj, flags)) {
-						hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_MARK, HG_TYPE_VALUE_ARRAY, array, array->current[i], GUINT_TO_POINTER (i));
-					} else {
-						hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_ALREADYMARK, HG_TYPE_VALUE_ARRAY, array, array->current[i], GUINT_TO_POINTER (i));
-					}
-				}
-			} G_STMT_END;
-#endif /* DEBUG_GC */
-			if (!hg_mem_is_flags__inline(obj, flags))
-				hg_mem_add_flags__inline(obj, flags, TRUE);
-		}
-	}
-	if (array->arrays) {
-		hg_mem_get_object__inline(array->arrays, obj);
-		if (obj == NULL) {
-			hg_log_warning("[BUG] Invalid object %p to be marked: Array", array->arrays);
-		} else {
-#ifdef DEBUG_GC
-			G_STMT_START {
-				if ((flags & HG_MEMOBJ_MARK_AGE_MASK) != 0) {
-					hg_value_node_debug_print(__hg_file_stderr, HG_DEBUG_GC_MARK, HG_TYPE_VALUE_ARRAY, array, array->arrays, GUINT_TO_POINTER (-1));
-				}
-			} G_STMT_END;
-#endif /* DEBUG_GC */
-			hg_mem_add_flags__inline(obj, flags, TRUE);
-		}
-	}
-}
-
-static void
-_hg_array_real_relocate(gpointer           data,
-			HgMemRelocateInfo *info)
-{
-	HgArray *array = data;
-	guint i;
-
-	if (array->name) {
-		if ((gsize)array->name >= info->start &&
-		    (gsize)array->name <= info->end) {
-			array->name = (gchar *)((gsize)array->name + info->diff);
-		}
-	}
-	if ((gsize)array->arrays >= info->start &&
-	    (gsize)array->arrays <= info->end) {
-		array->arrays = (HgValueNode **)((gsize)array->arrays + info->diff);
-		array->current = (gpointer)((gsize)array->arrays + sizeof (gpointer) * array->removed_arrays + sizeof (gpointer) * array->subarray_offset);
-	}
-	for (i = 0; i < array->n_arrays; i++) {
-		if ((gsize)array->current[i] >= info->start &&
-		    (gsize)array->current[i] <= info->end) {
-			array->current[i] = (HgValueNode *)((gsize)array->current[i] + info->diff);
-		}
-	}
-}
-
-static gpointer
-_hg_array_real_dup(gpointer data)
-{
-	HgArray *array = data, *retval;
-	HgMemObject *obj;
-
-	hg_mem_get_object__inline(data, obj);
-	if (obj == NULL)
-		return NULL;
-
-	retval = hg_array_new(obj->pool, array->n_arrays);
-	if (retval == NULL) {
-		hg_log_warning("Failed to duplicate an array.");
-		return NULL;
-	}
-	memcpy(retval->arrays, array->current, sizeof (HgValueNode *) * array->n_arrays);
-	retval->name = array->name;
-	retval->n_arrays = array->n_arrays;
-
-	return retval;
-}
-
-static gpointer
-_hg_array_real_copy(gpointer data)
-{
-	HgArray *array = data, *retval;
-	HgMemObject *obj;
-	guint i;
-	gpointer p;
-
-	hg_mem_get_object__inline(data, obj);
-	if (obj == NULL)
-		return NULL;
-
-	if (hg_mem_is_copying(obj)) {
-		/* circular reference happened. */
-		hg_log_warning("Circular reference happened in %p (mem: %p). copying entire object is impossible.", data, obj);
-		return array;
-	}
-	hg_mem_set_copying(obj);
-	retval = hg_array_new(obj->pool, array->n_arrays);
-	if (retval == NULL) {
-		hg_log_warning("Failed to copy an array.");
-		hg_mem_unset_copying(obj);
-		return NULL;
-	}
-	retval->name = array->name;
-	for (i = 0; i < array->n_arrays; i++) {
-		p = hg_object_copy((HgObject *)array->current[i]);
-		if (p == NULL) {
-			hg_mem_unset_copying(obj);
-			return NULL;
-		}
-		retval->arrays[retval->n_arrays++] = p;
-	}
-	hg_mem_unset_copying(obj);
-
-	return retval;
-}
-
-static gpointer
-_hg_array_real_to_string(gpointer data)
-{
-	HgArray *array = data;
-	HgMemObject *obj;
-	HgString *retval, *str;
-	guint i;
-
-	hg_mem_get_object__inline(data, obj);
-	if (obj == NULL)
-		return NULL;
-	retval = hg_string_new(obj->pool, -1);
-	if (retval == NULL)
-		return NULL;
-	if (array->name && array->name[0] != 0) {
-		hg_string_append(retval, "--", 2);
-		hg_string_append(retval, array->name, -1);
-		hg_string_append(retval, "--", 2);
-		hg_string_fix_string_size(retval);
-
-		return retval;
-	}
-	if (!hg_object_is_readable(data)) {
-		hg_string_append(retval, "-array-", 7);
-		hg_string_fix_string_size(retval);
-
-		return retval;
-	}
-	if (hg_mem_is_copying(obj)) {
-		/* circular reference happened. */
-		gchar *name = g_strdup_printf("--circle-%p--", array);
-
-		hg_string_append(retval, name, -1);
-		hg_string_fix_string_size(retval);
-		g_free(name);
-
-		return retval;
-	}
-	hg_mem_set_copying(obj);
-	for (i = 0; i < array->n_arrays; i++) {
-		if (hg_string_length(retval) > 0)
-			hg_string_append_c(retval, ' ');
-		str = hg_object_to_string((HgObject *)array->current[i]);
-		if (str == NULL) {
-			hg_mem_free(retval);
-			hg_mem_unset_copying(obj);
-			return NULL;
-		}
-		if (!hg_string_concat(retval, str)) {
-			hg_mem_free(retval);
-			hg_mem_unset_copying(obj);
-			return NULL;
-		}
-	}
-	hg_string_fix_string_size(retval);
-	hg_mem_unset_copying(obj);
-
-	return retval;
-}
 
 /*
- * Public Functions
+ * public functions
  */
-HgArray *
-hg_array_new(HgMemPool *pool,
-	     gint32     num)
+hg_object_t *
+hg_object_array_new(hg_vm_t *vm,
+		    guint16  length)
 {
-	HgArray *retval;
+	hg_object_t *retval;
+	hg_arraydata_t *data;
 
-	g_return_val_if_fail (pool != NULL, NULL);
-	g_return_val_if_fail (num < HG_ARRAY_MAX_SIZE + 1, NULL);
+	hg_return_val_if_fail (vm != NULL, NULL);
 
-	retval = hg_mem_alloc_with_flags(pool,
-					 sizeof (HgArray),
-					 HG_FL_HGOBJECT | HG_FL_RESTORABLE | HG_FL_COMPLEX);
-	if (retval == NULL)
-		return NULL;
-	HG_OBJECT_INIT_STATE (&retval->object);
-	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
-	hg_object_set_vtable(&retval->object, &__hg_array_vtable);
-
-	retval->name = NULL;
-	retval->n_arrays = 0;
-	retval->removed_arrays = 0;
-	retval->subarray_offset = 0;
-	retval->is_subarray = FALSE;
-	if (num < 0) {
-		retval->allocated_arrays = HG_ARRAY_ALLOC_SIZE;
-		retval->is_fixed_size = FALSE;
-	} else {
-		retval->allocated_arrays = num;
-		retval->is_fixed_size = TRUE;
+	retval = hg_object_sized_new(vm, hg_n_alignof (sizeof (hg_arraydata_t) + sizeof (hg_object_t) * length));
+	if (retval != NULL) {
+		HG_OBJECT_GET_TYPE (retval) = HG_OBJECT_TYPE_ARRAY;
+		HG_OBJECT_ARRAY (retval)->length = length;
+		HG_OBJECT_ARRAY (retval)->real_length = length;
+		data = HG_OBJECT_ARRAY_DATA (retval);
+		data->name[0] = 0;
+		if (length > 0)
+			data->array = (hg_object_t *)data->data;
+		else
+			data->array = NULL;
 	}
-	/* initialize arrays with NULL first to avoid a crash.
-	 * when the alloc size is too big and GC is necessary to be ran.
-	 */
-	retval->arrays = NULL;
-	retval->arrays = hg_mem_alloc_with_flags(pool,
-						 sizeof (HgValueNode *) * retval->allocated_arrays,
-						 HG_FL_RESTORABLE);
-	retval->current = retval->arrays;
-	if (retval->arrays == NULL)
-		return NULL;
 
 	return retval;
 }
 
-gboolean
-hg_array_append(HgArray     *array,
-		HgValueNode *node)
+hg_object_t *
+hg_object_array_subarray_new(hg_vm_t     *vm,
+			     hg_object_t *object,
+			     guint16      start_index,
+			     guint16      length)
 {
-	return hg_array_append_forcibly(array, node, FALSE);
-}
+	hg_object_t *retval, **p;
 
-gboolean
-hg_array_append_forcibly(HgArray     *array,
-			 HgValueNode *node,
-			 gboolean     force)
-{
-	HgMemObject *obj, *nobj;
+	hg_return_val_if_fail (vm != NULL, NULL);
+	hg_return_val_if_fail (object != NULL, NULL);
+	hg_return_val_if_fail (HG_OBJECT_IS_ARRAY (object), NULL);
+	hg_return_val_if_fail (HG_OBJECT_ARRAY (object)->real_length > start_index, NULL);
+	hg_return_val_if_fail (HG_OBJECT_ARRAY (object)->real_length >= (start_index + length), NULL);
 
-	g_return_val_if_fail (array != NULL, FALSE);
-	g_return_val_if_fail (node != NULL, FALSE);
-	g_return_val_if_fail (hg_object_is_readable((HgObject *)array), FALSE);
-	g_return_val_if_fail (hg_object_is_writable((HgObject *)array), FALSE);
-
-	hg_mem_get_object__inline(array, obj);
-	g_return_val_if_fail (obj != NULL, FALSE);
-	hg_mem_get_object__inline(node, nobj);
-	g_return_val_if_fail (nobj != NULL, FALSE);
-
-	if (!force) {
-		if (!hg_mem_pool_is_own_object(obj->pool, node)) {
-			hg_log_warning("node %p isn't allocated from a pool %s\n", node, hg_mem_pool_get_name(obj->pool));
-
-			return FALSE;
-		}
-	}
-	if (obj->pool != nobj->pool)
-		hg_mem_pool_add_pool_reference(nobj->pool, obj->pool);
-	if (array->removed_arrays > 0) {
-		/* remove the nodes forever */
-		memmove(array->arrays, array->current, sizeof (gpointer) * array->n_arrays);
-		array->removed_arrays = 0;
-		array->current = array->arrays;
-	}
-	if (!array->is_fixed_size &&
-	    array->n_arrays >= array->allocated_arrays) {
-		/* max array size is 65535 */
-		g_return_val_if_fail (array->n_arrays < HG_ARRAY_MAX_SIZE, FALSE);
-		/* resize */
-		gpointer p = hg_mem_resize(array->arrays,
-					   sizeof (HgValueNode *) * (array->allocated_arrays + HG_ARRAY_ALLOC_SIZE));
-
-		if (p == NULL) {
-			hg_log_warning("Failed to resize an array.");
-			return FALSE;
-		} else {
-			array->current = array->arrays = p;
-			array->allocated_arrays += HG_ARRAY_ALLOC_SIZE;
-		}
-	}
-	if (array->n_arrays < array->allocated_arrays) {
-		array->arrays[array->n_arrays++] = node;
-	} else {
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
-gboolean
-hg_array_replace(HgArray     *array,
-		 HgValueNode *node,
-		 guint        index)
-{
-	return hg_array_replace_forcibly(array, node, index, FALSE);
-}
-
-gboolean
-hg_array_replace_forcibly(HgArray     *array,
-			  HgValueNode *node,
-			  guint        index,
-			  gboolean     force)
-{
-	HgMemObject *obj, *nobj;
-
-	g_return_val_if_fail (array != NULL, FALSE);
-	g_return_val_if_fail (node != NULL, FALSE);
-	g_return_val_if_fail (index < array->n_arrays, FALSE);
-	g_return_val_if_fail (hg_object_is_readable((HgObject *)array), FALSE);
-	g_return_val_if_fail (hg_object_is_writable((HgObject *)array), FALSE);
-
-	hg_mem_get_object__inline(array, obj);
-	g_return_val_if_fail (obj != NULL, FALSE);
-	hg_mem_get_object__inline(node, nobj);
-	g_return_val_if_fail (nobj != NULL, FALSE);
-
-	if (!force) {
-		if (!hg_mem_pool_is_own_object(obj->pool, node)) {
-			hg_log_warning("node %p isn't allocated from a pool %s\n", node, hg_mem_pool_get_name(obj->pool));
-
-			return FALSE;
-		}
-	}
-	if (obj->pool != nobj->pool)
-		hg_mem_pool_add_pool_reference(nobj->pool, obj->pool);
-	array->current[index] = node;
-
-	return TRUE;
-}
-
-gboolean
-hg_array_remove(HgArray *array,
-		guint    index)
-{
-	guint i;
-
-	g_return_val_if_fail (array != NULL, FALSE);
-	g_return_val_if_fail (index < array->n_arrays, FALSE);
-	g_return_val_if_fail (array->is_subarray == FALSE, FALSE);
-	g_return_val_if_fail (hg_object_is_readable((HgObject *)array), FALSE);
-	g_return_val_if_fail (hg_object_is_writable((HgObject *)array), FALSE);
-
-	if (index == 0) {
-		/* This looks ugly hack but need to spend less time
-		 * to remove an array node.
-		 */
-		array->removed_arrays++;
-		array->current = (gpointer)((gsize)array->arrays + sizeof (gpointer) * array->removed_arrays);
-	} else {
-		for (i = index; i <= array->n_arrays - 1; i++) {
-			array->current[i] = array->current[i + 1];
-		}
-	}
-	array->n_arrays--;
-
-	return TRUE;
-}
-
-HgValueNode *
-hg_array_index(const HgArray *array,
-	       guint          index)
-{
-	g_return_val_if_fail (array != NULL, NULL);
-	g_return_val_if_fail (index < array->n_arrays, NULL);
-	g_return_val_if_fail (hg_object_is_readable((HgObject *)array), NULL);
-
-	return array->current[index];
-}
-
-guint
-hg_array_length(HgArray *array)
-{
-	g_return_val_if_fail (array != NULL, 0);
-	g_return_val_if_fail (hg_object_is_readable((HgObject *)array), 0);
-
-	return array->n_arrays;
-}
-
-gboolean
-hg_array_fix_array_size(HgArray *array)
-{
-	g_return_val_if_fail (array != NULL, FALSE);
-	g_return_val_if_fail (hg_object_is_readable((HgObject *)array), FALSE);
-	g_return_val_if_fail (hg_object_is_writable((HgObject *)array), FALSE);
-
-	if (!array->is_fixed_size) {
-		gpointer p;
-
-		if (array->removed_arrays > 0) {
-			/* array needs to be correct first */
-			memmove(array->arrays, array->current, sizeof (gpointer) * array->n_arrays);
-			array->removed_arrays = 0;
-		}
-		p = hg_mem_resize(array->arrays, sizeof (gpointer) * array->n_arrays);
-		if (p == NULL) {
-			hg_log_warning("Failed to resize an array.");
-			return FALSE;
-		}
-		array->current = array->arrays = p;
-		array->allocated_arrays = array->n_arrays;
-		array->is_fixed_size = TRUE;
-	}
-
-	return TRUE;
-}
-
-HgArray *
-hg_array_make_subarray(HgMemPool *pool,
-		       HgArray   *array,
-		       guint      start_index,
-		       guint      end_index)
-{
-	HgArray *retval;
-
-	g_return_val_if_fail (pool != NULL, NULL);
-
-	retval = hg_array_new(pool, 0);
-	if (end_index > HG_ARRAY_MAX_SIZE) {
-		/* makes an empty array */
-	} else {
-		if (!hg_array_copy_as_subarray(array, retval, start_index, end_index))
-			return NULL;
+	retval = hg_object_array_new(vm, 0);
+	if (retval != NULL) {
+		p = HG_OBJECT_ARRAY_DATA (object)->array;
+		HG_OBJECT_ARRAY_DATA (retval)->array = &p[start_index];
+		HG_OBJECT_ARRAY (retval)->real_length = length;
 	}
 
 	return retval;
 }
 
 gboolean
-hg_array_copy_as_subarray(HgArray *src,
-			  HgArray *dest,
-			  guint    start_index,
-			  guint    end_index)
+hg_object_array_put(hg_vm_t     *vm,
+		    hg_object_t *object,
+		    hg_object_t *data,
+		    guint16      index)
 {
-	g_return_val_if_fail (src != NULL, FALSE);
-	g_return_val_if_fail (dest != NULL, FALSE);
-	g_return_val_if_fail (start_index < src->n_arrays, FALSE);
-	g_return_val_if_fail (end_index < src->n_arrays, FALSE);
-	g_return_val_if_fail (start_index <= end_index, FALSE);
+	hg_object_t **array;
 
-	/* validate an array */
-	if (src->removed_arrays > 0) {
-		/* remove the nodes forever */
-		memmove(src->arrays, src->current, sizeof (gpointer) * src->n_arrays);
-		src->removed_arrays = 0;
-		src->current = src->arrays;
-	}
-	/* destroy the unnecessary destination arrays */
-	hg_mem_free(dest->arrays);
-	/* make a sub-array */
-	dest->arrays = src->arrays;
-	dest->current = (gpointer)((gsize)dest->arrays + sizeof (gpointer) * (src->subarray_offset + start_index));
-	dest->allocated_arrays = dest->n_arrays = end_index - start_index + 1;
-	dest->removed_arrays = 0;
-	dest->subarray_offset = start_index;
-	dest->is_subarray = TRUE;
-	dest->is_fixed_size = TRUE;
+	hg_return_val_if_fail (vm != NULL, FALSE);
+	hg_return_val_if_fail (object != NULL, FALSE);
+	hg_return_val_if_fail (data != NULL, FALSE);
+	hg_return_val_if_fail (HG_OBJECT_IS_ARRAY (object), FALSE);
+	hg_return_val_if_fail (HG_OBJECT_ARRAY (object)->real_length > index, FALSE);
+	/* XXX: need to check the memory spool type */
+
+	array = HG_OBJECT_ARRAY_DATA (object)->array;
+	array[index] = data;
 
 	return TRUE;
 }
 
-gboolean
-hg_array_compare(const HgArray *a,
-		 const HgArray *b,
-		 guint          attributes_mask)
+hg_object_t *
+hg_object_array_get(hg_vm_t           *vm,
+		    const hg_object_t *object,
+		    guint16            index)
 {
-	guint i;
+	hg_object_t **array, *retval, *p;
+
+	hg_return_val_if_fail (vm != NULL, NULL);
+	hg_return_val_if_fail (object != NULL, NULL);
+	hg_return_val_if_fail (HG_OBJECT_IS_ARRAY (object), NULL);
+	hg_return_val_if_fail (HG_OBJECT_ARRAY (object)->real_length > index, NULL);
+
+	array = HG_OBJECT_ARRAY_DATA (object)->array;
+	p = array[index];
+
+	if (!HG_OBJECT_IS_COMPLEX (p)) {
+		/* create a copy to prevent destructive modifications */
+		retval = hg_object_copy(vm, p);
+	} else {
+		/* complex objects are allowed to be modified */
+		retval = p;
+	}
+
+	return retval;
+}
+
+hg_object_t *
+hg_object_array_get_const(const hg_object_t *object,
+			  guint16            index)
+{
+	hg_object_t **array;
+
+	hg_return_val_if_fail (object != NULL, NULL);
+	hg_return_val_if_fail (HG_OBJECT_IS_ARRAY (object), NULL);
+	hg_return_val_if_fail (HG_OBJECT_ARRAY (object)->real_length > index, NULL);
+
+	array = HG_OBJECT_ARRAY_DATA (object)->array;
+	return array[index];
+}
+
+gboolean
+hg_object_array_compare(hg_object_t *object1,
+			hg_object_t *object2)
+{
+	guint16 i;
+	hg_object_t *a, *b;
 	gboolean retval = TRUE;
-	HgMemObject *obj;
 
-	g_return_val_if_fail (a != NULL, FALSE);
-	g_return_val_if_fail (b != NULL, FALSE);
+	hg_return_val_if_fail (object1 != NULL, FALSE);
+	hg_return_val_if_fail (object2 != NULL, FALSE);
+	hg_return_val_if_fail (HG_OBJECT_IS_ARRAY (object1), FALSE);
+	hg_return_val_if_fail (HG_OBJECT_IS_ARRAY (object2), FALSE);
 
-	if (a->n_arrays != b->n_arrays)
+	if (HG_OBJECT_ARRAY (object1)->real_length != HG_OBJECT_ARRAY (object2)->real_length)
 		return FALSE;
 
-	hg_mem_get_object__inline(a, obj);
-	if (obj == NULL)
-		return FALSE;
+	G_LOCK (hgarray);
+	if (HG_OBJECT_OBJECT (object1)->attr.bit.is_checked) {
+		retval = (HG_OBJECT_OBJECT (object1)->attr.bit.is_checked == HG_OBJECT_OBJECT (object2)->attr.bit.is_checked);
+		G_UNLOCK (hgarray);
 
-	if (hg_mem_is_copying(obj)) {
-		/* postpone the decision. leave it to later comparing so far */
-		return TRUE;
+		return retval;
 	}
-	hg_mem_set_copying(obj);
+	/* for checking the circular reference */
+	HG_OBJECT_OBJECT (object1)->attr.bit.is_checked = TRUE;
+	HG_OBJECT_OBJECT (object2)->attr.bit.is_checked = TRUE;
+	G_UNLOCK (hgarray);
 
-	for (i = 0; i < a->n_arrays; i++) {
-		HgValueNode *na, *nb;
-
-		na = hg_array_index(a, i);
-		nb = hg_array_index(b, i);
-		if ((retval = hg_value_node_compare_content(na, nb, attributes_mask)) == FALSE)
+	for (i = 0; i < HG_OBJECT_ARRAY (object1)->real_length; i++) {
+		a = hg_object_array_get_const(object1, i);
+		b = hg_object_array_get_const(object2, i);
+		if (!hg_object_compare(a, b)) {
+			retval = FALSE;
 			break;
+		}
 	}
 
-	hg_mem_unset_copying(obj);
+	/* cleaning up */
+	G_LOCK (hgarray);
+	HG_OBJECT_OBJECT (object1)->attr.bit.is_checked = FALSE;
+	HG_OBJECT_OBJECT (object2)->attr.bit.is_checked = FALSE;
+	G_UNLOCK (hgarray);
 
 	return retval;
 }
 
-void
-hg_array_set_name(HgArray     *array,
-		  const gchar *name)
+gchar *
+hg_object_array_dump(hg_object_t *object,
+		     gboolean     verbose)
 {
-	HgMemObject *obj;
-	size_t len;
+	hg_return_val_if_fail (object != NULL, NULL);
+	hg_return_val_if_fail (HG_OBJECT_IS_ARRAY (object), NULL);
 
-	g_return_if_fail (array != NULL);
-	g_return_if_fail (name != NULL && name[0] != 0);
-
-	len = strlen(name);
-	hg_mem_get_object__inline(array, obj);
-	/* don't free 'name' here.
-	 * it could be in the snapshot.
-	 */
-	array->name = hg_mem_alloc_with_flags(obj->pool,
-					      sizeof (gchar) * (len + 1),
-					      HG_FL_RESTORABLE);
-	memcpy(array->name, name, len);
-	array->name[len] = 0;
-}
-
-const gchar *
-hg_array_get_name(const HgArray *array)
-{
-	g_return_val_if_fail (array != NULL, NULL);
-
-	return array->name;
+	return g_strdup("--array--");
 }

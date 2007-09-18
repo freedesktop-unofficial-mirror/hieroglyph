@@ -1,10 +1,10 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
  * hgarray.h
- * Copyright (C) 2005-2006 Akira TAGOH
+ * Copyright (C) 2005-2007 Akira TAGOH
  * 
  * Authors:
- *   Akira TAGOH  <at@gclab.org>
+ *   Akira TAGOH  <akira@tagoh.org>
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,51 +21,36 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HG_ARRAY_H__
-#define __HG_ARRAY_H__
+#ifndef __HIEROGLYPH_HGARRAY_H__
+#define __HIEROGLYPH_HGARRAY_H__
 
 #include <hieroglyph/hgtypes.h>
 
+
 G_BEGIN_DECLS
 
-#define hg_array_free(obj)	hg_mem_free(obj)
 
-HgArray     *hg_array_new             (HgMemPool     *pool,
-				       gint32         num);
-gboolean     hg_array_append          (HgArray       *array,
-				       HgValueNode   *node);
-gboolean     hg_array_append_forcibly (HgArray       *array,
-				       HgValueNode   *node,
-				       gboolean       force);
-gboolean     hg_array_replace         (HgArray       *array,
-				       HgValueNode   *node,
-				       guint          index);
-gboolean     hg_array_replace_forcibly(HgArray       *array,
-				       HgValueNode   *node,
-				       guint          index,
-				       gboolean       force);
-gboolean     hg_array_remove          (HgArray       *array,
-				       guint          index);
-HgValueNode *hg_array_index           (const HgArray *array,
-				       guint          index);
-guint        hg_array_length          (HgArray       *array);
-gboolean     hg_array_fix_array_size  (HgArray       *array);
-HgArray     *hg_array_make_subarray   (HgMemPool     *pool,
-				       HgArray       *array,
-				       guint          start_index,
-				       guint          end_index);
-gboolean     hg_array_copy_as_subarray(HgArray       *src,
-				       HgArray       *dest,
-				       guint          start_index,
-				       guint          end_index);
-gboolean     hg_array_compare         (const HgArray *a,
-				       const HgArray *b,
-				       guint          attributes_mask);
-void         hg_array_set_name        (HgArray       *array,
-				       const gchar   *name);
-const gchar *hg_array_get_name        (const HgArray *array);
+hg_object_t *hg_object_array_new         (hg_vm_t           *vm,
+					  guint16            length) G_GNUC_WARN_UNUSED_RESULT;
+hg_object_t *hg_object_array_subarray_new(hg_vm_t           *vm,
+					  hg_object_t       *object,
+					  guint16            start_index,
+					  guint16            length) G_GNUC_WARN_UNUSED_RESULT;
+gboolean     hg_object_array_put         (hg_vm_t           *vm,
+					  hg_object_t       *object,
+					  hg_object_t       *item,
+					  guint16            index);
+hg_object_t *hg_object_array_get         (hg_vm_t           *vm,
+					  const hg_object_t *object,
+					  guint16            index);
+hg_object_t *hg_object_array_get_const   (const hg_object_t *object,
+					  guint16            index);
+gboolean     hg_object_array_compare     (hg_object_t       *object1,
+					  hg_object_t       *object2);
+gchar       *hg_object_array_dump        (hg_object_t       *object,
+					  gboolean           verbose) G_GNUC_MALLOC;
 
 
 G_END_DECLS
 
-#endif /* __HG_ARRAY_H__ */
+#endif /* __HIEROGLYPH_HGARRAY_H__ */

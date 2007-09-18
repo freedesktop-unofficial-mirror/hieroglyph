@@ -1,10 +1,10 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * hgmatrix.h
- * Copyright (C) 2006 Akira TAGOH
+ * utils.h
+ * Copyright (C) 2007 Akira TAGOH
  * 
  * Authors:
- *   Akira TAGOH  <at@gclab.org>
+ *   Akira TAGOH  <akira@tagoh.org>
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,33 +21,18 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HG_MATRIX_H__
-#define __HG_MATRIX_H__
+#ifndef __HIEROGLYPH__UTILS_H__
+#define __HIEROGLYPH__UTILS_H__
 
 #include <hieroglyph/hgtypes.h>
 
+
 G_BEGIN_DECLS
 
-HgMatrix *hg_matrix_new      (HgMemPool      *pool,
-			      gdouble         xx,
-			      gdouble         yx,
-			      gdouble         xy,
-			      gdouble         yy,
-			      gdouble         x0,
-			      gdouble         y0);
-HgMatrix *hg_matrix_multiply (HgMemPool      *pool,
-			      const HgMatrix *mtx1,
-			      const HgMatrix *mtx2);
-HgMatrix *hg_matrix_rotate   (HgMemPool      *pool,
-			      gdouble         angle);
-HgMatrix *hg_matrix_scale    (HgMemPool      *pool,
-			      gdouble         x,
-			      gdouble         y);
-HgMatrix *hg_matrix_translate(HgMemPool      *pool,
-			      gdouble         x,
-			      gdouble         y);
-
+gchar    *hg_get_stacktrace       (void) G_GNUC_MALLOC;
+void      hg_use_stacktrace       (gboolean flag);
+gboolean  hg_is_stacktrace_enabled(void) __attribute__ ((weak));
 
 G_END_DECLS
 
-#endif /* __HG_MATRIX_H__ */
+#endif /* __HIEROGLYPH__UTILS_H__ */

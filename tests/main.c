@@ -1,10 +1,10 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * hgallocator-bfit.h
- * Copyright (C) 2006 Akira TAGOH
+ * main.c
+ * Copyright (C) 2007 Akira TAGOH
  * 
  * Authors:
- *   Akira TAGOH  <at@gclab.org>
+ *   Akira TAGOH  <akira@tagoh.org>
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,15 +21,21 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HG_ALLOCATOR_BFIT_H__
-#define __HG_ALLOCATOR_BFIT_H__
+#include <stdlib.h>
+#include <check.h>
 
-#include <hieroglyph/hgtypes.h>
+extern Suite *hieroglyph_suite(void);
 
-G_BEGIN_DECLS
+int
+main(void)
+{
+	int number_failed;
+	Suite *s = hieroglyph_suite();
+	SRunner *sr = srunner_create(s);
 
-HgAllocatorVTable *hg_allocator_bfit_get_vtable(void) G_GNUC_CONST;
+	srunner_run_all(sr, CK_NORMAL);
+	number_failed = srunner_ntests_failed(sr);
+	srunner_free(sr);
 
-G_END_DECLS
-
-#endif /* __HG_ALLOCATOR_BFIT_H__ */
+	return (number_failed == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
+}

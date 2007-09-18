@@ -1,10 +1,10 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
  * hgfile.c
- * Copyright (C) 2005-2006 Akira TAGOH
+ * Copyright (C) 2006-2007 Akira TAGOH
  * 
  * Authors:
- *   Akira TAGOH  <at@gclab.org>
+ *   Akira TAGOH  <akira@tagoh.org>
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,1016 +22,309 @@
  * Boston, MA 02111-1307, USA.
  */
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 
-#include <string.h>
 #include <fcntl.h>
-#include <errno.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <unistd.h>
+#include <glib/gstrfuncs.h>
+#include <hieroglyph/hgobject.h>
+#include <hieroglyph/vm.h>
 #include "hgfile.h"
-#include "hgallocator-bfit.h"
-#include "hglog.h"
-#include "hgmem.h"
-#include "hgstring.h"
-#include "hglineedit.h"
 
-
-typedef struct _HieroGlyphFileBuffer	HgFileBuffer;
-
-struct _HieroGlyphFileBuffer {
-	gchar *buffer;
-	gint32 bufsize;
-	gint32 pos;
-};
-
-struct _HieroGlyphFileObject {
-	HgObject    object;
-	gchar      *filename;
-	gint        error;
-	guint       access_mode;
-	gchar       ungetc;
-	gboolean    is_eof : 1;
-	union {
-		struct {
-			gint         fd;
-			gboolean     is_mmap;
-			HgFileBuffer mmap;
-		} file;
-		HgFileBuffer          buf;
-		struct {
-			gpointer              user_data;
-			HgFileObjectCallback *vtable;
-		} callback;
-	} is;
-};
-
-
-static void     _hg_file_object_real_free     (gpointer           data);
-static void     _hg_file_object_real_set_flags(gpointer           data,
-					       guint              flags);
-static void     _hg_file_object_real_relocate (gpointer           data,
-					       HgMemRelocateInfo *info);
-static gpointer _hg_file_object_real_to_string(gpointer           data);
-
-
-HgFileObject *__hg_file_stdin = NULL;
-HgFileObject *__hg_file_stdout = NULL;
-HgFileObject *__hg_file_stderr = NULL;
-static gboolean __hg_file_is_initialized = FALSE;
-static gboolean __hg_file_is_io_synchronous = FALSE;
-static HgMemPool *__hg_file_mem_pool = NULL;
-static HgAllocator *__hg_file_allocator = NULL;
-static HgObjectVTable __hg_file_vtable = {
-	.free      = _hg_file_object_real_free,
-	.set_flags = _hg_file_object_real_set_flags,
-	.relocate  = _hg_file_object_real_relocate,
-	.dup       = NULL,
-	.copy      = NULL,
-	.to_string = _hg_file_object_real_to_string,
-};
 
 /*
- * Private Functions
+ * private functions
  */
-static void
-_hg_file_object_real_free(gpointer data)
+static hg_filetype_t
+_hg_object_file_get_io_type(const gchar *filename)
 {
-	HgFileObject *file = data;
+	if (strcmp(filename, "%stdin") == 0) {
+		return HG_FILE_TYPE_STDIN;
+	} else if (strcmp(filename, "%stdout") == 0) {
+		return HG_FILE_TYPE_STDOUT;
+	} else if (strcmp(filename, "%stderr") == 0) {
+		return HG_FILE_TYPE_STDERR;
+	} else if (strcmp(filename, "%lineedit") == 0) {
+		return HG_FILE_TYPE_LINEEDIT;
+	} else if (strcmp(filename, "%statementedit") == 0) {
+		return HG_FILE_TYPE_STATEMENTEDIT;
+	}
 
-	if (hg_file_object_is_writable(file))
-		hg_file_object_flush(file);
-	hg_file_object_close(file);
+	return HG_FILE_TYPE_FILE_IO;
 }
 
-static void
-_hg_file_object_real_set_flags(gpointer data,
-			       guint    flags)
+static int
+_hg_object_file_get_open_mode(hg_filemode_t mode)
 {
-	HgFileObject *file = data;
-	HgMemObject *obj;
-
-	if (file->filename) {
-		hg_mem_get_object__inline(file->filename, obj);
-		if (obj == NULL) {
-			hg_log_warning("Invalid object %p to be marked: HgFileObject->filename", file->filename);
-		} else {
-#ifdef DEBUG_GC
-			G_STMT_START {
-				if ((flags & HG_MEMOBJ_MARK_AGE_MASK) != 0) {
-					g_print("%s: marking filename %p\n", __FUNCTION__, obj);
-				}
-			} G_STMT_END;
-#endif /* DEBUG_GC */
-			if (!hg_mem_is_flags__inline(obj, flags))
-				hg_mem_add_flags__inline(obj, flags, TRUE);
-		}
-	}
-	if ((HG_FILE_GET_FILE_TYPE (file) == HG_FILE_TYPE_BUFFER ||
-	     HG_FILE_GET_FILE_TYPE (file) == HG_FILE_TYPE_STATEMENT_EDIT ||
-	     HG_FILE_GET_FILE_TYPE (file) == HG_FILE_TYPE_LINE_EDIT) &&
-	    file->is.buf.buffer) {
-		hg_mem_get_object__inline(file->is.buf.buffer, obj);
-		if (obj == NULL) {
-			hg_log_warning("Invalid object %p to be marked: HgFileObject->buffer", file->is.buf.buffer);
-		} else {
-#ifdef DEBUG_GC
-		G_STMT_START {
-			if ((flags & HG_MEMOBJ_MARK_AGE_MASK) != 0) {
-				g_print("%s: marking buffer %p\n", __FUNCTION__, obj);
-			}
-		} G_STMT_END;
-#endif /* DEBUG_GC */
-			if (!hg_mem_is_flags__inline(obj, flags))
-				hg_mem_add_flags__inline(obj, flags, TRUE);
-		}
-	}
-}
-
-static void
-_hg_file_object_real_relocate(gpointer           data,
-			      HgMemRelocateInfo *info)
-{
-	HgFileObject *file = data;
-
-	if ((gsize)file->filename >= info->start &&
-	    (gsize)file->filename <= info->end) {
-		file->filename = (gchar *)((gsize)file->filename + info->diff);
-	}
-	if ((HG_FILE_GET_FILE_TYPE (file) == HG_FILE_TYPE_BUFFER ||
-	     HG_FILE_GET_FILE_TYPE (file) == HG_FILE_TYPE_STATEMENT_EDIT ||
-	     HG_FILE_GET_FILE_TYPE (file) == HG_FILE_TYPE_LINE_EDIT) &&
-	    file->is.buf.buffer) {
-		if ((gsize)file->is.buf.buffer >= info->start &&
-		    (gsize)file->is.buf.buffer <= info->end) {
-			file->is.buf.buffer = (gchar *)((gsize)file->is.buf.buffer + info->diff);
-		}
-	}
-}
-
-static gpointer
-_hg_file_object_real_to_string(gpointer data)
-{
-	HgMemObject *obj;
-	HgString *retval;
-	HgFileObject *file = data;
-
-	hg_mem_get_object__inline(data, obj);
-	if (obj == NULL)
-		return NULL;
-
-	retval = hg_string_new(obj->pool, -1);
-	if (HG_FILE_GET_FILE_TYPE (file) == HG_FILE_TYPE_BUFFER) {
-		/* it shows as string to evaluate it */
-		hg_string_append_c(retval, '(');
-		hg_string_append(retval, file->is.buf.buffer + file->is.buf.pos, file->is.buf.bufsize - file->is.buf.pos);
-		hg_string_append(retval, ")/-file-", -1);
-	} else {
-		hg_string_append(retval, "-file-", -1);
-	}
-	hg_string_fix_string_size(retval);
-
-	return retval;
-}
-
-static gint
-_hg_file_get_access_mode(guint mode)
-{
-	static gint modes[] = {
-		0, /* 0 */
-		O_RDONLY,                      /* HG_OPEN_MODE_READ */
-		O_WRONLY | O_CREAT | O_TRUNC,  /* HG_OPEN_MODE_WRITE */
-		O_RDWR,                        /* HG_OPEN_MODE_READ | HG_OPEN_MODE_WRITE */
-		O_WRONLY | O_CREAT | O_APPEND, /* HG_OPEN_MODE_READWRITE */
-		O_RDWR,                        /* HG_OPEN_MODE_READ | HG_OPEN_MODE_READWRITE */
-		O_RDWR | O_CREAT | O_TRUNC,    /* HG_OPEN_MODE_WRITE | HG_OPEN_MODE_READWRITE */
-		O_RDWR | O_CREAT | O_APPEND,   /* HG_OPEN_MODE_READ | HG_OPEN_MODE_WRITE | HG_OPEN_MODE_READWRITE */
-	};
-
-	return modes[mode];
+	return 0;
 }
 
 /*
- * Public Functions
+ * public functions
  */
-
-/* initializer */
-void
-hg_file_init(void)
+hg_object_t *
+hg_object_file_new(hg_vm_t       *vm,
+		   const gchar   *filename,
+		   hg_filemode_t  mode)
 {
-	hg_mem_init();
+	hg_object_t *retval, *obj, *string;
+	gsize len, buflen = 0;
+	struct stat st;
+	hg_filetype_t iotype;
+	hg_filedata_t *data;
+	int fd;
+	gpointer buffer = NULL;
+	gboolean set_io = FALSE;
 
-	if (!__hg_file_is_initialized) {
-		__hg_file_allocator = hg_allocator_new(hg_allocator_bfit_get_vtable());
-		__hg_file_mem_pool = hg_mem_pool_new(__hg_file_allocator,
-						     "Memory pool for HgFileObject",
-						     sizeof (HgFileObject) * 128,
-						     HG_MEM_GLOBAL);
-		__hg_file_stdin = hg_file_object_new(__hg_file_mem_pool,
-						     HG_FILE_TYPE_STDIN);
-		hg_mem_pool_add_root_node(__hg_file_mem_pool, __hg_file_stdin);
-		__hg_file_stdout = hg_file_object_new(__hg_file_mem_pool,
-						      HG_FILE_TYPE_STDOUT);
-		hg_object_writable((HgObject *)__hg_file_stdout);
-		hg_mem_pool_add_root_node(__hg_file_mem_pool, __hg_file_stdout);
-		__hg_file_stderr = hg_file_object_new(__hg_file_mem_pool,
-						      HG_FILE_TYPE_STDERR);
-		hg_object_writable((HgObject *)__hg_file_stderr);
-		hg_mem_pool_add_root_node(__hg_file_mem_pool, __hg_file_stderr);
+	hg_return_val_if_fail (vm != NULL, NULL);
+	hg_return_val_if_fail (filename != NULL, NULL);
 
-		__hg_file_is_initialized = TRUE;
-	}
-}
+	len = strlen(filename);
+	iotype = _hg_object_file_get_io_type(filename);
+	switch (iotype) {
+	    case HG_FILE_TYPE_FILE_IO:
+		    if (stat(filename, &st) == -1) {
+			    hg_object_file_notify_error(vm, errno);
 
-void
-hg_file_finalize(void)
-{
-	if (__hg_file_is_initialized) {
-		hg_mem_pool_destroy(__hg_file_mem_pool);
-		hg_allocator_destroy(__hg_file_allocator);
+			    return NULL;
+		    }
+		    buflen = st.st_size;
+		    if ((fd = open(filename, _hg_object_file_get_open_mode(mode))) == -1) {
+			    hg_object_file_notify_error(vm, errno);
 
-		__hg_file_is_initialized = FALSE;
-	}
-}
-
-gboolean
-hg_file_is_initialized(void)
-{
-	return __hg_file_is_initialized;
-}
-
-void
-hg_file_io_synchronous(gboolean flag)
-{
-	__hg_file_is_io_synchronous = flag;
-}
-
-/* file object */
-HgFileObject *
-hg_file_object_new(HgMemPool  *pool,
-		   HgFileType  file_type,
-		   ...)
-{
-	HgFileObject *retval;
-	va_list ap;
-	gchar *p;
-	gsize len;
-	gint flag;
-	HgLineEdit *lineedit;
-
-	g_return_val_if_fail (pool != NULL, NULL);
-
-	retval = hg_mem_alloc_with_flags(pool, sizeof (HgFileObject),
-					 HG_FL_HGOBJECT | HG_FL_COMPLEX);
-	if (retval == NULL) {
-		hg_log_warning("Failed to create a file object.");
-		return NULL;
-	}
-	HG_OBJECT_INIT_STATE (&retval->object);
-	HG_OBJECT_SET_STATE (&retval->object, hg_mem_pool_get_default_access_mode(pool));
-	hg_object_set_vtable(&retval->object, &__hg_file_vtable);
-
-	HG_FILE_SET_FILE_TYPE (retval, file_type);
-	/* initialize filename here to avoid a warning
-	   when allocating a memory for this and run GC. */
-	retval->filename = NULL;
-	retval->error = 0;
-	retval->ungetc = 0;
-	retval->is_eof = FALSE;
-	va_start(ap, file_type);
-	switch (file_type) {
-	    case HG_FILE_TYPE_FILE:
-		    retval->access_mode = (guint)va_arg(ap, guint);
-		    p = (gchar *)va_arg(ap, gchar *);
-		    len = strlen(p);
-		    retval->filename = hg_mem_alloc(pool, len + 1);
-		    if (retval->filename == NULL) {
-			    hg_log_warning("Failed to allocate a memory for file object.");
 			    return NULL;
 		    }
-		    strncpy(retval->filename, p, len);
-		    retval->filename[len] = 0;
-		    errno = 0;
-		    retval->is.file.fd = open(retval->filename,
-					      _hg_file_get_access_mode(retval->access_mode));
-		    retval->error = errno;
-		    if (retval->is.file.fd != -1) {
-			    struct stat s;
-
-			    stat(retval->filename, &s);
-			    retval->is.file.mmap.buffer = mmap(NULL,
-							       s.st_size,
-							       PROT_READ,
-							       MAP_PRIVATE,
-							       retval->is.file.fd,
-							       0);
-			    if (retval->is.file.mmap.buffer != MAP_FAILED) {
-				    retval->is.file.mmap.bufsize = s.st_size;
-				    retval->is.file.mmap.pos = 0;
-				    retval->is.file.is_mmap = TRUE;
-			    } else {
-				    retval->is.file.is_mmap = FALSE;
-			    }
-		    }
-		    break;
-	    case HG_FILE_TYPE_BUFFER:
-		    retval->access_mode = (guint)va_arg(ap, guint);
-		    p = (gchar *)va_arg(ap, gchar *);
-		    len = strlen(p);
-		    retval->filename = hg_mem_alloc(pool, len + 1);
-		    if (retval->filename == NULL) {
-			    hg_log_warning("Failed to allocate a memory for file object.");
-			    return NULL;
-		    }
-		    strncpy(retval->filename, p, len);
-		    retval->filename[len] = 0;
-		    p = (gchar *)va_arg(ap, gchar *);
-		    retval->is.buf.bufsize = (gint32)va_arg(ap, gint32);
-		    if (retval->is.buf.bufsize < 0)
-			    retval->is.buf.bufsize = strlen(p);
-		    retval->is.buf.buffer = NULL;
-		    retval->is.buf.buffer = hg_mem_alloc(pool, retval->is.buf.bufsize);
-		    if (retval->is.buf.buffer == NULL) {
-			    hg_log_warning("Failed to allocate a memory for file object.");
-			    return NULL;
-		    }
-		    memcpy(retval->is.buf.buffer, p, retval->is.buf.bufsize);
-		    retval->is.buf.pos = 0;
-		    break;
-	    case HG_FILE_TYPE_STDIN:
-		    retval->filename = hg_mem_alloc(pool, 6);
-		    if (retval->filename == NULL) {
-			    hg_log_warning("Failed to allocate a memory for file object.");
-			    return NULL;
-		    }
-		    strncpy(retval->filename, "stdin", 5);
-		    retval->filename[5] = 0;
-		    retval->is.file.fd = 0;
-		    retval->is.file.is_mmap = FALSE;
-		    retval->access_mode = HG_FILE_MODE_READ;
-		    flag = fcntl(0, F_GETFL);
-		    fcntl(0, F_SETFL, flag | O_NONBLOCK);
-		    break;
-	    case HG_FILE_TYPE_STDOUT:
-		    retval->filename = hg_mem_alloc(pool, 7);
-		    if (retval->filename == NULL) {
-			    hg_log_warning("Failed to allocate a memory for file object.");
-			    return NULL;
-		    }
-		    strncpy(retval->filename, "stdout", 6);
-		    retval->filename[6] = 0;
-		    retval->is.file.fd = 1;
-		    retval->is.file.is_mmap = FALSE;
-		    retval->access_mode = HG_FILE_MODE_WRITE;
-		    break;
-	    case HG_FILE_TYPE_STDERR:
-		    retval->filename = hg_mem_alloc(pool, 7);
-		    if (retval->filename == NULL) {
-			    hg_log_warning("Failed to allocate a memory for file object.");
-			    return NULL;
-		    }
-		    strncpy(retval->filename, "stderr", 6);
-		    retval->filename[6] = 0;
-		    retval->is.file.fd = 2;
-		    retval->is.file.is_mmap = FALSE;
-		    retval->access_mode = HG_FILE_MODE_WRITE;
-		    break;
-	    case HG_FILE_TYPE_STATEMENT_EDIT:
-		    lineedit = (HgLineEdit *)va_arg(ap, HgLineEdit *);
-		    if (lineedit == NULL) {
-			    hg_log_warning("[BUG] No HgLineEdit instance.");
-			    return NULL;
-		    }
-		    retval->filename = hg_mem_alloc(pool, 15);
-		    if (retval->filename == NULL) {
-			    hg_log_warning("Failed to allocate a memory for file object.");
-			    return NULL;
-		    }
-		    strncpy(retval->filename, "%statementedit", 14);
-		    retval->filename[14] = 0;
-		    p = hg_line_edit_get_statement(lineedit, NULL);
-		    if (p == NULL) {
-			    hg_log_warning("Failed to read a statement.");
-			    return NULL;
-		    }
-		    retval->access_mode = HG_FILE_MODE_READ;
-		    retval->is.buf.bufsize = strlen(p);
-		    retval->is.buf.buffer = NULL;
-		    retval->is.buf.buffer = hg_mem_alloc(pool, retval->is.buf.bufsize);
-		    if (retval->is.buf.buffer == NULL) {
-			    hg_log_warning("Failed to allocate a memory for file object.");
-			    return NULL;
-		    }
-		    memcpy(retval->is.buf.buffer, p, retval->is.buf.bufsize);
-		    g_free(p);
-		    retval->is.buf.pos = 0;
-		    break;
-	    case HG_FILE_TYPE_LINE_EDIT:
-		    lineedit = (HgLineEdit *)va_arg(ap, HgLineEdit *);
-		    if (lineedit == NULL) {
-			    hg_log_warning("[BUG] No HgLineEdit instance.");
-			    return NULL;
-		    }
-		    retval->filename = hg_mem_alloc(pool, 10);
-		    if (retval->filename == NULL) {
-			    hg_log_warning("Failed to allocate a memory for file object.");
-			    return NULL;
-		    }
-		    strncpy(retval->filename, "%lineedit", 9);
-		    retval->filename[9] = 0;
-		    p = hg_line_edit_get_line(lineedit, NULL, TRUE);
-		    if (p == NULL) {
-			    hg_log_warning("Failed to read a statement.");
-			    return NULL;
-		    }
-		    retval->access_mode = HG_FILE_MODE_READ;
-		    retval->is.buf.bufsize = strlen(p);
-		    retval->is.buf.buffer = NULL;
-		    retval->is.buf.buffer = hg_mem_alloc(pool, retval->is.buf.bufsize);
-		    if (retval->is.buf.buffer == NULL) {
-			    hg_log_warning("Failed to allocate a memory for file object.");
-			    return NULL;
-		    }
-		    memcpy(retval->is.buf.buffer, p, retval->is.buf.bufsize);
-		    g_free(p);
-		    retval->is.buf.pos = 0;
-		    break;
-	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
-		    retval->access_mode = (guint)va_arg(ap, guint);
-		    p = (gchar *)va_arg(ap, gchar *);
-		    len = strlen(p);
-		    retval->filename = hg_mem_alloc(pool, len + 1);
-		    if (retval->filename == NULL) {
-			    hg_log_warning("Failed to allocate a memory for file object.");
-			    return NULL;
-		    }
-		    strncpy(retval->filename, p, len);
-		    retval->filename[len] = 0;
-		    retval->is.callback.vtable = (HgFileObjectCallback *)va_arg(ap, HgFileObjectCallback *);
-		    retval->is.callback.user_data = (gpointer)va_arg(ap, gpointer);
-		    break;
-	    default:
-		    hg_log_warning("Unknown file type %d\n", HG_FILE_GET_FILE_TYPE (retval));
-		    retval = NULL;
-		    break;
-	}
-	va_end(ap);
-
-	return retval;
-}
-
-gboolean
-hg_file_object_has_error(HgFileObject *object)
-{
-	g_return_val_if_fail (object != NULL, TRUE);
-
-	switch (HG_FILE_GET_FILE_TYPE (object)) {
-	    case HG_FILE_TYPE_FILE:
-		    if (object->is.file.fd == -1)
-			    return TRUE;
-		    break;
-	    case HG_FILE_TYPE_STATEMENT_EDIT:
-	    case HG_FILE_TYPE_LINE_EDIT:
-		    if (object->is.buf.bufsize == 0) {
-			    object->error = ENOENT;
-			    return TRUE;
-		    }
-	    case HG_FILE_TYPE_BUFFER:
-		    if (object->is.buf.buffer == NULL) {
-			    object->error = EACCES;
-			    return TRUE;
+		    if ((buffer = mmap(NULL, buflen, PROT_READ, MAP_PRIVATE, fd, 0)) != MAP_FAILED) {
+			    iotype = HG_FILE_TYPE_MMAPPED_IO;
 		    }
 		    break;
 	    case HG_FILE_TYPE_STDIN:
-	    case HG_FILE_TYPE_STDOUT:
-	    case HG_FILE_TYPE_STDERR:
-		    break;
-	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
-		    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
-		    break;
-	    default:
-		    hg_log_warning("[BUG] Invalid file type %d was given to check the error.", HG_FILE_GET_FILE_TYPE (object));
-		    return TRUE;
-	}
+		    if ((mode & ~HG_FILE_MODE_READ) != 0) {
+			    hg_object_file_notify_error(vm, EIO);
 
-	return object->error != 0;
-}
-
-gint
-hg_file_object_get_error(HgFileObject *object)
-{
-	g_return_val_if_fail (object != NULL, EIO);
-
-	return object->error;
-}
-
-void
-hg_file_object_clear_error(HgFileObject *object)
-{
-	g_return_if_fail (object != NULL);
-
-	object->error = 0;
-}
-
-gboolean
-hg_file_object_is_eof(HgFileObject *object)
-{
-	g_return_val_if_fail (object != NULL, TRUE);
-
-	return object->is_eof;
-}
-
-gsize
-hg_file_object_read(HgFileObject *object,
-		    gpointer      buffer,
-		    gsize         size,
-		    gsize         n)
-{
-	gsize retval = 0;
-
-	g_return_val_if_fail (object != NULL, 0);
-	g_return_val_if_fail (buffer != NULL, 0);
-	g_return_val_if_fail ((object->access_mode & HG_FILE_MODE_READ) != 0, 0);
-	g_return_val_if_fail (hg_object_is_readable((HgObject *)object), FALSE);
-
-	/* FIXME: need to handle ungetc here properly */
-	if (object->ungetc != 0) {
-		hg_log_warning("FIXME: ungetc handling not yet implemented!!");
-	}
-	switch (HG_FILE_GET_FILE_TYPE (object)) {
-	    case HG_FILE_TYPE_FILE:
-		    if (object->is.file.is_mmap) {
-			    if ((object->is.file.mmap.bufsize - object->is.file.mmap.pos) < (size * n))
-				    retval = object->is.file.mmap.bufsize - object->is.file.mmap.pos;
-			    else
-				    retval = size * n;
-			    memcpy(buffer, object->is.file.mmap.buffer + object->is.file.mmap.pos, retval);
-			    ((gchar *)buffer)[retval] = 0;
-			    object->is.file.mmap.pos += retval;
-			    if (retval == 0 &&
-				object->is.file.mmap.pos == object->is.file.mmap.bufsize)
-				    object->is_eof = TRUE;
-			    break;
+			    return NULL;
 		    }
-	    case HG_FILE_TYPE_STDIN:
-		    errno = 0;
-		    retval = read(object->is.file.fd, buffer, size * n);
-		    object->error = errno;
-		    if (size * n != 0 && retval == 0)
-			    object->is_eof = TRUE;
+		    if ((retval = hg_vm_get_io(vm, iotype)) != NULL)
+			    return retval;
+		    fd = dup(0);
+		    set_io = TRUE;
 		    break;
-	    case HG_FILE_TYPE_BUFFER:
-	    case HG_FILE_TYPE_STATEMENT_EDIT:
-	    case HG_FILE_TYPE_LINE_EDIT:
-		    if ((object->is.buf.bufsize - object->is.buf.pos) < (size * n))
-			    retval = object->is.buf.bufsize - object->is.buf.pos;
-		    else
-			    retval = size * n;
-		    memcpy(buffer, object->is.buf.buffer + object->is.buf.pos, retval);
-		    ((gchar *)buffer)[retval] = 0;
-		    object->is.buf.pos += retval;
-		    if (retval == 0 &&
-			object->is.buf.pos == object->is.buf.bufsize)
-			    object->is_eof = TRUE;
-		    break;
-	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
-		    retval = object->is.callback.vtable->read(object->is.callback.user_data, buffer, size, n);
-		    object->is_eof = object->is.callback.vtable->is_eof(object->is.callback.user_data);
-		    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
-		    break;
-	    default:
-		    hg_log_warning("[BUG] Invalid file type %d was given to be read.", HG_FILE_GET_FILE_TYPE (object));
-		    object->error = EACCES;
-		    break;
-	}
-
-	return retval;
-}
-
-gsize
-hg_file_object_write(HgFileObject  *object,
-		     gconstpointer  buffer,
-		     gsize          size,
-		     gsize          n)
-{
-	gsize retval = 0;
-
-	g_return_val_if_fail (object != NULL, 0);
-	g_return_val_if_fail (buffer != NULL, 0);
-	g_return_val_if_fail ((object->access_mode & HG_FILE_MODE_WRITE) != 0, 0);
-	g_return_val_if_fail (hg_object_is_readable((HgObject *)object), FALSE);
-	g_return_val_if_fail (hg_object_is_writable((HgObject *)object), FALSE);
-
-	switch (HG_FILE_GET_FILE_TYPE (object)) {
-	    case HG_FILE_TYPE_FILE:
 	    case HG_FILE_TYPE_STDOUT:
+		    if ((mode & ~HG_FILE_MODE_WRITE) != 0) {
+			    hg_object_file_notify_error(vm, EIO);
+
+			    return NULL;
+		    }
+		    if ((retval = hg_vm_get_io(vm, iotype)) != NULL)
+			    return retval;
+		    fd = dup(1);
+		    set_io = TRUE;
+		    break;
 	    case HG_FILE_TYPE_STDERR:
-		    errno = 0;
-		    retval = write(object->is.file.fd, buffer, size * n);
-		    object->error = errno;
-		    if (__hg_file_is_io_synchronous)
-			    fsync(object->is.file.fd);
+		    if ((mode & ~HG_FILE_MODE_WRITE) != 0) {
+			    hg_object_file_notify_error(vm, EIO);
+
+			    return NULL;
+		    }
+		    if ((retval = hg_vm_get_io(vm, iotype)) != NULL)
+			    return retval;
+		    fd = dup(2);
+		    set_io = TRUE;
 		    break;
-	    case HG_FILE_TYPE_BUFFER:
-		    if ((object->is.buf.bufsize - object->is.buf.pos) < (size * n))
-			    retval = object->is.buf.bufsize - object->is.buf.pos;
-		    else
-			    retval = size * n;
-		    memcpy(object->is.buf.buffer + object->is.buf.pos, buffer, retval);
-		    ((gchar *)buffer)[retval] = 0;
-		    object->is.buf.pos += retval;
-		    if (retval == 0 &&
-			object->is.buf.pos == object->is.buf.bufsize)
-			    object->error = EIO;
-		    break;
-	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
-		    retval = object->is.callback.vtable->write(object->is.callback.user_data, buffer, size, n);
-		    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
-		    break;
+	    case HG_FILE_TYPE_LINEEDIT:
+	    case HG_FILE_TYPE_STATEMENTEDIT:
+		    if ((mode & ~HG_FILE_MODE_READ) != 0) {
+			    hg_object_file_notify_error(vm, EIO);
+
+			    return NULL;
+		    }
+		    if ((obj = hg_vm_get_io(vm, iotype)) == NULL) {
+			    hg_object_file_notify_error(vm, EIO);
+
+			    return NULL;
+		    }
+		    /* XXX */
+		    return hg_object_file_new_from_string(vm, string, HG_FILE_MODE_READ);
 	    default:
-		    hg_log_warning("[BUG] Invalid file type %d to be wrriten.", HG_FILE_GET_FILE_TYPE (object));
-		    object->error = EACCES;
-		    break;
+		    g_warning("Unknown file type `%d' in creating file object", iotype);
+		    return NULL;
 	}
-
-	return retval;
-}
-
-gchar
-hg_file_object_getc(HgFileObject *object)
-{
-	gchar retval = 0;
-
-	g_return_val_if_fail (object != NULL, 0);
-	g_return_val_if_fail ((object->access_mode & HG_FILE_MODE_READ) != 0, 0);
-	g_return_val_if_fail (hg_object_is_readable((HgObject *)object), FALSE);
-
-	if (object->ungetc != 0) {
-		retval = object->ungetc;
-		object->ungetc = 0;
+	retval = hg_object_sized_new(vm, hg_n_alignof (sizeof (hg_filedata_t) + sizeof (gchar) * (len + 1)));
+	if (retval != NULL) {
+		HG_OBJECT_GET_TYPE (retval) = HG_OBJECT_TYPE_FILE;
+		data = HG_OBJECT_FILE_DATA (retval);
+		memset(data, 0, sizeof (hg_filedata_t) + sizeof (gchar) * (len + 1));
+		data->v.buffer = buffer;
+		data->fd = fd;
+		data->filesize = buflen;
+		data->current_position = 0;
+		data->current_line = 0;
+		data->iotype = iotype;
+		data->mode = mode;
+		data->filename_length = len;
+		memcpy(data->filename, filename, len);
+		if (set_io)
+			hg_vm_set_io(vm, retval);
 	} else {
-		switch (HG_FILE_GET_FILE_TYPE (object)) {
-		    case HG_FILE_TYPE_FILE:
-			    if (object->is.file.is_mmap) {
-				    if (object->is.file.mmap.pos == object->is.file.mmap.bufsize)
-					    object->is_eof = TRUE;
-				    if (object->is.file.mmap.pos < object->is.file.mmap.bufsize)
-					    retval = object->is.file.mmap.buffer[object->is.file.mmap.pos++];
-				    break;
-			    }
-		    case HG_FILE_TYPE_STDIN:
-			    errno = 0;
-			    if (read(object->is.file.fd, &retval, 1) == 0)
-				    object->is_eof = TRUE;
-			    object->error = errno;
-			    break;
-		    case HG_FILE_TYPE_BUFFER:
-		    case HG_FILE_TYPE_STATEMENT_EDIT:
-		    case HG_FILE_TYPE_LINE_EDIT:
-			    if (object->is.buf.pos == object->is.buf.bufsize)
-				    object->is_eof = TRUE;
-			    if (object->is.buf.pos < object->is.buf.bufsize)
-				    retval = object->is.buf.buffer[object->is.buf.pos++];
-			    break;
-		    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
-			    retval = object->is.callback.vtable->getc(object->is.callback.user_data);
-			    object->is_eof = object->is.callback.vtable->is_eof(object->is.callback.user_data);
-			    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
-			    break;
-		    default:
-			    hg_log_warning("[BUG] Invalid file type %d was given to be get a character.", HG_FILE_GET_FILE_TYPE (object));
-			    break;
-		}
+		if (buffer)
+			munmap(buffer, buflen);
+		close(fd);
+	}
+
+	return retval;
+}
+
+hg_object_t *
+hg_object_file_new_from_string(hg_vm_t       *vm,
+			       hg_object_t   *string,
+			       hg_filemode_t  mode)
+{
+	hg_object_t *retval;
+	static gchar name[] = "%file buffer";
+	gsize len = strlen(name);
+	hg_filedata_t *data;
+
+	hg_return_val_if_fail (vm != NULL, NULL);
+	hg_return_val_if_fail (string != NULL, NULL);
+	hg_return_val_if_fail (HG_OBJECT_IS_STRING (string), NULL);
+
+	retval = hg_object_sized_new(vm, hg_n_alignof (sizeof (hg_filedata_t) + sizeof (gchar) * (len + 1)));
+	if (retval != NULL) {
+		HG_OBJECT_GET_TYPE (retval) = HG_OBJECT_TYPE_FILE;
+		data = HG_OBJECT_FILE_DATA (retval);
+		data->v.buffer = string;
+		data->fd = -1;
+		data->filesize = HG_OBJECT_STRING (string)->real_length;
+		data->current_position = 0;
+		data->current_line = 0;
+		data->iotype = HG_FILE_TYPE_BUFFER;
+		data->mode = mode;
+		data->filename_length = len;
+		memcpy(data->filename, name, len);
+		data->filename[len] = 0;
+	}
+
+	return retval;
+}
+
+hg_object_t *
+hg_object_file_new_with_custom(hg_vm_t        *vm,
+			       hg_filetable_t *table,
+			       hg_filemode_t   mode)
+{
+	hg_object_t *retval;
+	static gchar name[] = "%custom file object";
+	gsize len = strlen(name);
+	hg_filedata_t *data;
+
+	hg_return_val_if_fail (vm != NULL, NULL);
+	hg_return_val_if_fail (table != NULL, NULL);
+
+	retval = hg_object_sized_new(vm, hg_n_alignof (sizeof (hg_filedata_t) + sizeof (gchar) * (len + 1)));
+	if (retval != NULL) {
+		HG_OBJECT_GET_TYPE (retval) = HG_OBJECT_TYPE_FILE;
+		data = HG_OBJECT_FILE_DATA (retval);
+		memset(data, 0, sizeof (hg_filedata_t) + sizeof (gchar) * (len + 1));
+		data->v.table = table;
+		data->filesize = 0;
+		data->current_position = 0;
+		data->current_line = 0;
+		data->iotype = HG_FILE_TYPE_CALLBACK;
+		data->mode = mode;
+		data->filename_length = len;
+		memcpy(data->filename, name, len);
 	}
 
 	return retval;
 }
 
 void
-hg_file_object_ungetc(HgFileObject *object,
-		      gchar         c)
+hg_object_file_free(hg_vm_t     *vm,
+		    hg_object_t *object)
 {
-	gssize retval;
+	hg_return_if_fail (vm != NULL);
+	hg_return_if_fail (object != NULL);
+	hg_return_if_fail (HG_OBJECT_IS_FILE (object));
 
-	g_return_if_fail (object != NULL);
-	g_return_if_fail ((object->access_mode & HG_FILE_MODE_READ) != 0);
-	g_return_if_fail (object->ungetc == 0);
-	g_return_if_fail (hg_object_is_readable((HgObject *)object));
-	g_return_if_fail (hg_object_is_writable((HgObject *)object));
-
-	switch (HG_FILE_GET_FILE_TYPE (object)) {
-	    case HG_FILE_TYPE_FILE:
-	    case HG_FILE_TYPE_BUFFER:
-	    case HG_FILE_TYPE_STATEMENT_EDIT:
-	    case HG_FILE_TYPE_LINE_EDIT:
-	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
-		    object->is_eof = FALSE;
-		    retval = hg_file_object_seek(object, -1, HG_FILE_POS_CURRENT);
-		    if (retval > 0)
-			    break;
-		    hg_log_debug(DEBUG_FILE, "Failed to push back a character to a file stream.");
-		    break;
-	    case HG_FILE_TYPE_STDIN:
-		    object->is_eof = FALSE;
-		    object->ungetc = c;
-		    break;
+	switch (HG_OBJECT_FILE_DATA (object)->iotype) {
 	    default:
-		    hg_log_warning("[BUG] Invalid file type %d was given to be unget a character.", HG_FILE_GET_FILE_TYPE (object));
 		    break;
 	}
+}
+
+void
+hg_object_file_notify_error(hg_vm_t     *vm,
+			    error_t      _errno)
+{
+	hg_error_t error = 0;
+	gchar buffer[4096];
+
+	hg_return_if_fail (vm != NULL);
+
+	switch (_errno) {
+	    case 0:
+		    break;
+	    case EACCES:
+	    case EBADF:
+	    case EEXIST:
+	    case ENOTDIR:
+	    case ENOTEMPTY:
+	    case EPERM:
+	    case EROFS:
+		    error = HG_e_invalidfileaccess;
+		    break;
+	    case EAGAIN:
+	    case EBUSY:
+	    case EIO:
+	    case ENOSPC:
+		    error = HG_e_ioerror;
+		    break;
+	    case EMFILE:
+		    error = HG_e_limitcheck;
+		    break;
+	    case ENAMETOOLONG:
+	    case ENODEV:
+	    case ENOENT:
+		    error = HG_e_undefinedfilename;
+		    break;
+	    case ENOMEM:
+		    error = HG_e_VMerror;
+		    break;
+	    default:
+		    strerror_r(_errno, buffer, 4096);
+		    g_warning("%s: need to support errno %d\n  %s\n",
+			      __PRETTY_FUNCTION__, _errno, buffer);
+		    break;
+	}
+	if (error != 0)
+		hg_vm_set_error(vm, error);
 }
 
 gboolean
-hg_file_object_flush(HgFileObject *object)
+hg_object_file_compare(hg_object_t *object1,
+		       hg_object_t *object2)
 {
-	gboolean retval = FALSE;
+	hg_return_val_if_fail (object1 != NULL, FALSE);
+	hg_return_val_if_fail (object2 != NULL, FALSE);
+	hg_return_val_if_fail (HG_OBJECT_IS_FILE (object1), FALSE);
+	hg_return_val_if_fail (HG_OBJECT_IS_FILE (object2), FALSE);
 
-	g_return_val_if_fail (object != NULL, FALSE);
-	g_return_val_if_fail (hg_object_is_writable((HgObject *)object), FALSE);
-
-	switch (HG_FILE_GET_FILE_TYPE (object)) {
-	    case HG_FILE_TYPE_FILE:
-	    case HG_FILE_TYPE_STDIN:
-	    case HG_FILE_TYPE_STDOUT:
-	    case HG_FILE_TYPE_STDERR:
-		    if (hg_file_object_is_readable(object)) {
-			    /* clear the inbuffer */
-			    gchar tmp[256];
-
-			    while (!hg_file_object_is_eof(object)) {
-				    hg_file_object_read(object, tmp, sizeof (gchar), 255);
-			    }
-		    } else {
-			    /* FIXME: clear the outbuffer */
-			    sync();
-		    }
-		    retval = TRUE;
-		    break;
-	    case HG_FILE_TYPE_BUFFER:
-	    case HG_FILE_TYPE_STATEMENT_EDIT:
-	    case HG_FILE_TYPE_LINE_EDIT:
-		    if (hg_file_object_is_readable(object)) {
-			    object->is.buf.pos = object->is.buf.bufsize;
-			    object->is_eof = TRUE;
-		    }
-		    retval = TRUE;
-		    break;
-	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
-		    retval = object->is.callback.vtable->flush(object->is.callback.user_data);
-		    break;
-	    default:
-		    hg_log_warning("Invalid file type %d was given to be flushed.", HG_FILE_GET_FILE_TYPE (object));
-		    break;
-	}
-
-	return retval;
+	/* XXX: no copy and dup functionalities are available so far.
+	 * so just comparing a pointer should works enough
+	 */
+	return object1 == object2;
 }
 
-gssize
-hg_file_object_seek(HgFileObject  *object,
-		    gssize         offset,
-		    HgFilePosType  whence)
+gchar *
+hg_object_file_dump(hg_object_t *object,
+		    gboolean     verbose)
 {
-	gssize retval = -1;
+	hg_return_val_if_fail (object != NULL, NULL);
+	hg_return_val_if_fail (HG_OBJECT_IS_FILE (object), NULL);
 
-	g_return_val_if_fail (object != NULL, -1);
-
-	switch (HG_FILE_GET_FILE_TYPE (object)) {
-	    case HG_FILE_TYPE_FILE:
-		    if (object->is.file.is_mmap) {
-			    switch (whence) {
-				case HG_FILE_POS_BEGIN:
-					if (offset < 0)
-						object->is.file.mmap.pos = 0;
-					else if (offset > object->is.file.mmap.bufsize)
-						object->is.file.mmap.pos = object->is.file.mmap.bufsize;
-					else
-						object->is.file.mmap.pos = offset;
-					break;
-				case HG_FILE_POS_CURRENT:
-					if (object->ungetc)
-						object->is.file.mmap.pos--;
-					object->is.file.mmap.pos += offset;
-					if (object->is.file.mmap.pos < 0)
-						object->is.file.mmap.pos = 0;
-					else if (object->is.file.mmap.pos > object->is.file.mmap.bufsize)
-						object->is.file.mmap.pos = object->is.file.mmap.bufsize;
-					break;
-				case HG_FILE_POS_END:
-					object->is.file.mmap.pos = object->is.file.mmap.bufsize + offset;
-					if (object->is.file.mmap.pos < 0)
-						object->is.file.mmap.pos = 0;
-					else if (object->is.file.mmap.pos > object->is.file.mmap.bufsize)
-						object->is.file.mmap.pos = object->is.file.mmap.bufsize;
-					break;
-				default:
-					hg_log_warning("Invalid whence `%d' was given.", whence);
-					object->error = EINVAL;
-					break;
-			    }
-			    retval = object->is.file.mmap.pos;
-		    } else {
-			    retval = lseek(object->is.file.fd, offset, whence);
-			    object->error = errno;
-		    }
-		    break;
-	    case HG_FILE_TYPE_BUFFER:
-	    case HG_FILE_TYPE_STATEMENT_EDIT:
-	    case HG_FILE_TYPE_LINE_EDIT:
-		    switch (whence) {
-			case HG_FILE_POS_BEGIN:
-				if (offset < 0)
-					object->is.buf.pos = 0;
-				else if (offset > object->is.buf.bufsize)
-					object->is.buf.pos = object->is.buf.bufsize;
-				else
-					object->is.buf.pos = offset;
-				break;
-			case HG_FILE_POS_CURRENT:
-				if (object->ungetc)
-					object->is.buf.pos--;
-				object->is.buf.pos += offset;
-				if (object->is.buf.pos < 0)
-					object->is.buf.pos = 0;
-				else if (object->is.buf.pos > object->is.buf.bufsize)
-					object->is.buf.pos = object->is.buf.bufsize;
-				break;
-			case HG_FILE_POS_END:
-				object->is.buf.pos = object->is.buf.bufsize + offset;
-				if (object->is.buf.pos < 0)
-					object->is.buf.pos = 0;
-				else if (object->is.buf.pos > object->is.buf.bufsize)
-					object->is.buf.pos = object->is.buf.bufsize;
-				break;
-			default:
-				hg_log_warning("Invalid whence `%d' was given.", whence);
-				object->error = EINVAL;
-				break;
-		    }
-		    retval = object->is.buf.pos;
-		    break;
-	    case HG_FILE_TYPE_STDIN:
-	    case HG_FILE_TYPE_STDOUT:
-	    case HG_FILE_TYPE_STDERR:
-		    hg_log_warning("Not supported to be sought.");
-		    object->error = ESPIPE;
-		    break;
-	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
-		    retval = object->is.callback.vtable->seek(object->is.callback.user_data, offset, whence);
-		    object->error = object->is.callback.vtable->get_error_code(object->is.callback.user_data);
-		    break;
-	    default:
-		    hg_log_warning("Unknown file type %d was given to be sought.",
-				   HG_FILE_GET_FILE_TYPE (object));
-		    break;
-	}
-	object->ungetc = 0;
-
-	return retval;
-}
-
-void
-hg_file_object_close(HgFileObject *object)
-{
-	g_return_if_fail (object != NULL);
-
-	object->ungetc = 0;
-	object->is_eof = TRUE;
-	switch (HG_FILE_GET_FILE_TYPE (object)) {
-	    case HG_FILE_TYPE_FILE:
-		    if (object->is.file.is_mmap) {
-			    munmap(object->is.file.mmap.buffer, object->is.file.mmap.bufsize);
-			    object->is.file.is_mmap = FALSE;
-		    }
-		    if (object->is.file.fd != -1) {
-			    close(object->is.file.fd);
-			    object->is.file.fd = -1;
-		    }
-		    break;
-	    case HG_FILE_TYPE_STDIN:
-	    case HG_FILE_TYPE_STDOUT:
-	    case HG_FILE_TYPE_STDERR:
-		    /* just ignore for them */
-		    break;
-	    case HG_FILE_TYPE_BUFFER:
-	    case HG_FILE_TYPE_STATEMENT_EDIT:
-	    case HG_FILE_TYPE_LINE_EDIT:
-		    object->is.buf.pos = 0;
-		    object->is.buf.bufsize = 0;
-		    break;
-	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
-		    object->is.callback.vtable->close(object->is.callback.user_data);
-		    break;
-	    default:
-		    hg_log_warning("Unknown file type %d was given to be closed.",
-				   HG_FILE_GET_FILE_TYPE (object));
-		    break;
-	}
-}
-
-gboolean
-hg_file_object_is_closed(HgFileObject *object)
-{
-	gboolean retval = FALSE;
-
-	g_return_val_if_fail (object != NULL, TRUE);
-
-	switch (HG_FILE_GET_FILE_TYPE (object)) {
-	    case HG_FILE_TYPE_FILE:
-		    retval = (!object->is.file.is_mmap && object->is.file.fd == -1);
-		    break;
-	    case HG_FILE_TYPE_STDIN:
-	    case HG_FILE_TYPE_STDOUT:
-	    case HG_FILE_TYPE_STDERR:
-		    /* just ignore for them */
-		    break;
-	    case HG_FILE_TYPE_BUFFER:
-	    case HG_FILE_TYPE_STATEMENT_EDIT:
-	    case HG_FILE_TYPE_LINE_EDIT:
-		    retval = (object->is.buf.pos == 0 && object->is.buf.bufsize == 0);
-		    break;
-	    case HG_FILE_TYPE_BUFFER_WITH_CALLBACK:
-		    retval = object->is.callback.vtable->is_closed(object->is.callback.user_data);
-		    break;
-	    default:
-		    hg_log_warning("Unknown file type %d was given to be closed.",
-				   HG_FILE_GET_FILE_TYPE (object));
-		    break;
-	}
-
-	return retval;
-}
-
-gboolean
-hg_file_object_is_readable(HgFileObject *object)
-{
-	g_return_val_if_fail (object != NULL, FALSE);
-	g_return_val_if_fail (hg_object_is_readable((HgObject *)object), FALSE);
-
-	return (object->access_mode & HG_FILE_MODE_READ) != 0;
-}
-
-gboolean
-hg_file_object_is_writable(HgFileObject *object)
-{
-	g_return_val_if_fail (object != NULL, FALSE);
-	g_return_val_if_fail (hg_object_is_readable((HgObject *)object), FALSE);
-
-	return (object->access_mode & HG_FILE_MODE_WRITE) != 0;
-}
-
-void
-hg_file_object_printf(HgFileObject *object,
-		      gchar const *format,
-		      ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	hg_file_object_vprintf(object, format, ap);
-	va_end(ap);
-}
-
-void
-hg_file_object_vprintf(HgFileObject *object,
-		       gchar const  *format,
-		       va_list       va_args)
-{
-	gchar *buffer;
-
-	g_return_if_fail (object != NULL);
-	g_return_if_fail (format != NULL);
-	g_return_if_fail (hg_object_is_readable((HgObject *)object));
-	g_return_if_fail (hg_object_is_writable((HgObject *)object));
-
-	buffer = g_strdup_vprintf(format, va_args);
-	hg_file_object_write(object, buffer, sizeof (gchar), strlen(buffer));
-	g_free(buffer);
-}
-
-void
-hg_stdout_printf(gchar const *format, ...)
-{
-	va_list ap;
-
-	if (!hg_file_is_initialized())
-		hg_file_init();
-
-	va_start(ap, format);
-	hg_file_object_vprintf(__hg_file_stdout, format, ap);
-	va_end(ap);
-}
-
-void
-hg_stderr_printf(gchar const *format, ...)
-{
-	va_list ap;
-
-	if (!hg_file_is_initialized())
-		hg_file_init();
-
-	va_start(ap, format);
-	hg_file_object_vprintf(__hg_file_stderr, format, ap);
-	va_end(ap);
+	return g_strdup("--file--");
 }

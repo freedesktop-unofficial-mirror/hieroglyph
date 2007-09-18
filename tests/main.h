@@ -1,10 +1,10 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * hgdebug.c
- * Copyright (C) 2006 Akira TAGOH
+ * main.h
+ * Copyright (C) 2007 Akira TAGOH
  * 
  * Authors:
- *   Akira TAGOH  <at@gclab.org>
+ *   Akira TAGOH  <akira@tagoh.org>
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,24 +21,13 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+#ifndef __HIEROGLYPH_TEST_MAIN_H__
+#define __HIEROGLYPH_TEST_MAIN_H__
 
-#include "hgdebug.h"
+#include <check.h>
 
+#define TDEF(fn)	START_TEST (test_ ## fn)
+#define TEND		END_TEST
+#define T(fn)		tcase_add_test(tc, test_ ## fn)
 
-/*
- * Private Functions
- */
-
-/*
- * Public Functions
- */
-void
-hg_debug_sleep(gpointer data)
-{
-	guint i = GPOINTER_TO_UINT (data);
-
-	sleep(i);
-}
+#endif /* __HIEROGLYPH_TEST_MAIN_H__ */

@@ -1,10 +1,10 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
  * version.h
- * Copyright (C) 2005-2006 Akira TAGOH
+ * Copyright (C) 2005-2007 Akira TAGOH
  * 
  * Authors:
- *   Akira TAGOH  <at@gclab.org>
+ *   Akira TAGOH  <akira@tagoh.org>
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,18 +21,19 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HG_VERSION_H__
-#define __HG_VERSION_H__
+#ifndef c914e012-1e1c-44e8-8686-b0eb222c2ac2VERSION_H__
+#define c914e012-1e1c-44e8-8686-b0eb222c2ac2VERSION_H__
 
 #include <glib/gmacros.h>
+
 
 G_BEGIN_DECLS
 
 #define HIEROGLYPH_VERSION	"@VERSION@"
-#define HIEROGLYPH_UUID		"bd0c9fb4-4ed8-4bb9-bce5-c4f0198ece76"
+#define HIEROGLYPH_UUID		"c914e012-1e1c-44e8-8686-b0eb222c2ac2"
 
 const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
 
 G_END_DECLS
 
-#endif /* __HG_VERSION_H__ */
+#endif /* c914e012-1e1c-44e8-8686-b0eb222c2ac2VERSION_H__ */

@@ -1,5 +1,5 @@
 NULL =
-SUBDIRS = hieroglyph src devices plugins lib tests examples po
+SUBDIRS = hieroglyph tests #src devices plugins lib tests examples po
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = hieroglyph.pc

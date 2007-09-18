@@ -1,10 +1,10 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
  * hgdict.h
- * Copyright (C) 2005-2006 Akira TAGOH
+ * Copyright (C) 2005-2007 Akira TAGOH
  * 
  * Authors:
- *   Akira TAGOH  <at@gclab.org>
+ *   Akira TAGOH  <akira@tagoh.org>
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,44 +21,37 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HG_DICT_H__
-#define __HG_DICT_H__
+#ifndef __HIEROGLYPH_HGDICT_H__
+#define __HIEROGLYPH_HGDICT_H__
 
 #include <hieroglyph/hgtypes.h>
 
+
 G_BEGIN_DECLS
 
-
-HgDict      *hg_dict_new               (HgMemPool      *pool,
-					guint           n_prealloc);
-gboolean     hg_dict_insert            (HgMemPool      *pool,
-					HgDict         *dict,
-					HgValueNode    *key,
-					HgValueNode    *val);
-gboolean     hg_dict_insert_forcibly   (HgMemPool      *pool,
-					HgDict         *dict,
-					HgValueNode    *key,
-					HgValueNode    *val,
-					gboolean        force);
-gboolean     hg_dict_remove            (HgDict         *dict,
-					HgValueNode    *key);
-HgValueNode *hg_dict_lookup            (const HgDict   *dict,
-					HgValueNode    *key);
-HgValueNode *hg_dict_lookup_with_string(HgDict         *dict,
-					const gchar    *key);
-guint        hg_dict_length            (const HgDict   *dict);
-guint        hg_dict_maxlength         (const HgDict   *dict);
-gboolean     hg_dict_traverse          (const HgDict   *dict,
-					HgTraverseFunc  func,
-					gpointer        data);
-gboolean     hg_dict_first             (HgDict         *dict,
-					HgValueNode   **key,
-					HgValueNode   **val);
-gboolean     hg_dict_compare           (const HgDict   *a,
-					const HgDict   *b,
-					guint           attributes_mask);
-
+hg_object_t *hg_object_dict_new                        (hg_vm_t     *vm,
+							guint16      n_nodes) G_GNUC_WARN_UNUSED_RESULT;
+gboolean     hg_object_dict_compare                    (hg_object_t *object1,
+							hg_object_t *object2);
+gchar       *hg_object_dict_dump                       (hg_object_t *object,
+							gboolean     verbose) G_GNUC_MALLOC;
+gboolean     hg_object_dict_insert                     (hg_object_t *dict,
+                                                        hg_object_t *key,
+                                                        hg_object_t *value);
+gboolean     hg_object_dict_insert_without_consistency (hg_object_t *dict,
+                                                        hg_object_t *key,
+                                                        hg_object_t *value);
+gboolean     hg_object_dict_replace                    (hg_object_t *dict,
+                                                        hg_object_t *key,
+                                                        hg_object_t *value);
+gboolean     hg_object_dict_replace_without_consistency(hg_object_t *dict,
+                                                        hg_object_t *key,
+                                                        hg_object_t *value);
+gboolean     hg_object_dict_remove                     (hg_object_t *dict,
+                                                        hg_object_t *key);
+hg_object_t *hg_object_dict_lookup                     (hg_object_t *dict,
+                                                        hg_object_t *key);
 
 G_END_DECLS
 
-#endif /* __HG_DICT_H__ */
+#endif /* __HIEROGLYPH_HGDICT_H__ */
