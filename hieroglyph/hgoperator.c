@@ -455,11 +455,11 @@ hg_object_operator_new_with_custom(hg_vm_t            *vm,
 }
 
 gboolean
-hg_object_operator_initialize(hg_vm_t             *vm,
-			      hg_emulation_type_t  level)
+hg_object_operator_initialize(hg_vm_t            *vm,
+			      hg_emulationtype_t  level)
 {
 	gboolean retval = TRUE;
-	hg_emulation_type_t current;
+	hg_emulationtype_t current;
 
 	hg_return_val_if_fail (vm != NULL, FALSE);
 	hg_return_val_if_fail (level < HG_EMU_END, FALSE);
@@ -836,8 +836,8 @@ hg_object_operator_initialize(hg_vm_t             *vm,
 }
 
 gboolean
-hg_object_operator_finalize(hg_vm_t             *vm,
-			    hg_emulation_type_t  level)
+hg_object_operator_finalize(hg_vm_t            *vm,
+			    hg_emulationtype_t  level)
 {
 	gboolean retval = TRUE;
 

@@ -36,9 +36,9 @@ hg_object_t *hg_object_operator_new_with_custom(hg_vm_t              *vm,
                                                 gchar                *name,
 						hg_operator_func_t    func) G_GNUC_WARN_UNUSED_RESULT;
 gboolean     hg_object_operator_initialize     (hg_vm_t              *vm,
-						hg_emulation_type_t   level);
+						hg_emulationtype_t    level);
 gboolean     hg_object_operator_finalize       (hg_vm_t              *vm,
-						hg_emulation_type_t   level);
+						hg_emulationtype_t    level);
 gboolean     hg_object_operator_invoke         (hg_vm_t              *vm,
 						hg_object_t          *object);
 gboolean     hg_object_operator_compare        (hg_object_t          *object1,

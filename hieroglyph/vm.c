@@ -37,12 +37,12 @@
 typedef struct hg_vm_private_s	hg_vm_private_t;
 
 struct hg_vm_private_s {
-	hg_vm_t              instance;
-	hg_error_t           error;
-	hg_emulation_type_t  current_level;
-	hg_object_t         *io[HG_FILE_TYPE_END];
-	hg_stack_t          *stack[HG_STACK_TYPE_END];
-	hg_object_t         *dict;
+	hg_vm_t             instance;
+	hg_error_t          error;
+	hg_emulationtype_t  current_level;
+	hg_object_t        *io[HG_FILE_TYPE_END];
+	hg_stack_t         *stack[HG_STACK_TYPE_END];
+	hg_object_t        *dict;
 };
 
 
@@ -277,7 +277,7 @@ hg_vm_t *
 hg_vm_new(void)
 {
 	hg_vm_private_t *retval = g_new0(hg_vm_private_t, 1);
-	hg_stack_type_t i;
+	hg_stacktype_t i;
 
 	/* initialize VM */
 	retval->current_level = HG_EMU_BEGIN;
@@ -308,9 +308,25 @@ hg_vm_new(void)
 void
 hg_vm_destroy(hg_vm_t *vm)
 {
+	hg_vm_private_t *priv;
+	hg_filetype_t i;
+	hg_stacktype_t j;
+
 	hg_return_if_fail (vm != NULL);
 
-	/* XXX */
+	priv = (hg_vm_private_t *)vm;
+
+	for (i = 0; i < HG_FILE_TYPE_END; i++) {
+		if (priv->io[i])
+			hg_object_free(vm, priv->io[i]);
+	}
+	for (j = 0; j < HG_STACK_TYPE_END; j++) {
+		if (priv->stack[j])
+			hg_stack_free(vm, priv->stack[j]);
+	}
+	if (priv->dict)
+		hg_object_free(vm, priv->dict);
+
 	g_free(vm);
 }
 
@@ -482,7 +498,7 @@ hg_vm_finalize(hg_vm_t *vm)
 	return TRUE;
 }
 
-hg_emulation_type_t
+hg_emulationtype_t
 hg_vm_get_emulation_level(hg_vm_t *vm)
 {
 	hg_vm_private_t *priv;
@@ -495,8 +511,8 @@ hg_vm_get_emulation_level(hg_vm_t *vm)
 }
 
 gboolean
-hg_vm_set_emulation_level(hg_vm_t             *vm,
-			  hg_emulation_type_t  level)
+hg_vm_set_emulation_level(hg_vm_t            *vm,
+			  hg_emulationtype_t  level)
 {
 	hg_vm_private_t *priv;
 

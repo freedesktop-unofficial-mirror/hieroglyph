@@ -56,13 +56,13 @@ typedef struct hg_operatordata_s		hg_operatordata_t;
 typedef union hg_attribute_u			hg_attribute_t;
 typedef struct _hg_object_s			_hg_object_t;
 typedef struct hg_object_s			hg_object_t;
-typedef enum hg_object_type_e			hg_object_type_t;
-typedef enum hg_stack_type_e			hg_stack_type_t;
+typedef enum hg_objecttype_e			hg_objecttype_t;
+typedef enum hg_stacktype_e			hg_stacktype_t;
 typedef struct hg_stackdata_s			hg_stackdata_t;
 typedef struct hg_stack_s			hg_stack_t;
 typedef enum hg_error_e				hg_error_t;
 typedef enum hg_system_encoding_e		hg_system_encoding_t;
-typedef enum hg_emulation_type_e		hg_emulation_type_t;
+typedef enum hg_emulationtype_e			hg_emulationtype_t;
 typedef struct hg_vm_s				hg_vm_t;
 
 typedef gboolean (* hg_operator_func_t) (hg_vm_t     *vm,
@@ -225,7 +225,7 @@ struct hg_filedata_s {
 	gchar         *filename[];
 };
 
-enum hg_object_type_e {
+enum hg_objecttype_e {
 	HG_OBJECT_TYPE_NULL = 0,
 	HG_OBJECT_TYPE_INTEGER,
 	HG_OBJECT_TYPE_REAL,
@@ -242,7 +242,7 @@ enum hg_object_type_e {
 	HG_OBJECT_TYPE_END = (1 << 7) - 1
 };
 
-enum hg_stack_type_e {
+enum hg_stacktype_e {
 	HG_STACK_TYPE_OSTACK,
 	HG_STACK_TYPE_ESTACK,
 	HG_STACK_TYPE_DSTACK,
@@ -795,7 +795,7 @@ enum hg_system_encoding_e {
 
 	HG_enc_END
 };
-enum hg_emulation_type_e {
+enum hg_emulationtype_e {
 	HG_EMU_BEGIN,
 	HG_EMU_PS_LEVEL_1,
 	HG_EMU_PS_LEVEL_2,
