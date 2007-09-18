@@ -52,6 +52,8 @@ gboolean             hg_vm_finalize           (hg_vm_t            *vm);
 hg_emulationtype_t   hg_vm_get_emulation_level(hg_vm_t            *vm);
 gboolean             hg_vm_set_emulation_level(hg_vm_t            *vm,
                                                hg_emulationtype_t  level);
+gboolean             hg_vm_stepi              (hg_vm_t            *vm,
+					       gboolean           *is_proceeded);
 gboolean             hg_vm_step               (hg_vm_t            *vm);
 hg_object_t         *hg_vm_get_dict           (hg_vm_t            *vm);
 hg_object_t         *hg_vm_dict_lookup        (hg_vm_t            *vm,

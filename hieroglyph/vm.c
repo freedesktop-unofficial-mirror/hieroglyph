@@ -532,7 +532,8 @@ hg_vm_set_emulation_level(hg_vm_t            *vm,
 }
 
 gboolean
-hg_vm_step(hg_vm_t *vm)
+hg_vm_stepi(hg_vm_t  *vm,
+	    gboolean *is_proceeded)
 {
 	hg_vm_private_t *priv;
 	hg_stack_t *estack, *ostack;
@@ -541,12 +542,14 @@ hg_vm_step(hg_vm_t *vm)
 	gsize index;
 
 	hg_return_val_if_fail (vm != NULL, FALSE);
+	hg_return_val_if_fail (is_proceeded != NULL, FALSE);
 
 	priv = (hg_vm_private_t *)vm;
 	estack = priv->stack[HG_STACK_TYPE_ESTACK];
 	ostack = priv->stack[HG_STACK_TYPE_OSTACK];
 	object = hg_stack_index(estack, 0);
 
+	*is_proceeded = FALSE;
   evaluate:
 	switch (HG_OBJECT_GET_TYPE (object)) {
 	    case HG_OBJECT_TYPE_ARRAY:
@@ -560,6 +563,7 @@ hg_vm_step(hg_vm_t *vm)
 				    }
 			    } else {
 				    result = object;
+				    *is_proceeded = TRUE;
 			    }
 			    if (!hg_stack_push(estack, result)) {
 				    hg_vm_set_error(vm, HG_e_execstackoverflow);
@@ -581,6 +585,7 @@ hg_vm_step(hg_vm_t *vm)
 			    retval = FALSE;
 		    }
 		    hg_stack_pop(estack);
+		    *is_proceeded = TRUE;
 		    break;
 	    case HG_OBJECT_TYPE_EVAL:
 		    result = hg_vm_dict_lookup(vm, object);
@@ -598,10 +603,24 @@ hg_vm_step(hg_vm_t *vm)
 		    retval = hg_object_operator_invoke(vm, object);
 		    hg_stack_roll(estack, hg_stack_length(estack) - index + 1, 1);
 		    hg_stack_pop(estack);
+		    *is_proceeded = TRUE;
 		    break;
 	    default:
 		    g_warning("[BUG] Unknown object type  `%d'", HG_OBJECT_GET_TYPE (object));
 		    break;
+	}
+
+	return retval;
+}
+
+gboolean
+hg_vm_step(hg_vm_t *vm)
+{
+	gboolean retval, is_proceeded;
+
+	while ((retval = hg_vm_stepi(vm, &is_proceeded))) {
+		if (is_proceeded)
+			break;
 	}
 
 	return retval;
