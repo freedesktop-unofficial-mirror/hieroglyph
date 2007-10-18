@@ -166,7 +166,7 @@ hg_object_t *
 hg_object_dup(hg_vm_t     *vm,
 	      hg_object_t *object)
 {
-	hg_object_t *retval;
+	hg_object_t *retval = NULL;
 	gsize length;
 
 	hg_return_val_if_fail (vm != NULL, NULL);

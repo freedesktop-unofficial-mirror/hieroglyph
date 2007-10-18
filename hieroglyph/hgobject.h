@@ -24,6 +24,7 @@
 #ifndef __HIEROGLYPH__HGOBJECT_H__
 #define __HIEROGLYPH__HGOBJECT_H__
 
+#include <math.h>
 #include <hieroglyph/hgtypes.h>
 
 

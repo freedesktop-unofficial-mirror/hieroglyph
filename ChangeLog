@@ -1,3 +1,9 @@
+2007-10-18  Akira TAGOH  <akira@tagoh.org>
+
+	* tests/Makefile.am: add more test cases.
+
+	* hieroglyph/hgobject.c (hg_object_dup): initialize the return value with NULL.
+
 2007-09-18  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/vm.c (hg_vm_stepi): new function to step one instruction exactly.

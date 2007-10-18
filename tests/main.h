@@ -29,5 +29,6 @@
 #define TDEF(fn)	START_TEST (test_ ## fn)
 #define TEND		END_TEST
 #define T(fn)		tcase_add_test(tc, test_ ## fn)
+#define TNUL(obj)	fail_unless((obj) != NULL, "Failed to create an object")
 
 #endif /* __HIEROGLYPH_TEST_MAIN_H__ */

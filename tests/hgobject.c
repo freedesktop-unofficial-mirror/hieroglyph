@@ -21,6 +21,9 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include <hieroglyph/hgobject.h>
 #include <hieroglyph/vm.h>
 #include "main.h"
@@ -48,14 +51,14 @@ TDEF (hg_object_new)
 
 	obj = hg_object_new(vm, 1);
 
-	fail_unless(obj != NULL, "Failed to create an object");
+	TNUL (obj);
 	fail_unless(HG_OBJECT_GET_N_OBJECTS (obj) == 1, "The amount of the object is different.");
 
 	hg_object_free(vm, obj);
 
 	obj = hg_object_new(vm, 10);
 
-	fail_unless(obj != NULL, "Failed to create an object");
+	TNUL (obj);
 	fail_unless(HG_OBJECT_GET_N_OBJECTS (obj) == 10, "The amount of the object is different.");
 
 	hg_object_free(vm, obj);
@@ -74,26 +77,295 @@ TEND
 
 TDEF (hg_object_sized_new)
 {
+	obj = hg_object_sized_new(vm, 10);
+
+	TNUL (obj);
+	fail_unless(HG_OBJECT_GET_N_OBJECTS (obj) == 1, "The amount of the object is different.");
+	fail_unless(HG_OBJECT_HEADER (obj)->total_length == hg_n_alignof (sizeof (hg_object_header_t) + sizeof (_hg_object_t) + 10), "The length of the object is different.");
+
+	hg_object_free(vm, obj);
+
+	obj = hg_object_sized_new(vm, 0);
+
+	TNUL (obj);
+	fail_unless(HG_OBJECT_GET_N_OBJECTS (obj) == 1, "The amount of the object is different.");
+	fail_unless(HG_OBJECT_HEADER (obj)->total_length == hg_n_alignof (sizeof (hg_object_header_t) + sizeof (_hg_object_t)), "The length of the object is different.");
+
+	hg_object_free(vm, obj);
 }
 TEND
 
 TDEF (hg_object_dup)
 {
+	hg_object_t *obj2;
+
+	obj = hg_object_new(vm, 1);
+
+	TNUL (obj);
+	obj2 = hg_object_dup(vm, obj);
+	fail_unless(obj2 == NULL, "Not allowed to duplicate the uninitialized object");
+
+	hg_object_free(vm, obj);
+
+	/* null */
+	obj = hg_object_null_new(vm);
+
+	fail_unless(obj != NULL, "Failed to create a null object");
+	fail_unless(HG_OBJECT_IS_NULL (obj), "Created object isn't a null object");
+	obj2 = hg_object_dup(vm, obj);
+	fail_unless(obj2 != NULL, "Failed to duplicate a null object");
+	fail_unless(HG_OBJECT_IS_NULL (obj2), "Duplicated object isn't a null object");
+	fail_unless(hg_object_compare(obj, obj2), "Object wasn't exactly duplicated");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
+
+	/* integer */
+	obj = hg_object_integer_new(vm, 123);
+
+	fail_unless(obj != NULL, "Failed to create an integer object");
+	fail_unless(HG_OBJECT_IS_INTEGER (obj), "Created object isn't an integer object");
+	obj2 = hg_object_dup(vm, obj);
+	fail_unless(obj2 != NULL, "Failed to duplicate an integer object");
+	fail_unless(HG_OBJECT_IS_INTEGER (obj2), "Duplicated object isn't an integer object");
+	fail_unless(hg_object_compare(obj, obj2), "Object wasn't exactly duplicated");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
+
+	/* real */
+	obj = hg_object_real_new(vm, 0.01);
+
+	fail_unless(obj != NULL, "Failed to create an real object");
+	fail_unless(HG_OBJECT_IS_REAL (obj), "Created object isn't an real object");
+	obj2 = hg_object_dup(vm, obj);
+	fail_unless(obj2 != NULL, "Failed to duplicate an real object");
+	fail_unless(HG_OBJECT_IS_REAL (obj2), "Duplicated object isn't an real object");
+	fail_unless(hg_object_compare(obj, obj2), "Object wasn't exactly duplicated");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
+
+	/* name */
+	obj = hg_object_name_new(vm, "foo", FALSE);
+
+	fail_unless(obj != NULL, "Failed to create a name object");
+	fail_unless(HG_OBJECT_IS_NAME (obj), "Created object isn't a name object");
+	obj2 = hg_object_dup(vm, obj);
+	fail_unless(obj2 != NULL, "Failed to duplicate a name object");
+	fail_unless(HG_OBJECT_IS_NAME (obj2), "Duplicated object isn't a name object");
+	fail_unless(hg_object_compare(obj, obj2), "Object wasn't exactly duplicated");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
+
+	/* name eval */
+	obj = hg_object_name_new(vm, "foo", TRUE);
+
+	fail_unless(obj != NULL, "Failed to create a name(eval) object");
+	fail_unless(HG_OBJECT_IS_EVAL (obj), "Created object isn't a name(eval) object");
+	obj2 = hg_object_dup(vm, obj);
+	fail_unless(obj2 != NULL, "Failed to duplicate a name object");
+	fail_unless(HG_OBJECT_IS_EVAL (obj2), "Duplicated object isn't a name(eval) object");
+	fail_unless(hg_object_compare(obj, obj2), "Object wasn't exactly duplicated");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
+
+	/* system encoding */
+	obj = hg_object_system_encoding_new(vm, HG_enc_abs, FALSE);
+
+	fail_unless(obj != NULL, "Failed to create a name object");
+	fail_unless(HG_OBJECT_IS_NAME (obj), "Created object isn't a name object");
+	obj2 = hg_object_dup(vm, obj);
+	fail_unless(obj2 != NULL, "Failed to duplicate a name object");
+	fail_unless(HG_OBJECT_IS_NAME (obj2), "Duplicated object isn't a name object");
+	fail_unless(hg_object_compare(obj, obj2), "Object wasn't exactly duplicated");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
+
+	/* system encoding eval */
+	obj = hg_object_system_encoding_new(vm, HG_enc_abs, TRUE);
+
+	fail_unless(obj != NULL, "Failed to create a name(eval) object");
+	fail_unless(HG_OBJECT_IS_EVAL (obj), "Created object isn't a name(eval) object");
+	obj2 = hg_object_dup(vm, obj);
+	fail_unless(obj2 != NULL, "Failed to duplicate a name(eval) object");
+	fail_unless(HG_OBJECT_IS_EVAL (obj2), "Duplicated object isn't a name(eval) object");
+	fail_unless(hg_object_compare(obj, obj2), "Object wasn't exactly duplicated");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
+
+	/* boolean */
+	obj = hg_object_boolean_new(vm, TRUE);
+
+	fail_unless(obj != NULL, "Failed to create a boolean object");
+	fail_unless(HG_OBJECT_IS_BOOLEAN (obj), "Created object isn't a boolean object");
+	obj2 = hg_object_dup(vm, obj);
+	fail_unless(obj2 != NULL, "Failed to duplicate a boolean object");
+	fail_unless(HG_OBJECT_IS_BOOLEAN (obj2), "Duplicated object isn't a boolean object");
+	fail_unless(hg_object_compare(obj, obj2), "Object wasn't exactly duplicated");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
+
+	/* mark */
+	obj = hg_object_mark_new(vm);
+
+	fail_unless(obj != NULL, "Failed to create a mark object");
+	fail_unless(HG_OBJECT_IS_MARK (obj), "Created object isn't a mark object");
+	obj2 = hg_object_dup(vm, obj);
+	fail_unless(obj2 != NULL, "Failed to duplicate a mark object");
+	fail_unless(HG_OBJECT_IS_MARK (obj2), "Duplicated object isn't a mark object");
+	fail_unless(hg_object_compare(obj, obj2), "Object wasn't exactly duplicated");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
 }
 TEND
 
 TDEF (hg_object_copy)
 {
+	hg_object_t *obj2;
+
+	obj = hg_object_new(vm, 1);
+
+	TNUL (obj);
+	obj2 = hg_object_copy(vm, obj);
+	fail_unless(obj2 != NULL, "Failed to copy an uninitialized object");
+
+	hg_object_free(vm, obj);
+
+	/* null */
+	obj = hg_object_null_new(vm);
+
+	fail_unless(obj != NULL, "Failed to create a null object");
+	fail_unless(HG_OBJECT_IS_NULL (obj), "Created object isn't a null object");
+	obj2 = hg_object_copy(vm, obj);
+	fail_unless(obj2 != NULL, "Failed to copy a null object");
+	fail_unless(HG_OBJECT_IS_NULL (obj2), "Copied object isn't a null object");
+	fail_unless(hg_object_compare(obj, obj2), "Object wasn't exactly copied");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
+
+	/* integer */
+	obj = hg_object_integer_new(vm, 123);
+
+	fail_unless(obj != NULL, "Failed to create an integer object");
+	fail_unless(HG_OBJECT_IS_INTEGER (obj), "Created object isn't an integer object");
+	obj2 = hg_object_copy(vm, obj);
+	fail_unless(obj2 != NULL, "Failed to copy an integer object");
+	fail_unless(HG_OBJECT_IS_INTEGER (obj2), "Copied object isn't an integer object");
+	fail_unless(hg_object_compare(obj, obj2), "Object wasn't exactly copied");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
+
+	/* real */
+	obj = hg_object_real_new(vm, 0.01);
+
+	fail_unless(obj != NULL, "Failed to create an real object");
+	fail_unless(HG_OBJECT_IS_REAL (obj), "Created object isn't an real object");
+	obj2 = hg_object_copy(vm, obj);
+	fail_unless(obj2 != NULL, "Failed to copy an real object");
+	fail_unless(HG_OBJECT_IS_REAL (obj2), "Copied object isn't an real object");
+	fail_unless(hg_object_compare(obj, obj2), "Object wasn't exactly copied");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
+
+	/* name */
+	obj = hg_object_name_new(vm, "foo", FALSE);
+
+	fail_unless(obj != NULL, "Failed to create a name object");
+	fail_unless(HG_OBJECT_IS_NAME (obj), "Created object isn't a name object");
+	obj2 = hg_object_copy(vm, obj);
+	fail_unless(obj2 != NULL, "Failed to copy a name object");
+	fail_unless(HG_OBJECT_IS_NAME (obj2), "Copied object isn't a name object");
+	fail_unless(hg_object_compare(obj, obj2), "Object wasn't exactly copied");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
+
+	/* name eval */
+	obj = hg_object_name_new(vm, "foo", TRUE);
+
+	fail_unless(obj != NULL, "Failed to create a name(eval) object");
+	fail_unless(HG_OBJECT_IS_EVAL (obj), "Created object isn't a name(eval) object");
+	obj2 = hg_object_copy(vm, obj);
+	fail_unless(obj2 != NULL, "Failed to copy a name object");
+	fail_unless(HG_OBJECT_IS_EVAL (obj2), "Copied object isn't a name(eval) object");
+	fail_unless(hg_object_compare(obj, obj2), "Object wasn't exactly copied");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
+
+	/* system encoding */
+	obj = hg_object_system_encoding_new(vm, HG_enc_abs, FALSE);
+
+	fail_unless(obj != NULL, "Failed to create a name object");
+	fail_unless(HG_OBJECT_IS_NAME (obj), "Created object isn't a name object");
+	obj2 = hg_object_copy(vm, obj);
+	fail_unless(obj2 != NULL, "Failed to copy a name object");
+	fail_unless(HG_OBJECT_IS_NAME (obj2), "Copied object isn't a name object");
+	fail_unless(hg_object_compare(obj, obj2), "Object wasn't exactly copied");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
+
+	/* system encoding eval */
+	obj = hg_object_system_encoding_new(vm, HG_enc_abs, TRUE);
+
+	fail_unless(obj != NULL, "Failed to create a name(eval) object");
+	fail_unless(HG_OBJECT_IS_EVAL (obj), "Created object isn't a name(eval) object");
+	obj2 = hg_object_copy(vm, obj);
+	fail_unless(obj2 != NULL, "Failed to copy a name(eval) object");
+	fail_unless(HG_OBJECT_IS_EVAL (obj2), "Copied object isn't a name(eval) object");
+	fail_unless(hg_object_compare(obj, obj2), "Object wasn't exactly copied");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
+
+	/* boolean */
+	obj = hg_object_boolean_new(vm, TRUE);
+
+	fail_unless(obj != NULL, "Failed to create a boolean object");
+	fail_unless(HG_OBJECT_IS_BOOLEAN (obj), "Created object isn't a boolean object");
+	obj2 = hg_object_copy(vm, obj);
+	fail_unless(obj2 != NULL, "Failed to copy a boolean object");
+	fail_unless(HG_OBJECT_IS_BOOLEAN (obj2), "Copied object isn't a boolean object");
+	fail_unless(hg_object_compare(obj, obj2), "Object wasn't exactly copied");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
+
+	/* mark */
+	obj = hg_object_mark_new(vm);
+
+	fail_unless(obj != NULL, "Failed to create a mark object");
+	fail_unless(HG_OBJECT_IS_MARK (obj), "Created object isn't a mark object");
+	obj2 = hg_object_copy(vm, obj);
+	fail_unless(obj2 != NULL, "Failed to copy a mark object");
+	fail_unless(HG_OBJECT_IS_MARK (obj2), "Copied object isn't a mark object");
+	fail_unless(hg_object_compare(obj, obj2), "Object wasn't exactly copied");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
 }
 TEND
 
 TDEF (hg_object_compare)
 {
+	/* almost test cases has been done at hg_object_dup/copy */
 }
 TEND
 
 TDEF (hg_object_dump)
 {
+	g_print("FIXME: %s\n", __FUNCTION__);
 }
 TEND
 
@@ -132,30 +404,35 @@ TEND
 /* real object */
 TDEF (hg_object_real_new)
 {
+	g_print("FIXME: %s\n", __FUNCTION__);
 }
 TEND
 
 /* name object */
 TDEF (hg_object_name_new)
 {
+	g_print("FIXME: %s\n", __FUNCTION__);
 }
 TEND
 
 /* system encoding object */
 TDEF (hg_object_system_encoding_new)
 {
+	g_print("FIXME: %s\n", __FUNCTION__);
 }
 TEND
 
 /* boolean object */
 TDEF (hg_object_boolean_new)
 {
+	g_print("FIXME: %s\n", __FUNCTION__);
 }
 TEND
 
 /* mark object */
 TDEF (hg_object_mark_new)
 {
+	g_print("FIXME: %s\n", __FUNCTION__);
 }
 TEND
 
