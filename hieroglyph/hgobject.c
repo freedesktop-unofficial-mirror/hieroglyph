@@ -234,6 +234,8 @@ hg_object_compare(hg_object_t *object1,
 
 	if (HG_OBJECT_GET_TYPE (object1) != HG_OBJECT_GET_TYPE (object2))
 		return FALSE;
+	if (object1 == object2)
+		return TRUE;
 
 	switch (HG_OBJECT_GET_TYPE (object1)) {
 	    case HG_OBJECT_TYPE_NULL:

@@ -1,3 +1,14 @@
+2007-10-22  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgarray.c (hg_object_array_new): initialize the array.
+	(hg_object_array_compare): consider the objects as the same if the same
+	address is given.
+
+	* hieroglyph/hgobject.c (hg_object_compare): consider the objects as
+	the same if the same address is given.
+
+	* tests/hgarray.c: add more test cases.
+
 2007-10-18  Akira TAGOH  <akira@tagoh.org>
 
 	* tests/Makefile.am: add more test cases.

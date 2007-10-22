@@ -25,6 +25,7 @@
 #include "config.h"
 #endif
 
+#include <string.h>
 #include <glib/gstrfuncs.h>
 #include <glib/gthread.h>
 #include <hieroglyph/hgobject.h>
@@ -57,10 +58,12 @@ hg_object_array_new(hg_vm_t *vm,
 		HG_OBJECT_ARRAY (retval)->real_length = length;
 		data = HG_OBJECT_ARRAY_DATA (retval);
 		data->name[0] = 0;
-		if (length > 0)
+		if (length > 0) {
 			data->array = (hg_object_t *)data->data;
-		else
+			memset(data->array, 0, sizeof (hg_object_t) * length);
+		} else {
 			data->array = NULL;
+		}
 	}
 
 	return retval;
@@ -164,6 +167,8 @@ hg_object_array_compare(hg_object_t *object1,
 	hg_return_val_if_fail (HG_OBJECT_IS_ARRAY (object1), FALSE);
 	hg_return_val_if_fail (HG_OBJECT_IS_ARRAY (object2), FALSE);
 
+	if (object1 == object2)
+		return TRUE;
 	if (HG_OBJECT_ARRAY (object1)->real_length != HG_OBJECT_ARRAY (object2)->real_length)
 		return FALSE;
 

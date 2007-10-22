@@ -25,6 +25,7 @@
 #include "config.h"
 #endif
 #include <hieroglyph/hgarray.h>
+#include <hieroglyph/hgobject.h>
 #include <hieroglyph/vm.h>
 #include "main.h"
 
@@ -47,25 +48,147 @@ teardown(void)
 /* array object */
 TDEF (hg_object_array_new)
 {
-	g_print("FIXME: %s\n", __FUNCTION__);
+	obj = hg_object_array_new(vm, 10);
+
+	TNUL (obj);
+	fail_unless(HG_OBJECT_GET_N_OBJECTS (obj) == 1, "The amount of the object is different.");
+	fail_unless(HG_OBJECT_IS_ARRAY (obj), "Object isn't an array.");
+	fail_unless(HG_OBJECT_ARRAY (obj)->length == 10, "The amount of the array is different.");
+
+	hg_object_free(vm, obj);
+
+	obj = hg_object_array_new(vm, 0);
+
+	TNUL (obj);
+	fail_unless(HG_OBJECT_GET_N_OBJECTS (obj) == 1, "The amount of the object is different.");
+	fail_unless(HG_OBJECT_IS_ARRAY (obj), "Object isn't an array.");
+	fail_unless(HG_OBJECT_ARRAY (obj)->length == 0, "The amount of the array is different.");
+
+	hg_object_free(vm, obj);
 }
 TEND
 
 TDEF (hg_object_array_subarray_new)
 {
-	g_print("FIXME: %s\n", __FUNCTION__);
+	gboolean flag;
+	hg_object_t *obj2;
+
+	obj = hg_object_array_new(vm, 10);
+
+	TNUL (obj);
+	fail_unless(HG_OBJECT_GET_N_OBJECTS (obj) == 1, "The amount of the object is different.");
+	fail_unless(HG_OBJECT_IS_ARRAY (obj), "Object isn't an array.");
+	fail_unless(HG_OBJECT_ARRAY (obj)->length == 10, "The amount of the array is different.");
+
+	obj2 = hg_object_array_subarray_new(vm, obj, 5, 5);
+	fail_unless(HG_OBJECT_GET_N_OBJECTS (obj2) == 1, "The amount of the object is different.");
+	fail_unless(HG_OBJECT_IS_ARRAY (obj2), "Object isn't an array.");
+	fail_unless(HG_OBJECT_ARRAY (obj2)->length == 0, "The amount of the array is different.");
+	fail_unless(HG_OBJECT_ARRAY (obj2)->real_length == 5, "The amount of the array is different.");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
+
+	obj = hg_object_new(vm, 1);
+
+	TNUL (obj);
+	fail_unless(HG_OBJECT_GET_N_OBJECTS (obj) == 1, "The amount of the object is different.");
+
+	if (hg_is_stacktrace_enabled)
+		flag = hg_is_stacktrace_enabled();
+	hg_use_stacktrace(FALSE);
+	obj2 = hg_object_array_subarray_new(vm, obj, 0, 0);
+	if (hg_is_stacktrace_enabled)
+		hg_use_stacktrace(flag);
+
+	fail_unless(obj2 == NULL, "Not allowed to create an array object without the parent array object.");
+
+	hg_object_free(vm, obj);
 }
 TEND
 
 TDEF (hg_object_array_put)
 {
-	g_print("FIXME: %s\n", __FUNCTION__);
+	hg_object_t *obj2, *obj3;
+	gboolean retval;
+
+	obj = hg_object_array_new(vm, 5);
+
+	TNUL (obj);
+
+	obj2 = hg_object_boolean_new(vm, TRUE);
+
+	TNUL (obj2);
+	fail_unless(HG_OBJECT_IS_BOOLEAN (obj2), "Failed to create a boolean object");
+
+	retval = hg_object_array_put(vm, obj, obj2, 0);
+	fail_unless(retval == TRUE, "Failed to put an object to the array");
+	fail_unless(((hg_object_t **)HG_OBJECT_ARRAY_DATA (obj)->array)[0] == obj2, "Failed to put an object to the array expectedly");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
+
+	obj = hg_object_array_new(vm, 10);
+
+	TNUL (obj);
+
+	obj2 = hg_object_array_subarray_new(vm, obj, 5, 5);
+
+	TNUL (obj2);
+
+	obj3 = hg_object_boolean_new(vm, TRUE);
+
+	TNUL (obj3);
+
+	retval = hg_object_array_put(vm, obj2, obj3, 0);
+	fail_unless(retval == TRUE, "Failed to put an object to the sub array");
+	fail_unless(((hg_object_t **)HG_OBJECT_ARRAY_DATA (obj2)->array)[0] == obj3, "Failed to put an object to the sub array expectedly");
+	fail_unless(((hg_object_t **)HG_OBJECT_ARRAY_DATA (obj)->array)[5] == obj3, "Failed to sync between the array and the sub array on putting an object");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
+	hg_object_free(vm, obj3);
 }
 TEND
 
 TDEF (hg_object_array_get)
 {
-	g_print("FIXME: %s\n", __FUNCTION__);
+	hg_object_t *obj2, *obj3;
+	gboolean retval;
+
+	obj = hg_object_array_new(vm, 10);
+	TNUL (obj);
+
+	obj2 = hg_object_boolean_new(vm, TRUE);
+	TNUL (obj2);
+
+	retval = hg_object_array_put(vm, obj, obj2, 0);
+	fail_unless(retval == TRUE, "Failed to put an object to the array");
+
+	obj3 = hg_object_array_get(vm, obj, 0);
+	fail_unless(obj3 != NULL, "Failed to get an object from the array");
+	fail_unless(hg_object_compare(obj2, obj3), "Failed to get an expected object from the array");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
+	hg_object_free(vm, obj3);
+
+	obj = hg_object_array_new(vm, 10);
+	TNUL (obj);
+
+	obj2 = hg_object_array_new(vm, 5);
+	TNUL (obj2);
+
+	retval = hg_object_array_put(vm, obj, obj2, 0);
+	fail_unless(retval == TRUE, "Failed to put an object to the array");
+
+	obj3 = hg_object_array_get(vm, obj, 0);
+	fail_unless(obj3 != NULL, "Failed to get an object from the array");
+	fail_unless(hg_object_compare(obj2, obj3), "Failed to get an expected object from the array");
+	fail_unless(obj2 == obj3, "Have to return the same object for the complex object");
+
+	hg_object_free(vm, obj);
+	hg_object_free(vm, obj2);
 }
 TEND
 
