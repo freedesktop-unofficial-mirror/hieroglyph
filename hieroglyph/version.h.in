@@ -21,8 +21,8 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef be37381d-6757-45e2-818f-020bd2a1f7f0VERSION_H__
-#define be37381d-6757-45e2-818f-020bd2a1f7f0VERSION_H__
+#ifndef __HIEROGLYPH__VERSION_H__
+#define __HIEROGLYPH__VERSION_H__
 
 #include <glib/gmacros.h>
 
@@ -30,10 +30,10 @@
 G_BEGIN_DECLS
 
 #define HIEROGLYPH_VERSION	"@VERSION@"
-#define HIEROGLYPH_UUID		"be37381d-6757-45e2-818f-020bd2a1f7f0"
+#define HIEROGLYPH_UUID		"0c180155-7a70-4aea-bdeb-0742542638a4"
 
 const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
 
 G_END_DECLS
 
-#endif /* be37381d-6757-45e2-818f-020bd2a1f7f0VERSION_H__ */
+#endif /* __HIEROGLYPH__VERSION_H__ */

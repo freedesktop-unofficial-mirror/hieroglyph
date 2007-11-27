@@ -1,5 +1,7 @@
 2007-11-27  Akira TAGOH  <akira@tagoh.org>
 
+	* update-version: trivial update.
+
 	* hieroglyph/hgobject.c (_hg_object_new): Initialize the object type.
 	(hg_object_name_new): Initialize the unused value too.
 
