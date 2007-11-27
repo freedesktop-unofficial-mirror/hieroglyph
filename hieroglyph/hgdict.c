@@ -25,6 +25,7 @@
 #include "config.h"
 #endif
 
+#include <string.h>
 #include <glib/gstrfuncs.h>
 #include <hieroglyph/hgobject.h>
 #include "hgdict.h"
@@ -119,7 +120,7 @@ _hg_object_dict_insert(hg_object_t *dict,
 		}
 	}
 
-	return FALSE;
+	return retval;
 }
 
 /*
@@ -138,6 +139,7 @@ hg_object_dict_new(hg_vm_t *vm,
 		HG_OBJECT_GET_TYPE (retval) = HG_OBJECT_TYPE_DICT;
 		HG_OBJECT_DICT (retval)->length = n_nodes;
 		HG_OBJECT_DICT (retval)->used = 0;
+		memset(HG_OBJECT_DICT_DATA (retval), 0, sizeof (hg_dictdata_t) * __hg_dict_primes[n_nodes]);
 	}
 
 	return retval;

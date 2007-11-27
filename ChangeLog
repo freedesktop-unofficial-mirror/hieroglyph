@@ -1,3 +1,19 @@
+2007-11-27  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgobject.c (_hg_object_new): Initialize the object type.
+	(hg_object_name_new): Initialize the unused value too.
+
+	* hieroglyph/vm.c (hg_vm_get_current_allocation_mode): new function.
+	(hg_vm_set_current_allocation_mode): likewise.
+	(hg_vm_get_attributes): Follow the value for the allocation mode.
+
+	* hieroglyph/hgdict.c (_hg_object_dict_insert): Fix a typo.
+	(hg_object_dict_new): Initialize the array area.
+
+	* configure.ac (AC_INIT): Update the bug report address.
+
+	* tests/hgdict.c: Add more test cases.
+
 2007-10-22  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgarray.c (hg_object_array_new): initialize the array.

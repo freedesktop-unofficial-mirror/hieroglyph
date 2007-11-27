@@ -378,6 +378,19 @@ hg_vm_get_object_format(hg_vm_t *vm)
 	return 0;
 }
 
+gboolean
+hg_vm_get_current_allocation_mode(hg_vm_t *vm)
+{
+	return vm->is_global;
+}
+
+void
+hg_vm_set_current_allocation_mode(hg_vm_t  *vm,
+				  gboolean  is_global)
+{
+	vm->is_global = is_global;
+}
+
 void
 hg_vm_get_attributes(hg_vm_t        *vm,
 		     hg_attribute_t *attr)
@@ -392,7 +405,7 @@ hg_vm_get_attributes(hg_vm_t        *vm,
 	attr->bit.is_locked = FALSE;
 	attr->bit.reserved4 = FALSE;
 	attr->bit.reserved5 = FALSE;
-	attr->bit.is_global = FALSE;
+	attr->bit.is_global = hg_vm_get_current_allocation_mode(vm);
 	attr->bit.is_checked = FALSE;
 }
 

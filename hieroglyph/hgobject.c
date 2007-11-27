@@ -52,12 +52,19 @@ _hg_object_new(hg_vm_t  *vm,
 
 	retval = hg_vm_malloc(vm, total_size);
 	if (retval != NULL) {
+#ifdef DEBUG
+		/* We don't ensure whether or not the allocated object is sane
+		 * to be used in C. any classes must have their own initializer
+		 * as needed
+		 */
 		memset(HG_OBJECT_OBJECT (retval), -1, sizeof (_hg_object_t) + data_size);
+#endif /* DEBUG */
 		hg_vm_get_attributes(vm, &attr);
 		HG_OBJECT_HEADER (retval)->token_type = hg_vm_get_object_format(vm);
 		HG_OBJECT_HEADER (retval)->n_objects = 0xff;
 		HG_OBJECT_HEADER (retval)->total_length = total_size;
 		HG_OBJECT_OBJECT (retval)->attr.attributes = attr.attributes;
+		HG_OBJECT_GET_TYPE (retval) = -1;
 	} else {
 		hg_vm_set_error(vm, HG_e_VMerror);
 	}
@@ -479,6 +486,10 @@ hg_object_name_new(hg_vm_t     *vm,
 		} else {
 			HG_OBJECT_GET_TYPE (retval) = HG_OBJECT_TYPE_NAME;
 		}
+		/* initialize the reserved area to not confuse between
+		 * the encoding named object and the named object.
+		 */
+		HG_OBJECT_NAME (retval)->reserved1 = 0;
 		HG_OBJECT_NAME (retval)->length = size;
 		memcpy(HG_OBJECT_DATA (retval), value, size);
 	}

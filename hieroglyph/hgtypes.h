@@ -804,6 +804,7 @@ enum hg_emulationtype_e {
 };
 
 struct hg_vm_s {
+	gboolean is_global;
 };
 
 G_END_DECLS

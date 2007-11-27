@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([hieroglyph], 0.0.1, [akira@tagoh.org])
+AC_INIT([hieroglyph], 0.0.1, [https://bugs.freedesktop.org/enter_bug.cgi?product=Hieroglyph])
 
 . ./requires
 
