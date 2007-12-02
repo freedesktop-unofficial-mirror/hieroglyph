@@ -29,9 +29,11 @@
 
 G_BEGIN_DECLS
 
-gchar    *hg_get_stacktrace       (void) G_GNUC_MALLOC;
-void      hg_use_stacktrace       (gboolean flag);
-gboolean  hg_is_stacktrace_enabled(void) __attribute__ ((weak));
+gchar    *hg_get_stacktrace        (void) G_GNUC_MALLOC;
+void      hg_use_stacktrace        (gboolean flag);
+gboolean  hg_is_stacktrace_enabled (void) __attribute__ ((weak));
+void      hg_quiet_warning_messages(gboolean flag);
+gboolean  hg_allow_warning_messages(void);
 
 G_END_DECLS
 

@@ -33,6 +33,7 @@
 
 
 static gboolean __hg_stacktrace_feature = TRUE;
+static gboolean __hg_warning_message_feature = TRUE;
 
 /*
  * private functions
@@ -81,3 +82,15 @@ hg_is_stacktrace_enabled(void)
 	return __hg_stacktrace_feature;
 }
 #endif
+
+void
+hg_quiet_warning_messages(gboolean flag)
+{
+	__hg_warning_message_feature = !flag;
+}
+
+gboolean
+hg_allow_warning_messages(void)
+{
+	return __hg_warning_message_feature;
+}

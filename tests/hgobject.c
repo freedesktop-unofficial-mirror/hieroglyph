@@ -67,9 +67,13 @@ TDEF (hg_object_new)
 	if (hg_is_stacktrace_enabled)
 		flag = hg_is_stacktrace_enabled();
 	hg_use_stacktrace(FALSE);
+	/* disable warnings */
+	hg_quiet_warning_messages(TRUE);
+
 	obj = hg_object_new(vm, 0);
 	if (hg_is_stacktrace_enabled)
 		hg_use_stacktrace(flag);
+	hg_quiet_warning_messages(FALSE);
 
 	fail_unless(obj == NULL, "Not allowed to create empty object");
 }
@@ -102,8 +106,11 @@ TDEF (hg_object_dup)
 	obj = hg_object_new(vm, 1);
 
 	TNUL (obj);
+	/* disable warning messages */
+	hg_quiet_warning_messages(TRUE);
 	obj2 = hg_object_dup(vm, obj);
 	fail_unless(obj2 == NULL, "Not allowed to duplicate the uninitialized object");
+	hg_quiet_warning_messages(FALSE);
 
 	hg_object_free(vm, obj);
 

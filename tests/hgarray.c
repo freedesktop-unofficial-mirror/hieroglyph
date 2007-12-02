@@ -97,9 +97,11 @@ TDEF (hg_object_array_subarray_new)
 	if (hg_is_stacktrace_enabled)
 		flag = hg_is_stacktrace_enabled();
 	hg_use_stacktrace(FALSE);
+	hg_quiet_warning_messages(TRUE);
 	obj2 = hg_object_array_subarray_new(vm, obj, 0, 0);
 	if (hg_is_stacktrace_enabled)
 		hg_use_stacktrace(flag);
+	hg_quiet_warning_messages(FALSE);
 
 	fail_unless(obj2 == NULL, "Not allowed to create an array object without the parent array object.");
 

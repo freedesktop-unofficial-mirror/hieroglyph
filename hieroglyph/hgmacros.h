@@ -36,6 +36,7 @@ G_BEGIN_DECLS
 
 #define hg_n_alignof(_hg_n_)						\
 	((((_hg_n_) / ALIGNOF_VOID_P) + (((_hg_n_) % ALIGNOF_VOID_P) ? 1 : 0)) * ALIGNOF_VOID_P)
+#ifdef DEBUG
 #define hg_stacktrace()							\
 	G_STMT_START {							\
 		if (hg_is_stacktrace_enabled()) {			\
@@ -45,14 +46,25 @@ G_BEGIN_DECLS
 			g_free(__stacktrace__);				\
 		}							\
 	} G_STMT_END
+#else /* !DEBUG */
+#define hg_stacktrace()
+#endif /* DEBUG */
 #ifdef __GNUC__
+#define _hg_return_if_fail_warning(__domain__,__func__,__expr__)	\
+	G_STMT_START {							\
+		if (hg_allow_warning_messages()) {			\
+			g_return_if_fail_warning(__domain__,		\
+						 __func__,		\
+						 __expr__);		\
+		}							\
+	} G_STMT_END
 #define _hg_return_after_eval_if_fail(__expr__,__eval__)		\
 	G_STMT_START {							\
 		if (G_LIKELY(__expr__)) {				\
 		} else {						\
-			g_return_if_fail_warning(G_LOG_DOMAIN,		\
-						 __PRETTY_FUNCTION__,	\
-						 #__expr__);		\
+			_hg_return_if_fail_warning(G_LOG_DOMAIN,	\
+						   __PRETTY_FUNCTION__,	\
+						   #__expr__);		\
 			__eval__;					\
 			return;						\
 		}							\
@@ -61,9 +73,9 @@ G_BEGIN_DECLS
 	G_STMT_START {							\
 		if (G_LIKELY(__expr__)) {				\
 		} else {						\
-			g_return_if_fail_warning(G_LOG_DOMAIN,		\
-						 __PRETTY_FUNCTION__,	\
-						 #__expr__);		\
+			_hg_return_if_fail_warning(G_LOG_DOMAIN,	\
+						   __PRETTY_FUNCTION__,	\
+						   #__expr__);		\
 			__eval__;					\
 			return (__val__);				\
 		}							\
@@ -99,7 +111,6 @@ G_BEGIN_DECLS
 	} G_STMT_END
 #endif /* __GNUC__ */
 
-#ifdef DEBUG
 #define hg_return_if_fail(__expr__)					\
 	_hg_return_after_eval_if_fail(__expr__,hg_stacktrace())
 #define hg_return_val_if_fail(__expr__,__val__)				\
@@ -108,14 +119,6 @@ G_BEGIN_DECLS
 	_hg_return_after_eval_if_fail(__expr__,hg_stacktrace();__eval__)
 #define hg_return_val_after_eval_if_fail(__expr__,__val__,__eval__)	\
 	_hg_return_val_after_eval_if_fail(__expr__,__val__,hg_stacktrace();__eval__)
-#else /* !DEBUG */
-#define hg_return_if_fail(__expr__)		g_return_if_fail(__expr__)
-#define hg_return_val_if_fail(__expr__,__val__)	g_return_val_if_fail(__expr__, __val__)
-#define hg_return_after_eval_if_fail(__expr__,__eval__)			\
-	_hg_return_after_eval_if_fail(__expr__,__eval__)
-#define hg_return_val_after_eval_if_fail(__expr__,__val__,__eval__)	\
-	_hg_return_val_after_eval_if_fail(__expr__, __val__,__eval__)
-#endif /* DEBUG */
 
 
 G_END_DECLS

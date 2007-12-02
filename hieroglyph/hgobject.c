@@ -164,8 +164,7 @@ hg_object_free(hg_vm_t     *vm,
 		    hg_object_file_free(vm, object);
 		    break;
 	    default:
-		    g_warning("[BUG] Unknown object type `%d'", HG_OBJECT_GET_TYPE (object));
-		    break;
+		    g_warning("[BUG] Unknown object type `%d' during destroying", HG_OBJECT_GET_TYPE (object));
 	}
 }
 
@@ -206,7 +205,7 @@ hg_object_dup(hg_vm_t     *vm,
 		    retval = object;
 		    break;
 	    default:
-		    g_warning("[BUG] Unknown object type `%d'", HG_OBJECT_GET_TYPE (object));
+		    g_warning("[BUG] Unknown object type `%d' during duplicating", HG_OBJECT_GET_TYPE (object));
 		    break;
 	}
 
@@ -268,7 +267,7 @@ hg_object_compare(hg_object_t *object1,
 	    case HG_OBJECT_TYPE_OPERATOR:
 		    return hg_object_operator_compare(object1, object2);
 	    default:
-		    g_warning("Unknown object type `%d' in comparing", HG_OBJECT_GET_TYPE (object1));
+		    g_warning("Unknown object type `%d' during comparing", HG_OBJECT_GET_TYPE (object1));
 	}
 
 	return FALSE;
@@ -346,7 +345,7 @@ hg_object_dump(hg_object_t *object,
 	    case HG_OBJECT_TYPE_OPERATOR:
 		    return hg_object_operator_dump(object, verbose);
 	    default:
-		    g_warning("Unknown object type `%d' in dumping", HG_OBJECT_GET_TYPE (object));
+		    g_warning("Unknown object type `%d' during dumping", HG_OBJECT_GET_TYPE (object));
 	}
 
 	return g_string_free(string, FALSE);

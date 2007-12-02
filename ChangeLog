@@ -1,3 +1,14 @@
+2007-12-02  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/utils.c (hg_quiet_warning_messages): new function.
+	(hg_allow_warning_messages): new function.
+
+	* tests/hgobject.c (test_hgobject_new): disable the warning messages
+	for some things that is intentional not to confuse.
+	(test_hg_object_dup): likewise.
+
+	* tests/hgarray.c (test_hg_object_array_subarray_new): likewise.
+
 2007-11-27  Akira TAGOH  <akira@tagoh.org>
 
 	* update-version: trivial update.
