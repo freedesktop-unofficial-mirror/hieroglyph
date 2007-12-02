@@ -4,4 +4,4 @@ VERSIONIN=$TOPDIR/hieroglyph/version.h.in.in
 VERSION_H=${VERSIONIN//.in.in}.in
 UUID=`uuidgen`
 
-sed -e "s/__HIEROGLYPH__/$UUID/" $VERSIONIN > $VERSION_H
+sed -e "s/%%HIEROGLYPH%%/$UUID/" $VERSIONIN > $VERSION_H
