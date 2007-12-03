@@ -411,35 +411,97 @@ TEND
 /* real object */
 TDEF (hg_object_real_new)
 {
-	g_print("FIXME: %s\n", __FUNCTION__);
+	obj = hg_object_real_new(vm, 1);
+
+	fail_unless(obj != NULL, "Failed to create an real object");
+	fail_unless(HG_OBJECT_IS_REAL (obj), "Created object isn't an real object");
+	fail_unless(HG_OBJECT_REAL_IS_EQUAL_TO (obj, 1), "Object isn't set correctly on creation");
+
+	hg_object_free(vm, obj);
+	obj = hg_object_real_new(vm, -1);
+
+	fail_unless(obj != NULL, "Failed to create an real object");
+	fail_unless(HG_OBJECT_IS_REAL (obj), "Created object isn't an real object");
+	fail_unless(HG_OBJECT_REAL_IS_EQUAL_TO (obj, -1), "Object isn't set correctly on creation");
+
+	hg_object_free(vm, obj);
 }
 TEND
 
 /* name object */
 TDEF (hg_object_name_new)
 {
-	g_print("FIXME: %s\n", __FUNCTION__);
+	obj = hg_object_name_new(vm, "foo", FALSE);
+
+	fail_unless(obj != NULL, "Failed to create a name object");
+	fail_unless(HG_OBJECT_IS_NAME (obj), "Created object isn't a name object");
+	fail_unless(hg_object_name_compare_with_raw(obj, "foo"), "Object isn't set correctly on creation");
+
+	hg_object_free(vm, obj);
+
+	obj = hg_object_name_new(vm, "foo", TRUE);
+
+	fail_unless(obj != NULL, "Failed to create a name object");
+	fail_unless(HG_OBJECT_IS_EVAL (obj), "Created object isn't a name object");
+	fail_unless(hg_object_name_compare_with_raw(obj, "foo"), "Object isn't set correctly on creation");
+
+	hg_object_free(vm, obj);
 }
 TEND
 
 /* system encoding object */
 TDEF (hg_object_system_encoding_new)
 {
-	g_print("FIXME: %s\n", __FUNCTION__);
+	hg_vm_initialize(vm);
+	obj = hg_object_system_encoding_new(vm, HG_enc_abs, FALSE);
+
+	fail_unless(obj != NULL, "Failed to create a system encoding object");
+	fail_unless(HG_OBJECT_IS_NAME (obj), "Created object isn't a system encoding object");
+	fail_unless(hg_object_name_compare_with_raw(obj, "abs"), "Object isn't set correctly on creation");
+
+	hg_object_free(vm, obj);
+
+	obj = hg_object_system_encoding_new(vm, HG_enc_abs, TRUE);
+
+	fail_unless(obj != NULL, "Failed to create a system encoding object");
+	fail_unless(HG_OBJECT_IS_EVAL (obj), "Created object isn't a system encoding object");
+	fail_unless(hg_object_name_compare_with_raw(obj, "abs"), "Object isn't set correctly on creation");
+
+	hg_object_free(vm, obj);
+	hg_vm_finalize(vm);
 }
 TEND
 
 /* boolean object */
 TDEF (hg_object_boolean_new)
 {
-	g_print("FIXME: %s\n", __FUNCTION__);
+	obj = hg_object_boolean_new(vm, FALSE);
+
+	fail_unless(obj != NULL, "Failed to create a boolean object");
+	fail_unless(HG_OBJECT_IS_BOOLEAN (obj), "Created object isn't a boolean object");
+	fail_unless(HG_OBJECT_BOOLEAN (obj) == FALSE, "Object isn't set correctly on creation");
+
+	hg_object_free(vm, obj);
+
+	obj = hg_object_boolean_new(vm, TRUE);
+
+	fail_unless(obj != NULL, "Failed to create a boolean object");
+	fail_unless(HG_OBJECT_IS_BOOLEAN (obj), "Created object isn't a boolean object");
+	fail_unless(HG_OBJECT_BOOLEAN (obj) == TRUE, "Object isn't set correctly on creation");
+
+	hg_object_free(vm, obj);
 }
 TEND
 
 /* mark object */
 TDEF (hg_object_mark_new)
 {
-	g_print("FIXME: %s\n", __FUNCTION__);
+	obj = hg_object_mark_new(vm);
+
+	fail_unless(obj != NULL, "Failed to create a mark object");
+	fail_unless(HG_OBJECT_IS_MARK (obj), "Created object isn't a mark object");
+
+	hg_object_free(vm, obj);
 }
 TEND
 

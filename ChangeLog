@@ -1,3 +1,22 @@
+2007-12-03  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgobject.h (HG_OBJECT_REAL_IS_EQUAL_TO): new macro.
+
+	* hieroglyph/hgobject.c (hg_object_name_compare_with_raw): new function.
+	(hg_object_name_n_compare_with_raw): new function.
+
+	* hieroglyph/vm.c (hg_vm_new): have a flag to check if
+	the initialization is done.
+	(hg_vm_initialize): do nothing if the initialization is already done.
+	(hg_vm_finalize): finalize the VM.
+
+	* hieroglyph/hgoperator.c (hg_object_operator_initialize): have a flag
+	to check if the initialization is done.
+
+	* hieroglyph/hgdictprime.h (__hg_dict_primes): correct primes table.
+
+	* tests/hgobject.c: Add more test cases.
+
 2007-12-02  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/utils.c (hg_quiet_warning_messages): new function.

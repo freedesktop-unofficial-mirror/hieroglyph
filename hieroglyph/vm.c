@@ -38,6 +38,7 @@ typedef struct hg_vm_private_s	hg_vm_private_t;
 
 struct hg_vm_private_s {
 	hg_vm_t             instance;
+	gboolean            is_initialized;
 	hg_error_t          error;
 	hg_emulationtype_t  current_level;
 	hg_object_t        *io[HG_FILE_TYPE_END];
@@ -280,6 +281,7 @@ hg_vm_new(void)
 	hg_stacktype_t i;
 
 	/* initialize VM */
+	retval->is_initialized = FALSE;
 	retval->current_level = HG_EMU_BEGIN;
 	for (i = HG_STACK_TYPE_OSTACK; i < HG_STACK_TYPE_END; i++)
 		retval->stack[i] = NULL;
@@ -310,22 +312,17 @@ hg_vm_destroy(hg_vm_t *vm)
 {
 	hg_vm_private_t *priv;
 	hg_filetype_t i;
-	hg_stacktype_t j;
 
 	hg_return_if_fail (vm != NULL);
 
 	priv = (hg_vm_private_t *)vm;
 
+	if (priv->is_initialized)
+		hg_vm_finalize(vm);
 	for (i = 0; i < HG_FILE_TYPE_END; i++) {
 		if (priv->io[i])
 			hg_object_free(vm, priv->io[i]);
 	}
-	for (j = 0; j < HG_STACK_TYPE_END; j++) {
-		if (priv->stack[j])
-			hg_stack_free(vm, priv->stack[j]);
-	}
-	if (priv->dict)
-		hg_object_free(vm, priv->dict);
 
 	g_free(vm);
 }
@@ -484,6 +481,10 @@ hg_vm_initialize(hg_vm_t *vm)
 	hg_return_val_if_fail (vm != NULL, FALSE);
 
 	priv = (hg_vm_private_t *)vm;
+	if (priv->is_initialized)
+		return FALSE;
+
+	priv->is_initialized = TRUE;
 	priv->stack[HG_STACK_TYPE_OSTACK] = hg_stack_new(vm, 65535);
 	priv->stack[HG_STACK_TYPE_ESTACK] = hg_stack_new(vm, 65535);
 	priv->stack[HG_STACK_TYPE_DSTACK] = hg_stack_new(vm, 65535);
@@ -502,11 +503,24 @@ gboolean
 hg_vm_finalize(hg_vm_t *vm)
 {
 	hg_vm_private_t *priv;
+	hg_stacktype_t j;
 
 	hg_return_val_if_fail (vm != NULL, FALSE);
 
 	priv = (hg_vm_private_t *)vm;
+
+	hg_return_val_if_fail (priv->is_initialized, FALSE);
+
+	hg_object_operator_finalize(vm, HG_EMU_BEGIN);
+	if (priv->dict)
+		hg_object_free(vm, priv->dict);
+	for (j = 0; j < HG_STACK_TYPE_END; j++) {
+		if (priv->stack[j])
+			hg_stack_free(vm, priv->stack[j]);
+	}
 	/* XXX */
+
+	priv->is_initialized = FALSE;
 
 	return TRUE;
 }

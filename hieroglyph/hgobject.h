@@ -59,12 +59,14 @@ G_BEGIN_DECLS
 #define HG_OBJECT_ATTR_IS_GLOBAL(_hg_o_)	HG_OBJECT_ATTR_IS (_hg_o_, global)
 #define HG_OBJECT_ATTR_IS_EXECUTABLE(_hg_o_)	(HG_OBJECT_OBJECT (_hg_o_)->t.v.is_executable)
 #define HG_OBJECT_GET_N_OBJECTS(_hg_o_)		HG_OBJECT_HEADER (_hg_o_)->n_objects
-#define HG_OBJECT_CHECK_N_OBJECTS(_hg_o_,_hg_n_)	\
+#define HG_OBJECT_CHECK_N_OBJECTS(_hg_o_,_hg_n_)			\
 						(_hg_n_ < HG_OBJECT_GET_N_OBJECTS (_hg_o_))
 #define HG_OBJECT_INTEGER(_hg_o_)		(HG_OBJECT_OBJECT (_hg_o_)->v.integer)
 #define HG_OBJECT_REAL(_hg_o_)			(HG_OBJECT_OBJECT (_hg_o_)->v.real)
-#define HG_OBJECT_REAL_IS_EQUAL(_hg_o_1,_hg_o_2)	\
+#define HG_OBJECT_REAL_IS_EQUAL(_hg_o_1,_hg_o_2)			\
 						(fabsf(HG_OBJECT_REAL (_hg_o_1) - HG_OBJECT_REAL (_hg_o_2)) <= FLT_EPSILON)
+#define HG_OBJECT_REAL_IS_EQUAL_TO(_hg_o_,_hg_r_)			\
+						(fabsf(HG_OBJECT_REAL (_hg_o_) - (_hg_r_)) <= FLT_EPSILON)
 #define HG_OBJECT_REAL_IS_ZERO(_hg_o_)		(fabsf(HG_OBJECT_REAL (_hg_o_)) <= FLT_EPSILON)
 #define HG_OBJECT_NAME(_hg_o_)			(&(HG_OBJECT_OBJECT (_hg_o_)->v.name))
 #define HG_OBJECT_NAME_DATA(_hg_o_)		(gchar *)(HG_OBJECT_DATA (_hg_o_))
@@ -82,35 +84,40 @@ G_BEGIN_DECLS
 #define HG_OBJECT_OPERATOR_DATA(_hg_o_)		((hg_operatordata_t *)HG_OBJECT_DATA (_hg_o_))
 
 
-hg_object_t *hg_object_new                (hg_vm_t     *vm,
-					   guint16      n_objects) G_GNUC_WARN_UNUSED_RESULT;
-hg_object_t *hg_object_sized_new          (hg_vm_t     *vm,
-					   gsize        size) G_GNUC_WARN_UNUSED_RESULT;
-void         hg_object_free               (hg_vm_t     *vm,
-					   hg_object_t *object);
-hg_object_t *hg_object_dup                (hg_vm_t     *vm,
-					   hg_object_t *object) G_GNUC_WARN_UNUSED_RESULT;
-hg_object_t *hg_object_copy               (hg_vm_t     *vm,
-					   hg_object_t *object) G_GNUC_WARN_UNUSED_RESULT;
-gboolean     hg_object_compare            (hg_object_t *object1,
-					   hg_object_t *object2);
-gchar       *hg_object_dump               (hg_object_t *object,
-					   gboolean     verbose) G_GNUC_MALLOC;
-gsize        hg_object_get_hash           (hg_object_t *object);
-hg_object_t *hg_object_null_new           (hg_vm_t     *vm) G_GNUC_WARN_UNUSED_RESULT;
-hg_object_t *hg_object_integer_new        (hg_vm_t     *vm,
-					   gint32       value) G_GNUC_WARN_UNUSED_RESULT;
-hg_object_t *hg_object_real_new           (hg_vm_t     *vm,
-					   gfloat       value) G_GNUC_WARN_UNUSED_RESULT;
-hg_object_t *hg_object_name_new           (hg_vm_t     *vm,
-					   const gchar *value,
-					   gboolean     is_evaluated) G_GNUC_WARN_UNUSED_RESULT;
-hg_object_t *hg_object_system_encoding_new(hg_vm_t     *vm,
-					   guint32      index,
-					   gboolean     is_evaluated) G_GNUC_WARN_UNUSED_RESULT;
-hg_object_t *hg_object_boolean_new        (hg_vm_t     *vm,
-					   gboolean     value) G_GNUC_WARN_UNUSED_RESULT;
-hg_object_t *hg_object_mark_new           (hg_vm_t     *vm) G_GNUC_WARN_UNUSED_RESULT;
+hg_object_t *hg_object_new                    (hg_vm_t     *vm,
+					       guint16      n_objects) G_GNUC_WARN_UNUSED_RESULT;
+hg_object_t *hg_object_sized_new              (hg_vm_t     *vm,
+					       gsize        size) G_GNUC_WARN_UNUSED_RESULT;
+void         hg_object_free                   (hg_vm_t     *vm,
+					       hg_object_t *object);
+hg_object_t *hg_object_dup                    (hg_vm_t     *vm,
+					       hg_object_t *object) G_GNUC_WARN_UNUSED_RESULT;
+hg_object_t *hg_object_copy                   (hg_vm_t     *vm,
+					       hg_object_t *object) G_GNUC_WARN_UNUSED_RESULT;
+gboolean     hg_object_compare                (hg_object_t *object1,
+					       hg_object_t *object2);
+gchar       *hg_object_dump                   (hg_object_t *object,
+					       gboolean     verbose) G_GNUC_MALLOC;
+gsize        hg_object_get_hash               (hg_object_t *object);
+hg_object_t *hg_object_null_new               (hg_vm_t     *vm) G_GNUC_WARN_UNUSED_RESULT;
+hg_object_t *hg_object_integer_new            (hg_vm_t     *vm,
+					       gint32       value) G_GNUC_WARN_UNUSED_RESULT;
+hg_object_t *hg_object_real_new               (hg_vm_t     *vm,
+					       gfloat       value) G_GNUC_WARN_UNUSED_RESULT;
+hg_object_t *hg_object_name_new               (hg_vm_t     *vm,
+					       const gchar *value,
+					       gboolean     is_evaluated) G_GNUC_WARN_UNUSED_RESULT;
+gboolean     hg_object_name_compare_with_raw  (hg_object_t *object,
+					       const gchar *name);
+gboolean     hg_object_name_n_compare_with_raw(hg_object_t *object,
+					       const gchar *name,
+					       gssize       length);
+hg_object_t *hg_object_system_encoding_new    (hg_vm_t     *vm,
+					       guint32      index,
+					       gboolean     is_evaluated) G_GNUC_WARN_UNUSED_RESULT;
+hg_object_t *hg_object_boolean_new            (hg_vm_t     *vm,
+					       gboolean     value) G_GNUC_WARN_UNUSED_RESULT;
+hg_object_t *hg_object_mark_new               (hg_vm_t     *vm) G_GNUC_WARN_UNUSED_RESULT;
 
 
 G_END_DECLS

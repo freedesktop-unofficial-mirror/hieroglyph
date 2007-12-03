@@ -496,6 +496,70 @@ hg_object_name_new(hg_vm_t     *vm,
 	return retval;
 }
 
+gboolean
+hg_object_name_compare_with_raw(hg_object_t *object,
+				const gchar *name)
+{
+	gssize length1, length2;
+	guint16 i;
+	const gchar *p;
+
+	hg_return_val_if_fail (object != NULL, FALSE);
+	hg_return_val_if_fail (name != NULL, FALSE);
+	hg_return_val_if_fail (HG_OBJECT_IS_NAME (object) || HG_OBJECT_IS_EVAL (object), FALSE);
+
+	length2 = strlen(name);
+	if (HG_OBJECT_ENCODING_NAME (object)->representation == -1) {
+		p = hg_object_operator_get_name(HG_OBJECT_ENCODING_NAME (object)->index);
+		length1 = strlen(p);
+	} else {
+		p = HG_OBJECT_NAME_DATA (object);
+		length1 = HG_OBJECT_NAME (object)->length;
+	}
+	if (length1 != length2)
+		return FALSE;
+
+	for (i = 0; i < length2; i++) {
+		if (p[i] != name[i])
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+gboolean
+hg_object_name_n_compare_with_raw(hg_object_t *object,
+				  const gchar *name,
+				  gssize       length)
+{
+	gssize length1;
+	guint16 i;
+	const gchar *p;
+
+	hg_return_val_if_fail (object != NULL, FALSE);
+	hg_return_val_if_fail (name != NULL, FALSE);
+	hg_return_val_if_fail (HG_OBJECT_IS_NAME (object) || HG_OBJECT_IS_EVAL (object), FALSE);
+
+	if (length < 0)
+		length = strlen(name);
+	if (HG_OBJECT_ENCODING_NAME (object)->representation == -1) {
+		p = hg_object_operator_get_name(HG_OBJECT_ENCODING_NAME (object)->index);
+		length1 = strlen(p);
+	} else {
+		p = HG_OBJECT_NAME_DATA (object);
+		length1 = HG_OBJECT_NAME (object)->length;
+	}
+	if (length1 < length)
+		return FALSE;
+
+	for (i = 0; i < length; i++) {
+		if (p[i] != name[i])
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
 hg_object_t *
 hg_object_system_encoding_new(hg_vm_t  *vm,
 			      guint32   index,

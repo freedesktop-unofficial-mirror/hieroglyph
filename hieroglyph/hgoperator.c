@@ -35,6 +35,7 @@
 
 
 static gchar *__hg_system_encoding_names[HG_enc_END];
+static gboolean __hg_operator_initialized = FALSE;
 
 
 /*
@@ -464,6 +465,9 @@ hg_object_operator_initialize(hg_vm_t            *vm,
 	hg_return_val_if_fail (vm != NULL, FALSE);
 	hg_return_val_if_fail (level < HG_EMU_END, FALSE);
 
+	/* just set a flag to lock up */
+	__hg_operator_initialized = TRUE;
+
 	current = hg_vm_get_emulation_level(vm);
 	if (level >= HG_EMU_PS_LEVEL_1 && current < level) {
 		_hg_object_operator_priv_build(vm, %arraytomark, private_arraytomark);
@@ -832,6 +836,9 @@ hg_object_operator_initialize(hg_vm_t            *vm,
 		_hg_object_operator_priv_build(vm, usefont, usefont);
 	}
 
+	/* reflect to the result */
+	__hg_operator_initialized = retval;
+
 	return retval;
 }
 
@@ -842,6 +849,7 @@ hg_object_operator_finalize(hg_vm_t            *vm,
 	gboolean retval = TRUE;
 
 	hg_return_val_if_fail (vm != NULL, FALSE);
+	hg_return_val_if_fail (__hg_operator_initialized, FALSE);
 	hg_return_val_if_fail (level < HG_EMU_END, FALSE);
 
 	if (level < HG_EMU_PS_LEVEL_3) {
@@ -1209,6 +1217,8 @@ hg_object_operator_finalize(hg_vm_t            *vm,
 		_hg_object_operator_unbuild(vm, xor);
 	}
 
+	__hg_operator_initialized = FALSE;
+
 	return retval;
 }
 
@@ -1220,6 +1230,7 @@ hg_object_operator_invoke(hg_vm_t     *vm,
 
 	hg_return_val_if_fail (vm != NULL, FALSE);
 	hg_return_val_if_fail (object != NULL, FALSE);
+	hg_return_val_if_fail (__hg_operator_initialized, FALSE);
 	hg_return_val_if_fail (HG_OBJECT_IS_OPERATOR (object), FALSE);
 
 	data = HG_OBJECT_OPERATOR_DATA (object);
@@ -1262,6 +1273,7 @@ hg_object_operator_get_name(hg_system_encoding_t encoding)
 	const gchar *retval;
 
 	hg_return_val_if_fail (encoding < HG_enc_END, NULL);
+	hg_return_val_if_fail (__hg_operator_initialized, NULL);
 
 	retval = __hg_system_encoding_names[encoding];
 
