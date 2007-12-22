@@ -24,7 +24,9 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+#include <string.h>
 #include <hieroglyph/hgstring.h>
+#include <hieroglyph/hgobject.h>
 #include <hieroglyph/vm.h>
 #include "main.h"
 
@@ -47,25 +49,86 @@ teardown(void)
 /* string object */
 TDEF (hg_object_string_new)
 {
-	g_print("FIXME: %s\n", __FUNCTION__);
+	gchar *p;
+
+	obj = hg_object_string_new(vm, "foo");
+
+	fail_unless(obj != NULL, "Failed to create a string object");
+	fail_unless(HG_OBJECT_IS_STRING (obj), "Created object isn't a string object");
+	p = HG_OBJECT_STRING_DATA (obj)->string;
+	fail_unless(p[0] == 'f' && p[1] == 'o' && p[2] == 'o', "Object isn't set correctly on object creation");
+	fail_unless(HG_OBJECT_STRING (obj)->real_length == 3, "Object doesn't have an expected length");
+
+	hg_object_free(vm, obj);
 }
 TEND
 
 TDEF (hg_object_string_sized_new)
 {
-	g_print("FIXME: %s\n", __FUNCTION__);
+	obj = hg_object_string_sized_new(vm, 10);
+
+	fail_unless(obj != NULL, "Failed to create a string object");
+	fail_unless(HG_OBJECT_IS_STRING (obj), "Created object isn't a string object");
+	fail_unless(HG_OBJECT_STRING (obj)->length == 10, "Object doesn't have an expected length");
+
+	hg_object_free(vm, obj);
+
+	obj = hg_object_string_sized_new(vm, 0);
+
+	fail_unless(obj != NULL, "Failed to create a string object");
+	fail_unless(HG_OBJECT_IS_STRING (obj), "Created object isn't a string object");
+	fail_unless(HG_OBJECT_STRING_DATA (obj)->string == NULL, "Don't have an allocated space");
+	fail_unless(HG_OBJECT_STRING (obj)->length == 0, "Object doesn't have an expected length");
+
+	hg_object_free(vm, obj);
 }
 TEND
 
 TDEF (hg_object_string_substring_new)
 {
-	g_print("FIXME: %s\n", __FUNCTION__);
+	hg_object_t *obj2;
+
+	obj = hg_object_string_new(vm, "I like a dog");
+
+	fail_unless(obj != NULL, "Failed to create a string object");
+	fail_unless(HG_OBJECT_IS_STRING (obj), "Created object isn't a string object");
+
+	obj2 = hg_object_string_substring_new(vm, obj, 9, 3);
+
+	fail_unless(obj2 != NULL, "Failed to create a substring.");
+	fail_unless(HG_OBJECT_IS_STRING (obj2), "Created substring isn't a string object");
+
+	memcpy(HG_OBJECT_STRING_DATA (obj2)->string, "cat", 3);
+	fail_unless(strncmp(HG_OBJECT_STRING_DATA (obj)->string,
+			    "I like a cat",
+			    HG_OBJECT_STRING (obj)->real_length) == 0, "Failed to modify through a substring");
+
+	hg_object_free(vm, obj);
 }
 TEND
 
 TDEF (hg_object_string_compare)
 {
-	g_print("FIXME: %s\n", __FUNCTION__);
+	hg_object_t *obj2;
+
+	obj = hg_object_string_new(vm, "foo");
+	obj2 = hg_object_string_new(vm, "foo");
+
+	fail_unless(obj != NULL, "Failed to create a string object");
+	fail_unless(obj2 != NULL, "Failed to create a string object(2)");
+
+	fail_unless(hg_object_string_compare(obj, obj2), "Failed to compare the string objects");
+
+	hg_object_free(vm, obj2);
+
+	obj2 = hg_object_string_new(vm, "bar");
+
+	fail_unless(obj2 != NULL, "Failed to create a string object(3)");
+
+	fail_unless(!hg_object_string_compare(obj, obj2), "Have to be different.");
+
+	hg_object_free(vm, obj2);
+	hg_object_free(vm, obj);
 }
 TEND
 

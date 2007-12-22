@@ -1,3 +1,7 @@
+2007-12-22  Akira TAGOH  <akira@tagoh.org>
+
+	* tests/hgstring.c: Add more testcases.
+
 2007-12-06  Akira TAGOH  <akira@tagoh.org>
 
 	* tests/hgdict.c: Add more testcases.
