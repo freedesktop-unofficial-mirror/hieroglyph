@@ -44,6 +44,7 @@ test_hgfile_SOURCES =					\
 	$(NULL)
 test_hgfile_LDADD = $(LDADDS)
 test_hgstack_SOURCES =					\
+	main.c						\
 	hgstack.c					\
 	$(NULL)
 test_hgstack_LDADD = $(LDADDS)
