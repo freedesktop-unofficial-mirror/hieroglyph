@@ -85,7 +85,7 @@ TDEF (hg_object_sized_new)
 
 	TNUL (obj);
 	fail_unless(HG_OBJECT_GET_N_OBJECTS (obj) == 1, "The amount of the object is different.");
-	fail_unless(HG_OBJECT_HEADER (obj)->total_length == hg_n_alignof (sizeof (hg_object_header_t) + sizeof (_hg_object_t) + 10), "The length of the object is different.");
+	fail_unless(HG_OBJECT_HEADER (obj)->total_length == hg_n_alignof (hg_n_alignof (sizeof (hg_object_header_t) + sizeof (_hg_object_t)) + 10), "The length of the object is different.");
 
 	hg_object_free(vm, obj);
 

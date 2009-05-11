@@ -212,7 +212,7 @@ hg_stack_dump(hg_vm_t    *vm,
 	     i < (stack->stack_depth - stack->current_depth);
 	     i++, data = data->prev) {
 		p = hg_object_dump(data->data, TRUE);
-		printf("%d: %s\n", i + 1, p);
+		printf("%" G_GSIZE_FORMAT ": %s\n", i + 1, p);
 		g_free(p);
 	}
 }

@@ -1,3 +1,11 @@
+2009-05-11  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgobject.c (_hg_object_new): Fix the alignment issue.
+
+	* hieroglyph/hgstack.c (hg_stack_dump): Fix a warning on 64bit arch.
+
+	* tests/hgobject.c (test_hg_object_sized_new): update the aligned size.
+
 2007-12-31  Akira TAGOH  <akira@tagoh.org>
 
 	* tests/Makefile.am (test_hgstack_SOURCES): use check library.

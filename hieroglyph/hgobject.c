@@ -45,7 +45,7 @@ _hg_object_new(hg_vm_t  *vm,
 	       gsize     data_size)
 {
 	hg_object_t *retval;
-	guint32 total_size = hg_n_alignof (sizeof (hg_object_header_t) + sizeof (_hg_object_t) + data_size);
+	guint32 total_size = hg_n_alignof (hg_n_alignof (sizeof (hg_object_header_t) + sizeof (_hg_object_t)) + data_size);
 	hg_attribute_t attr;
 
 	hg_return_val_if_fail (vm != NULL, NULL);
