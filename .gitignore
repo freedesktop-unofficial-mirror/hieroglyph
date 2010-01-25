@@ -9,7 +9,7 @@ config\.*
 configure
 install-sh
 intltool-*
-hieroglyph/version.h
+hieroglyph/hgversion.h
 libtool
 ltmain\.sh
 missing
