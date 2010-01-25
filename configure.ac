@@ -141,6 +141,7 @@ AC_CONFIG_FILES([
 	hieroglyph/version.h
 	hieroglyph.pc
 	hieroglyph-uninstalled.pc
+	po/Makefile.in
 ])
 AC_OUTPUT
 
@@ -149,8 +150,8 @@ dnl result
 dnl ======================================================================
 echo ""
 echo "========== Build Information =========="
-echo " CFLAGS:				$CFLAGS $HG_CFLAGS"
-echo " LDFLAGS:				$LDFLAGS $HG_LIBS"
+echo " CFLAGS:			$CFLAGS $HG_CFLAGS"
+echo " LDFLAGS:			$LDFLAGS $HG_LIBS"
 echo ""
 echo " Enable the debugging build:	$enable_debug"
 echo ""
