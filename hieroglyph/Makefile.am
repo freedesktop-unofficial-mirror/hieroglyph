@@ -1,74 +1,72 @@
 ##
 # Global definitions
 NULL =
-INCLUDES =					\
-	$(HG_CFLAGS)				\
+INCLUDES =							\
+	$(HG_CFLAGS)						\
 	$(NULL)
-LIBS =						\
-	@LDFLAGS@				\
-	$(HG_LIBS)				\
+LIBS =								\
+	@LDFLAGS@						\
+	$(HG_LIBS)						\
 	$(NULL)
-EXTRA_DIST =					\
-	hgversion.h.in				\
-	hgversion.h.in.in			\
+EXTRA_DIST =							\
+	hgversion.h.in						\
+	hgversion.h.in.in					\
 	$(NULL)
-MAINTAINERCLEANFILES =				\
+MAINTAINERCLEANFILES =						\
 	$(NULL)
-CLEANFILES =					\
+CLEANFILES =							\
 	$(NULL)
 
 ##
 # Local definitions
-mkprefix = hg
-
-$(mkprefix)_public_headers =			\
+hg_public_headers =						\
 	$(NULL)
-$(mkprefix)_private_headers =			\
+hg_private_headers =						\
 	$(NULL)
-$(mkprefix)_built_public_headers =		\
-	hgversion.h				\
+hg_built_public_headers =					\
+	hgversion.h						\
 	$(NULL)
-$(mkprefix)_built_private_headers =		\
+hg_built_private_headers =					\
 	$(NULL)
-$(mkprefix)_built_headers =			\
-	$($(mkprefix)_built_public_headers)	\
-	$($(mkprefix)_built_private_headers)	\
+hg_built_headers =						\
+	$(hg_built_public_headers)				\
+	$(hg_built_private_headers)				\
 	$(NULL)
 #
-$(mkprefix)_built_sources =			\
+hg_built_sources =						\
 	$(NULL)
-$(mkprefix)_sources =				\
-	$($(mkprefix)_built_sources)		\
+hg_sources =							\
+	$(hg_built_sources)					\
 	$(NULL)
 #
-stamp_files =					\
+stamp_files =							\
 	$(NULL)
 
 ##
 # Local Rules
-$(libhieroglyph_la_OBJECTS): $($(mkprefix)_built_headers)
+$(libhieroglyph_la_OBJECTS): $(hg_built_headers)
 hgversion.h.in: hgversion.h.in.in $(top_srcdir)/update-version
 	$(top_srcdir)/update-version
 
 ##
 # Target platform
-lib_LTLIBRARIES =				\
-	libhieroglyph.la			\
+lib_LTLIBRARIES =						\
+	libhieroglyph.la					\
 	$(NULL)
 #
-$(mkprefix)includedir = $(includedir)/hieroglyph
-$(mkprefix)include_HEADERS =			\
-	$($(mkprefix)_public_headers)		\
-	$($(mkprefix)_built_public_headers)	\
+hgincludedir = $(includedir)/hieroglyph
+hginclude_HEADERS =						\
+	$(hg_public_headers)					\
+	$(hg_built_public_headers)				\
 	$(NULL)
 #
-noinst_HEADERS =				\
-	$($(mkprefix)_private_headers)		\
-	$($(mkprefix)_built_private_headers)	\
+noinst_HEADERS =						\
+	$(hg_private_headers)					\
+	$(hg_built_private_headers)				\
 	$(NULL)
 #
-libhieroglyph_la_SOURCES =			\
-	$($(mkprefix)_sources)					\
+libhieroglyph_la_SOURCES =					\
+	$(hg_sources)						\
 	$(NULL)
 libhieroglyph_la_CFLAGS =					\
 	-DG_LOG_DOMAIN="\"Hieroglyph\""				\
