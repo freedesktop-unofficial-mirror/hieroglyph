@@ -1,0 +1,6 @@
+Name: Hieroglyph Uninstalled
+Description: PostScript rendering library
+Version: @VERSION@
+Requires: glib-2.0
+Libs: ${pc_top_builddir}/${pcfiledir}/libhieroglyph.la
+Cflags: -I${pc_top_builddir}/${pcfiledir} -I${pc_top_builddir}/${pcfiledir}/@srcdir@

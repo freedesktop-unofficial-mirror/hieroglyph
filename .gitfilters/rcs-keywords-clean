@@ -1,0 +1,4 @@
+#!/bin/sh
+cat|\
+perl -pe "s/\\\$Date[A-Za-z0-9 ,:\(\)+-]*\\\$/\\\$Date\\\$/"|\
+perl -pe "s/\\\$Rev[0-9]*\\\$/\\\$Rev\\\$/"

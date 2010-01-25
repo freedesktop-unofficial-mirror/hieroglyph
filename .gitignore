@@ -1,0 +1,12 @@
+*\.pc
+*~
+aclocal\.m4
+autom4te\.cache
+config\.*
+configure
+install-sh
+intltool-*
+ltmain\.sh
+missing
+mkinstalldirs
+po/Makefile.in.in
