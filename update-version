@@ -1,7 +1,0 @@
-#! /bin/sh
-TOPDIR=`dirname $0`
-VERSIONIN=$TOPDIR/hieroglyph/version.h.in.in
-VERSION_H=${VERSIONIN//.in.in}.in
-UUID=`uuidgen`
-
-sed -e "s/%%HIEROGLYPH%%/$UUID/" $VERSIONIN > $VERSION_H
