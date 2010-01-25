@@ -1,7 +1,7 @@
 #! /bin/sh
 DO=""
 TOPDIR=`dirname $0`
-VERSIONIN=$TOPDIR/hieroglyph/version.h.in.in
+VERSIONIN=$TOPDIR/hieroglyph/hgversion.h.in.in
 VERSION_H=`echo $VERSIONIN | sed -e 's/.in.in$/.in/'`
 
 function DO() {

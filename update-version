@@ -1,6 +1,6 @@
 #! /bin/sh
 TOPDIR=`dirname $0`
-VERSIONIN=$TOPDIR/hieroglyph/version.h.in.in
+VERSIONIN=$TOPDIR/hieroglyph/hgversion.h.in.in
 VERSION_H=${VERSIONIN//.in.in}.in
 UUID=`uuidgen`
 

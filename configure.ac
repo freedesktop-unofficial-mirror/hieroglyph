@@ -138,7 +138,8 @@ dnl output
 dnl ======================================================================
 AC_CONFIG_FILES([
 	Makefile
-	hieroglyph/version.h
+	hieroglyph/Makefile
+	hieroglyph/hgversion.h
 	hieroglyph.pc
 	hieroglyph-uninstalled.pc
 	po/Makefile.in
