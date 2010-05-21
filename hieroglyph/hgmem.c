@@ -1,0 +1,175 @@
+/* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
+/* 
+ * hgmem.c
+ * Copyright (C) 2005-2010 Akira TAGOH
+ * 
+ * Authors:
+ *   Akira TAGOH  <akira@tagoh.org>
+ * 
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ * 
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+ * Boston, MA 02111-1307, USA.
+ */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif /* HAVE_CONFIG_H */
+
+#include <math.h>
+#include "hgallocator.h"
+#include "hgerror.h"
+#include "hgutils.h"
+#include "hgmem.h"
+#include "hgmem-private.h"
+
+/*< private >*/
+
+/*< public >*/
+
+/* memory management */
+/**
+ * hg_mem_new:
+ * @size:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_mem_t *
+hg_mem_new(gsize size)
+{
+	return hg_mem_new_with_allocator(hg_allocator_get_vtable(), size);
+}
+
+/**
+ * hg_mem_new_with_allocator:
+ * @allocator:
+ * @size:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_mem_t *
+hg_mem_new_with_allocator(hg_mem_vtable_t *allocator,
+			  gsize            size)
+{
+	hg_mem_t *retval;
+
+	hg_return_val_if_fail (allocator != NULL, NULL);
+	hg_return_val_if_fail (allocator->initialize != NULL, NULL);
+	hg_return_val_if_fail (size > 0, NULL);
+
+	retval = g_new0(hg_mem_t, 1);
+	retval->allocator = allocator;
+	if (!allocator->initialize(retval)) {
+		hg_mem_destroy(retval);
+		retval = NULL;
+	} else {
+		hg_mem_resize_heap(retval, size);
+	}
+
+	return retval;
+}
+
+/**
+ * hg_mem_destroy:
+ * @mem:
+ *
+ * FIXME
+ */
+void
+hg_mem_destroy(gpointer data)
+{
+	hg_mem_t *mem;
+
+	if (!data)
+		return;
+
+	mem = (hg_mem_t *)data;
+
+	hg_return_if_fail (mem->allocator != NULL);
+	hg_return_if_fail (mem->allocator->finalize != NULL);
+
+	mem->allocator->finalize(mem);
+
+	g_free(mem);
+}
+
+/**
+ * hg_mem_resize_heap:
+ * @mem:
+ * @size:
+ *
+ * FIXME
+ */
+gboolean
+hg_mem_resize_heap(hg_mem_t  *mem,
+		   gsize      size)
+{
+	gsize old_size;
+	gboolean retval;
+
+	hg_return_val_if_fail (mem != NULL, FALSE);
+	hg_return_val_if_fail (mem->allocator != NULL, FALSE);
+	hg_return_val_if_fail (mem->allocator->resize_heap != NULL, FALSE);
+	hg_return_val_if_fail (size > 0, FALSE);
+
+	old_size = mem->total_size;
+	mem->total_size = size;
+	if (!(retval = mem->allocator->resize_heap(mem))) {
+		mem->total_size = old_size;
+	}
+
+	return retval;
+}
+
+/**
+ * hg_mem_alloc:
+ * @mem:
+ * @size:
+ *
+ * FIXME:
+ *
+ * Returns:
+ */
+hg_quark_t
+hg_mem_alloc(hg_mem_t *mem,
+	     gsize     size)
+{
+	hg_return_val_if_fail (mem != NULL, 0);
+	hg_return_val_if_fail (mem->allocator != NULL, 0);
+	hg_return_val_if_fail (mem->allocator->alloc != NULL, 0);
+	hg_return_val_if_fail (size > 0, 0);
+
+	return mem->allocator->alloc(mem, size);
+}
+
+/**
+ * hg_mem_free:
+ * @mem:
+ * @data:
+ *
+ * FIXME
+ */
+void
+hg_mem_free(hg_mem_t   *mem,
+	    hg_quark_t  data)
+{
+	hg_return_if_fail (mem != NULL);
+	hg_return_if_fail (mem->allocator != NULL);
+	hg_return_if_fail (mem->allocator->free != NULL);
+	hg_return_if_fail (data != 0);
+
+	mem->allocator->free(mem, data);
+}

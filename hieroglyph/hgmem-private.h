@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * version.h
- * Copyright (C) 2005-2010 Akira TAGOH
+ * hgmem-private.h
+ * Copyright (C) 2010 Akira TAGOH
  * 
  * Authors:
  *   Akira TAGOH  <akira@tagoh.org>
@@ -21,19 +21,20 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HIEROGLYPH__VERSION_H__
-#define __HIEROGLYPH__VERSION_H__
+#ifndef __HIEROGLYPH_HGMEM_PRIVATE_H__
+#define __HIEROGLYPH_HGMEM_PRIVATE_H__
 
-#include <glib/gmacros.h>
-
+#include <hieroglyph/hgtypes.h>
 
 G_BEGIN_DECLS
 
-#define HIEROGLYPH_VERSION	"@VERSION@"
-#define HIEROGLYPH_UUID		"d0ed39ec-6073-4507-95a8-fe1809073032"
-
-const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
+struct _hg_mem_t {
+	hg_mem_vtable_t *allocator;
+	gpointer         private;
+	gsize            total_size;
+	gsize            used_size;
+};
 
 G_END_DECLS
 
-#endif /* __HIEROGLYPH__VERSION_H__ */
+#endif /* __HIEROGLYPH_HGMEM_PRIVATE_H__ */

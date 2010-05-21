@@ -1,0 +1,17 @@
+2010-05-21  Akira TAGOH  <akira@tagoh.org>
+
+	* hgallocator.[ch]: Revised.
+
+	* hgerror.[ch]: Revised.
+
+	* hgmacros.h: Revised.
+
+	* hgmem-private.h: Revised.
+
+	* hgmem.[ch]: Revised.
+
+	* hgtypes.h: Revised.
+
+	* hgutils.[ch]: Revised.
+
+

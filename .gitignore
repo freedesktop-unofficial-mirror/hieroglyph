@@ -1,12 +1,19 @@
 *\.autogen_bak
+*\.la
+*\.lo
+*\.o
 *\.pc
 *~
+\.deps
+\.libs
 Makefile
 Makefile.in
+a\.out
 aclocal\.m4
 autom4te\.cache
 config\.*
 configure
+depcomp
 install-sh
 intltool-*
 hieroglyph/hgversion.h
@@ -17,3 +24,4 @@ mkinstalldirs
 po/Makefile*
 po/POTFILES
 stamp*
+t\.c

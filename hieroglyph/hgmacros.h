@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * version.h
- * Copyright (C) 2005-2010 Akira TAGOH
+ * hgmacros.h
+ * Copyright (C) 2006-2010 Akira TAGOH
  * 
  * Authors:
  *   Akira TAGOH  <akira@tagoh.org>
@@ -21,19 +21,20 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HIEROGLYPH__VERSION_H__
-#define __HIEROGLYPH__VERSION_H__
+#ifndef __HIEROGLYPH_HGMACROS_H__
+#define __HIEROGLYPH_HGMACROS_H__
 
-#include <glib/gmacros.h>
-
+#include <glib.h>
 
 G_BEGIN_DECLS
 
-#define HIEROGLYPH_VERSION	"@VERSION@"
-#define HIEROGLYPH_UUID		"d0ed39ec-6073-4507-95a8-fe1809073032"
+#if defined(GNOME_ENABLE_DEBUG) || defined(DEBUG)
+#define HG_DEBUG
+#endif /* GNOME_ENABLE_DEBUG || DEBUG */
 
-const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
+#define HGPOINTER_TO_QUARK(p)	((hg_quark_t)(gulong)(p))
+#define HGQUARK_TO_POINTER(q)	((gpointer)(gulong)(q))
 
 G_END_DECLS
 
-#endif /* __HIEROGLYPH__VERSION_H__ */
+#endif /* __HIEROGLYPH_HGMACROS_H__ */

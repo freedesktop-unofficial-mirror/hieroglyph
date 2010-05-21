@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * version.h
- * Copyright (C) 2005-2010 Akira TAGOH
+ * hgutils.c
+ * Copyright (C) 2010 Akira TAGOH
  * 
  * Authors:
  *   Akira TAGOH  <akira@tagoh.org>
@@ -21,19 +21,44 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HIEROGLYPH__VERSION_H__
-#define __HIEROGLYPH__VERSION_H__
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
-#include <glib/gmacros.h>
+#include <math.h>
+#include "hgutils.h"
 
 
-G_BEGIN_DECLS
+/*< private >*/
 
-#define HIEROGLYPH_VERSION	"@VERSION@"
-#define HIEROGLYPH_UUID		"d0ed39ec-6073-4507-95a8-fe1809073032"
+/*< public >*/
+/**
+ * hg_get_quark_mask:
+ * @pointer:
+ * @size:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+guint32
+hg_get_quark_mask(gsize size)
+{
+	return (1 << ((guint32)log2((double)size) + 1)) - 1;
+}
 
-const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
-
-G_END_DECLS
-
-#endif /* __HIEROGLYPH__VERSION_H__ */
+/**
+ * hg_get_quark:
+ * @pointer:
+ * @size:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_quark_t
+hg_get_quark(gpointer pointer,
+	     gsize    size)
+{
+	return (gsize)pointer & ~hg_get_quark_mask(size);
+}

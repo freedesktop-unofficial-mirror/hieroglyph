@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * version.h
- * Copyright (C) 2005-2010 Akira TAGOH
+ * hgutils.h
+ * Copyright (C) 2010 Akira TAGOH
  * 
  * Authors:
  *   Akira TAGOH  <akira@tagoh.org>
@@ -21,19 +21,17 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HIEROGLYPH__VERSION_H__
-#define __HIEROGLYPH__VERSION_H__
+#ifndef __HIEROGLYPH_HGUTILS_H__
+#define __HIEROGLYPH_HGUTILS_H__
 
-#include <glib/gmacros.h>
-
+#include <hieroglyph/hgtypes.h>
 
 G_BEGIN_DECLS
 
-#define HIEROGLYPH_VERSION	"@VERSION@"
-#define HIEROGLYPH_UUID		"d0ed39ec-6073-4507-95a8-fe1809073032"
-
-const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
+guint32    hg_get_quark_mask(gsize     size);
+hg_quark_t hg_get_quark     (gpointer  pointer,
+                             gsize     size);
 
 G_END_DECLS
 
-#endif /* __HIEROGLYPH__VERSION_H__ */
+#endif /* __HIEROGLYPH_HGUTILS_H__ */

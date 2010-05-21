@@ -3,6 +3,7 @@
 NULL =
 INCLUDES =							\
 	$(HG_CFLAGS)						\
+	-I$(top_srcdir)						\
 	$(NULL)
 LIBS =								\
 	@LDFLAGS@						\
@@ -20,8 +21,15 @@ CLEANFILES =							\
 ##
 # Local definitions
 hg_public_headers =						\
+	hgallocator.h						\
+	hgerror.h						\
+	hgmacros.h						\
+	hgmem.h							\
+	hgtypes.h						\
+	hgutils.h						\
 	$(NULL)
 hg_private_headers =						\
+	hgmem-private.h						\
 	$(NULL)
 hg_built_public_headers =					\
 	hgversion.h						\
@@ -37,6 +45,10 @@ hg_built_sources =						\
 	$(NULL)
 hg_sources =							\
 	$(hg_built_sources)					\
+	hgallocator.c						\
+	hgerror.c						\
+	hgmem.c							\
+	hgutils.c						\
 	$(NULL)
 #
 stamp_files =							\
