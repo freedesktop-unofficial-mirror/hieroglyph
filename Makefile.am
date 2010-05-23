@@ -1,6 +1,6 @@
 NULL =
 AUTOMAKE_OPTIONS = dist-bzip2
-SUBDIRS = hieroglyph
+SUBDIRS = hieroglyph tests
 
 ACLOCAL_AMFLAGS =		\
 	-I m4macros		\
@@ -13,9 +13,6 @@ CONFIGURE_DEPENDENCIES =	\
 EXTRA_DIST =			\
 	$(pkgconfig_DATA)	\
 	$(noinst_DATA)		\
-	intltool-extract.in	\
-	intltool-merge.in	\
-	intltool-update.in	\
 	requires		\
 	$(NULL)
 

@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * hgallocator.h
- * Copyright (C) 2006-2010 Akira TAGOH
+ * main.h
+ * Copyright (C) 2007-2010 Akira TAGOH
  * 
  * Authors:
  *   Akira TAGOH  <akira@tagoh.org>
@@ -21,20 +21,28 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HIEROGLYPH_HGALLOCATOR_H__
-#define __HIEROGLYPH_HGALLOCATOR_H__
+#ifndef __HIEROGLYPH_TEST_MAIN_H__
+#define __HIEROGLYPH_TEST_MAIN_H__
 
-#include <hieroglyph/hgtypes.h>
+#include <check.h>
+#include <glib.h>
 
 G_BEGIN_DECLS
 
-typedef struct _hg_allocator_bitmap_t	hg_allocator_bitmap_t;
-typedef struct _hg_allocator_block_t	hg_allocator_block_t;
-typedef struct _hg_allocator_private_t	hg_allocator_private_t;
+#define HIEROGLYPH_TEST_ERROR	hieroglyph_test_get_error_quark()
+#define TDEF(fn)		START_TEST (test_ ## fn)
+#define TEND			END_TEST
+#define T(fn)			tcase_add_test(tc, test_ ## fn)
+#define TNUL(obj)		fail_unless((obj) != NULL, "Failed to create an object")
 
 
-hg_mem_vtable_t *hg_allocator_get_vtable(void);
+void    setup                               (void);
+void    teardown                            (void);
+Suite  *hieroglyph_suite                    (void);
+GQuark  hieroglyph_test_get_error_quark     (void);
+gchar  *hieroglyph_test_pop_error           (void) G_GNUC_MALLOC;
+
 
 G_END_DECLS
 
-#endif /* __HIEROGLYPH_HGALLOCATOR_H__ */
+#endif /* __HIEROGLYPH_TEST_MAIN_H__ */

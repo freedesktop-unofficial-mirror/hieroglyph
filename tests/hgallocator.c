@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * hgallocator.h
- * Copyright (C) 2006-2010 Akira TAGOH
+ * hgallocator.c
+ * Copyright (C) 2010 Akira TAGOH
  * 
  * Authors:
  *   Akira TAGOH  <akira@tagoh.org>
@@ -21,20 +21,76 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HIEROGLYPH_HGALLOCATOR_H__
-#define __HIEROGLYPH_HGALLOCATOR_H__
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
-#include <hieroglyph/hgtypes.h>
-
-G_BEGIN_DECLS
-
-typedef struct _hg_allocator_bitmap_t	hg_allocator_bitmap_t;
-typedef struct _hg_allocator_block_t	hg_allocator_block_t;
-typedef struct _hg_allocator_private_t	hg_allocator_private_t;
+#include "hgallocator.h"
+#include "hgallocator-private.h"
+#include "main.h"
 
 
-hg_mem_vtable_t *hg_allocator_get_vtable(void);
+hg_mem_vtable_t *vtable = NULL;
 
-G_END_DECLS
+/** common **/
+void
+setup(void)
+{
+	vtable = hg_allocator_get_vtable();
+}
 
-#endif /* __HIEROGLYPH_HGALLOCATOR_H__ */
+void
+teardown(void)
+{
+}
+
+/** test cases **/
+TDEF (initialize)
+{
+} TEND
+
+TDEF (finalize)
+{
+} TEND
+
+TDEF (resize_heap)
+{
+} TEND
+
+TDEF (alloc)
+{
+} TEND
+
+TDEF (free)
+{
+} TEND
+
+TDEF (lock_object)
+{
+} TEND
+
+TDEF (unlock_object)
+{
+} TEND
+
+/****/
+Suite *
+hieroglyph_suite(void)
+{
+	Suite *s = suite_create("hg_allocator_t");
+	TCase *tc = tcase_create("Generic Functionalities");
+
+	tcase_add_checked_fixture(tc, setup, teardown);
+
+	T (initialize);
+	T (finalize);
+	T (resize_heap);
+	T (alloc);
+	T (free);
+	T (lock_object);
+	T (unlock_object);
+
+	suite_add_tcase(s, tc);
+
+	return s;
+}

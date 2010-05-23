@@ -25,3 +25,4 @@ po/Makefile*
 po/POTFILES
 stamp*
 t\.c
+tests/test-*

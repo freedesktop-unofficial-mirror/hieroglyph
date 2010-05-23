@@ -8,6 +8,7 @@ INCLUDES =							\
 LIBS =								\
 	@LDFLAGS@						\
 	$(HG_LIBS)						\
+	-lm							\
 	$(NULL)
 EXTRA_DIST =							\
 	hgversion.h.in						\
@@ -29,6 +30,7 @@ hg_public_headers =						\
 	hgutils.h						\
 	$(NULL)
 hg_private_headers =						\
+	hgallocator-private.h					\
 	hgmem-private.h						\
 	$(NULL)
 hg_built_public_headers =					\

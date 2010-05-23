@@ -21,7 +21,6 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-/* Memory allocator on the first fit algorithm */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -30,32 +29,7 @@
 #include "hgerror.h"
 #include "hgmem-private.h"
 #include "hgallocator.h"
-
-
-#define BLOCK_SIZE		32
-
-#define hg_mem_aligned_to(x,y)			\
-	(((x) + (y) - 1) & ~((y) - 1))
-#define hg_mem_aligned_size(x)			\
-	hg_mem_aligned_to(x, ALIGNOF_VOID_P)
-
-
-struct _hg_allocator_bitmap_t {
-	guint32 *bitmaps;
-	gsize    size;
-};
-struct _hg_allocator_block_t {
-	hg_quark_t     index;
-	gsize          size;
-	volatile guint lock_count;
-};
-struct _hg_allocator_private_t {
-	hg_allocator_bitmap_t *bitmap;
-	gpointer               heap;
-	gsize                  size_in_use;
-	hg_quark_t             current_id;
-	GTree                 *block_in_use;
-};
+#include "hgallocator-private.h"
 
 
 static hg_allocator_bitmap_t *_hg_allocator_bitmap_new                (gsize                  size);

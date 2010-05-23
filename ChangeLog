@@ -1,3 +1,11 @@
+2010-05-23  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgallocator-private.h: new.
+
+	* hieroglyph/Makefile.am (LIBS): Add missing library.
+
+	* Makefile.am (SUBDIRS): Add tests.
+
 2010-05-21  Akira TAGOH  <akira@tagoh.org>
 
 	* hgallocator.[ch]: Revised.

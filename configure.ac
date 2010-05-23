@@ -113,12 +113,16 @@ dnl ======================================================================
 dnl check pkg-config stuff
 dnl ======================================================================
 PKG_CHECK_MODULES(HG, glib-2.0)
-PKG_CHECK_MODULES(CHECK, check >= $CHECK_REQUIRED)
+PKG_CHECK_MODULES(CHECK, check >= $CHECK_REQUIRED,
+	[use_check="yes"],
+	[use_check="no"])
 
 AC_SUBST(HG_CFLAGS)
 AC_SUBST(HG_LIBS)
 AC_SUBST(CHECK_CFLAGS)
 AC_SUBST(CHECK_LIBS)
+
+AM_CONDITIONAL(ENABLE_UNIT_TEST, test x$use_check != xno)
 
 dnl ======================================================================
 dnl check another libraries
@@ -143,6 +147,7 @@ AC_CONFIG_FILES([
 	hieroglyph.pc
 	hieroglyph-uninstalled.pc
 	po/Makefile.in
+	tests/Makefile
 ])
 AC_OUTPUT
 
@@ -155,4 +160,5 @@ echo " CFLAGS:			$CFLAGS $HG_CFLAGS"
 echo " LDFLAGS:			$LDFLAGS $HG_LIBS"
 echo ""
 echo " Enable the debugging build:	$enable_debug"
+echo " Unit testing:			$use_check"
 echo ""

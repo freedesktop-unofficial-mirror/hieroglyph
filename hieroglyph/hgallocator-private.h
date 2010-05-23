@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * hgallocator.h
- * Copyright (C) 2006-2010 Akira TAGOH
+ * hgallocator-private.h
+ * Copyright (C) 2010 Akira TAGOH
  * 
  * Authors:
  *   Akira TAGOH  <akira@tagoh.org>
@@ -21,20 +21,38 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HIEROGLYPH_HGALLOCATOR_H__
-#define __HIEROGLYPH_HGALLOCATOR_H__
+#ifndef __HIEROGLYPH_HGALLOCATOR_PRIVATE_H__
+#define __HIEROGLYPH_HGALLOCATOR_PRIVATE_H__
 
 #include <hieroglyph/hgtypes.h>
 
 G_BEGIN_DECLS
 
-typedef struct _hg_allocator_bitmap_t	hg_allocator_bitmap_t;
-typedef struct _hg_allocator_block_t	hg_allocator_block_t;
-typedef struct _hg_allocator_private_t	hg_allocator_private_t;
+#define BLOCK_SIZE		32
+
+#define hg_mem_aligned_to(x,y)			\
+	(((x) + (y) - 1) & ~((y) - 1))
+#define hg_mem_aligned_size(x)			\
+	hg_mem_aligned_to(x, ALIGNOF_VOID_P)
 
 
-hg_mem_vtable_t *hg_allocator_get_vtable(void);
+struct _hg_allocator_bitmap_t {
+	guint32 *bitmaps;
+	gsize    size;
+};
+struct _hg_allocator_block_t {
+	hg_quark_t     index;
+	gsize          size;
+	volatile guint lock_count;
+};
+struct _hg_allocator_private_t {
+	hg_allocator_bitmap_t *bitmap;
+	gpointer               heap;
+	gsize                  size_in_use;
+	hg_quark_t             current_id;
+	GTree                 *block_in_use;
+};
 
 G_END_DECLS
 
-#endif /* __HIEROGLYPH_HGALLOCATOR_H__ */
+#endif /* __HIEROGLYPH_HGALLOCATOR_PRIVATE_H__ */
