@@ -1,5 +1,7 @@
 2010-05-23  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgallocator.c: Drop hg_mem_t dependencies.
+
 	* hieroglyph/hgallocator-private.h: new.
 
 	* hieroglyph/Makefile.am (LIBS): Add missing library.

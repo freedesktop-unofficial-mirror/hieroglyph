@@ -29,10 +29,8 @@
 G_BEGIN_DECLS
 
 struct _hg_mem_t {
-	hg_mem_vtable_t *allocator;
-	gpointer         private;
-	gsize            total_size;
-	gsize            used_size;
+	hg_mem_vtable_t     *allocator;
+	hg_allocator_data_t *data;
 };
 
 G_END_DECLS

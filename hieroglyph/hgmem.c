@@ -72,7 +72,8 @@ hg_mem_new_with_allocator(hg_mem_vtable_t *allocator,
 
 	retval = g_new0(hg_mem_t, 1);
 	retval->allocator = allocator;
-	if (!allocator->initialize(retval)) {
+	retval->data = allocator->initialize();
+	if (!retval->data) {
 		hg_mem_destroy(retval);
 		retval = NULL;
 	} else {
@@ -101,7 +102,7 @@ hg_mem_destroy(gpointer data)
 	hg_return_if_fail (mem->allocator != NULL);
 	hg_return_if_fail (mem->allocator->finalize != NULL);
 
-	mem->allocator->finalize(mem);
+	mem->allocator->finalize(mem->data);
 
 	g_free(mem);
 }
@@ -117,21 +118,13 @@ gboolean
 hg_mem_resize_heap(hg_mem_t  *mem,
 		   gsize      size)
 {
-	gsize old_size;
-	gboolean retval;
-
 	hg_return_val_if_fail (mem != NULL, FALSE);
 	hg_return_val_if_fail (mem->allocator != NULL, FALSE);
 	hg_return_val_if_fail (mem->allocator->resize_heap != NULL, FALSE);
+	hg_return_val_if_fail (mem->data != NULL, FALSE);
 	hg_return_val_if_fail (size > 0, FALSE);
 
-	old_size = mem->total_size;
-	mem->total_size = size;
-	if (!(retval = mem->allocator->resize_heap(mem))) {
-		mem->total_size = old_size;
-	}
-
-	return retval;
+	return mem->allocator->resize_heap(mem->data, size);
 }
 
 /**
@@ -147,12 +140,13 @@ hg_quark_t
 hg_mem_alloc(hg_mem_t *mem,
 	     gsize     size)
 {
-	hg_return_val_if_fail (mem != NULL, 0);
-	hg_return_val_if_fail (mem->allocator != NULL, 0);
-	hg_return_val_if_fail (mem->allocator->alloc != NULL, 0);
-	hg_return_val_if_fail (size > 0, 0);
+	hg_return_val_if_fail (mem != NULL, Qnil);
+	hg_return_val_if_fail (mem->allocator != NULL, Qnil);
+	hg_return_val_if_fail (mem->allocator->alloc != NULL, Qnil);
+	hg_return_val_if_fail (mem->data != NULL, Qnil);
+	hg_return_val_if_fail (size > 0, Qnil);
 
-	return mem->allocator->alloc(mem, size);
+	return mem->allocator->alloc(mem->data, size);
 }
 
 /**
@@ -169,7 +163,8 @@ hg_mem_free(hg_mem_t   *mem,
 	hg_return_if_fail (mem != NULL);
 	hg_return_if_fail (mem->allocator != NULL);
 	hg_return_if_fail (mem->allocator->free != NULL);
+	hg_return_if_fail (mem->data != NULL);
 	hg_return_if_fail (data != 0);
 
-	mem->allocator->free(mem, data);
+	mem->allocator->free(mem->data, data);
 }

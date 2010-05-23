@@ -47,14 +47,46 @@ teardown(void)
 /** test cases **/
 TDEF (initialize)
 {
+	hg_allocator_data_t *retval;
+	hg_allocator_private_t *priv;
+
+	retval = vtable->initialize();
+	fail_unless(retval != NULL, "Unable to initialize the allocator.");
+	fail_unless(retval->total_size == 0, "Unable to initialize total memory size.");
+	fail_unless(retval->used_size == 0, "Unable to initialize used memory size.");
+
+	priv = (hg_allocator_private_t *)retval;
+
+	fail_unless(priv->bitmap == NULL, "Detected the garbage entry on the bitmap table.");
+	fail_unless(priv->heap == NULL, "Detected the garbage entry on the heap.");
+
+	vtable->finalize(retval);
 } TEND
 
 TDEF (finalize)
 {
+	/* can be done in initialize testcase. */
 } TEND
 
 TDEF (resize_heap)
 {
+	hg_allocator_data_t *retval;
+	hg_allocator_private_t *priv;
+
+	retval = vtable->initialize();
+	fail_unless(retval != NULL, "Unable to initialize the allocator.");
+	fail_unless(vtable->resize_heap(retval, 256), "Unable to initialize the heap.");
+	priv = (hg_allocator_private_t *)retval;
+	fail_unless(retval->total_size >= 256, "Unable to assign the heap more than requested size.");
+	fail_unless(priv->bitmap != NULL, "Unable tto initialize the bitmap table.");
+	fail_unless(priv->heap != NULL, "Unable to initialize the heap.");
+
+	fail_unless(vtable->resize_heap(retval, 512), "Unable to resize the heap.");
+	fail_unless(retval->total_size >= 512, "Unable to reassign the heap more than requested size.");
+	fail_unless(priv->bitmap != NULL, "Unable tto resize the bitmap table.");
+	fail_unless(priv->heap != NULL, "Unable to resize the heap.");
+
+	vtable->finalize(retval);
 } TEND
 
 TDEF (alloc)

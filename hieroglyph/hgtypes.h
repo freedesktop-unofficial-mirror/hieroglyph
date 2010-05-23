@@ -31,25 +31,31 @@ G_BEGIN_DECLS
 #define Qnil	-1
 
 /* hgmem.h */
-typedef struct _hg_mem_t	hg_mem_t;
-typedef struct _hg_mem_vtable_t	hg_mem_vtable_t;
+typedef struct _hg_mem_t		hg_mem_t;
+typedef struct _hg_mem_vtable_t		hg_mem_vtable_t;
+typedef struct _hg_allocator_data_t	hg_allocator_data_t;
 /* hgutils.h */
-typedef guint32			hg_quark_t;
+typedef guint32				hg_quark_t;
 
 
 /* hgmem.h */
 struct _hg_mem_vtable_t {
-	gboolean   (* initialize)    (hg_mem_t   *mem);
-	void       (* finalize)      (hg_mem_t   *mem);
-	gboolean   (* resize_heap)   (hg_mem_t   *mem);
-	hg_quark_t (* alloc)         (hg_mem_t   *mem,
-				      gsize       size);
-	void       (* free)          (hg_mem_t   *mem,
-				      hg_quark_t  data);
-	gpointer   (* lock_object)   (hg_mem_t   *mem,
-				      hg_quark_t  data);
-	void       (* unlock_object) (hg_mem_t   *mem,
-				      hg_quark_t  data);
+	gpointer   (* initialize)    (void);
+	void       (* finalize)      (hg_allocator_data_t *data);
+	gboolean   (* resize_heap)   (hg_allocator_data_t *data,
+				      gsize                size);
+	hg_quark_t (* alloc)         (hg_allocator_data_t *data,
+				      gsize                size);
+	void       (* free)          (hg_allocator_data_t *data,
+				      hg_quark_t           quark);
+	gpointer   (* lock_object)   (hg_allocator_data_t *data,
+				      hg_quark_t           quark);
+	void       (* unlock_object) (hg_allocator_data_t *data,
+				      hg_quark_t           quark);
+};
+struct _hg_allocator_data_t {
+	gsize total_size;
+	gsize used_size;
 };
 
 
