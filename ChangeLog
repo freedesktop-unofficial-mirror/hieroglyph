@@ -1,3 +1,9 @@
+2010-05-25  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgallocator-private.h (hg_get_allocated_object):
+	new macro.
+	(hg_get_allocator_block): new macro.
+
 2010-05-24  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgallocator.c (_hg_allocator_alloc): add ret argument to

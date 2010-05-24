@@ -313,7 +313,7 @@ _hg_allocator_alloc(hg_allocator_data_t *data,
 {
 	hg_allocator_private_t *priv;
 	hg_allocator_block_t *block;
-	gsize obj_size, header_size;
+	gsize obj_size;
 	hg_quark_t index, retval = Qnil;
 
 	hg_return_val_if_fail (data != NULL, Qnil);
@@ -323,7 +323,6 @@ _hg_allocator_alloc(hg_allocator_data_t *data,
 
 	hg_return_val_if_fail (priv->current_id != 0, Qnil); /* FIXME: need to find out the free id */
 
-	header_size = hg_mem_aligned_size (sizeof (hg_allocator_block_t));
 	obj_size = hg_mem_aligned_size (sizeof (hg_allocator_block_t) + size);
 	index = _hg_allocator_bitmap_alloc(priv->bitmap, obj_size);
 	if (index >= 0) {
@@ -338,7 +337,7 @@ _hg_allocator_alloc(hg_allocator_data_t *data,
 		 *       VM manages. otherwise it will be swept by GC.
 		 */
 		if (ret)
-			*ret = (gpointer)((gchar *)block + header_size);
+			*ret = hg_get_allocated_object (block);
 	}
 
 	return retval;
@@ -410,12 +409,8 @@ _hg_allocator_lock_object(hg_allocator_data_t *data,
 	hg_allocator_block_t *retval = NULL;
 
 	retval = _hg_allocator_lock_internal_object(data, index);
-	if (retval) {
-		gsize header_size;
-
-		header_size = hg_mem_aligned_size (sizeof (hg_allocator_block_t));
-		return (gpointer)((gchar *)retval + header_size);
-	}
+	if (retval)
+		return hg_get_allocated_object (retval);
 
 	return NULL;
 }

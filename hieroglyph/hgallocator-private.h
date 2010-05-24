@@ -34,7 +34,10 @@ G_BEGIN_DECLS
 	(((x) + (y) - 1) & ~((y) - 1))
 #define hg_mem_aligned_size(x)			\
 	hg_mem_aligned_to(x, ALIGNOF_VOID_P)
-
+#define hg_get_allocated_object(x)		\
+	(gpointer)((gchar *)(x) + hg_mem_aligned_size(sizeof (hg_allocator_block_t)))
+#define hg_get_allocator_block(x)		\
+	(hg_allocator_block_t *)((gchar *)(x) - hg_mem_aligned_size(sizeof (hg_allocator_block_t)))
 
 struct _hg_allocator_bitmap_t {
 	guint32 *bitmaps;

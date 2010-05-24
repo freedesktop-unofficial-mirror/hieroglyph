@@ -129,7 +129,6 @@ TDEF (lock_object)
 	hg_quark_t t;
 	gpointer p, p2;
 	hg_allocator_block_t *b;
-	gsize header_size = hg_mem_aligned_size (sizeof (hg_allocator_block_t));
 
 	retval = vtable->initialize();
 	fail_unless(retval != NULL, "Unable to initialize the allocator.");
@@ -137,17 +136,17 @@ TDEF (lock_object)
 
 	t = vtable->alloc(retval, 128, &p2);
 	fail_unless(t != Qnil, "Unable to allocate the memory.");
-	b = (gpointer)((gchar *)p2 - header_size);
+	b = hg_get_allocator_block (p2);
 	fail_unless(b->lock_count == 1, "Detected inconsistency in the lock count");
 
 	p = vtable->lock_object(retval, t);
-	b = (gpointer)((gchar *)p - header_size);
+	b = hg_get_allocator_block (p);
 	fail_unless(p != NULL, "Unable to obtain the object address.");
 	fail_unless(p == p2, "Obtaining the different object address.");
 	fail_unless(b->lock_count == 2, "Failed to lock the object.");
 
 	p = vtable->lock_object(retval, t);
-	b = (gpointer)((gchar *)p - header_size);
+	b = hg_get_allocator_block (p);
 	g_print("foooo: %d\n", b->lock_count);
 	fail_unless(p != NULL, "Unable to obtain the object address.");
 	fail_unless(b->lock_count == 3, "Failed to lock the object.");
