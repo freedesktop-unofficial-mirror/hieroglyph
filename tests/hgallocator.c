@@ -104,15 +104,15 @@ TDEF (alloc)
 	fail_unless(retval != NULL, "Unable to initialize the allocator.");
 	fail_unless(vtable->resize_heap(retval, 256), "Unable to initialize the heap.");
 
-	t = vtable->alloc(retval, 128);
+	t = vtable->alloc(retval, 128, NULL);
 	fail_unless(t != Qnil, "Unable to allocate the memory.");
-	t2 = vtable->alloc(retval, 64);
+	t2 = vtable->alloc(retval, 64, NULL);
 	fail_unless(t2 != Qnil, "Unable to allocate the memory.");
-	t3 = vtable->alloc(retval, 128);
+	t3 = vtable->alloc(retval, 128, NULL);
 	fail_unless(t3 == Qnil, "Should be no free spaces available.");
 
 	vtable->free(retval, t);
-	t3 = vtable->alloc(retval, 128);
+	t3 = vtable->alloc(retval, 128, NULL);
 	fail_unless(t3 != Qnil, "Unable to allocate the memory.");
 
 	vtable->finalize(retval);
@@ -127,29 +127,36 @@ TDEF (lock_object)
 {
 	hg_allocator_data_t *retval;
 	hg_quark_t t;
-	gpointer p;
+	gpointer p, p2;
 	hg_allocator_block_t *b;
+	gsize header_size = hg_mem_aligned_size (sizeof (hg_allocator_block_t));
 
 	retval = vtable->initialize();
 	fail_unless(retval != NULL, "Unable to initialize the allocator.");
 	fail_unless(vtable->resize_heap(retval, 256), "Unable to initialize the heap.");
 
-	t = vtable->alloc(retval, 128);
+	t = vtable->alloc(retval, 128, &p2);
 	fail_unless(t != Qnil, "Unable to allocate the memory.");
+	b = (gpointer)((gchar *)p2 - header_size);
+	fail_unless(b->lock_count == 1, "Detected inconsistency in the lock count");
 
-	b = p = vtable->lock_object(retval, t);
+	p = vtable->lock_object(retval, t);
+	b = (gpointer)((gchar *)p - header_size);
 	fail_unless(p != NULL, "Unable to obtain the object address.");
-	fail_unless(b->lock_count == 1, "Failed to lock the object.");
-
-	b = p = vtable->lock_object(retval, t);
-	fail_unless(p != NULL, "Unable to obtain the object address.");
+	fail_unless(p == p2, "Obtaining the different object address.");
 	fail_unless(b->lock_count == 2, "Failed to lock the object.");
+
+	p = vtable->lock_object(retval, t);
+	b = (gpointer)((gchar *)p - header_size);
+	g_print("foooo: %d\n", b->lock_count);
+	fail_unless(p != NULL, "Unable to obtain the object address.");
+	fail_unless(b->lock_count == 3, "Failed to lock the object.");
+
+	vtable->unlock_object(retval, t);
+	fail_unless(b->lock_count == 2, "Failed to unlock the object.");
 
 	vtable->unlock_object(retval, t);
 	fail_unless(b->lock_count == 1, "Failed to unlock the object.");
-
-	vtable->unlock_object(retval, t);
-	fail_unless(b->lock_count == 0, "Failed to unlock the object.");
 
 	vtable->finalize(retval);
 } TEND

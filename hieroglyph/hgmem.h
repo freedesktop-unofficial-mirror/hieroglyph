@@ -35,7 +35,8 @@ void        hg_mem_destroy           (gpointer         data);
 gboolean    hg_mem_resize_heap       (hg_mem_t        *mem,
                                       gsize            size);
 hg_quark_t  hg_mem_alloc             (hg_mem_t        *mem,
-                                      gsize            size);
+                                      gsize            size,
+				      gpointer        *ret);
 void        hg_mem_free              (hg_mem_t        *mem,
                                       hg_quark_t       data);
 gpointer    hg_mem_lock_object       (hg_mem_t        *mem,

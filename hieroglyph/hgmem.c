@@ -131,6 +131,7 @@ hg_mem_resize_heap(hg_mem_t  *mem,
  * hg_mem_alloc:
  * @mem:
  * @size:
+ * @ret:
  *
  * FIXME:
  *
@@ -138,7 +139,8 @@ hg_mem_resize_heap(hg_mem_t  *mem,
  */
 hg_quark_t
 hg_mem_alloc(hg_mem_t *mem,
-	     gsize     size)
+	     gsize     size,
+	     gpointer *ret)
 {
 	hg_return_val_if_fail (mem != NULL, Qnil);
 	hg_return_val_if_fail (mem->allocator != NULL, Qnil);
@@ -146,7 +148,7 @@ hg_mem_alloc(hg_mem_t *mem,
 	hg_return_val_if_fail (mem->data != NULL, Qnil);
 	hg_return_val_if_fail (size > 0, Qnil);
 
-	return mem->allocator->alloc(mem->data, size);
+	return mem->allocator->alloc(mem->data, size, ret);
 }
 
 /**

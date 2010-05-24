@@ -51,11 +51,14 @@ static void                   _hg_allocator_finalize                  (hg_alloca
 static gboolean               _hg_allocator_resize_heap               (hg_allocator_data_t    *data,
                                                                        gsize                   size);
 static hg_quark_t             _hg_allocator_alloc                     (hg_allocator_data_t    *data,
-                                                                       gsize                   size);
+                                                                       gsize                   size,
+								       gpointer               *ret);
 static void                   _hg_allocator_free                      (hg_allocator_data_t    *data,
                                                                        hg_quark_t              index);
 static gpointer               _hg_allocator_initialize_and_lock_object(hg_allocator_private_t *data,
                                                                        hg_quark_t              index);
+static gpointer               _hg_allocator_lock_internal_object      (hg_allocator_data_t    *data,
+								       hg_quark_t              index);
 static gpointer               _hg_allocator_lock_object               (hg_allocator_data_t    *data,
                                                                        hg_quark_t              index);
 static void                   _hg_allocator_unlock_object             (hg_allocator_data_t    *data,
@@ -305,7 +308,8 @@ _hg_allocator_resize_heap(hg_allocator_data_t *data,
 
 static hg_quark_t
 _hg_allocator_alloc(hg_allocator_data_t *data,
-		    gsize                size)
+		    gsize                size,
+		    gpointer            *ret)
 {
 	hg_allocator_private_t *priv;
 	hg_allocator_block_t *block;
@@ -328,7 +332,13 @@ _hg_allocator_alloc(hg_allocator_data_t *data,
 		block->size = obj_size;
 		retval = priv->current_id++;
 		g_tree_insert(priv->block_in_use, HGQUARK_TO_POINTER (retval), block);
-		_hg_allocator_unlock_object(data, retval);
+		/* NOTE: No unlock yet here.
+		 *       any objects are supposed to be unlocked
+		 *       when it's entered into the stack where PostScript
+		 *       VM manages. otherwise it will be swept by GC.
+		 */
+		if (ret)
+			*ret = (gpointer)((gchar *)block + header_size);
 	}
 
 	return retval;
@@ -345,7 +355,7 @@ _hg_allocator_free(hg_allocator_data_t *data,
 	hg_return_if_fail (index != Qnil);
 
 	priv = (hg_allocator_private_t *)data;
-	block = _hg_allocator_lock_object(data, index);
+	block = _hg_allocator_lock_internal_object(data, index);
 	if (block) {
 		g_tree_remove(priv->block_in_use, HGQUARK_TO_POINTER (index));
 		_hg_allocator_bitmap_free(priv->bitmap, block->index, block->size);
@@ -367,13 +377,16 @@ _hg_allocator_initialize_and_lock_object(hg_allocator_private_t *priv,
 	retval = (hg_allocator_block_t *)((gchar *)priv->heap) + (index * BLOCK_SIZE);
 	memset(retval, 0, sizeof (hg_allocator_block_t));
 	retval->lock_count = 1;
+#if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
+	g_print("%s: %p\n", G_GNUC_FUNCTION, retval);
+#endif
 
 	return retval;
 }
 
 static gpointer
-_hg_allocator_lock_object(hg_allocator_data_t *data,
-			  hg_quark_t           index)
+_hg_allocator_lock_internal_object(hg_allocator_data_t *data,
+				   hg_quark_t           index)
 {
 	hg_allocator_private_t *priv;
 	hg_allocator_block_t *retval = NULL;
@@ -388,6 +401,23 @@ _hg_allocator_lock_object(hg_allocator_data_t *data,
 	}
 
 	return retval;
+}
+
+static gpointer
+_hg_allocator_lock_object(hg_allocator_data_t *data,
+			  hg_quark_t           index)
+{
+	hg_allocator_block_t *retval = NULL;
+
+	retval = _hg_allocator_lock_internal_object(data, index);
+	if (retval) {
+		gsize header_size;
+
+		header_size = hg_mem_aligned_size (sizeof (hg_allocator_block_t));
+		return (gpointer)((gchar *)retval + header_size);
+	}
+
+	return NULL;
 }
 
 static void

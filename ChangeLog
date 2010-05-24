@@ -1,5 +1,11 @@
 2010-05-24  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgallocator.c (_hg_allocator_alloc): add ret argument to
+	be able to set the real address.
+	(_hg_allocator_alloc): don't unlock the object.
+	(_hg_allocator_lock_internal_object): new to get
+	the hg_allocator_block_t object.
+
 	* hieroglyph/hgtypes.h: extend hg_quark_t to 64bit.
 
 	* hieroglyph/hgmem.c (hg_mem_lock_object, hg_mem_unlock_object):
