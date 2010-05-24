@@ -144,7 +144,7 @@ static hg_quark_t
 _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 			   gsize                  size)
 {
-	gint32 i, j;
+	hg_quark_t i, j;
 	gsize aligned_size, required_size;
 
 	hg_return_val_if_fail (bitmap != NULL, Qnil);
@@ -180,7 +180,7 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 
 				G_UNLOCK (bitmap);
 
-				return (hg_quark_t)i;
+				return i;
 			} else {
 				i = j;
 				required_size = aligned_size;

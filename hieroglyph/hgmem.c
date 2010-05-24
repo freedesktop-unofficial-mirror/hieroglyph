@@ -164,7 +164,49 @@ hg_mem_free(hg_mem_t   *mem,
 	hg_return_if_fail (mem->allocator != NULL);
 	hg_return_if_fail (mem->allocator->free != NULL);
 	hg_return_if_fail (mem->data != NULL);
-	hg_return_if_fail (data != 0);
+	hg_return_if_fail (data != Qnil);
 
 	mem->allocator->free(mem->data, data);
+}
+
+/**
+ * hg_mem_lock_object:
+ * @mem:
+ * @data:
+ *
+ * FIXME
+ *
+ * Return:
+ */
+gpointer
+hg_mem_lock_object(hg_mem_t   *mem,
+		   hg_quark_t  data)
+{
+	hg_return_val_if_fail (mem != NULL, NULL);
+	hg_return_val_if_fail (mem->allocator != NULL, NULL);
+	hg_return_val_if_fail (mem->allocator->lock_object != NULL, NULL);
+	hg_return_val_if_fail (mem->data != NULL, NULL);
+	hg_return_val_if_fail (data != Qnil, NULL);
+
+	return mem->allocator->lock_object(mem->data, data);
+}
+
+/**
+ * hg_mem_unlock_object:
+ * @mem:
+ * @data:
+ *
+ * FIXME
+ */
+void
+hg_mem_unlock_object(hg_mem_t   *mem,
+		     hg_quark_t  data)
+{
+	hg_return_if_fail (mem != NULL);
+	hg_return_if_fail (mem->allocator != NULL);
+	hg_return_if_fail (mem->allocator->unlock_object != NULL);
+	hg_return_if_fail (mem->data != NULL);
+	hg_return_if_fail (data != Qnil);
+
+	return mem->allocator->unlock_object(mem->data, data);
 }

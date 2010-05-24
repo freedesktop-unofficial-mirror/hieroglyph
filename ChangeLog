@@ -1,5 +1,10 @@
 2010-05-24  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgtypes.h: extend hg_quark_t to 64bit.
+
+	* hieroglyph/hgmem.c (hg_mem_lock_object, hg_mem_unlock_object):
+	add missing functions.
+
 	* hieroglyph/hgerror.h (hg_stacktrace): Output to the glib log
 	instead of stderr directly.
 

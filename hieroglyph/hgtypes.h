@@ -35,7 +35,7 @@ typedef struct _hg_mem_t		hg_mem_t;
 typedef struct _hg_mem_vtable_t		hg_mem_vtable_t;
 typedef struct _hg_allocator_data_t	hg_allocator_data_t;
 /* hgutils.h */
-typedef glong				hg_quark_t;
+typedef gint64				hg_quark_t;
 
 
 /* hgmem.h */

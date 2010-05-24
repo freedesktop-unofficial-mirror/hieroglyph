@@ -33,10 +33,14 @@ hg_mem_t   *hg_mem_new_with_allocator(hg_mem_vtable_t *allocator,
                                       gsize            size);
 void        hg_mem_destroy           (gpointer         data);
 gboolean    hg_mem_resize_heap       (hg_mem_t        *mem,
-				      gsize            size);
+                                      gsize            size);
 hg_quark_t  hg_mem_alloc             (hg_mem_t        *mem,
                                       gsize            size);
 void        hg_mem_free              (hg_mem_t        *mem,
+                                      hg_quark_t       data);
+gpointer    hg_mem_lock_object       (hg_mem_t        *mem,
+                                      hg_quark_t       data);
+void        hg_mem_unlock_object     (hg_mem_t        *mem,
                                       hg_quark_t       data);
 
 G_END_DECLS
