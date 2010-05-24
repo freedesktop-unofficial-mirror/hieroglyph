@@ -38,7 +38,8 @@ G_BEGIN_DECLS
 		if (hg_is_stacktrace_enabled()) {			\
 			gchar *__stacktrace__ = hg_get_stacktrace();	\
 									\
-			fprintf(stderr, "Stacktrace:\n%s\n", __stacktrace__); \
+			g_log(G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL,	\
+			      "Stacktrace:\n%s\n", __stacktrace__);	\
 			g_free(__stacktrace__);				\
 		}							\
 	} G_STMT_END

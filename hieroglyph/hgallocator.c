@@ -145,24 +145,34 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 			   gsize                  size)
 {
 	gint32 i, j;
-	gboolean found;
-	gsize aligned_size;
+	gsize aligned_size, required_size;
 
 	hg_return_val_if_fail (bitmap != NULL, Qnil);
 	hg_return_val_if_fail (size > 0, Qnil);
 
 	aligned_size = hg_mem_aligned_to(size, BLOCK_SIZE) / BLOCK_SIZE;
+#define HG_MEM_DEBUG
+#if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
+	g_print("ALLOC: %" G_GSIZE_FORMAT " blocks required\n", aligned_size);
+	g_print("Bitmap: %" G_GSIZE_FORMAT " blocks allocated\n", bitmap->size);
+	g_print("         1         2         3         4         5\n");
+	g_print("12345678901234567890123456789012345678901234567890");
 	for (i = 0; i < bitmap->size; i++) {
-		if (_hg_allocator_bitmap_is_marked(bitmap, i)) {
-			found = TRUE;
-			for (j = i + 1; j < (i + aligned_size); j++) {
-				if (!_hg_allocator_bitmap_is_marked(bitmap, j)) {
-					i = j;
-					found = FALSE;
-					break;
-				}
+		if (i % 50 == 0)
+			g_print("\n");
+		g_print("%d", _hg_allocator_bitmap_is_marked(bitmap, i) ? 1 : 0);
+	}
+	g_print("\n");
+#endif
+	required_size = aligned_size;
+	for (i = 0; i < bitmap->size; i++) {
+		if (!_hg_allocator_bitmap_is_marked(bitmap, i)) {
+			required_size--;
+			for (j = i + 1; required_size > 0 && j < bitmap->size; j++) {
+				if (!_hg_allocator_bitmap_is_marked(bitmap, j))
+					required_size--;
 			}
-			if (found) {
+			if (required_size == 0) {
 				G_LOCK (bitmap);
 
 				for (j = i; j < (i + aligned_size); j++)
@@ -171,6 +181,9 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 				G_UNLOCK (bitmap);
 
 				return (hg_quark_t)i;
+			} else {
+				i = j;
+				required_size = aligned_size;
 			}
 		}
 	}
@@ -187,12 +200,23 @@ _hg_allocator_bitmap_free(hg_allocator_bitmap_t *bitmap,
 	gsize aligned_size;
 
 	hg_return_if_fail (bitmap != NULL);
-	hg_return_if_fail (index > 0);
+	hg_return_if_fail (index >= 0);
 	hg_return_if_fail (size > 0);
 
 	aligned_size = hg_mem_aligned_to(size, BLOCK_SIZE) / BLOCK_SIZE;
 	for (i = index; i < (index + aligned_size); i++)
 		_hg_allocator_bitmap_clear(bitmap, i);
+#if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
+	g_print("After freed bitmap: %" G_GSIZE_FORMAT " blocks allocated\n", bitmap->size);
+	g_print("         1         2         3         4         5\n");
+	g_print("12345678901234567890123456789012345678901234567890");
+	for (i = 0; i < bitmap->size; i++) {
+		if (i % 50 == 0)
+			g_print("\n");
+		g_print("%d", _hg_allocator_bitmap_is_marked(bitmap, i) ? 1 : 0);
+	}
+	g_print("\n");
+#endif
 }
 
 static void
@@ -300,7 +324,6 @@ _hg_allocator_alloc(hg_allocator_data_t *data,
 	index = _hg_allocator_bitmap_alloc(priv->bitmap, obj_size);
 	if (index >= 0) {
 		block = _hg_allocator_initialize_and_lock_object(priv, index);
-		memset(block, 0, sizeof (hg_allocator_block_t));
 		block->index = index;
 		block->size = obj_size;
 		retval = priv->current_id++;
@@ -326,6 +349,10 @@ _hg_allocator_free(hg_allocator_data_t *data,
 	if (block) {
 		g_tree_remove(priv->block_in_use, HGQUARK_TO_POINTER (index));
 		_hg_allocator_bitmap_free(priv->bitmap, block->index, block->size);
+	} else {
+#if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
+		g_warning("%lx isn't the allocated object.\n", index);
+#endif
 	}
 }
 
@@ -372,6 +399,7 @@ _hg_allocator_unlock_object(hg_allocator_data_t *data,
 	gint old_val;
 
 	hg_return_if_fail (data != NULL);
+	hg_return_if_fail (index != Qnil);
 
 	priv = (hg_allocator_private_t *)data;
 	if ((retval = g_tree_lookup(priv->block_in_use, HGQUARK_TO_POINTER (index))) != NULL) {

@@ -42,6 +42,12 @@ setup(void)
 void
 teardown(void)
 {
+	gchar *e = hieroglyph_test_pop_error();
+
+	if (e) {
+		g_print("E: %s\n", e);
+		g_free(e);
+	}
 }
 
 /** test cases **/
@@ -91,18 +97,66 @@ TDEF (resize_heap)
 
 TDEF (alloc)
 {
+	hg_allocator_data_t *retval;
+	hg_quark_t t, t2, t3;
+
+	retval = vtable->initialize();
+	fail_unless(retval != NULL, "Unable to initialize the allocator.");
+	fail_unless(vtable->resize_heap(retval, 256), "Unable to initialize the heap.");
+
+	t = vtable->alloc(retval, 128);
+	fail_unless(t != Qnil, "Unable to allocate the memory.");
+	t2 = vtable->alloc(retval, 64);
+	fail_unless(t2 != Qnil, "Unable to allocate the memory.");
+	t3 = vtable->alloc(retval, 128);
+	fail_unless(t3 == Qnil, "Should be no free spaces available.");
+
+	vtable->free(retval, t);
+	t3 = vtable->alloc(retval, 128);
+	fail_unless(t3 != Qnil, "Unable to allocate the memory.");
+
+	vtable->finalize(retval);
 } TEND
 
 TDEF (free)
 {
+	/* can be done in alloc testcase */
 } TEND
 
 TDEF (lock_object)
 {
+	hg_allocator_data_t *retval;
+	hg_quark_t t;
+	gpointer p;
+	hg_allocator_block_t *b;
+
+	retval = vtable->initialize();
+	fail_unless(retval != NULL, "Unable to initialize the allocator.");
+	fail_unless(vtable->resize_heap(retval, 256), "Unable to initialize the heap.");
+
+	t = vtable->alloc(retval, 128);
+	fail_unless(t != Qnil, "Unable to allocate the memory.");
+
+	b = p = vtable->lock_object(retval, t);
+	fail_unless(p != NULL, "Unable to obtain the object address.");
+	fail_unless(b->lock_count == 1, "Failed to lock the object.");
+
+	b = p = vtable->lock_object(retval, t);
+	fail_unless(p != NULL, "Unable to obtain the object address.");
+	fail_unless(b->lock_count == 2, "Failed to lock the object.");
+
+	vtable->unlock_object(retval, t);
+	fail_unless(b->lock_count == 1, "Failed to unlock the object.");
+
+	vtable->unlock_object(retval, t);
+	fail_unless(b->lock_count == 0, "Failed to unlock the object.");
+
+	vtable->finalize(retval);
 } TEND
 
 TDEF (unlock_object)
 {
+	/* can be done in lock_object testcase */
 } TEND
 
 /****/

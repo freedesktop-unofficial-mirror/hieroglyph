@@ -1,3 +1,12 @@
+2010-05-24  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgerror.h (hg_stacktrace): Output to the glib log
+	instead of stderr directly.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_bitmap_alloc): Fix a typo.
+	(_hg_allocator_bitmap_free): Fix a typo.
+	(_hg_allocator_alloc): Fix a typo.
+
 2010-05-23  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgallocator.c: Drop hg_mem_t dependencies.
