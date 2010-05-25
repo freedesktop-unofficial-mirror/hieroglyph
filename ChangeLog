@@ -1,5 +1,7 @@
 2010-05-25  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgobject.h (HG_DEFINE_VTABLE): add new macro.
+
 	* hieroglyph/hgnull.[ch]: new.
 
 	* hieroglyph/hgmark.[ch]: new.

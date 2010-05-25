@@ -37,11 +37,7 @@ static void  _hg_object_int_free               (hg_mem_t    *mem,
 						hg_object_t *object);
 
 
-static hg_object_vtable_t __hg_object_int_vtable = {
-	.get_capsulated_size = _hg_object_int_get_capsulated_size,
-	.initialize          = _hg_object_int_initialize,
-	.free                = _hg_object_int_free,
-};
+HG_DEFINE_VTABLE (int)
 
 /*< private >*/
 static gsize
@@ -77,8 +73,3 @@ _hg_object_int_free(hg_mem_t    *mem,
 }
 
 /*< public >*/
-hg_object_vtable_t *
-hg_object_int_get_vtable(void)
-{
-	return &__hg_object_int_vtable;
-}

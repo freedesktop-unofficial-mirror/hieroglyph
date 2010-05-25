@@ -63,6 +63,18 @@ G_BEGIN_DECLS
 	 |hg_quark_mask_set_state (hg_quark_get_state (_x_))	\
 	 |hg_quark_mask_set_value (hg_quark_get_value (_x_)))
 
+#define HG_DEFINE_VTABLE(_name_)					\
+	static hg_object_vtable_t __hg_object_ ## _name_ ## _vtable = {	\
+		.get_capsulated_size = _hg_object_ ## _name_ ## _get_capsulated_size, \
+		.initialize          = _hg_object_ ## _name_ ## _initialize, \
+		.free                = _hg_object_ ## _name_ ## _free,	\
+	};								\
+									\
+	hg_object_vtable_t *						\
+	hg_object_ ## _name_ ## _get_vtable(void)			\
+	{								\
+		return &__hg_object_ ## _name_ ## _vtable;		\
+	}
 
 typedef enum _hg_object_type_t			hg_object_type_t;
 typedef enum _hg_object_state_t			hg_object_state_t;
