@@ -29,6 +29,14 @@
 #include "hgbool.h"
 
 
+static gsize _hg_object_bool_get_capsulated_size(void);
+static void  _hg_object_bool_initialize         (hg_mem_t    *mem,
+                                                 hg_object_t *object,
+                                                 va_list      args);
+static void  _hg_object_bool_free               (hg_mem_t    *mem,
+                                                 hg_object_t *object);
+
+
 static hg_object_vtable_t __hg_object_bool_vtable = {
 	.get_capsulated_size = _hg_object_bool_get_capsulated_size,
 	.initialize          = _hg_object_bool_initialize,
