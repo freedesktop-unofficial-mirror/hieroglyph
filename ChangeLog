@@ -1,3 +1,7 @@
+2010-05-26  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgobject.c (hg_object_new): align the preallocated size.
+
 2010-05-25  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgobject.h (HG_DEFINE_VTABLE): add new macro.

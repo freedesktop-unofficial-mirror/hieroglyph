@@ -124,7 +124,7 @@ hg_object_new(hg_mem_t         *mem,
 
 	v = vtables[type];
 	size = v->get_capsulated_size();
-	index = _hg_object_new(mem, type, size + preallocated_size, &retval);
+	index = _hg_object_new(mem, type, size + hg_mem_aligned_size (preallocated_size), &retval);
 
 	va_start(ap, preallocated_size);
 
