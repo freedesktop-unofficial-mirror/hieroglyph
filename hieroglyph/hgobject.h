@@ -77,7 +77,6 @@ typedef struct _hg_object_t			hg_object_t;
 typedef struct _hg_object_null_t		hg_object_null_t;
 typedef struct _hg_object_real_t		hg_object_real_t;
 typedef struct _hg_object_name_t		hg_object_name_t;
-typedef struct _hg_object_bool_t		hg_object_bool_t;
 typedef struct _hg_object_string_t		hg_object_string_t;
 typedef struct _hg_object_array_t		hg_object_array_t;
 typedef struct _hg_object_mark_t		hg_object_mark_t;
@@ -184,11 +183,6 @@ struct _hg_object_name_t {
 		guint32      index;
 		guint32      offset;
 	} v;
-};
-struct _hg_object_bool_t {
-	hg_object_template_t t;
-	guint16              unused1;
-	guint32              value;
 };
 struct _hg_object_string_t {
 	hg_object_template_t t;
