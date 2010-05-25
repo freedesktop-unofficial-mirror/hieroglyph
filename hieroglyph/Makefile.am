@@ -24,8 +24,10 @@ CLEANFILES =							\
 hg_public_headers =						\
 	hgallocator.h						\
 	hgerror.h						\
+	hgint.h							\
 	hgmacros.h						\
 	hgmem.h							\
+	hgobject.h						\
 	hgtypes.h						\
 	hgutils.h						\
 	$(NULL)
@@ -49,7 +51,9 @@ hg_sources =							\
 	$(hg_built_sources)					\
 	hgallocator.c						\
 	hgerror.c						\
+	hgint.c							\
 	hgmem.c							\
+	hgobject.c						\
 	hgutils.c						\
 	$(NULL)
 #

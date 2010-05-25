@@ -1,5 +1,9 @@
 2010-05-25  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgint.[ch]: new.
+
+	* hieroglyph/hgobject.[ch]: new.
+
 	* hieroglyph/hgallocator.c: get rid of the unnecessary error check.
 
 	* hieroglyph/hgallocator-private.h (hg_get_allocated_object):

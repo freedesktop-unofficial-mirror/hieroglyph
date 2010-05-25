@@ -35,6 +35,12 @@ G_BEGIN_DECLS
 #define HGPOINTER_TO_QUARK(p)	((hg_quark_t)(gulong)(p))
 #define HGQUARK_TO_POINTER(q)	((gpointer)(gulong)(q))
 
+#define hg_mem_aligned_to(x,y)			\
+	(((x) + (y) - 1) & ~((y) - 1))
+#define hg_mem_aligned_size(x)			\
+	hg_mem_aligned_to(x, ALIGNOF_VOID_P)
+
+
 G_END_DECLS
 
 #endif /* __HIEROGLYPH_HGMACROS_H__ */
