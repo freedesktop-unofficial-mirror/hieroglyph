@@ -29,14 +29,6 @@
 #include "hgint.h"
 
 
-static gsize _hg_object_int_get_capsulated_size(void);
-static void  _hg_object_int_initialize         (hg_mem_t    *mem,
-                                                hg_object_t *object,
-                                                va_list      args);
-static void  _hg_object_int_free               (hg_mem_t    *mem,
-						hg_object_t *object);
-
-
 HG_DEFINE_VTABLE (int)
 
 /*< private >*/

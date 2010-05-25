@@ -64,6 +64,13 @@ G_BEGIN_DECLS
 	 |hg_quark_mask_set_value (hg_quark_get_value (_x_)))
 
 #define HG_DEFINE_VTABLE(_name_)					\
+	static gsize _hg_object_ ## _name_ ## _get_capsulated_size(void); \
+	static void  _hg_object_ ## _name_ ## _initialize         (hg_mem_t    *mem, \
+								   hg_object_t *object,	\
+								   va_list      args); \
+	static void  _hg_object_ ## _name_ ## _free               (hg_mem_t    *mem, \
+								   hg_object_t *object); \
+									\
 	static hg_object_vtable_t __hg_object_ ## _name_ ## _vtable = {	\
 		.get_capsulated_size = _hg_object_ ## _name_ ## _get_capsulated_size, \
 		.initialize          = _hg_object_ ## _name_ ## _initialize, \
@@ -87,7 +94,6 @@ typedef struct _hg_object_extended_header_t	hg_object_extended_header_t;
 typedef struct _hg_object_template_t		hg_object_template_t;
 typedef struct _hg_object_t			hg_object_t;
 typedef struct _hg_object_real_t		hg_object_real_t;
-typedef struct _hg_object_name_t		hg_object_name_t;
 typedef struct _hg_object_string_t		hg_object_string_t;
 typedef struct _hg_object_array_t		hg_object_array_t;
 
@@ -179,14 +185,6 @@ struct _hg_object_real_t {
 	union {
 		/* fixme */
 		gfloat       value;
-	} v;
-};
-struct _hg_object_name_t {
-	hg_object_template_t t;
-	guint16              representation;
-	union {
-		guint32      index;
-		guint32      offset;
 	} v;
 };
 struct _hg_object_string_t {
