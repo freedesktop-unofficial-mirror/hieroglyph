@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * version.h
- * Copyright (C) 2005-2010 Akira TAGOH
+ * hgnull.h
+ * Copyright (C) 2010 Akira TAGOH
  * 
  * Authors:
  *   Akira TAGOH  <akira@tagoh.org>
@@ -21,19 +21,31 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HIEROGLYPH__VERSION_H__
-#define __HIEROGLYPH__VERSION_H__
+#ifndef __HIEROGLYPH_HGNULL_H__
+#define __HIEROGLYPH_HGNULL_H__
 
-#include <glib/gmacros.h>
-
+#include <hieroglyph/hgobject.h>
 
 G_BEGIN_DECLS
 
-#define HIEROGLYPH_VERSION	"@VERSION@"
-#define HIEROGLYPH_UUID		"6d3299d4-5f51-4722-b9eb-177a10fe1e7e"
+typedef struct _hg_object_null_t		hg_object_null_t;
 
-const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
+struct _hg_object_null_t {
+	hg_object_template_t t;
+	guint16              unused1;
+	guint32              unused2;
+};
+
+
+#define hg_object_null_to_qnull(_x_)				\
+	(hg_quark_t)(hg_quark_mask_set_type (HG_TYPE_NULL))
+#define hg_qnull_to_object_null(_m_, _x_)				\
+	(hg_object_null_t *)hg_object_new(_m_, HG_TYPE_NULL, 0, Qnil)
+
+
+hg_object_vtable_t *hg_object_null_get_vtable(void);
+
 
 G_END_DECLS
 
-#endif /* __HIEROGLYPH__VERSION_H__ */
+#endif /* __HIEROGLYPH_HG_NULL_H__ */

@@ -74,7 +74,6 @@ typedef struct _hg_object_standard_header_t	hg_object_standard_header_t;
 typedef struct _hg_object_extended_header_t	hg_object_extended_header_t;
 typedef struct _hg_object_template_t		hg_object_template_t;
 typedef struct _hg_object_t			hg_object_t;
-typedef struct _hg_object_null_t		hg_object_null_t;
 typedef struct _hg_object_real_t		hg_object_real_t;
 typedef struct _hg_object_name_t		hg_object_name_t;
 typedef struct _hg_object_string_t		hg_object_string_t;
@@ -161,11 +160,6 @@ struct _hg_object_t {
 	hg_object_template_t t;
 	guint16              length;
 	guint32              value;
-};
-struct _hg_object_null_t {
-	hg_object_template_t t;
-	guint16              unused1;
-	guint32              unused2;
 };
 struct _hg_object_real_t {
 	hg_object_template_t t;
