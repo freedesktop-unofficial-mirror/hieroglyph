@@ -51,9 +51,9 @@ _hg_object_int_get_capsulated_size(void)
 }
 
 static void
-_hg_object_int_initialize(hg_mem_t         *mem,
-			  hg_object_t      *object,
-			  va_list           args)
+_hg_object_int_initialize(hg_mem_t    *mem,
+			  hg_object_t *object,
+			  va_list      args)
 {
 	hg_object_int_t *o;
 	hg_quark_t v;
