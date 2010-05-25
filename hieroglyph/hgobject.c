@@ -27,7 +27,10 @@
 
 #include <string.h>
 #include "hgerror.h"
+#include "hgbool.h"
 #include "hgint.h"
+#include "hgmark.h"
+#include "hgnull.h"
 #include "hgmem.h"
 #include "hgobject.h"
 
@@ -80,8 +83,14 @@ hg_object_init(void)
 
 		is_initialized = TRUE;
 
+		v = hg_object_bool_get_vtable();
+		vtables[HG_TYPE_BOOL] = v;
 		v = hg_object_int_get_vtable();
 		vtables[HG_TYPE_INT] = v;
+		v = hg_object_mark_get_vtable();
+		vtables[HG_TYPE_MARK] = v;
+		v = hg_object_null_get_vtable();
+		vtables[HG_TYPE_NULL] = v;
 	}
 }
 
