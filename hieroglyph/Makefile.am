@@ -23,9 +23,11 @@ CLEANFILES =							\
 # Local definitions
 hg_public_headers =						\
 	hgallocator.h						\
+	hgbool.h						\
 	hgerror.h						\
 	hgint.h							\
 	hgmacros.h						\
+	hgmark.h						\
 	hgmem.h							\
 	hgobject.h						\
 	hgtypes.h						\
@@ -50,8 +52,10 @@ hg_built_sources =						\
 hg_sources =							\
 	$(hg_built_sources)					\
 	hgallocator.c						\
+	hgbool.c						\
 	hgerror.c						\
 	hgint.c							\
+	hgmark.c						\
 	hgmem.c							\
 	hgobject.c						\
 	hgutils.c						\

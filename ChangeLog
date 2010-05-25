@@ -1,5 +1,7 @@
 2010-05-25  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgmark.[ch]: new.
+
 	* hieroglyph/hgbool.[ch]: new.
 
 	* hieroglyph/hgint.[ch]: new.

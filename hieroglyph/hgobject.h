@@ -79,7 +79,6 @@ typedef struct _hg_object_real_t		hg_object_real_t;
 typedef struct _hg_object_name_t		hg_object_name_t;
 typedef struct _hg_object_string_t		hg_object_string_t;
 typedef struct _hg_object_array_t		hg_object_array_t;
-typedef struct _hg_object_mark_t		hg_object_mark_t;
 
 
 enum _hg_object_type_t {
@@ -193,11 +192,6 @@ struct _hg_object_array_t {
 	hg_object_template_t t;
 	guint16              length;
 	guint32              offset;
-};
-struct _hg_object_mark_t {
-	hg_object_template_t t;
-	guint16              unused1;
-	guint32              unused2;
 };
 
 
