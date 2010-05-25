@@ -286,9 +286,6 @@ _hg_allocator_resize_heap(hg_allocator_data_t *data,
 {
 	hg_allocator_private_t *priv;
 
-	hg_return_val_if_fail (data != NULL, FALSE);
-	hg_return_val_if_fail (size > 0, FALSE);
-
 	priv = (hg_allocator_private_t *)data;
 	if (priv->bitmap) {
 		if (!_hg_allocator_bitmap_resize(priv->bitmap, size))
@@ -315,9 +312,6 @@ _hg_allocator_alloc(hg_allocator_data_t *data,
 	hg_allocator_block_t *block;
 	gsize obj_size;
 	hg_quark_t index, retval = Qnil;
-
-	hg_return_val_if_fail (data != NULL, Qnil);
-	hg_return_val_if_fail (size > 0, Qnil);
 
 	priv = (hg_allocator_private_t *)data;
 
@@ -350,9 +344,6 @@ _hg_allocator_free(hg_allocator_data_t *data,
 	hg_allocator_private_t *priv;
 	hg_allocator_block_t *block;
 
-	hg_return_if_fail (data != NULL);
-	hg_return_if_fail (index != Qnil);
-
 	priv = (hg_allocator_private_t *)data;
 	block = _hg_allocator_lock_internal_object(data, index);
 	if (block) {
@@ -371,8 +362,6 @@ _hg_allocator_initialize_and_lock_object(hg_allocator_private_t *priv,
 {
 	hg_allocator_block_t *retval;
 
-	hg_return_val_if_fail (priv != NULL, NULL);
-
 	retval = (hg_allocator_block_t *)((gchar *)priv->heap) + (index * BLOCK_SIZE);
 	memset(retval, 0, sizeof (hg_allocator_block_t));
 	retval->lock_count = 1;
@@ -390,9 +379,6 @@ _hg_allocator_lock_internal_object(hg_allocator_data_t *data,
 	hg_allocator_private_t *priv;
 	hg_allocator_block_t *retval = NULL;
 	gint old_val;
-
-	hg_return_val_if_fail (data != NULL, NULL);
-	hg_return_val_if_fail (index != Qnil, NULL);
 
 	priv = (hg_allocator_private_t *)data;
 	if ((retval = g_tree_lookup(priv->block_in_use, HGQUARK_TO_POINTER (index))) != NULL) {
@@ -422,9 +408,6 @@ _hg_allocator_unlock_object(hg_allocator_data_t *data,
 	hg_allocator_private_t *priv;
 	hg_allocator_block_t *retval = NULL;
 	gint old_val;
-
-	hg_return_if_fail (data != NULL);
-	hg_return_if_fail (index != Qnil);
 
 	priv = (hg_allocator_private_t *)data;
 	if ((retval = g_tree_lookup(priv->block_in_use, HGQUARK_TO_POINTER (index))) != NULL) {
