@@ -1,5 +1,7 @@
 2010-05-27  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgencoding.[ch]: new.
+
 	* hieroglyph/hgtypes.h: add hg_system_encoding_t type.
 
 2010-05-26  Akira TAGOH  <akira@tagoh.org>

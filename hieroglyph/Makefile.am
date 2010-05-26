@@ -24,6 +24,7 @@ CLEANFILES =							\
 hg_public_headers =						\
 	hgallocator.h						\
 	hgbool.h						\
+	hgencoding.h						\
 	hgerror.h						\
 	hgint.h							\
 	hgmacros.h						\
@@ -54,6 +55,7 @@ hg_sources =							\
 	$(hg_built_sources)					\
 	hgallocator.c						\
 	hgbool.c						\
+	hgencoding.c						\
 	hgerror.c						\
 	hgint.c							\
 	hgmark.c						\
