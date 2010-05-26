@@ -26,7 +26,6 @@
 #endif
 
 #include <math.h>
-#include "hgerror.h"
 #include "hgutils.h"
 
 
