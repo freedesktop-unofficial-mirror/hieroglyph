@@ -2,8 +2,6 @@
 
 	* hieroglyph/hgtypes.h: add hg_system_encoding_t type.
 
-	* hieroglyph/hgutils.c (hg_get_system_encoding_name): new.
-
 2010-05-26  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgobject.c (hg_object_new): align the preallocated size.

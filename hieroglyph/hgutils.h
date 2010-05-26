@@ -28,10 +28,9 @@
 
 G_BEGIN_DECLS
 
-guint32      hg_get_quark_mask          (gsize                 size);
-hg_quark_t   hg_get_quark               (gpointer              pointer,
-                                         gsize                 size);
-const gchar *hg_get_system_encoding_name(hg_system_encoding_t  encoding);
+guint32    hg_get_quark_mask(gsize     size);
+hg_quark_t hg_get_quark     (gpointer  pointer,
+                             gsize     size);
 
 G_END_DECLS
 
