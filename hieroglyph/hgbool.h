@@ -28,7 +28,7 @@
 
 G_BEGIN_DECLS
 
-typedef struct _hg_object_bool_t		hg_object_bool_t;
+typedef struct _hg_object_bool_t	hg_object_bool_t;
 
 struct _hg_object_bool_t {
 	hg_object_template_t t;
