@@ -1,5 +1,9 @@
 2010-05-27  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgmem.c (hg_mem_free): get rid of the unnecessary bits.
+	(hg_mem_lock_object): likewise.
+	(hg_mem_unlock_object): likewise.
+
 	* tests/hgnull.c: add testcases.
 
 	* tests/hgmark.c: add testcases.
