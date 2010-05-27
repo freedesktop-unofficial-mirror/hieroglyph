@@ -30,6 +30,14 @@ G_BEGIN_DECLS
 
 #define Qnil	(hg_quark_t)-1
 
+/* hgutils.h */
+#define hg_quark_mask_value(_v_)		\
+	((_v_) & 0xffffffff)
+#define hg_quark_get_value(_v_)			\
+	hg_quark_mask_value (_v_)
+#define hg_quark_mask_set_value(_v_)		\
+	hg_quark_mask_value (_v_)
+
 /* hgmem.h */
 typedef struct _hg_mem_t		hg_mem_t;
 typedef struct _hg_mem_vtable_t		hg_mem_vtable_t;

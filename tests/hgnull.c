@@ -72,6 +72,7 @@ TDEF (initialize)
 
 	q = hg_object_null_new(mem, (gpointer *)&v);
 	fail_unless(q != Qnil, "Unable to create the null object.");
+	fail_unless(hg_quark_get_type(q) == HG_TYPE_NULL, "No type information in the quark");
 	qv = hg_object_null_to_qnull(v);
 	fail_unless(qv == 0x0000000000000000, "Unexpected result to convert the object to the quark value.");
 	q2 = hg_qnull_to_object_null(mem, qv, (gpointer *)&v2);

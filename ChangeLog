@@ -1,5 +1,10 @@
 2010-05-27  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgobject.c (_hg_object_new): add the object type to
+	the quark.
+	(hg_object_init): add the name object vtable.
+	(hg_object_init): initialize the encodings.
+
 	* hieroglyph/hgmem.c (hg_mem_free): get rid of the unnecessary bits.
 	(hg_mem_lock_object): likewise.
 	(hg_mem_unlock_object): likewise.

@@ -72,6 +72,7 @@ TDEF (initialize)
 
 	q = hg_object_mark_new(mem, (gpointer *)&v);
 	fail_unless(q != Qnil, "Unable to create the mark object.");
+	fail_unless(hg_quark_get_type(q) == HG_TYPE_MARK, "No type information in the quark");
 	qv = hg_object_mark_to_qmark(v);
 	fail_unless(qv == 0xa000000000000000, "Unexpected result to convert the object to the quark value.");
 	q2 = hg_qmark_to_object_mark(mem, qv, (gpointer *)&v2);

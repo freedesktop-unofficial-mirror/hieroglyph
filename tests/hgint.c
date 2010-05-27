@@ -72,6 +72,7 @@ TDEF (initialize)
 
 	q = hg_object_int_new(mem, Qnil, (gpointer *)&v);
 	fail_unless(q != Qnil, "Unable to create the integer object.");
+	fail_unless(hg_quark_get_type(q) == HG_TYPE_INT, "No type information in the quark");
 	v->value = 32768;
 	qv = hg_object_int_to_qint(v);
 	fail_unless(qv == 0x1000000000008000, "Unexpected result to convert the object to the quark value.");

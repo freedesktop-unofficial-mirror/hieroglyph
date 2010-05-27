@@ -72,6 +72,7 @@ TDEF (initialize)
 
 	q = hg_object_bool_new(mem, Qnil, (gpointer *)&v);
 	fail_unless(q != Qnil, "Unable to create the boolean object.");
+	fail_unless(hg_quark_get_type(q) == HG_TYPE_BOOL, "No type information in the quark");
 	v->value = TRUE;
 	qv = hg_object_bool_to_qbool(v);
 	fail_unless(qv == 0x4000000000000001, "Unexpected result to convert the object to the quark value.");

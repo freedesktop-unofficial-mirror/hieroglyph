@@ -27,9 +27,11 @@
 
 #include <string.h>
 #include "hgerror.h"
+#include "hgencoding.h"
 #include "hgbool.h"
 #include "hgint.h"
 #include "hgmark.h"
+#include "hgname.h"
 #include "hgnull.h"
 #include "hgmem.h"
 #include "hgobject.h"
@@ -65,6 +67,7 @@ _hg_object_new(hg_mem_t          *mem,
 		if (ret)
 			*ret = object;
 	}
+	retval |= hg_quark_mask_set_type(type);
 
 	return retval;
 }
@@ -89,8 +92,12 @@ hg_object_init(void)
 		vtables[HG_TYPE_INT] = v;
 		v = hg_object_mark_get_vtable();
 		vtables[HG_TYPE_MARK] = v;
+		v = hg_object_name_get_vtable();
+		vtables[HG_TYPE_NAME] = v;
 		v = hg_object_null_get_vtable();
 		vtables[HG_TYPE_NULL] = v;
+
+		hg_encoding_init();
 	}
 }
 
@@ -102,6 +109,8 @@ hg_object_init(void)
 void
 hg_object_fini(void)
 {
+	hg_encoding_fini();
+
 	is_initialized = FALSE;
 }
 
