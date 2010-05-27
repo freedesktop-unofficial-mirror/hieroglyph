@@ -1,5 +1,8 @@
 2010-05-27  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgallocator.c (_hg_allocator_initialize_and_lock_object):
+	Fix wrong casting.
+
 	* tests/hgencoding.c: add testcases.
 
 	* hieroglyph/hgencoding.c (hg_encoding_lookup_system_encoding): 

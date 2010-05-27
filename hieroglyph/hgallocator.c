@@ -362,7 +362,7 @@ _hg_allocator_initialize_and_lock_object(hg_allocator_private_t *priv,
 {
 	hg_allocator_block_t *retval;
 
-	retval = (hg_allocator_block_t *)((gchar *)priv->heap) + (index * BLOCK_SIZE);
+	retval = (hg_allocator_block_t *)((gulong)priv->heap + (index * BLOCK_SIZE));
 	memset(retval, 0, sizeof (hg_allocator_block_t));
 	retval->lock_count = 1;
 #if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
