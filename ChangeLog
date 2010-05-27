@@ -1,5 +1,9 @@
 2010-05-27  Akira TAGOH  <akira@tagoh.org>
 
+	* tests/hgint.c: add testcases.
+
+	* hieroglyph/hgint.h (hg_object_int_new): new macro.
+
 	* tests/hgbool.c: add testcases.
 
 	* hieroglyph/hgtypes.h (Qnil): correct a typo.

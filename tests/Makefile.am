@@ -48,6 +48,7 @@ noinst_PROGRAMS +=					\
 	test-hgallocator				\
 	test-hgbool					\
 	test-hgencoding					\
+	test-hgint					\
 	$(NULL)
 endif
 #
@@ -63,5 +64,10 @@ test_hgbool_SOURCES =					\
 #
 test_hgencoding_SOURCES =				\
 	hgencoding.c					\
+	$(common_sources)				\
+	$(NULL)
+#
+test_hgint_SOURCES =					\
+	hgint.c						\
 	$(common_sources)				\
 	$(NULL)
