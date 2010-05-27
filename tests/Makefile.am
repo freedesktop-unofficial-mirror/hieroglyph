@@ -49,6 +49,8 @@ noinst_PROGRAMS +=					\
 	test-hgbool					\
 	test-hgencoding					\
 	test-hgint					\
+	test-hgmark					\
+	test-hgnull					\
 	$(NULL)
 endif
 #
@@ -69,5 +71,15 @@ test_hgencoding_SOURCES =				\
 #
 test_hgint_SOURCES =					\
 	hgint.c						\
+	$(common_sources)				\
+	$(NULL)
+#
+test_hgmark_SOURCES =					\
+	hgmark.c					\
+	$(common_sources)				\
+	$(NULL)
+#
+test_hgnull_SOURCES =					\
+	hgnull.c					\
 	$(common_sources)				\
 	$(NULL)

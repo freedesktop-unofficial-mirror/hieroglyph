@@ -28,7 +28,7 @@
 
 G_BEGIN_DECLS
 
-typedef struct _hg_object_null_t		hg_object_null_t;
+typedef struct _hg_object_null_t	hg_object_null_t;
 
 struct _hg_object_null_t {
 	hg_object_template_t t;
@@ -37,10 +37,12 @@ struct _hg_object_null_t {
 };
 
 
+#define hg_object_null_new(_m_,_r_)				\
+	hg_object_new((_m_), (_r_), HG_TYPE_NULL, 0, Qnil)
 #define hg_object_null_to_qnull(_x_)				\
 	(hg_quark_t)(hg_quark_mask_set_type (HG_TYPE_NULL))
-#define hg_qnull_to_object_null(_m_, _x_)				\
-	(hg_object_null_t *)hg_object_new(_m_, HG_TYPE_NULL, 0, Qnil)
+#define hg_qnull_to_object_null(_m_,_x_,_r_)	\
+	hg_object_null_new((_m_), (_r_))
 
 
 hg_object_vtable_t *hg_object_null_get_vtable(void);

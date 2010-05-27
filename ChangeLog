@@ -1,5 +1,13 @@
 2010-05-27  Akira TAGOH  <akira@tagoh.org>
 
+	* tests/hgnull.c: add testcases.
+
+	* tests/hgmark.c: add testcases.
+
+	* hieroglyph/hgnull.h (hg_object_null_new): new macro.
+
+	* hieroglyph/hgmark.h (hg_object_mark_new): new macro.
+
 	* tests/hgint.c: add testcases.
 
 	* hieroglyph/hgint.h (hg_object_int_new): new macro.
