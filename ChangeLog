@@ -1,5 +1,10 @@
 2010-05-27  Akira TAGOH  <akira@tagoh.org>
 
+	* tests/hgencoding.c: add testcases.
+
+	* hieroglyph/hgencoding.c (hg_encoding_lookup_system_encoding): 
+	add more sanity check.
+
 	* hieroglyph/hgname.[ch]: new.
 
 	* hieroglyph/hgobject.c (hg_object_new): API change to make this

@@ -1044,6 +1044,7 @@ hg_encoding_lookup_system_encoding(const gchar *name)
 	gpointer result;
 
 	hg_return_val_if_fail (name != NULL, HG_enc_END);
+	hg_return_val_if_fail (__hg_encoding_index_table != NULL, HG_enc_END);
 
 	result = g_hash_table_lookup(__hg_encoding_index_table, name);
 	if (!result)
