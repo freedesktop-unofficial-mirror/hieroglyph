@@ -1,5 +1,9 @@
 2010-05-27  Akira TAGOH  <akira@tagoh.org>
 
+	* tests/hgname.c: add testcases.
+
+	* hieroglyph/hgname.c (_hg_object_name_new): Fix a typo.
+
 	* hieroglyph/hgobject.c (_hg_object_new): add the object type to
 	the quark.
 	(hg_object_init): add the name object vtable.

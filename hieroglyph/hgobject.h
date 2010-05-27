@@ -32,20 +32,14 @@ G_BEGIN_DECLS
 #define HG_OBJECT_MASK_TYPE(_t_)		((_t_) & 0x7f)
 #define HG_OBJECT_SET_EXECUTABLE(_v_)		((_v_) == TRUE)
 
-#define hg_quark_mask_value(_v_)		\
-	((_v_) & 0xffffffff)
 #define hg_quark_mask_state(_v_)					\
 	((guint64)(_v_) & (((1LL << HG_STATE_SHIFT_STATE_END) - 1) << 32)
 #define hg_quark_mask_type(_v_)						\
 	((guint64)(_v_) & (((1LL << (HG_STATE_SHIFT_TYPE_END - HG_STATE_SHIFT_TYPE)) - 1) << (32 + HG_STATE_SHIFT_TYPE)))
-#define hg_quark_get_value(_v_)			\
-	hg_quark_mask_value (_v_)
 #define hg_quark_get_state(_v_)						\
 	(hg_quark_mask_state (_v_) >> (32 + HG_STATE_SHIFT_STATE))
 #define hg_quark_get_type(_v_)						\
 	(hg_quark_mask_type (_v_) >> (32 + HG_STATE_SHIFT_TYPE))
-#define hg_quark_mask_set_value(_v_)		\
-	hg_quark_mask_value (_v_)
 #define hg_quark_mask_set_state(_v_)					\
 	(((guint64)(_v_) & ((1LL << HG_STATE_SHIFT_STATE_END) - 1)) << (32 + HG_STATE_SHIFT_STATE))
 #define hg_quark_mask_set_type(_v_)					\

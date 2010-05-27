@@ -88,7 +88,7 @@ _hg_object_name_new(hg_mem_t              *mem,
 	    default:
 		    return Qnil;
 	}
-	retval = hg_object_new(mem, (gpointer)&n, HG_TYPE_NAME, prealloc, Qnil);
+	retval = hg_object_new(mem, (gpointer *)&n, HG_TYPE_NAME, prealloc, Qnil);
 	if (retval != Qnil) {
 		n->representation = type;
 		/* post-process */

@@ -38,7 +38,7 @@ enum _hg_object_name_type_t {
 };
 struct _hg_object_name_t {
 	hg_object_template_t t;
-	guint16              representation;
+	gint16               representation;
 	union {
 		guint32      index;
 		guint32      offset;
