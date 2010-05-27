@@ -39,6 +39,12 @@ setup(void)
 void
 teardown(void)
 {
+	gchar *e = hieroglyph_test_pop_error();
+
+	if (e) {
+		g_print("E: %s\n", e);
+		g_free(e);
+	}
 }
 
 /** test cases **/
