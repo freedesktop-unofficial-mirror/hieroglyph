@@ -30,6 +30,7 @@ hg_public_headers =						\
 	hgmacros.h						\
 	hgmark.h						\
 	hgmem.h							\
+	hgname.h						\
 	hgnull.h						\
 	hgobject.h						\
 	hgtypes.h						\
@@ -60,6 +61,7 @@ hg_sources =							\
 	hgint.c							\
 	hgmark.c						\
 	hgmem.c							\
+	hgname.c						\
 	hgnull.c						\
 	hgobject.c						\
 	hgutils.c						\

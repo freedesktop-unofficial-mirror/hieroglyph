@@ -1,5 +1,7 @@
 2010-05-27  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgname.[ch]: new.
+
 	* hieroglyph/hgobject.c (hg_object_new): API change to make this
 	comfortable for others.
 
