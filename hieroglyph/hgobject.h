@@ -199,14 +199,15 @@ struct _hg_object_array_t {
 };
 
 
-void         hg_object_init(void);
-void         hg_object_fini(void);
-hg_object_t *hg_object_new (hg_mem_t         *mem,
-                            hg_object_type_t  type,
-                            gsize             preallocated_size,
-			    ...);
-void         hg_object_free(hg_mem_t         *mem,
-			    hg_quark_t        index);
+void       hg_object_init(void);
+void       hg_object_fini(void);
+hg_quark_t hg_object_new (hg_mem_t         *mem,
+                          gpointer         *ret,
+                          hg_object_type_t  type,
+                          gsize             preallocated_size,
+			  ...);
+void       hg_object_free(hg_mem_t         *mem,
+                          hg_quark_t        index);
 
 G_END_DECLS
 

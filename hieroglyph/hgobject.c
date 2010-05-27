@@ -115,8 +115,9 @@ hg_object_fini(void)
  *
  * Returns:
  */
-hg_object_t *
+hg_quark_t
 hg_object_new(hg_mem_t         *mem,
+	      gpointer         *ret,
 	      hg_object_type_t  type,
 	      gsize             preallocated_size,
 	      ...)
@@ -127,9 +128,9 @@ hg_object_new(hg_mem_t         *mem,
 	gsize size;
 	va_list ap;
 
-	hg_return_val_if_fail (mem != NULL, NULL);
-	hg_return_val_if_fail (type < HG_TYPE_END, NULL);
-	hg_return_val_if_fail (vtables[type] != NULL, NULL);
+	hg_return_val_if_fail (mem != NULL, Qnil);
+	hg_return_val_if_fail (type < HG_TYPE_END, Qnil);
+	hg_return_val_if_fail (vtables[type] != NULL, Qnil);
 
 	v = vtables[type];
 	size = v->get_capsulated_size();
@@ -138,10 +139,12 @@ hg_object_new(hg_mem_t         *mem,
 	va_start(ap, preallocated_size);
 
 	v->initialize(mem, retval, ap);
+	if (ret)
+		*ret = retval;
 
 	va_end(ap);
 
-	return retval;
+	return index;
 }
 
 /**
