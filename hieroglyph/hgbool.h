@@ -37,11 +37,13 @@ struct _hg_object_bool_t {
 };
 
 
+#define hg_object_bool_new(_m_,_v_,_r_)					\
+	hg_object_new((_m_), (_r_), HG_TYPE_BOOL, 0, (_v_), Qnil)
 #define hg_object_bool_to_qbool(_x_)				\
 	(hg_quark_t)(hg_quark_mask_set_type (HG_TYPE_BOOL)	\
 		     |hg_quark_mask_set_value ((_x_)->value))
-#define hg_qbool_to_object_bool(_m_, _x_)				\
-	(hg_object_bool_t *)hg_object_new(_m_, HG_TYPE_BOOL, 0, (_x_), Qnil)
+#define hg_qbool_to_object_bool(_m_, _x_,_r_)	\
+	hg_object_bool_new((_m_), (_x_), (_r_))
 
 
 hg_object_vtable_t *hg_object_bool_get_vtable(void);

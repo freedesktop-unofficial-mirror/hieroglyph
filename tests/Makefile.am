@@ -46,12 +46,18 @@ noinst_PROGRAMS =					\
 if ENABLE_UNIT_TEST
 noinst_PROGRAMS +=					\
 	test-hgallocator				\
+	test-hgbool					\
 	test-hgencoding					\
 	$(NULL)
 endif
 #
 test_hgallocator_SOURCES =				\
 	hgallocator.c					\
+	$(common_sources)				\
+	$(NULL)
+#
+test_hgbool_SOURCES =					\
+	hgbool.c					\
 	$(common_sources)				\
 	$(NULL)
 #

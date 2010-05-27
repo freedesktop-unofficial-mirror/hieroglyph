@@ -28,7 +28,7 @@
 
 G_BEGIN_DECLS
 
-#define Qnil	-1
+#define Qnil	(hg_quark_t)-1
 
 /* hgmem.h */
 typedef struct _hg_mem_t		hg_mem_t;
