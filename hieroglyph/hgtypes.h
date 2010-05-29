@@ -25,6 +25,7 @@
 #define __HIEROGLYPH_HGTYPES_H__
 
 #include <hieroglyph/hgmacros.h>
+#include <hieroglyph/hgquark.h>
 
 G_BEGIN_DECLS
 
@@ -42,8 +43,6 @@ G_BEGIN_DECLS
 typedef struct _hg_mem_t		hg_mem_t;
 typedef struct _hg_mem_vtable_t		hg_mem_vtable_t;
 typedef struct _hg_allocator_data_t	hg_allocator_data_t;
-/* hgutils.h */
-typedef gint64				hg_quark_t;
 
 typedef enum _hg_system_encoding_t	hg_system_encoding_t;
 

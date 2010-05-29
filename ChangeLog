@@ -1,3 +1,7 @@
+2010-05-29  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgquark.h: new.
+
 2010-05-27  Akira TAGOH  <akira@tagoh.org>
 
 	* tests/hgname.c: add testcases.

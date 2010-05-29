@@ -33,6 +33,7 @@ hg_public_headers =						\
 	hgname.h						\
 	hgnull.h						\
 	hgobject.h						\
+	hgquark.h						\
 	hgtypes.h						\
 	hgutils.h						\
 	$(NULL)
