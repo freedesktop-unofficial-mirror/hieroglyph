@@ -24,28 +24,21 @@
 #ifndef __HIEROGLYPH_HGMARK_H__
 #define __HIEROGLYPH_HGMARK_H__
 
-#include <hieroglyph/hgobject.h>
+#include <hieroglyph/hgquark.h>
 
 G_BEGIN_DECLS
 
-typedef struct _hg_object_mark_t	hg_object_mark_t;
+typedef struct _hg_bs_mark_t	hg_bs_mark_t;
 
-struct _hg_object_mark_t {
-	hg_object_template_t t;
-	guint16              unused1;
-	guint32              unused2;
+struct _hg_bs_mark_t {
+	hg_bs_template_t t;
+	guint16          unused1;
+	guint32          unused2;
 };
 
 
-#define hg_object_mark_new(_m_,_r_)				\
-	hg_object_new((_m_), (_r_), HG_TYPE_MARK, 0, Qnil)
-#define hg_object_mark_to_qmark(_x_)				\
-	(hg_quark_t)(hg_quark_mask_set_type (HG_TYPE_MARK))
-#define hg_qmark_to_object_mark(_m_,_x_,_r_)	\
-	hg_object_mark_new((_m_), (_r_))
-
-
-hg_object_vtable_t *hg_object_mark_get_vtable(void);
+#define HG_QMARK				\
+	hg_quark_new(HG_TYPE_MARK, Qnil)
 
 
 G_END_DECLS

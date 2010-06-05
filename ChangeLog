@@ -1,3 +1,18 @@
+2010-06-05  Akira TAGOH  <akira@tagoh.org>
+
+	Update the header files that provides the simple object to be based on
+	hg_quark_t rather than hg_object_t.
+
+	* hieroglyph/hgbool.h (HG_QBOOL): new.
+
+	* hieroglyph/hgint.h (HG_QINT): new.
+
+	* hieroglyph/hgmark.h (HG_QMARK): new.
+
+	* hieroglyph/hgnull.h (HG_QNULL): new.
+
+	* hieroglyph/hgquark.h: add more macros and polish some.
+
 2010-05-29  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgquark.h: new.

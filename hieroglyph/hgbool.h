@@ -24,29 +24,21 @@
 #ifndef __HIEROGLYPH_HGBOOL_H__
 #define __HIEROGLYPH_HGBOOL_H__
 
-#include <hieroglyph/hgobject.h>
+#include <hieroglyph/hgquark.h>
 
 G_BEGIN_DECLS
 
-typedef struct _hg_object_bool_t	hg_object_bool_t;
+typedef struct _hg_bs_bool_t	hg_bs_bool_t;
 
-struct _hg_object_bool_t {
-	hg_object_template_t t;
-	guint16              unused1;
-	guint32              value;
+struct _hg_bs_bool_t {
+	hg_bs_template_t t;
+	guint16          unused1;
+	guint32          value;
 };
 
 
-#define hg_object_bool_new(_m_,_v_,_r_)					\
-	hg_object_new((_m_), (_r_), HG_TYPE_BOOL, 0, (_v_), Qnil)
-#define hg_object_bool_to_qbool(_x_)				\
-	(hg_quark_t)(hg_quark_mask_set_type (HG_TYPE_BOOL)	\
-		     |hg_quark_mask_set_value ((_x_)->value))
-#define hg_qbool_to_object_bool(_m_,_x_,_r_)	\
-	hg_object_bool_new((_m_), (_x_), (_r_))
-
-
-hg_object_vtable_t *hg_object_bool_get_vtable(void);
+#define HG_QBOOL(_v_)					\
+	hg_quark_new(HG_TYPE_BOOL, (_v_) == TRUE)
 
 
 G_END_DECLS

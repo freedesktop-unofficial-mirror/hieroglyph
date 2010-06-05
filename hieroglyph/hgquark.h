@@ -58,27 +58,57 @@ enum _hg_type_t {
 };
 
 
-#ifdef G_CAN_INLINE
-G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_mask     (hg_quark_t           v) G_GNUC_CONST;
-G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_mask_bits(hg_quark_t           v,
-						      hg_quark_type_bit_t  begin,
-						      hg_quark_type_bit_t  end) G_GNUC_CONST;
-G_INLINE_FUNC gint       _hg_quark_type_bit_get_bits (hg_quark_t           v,
-						      hg_quark_type_bit_t  begin,
-						      hg_quark_type_bit_t  end) G_GNUC_CONST;
+G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_get          (hg_quark_t           v) G_GNUC_CONST;
+G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_set          (hg_quark_t           v) G_GNUC_CONST;
+G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_get_value    (hg_quark_t           v) G_GNUC_CONST;
+G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_mask_bits    (hg_quark_t           v,
+                                                          hg_quark_type_bit_t  begin,
+                                                          hg_quark_type_bit_t  end) G_GNUC_CONST;
+G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_clear_bits   (hg_quark_t           v,
+                                                          hg_quark_type_bit_t  begin,
+                                                          hg_quark_type_bit_t  end) G_GNUC_CONST;
+G_INLINE_FUNC gint       _hg_quark_type_bit_get_bits     (hg_quark_t           v,
+                                                          hg_quark_type_bit_t  begin,
+                                                          hg_quark_type_bit_t  end) G_GNUC_CONST;
+G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_validate_bits(hg_quark_t           v,
+                                                          hg_quark_type_bit_t  begin,
+                                                          hg_quark_type_bit_t  end) G_GNUC_CONST;
+G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_set_bits     (hg_quark_t           x,
+                                                          hg_quark_type_bit_t  begin,
+                                                          hg_quark_type_bit_t  end,
+                                                          hg_quark_t           v) G_GNUC_CONST;
 
 G_INLINE_FUNC hg_quark_t
-_hg_quark_type_bit_mask(hg_quark_t v)
+_hg_quark_type_bit_get(hg_quark_t v)
 {
 	return v >> HG_QUARK_TYPE_BIT_SHIFT;
 }
 
 G_INLINE_FUNC hg_quark_t
-_hg_quark_type_bit_mask_bits(hg_quark_t          v,
-			     hg_quark_type_bit_t begin,
+_hg_quark_type_bit_set(hg_quark_t v)
+{
+	return v << HG_QUARK_TYPE_BIT_SHIFT;
+}
+
+G_INLINE_FUNC hg_quark_t
+_hg_quark_type_bit_get_value(hg_quark_t v)
+{
+	return v & ((1LL << HG_QUARK_TYPE_BIT_SHIFT) - 1);
+}
+
+G_INLINE_FUNC hg_quark_t
+_hg_quark_type_bit_mask_bits(hg_quark_type_bit_t begin,
 			     hg_quark_type_bit_t end)
 {
-	return _hg_quark_type_bit_mask(v) & ((1 << (end - begin + 1)) - 1);
+	return ((1LL << (end - begin + 1)) - 1) << begin;
+}
+
+G_INLINE_FUNC hg_quark_t
+_hg_quark_type_bit_clear_bits(hg_quark_t        v,
+			      hg_quark_type_bit_t begin,
+			      hg_quark_type_bit_t end)
+{
+	return _hg_quark_type_bit_get (v) & ~(_hg_quark_type_bit_mask_bits(begin, end));
 }
 
 G_INLINE_FUNC gint
@@ -86,20 +116,52 @@ _hg_quark_type_bit_get_bits(hg_quark_t          v,
 			    hg_quark_type_bit_t begin,
 			    hg_quark_type_bit_t end)
 {
-	return _hg_quark_type_bit_mask_bits(v, begin, end) >> begin;
+	return (_hg_quark_type_bit_get (v) & _hg_quark_type_bit_mask_bits (begin, end)) >> begin;
 }
-#else /* !G_CAN_INLINE */
-#define _hg_quark_type_bit_mask(_q_)			\
-	((hg_quark_t)(_q_) >> HG_QUARK_TYPE_BIT_SHIFT)
-#define _hg_quark_type_bit_mask_bits(_q_,_bs_,_be_)			\
-	(_hg_quark_type_bit_mask(_q_) & (1 << (((_be_) - (_bs_) + 1) - 1)))
-#define _hg_quark_type_bit_get_bits(_q_,_bs_,_be_)		\
-	(_hg_quark_type_bit_mask_bits(_q_,_bs_,_be_) >> (_bs_)
-#endif /* G_CAN_INLINE */
+
+G_INLINE_FUNC hg_quark_t
+_hg_quark_type_bit_validate_bits(hg_quark_t          v,
+				 hg_quark_type_bit_t begin,
+				 hg_quark_type_bit_t end)
+{
+	return v & _hg_quark_type_bit_mask_bits (begin, end);
+}
+
+G_INLINE_FUNC hg_quark_t
+_hg_quark_type_bit_set_bits(hg_quark_t          x,
+			    hg_quark_type_bit_t begin,
+			    hg_quark_type_bit_t end,
+			    hg_quark_t          v)
+{
+	return _hg_quark_type_bit_set (_hg_quark_type_bit_clear_bits (x, begin, end) |
+				       (_hg_quark_type_bit_validate_bits(v, begin, end) << begin)) |
+		_hg_quark_typebit_get_value(x);
+}
 
 
-G_INLINE_FUNC hg_type_t hg_quark_get_type        (hg_quark_t quark);
-G_INLINE_FUNC gboolean  hg_quark_is_simple_object(hg_quark_t quark);
+G_INLINE_FUNC hg_quark_t hg_quark_new             (hg_type_t   type,
+                                                   hg_quark_t  value);
+G_INLINE_FUNC hg_type_t  hg_quark_get_type        (hg_quark_t  quark);
+G_INLINE_FUNC gboolean   hg_quark_is_simple_object(hg_quark_t  quark);
+
+/**
+ * hg_quark_new:
+ * @type:
+ * @value:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+G_INLINE_FUNC hg_quark_t
+hg_quark_new(hg_type_t  type,
+	     hg_quark_t value)
+{
+	return _hg_quark_type_bit_set_bits(value,
+					   HG_QUARK_TYPE_BIT_TYPE,
+					   HG_QUARK_TYPE_BIT_TYPE_END,
+					   type);
+}
 
 /**
  * hg_quark_get_type:
