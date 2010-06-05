@@ -56,14 +56,10 @@ hg_built_sources =						\
 hg_sources =							\
 	$(hg_built_sources)					\
 	hgallocator.c						\
-	hgbool.c						\
 	hgencoding.c						\
 	hgerror.c						\
-	hgint.c							\
-	hgmark.c						\
 	hgmem.c							\
 	hgname.c						\
-	hgnull.c						\
 	hgobject.c						\
 	hgutils.c						\
 	$(NULL)

@@ -61,9 +61,8 @@ enum _hg_type_t {
 G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_get          (hg_quark_t           v) G_GNUC_CONST;
 G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_set          (hg_quark_t           v) G_GNUC_CONST;
 G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_get_value    (hg_quark_t           v) G_GNUC_CONST;
-G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_mask_bits    (hg_quark_t           v,
-                                                          hg_quark_type_bit_t  begin,
-                                                          hg_quark_type_bit_t  end) G_GNUC_CONST;
+G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_mask_bits    (hg_quark_type_bit_t  begin,
+							  hg_quark_type_bit_t  end) G_GNUC_CONST;
 G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_clear_bits   (hg_quark_t           v,
                                                           hg_quark_type_bit_t  begin,
                                                           hg_quark_type_bit_t  end) G_GNUC_CONST;
@@ -135,7 +134,7 @@ _hg_quark_type_bit_set_bits(hg_quark_t          x,
 {
 	return _hg_quark_type_bit_set (_hg_quark_type_bit_clear_bits (x, begin, end) |
 				       (_hg_quark_type_bit_validate_bits(v, begin, end) << begin)) |
-		_hg_quark_typebit_get_value(x);
+		_hg_quark_type_bit_get_value(x);
 }
 
 
