@@ -25,25 +25,20 @@
 #define __HIEROGLYPH_HGTYPES_H__
 
 #include <hieroglyph/hgmacros.h>
-#include <hieroglyph/hgquark.h>
 
 G_BEGIN_DECLS
 
-#define Qnil	(hg_quark_t)-1
+#define Qnil	(hg_quark_t)0
 
-/* hgutils.h */
-#define hg_quark_mask_value(_v_)		\
-	((_v_) & 0xffffffff)
-#define hg_quark_get_value(_v_)			\
-	hg_quark_mask_value (_v_)
-#define hg_quark_mask_set_value(_v_)		\
-	hg_quark_mask_value (_v_)
+/* hgquark.h */
+typedef gint64				hg_quark_t;
 
 /* hgmem.h */
 typedef struct _hg_mem_t		hg_mem_t;
 typedef struct _hg_mem_vtable_t		hg_mem_vtable_t;
 typedef struct _hg_allocator_data_t	hg_allocator_data_t;
 
+typedef struct _hg_bs_template_t	hg_bs_template_t;
 typedef enum _hg_system_encoding_t	hg_system_encoding_t;
 
 /* hgmem.h */
@@ -68,6 +63,14 @@ struct _hg_allocator_data_t {
 };
 
 /**/
+struct _hg_bs_template_t {
+	union {
+		guint8 is_executable:1;
+		guint8 type:7;
+	} h;
+	guint8 is_zero;
+};
+
 enum _hg_system_encoding_t {
 	HG_enc_abs = 0,
 	HG_enc_add,

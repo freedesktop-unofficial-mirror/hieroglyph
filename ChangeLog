@@ -1,5 +1,10 @@
 2010-06-08  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgobject.[ch]: clean up.
+
+	* hieroglyph/hgquark.h (hg_type_is_simple): new.
+	(hg_quark_get_value): new.
+
 	* hieroglyph/hgallocator.c: trivial change to keep consistency between
 	Qnil and HG_QNULL.
 

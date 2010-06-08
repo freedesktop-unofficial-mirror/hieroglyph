@@ -37,10 +37,10 @@
 #include "hgobject.h"
 
 
-static hg_quark_t _hg_object_new(hg_mem_t          *mem,
-				 hg_object_type_t   type,
-				 gsize              size,
-				 hg_object_t      **ret);
+static hg_quark_t _hg_object_new(hg_mem_t    *mem,
+                                 hg_type_t    type,
+                                 gsize        size,
+                                 hg_object_t **ret);
 
 
 static hg_object_vtable_t *vtables[HG_TYPE_END];
@@ -48,10 +48,10 @@ static gboolean is_initialized = FALSE;
 
 /*< private >*/
 static hg_quark_t
-_hg_object_new(hg_mem_t          *mem,
-	       hg_object_type_t   type,
-	       gsize              size,
-	       hg_object_t      **ret)
+_hg_object_new(hg_mem_t     *mem,
+	       hg_type_t     type,
+	       gsize         size,
+	       hg_object_t **ret)
 {
 	hg_quark_t retval;
 	hg_object_t *object;
@@ -59,17 +59,20 @@ _hg_object_new(hg_mem_t          *mem,
 	hg_return_val_if_fail (mem != NULL, Qnil);
 	hg_return_val_if_fail (size > 0, Qnil);
 
-	retval = hg_mem_alloc(mem, sizeof (hg_object_t) > size ? sizeof (hg_object_t) : size, (gpointer *)&object);
-	if (retval != Qnil) {
-		memset(object, 0, sizeof (hg_object_t));
-		object->t.x.type = HG_OBJECT_MASK_TYPE (type);
+	if (hg_type_is_simple(type)) {
+		retval = Qnil;
+	} else {
+		retval = hg_mem_alloc(mem, sizeof (hg_object_t) > size ? sizeof (hg_object_t) : size, (gpointer *)&object);
+		if (retval != Qnil) {
+			memset(object, 0, sizeof (hg_object_t));
+			object->t.x.type = HG_OBJECT_MASK_TYPE (type);
 
-		if (ret)
-			*ret = object;
+			if (ret)
+				*ret = object;
+		}
 	}
-	retval |= hg_quark_mask_set_type(type);
 
-	return retval;
+	return hg_quark_new(type, retval);
 }
 
 /*< public >*/
@@ -82,20 +85,7 @@ void
 hg_object_init(void)
 {
 	if (!is_initialized) {
-		hg_object_vtable_t *v;
-
 		is_initialized = TRUE;
-
-		v = hg_object_bool_get_vtable();
-		vtables[HG_TYPE_BOOL] = v;
-		v = hg_object_int_get_vtable();
-		vtables[HG_TYPE_INT] = v;
-		v = hg_object_mark_get_vtable();
-		vtables[HG_TYPE_MARK] = v;
-		v = hg_object_name_get_vtable();
-		vtables[HG_TYPE_NAME] = v;
-		v = hg_object_null_get_vtable();
-		vtables[HG_TYPE_NULL] = v;
 
 		hg_encoding_init();
 	}
@@ -125,10 +115,10 @@ hg_object_fini(void)
  * Returns:
  */
 hg_quark_t
-hg_object_new(hg_mem_t         *mem,
-	      gpointer         *ret,
-	      hg_object_type_t  type,
-	      gsize             preallocated_size,
+hg_object_new(hg_mem_t  *mem,
+	      gpointer  *ret,
+	      hg_type_t  type,
+	      gsize      preallocated_size,
 	      ...)
 {
 	hg_object_vtable_t *v;
