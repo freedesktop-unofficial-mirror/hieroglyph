@@ -25,21 +25,14 @@
 #include "config.h"
 #endif
 
-#include "hgmem.h"
 #include "hgmark.h"
 #include "main.h"
 
-
-hg_mem_t *mem = NULL;
-hg_object_vtable_t *vtable = NULL;
 
 /** common **/
 void
 setup(void)
 {
-	hg_object_init();
-	mem = hg_mem_new(512);
-	vtable = hg_object_mark_get_vtable();
 }
 
 void
@@ -51,64 +44,27 @@ teardown(void)
 		g_print("E: %s\n", e);
 		g_free(e);
 	}
-	hg_mem_destroy(mem);
-	hg_object_fini();
 }
 
 /** test cases **/
-TDEF (get_capsulated_size)
+TDEF (new)
 {
-	gsize size;
+	hg_quark_t q;
 
-	size = vtable->get_capsulated_size();
-	fail_unless(size == sizeof (hg_object_mark_t), "Obtaining the different size: expect: %" G_GSIZE_FORMAT " actual: %" G_GSIZE_FORMAT, sizeof (hg_object_mark_t), size);
-} TEND
-
-TDEF (initialize)
-{
-	hg_object_mark_t *v = NULL, *v2 = NULL;
-	hg_quark_t q, q2;
-	hg_quark_t qv;
-
-	q = hg_object_mark_new(mem, (gpointer *)&v);
-	fail_unless(q != Qnil, "Unable to create the mark object.");
-	fail_unless(hg_quark_get_type(q) == HG_TYPE_MARK, "No type information in the quark");
-	qv = hg_object_mark_to_qmark(v);
-	fail_unless(qv == 0xa000000000000000, "Unexpected result to convert the object to the quark value.");
-	q2 = hg_qmark_to_object_mark(mem, qv, (gpointer *)&v2);
-	fail_unless(q2 != Qnil, "Unable to create the mark object (copying)");
-	fail_unless(v2 != NULL, "Unable to obtain the pointer of hg_object_mark_t");
-} TEND
-
-TDEF (free)
-{
-	/* can be done in initialize testcase */
-} TEND
-
-TDEF (object_to)
-{
-	/* can be done in initialize testcase */
-} TEND
-
-TDEF (object_from)
-{
-	/* can be done in initialize testcase */
+	q = HG_QMARK;
+	fail_unless(q == 0xa00000000, "Unexpected result to create a quark for mark: expected %lx, actual:%lx", 0xa00000000, q);
 } TEND
 
 /****/
 Suite *
 hieroglyph_suite(void)
 {
-	Suite *s = suite_create("hg_object_mark_t");
+	Suite *s = suite_create("hgmark.h");
 	TCase *tc = tcase_create("Generic Functionalities");
 
 	tcase_add_checked_fixture(tc, setup, teardown);
 
-	T (get_capsulated_size);
-	T (initialize);
-	T (free);
-	T (object_to);
-	T (object_from);
+	T (new);
 
 	suite_add_tcase(s, tc);
 

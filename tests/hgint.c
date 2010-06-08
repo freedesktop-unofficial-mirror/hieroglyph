@@ -25,21 +25,14 @@
 #include "config.h"
 #endif
 
-#include "hgmem.h"
 #include "hgint.h"
 #include "main.h"
 
-
-hg_mem_t *mem = NULL;
-hg_object_vtable_t *vtable = NULL;
 
 /** common **/
 void
 setup(void)
 {
-	hg_object_init();
-	mem = hg_mem_new(512);
-	vtable = hg_object_int_get_vtable();
 }
 
 void
@@ -51,68 +44,27 @@ teardown(void)
 		g_print("E: %s\n", e);
 		g_free(e);
 	}
-	hg_mem_destroy(mem);
-	hg_object_fini();
 }
 
 /** test cases **/
-TDEF (get_capsulated_size)
+TDEF (new)
 {
-	gsize size;
+	hg_quark_t q;
 
-	size = vtable->get_capsulated_size();
-	fail_unless(size == sizeof (hg_object_int_t), "Obtaining the different size: expect: %" G_GSIZE_FORMAT " actual: %" G_GSIZE_FORMAT, sizeof (hg_object_int_t), size);
-} TEND
-
-TDEF (initialize)
-{
-	hg_object_int_t *v = NULL, *v2 = NULL, *v3;
-	hg_quark_t q, q2, q3;
-	hg_quark_t qv, qv2;
-
-	q = hg_object_int_new(mem, Qnil, (gpointer *)&v);
-	fail_unless(q != Qnil, "Unable to create the integer object.");
-	fail_unless(hg_quark_get_type(q) == HG_TYPE_INT, "No type information in the quark");
-	v->value = 32768;
-	qv = hg_object_int_to_qint(v);
-	fail_unless(qv == 0x1000000000008000, "Unexpected result to convert the object to the quark value.");
-	q2 = hg_object_int_new(mem, qv, (gpointer *)&v2);
-	qv2 = hg_object_int_to_qint(v2);
-	fail_unless(qv2 == qv, "Unexpected result to convert the object to the quark value (copying).");
-	q3 = hg_qint_to_object_int(mem, qv, (gpointer *)&v3);
-	fail_unless(q3 != Qnil, "Unable to create the integer object (copying)");
-	fail_unless(v3->value == v->value, "Failed to copy the object from the quark.");
-} TEND
-
-TDEF (free)
-{
-	/* can be done in initialize testcase */
-} TEND
-
-TDEF (object_to)
-{
-	/* can be done in initialize testcase */
-} TEND
-
-TDEF (object_from)
-{
-	/* can be done in initialize testcase */
+	q = HG_QINT(32767);
+	fail_unless(q == 0x100007fff, "Unexpected result to create a quark for integer: expected: %lx, actual: %lx", 0x100007fff, q);
 } TEND
 
 /****/
 Suite *
 hieroglyph_suite(void)
 {
-	Suite *s = suite_create("hg_object_int_t");
+	Suite *s = suite_create("hgint.h");
 	TCase *tc = tcase_create("Generic Functionalities");
 
 	tcase_add_checked_fixture(tc, setup, teardown);
 
-	T (get_capsulated_size);
-	T (initialize);
-	T (free);
-	T (object_to);
-	T (object_from);
+	T (new);
 
 	suite_add_tcase(s, tc);
 

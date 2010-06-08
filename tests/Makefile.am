@@ -50,7 +50,6 @@ noinst_PROGRAMS +=					\
 	test-hgencoding					\
 	test-hgint					\
 	test-hgmark					\
-	test-hgname					\
 	test-hgnull					\
 	$(NULL)
 endif
