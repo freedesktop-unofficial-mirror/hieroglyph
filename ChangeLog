@@ -1,3 +1,8 @@
+2010-06-08  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgallocator.c: trivial change to keep consistency between
+	Qnil and HG_QNULL.
+
 2010-06-05  Akira TAGOH  <akira@tagoh.org>
 
 	Update the header files that provides the simple object to be based on

@@ -183,7 +183,7 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 
 				G_UNLOCK (bitmap);
 
-				return i;
+				return i + 1;
 			} else {
 				i = j;
 				required_size = aligned_size;
@@ -203,11 +203,11 @@ _hg_allocator_bitmap_free(hg_allocator_bitmap_t *bitmap,
 	gsize aligned_size;
 
 	hg_return_if_fail (bitmap != NULL);
-	hg_return_if_fail (index >= 0);
+	hg_return_if_fail (index > 0);
 	hg_return_if_fail (size > 0);
 
 	aligned_size = hg_mem_aligned_to(size, BLOCK_SIZE) / BLOCK_SIZE;
-	for (i = index; i < (index + aligned_size); i++)
+	for (i = index - 1; i < (index + aligned_size - 1); i++)
 		_hg_allocator_bitmap_clear(bitmap, i);
 #if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
 	g_print("After freed bitmap: %" G_GSIZE_FORMAT " blocks allocated\n", bitmap->size);
@@ -216,7 +216,7 @@ _hg_allocator_bitmap_free(hg_allocator_bitmap_t *bitmap,
 	for (i = 0; i < bitmap->size; i++) {
 		if (i % 50 == 0)
 			g_print("\n");
-		g_print("%d", _hg_allocator_bitmap_is_marked(bitmap, i) ? 1 : 0);
+		g_print("%d", _hg_allocator_bitmap_is_marked(bitmap, i + 1) ? 1 : 0);
 	}
 	g_print("\n");
 #endif
@@ -227,8 +227,9 @@ _hg_allocator_bitmap_mark(hg_allocator_bitmap_t *bitmap,
 			  gint32                 index)
 {
 	hg_return_if_fail (bitmap != NULL);
+	hg_return_if_fail (index > 0);
 
-	bitmap->bitmaps[index / sizeof (gint32)] |= 1 << (index % sizeof (gint32));
+	bitmap->bitmaps[(index - 1) / sizeof (gint32)] |= 1 << ((index - 1) % sizeof (gint32));
 }
 
 static void
@@ -236,8 +237,9 @@ _hg_allocator_bitmap_clear(hg_allocator_bitmap_t *bitmap,
 			   gint32                 index)
 {
 	hg_return_if_fail (bitmap != NULL);
+	hg_return_if_fail (index > 0);
 
-	bitmap->bitmaps[index / sizeof (gint32)] &= ~(1 << (index % sizeof (gint32)));
+	bitmap->bitmaps[(index - 1) / sizeof (gint32)] &= ~(1 << ((index - 1) % sizeof (gint32)));
 }
 
 static gboolean
@@ -245,8 +247,9 @@ _hg_allocator_bitmap_is_marked(hg_allocator_bitmap_t *bitmap,
 			       gint32                 index)
 {
 	hg_return_val_if_fail (bitmap != NULL, FALSE);
+	hg_return_val_if_fail (index > 0, FALSE);
 
-	return bitmap->bitmaps[index / sizeof (gint32)] & 1 << (index % sizeof (gint32));
+	return bitmap->bitmaps[(index - 1) / sizeof (gint32)] & 1 << ((index - 1) % sizeof (gint32));
 }
 
 /** allocator **/
@@ -319,7 +322,7 @@ _hg_allocator_alloc(hg_allocator_data_t *data,
 
 	obj_size = hg_mem_aligned_size (sizeof (hg_allocator_block_t) + size);
 	index = _hg_allocator_bitmap_alloc(priv->bitmap, obj_size);
-	if (index >= 0) {
+	if (index != Qnil) {
 		block = _hg_allocator_initialize_and_lock_object(priv, index);
 		block->index = index;
 		block->size = obj_size;
@@ -362,7 +365,7 @@ _hg_allocator_initialize_and_lock_object(hg_allocator_private_t *priv,
 {
 	hg_allocator_block_t *retval;
 
-	retval = (hg_allocator_block_t *)((gulong)priv->heap + (index * BLOCK_SIZE));
+	retval = (hg_allocator_block_t *)((gulong)priv->heap + ((index - 1) * BLOCK_SIZE));
 	memset(retval, 0, sizeof (hg_allocator_block_t));
 	retval->lock_count = 1;
 #if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
