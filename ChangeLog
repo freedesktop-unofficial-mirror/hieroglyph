@@ -1,3 +1,8 @@
+2010-06-22  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgerror.c (hg_get_stacktrace): trivial fix to get rid of
+	the unnecessary trace log.
+
 2010-06-08  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgobject.[ch]: clean up.

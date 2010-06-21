@@ -60,7 +60,8 @@ hg_get_stacktrace(void)
 	} while (size == 256);
 	strings = backtrace_symbols(array->pdata, array->len);
 
-	for (i = 0; i < array->len; i++) {
+	for (i = 1; i < array->len; i++) {
+		g_string_append_printf(retval, "  %d. ", i);
 		g_string_append(retval, strings[i]);
 		g_string_append_c(retval, '\n');
 	}
