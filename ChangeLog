@@ -1,5 +1,8 @@
 2010-06-24  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgreal.h (hg_real_convert_from_native): new.
+	(HG_QREAL): new.
+
 	* hieroglyph/hgmem.c (hg_mem_realloc): new.
 
 	* hieroglyph/hgallocator.c (_hg_allocator_bitmap_alloc):

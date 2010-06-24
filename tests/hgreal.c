@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * version.h
- * Copyright (C) 2005-2010 Akira TAGOH
+ * hgreal.c
+ * Copyright (C) 2010 Akira TAGOH
  * 
  * Authors:
  *   Akira TAGOH  <akira@tagoh.org>
@@ -21,19 +21,54 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HIEROGLYPH__VERSION_H__
-#define __HIEROGLYPH__VERSION_H__
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
-#include <glib/gmacros.h>
+#include "hgreal.h"
+#include "main.h"
 
 
-G_BEGIN_DECLS
+/** common **/
+void
+setup(void)
+{
+}
 
-#define HIEROGLYPH_VERSION	"@VERSION@"
-#define HIEROGLYPH_UUID		"cc9d38aa-9916-4039-b4e7-13804c2046fc"
+void
+teardown(void)
+{
+	gchar *e = hieroglyph_test_pop_error();
 
-const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
+	if (e) {
+		g_print("E: %s\n", e);
+		g_free(e);
+	}
+}
 
-G_END_DECLS
+/** test cases **/
+TDEF (new)
+{
+	hg_quark_t q;
 
-#endif /* __HIEROGLYPH__VERSION_H__ */
+	q = HG_QREAL(1.1);
+	fail_unless(q == 0x23f8ccccd, "Unexpected result to create a quark for integer: expected: %lx, actual: %lx", 0x23f8ccccd, q);
+	q = HG_QREAL(-1.1);
+	fail_unless(q == 0x2bf8ccccd, "Unexpected result to create a quark for integer: expected: %lx, actual: %lx", 0x2bf8ccccd, q);
+} TEND
+
+/****/
+Suite *
+hieroglyph_suite(void)
+{
+	Suite *s = suite_create("hgreal.h");
+	TCase *tc = tcase_create("Generic Functionalities");
+
+	tcase_add_checked_fixture(tc, setup, teardown);
+
+	T (new);
+
+	suite_add_tcase(s, tc);
+
+	return s;
+}

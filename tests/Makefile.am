@@ -51,6 +51,7 @@ noinst_PROGRAMS +=					\
 	test-hgint					\
 	test-hgmark					\
 	test-hgnull					\
+	test-hgreal					\
 	$(NULL)
 endif
 #
@@ -86,5 +87,10 @@ test_hgname_SOURCES =					\
 #
 test_hgnull_SOURCES =					\
 	hgnull.c					\
+	$(common_sources)				\
+	$(NULL)
+#
+test_hgreal_SOURCES =					\
+	hgreal.c					\
 	$(common_sources)				\
 	$(NULL)

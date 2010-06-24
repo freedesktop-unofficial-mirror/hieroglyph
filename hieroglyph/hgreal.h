@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * version.h
- * Copyright (C) 2005-2010 Akira TAGOH
+ * hgreal.h
+ * Copyright (C) 2010 Akira TAGOH
  * 
  * Authors:
  *   Akira TAGOH  <akira@tagoh.org>
@@ -21,19 +21,46 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HIEROGLYPH__VERSION_H__
-#define __HIEROGLYPH__VERSION_H__
+#ifndef __HIEROGLYPH_HGREAL_H__
+#define __HIEROGLYPH_HGREAL_H__
 
-#include <glib/gmacros.h>
-
+#include <hieroglyph/hgquark.h>
 
 G_BEGIN_DECLS
 
-#define HIEROGLYPH_VERSION	"@VERSION@"
-#define HIEROGLYPH_UUID		"cc9d38aa-9916-4039-b4e7-13804c2046fc"
+typedef struct _hg_bs_real_t	hg_bs_real_t;
 
-const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
+struct _hg_bs_real_t {
+	hg_bs_template_t t;
+	guint16          representation;
+	GFloatIEEE754    v;
+};
+
+
+#define HG_QREAL(_v_)				\
+	hg_real_convert_from_native((_v_))
+
+G_INLINE_FUNC hg_quark_t hg_real_convert_from_native(gfloat vfloat);
+
+/**
+ * hg_real_convert_from_native:
+ * @vfloat:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+G_INLINE_FUNC hg_quark_t
+hg_real_convert_from_native(gfloat vfloat)
+{
+	GFloatIEEE754 v;
+	gpointer x = &v;
+	gchar *p = x;
+
+	v.v_float = vfloat;
+	return hg_quark_new(HG_TYPE_REAL, (hg_quark_t)*(guint32 *)p);
+}
 
 G_END_DECLS
 
-#endif /* __HIEROGLYPH__VERSION_H__ */
+#endif /* __HIEROGLYPH_HGREAL_H__ */
