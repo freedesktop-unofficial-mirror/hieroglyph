@@ -118,6 +118,45 @@ TDEF (alloc)
 	vtable->finalize(retval);
 } TEND
 
+TDEF (realloc)
+{
+	hg_allocator_data_t *retval;
+	hg_quark_t t, t2, t3;
+	gpointer p, p2;
+
+	retval = vtable->initialize();
+	fail_unless(retval != NULL, "Unable to initialize the allocator.");
+	fail_unless(vtable->resize_heap(retval, 256), "Unable to initialize the heap.");
+
+	t = vtable->alloc(retval, 32, NULL);
+	fail_unless(t != Qnil, "Unable to allocate the memory.");
+	p = vtable->lock_object(retval, t);
+	vtable->unlock_object(retval, t);
+	t2 = vtable->realloc(retval, t, 64, NULL);
+	fail_unless(t2 != Qnil, "Unable to re-allocate the memory.");
+	fail_unless(t == t2, "Unexpected result to keep quark.");
+	p2 = vtable->lock_object(retval, t2);
+	vtable->unlock_object(retval, t2);
+	fail_unless(p == p2, "Unexpected result to grow the space.");
+	t3 = vtable->alloc(retval, 8, NULL);
+	fail_unless(t3 != Qnil, "Unable to allocate the memory.");
+	t2 = vtable->realloc(retval, t, 80, NULL);
+	fail_unless(t2 != Qnil, "Unable to re-allocate the memory.");
+	fail_unless(t == t2, "Unexpected result to keep quark.");
+	p2 = vtable->lock_object(retval, t2);
+	vtable->unlock_object(retval, t2);
+	fail_unless(p != p2, "Unexpected result to re-allocate: original: %x, reallocated: %x", p, p2);
+	t2 = vtable->realloc(retval, t, 512, NULL);
+	fail_unless(t2 == Qnil, "Should be no free spaces available.");
+	vtable->free(retval, t);
+	t = vtable->alloc(retval, 8, NULL);
+	p = vtable->lock_object(retval, t);
+	t2 = vtable->realloc(retval, t, 16, NULL);
+	fail_unless(t2 == Qnil, "Unexpected result to re-allocate the locked memory.");
+
+	vtable->finalize(retval);
+} TEND
+
 TDEF (free)
 {
 	/* can be done in alloc testcase */
@@ -147,7 +186,6 @@ TDEF (lock_object)
 
 	p = vtable->lock_object(retval, t);
 	b = hg_get_allocator_block (p);
-	g_print("foooo: %d\n", b->lock_count);
 	fail_unless(p != NULL, "Unable to obtain the object address.");
 	fail_unless(b->lock_count == 3, "Failed to lock the object.");
 
@@ -179,6 +217,7 @@ hieroglyph_suite(void)
 	T (resize_heap);
 	T (alloc);
 	T (free);
+	T (realloc);
 	T (lock_object);
 	T (unlock_object);
 

@@ -50,6 +50,10 @@ struct _hg_mem_vtable_t {
 	hg_quark_t (* alloc)         (hg_allocator_data_t *data,
 				      gsize                size,
 				      gpointer            *ret);
+	hg_quark_t (* realloc)       (hg_allocator_data_t *data,
+				      hg_quark_t           quark,
+				      gsize                size,
+				      gpointer            *ret);
 	void       (* free)          (hg_allocator_data_t *data,
 				      hg_quark_t           quark);
 	gpointer   (* lock_object)   (hg_allocator_data_t *data,

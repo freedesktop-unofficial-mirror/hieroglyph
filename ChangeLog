@@ -1,3 +1,15 @@
+2010-06-24  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgmem.c (hg_mem_realloc): new.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_bitmap_alloc):
+	Fix the unexpected marking issue.
+	(_hg_allocator_bitmap_realloc): new.
+	(_hg_allocator_bitmap_free): mutex-lock when clearing the bitmaps.
+	(_hg_allocator_realloc): new.
+	(_hg_allocator_lock_object): mutex-lock to avoid the race-condition
+	with realloc.
+
 2010-06-22  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgerror.c (hg_get_stacktrace): trivial fix to get rid of

@@ -153,6 +153,33 @@ hg_mem_alloc(hg_mem_t *mem,
 }
 
 /**
+ * hg_mem_realloc:
+ * @mem:
+ * @data:
+ * @size:
+ * @ret:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_quark_t
+hg_mem_realloc(hg_mem_t   *mem,
+	       hg_quark_t  data,
+	       gsize       size,
+	       gpointer   *ret)
+{
+	hg_return_val_if_fail (mem != NULL, Qnil);
+	hg_return_val_if_fail (mem->allocator != NULL, Qnil);
+	hg_return_val_if_fail (mem->allocator->realloc != NULL, Qnil);
+	hg_return_val_if_fail (mem->data != NULL, Qnil);
+	hg_return_val_if_fail (data != Qnil, Qnil);
+	hg_return_val_if_fail (size > 0, Qnil);
+
+	return mem->allocator->realloc(mem->data, data, size, ret);
+}
+
+/**
  * hg_mem_free:
  * @mem:
  * @data:
