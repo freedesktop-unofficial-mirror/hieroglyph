@@ -29,7 +29,6 @@
 
 G_BEGIN_DECLS
 
-#define HG_OBJECT_MASK_TYPE(_t_)		((_t_) & 0x7f)
 #define HG_OBJECT_SET_EXECUTABLE(_v_)		((_v_) == TRUE)
 
 #define HG_DEFINE_VTABLE(_name_)					\
@@ -61,7 +60,6 @@ typedef struct _hg_object_standard_header_t	hg_object_standard_header_t;
 typedef struct _hg_object_extended_header_t	hg_object_extended_header_t;
 typedef struct _hg_object_template_t		hg_object_template_t;
 typedef struct _hg_object_t			hg_object_t;
-typedef struct _hg_object_real_t		hg_object_real_t;
 typedef struct _hg_object_array_t		hg_object_array_t;
 
 
@@ -94,8 +92,7 @@ enum _hg_object_state_t {
 
 struct _hg_object_vtable_t {
 	gsize      (* get_capsulated_size) (void);
-	gboolean   (* initialize)          (hg_mem_t         *mem,
-					    hg_object_t      *object,
+	gboolean   (* initialize)          (hg_object_t      *object,
 					    va_list           args);
 	void       (* free)                (hg_mem_t         *mem,
 					    hg_object_t      *object);
@@ -123,28 +120,12 @@ struct _hg_object_extended_header_t {
 	guint16                     n_objects;
 	guint32                     total_bytes;
 };
-struct _hg_object_template_t {
-	union {
-		guint8 is_executable:1;
-		guint8 type:7;
-	} x;
-	guint8  is_zero;
-};
 struct _hg_object_t {
-	hg_object_template_t t;
-	guint16              length;
-	guint32              value;
-};
-struct _hg_object_real_t {
-	hg_object_template_t t;
-	guint16              representation;
-	union {
-		/* fixme */
-		gfloat       value;
-	} v;
+	hg_mem_t *mem;
+	hg_type_t type;
 };
 struct _hg_object_array_t {
-	hg_object_template_t t;
+//	hg_object_template_t t;
 	guint16              length;
 	guint32              offset;
 };

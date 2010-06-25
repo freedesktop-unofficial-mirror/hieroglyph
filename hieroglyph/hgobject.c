@@ -65,7 +65,8 @@ _hg_object_new(hg_mem_t     *mem,
 		retval = hg_mem_alloc(mem, sizeof (hg_object_t) > size ? sizeof (hg_object_t) : size, (gpointer *)&object);
 		if (retval != Qnil) {
 			memset(object, 0, sizeof (hg_object_t));
-			object->t.x.type = HG_OBJECT_MASK_TYPE (type);
+			object->type = type;
+			object->mem = mem;
 
 			if (ret)
 				*ret = object;
@@ -137,7 +138,7 @@ hg_object_new(hg_mem_t  *mem,
 
 	va_start(ap, preallocated_size);
 
-	v->initialize(mem, retval, ap);
+	v->initialize(retval, ap);
 	if (ret)
 		*ret = retval;
 
@@ -162,9 +163,9 @@ hg_object_free(hg_mem_t   *mem,
 	hg_return_if_fail (index != Qnil);
 
 	object = hg_mem_lock_object(mem, index);
-	hg_return_if_fail (object->t.x.type < HG_TYPE_END);
+	hg_return_if_fail (object->type < HG_TYPE_END);
 
-	v = vtables[object->t.x.type];
+	v = vtables[object->type];
 	v->free(mem, object);
 
 	hg_mem_unlock_object(mem, index);
