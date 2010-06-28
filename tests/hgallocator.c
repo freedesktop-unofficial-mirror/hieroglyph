@@ -154,6 +154,13 @@ TDEF (realloc)
 	t2 = vtable->realloc(retval, t, 16, NULL);
 	fail_unless(t2 == Qnil, "Unexpected result to re-allocate the locked memory.");
 	g_free(hieroglyph_test_pop_error());
+	t = vtable->alloc(retval, 32, &p);
+	t2 = vtable->realloc(retval, t, 64, &p2);
+	fail_unless(t2 == Qnil, "Unexpected result to re-allocate the indirect locked memory.");
+	g_free(hieroglyph_test_pop_error());
+	vtable->unlock_object(retval, t);
+	t2 = vtable->realloc(retval, t, 64, &p2);
+	fail_unless(t2 == t, "Unable to re-allocate the memory after unlocking the indirect locked memory.");
 
 	vtable->finalize(retval);
 } TEND

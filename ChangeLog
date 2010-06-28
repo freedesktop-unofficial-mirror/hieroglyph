@@ -1,5 +1,11 @@
 2010-06-28  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgallocator.c (_hg_allocator_realloc): unlock the object
+	when any referrer found.
+	(_hg_allocator_alloc): keep a concistency on the behaviour of
+	the lock count.
+	(_hg_allocator_realloc): likewise.
+
 	* tests/hgallocator.c (test_realloc): don't pop up the unnecessary
 	backtrace.
 
