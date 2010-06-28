@@ -90,6 +90,8 @@ hg_object_init(void)
 		is_initialized = TRUE;
 
 		hg_encoding_init();
+
+		vtables[HG_TYPE_STRING] = hg_object_string_get_vtable();
 	}
 }
 

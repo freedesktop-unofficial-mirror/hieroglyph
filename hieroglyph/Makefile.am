@@ -35,6 +35,7 @@ hg_public_headers =						\
 	hgobject.h						\
 	hgquark.h						\
 	hgreal.h						\
+	hgstring.h						\
 	hgtypes.h						\
 	hgutils.h						\
 	$(NULL)
@@ -61,6 +62,7 @@ hg_sources =							\
 	hgerror.c						\
 	hgmem.c							\
 	hgobject.c						\
+	hgstring.c						\
 	hgutils.c						\
 	$(NULL)
 #
