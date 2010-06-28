@@ -53,7 +53,8 @@ TDEF (hg_encoding_init)
 	fail_unless(hg_encoding_init(), "Unable to initialize the encodings");
 	fail_unless(hg_encoding_lookup_system_encoding("abs") != HG_enc_END, "the encoding map isn't somehow initialized properly");
 	hg_encoding_fini();
-	fail_unless(hg_encoding_lookup_system_encoding("abs") == HG_enc_END, "the encoding map isn't somehow initialized properly");
+	fail_unless(hg_encoding_lookup_system_encoding("abs") == HG_enc_END, "the encoding map isn't somehow de-initialized properly");
+	g_free(hieroglyph_test_pop_error());
 } TEND
 
 TDEF (hg_encoding_fini)
@@ -575,6 +576,7 @@ TDEF (hg_encoding_get_system_encoding_name)
 	fail_unless(*p == '\0', "Obtaining non-null strings for unknown");
 	p = hg_encoding_get_system_encoding_name(HG_enc_END);
 	fail_unless(p == NULL, "Obtaining something wrong for encoding number out of range");
+	g_free(hieroglyph_test_pop_error());
 } TEND
 
 TDEF (hg_encoding_lookup_system_encoding)

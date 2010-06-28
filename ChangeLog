@@ -1,5 +1,11 @@
 2010-06-28  Akira TAGOH  <akira@tagoh.org>
 
+	* tests/hgallocator.c (test_realloc): don't pop up the unnecessary
+	backtrace.
+
+	* tests/hgencoding.c (test_hg_encoding_init): likewise.
+	(test_hg_encoding_get_system_encoding_name): likewise.
+
 	* hieroglyph/hgobject.c (hg_object_new): don't invoke
 	the initialization function when failing allocating the object.
 	(hg_object_new): fail if the initialization fails.

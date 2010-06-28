@@ -153,6 +153,7 @@ TDEF (realloc)
 	p = vtable->lock_object(retval, t);
 	t2 = vtable->realloc(retval, t, 16, NULL);
 	fail_unless(t2 == Qnil, "Unexpected result to re-allocate the locked memory.");
+	g_free(hieroglyph_test_pop_error());
 
 	vtable->finalize(retval);
 } TEND
