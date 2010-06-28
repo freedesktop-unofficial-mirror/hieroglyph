@@ -166,7 +166,7 @@ hg_object_free(hg_mem_t   *mem,
 	hg_return_if_fail (object->type < HG_TYPE_END);
 
 	v = vtables[object->type];
-	v->free(mem, object);
+	v->free(object);
 
 	hg_mem_unlock_object(mem, index);
 	hg_mem_free(mem, index);

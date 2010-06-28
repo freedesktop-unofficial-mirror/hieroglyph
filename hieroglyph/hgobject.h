@@ -32,12 +32,10 @@ G_BEGIN_DECLS
 #define HG_OBJECT_SET_EXECUTABLE(_v_)		((_v_) == TRUE)
 
 #define HG_DEFINE_VTABLE(_name_)					\
-	static gsize _hg_object_ ## _name_ ## _get_capsulated_size(void); \
-	static void  _hg_object_ ## _name_ ## _initialize         (hg_mem_t    *mem, \
-								   hg_object_t *object,	\
-								   va_list      args); \
-	static void  _hg_object_ ## _name_ ## _free               (hg_mem_t    *mem, \
-								   hg_object_t *object); \
+	static gsize    _hg_object_ ## _name_ ## _get_capsulated_size(void); \
+	static gboolean _hg_object_ ## _name_ ## _initialize         (hg_object_t *object, \
+								      va_list      args); \
+	static void     _hg_object_ ## _name_ ## _free               (hg_object_t *object); \
 									\
 	static hg_object_vtable_t __hg_object_ ## _name_ ## _vtable = {	\
 		.get_capsulated_size = _hg_object_ ## _name_ ## _get_capsulated_size, \
@@ -92,10 +90,9 @@ enum _hg_object_state_t {
 
 struct _hg_object_vtable_t {
 	gsize      (* get_capsulated_size) (void);
-	gboolean   (* initialize)          (hg_object_t      *object,
-					    va_list           args);
-	void       (* free)                (hg_mem_t         *mem,
-					    hg_object_t      *object);
+	gboolean   (* initialize)          (hg_object_t *object,
+					    va_list      args);
+	void       (* free)                (hg_object_t *object);
 };
 struct _hg_object_header_template_t {
 	guint8 token_type;

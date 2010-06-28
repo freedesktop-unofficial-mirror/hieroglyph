@@ -37,7 +37,7 @@ enum _hg_object_name_type_t {
 	HG_name_index = -1,
 };
 struct _hg_object_name_t {
-	hg_object_template_t t;
+	hg_object_t o;
 	gint16               representation;
 	union {
 		guint32      index;
