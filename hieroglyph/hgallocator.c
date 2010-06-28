@@ -494,7 +494,7 @@ _hg_allocator_free(hg_allocator_data_t *data,
 	}
 }
 
-static gpointer
+G_INLINE_FUNC gpointer
 _hg_allocator_internal_lock_object(hg_allocator_private_t *priv,
 				   hg_quark_t              index,
 				   gboolean                initialize)
@@ -513,7 +513,7 @@ _hg_allocator_internal_lock_object(hg_allocator_private_t *priv,
 	return retval;
 }
 
-static gpointer
+G_INLINE_FUNC gpointer
 _hg_allocator_real_lock_object(hg_allocator_data_t *data,
 			       hg_quark_t           index)
 {
@@ -546,7 +546,7 @@ _hg_allocator_lock_object(hg_allocator_data_t *data,
 	return NULL;
 }
 
-static void
+G_INLINE_FUNC void
 _hg_allocator_real_unlock_object(hg_allocator_block_t *block)
 {
 	gint old_val;
