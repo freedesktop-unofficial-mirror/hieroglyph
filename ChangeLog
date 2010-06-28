@@ -1,3 +1,10 @@
+2010-06-28  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgallocator.c (_hg_allocator_realloc): not fail
+	when lock_count is less than 2. it's still likely when locking
+	the object in the object.
+	(_hg_allocator_realloc): unlock the object when the lock_count is 2.
+
 2010-06-24  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgreal.h (hg_real_convert_from_native): new.

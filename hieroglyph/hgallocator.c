@@ -440,10 +440,9 @@ _hg_allocator_realloc(hg_allocator_data_t *data,
 		volatile gint make_sure_if_no_referrer;
 
 		make_sure_if_no_referrer = g_atomic_int_get(&block->lock_count);
-		hg_return_val_if_fail (make_sure_if_no_referrer == 2, Qnil);
+		hg_return_val_if_fail (make_sure_if_no_referrer <= 2, Qnil);
 
 		index = _hg_allocator_bitmap_realloc(priv->bitmap, block->index, block->size, obj_size);
-		g_print("%ld\n", index);
 		if (index != Qnil) {
 			new_block = _hg_allocator_internal_lock_object(priv, index, FALSE);
 			if (new_block != block) {
@@ -457,7 +456,10 @@ _hg_allocator_realloc(hg_allocator_data_t *data,
 			new_block->size = obj_size;
 			retval = quark;
 			g_tree_replace(priv->block_in_use, HGQUARK_TO_POINTER (retval), new_block);
-			_hg_allocator_real_unlock_object(new_block);
+			if (make_sure_if_no_referrer == 2) {
+				/* ensure the requirement of the one time unlock_object */
+				_hg_allocator_real_unlock_object(new_block);
+			}
 
 			if (ret)
 				*ret = hg_get_allocated_object (new_block);
@@ -505,7 +507,7 @@ _hg_allocator_internal_lock_object(hg_allocator_private_t *priv,
 		retval->lock_count = 1;
 	}
 #if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
-	g_print("%s: %p\n", G_GNUC_FUNCTION, retval);
+	g_print("%s: %p\n", __FUNCTION__, retval);
 #endif
 
 	return retval;
