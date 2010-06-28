@@ -1,5 +1,9 @@
 2010-06-28  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgobject.c (hg_object_new): don't invoke
+	the initialization function when failing allocating the object.
+	(hg_object_new): fail if the initialization fails.
+
 	* hieroglyph/hgallocator.c (_hg_allocator_realloc): not fail
 	when lock_count is less than 2. it's still likely when locking
 	the object in the object.

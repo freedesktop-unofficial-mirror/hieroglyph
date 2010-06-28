@@ -35,6 +35,7 @@
 #include "hgnull.h"
 #include "hgmem.h"
 #include "hgobject.h"
+#include "hgstring.h"
 
 
 static hg_quark_t _hg_object_new(hg_mem_t    *mem,
@@ -135,10 +136,15 @@ hg_object_new(hg_mem_t  *mem,
 	v = vtables[type];
 	size = v->get_capsulated_size();
 	index = _hg_object_new(mem, type, size + hg_mem_aligned_size (preallocated_size), &retval);
+	if (index == Qnil)
+		return Qnil;
 
 	va_start(ap, preallocated_size);
 
-	v->initialize(retval, ap);
+	if (!v->initialize(retval, ap)) {
+		hg_mem_free(mem, index);
+		return Qnil;
+	}
 	if (ret)
 		*ret = retval;
 

@@ -25,7 +25,7 @@
 #define __HIEROGLYPH_HGOBJECT_H__
 
 #include <stdarg.h>
-#include <hieroglyph/hgtypes.h>
+#include <hieroglyph/hgquark.h>
 
 G_BEGIN_DECLS
 
