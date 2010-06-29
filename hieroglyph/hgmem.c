@@ -194,7 +194,9 @@ hg_mem_free(hg_mem_t   *mem,
 	hg_return_if_fail (mem->allocator != NULL);
 	hg_return_if_fail (mem->allocator->free != NULL);
 	hg_return_if_fail (mem->data != NULL);
-	hg_return_if_fail (data != Qnil);
+
+	if (data == Qnil)
+		return;
 
 	mem->allocator->free(mem->data,
 			     hg_quark_get_value (data));

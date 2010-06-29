@@ -2,6 +2,7 @@
 
 	* hieroglyph/hgmem.c (hg_mem_lock_object): ignore Qnil.
 	(hg_mem_unlock_object): likewise.
+	(hg_mem_free): ignore Qnil.
 
 	* hieroglyph/hgobject.c (hg_object_new): unlock the object
 	if no referrer.
