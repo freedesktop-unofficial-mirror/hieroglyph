@@ -1,5 +1,8 @@
 2010-06-29  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgmem.c (hg_mem_lock_object): ignore Qnil.
+	(hg_mem_unlock_object): likewise.
+
 	* hieroglyph/hgobject.c (hg_object_new): unlock the object
 	if no referrer.
 

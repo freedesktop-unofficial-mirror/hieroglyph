@@ -217,7 +217,9 @@ hg_mem_lock_object(hg_mem_t   *mem,
 	hg_return_val_if_fail (mem->allocator != NULL, NULL);
 	hg_return_val_if_fail (mem->allocator->lock_object != NULL, NULL);
 	hg_return_val_if_fail (mem->data != NULL, NULL);
-	hg_return_val_if_fail (data != Qnil, NULL);
+
+	if (data == Qnil)
+		return NULL;
 
 	return mem->allocator->lock_object(mem->data,
 					   hg_quark_get_value (data));
@@ -238,7 +240,9 @@ hg_mem_unlock_object(hg_mem_t   *mem,
 	hg_return_if_fail (mem->allocator != NULL);
 	hg_return_if_fail (mem->allocator->unlock_object != NULL);
 	hg_return_if_fail (mem->data != NULL);
-	hg_return_if_fail (data != Qnil);
+
+	if (data == Qnil)
+		return;
 
 	return mem->allocator->unlock_object(mem->data,
 					     hg_quark_get_value (data));
