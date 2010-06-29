@@ -1,3 +1,12 @@
+2010-06-29  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgobject.c (hg_object_new): unlock the object
+	if no referrer.
+
+	* hieroglyph/hgstring.c (hg_string_new): likewise.
+	(hg_string_new_with_value): likewise.
+	(hg_string_get_cstr): likewise.
+
 2010-06-28  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgobject.c (hg_object_init): initialize the string object.

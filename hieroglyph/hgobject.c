@@ -149,6 +149,8 @@ hg_object_new(hg_mem_t  *mem,
 	}
 	if (ret)
 		*ret = retval;
+	else
+		hg_mem_unlock_object(mem, index);
 
 	va_end(ap);
 

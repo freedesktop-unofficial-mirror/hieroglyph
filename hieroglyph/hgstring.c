@@ -109,6 +109,8 @@ hg_string_new(hg_mem_t *mem,
 	retval = hg_object_new(mem, (gpointer *)&s, HG_TYPE_STRING, 0, NULL, 0, requisition_size);
 	if (ret)
 		*ret = s;
+	else
+		hg_mem_unlock_object(mem, retval);
 
 	return retval;
 }
@@ -140,6 +142,8 @@ hg_string_new_with_value(hg_mem_t    *mem,
 	retval = hg_object_new(mem, (gpointer *)&s, HG_TYPE_STRING, 0, string, 0, length);
 	if (ret)
 		*ret = s;
+	else
+		hg_mem_unlock_object(mem, retval);
 
 	return retval;
 }
@@ -464,6 +468,7 @@ hg_string_get_cstr(hg_string_t  *string,
 	gsize i;
 
 	hg_return_val_if_fail (string != NULL, Qnil);
+	hg_return_val_if_fail (ret != NULL, Qnil);
 
 	s = hg_mem_lock_object(string->o.mem, string->qstring);
 	q = hg_mem_alloc(string->o.mem, string->length + 1, (gpointer *)&retval);
@@ -473,8 +478,7 @@ hg_string_get_cstr(hg_string_t  *string,
 		}
 		retval[i] = 0;
 	}
-	if (ret)
-		*ret = retval;
+	*ret = retval;
 
 	return q;
 }
