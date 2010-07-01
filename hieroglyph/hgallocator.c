@@ -198,6 +198,10 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 
 				G_UNLOCK (bitmap);
 
+#if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
+				g_print("Allocated at %" G_GSIZE_FORMAT "\n", i);
+#endif
+
 				return i + 1;
 			} else {
 				i = j;

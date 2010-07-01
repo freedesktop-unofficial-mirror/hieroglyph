@@ -1,3 +1,8 @@
+2010-07-01  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgallocator.c (_hg_allocator_bitmap_alloc):
+	add more debuginfo message.
+
 2010-06-29  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgmem.c (hg_mem_lock_object): ignore Qnil.
