@@ -1,3 +1,7 @@
+2010-07-02  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/Makefile.am (hg_private_headers): add hgbtree-private.h
+
 2010-07-01  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgbtree.[ch]: new.
