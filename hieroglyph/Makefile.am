@@ -63,6 +63,7 @@ hg_sources =							\
 	hgencoding.c						\
 	hgerror.c						\
 	hgmem.c							\
+	hgname.c						\
 	hgobject.c						\
 	hgstring.c						\
 	hgutils.c						\

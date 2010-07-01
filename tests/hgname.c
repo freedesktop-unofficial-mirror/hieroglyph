@@ -1095,7 +1095,7 @@ TDEF (hg_name_new_with_string)
 	q = hg_name_new_with_string(name, "foo", 3);
 	fail_unless(q != Qnil, "Unable to create a quark for string: %s", "foo");
 	p = hg_name_lookup(name, q);
-	fail_unless(p != NULL && strcmp(p, "foo") == 0, "Unexpected result to look up for the string %s with the quark %" G_GSIZE_FORMAT, "foo", q);
+	fail_unless(p != NULL && strcmp(p, "foo") == 0, "Unexpected result to look up for the string %s with the quark %" G_GSIZE_FORMAT ": actual: %s", "foo", q, p);
 } TEND
 
 TDEF (hg_name_lookup)

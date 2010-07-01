@@ -24,21 +24,25 @@
 #ifndef __HIEROGLYPH_HGNAME_H__
 #define __HIEROGLYPH_HGNAME_H__
 
-#include <hieroglyph/hgobject.h>
+#include <hieroglyph/hgencoding.h>
 
 G_BEGIN_DECLS
 
-typedef struct _hg_object_name_t	hg_object_name_t;
-typedef enum _hg_object_name_type_t	hg_object_name_type_t;
+#define HG_QNAME(_n_,_s_)			\
+	hg_name_new_with_string(_n_,_s_, -1)
 
-enum _hg_object_name_type_t {
+typedef struct _hg_name_t	hg_name_t;
+typedef struct _hg_bs_name_t	hg_bs_name_t;
+typedef enum _hg_bs_name_type_t	hg_bs_name_type_t;
+
+enum _hg_bs_name_type_t {
 	HG_name_offset = 1,
 	HG_name_DPS = 0,
 	HG_name_index = -1,
 };
-struct _hg_object_name_t {
-	hg_object_t o;
-	gint16               representation;
+struct _hg_bs_name_t {
+	hg_bs_template_t t;
+	gint16           representation;
 	union {
 		guint32      index;
 		guint32      offset;
@@ -46,24 +50,15 @@ struct _hg_object_name_t {
 };
 
 
-#define hg_object_name_to_qname(_x_)				\
-	(hg_quark_t)(hg_quark_mask_set_type (HG_TYPE_NAME)	\
-		     |hg_quark_mask_set_value ((_x_)->value))
-#define hg_qname_to_object_name(_m_, _x_)					\
-	(hg_object_name_t *)hg_object_new(_m_, HG_TYPE_NAME, 0, (_x_), Qnil)
-
-
-hg_object_vtable_t *hg_object_name_get_vtable       (void);
-hg_quark_t          hg_object_name_new_with_encoding(hg_mem_t             *mem,
-                                                     hg_system_encoding_t  encoding,
-                                                     gpointer             *ret);
-hg_quark_t          hg_object_name_new_with_string  (hg_mem_t             *mem,
-                                                     const gchar          *name,
-                                                     gssize                len,
-                                                     gpointer             *ret);
-const gchar        *hg_object_name_get_name         (hg_mem_t             *mem,
-                                                     hg_quark_t            index);
-
+hg_name_t   *hg_name_init             (void);
+void         hg_name_tini             (hg_name_t            *name);
+hg_quark_t   hg_name_new_with_encoding(hg_name_t            *name,
+                                       hg_system_encoding_t  encoding);
+hg_quark_t   hg_name_new_with_string  (hg_name_t            *name,
+                                       const gchar          *string,
+                                       gssize                len);
+const gchar *hg_name_lookup           (hg_name_t            *name,
+                                       hg_quark_t            quark);
 
 G_END_DECLS
 

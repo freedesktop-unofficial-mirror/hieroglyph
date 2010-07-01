@@ -26,167 +26,181 @@
 #endif
 
 #include <string.h>
-#include "hgencoding.h"
 #include "hgerror.h"
-#include "hgmem.h"
-#include "hgutils.h"
+#include "hgquark.h"
 #include "hgname.h"
 
 
-static hg_quark_t _hg_object_name_new(hg_mem_t              *mem,
-				      gpointer              *ret,
-				      hg_object_name_type_t  type,
-				      ...);
+#define HG_NAME_BLOCK_SIZE	512
 
-HG_DEFINE_VTABLE (name)
+struct _hg_name_t {
+	GHashTable  *name_spool;
+	gchar      **quarks;
+	hg_quark_t   seq_id;
+};
+
+G_INLINE_FUNC hg_quark_t _hg_name_new(hg_name_t   *name,
+                                      const gchar *string);
+
 
 /*< private >*/
-static gsize
-_hg_object_name_get_capsulated_size(void)
+G_INLINE_FUNC hg_quark_t
+_hg_name_new(hg_name_t   *name,
+	     const gchar *string)
 {
-	return hg_mem_aligned_size (sizeof (hg_object_name_t));
-}
-
-static void
-_hg_object_name_initialize(hg_mem_t    *mem,
-			   hg_object_t *object,
-			   va_list      args)
-{
-	/* nothing */
-}
-
-static void
-_hg_object_name_free(hg_mem_t    *mem,
-		     hg_object_t *object)
-{
-	/* nothing */
-}
-
-static hg_quark_t
-_hg_object_name_new(hg_mem_t              *mem,
-		    gpointer              *ret,
-		    hg_object_name_type_t  type,
-		    ...)
-{
-	hg_object_name_t *n = NULL;
-	va_list ap;
-	gsize prealloc = 0;
-	const gchar *name = NULL;
-	hg_system_encoding_t enc = HG_enc_END;
 	hg_quark_t retval;
+	gchar *s;
 
-	va_start(ap, type);
-	/* pre-process */
-	switch (type) {
-	    case HG_name_offset:
-		    name = va_arg(ap, const gchar *);
-		    prealloc = va_arg(ap, gsize) + 1;
-		    break;
-	    case HG_name_index:
-		    enc = va_arg(ap, hg_system_encoding_t);
-		    break;
-	    default:
-		    return Qnil;
-	}
-	retval = hg_object_new(mem, (gpointer *)&n, HG_TYPE_NAME, prealloc, Qnil);
-	if (retval != Qnil) {
-		n->representation = type;
-		/* post-process */
-		switch (type) {
-		    case HG_name_offset:
-			    n->representation = prealloc - 1;
-			    n->v.offset = sizeof (hg_object_name_t);
-			    memcpy((gchar *)n + n->v.offset, name, prealloc);
-			    break;
-		    case HG_name_index:
-			    n->v.index = enc;
-			    break;
-		    default:
-			    break;
-		}
-		if (ret)
-			*ret = n;
-	}
+	hg_return_val_if_fail (name->seq_id < (1LL << HG_QUARK_TYPE_BIT_SHIFT), Qnil);
+	hg_return_val_if_fail (name->seq_id != 0, Qnil);
 
-	va_end(ap);
+	if ((name->seq_id - HG_enc_POSTSCRIPT_RESERVED_END) % HG_NAME_BLOCK_SIZE == 0)
+		name->quarks = g_renew(gchar *, name->quarks, name->seq_id - HG_enc_POSTSCRIPT_RESERVED_END + HG_NAME_BLOCK_SIZE);
+	s = g_strdup(string);
+	retval = name->seq_id++;
+	name->quarks[retval - HG_enc_POSTSCRIPT_RESERVED_END] = s;
+	g_hash_table_insert(name->name_spool,
+			    s, HGQUARK_TO_POINTER (retval));
 
 	return retval;
 }
 
 /*< public >*/
 /**
- * hg_object_name_new_with_encoding:
- * @mem:
+ * hg_name_init:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_name_t *
+hg_name_init(void)
+{
+	hg_name_t *retval = g_new0(hg_name_t, 1);
+
+	hg_return_val_if_fail(retval != NULL, NULL);
+	retval->name_spool = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+	retval->seq_id = HG_enc_POSTSCRIPT_RESERVED_END + 1;
+	retval->quarks = g_new0(gchar *, HG_NAME_BLOCK_SIZE);
+
+	if (!hg_encoding_init()) {
+		hg_name_tini(retval);
+
+		return NULL;
+	}
+
+	return retval;
+}
+
+/**
+ * hg_name_tini:
+ * @name:
+ *
+ * FIXME
+ */
+void
+hg_name_tini(hg_name_t *name)
+{
+	if (name == NULL)
+		return;
+
+	g_hash_table_destroy(name->name_spool);
+	g_free(name->quarks);
+	g_free(name);
+	hg_encoding_tini();
+}
+
+/**
+ * hg_name_new_with_encoding:
+ * @name:
  * @encoding:
- * @ret:
  *
  * FIXME
  *
  * Returns:
  */
 hg_quark_t
-hg_object_name_new_with_encoding(hg_mem_t             *mem,
-				 hg_system_encoding_t  encoding,
-				 gpointer             *ret)
+hg_name_new_with_encoding(hg_name_t            *name,
+			  hg_system_encoding_t  encoding)
 {
-	hg_return_val_if_fail (mem != NULL, Qnil);
+	hg_return_val_if_fail (name != NULL, Qnil);
 	hg_return_val_if_fail (encoding < HG_enc_POSTSCRIPT_RESERVED_END, Qnil);
 
-	return _hg_object_name_new(mem, ret, HG_name_index, encoding);
+	return hg_quark_new(HG_TYPE_NAME, encoding);
 }
 
 /**
- * hg_object_name_new_with_string:
- * @mem:
+ * hg_name_new_with_string:
  * @name:
+ * @string:
  * @len:
- * @ret:
  *
  * FIXME
  *
  * Returns:
  */
 hg_quark_t
-hg_object_name_new_with_string(hg_mem_t    *mem,
-			       const gchar *name,
-			       gssize       len,
-			       gpointer    *ret)
+hg_name_new_with_string(hg_name_t   *name,
+			const gchar *string,
+			gssize       len)
 {
-	hg_return_val_if_fail (mem != NULL, Qnil);
+	hg_system_encoding_t enc;
+	hg_quark_t retval;
+	gchar *s;
+
 	hg_return_val_if_fail (name != NULL, Qnil);
+	hg_return_val_if_fail (string != NULL, Qnil);
 
 	if (len < 0)
-		len = strlen(name);
+		len = strlen(string);
 
-	return _hg_object_name_new(mem, ret, HG_name_offset, name, len);
+	s = g_strndup(string, len);
+	enc = hg_encoding_lookup_system_encoding(s);
+	if (enc == HG_enc_END) {
+		/* string isn't a system encoding.
+		 * try to look up on the name database.
+		 */
+		retval = HGPOINTER_TO_QUARK (g_hash_table_lookup(name->name_spool, string));
+		if (retval == Qnil) {
+			/* No name registered for string */
+			retval = _hg_name_new(name, s);
+		}
+	} else {
+		retval = enc;
+	}
+	g_free(s);
+
+	return hg_quark_new(HG_TYPE_NAME, retval);
 }
 
 /**
- * hg_object_name_get_name:
- * @mem:
- * @index:
+ * hg_name_lookup:
+ * @name:
+ * @quark:
  *
  * FIXME
  *
  * Returns:
  */
 const gchar *
-hg_object_name_get_name(hg_mem_t   *mem,
-			hg_quark_t  index)
+hg_name_lookup(hg_name_t  *name,
+	       hg_quark_t  quark)
 {
-	hg_object_name_t *n;
+	const gchar *retval;
+	hg_quark_t value;
 
-	hg_return_val_if_fail (mem != NULL, NULL);
-	hg_return_val_if_fail (index != Qnil, NULL);
-	hg_return_val_if_fail (hg_quark_get_type (index) == HG_TYPE_NAME, NULL);
+	hg_return_val_if_fail (name != NULL, NULL);
+	hg_return_val_if_fail (quark != Qnil, NULL);
+	hg_return_val_if_fail (hg_quark_get_type (quark) == HG_TYPE_NAME, NULL);
 
-	n = (hg_object_name_t *)hg_mem_lock_object(mem, index);
-	if (n->representation > 0) {
-		return (const gchar *)n + n->v.offset;
-	} else if (n->representation == -1) {
-		return hg_encoding_get_system_encoding_name(n->v.index);
+	value = hg_quark_get_value(quark);
+	if ((hg_system_encoding_t)value > HG_enc_POSTSCRIPT_RESERVED_END) {
+		hg_quark_t q = value - HG_enc_POSTSCRIPT_RESERVED_END;
+
+		retval = name->quarks[q];
 	} else {
+		retval = hg_encoding_get_system_encoding_name(value);
 	}
 
-	return NULL;
+	return retval;
 }
