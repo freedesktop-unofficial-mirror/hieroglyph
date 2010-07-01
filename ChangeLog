@@ -1,5 +1,8 @@
 2010-07-01  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgquark.h (hg_quark_new): drop the higher bits
+	to avoid putting the garbage.
+
 	* hieroglyph/hgencoding.c (hg_encoding_init): returns TRUE
 	if the hash table is already initialized.
 

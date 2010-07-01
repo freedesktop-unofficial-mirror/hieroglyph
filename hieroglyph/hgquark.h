@@ -175,7 +175,7 @@ G_INLINE_FUNC hg_quark_t
 hg_quark_new(hg_type_t  type,
 	     hg_quark_t value)
 {
-	return _hg_quark_type_bit_set_bits(value,
+	return _hg_quark_type_bit_set_bits(_hg_quark_type_bit_get_value(value),
 					   HG_QUARK_TYPE_BIT_TYPE,
 					   HG_QUARK_TYPE_BIT_TYPE_END,
 					   type);
