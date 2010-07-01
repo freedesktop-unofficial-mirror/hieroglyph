@@ -103,3 +103,15 @@ hg_is_stacktrace_enabled(void)
 	return FALSE;
 #endif
 }
+
+/**
+ * hg_error_quark:
+ *
+ * FIXME
+ *
+ */
+GQuark
+hg_error_quark(void)
+{
+	return g_quark_from_static_string("hg-error-quark");
+}

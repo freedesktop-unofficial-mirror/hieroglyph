@@ -1,5 +1,11 @@
 2010-07-01  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgerror.h (_hg_gerror_on_fail): new.
+	(hg_return_with_gerror_if_fail): new.
+	(hg_return_val_with_gerror_if_fail): new.
+
+	* hieroglyph/hgerror.c (hg_error_quark): new.
+
 	* hieroglyph/hgallocator.c (_hg_allocator_bitmap_alloc):
 	add more debuginfo message.
 
