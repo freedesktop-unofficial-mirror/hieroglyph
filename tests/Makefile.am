@@ -47,6 +47,7 @@ if ENABLE_UNIT_TEST
 noinst_PROGRAMS +=					\
 	test-hgallocator				\
 	test-hgbool					\
+	test-hgbtree					\
 	test-hgencoding					\
 	test-hgint					\
 	test-hgmark					\
@@ -63,6 +64,11 @@ test_hgallocator_SOURCES =				\
 #
 test_hgbool_SOURCES =					\
 	hgbool.c					\
+	$(common_sources)				\
+	$(NULL)
+#
+test_hgbtree_SOURCES =					\
+	hgbtree.c					\
 	$(common_sources)				\
 	$(NULL)
 #

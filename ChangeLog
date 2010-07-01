@@ -1,5 +1,7 @@
 2010-07-01  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgbtree.[ch]: new.
+
 	* hieroglyph/hgerror.h (_hg_gerror_on_fail): new.
 	(hg_return_with_gerror_if_fail): new.
 	(hg_return_val_with_gerror_if_fail): new.
