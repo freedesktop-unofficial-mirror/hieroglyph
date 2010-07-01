@@ -29,7 +29,7 @@
 G_BEGIN_DECLS
 
 gboolean              hg_encoding_init                    (void);
-void                  hg_encoding_fini                    (void);
+void                  hg_encoding_tini                    (void);
 const gchar          *hg_encoding_get_system_encoding_name(hg_system_encoding_t  encoding);
 hg_system_encoding_t  hg_encoding_lookup_system_encoding  (const gchar          *name);
 

@@ -51,7 +51,7 @@ teardown(void)
 		g_print("E: %s\n", e);
 		g_free(e);
 	}
-	hg_object_fini();
+	hg_object_tini();
 	hg_mem_destroy(mem);
 }
 

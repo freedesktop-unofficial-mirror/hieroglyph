@@ -982,12 +982,13 @@ hg_encoding_init(void)
 {
 	hg_system_encoding_t i;
 
-	if (!__hg_encoding_index_table) {
-		__hg_encoding_index_table = g_hash_table_new(g_str_hash,
-							     g_str_equal);
-		if (!__hg_encoding_index_table)
-			return FALSE;
-	}
+	if (__hg_encoding_index_table)
+		return TRUE;
+
+	__hg_encoding_index_table = g_hash_table_new(g_str_hash,
+						     g_str_equal);
+	if (!__hg_encoding_index_table)
+		return FALSE;
 	for (i = 0; i < HG_enc_POSTSCRIPT_RESERVED_END; i++) {
 		const gchar *n = hg_encoding_get_system_encoding_name(i);
 
@@ -1001,12 +1002,12 @@ hg_encoding_init(void)
 }
 
 /**
- * hg_encoding_fini:
+ * hg_encoding_tini:
  *
  * FIXME
  */
 void
-hg_encoding_fini(void)
+hg_encoding_tini(void)
 {
 	if (__hg_encoding_index_table) {
 		g_hash_table_destroy(__hg_encoding_index_table);

@@ -1,5 +1,8 @@
 2010-07-01  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgencoding.c (hg_encoding_init): returns TRUE
+	if the hash table is already initialized.
+
 	* hieroglyph/hgbtree.[ch]: new.
 
 	* hieroglyph/hgerror.h (_hg_gerror_on_fail): new.

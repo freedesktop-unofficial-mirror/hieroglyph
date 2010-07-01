@@ -129,7 +129,7 @@ struct _hg_object_array_t {
 
 
 void       hg_object_init(void);
-void       hg_object_fini(void);
+void       hg_object_tini(void);
 hg_quark_t hg_object_new (hg_mem_t         *mem,
                           gpointer         *ret,
                           hg_type_t         type,

@@ -96,14 +96,14 @@ hg_object_init(void)
 }
 
 /**
- * hg_object_fini:
+ * hg_object_tini:
  *
  * FIXME
  */
 void
-hg_object_fini(void)
+hg_object_tini(void)
 {
-	hg_encoding_fini();
+	hg_encoding_tini();
 
 	is_initialized = FALSE;
 }

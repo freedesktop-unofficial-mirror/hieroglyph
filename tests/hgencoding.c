@@ -52,12 +52,12 @@ TDEF (hg_encoding_init)
 {
 	fail_unless(hg_encoding_init(), "Unable to initialize the encodings");
 	fail_unless(hg_encoding_lookup_system_encoding("abs") != HG_enc_END, "the encoding map isn't somehow initialized properly");
-	hg_encoding_fini();
+	hg_encoding_tini();
 	fail_unless(hg_encoding_lookup_system_encoding("abs") == HG_enc_END, "the encoding map isn't somehow de-initialized properly");
 	g_free(hieroglyph_test_pop_error());
 } TEND
 
-TDEF (hg_encoding_fini)
+TDEF (hg_encoding_tini)
 {
 	/* can be done in hg_encoding_init testcase */
 } TEND
@@ -1086,7 +1086,7 @@ TDEF (hg_encoding_lookup_system_encoding)
 
 #undef TT
 
-	hg_encoding_fini();
+	hg_encoding_tini();
 } TEND
 
 /****/
@@ -1099,7 +1099,7 @@ hieroglyph_suite(void)
 	tcase_add_checked_fixture(tc, setup, teardown);
 
 	T (hg_encoding_init);
-	T (hg_encoding_fini);
+	T (hg_encoding_tini);
 	T (hg_encoding_get_system_encoding_name);
 	T (hg_encoding_lookup_system_encoding);
 
