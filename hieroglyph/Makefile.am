@@ -42,6 +42,7 @@ hg_public_headers =						\
 	$(NULL)
 hg_private_headers =						\
 	hgallocator-private.h					\
+	hgbtree-private.h					\
 	hgmem-private.h						\
 	$(NULL)
 hg_built_public_headers =					\
