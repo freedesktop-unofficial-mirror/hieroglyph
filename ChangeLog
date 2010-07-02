@@ -1,5 +1,7 @@
 2010-07-02  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgdict.[ch]: new.
+
 	* hieroglyph/hgbtree.c (hg_btree_remove): return a value
 	if the item was removed or not.
 

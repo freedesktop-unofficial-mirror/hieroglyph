@@ -53,7 +53,8 @@ enum _hg_type_t {
 	HG_TYPE_EVAL_NAME = 6,
 	HG_TYPE_ARRAY     = 9,
 	HG_TYPE_MARK      = 10,
-	HG_TYPE_END
+	HG_TYPE_DICT      = 11,
+	HG_TYPE_END /* 15 */
 };
 
 

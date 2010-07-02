@@ -26,6 +26,7 @@ hg_public_headers =						\
 	hgarray.h						\
 	hgbool.h						\
 	hgbtree.h						\
+	hgdict.h						\
 	hgencoding.h						\
 	hgerror.h						\
 	hgint.h							\
@@ -62,6 +63,7 @@ hg_sources =							\
 	hgallocator.c						\
 	hgarray.c						\
 	hgbtree.c						\
+	hgdict.c						\
 	hgencoding.c						\
 	hgerror.c						\
 	hgmem.c							\
