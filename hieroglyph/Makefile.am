@@ -38,7 +38,6 @@ hg_public_headers =						\
 	hgreal.h						\
 	hgstring.h						\
 	hgtypes.h						\
-	hgutils.h						\
 	$(NULL)
 hg_private_headers =						\
 	hgallocator-private.h					\
@@ -67,7 +66,6 @@ hg_sources =							\
 	hgname.c						\
 	hgobject.c						\
 	hgstring.c						\
-	hgutils.c						\
 	$(NULL)
 #
 stamp_files =							\
