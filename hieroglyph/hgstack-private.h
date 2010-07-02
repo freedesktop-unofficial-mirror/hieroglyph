@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * version.h
+ * hgstack-private.h
  * Copyright (C) 2005-2010 Akira TAGOH
  * 
  * Authors:
@@ -21,19 +21,31 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HIEROGLYPH__VERSION_H__
-#define __HIEROGLYPH__VERSION_H__
+#ifndef __HIEROGLYPH_HGSTACK_PRIVATE_H__
+#define __HIEROGLYPH_HGSTACK_PRIVATE_H__
 
-#include <glib/gmacros.h>
-
+#include <hieroglyph/hgobject.h>
 
 G_BEGIN_DECLS
 
-#define HIEROGLYPH_VERSION	"@VERSION@"
-#define HIEROGLYPH_UUID		"18738889-2c98-4ec3-bf1d-20545ffbc823"
+typedef struct _hg_list_t	hg_list_t;
 
-const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
+struct _hg_list_t {
+	hg_quark_t  self;
+	hg_quark_t  data;
+	hg_list_t  *next;
+	hg_list_t  *prev;
+};
+struct _hg_stack_t {
+	hg_object_t  o;
+	hg_quark_t   self;
+	hg_list_t   *stack;
+	hg_list_t   *last_stack;
+	gsize        max_depth;
+	gsize        depth;
+	gboolean     validate_depth;
+};
 
 G_END_DECLS
 
-#endif /* __HIEROGLYPH__VERSION_H__ */
+#endif /* __HIEROGLYPH_HGSTACK_PRIVATE_H__ */

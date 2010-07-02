@@ -38,6 +38,7 @@ hg_public_headers =						\
 	hgobject.h						\
 	hgquark.h						\
 	hgreal.h						\
+	hgstack.h						\
 	hgstring.h						\
 	hgtypes.h						\
 	$(NULL)
@@ -45,6 +46,7 @@ hg_private_headers =						\
 	hgallocator-private.h					\
 	hgbtree-private.h					\
 	hgmem-private.h						\
+	hgstack-private.h					\
 	$(NULL)
 hg_built_public_headers =					\
 	hgversion.h						\
@@ -69,6 +71,7 @@ hg_sources =							\
 	hgmem.c							\
 	hgname.c						\
 	hgobject.c						\
+	hgstack.c						\
 	hgstring.c						\
 	$(NULL)
 #

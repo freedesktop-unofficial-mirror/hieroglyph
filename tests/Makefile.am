@@ -56,6 +56,7 @@ noinst_PROGRAMS +=					\
 	test-hgnull					\
 	test-hgquark					\
 	test-hgreal					\
+	test-hgstack					\
 	test-hgstring					\
 	$(NULL)
 endif
@@ -112,6 +113,11 @@ test_hgquark_SOURCES =					\
 #
 test_hgreal_SOURCES =					\
 	hgreal.c					\
+	$(common_sources)				\
+	$(NULL)
+#
+test_hgstack_SOURCES =					\
+	hgstack.c					\
 	$(common_sources)				\
 	$(NULL)
 #

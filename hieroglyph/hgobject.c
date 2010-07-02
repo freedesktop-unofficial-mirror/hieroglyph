@@ -37,6 +37,7 @@
 #include "hgmem.h"
 #include "hgobject.h"
 #include "hgstring.h"
+#include "hgstack.h"
 
 
 static hg_quark_t _hg_object_new(hg_mem_t    *mem,
@@ -94,6 +95,7 @@ hg_object_init(void)
 
 		vtables[HG_TYPE_STRING] = hg_object_string_get_vtable();
 		vtables[HG_TYPE_ARRAY] = hg_object_array_get_vtable();
+		vtables[HG_TYPE_STACK] = hg_object_stack_get_vtable();
 	}
 }
 
