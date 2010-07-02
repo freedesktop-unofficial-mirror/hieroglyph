@@ -39,6 +39,8 @@ struct _hg_bs_null_t {
 
 #define HG_QNULL				\
 	hg_quark_new(HG_TYPE_NULL, Qnil)
+#define HG_IS_QNULL(_v_)				\
+	(hg_quark_get_type(_v_) == HG_TYPE_NULL)
 
 
 G_END_DECLS

@@ -39,6 +39,8 @@ struct _hg_bs_bool_t {
 
 #define HG_QBOOL(_v_)					\
 	hg_quark_new(HG_TYPE_BOOL, (_v_) == TRUE)
+#define HG_IS_QBOOL(_v_)				\
+	(hg_quark_get_type(_v_) == HG_TYPE_BOOL)
 
 
 G_END_DECLS

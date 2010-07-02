@@ -1,5 +1,18 @@
 2010-07-02  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgstring.h (HG_QSTRING): new.
+	(HG_IS_QSTRING): new.
+
+	* hieroglyph/hgnull.h (HG_IS_QNULL): new.
+
+	* hieroglyph/hgname.h (HG_IS_QNAME): new.
+
+	* hieroglyph/hgmark.h (HG_IS_QMARK): new.
+
+	* hieroglyph/hgint.h (HG_IS_QINT): new.
+
+	* hieroglyph/hgbool.h (HG_IS_QBOOL): new.
+
 	* hieroglyph/hgobject.c (hg_object_init): initialize the array object.
 
 	* hieroglyph/hgarray.[ch]: new.

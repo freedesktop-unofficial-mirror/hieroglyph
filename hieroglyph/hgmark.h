@@ -39,6 +39,8 @@ struct _hg_bs_mark_t {
 
 #define HG_QMARK				\
 	hg_quark_new(HG_TYPE_MARK, Qnil)
+#define HG_IS_QMARK(_v_)				\
+	(hg_quark_get_type(_v_) == HG_TYPE_MARK)
 
 
 G_END_DECLS

@@ -28,6 +28,12 @@
 
 G_BEGIN_DECLS
 
+#define HG_QSTRING(_m_,_s_)					\
+	(hg_string_new_with_value((_m_), NULL, (_s_), -1))
+#define HG_IS_QSTRING(_v_)				\
+	(hg_quark_get_type(_v_) == HG_TYPE_STRING)
+
+
 typedef struct _hg_bs_string_t		hg_bs_string_t;
 typedef struct _hg_string_t		hg_string_t;
 

@@ -39,6 +39,8 @@ struct _hg_bs_int_t {
 
 #define HG_QINT(_v_)				\
 	hg_quark_new(HG_TYPE_INT, (_v_))
+#define HG_IS_QINT(_v_)				\
+	(hg_quark_get_type(_v_) == HG_TYPE_INT)
 
 
 G_END_DECLS
