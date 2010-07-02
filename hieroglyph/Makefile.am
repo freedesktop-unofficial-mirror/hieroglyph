@@ -23,6 +23,7 @@ CLEANFILES =							\
 # Local definitions
 hg_public_headers =						\
 	hgallocator.h						\
+	hgarray.h						\
 	hgbool.h						\
 	hgbtree.h						\
 	hgencoding.h						\
@@ -59,6 +60,7 @@ hg_built_sources =						\
 hg_sources =							\
 	$(hg_built_sources)					\
 	hgallocator.c						\
+	hgarray.c						\
 	hgbtree.c						\
 	hgencoding.c						\
 	hgerror.c						\

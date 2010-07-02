@@ -1,5 +1,9 @@
 2010-07-02  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgobject.c (hg_object_init): initialize the array object.
+
+	* hieroglyph/hgarray.[ch]: new.
+
 	* hieroglyph/hgstring.c (_hg_object_string_initialize): fail
 	the initialization if allocation failed.
 

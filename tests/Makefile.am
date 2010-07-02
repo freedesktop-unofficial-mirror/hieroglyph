@@ -46,6 +46,7 @@ noinst_PROGRAMS =					\
 if ENABLE_UNIT_TEST
 noinst_PROGRAMS +=					\
 	test-hgallocator				\
+	test-hgarray					\
 	test-hgbool					\
 	test-hgbtree					\
 	test-hgencoding					\
@@ -61,6 +62,11 @@ endif
 #
 test_hgallocator_SOURCES =				\
 	hgallocator.c					\
+	$(common_sources)				\
+	$(NULL)
+#
+test_hgarray_SOURCES =					\
+	hgarray.c					\
 	$(common_sources)				\
 	$(NULL)
 #

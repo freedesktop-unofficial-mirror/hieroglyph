@@ -28,6 +28,7 @@
 #include <string.h>
 #include "hgerror.h"
 #include "hgencoding.h"
+#include "hgarray.h"
 #include "hgbool.h"
 #include "hgint.h"
 #include "hgmark.h"
@@ -92,6 +93,7 @@ hg_object_init(void)
 		hg_encoding_init();
 
 		vtables[HG_TYPE_STRING] = hg_object_string_get_vtable();
+		vtables[HG_TYPE_ARRAY] = hg_object_array_get_vtable();
 	}
 }
 
