@@ -1,3 +1,8 @@
+2010-07-02  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgstring.c (_hg_object_string_initialize): fail
+	the initialization if allocation failed.
+
 2010-07-01  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgname.[ch]: revised a lot.

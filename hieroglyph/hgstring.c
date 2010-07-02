@@ -65,6 +65,8 @@ _hg_object_string_initialize(hg_object_t *object,
 		length = strlen(string);
 
 	str->qstring = hg_mem_alloc(object->mem, length, (gpointer *)&p);
+	if (str->qstring == Qnil)
+		return FALSE;
 	str->allocated_size = length;
 	str->is_fixed_size = FALSE;
 	hg_return_val_if_fail (str->qstring != Qnil, FALSE);
