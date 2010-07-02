@@ -808,16 +808,16 @@ hg_btree_add(hg_btree_t  *tree,
  *
  * FIXME
  */
-void
+gboolean
 hg_btree_remove(hg_btree_t  *tree,
 		hg_quark_t   qkey,
 		GError     **error)
 {
-	gboolean removed, need_restore = FALSE;
+	gboolean removed = FALSE, need_restore = FALSE;
 	hg_quark_t qval = Qnil, qroot = Qnil;
 	GError *err = NULL;
 
-	hg_return_with_gerror_if_fail (tree != NULL, error);
+	hg_return_val_with_gerror_if_fail (tree != NULL, FALSE, error);
 
 	removed = _hg_btree_node_remove(tree->mem, tree->root, &qkey, &qval, &need_restore, &err);
 	if (err)
@@ -862,6 +862,8 @@ hg_btree_remove(hg_btree_t  *tree,
 		}
 		g_error_free(err);
 	}
+
+	return removed;
 }
 
 /**

@@ -46,7 +46,7 @@ void       hg_btree_add    (hg_btree_t               *tree,
                             hg_quark_t                qkey,
                             hg_quark_t                qval,
                             GError                   **error);
-void       hg_btree_remove (hg_btree_t               *tree,
+gboolean   hg_btree_remove (hg_btree_t               *tree,
                             hg_quark_t                qkey,
                             GError                   **error);
 hg_quark_t hg_btree_find   (hg_btree_t               *tree,

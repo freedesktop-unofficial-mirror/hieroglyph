@@ -1,5 +1,8 @@
 2010-07-02  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgbtree.c (hg_btree_remove): return a value
+	if the item was removed or not.
+
 	* hieroglyph/hgstring.h (HG_QSTRING): new.
 	(HG_IS_QSTRING): new.
 
