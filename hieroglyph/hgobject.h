@@ -29,8 +29,6 @@
 
 G_BEGIN_DECLS
 
-#define HG_OBJECT_SET_EXECUTABLE(_v_)		((_v_) == TRUE)
-
 #define HG_DEFINE_VTABLE(_name_)					\
 	static gsize    _hg_object_ ## _name_ ## _get_capsulated_size(void); \
 	static gboolean _hg_object_ ## _name_ ## _initialize         (hg_object_t *object, \
@@ -51,14 +49,7 @@ G_BEGIN_DECLS
 
 typedef enum _hg_object_state_t			hg_object_state_t;
 typedef struct _hg_object_vtable_t		hg_object_vtable_t;
-typedef struct _hg_object_header_template_t	hg_object_header_template_t;
-typedef struct _hg_object_header_t		hg_object_header_t;
-typedef struct _hg_object_token_header_t	hg_object_token_header_t;
-typedef struct _hg_object_standard_header_t	hg_object_standard_header_t;
-typedef struct _hg_object_extended_header_t	hg_object_extended_header_t;
-typedef struct _hg_object_template_t		hg_object_template_t;
 typedef struct _hg_object_t			hg_object_t;
-typedef struct _hg_object_array_t		hg_object_array_t;
 
 
 enum {
@@ -94,37 +85,9 @@ struct _hg_object_vtable_t {
 					    va_list      args);
 	void       (* free)                (hg_object_t *object);
 };
-struct _hg_object_header_template_t {
-	guint8 token_type;
-};
-struct _hg_object_header_t {
-	hg_object_header_template_t type;
-	guint8 is_standard_header;
-};
-struct _hg_object_token_header_t {
-	hg_object_header_template_t type;
-	guint8                      representation;
-	guint16                     length;
-};
-struct _hg_object_standard_header_t {
-	hg_object_header_template_t type;
-	guint8                      n_objects;
-	guint16                     total_bytes;
-};
-struct _hg_object_extended_header_t {
-	hg_object_header_template_t type;
-	guint8                      is_zero;
-	guint16                     n_objects;
-	guint32                     total_bytes;
-};
 struct _hg_object_t {
 	hg_mem_t *mem;
 	hg_type_t type;
-};
-struct _hg_object_array_t {
-//	hg_object_template_t t;
-	guint16              length;
-	guint32              offset;
 };
 
 
