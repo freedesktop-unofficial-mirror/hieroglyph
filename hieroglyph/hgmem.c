@@ -29,7 +29,6 @@
 #include "hgallocator.h"
 #include "hgerror.h"
 #include "hgquark.h"
-#include "hgutils.h"
 #include "hgmem.h"
 #include "hgmem-private.h"
 
