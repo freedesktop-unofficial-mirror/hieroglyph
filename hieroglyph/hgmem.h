@@ -25,8 +25,10 @@
 #define __HIEROGLYPH_HGMEM_H__
 
 #include <hieroglyph/hgtypes.h>
+#include <hieroglyph/hgerror.h>
 
 G_BEGIN_DECLS
+
 
 hg_mem_t   *hg_mem_new               (gsize            size);
 hg_mem_t   *hg_mem_new_with_allocator(hg_mem_vtable_t *allocator,
@@ -47,6 +49,58 @@ gpointer    hg_mem_lock_object       (hg_mem_t        *mem,
                                       hg_quark_t       data);
 void        hg_mem_unlock_object     (hg_mem_t        *mem,
                                       hg_quark_t       data);
+
+G_INLINE_FUNC gpointer hg_mem_lock_object_with_gerror(hg_mem_t     *mem,
+						      hg_quark_t    quark,
+						      const gchar  *pretty_function,
+						      GError      **error);
+
+G_INLINE_FUNC gpointer
+hg_mem_lock_object_with_gerror(hg_mem_t     *mem,
+			       hg_quark_t    quark,
+			       const gchar  *pretty_function,
+			       GError      **error)
+{
+	gpointer retval;
+	GError *err = NULL;
+
+	hg_return_val_with_gerror_if_fail (mem != NULL, NULL, error);
+
+	retval = hg_mem_lock_object(mem, quark);
+	if (retval == NULL) {
+		g_set_error(&err, HG_ERROR, EINVAL,
+			    "%s: Invalid quark to obtain the real object [mem: %p, quark: %" G_GSIZE_FORMAT "]",
+			    pretty_function,
+			    mem,
+			    quark);
+	}
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s (code: %d)",
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+	}
+
+	return retval;
+}
+
+#define HG_MEM_LOCK(_m_,_q_,_e_)					\
+	hg_mem_lock_object_with_gerror((_m_),(_q_),__PRETTY_FUNCTION__,(_e_))
+#define hg_return_val_with_gerror_if_lock_fail(_o_,_m_,_q_,_e_,_v_)	\
+	_o_ = HG_MEM_LOCK ((_m_), (_q_), (_e_));			\
+	if ((_o_) == NULL)						\
+		return _v_;
+#define hg_return_with_gerror_if_lock_fail(_o_,_m_,_q_,_e_)		\
+	hg_return_val_with_gerror_if_lock_fail(_o_,_m_,_q_,_e_,)
+#define hg_return_val_if_lock_fail(_o_,_m_,_q_,_v_)			\
+	hg_return_val_with_gerror_if_lock_fail(_o_,_m_,_q_,NULL,_v_)
+#define hg_return_if_lock_fail(_o_,_m_,_q_)				\
+	hg_return_val_with_gerror_if_lock_fail(_o_,_m_,_q_,NULL,)
+
 
 G_END_DECLS
 

@@ -119,8 +119,7 @@ _hg_btree_node_new(hg_mem_t   *mem,
 	hg_btree_node_t *node;
 	hg_btree_t *tree;
 
-	tree = hg_mem_lock_object(mem, qtree);
-	hg_return_val_if_fail (tree != NULL, Qnil);
+	hg_return_val_if_lock_fail (tree, mem, qtree, Qnil);
 
 	retval = hg_mem_alloc(mem, sizeof (hg_btree_node_t), (gpointer *)&node);
 	if (retval != Qnil) {
@@ -168,7 +167,7 @@ _hg_btree_node_free(hg_mem_t   *mem,
 	if (qnode == Qnil)
 		return;
 
-	node = hg_mem_lock_object(mem, qnode);
+	hg_return_if_lock_fail (node, mem, qnode);
 
 	hg_mem_free(mem, node->qkey);
 	hg_mem_free(mem, node->qval);
@@ -218,11 +217,8 @@ _hg_btree_node_insert(hg_mem_t    *mem,
 		goto finalize;
 	}
 	if (!retval) {
-		tree = hg_mem_lock_object(mem, qnode_node->qparent);
+		tree = HG_MEM_LOCK (mem, qnode_node->qparent, error);
 		if (tree == NULL) {
-			g_set_error(error, HG_ERROR, EINVAL,
-				    "%s: Invalid quark to obtain the parent object: mem: %p, quark: %" G_GSIZE_FORMAT,
-				    __PRETTY_FUNCTION__, mem, qnode_node->qparent);
 			retval = FALSE;
 			goto finalize;
 		}
@@ -383,19 +379,13 @@ _hg_btree_node_remove(hg_mem_t    *mem,
 				qtnode = hg_mem_lock_object(qnode_node->mem, qqnode);
 			} while (qtnode[0] != Qnil);
 
-			qtkey = hg_mem_lock_object(qnode_node->mem, p->qkey);
-			qtval = hg_mem_lock_object(qnode_node->mem, p->qval);
+			qtkey = HG_MEM_LOCK (qnode_node->mem, p->qkey, error);
 			if (qtkey == NULL) {
-				g_set_error(error, HG_ERROR, EINVAL,
-					    "%s: Invalid quark to obtain the key container object: mem: %p, quark: %" G_GSIZE_FORMAT,
-					    __PRETTY_FUNCTION__, mem, p->qkey);
 				retval = FALSE;
 				goto finalize;
 			}
+			qtval = HG_MEM_LOCK (qnode_node->mem, p->qval, error);
 			if (qtval == NULL) {
-				g_set_error(error, HG_ERROR, EINVAL,
-					    "%s: Invalid quark to obtain the value container object: mem: %p, quark: %" G_GSIZE_FORMAT,
-					    __PRETTY_FUNCTION__, mem, p->qval);
 				retval = FALSE;
 				goto finalize;
 			}
@@ -445,15 +435,14 @@ _hg_btree_node_remove_data(hg_btree_node_t  *node,
 			   gsize             pos,
 			   GError          **error)
 {
-	hg_btree_t *tree = hg_mem_lock_object(node->mem, node->qparent);
+	hg_btree_t *tree;
 	gsize size;
 
-	if (tree == NULL) {
-		g_set_error(error, HG_ERROR, EINVAL,
-			    "%s: Invalid quark to obtain the tree object: mem: %p, quark: %" G_GSIZE_FORMAT,
-			    __PRETTY_FUNCTION__, node->mem, node->qparent);
-		return FALSE;
-	}
+	hg_return_val_with_gerror_if_lock_fail (tree,
+						node->mem,
+						node->qparent,
+						error,
+						FALSE);
 	size = tree->size;
 	hg_mem_unlock_object(node->mem, node->qparent);
 
@@ -474,29 +463,26 @@ _hg_btree_node_restore(hg_btree_node_t  *node,
 		       gsize             pos,
 		       GError          **error)
 {
-	hg_btree_t *tree = hg_mem_lock_object(node->mem, node->qparent);
+	hg_btree_t *tree;
 	hg_btree_node_t *tnode;
 	gsize size;
 
-	if (tree == NULL) {
-		g_set_error(error, HG_ERROR, EINVAL,
-			    "%s: Invalid quark to obtain the tree object: mem: %p, quark: %" G_GSIZE_FORMAT,
-			    __PRETTY_FUNCTION__, node->mem, node->qparent);
-		return FALSE;
-	}
+	hg_return_val_with_gerror_if_lock_fail (tree,
+						node->mem,
+						node->qparent,
+						error,
+						FALSE);
 	size = tree->size;
 	hg_mem_unlock_object(node->mem, node->qparent);
 
 	if (pos > 0) {
 		gsize ndata;
 
-		tnode = hg_mem_lock_object(node->mem, qnodes[pos - 1]);
-		if (tnode == NULL) {
-			g_set_error(error, HG_ERROR, EINVAL,
-				    "%s: Invalid quark to obtain the key container object: mem: %p, quark: %" G_GSIZE_FORMAT,
-				    __PRETTY_FUNCTION__, node->mem, qnodes[pos - 1]);
-			return FALSE;
-		}
+		hg_return_val_with_gerror_if_lock_fail (tnode,
+							node->mem,
+							qnodes[pos - 1],
+							error,
+							FALSE);
 		ndata = tnode->n_data;
 		hg_mem_unlock_object(node->mem, qnodes[pos - 1]);
 
@@ -507,13 +493,11 @@ _hg_btree_node_restore(hg_btree_node_t  *node,
 	} else {
 		gsize ndata;
 
-		tnode = hg_mem_lock_object(node->mem, qnodes[1]);
-		if (tnode == NULL) {
-			g_set_error(error, HG_ERROR, EINVAL,
-				    "%s: Invalid quark to obtain the key container object: mem: %p, quark: %" G_GSIZE_FORMAT,
-				    __PRETTY_FUNCTION__, node->mem, qnodes[1]);
-			return FALSE;
-		}
+		hg_return_val_with_gerror_if_lock_fail (tnode,
+							node->mem,
+							qnodes[1],
+							error,
+							FALSE);
 		ndata = tnode->n_data;
 		hg_mem_unlock_object(node->mem, qnodes[1]);
 
@@ -739,7 +723,7 @@ hg_btree_destroy(hg_mem_t   *mem,
 
 	if (qtree == Qnil)
 		return;
-	tree = hg_mem_lock_object(mem, qtree);
+	hg_return_if_lock_fail (tree, mem, qtree);
 	_hg_btree_node_free(tree->mem, tree->root);
 	hg_mem_free(tree->mem, tree->self);
 }
@@ -826,21 +810,19 @@ hg_btree_remove(hg_btree_t  *tree,
 		hg_btree_node_t *root_node;
 
 		qroot = tree->root;
-		root_node = hg_mem_lock_object(tree->mem, tree->root);
+		hg_return_val_with_gerror_if_lock_fail (root_node,
+							tree->mem,
+							tree->root,
+							error,
+							FALSE);
 
-		if (root_node == NULL) {
-			g_set_error(&err, HG_ERROR, EINVAL,
-				    "%s: Invalid quark to obtain the root node object: mem: %p, quark: %" G_GSIZE_FORMAT,
-				    __PRETTY_FUNCTION__, tree->mem, tree->root);
-			goto finalize;
-		}
 		if (root_node->n_data == 0) {
-			hg_quark_t *root_nodes = hg_mem_lock_object(root_node->mem, root_node->qnodes);
+			hg_quark_t *root_nodes;
 
+			root_nodes = HG_MEM_LOCK (root_node->mem,
+						  root_node->qnodes,
+						  error);
 			if (root_nodes == NULL) {
-				g_set_error(&err, HG_ERROR, EINVAL,
-					    "%s: Invalid quark to obtain the node container object: mem: %p, quark: %" G_GSIZE_FORMAT,
-					    __PRETTY_FUNCTION__, root_node->mem, root_node->qnodes);
 				goto qfinalize;
 			}
 			tree->root = root_nodes[0];

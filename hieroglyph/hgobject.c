@@ -175,8 +175,7 @@ hg_object_free(hg_mem_t   *mem,
 
 	hg_return_if_fail (mem != NULL);
 	hg_return_if_fail (index != Qnil);
-
-	object = hg_mem_lock_object(mem, index);
+	hg_return_if_lock_fail (object, mem, index);
 	hg_return_if_fail (object->type < HG_TYPE_END);
 
 	v = vtables[object->type];

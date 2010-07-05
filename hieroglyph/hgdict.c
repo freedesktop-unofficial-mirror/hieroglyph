@@ -119,10 +119,10 @@ hg_dict_add(hg_dict_t *dict,
 
 	hg_return_val_if_fail (dict != NULL, FALSE);
 	hg_return_val_if_fail (HG_IS_QSTRING (qkey), FALSE);
-
-	tree = hg_mem_lock_object(dict->o.mem, dict->qdict);
-	if (tree == NULL)
-		return FALSE;
+	hg_return_val_if_lock_fail (tree,
+				    dict->o.mem,
+				    dict->qdict,
+				    FALSE);
 
 	hg_btree_add(tree, qkey, qval, &err);
 
@@ -158,10 +158,10 @@ hg_dict_remove(hg_dict_t  *dict,
 
 	hg_return_val_if_fail (dict != NULL, FALSE);
 	hg_return_val_if_fail (HG_IS_QSTRING (qkey), FALSE);
-
-	tree = hg_mem_lock_object(dict->o.mem, dict->qdict);
-	if (tree == NULL)
-		return FALSE;
+	hg_return_val_if_lock_fail (tree,
+				    dict->o.mem,
+				    dict->qdict,
+				    FALSE);
 
 	retval = hg_btree_remove(tree, qkey, &err);
 
@@ -198,10 +198,10 @@ hg_dict_lookup(hg_dict_t  *dict,
 
 	hg_return_val_if_fail (dict != NULL, Qnil);
 	hg_return_val_if_fail (HG_IS_QSTRING (qkey), Qnil);
-
-	tree = hg_mem_lock_object(dict->o.mem, dict->qdict);
-	if (tree == NULL)
-		return Qnil;
+	hg_return_val_if_lock_fail (tree,
+				    dict->o.mem,
+				    dict->qdict,
+				    Qnil);
 
 	retval = hg_btree_find(tree, qkey, &err);
 
@@ -265,29 +265,15 @@ hg_dict_foreach(hg_dict_t                 *dict,
 		GError                   **error)
 {
 	hg_btree_t *tree;
-	GError *err = NULL;
 
 	hg_return_with_gerror_if_fail (dict != NULL, error);
 	hg_return_with_gerror_if_fail (func != NULL, error);
+	hg_return_with_gerror_if_lock_fail (tree,
+					    dict->o.mem,
+					    dict->qdict,
+					    error);
 
-	tree = hg_mem_lock_object(dict->o.mem, dict->qdict);
-	if (tree == NULL) {
-		g_set_error(&err, HG_ERROR, EINVAL,
-			    "%s: Invalid quark to obtain the btree object: mem: %p, quark: %" G_GSIZE_FORMAT,
-			    __PRETTY_FUNCTION__, dict->o.mem, dict->qdict);
-		goto finalize;
-	}
-
-	hg_btree_foreach(tree, func, data, &err);
+	hg_btree_foreach(tree, func, data, error);
 
 	hg_mem_unlock_object(dict->o.mem, dict->qdict);
-  finalize:
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			g_warning("%s (code: %d)", err->message, err->code);
-		}
-		g_error_free(err);
-	}
 }

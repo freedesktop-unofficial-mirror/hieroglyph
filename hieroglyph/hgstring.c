@@ -196,8 +196,8 @@ hg_string_clear(hg_string_t *string)
 	gchar *s;
 
 	hg_return_val_if_fail (string != NULL, FALSE);
+	hg_return_val_if_lock_fail (s, string->o.mem, string->qstring, FALSE);
 
-	s = hg_mem_lock_object(string->o.mem, string->qstring);
 	string->length = 0;
 	s[0] = 0;
 	hg_mem_unlock_object(string->o.mem, string->qstring);
@@ -224,7 +224,11 @@ hg_string_append_c(hg_string_t *string,
 	hg_return_val_if_fail (string != NULL, FALSE);
 
 	if (string->length < string->allocated_size) {
-		s = hg_mem_lock_object(string->o.mem, string->qstring);
+		hg_return_val_if_lock_fail (s,
+					    string->o.mem,
+					    string->qstring,
+					    FALSE);
+
 		s[string->length++] = c;
 		hg_mem_unlock_object(string->o.mem, string->qstring);
 		retval = TRUE;
@@ -275,7 +279,11 @@ hg_string_append(hg_string_t *string,
 	if (length < 0)
 		length = strlen(str);
 	if ((string->length + length) < string->allocated_size) {
-		s = hg_mem_lock_object(string->o.mem, string->qstring);
+		hg_return_val_if_lock_fail (s,
+					    string->o.mem,
+					    string->qstring,
+					    FALSE);
+
 		for (i = 0; i < length; i++)
 			s[string->length++] = str[i];
 		hg_mem_unlock_object(string->o.mem, string->qstring);
@@ -325,8 +333,11 @@ hg_string_insert_c(hg_string_t *string,
 
 	hg_return_val_if_fail (string != NULL, FALSE);
 	hg_return_val_if_fail (index < string->allocated_size, FALSE);
+	hg_return_val_if_lock_fail (s,
+				    string->o.mem,
+				    string->qstring,
+				    FALSE);
 
-	s = hg_mem_lock_object(string->o.mem, string->qstring);
 	s[index] = c;
 
 	for (i = 0; i < string->allocated_size; i++) {
@@ -367,8 +378,11 @@ hg_string_erase(hg_string_t *string,
 		length = string->length - pos;
 
 	hg_return_val_if_fail ((pos + length) <= string->length, FALSE);
+	hg_return_val_if_lock_fail (s,
+				    string->o.mem,
+				    string->qstring,
+				    FALSE);
 
-	s = hg_mem_lock_object(string->o.mem, string->qstring);
 	for (i = pos, j = (pos + length); j < string->length; i++, j++) {
 		s[i] = s[j];
 	}
@@ -396,8 +410,11 @@ hg_string_concat(hg_string_t *string1,
 
 	hg_return_val_if_fail (string1 != NULL, FALSE);
 	hg_return_val_if_fail (string2 != NULL, FALSE);
+	hg_return_val_if_lock_fail (s,
+				    string2->o.mem,
+				    string2->qstring,
+				    FALSE);
 
-	s = hg_mem_lock_object(string2->o.mem, string2->qstring);
 	retval = hg_string_append(string1, s, string2->length);
 	hg_mem_unlock_object(string2->o.mem, string2->qstring);
 
@@ -422,8 +439,11 @@ hg_string_index(hg_string_t *string,
 
 	hg_return_val_if_fail (string != NULL, 0);
 	hg_return_val_if_fail (index < string->length, 0);
+	hg_return_val_if_lock_fail (s,
+				    string->o.mem,
+				    string->qstring,
+				    0);
 
-	s = hg_mem_lock_object(string->o.mem, string->qstring);
 	retval = s[index];
 	hg_mem_unlock_object(string->o.mem, string->qstring);
 	
@@ -444,8 +464,11 @@ hg_string_get_static_cstr(hg_string_t *string)
 	gchar *retval;
 
 	hg_return_val_if_fail (string != NULL, NULL);
+	hg_return_val_if_lock_fail (retval,
+				    string->o.mem,
+				    string->qstring,
+				    NULL);
 
-	retval = hg_mem_lock_object(string->o.mem, string->qstring);
 	if (string->offset == 0)
 		retval[string->length] = 0;
 
@@ -471,8 +494,11 @@ hg_string_get_cstr(hg_string_t  *string,
 
 	hg_return_val_if_fail (string != NULL, Qnil);
 	hg_return_val_if_fail (ret != NULL, Qnil);
+	hg_return_val_if_lock_fail (s,
+				    string->o.mem,
+				    string->qstring,
+				    Qnil);
 
-	s = hg_mem_lock_object(string->o.mem, string->qstring);
 	q = hg_mem_alloc(string->o.mem, string->length + 1, (gpointer *)&retval);
 	if (q != Qnil) {
 		for (i = 0; i < string->length; i++) {
@@ -549,8 +575,10 @@ hg_string_ncompare(const hg_string_t *a,
 
 	hg_return_val_if_fail (a != NULL, FALSE);
 	hg_return_val_if_fail (b != NULL, FALSE);
-
-	sb = hg_mem_lock_object(b->o.mem, b->qstring);
+	hg_return_val_if_lock_fail (sb,
+				    b->o.mem,
+				    b->qstring,
+				    FALSE);
 
 	retval = hg_string_ncompare_with_cstr(a, sb, length);
 
@@ -585,7 +613,11 @@ hg_string_ncompare_with_cstr(const hg_string_t *a,
 	if (length != a->length)
 		return FALSE;
 
-	sa = hg_mem_lock_object(a->o.mem, a->qstring);
+	hg_return_val_if_lock_fail (sa,
+				    a->o.mem,
+				    a->qstring,
+				    FALSE);
+
 	retval = memcmp(sa, b, length) == 0;
 
 	hg_mem_unlock_object(a->o.mem, a->qstring);

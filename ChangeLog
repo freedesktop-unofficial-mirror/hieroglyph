@@ -1,3 +1,12 @@
+2010-07-05  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgmem.h (hg_mem_lock_object_with_gerror): new.
+	(HG_MEM_LOCK): new macro.
+	(hg_return_val_with_gerror_if_lock_fail): new macro.
+	(hg_return_with_gerror_if_lock_fail): new macro.
+	(hg_return_val_if_lock_fail): new macro.
+	(hg_return_if_lock_fail): new macro.
+
 2010-07-02  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgstack.[ch]: new.

@@ -128,10 +128,10 @@ hg_array_set(hg_array_t *array,
 
 	hg_return_val_if_fail (array != NULL, FALSE);
 	hg_return_val_if_fail ((array->offset + index) < array->allocated_size, FALSE);
-
-	container = hg_mem_lock_object(array->o.mem, array->qcontainer);
-	if (container == NULL)
-		return FALSE;
+	hg_return_val_if_lock_fail (container,
+				    array->o.mem,
+				    array->qcontainer,
+				    FALSE);
 
 	container[array->offset + index] = quark;
 	if (array->length < (array->offset + index + 1))
@@ -161,9 +161,11 @@ hg_array_get(hg_array_t  *array,
 
 	hg_return_val_with_gerror_if_fail (array != NULL, Qnil, error);
 	hg_return_val_with_gerror_if_fail ((array->offset + index) < array->length, Qnil, error);
-
-	container = hg_mem_lock_object(array->o.mem, array->qcontainer);
-	hg_return_val_with_gerror_if_fail (container != NULL, Qnil, error);
+	hg_return_val_with_gerror_if_lock_fail (container,
+						array->o.mem,
+						array->qcontainer,
+						error,
+						Qnil);
 
 	retval = container[array->offset + index];
 
@@ -195,10 +197,10 @@ hg_array_insert(hg_array_t *array,
 
 	if ((array->offset + pos) < array->length) {
 		hg_return_val_if_fail ((array->length + 1) < array->allocated_size, FALSE);
-
-		container = hg_mem_lock_object(array->o.mem, array->qcontainer);
-		if (container == NULL)
-			return FALSE;
+		hg_return_val_if_lock_fail (container,
+					    array->o.mem,
+					    array->qcontainer,
+					    FALSE);
 
 		array->length++;
 		for (i = array->length; i > array->offset + pos; i--) {
@@ -233,10 +235,10 @@ hg_array_remove(hg_array_t *array,
 	hg_return_val_if_fail (array != NULL, FALSE);
 	hg_return_val_if_fail (array->offset == 0, FALSE);
 	hg_return_val_if_fail ((array->offset + pos) < array->length, FALSE);
-
-	container = hg_mem_lock_object(array->o.mem, array->qcontainer);
-	if (container == NULL)
-		return FALSE;
+	hg_return_val_if_lock_fail (container,
+				    array->o.mem,
+				    array->qcontainer,
+				    FALSE);
 
 	for (i = pos; i < array->length; i++) {
 		container[i] = container[i + 1];
@@ -296,30 +298,17 @@ hg_array_foreach(hg_array_t                *array,
 {
 	hg_quark_t *container;
 	gsize i;
-	GError *err = NULL;
 
 	hg_return_with_gerror_if_fail (array != NULL, error);
 	hg_return_with_gerror_if_fail (func != NULL, error);
+	hg_return_with_gerror_if_lock_fail (container,
+					    array->o.mem,
+					    array->qcontainer,
+					    error);
 
-	container = hg_mem_lock_object(array->o.mem, array->qcontainer);
-	if (container == NULL) {
-		g_set_error(&err, HG_ERROR, EINVAL,
-			    "%s: Invalid quark to obtain the container object: mem: %p, quark: %" G_GSIZE_FORMAT,
-			    __PRETTY_FUNCTION__, array->o.mem, array->qcontainer);
-		goto finalize;
-	}
 	for (i = 0; i < array->length; i++) {
 		if (!func(array->o.mem, container[i], data, error))
 			break;
 	}
 	hg_mem_unlock_object(array->o.mem, array->qcontainer);
-  finalize:
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			g_warning("%s (code: %d)", err->message, err->code);
-		}
-		g_error_free(err);
-	}
 }
