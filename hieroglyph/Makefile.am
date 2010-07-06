@@ -29,6 +29,7 @@ hg_public_headers =						\
 	hgdict.h						\
 	hgencoding.h						\
 	hgerror.h						\
+	hgfile.h						\
 	hgint.h							\
 	hgmacros.h						\
 	hgmark.h						\
@@ -68,6 +69,7 @@ hg_sources =							\
 	hgdict.c						\
 	hgencoding.c						\
 	hgerror.c						\
+	hgfile.c						\
 	hgmem.c							\
 	hgname.c						\
 	hgobject.c						\
