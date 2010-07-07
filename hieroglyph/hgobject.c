@@ -37,8 +37,8 @@ static hg_quark_t _hg_object_new(hg_mem_t    *mem,
                                  hg_object_t **ret);
 
 
-static hg_object_vtable_t *vtables[HG_TYPE_END];
-static gboolean is_initialized = FALSE;
+static hg_object_vtable_t *__hg_object_vtables[HG_TYPE_END];
+static gboolean __hg_object_is_initialized = FALSE;
 
 /*< private >*/
 static hg_quark_t
@@ -79,8 +79,8 @@ _hg_object_new(hg_mem_t     *mem,
 void
 hg_object_init(void)
 {
-	memset(vtables, 0, sizeof (hg_quark_t) * (HG_TYPE_END - 1));
-	is_initialized = TRUE;
+	memset(__hg_object_vtables, 0, sizeof (hg_quark_t) * (HG_TYPE_END - 1));
+	__hg_object_is_initialized = TRUE;
 }
 
 /**
@@ -91,7 +91,7 @@ hg_object_init(void)
 void
 hg_object_tini(void)
 {
-	is_initialized = FALSE;
+	__hg_object_is_initialized = FALSE;
 }
 
 /**
@@ -107,9 +107,9 @@ gboolean
 hg_object_register(hg_type_t           type,
 		   hg_object_vtable_t *vtable)
 {
-	hg_return_val_if_fail (is_initialized, FALSE);
+	hg_return_val_if_fail (__hg_object_is_initialized, FALSE);
 
-	vtables[type] = vtable;
+	__hg_object_vtables[type] = vtable;
 
 	return TRUE;
 }
@@ -137,12 +137,12 @@ hg_object_new(hg_mem_t  *mem,
 	gsize size;
 	va_list ap;
 
-	hg_return_val_if_fail (is_initialized, Qnil);
+	hg_return_val_if_fail (__hg_object_is_initialized, Qnil);
 	hg_return_val_if_fail (mem != NULL, Qnil);
 	hg_return_val_if_fail (type < HG_TYPE_END, Qnil);
-	hg_return_val_if_fail (vtables[type] != NULL, Qnil);
+	hg_return_val_if_fail (__hg_object_vtables[type] != NULL, Qnil);
 
-	v = vtables[type];
+	v = __hg_object_vtables[type];
 	size = v->get_capsulated_size();
 	index = _hg_object_new(mem, type, size + hg_mem_aligned_size (preallocated_size), &retval);
 	if (index == Qnil)
@@ -176,13 +176,13 @@ hg_object_free(hg_mem_t   *mem,
 	hg_object_t *object;
 	hg_object_vtable_t *v;
 
-	hg_return_if_fail (is_initialized);
+	hg_return_if_fail (__hg_object_is_initialized);
 	hg_return_if_fail (mem != NULL);
 	hg_return_if_fail (index != Qnil);
 	hg_return_if_lock_fail (object, mem, index);
 	hg_return_if_fail (object->type < HG_TYPE_END);
 
-	v = vtables[object->type];
+	v = __hg_object_vtables[object->type];
 	v->free(object);
 
 	hg_mem_unlock_object(mem, index);
