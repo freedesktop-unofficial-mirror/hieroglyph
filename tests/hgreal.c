@@ -49,10 +49,17 @@ teardown(void)
 /** test cases **/
 TDEF (new)
 {
-	hg_quark_t q;
+	hg_quark_t q, q2;
+	gfloat f;
 
 	q = HG_QREAL(1.1);
-	fail_unless(q == 0x23f8ccccd, "Unexpected result to create a quark for integer: expected: %lx, actual: %lx", 0x23f8ccccd, q);
+	fail_unless(q == 0x23f8ccccd, "Unexpected result to create a quark for real: expected: %lx, actual: %lx", 0x23f8ccccd, q);
+	f = HG_REAL(q);
+	fail_unless(HG_REAL_EQUAL(f, 1.1), "Unexpected result to convert a quark to real: expected: %f, actual: %f", 1.1, f);
+	q2 = HG_QREAL(1.1);
+	fail_unless(q == q2, "Unexpected result to compare quarks for real.");
+	q2 = HG_QREAL(1.11L);
+	fail_unless(q != q2, "Unexpected result to compare different quarks for real.");
 	q = HG_QREAL(-1.1);
 	fail_unless(q == 0x2bf8ccccd, "Unexpected result to create a quark for integer: expected: %lx, actual: %lx", 0x2bf8ccccd, q);
 } TEND

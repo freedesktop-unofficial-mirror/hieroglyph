@@ -1,5 +1,18 @@
 2010-07-07  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgstring.h (HG_QSTRING): fix a typo.
+
+	* hieroglyph/hgstring.c (_hg_object_string_initialize): allow
+	0-sized string allocation.
+
+	* hieroglyph/hgreal.h (HG_REAL): new.
+	(HG_IS_QREAL): new.
+	(HG_REAL_EQUAL): new.
+	(HG_REAL_IS_ZERO): new.
+	(hg_real_convert_to_native): new.
+
+	* hieroglyph/hgint.h (HG_INT): new.
+
 	* hieroglyph/hgstring.h (HG_STRING_INIT): new.
 
 	* hieroglyph/hgstack.h (HG_STACK_INIT): new.

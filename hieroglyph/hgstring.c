@@ -61,15 +61,16 @@ _hg_object_string_initialize(hg_object_t *object,
 	hg_return_val_if_fail (str->offset >= 0, FALSE);
 
 	length = va_arg(args, gsize);
-	if (length < 0)
-		length = strlen(string);
 
-	str->qstring = hg_mem_alloc(object->mem, length, (gpointer *)&p);
-	if (str->qstring == Qnil)
-		return FALSE;
+	if (length > 0) {
+		str->qstring = hg_mem_alloc(object->mem, length, (gpointer *)&p);
+		if (str->qstring == Qnil)
+			return FALSE;
+	} else {
+		str->qstring = Qnil;
+	}
 	str->allocated_size = length;
 	str->is_fixed_size = FALSE;
-	hg_return_val_if_fail (str->qstring != Qnil, FALSE);
 
 	if (string) {
 		memcpy(p, string + str->offset, length);
@@ -106,7 +107,7 @@ hg_string_new(hg_mem_t *mem,
 	hg_quark_t retval;
 
 	hg_return_val_if_fail (mem != NULL, Qnil);
-	hg_return_val_if_fail (requisition_size > 0 && requisition_size <= HG_STRING_MAX_SIZE, Qnil);
+	hg_return_val_if_fail (requisition_size <= HG_STRING_MAX_SIZE, Qnil);
 
 	retval = hg_object_new(mem, (gpointer *)&s, HG_TYPE_STRING, 0, NULL, 0, requisition_size);
 	if (ret)
@@ -139,7 +140,7 @@ hg_string_new_with_value(hg_mem_t    *mem,
 
 	hg_return_val_if_fail (mem != NULL, Qnil);
 	hg_return_val_if_fail (string != NULL, Qnil);
-	hg_return_val_if_fail (length > 0 && length <= HG_STRING_MAX_SIZE, Qnil);
+	hg_return_val_if_fail (length <= HG_STRING_MAX_SIZE, Qnil);
 
 	retval = hg_object_new(mem, (gpointer *)&s, HG_TYPE_STRING, 0, string, 0, length);
 	if (ret)
@@ -464,6 +465,10 @@ hg_string_get_static_cstr(hg_string_t *string)
 	gchar *retval;
 
 	hg_return_val_if_fail (string != NULL, NULL);
+
+	if (string->qstring == Qnil)
+		return NULL;
+
 	hg_return_val_if_lock_fail (retval,
 				    string->o.mem,
 				    string->qstring,
@@ -494,6 +499,12 @@ hg_string_get_cstr(hg_string_t  *string,
 
 	hg_return_val_if_fail (string != NULL, Qnil);
 	hg_return_val_if_fail (ret != NULL, Qnil);
+
+	if (string->qstring == Qnil) {
+		*ret = NULL;
+		return Qnil;
+	}
+
 	hg_return_val_if_lock_fail (s,
 				    string->o.mem,
 				    string->qstring,

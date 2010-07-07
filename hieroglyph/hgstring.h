@@ -24,6 +24,7 @@
 #ifndef __HIEROGLYPH_HGSTRING_H__
 #define __HIEROGLYPH_HGSTRING_H__
 
+#include <string.h>
 #include <hieroglyph/hgobject.h>
 
 G_BEGIN_DECLS
@@ -33,7 +34,7 @@ G_BEGIN_DECLS
 			    hg_object_string_get_vtable()))
 
 #define HG_QSTRING(_m_,_s_)					\
-	(hg_string_new_with_value((_m_), NULL, (_s_), -1))
+	(hg_string_new_with_value((_m_), NULL, (_s_), strlen(_s_)))
 #define HG_IS_QSTRING(_v_)				\
 	(hg_quark_get_type(_v_) == HG_TYPE_STRING)
 
