@@ -40,6 +40,7 @@ void
 setup(void)
 {
 	hg_object_init();
+	HG_STACK_INIT;
 	mem = hg_mem_new(100000);
 	vtable = hg_object_stack_get_vtable();
 }

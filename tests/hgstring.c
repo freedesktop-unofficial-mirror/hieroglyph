@@ -38,6 +38,7 @@ void
 setup(void)
 {
 	hg_object_init();
+	HG_STRING_INIT;
 	mem = hg_mem_new(100000);
 	vtable = hg_object_string_get_vtable();
 }
