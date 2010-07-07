@@ -36,12 +36,9 @@ G_BEGIN_DECLS
 typedef enum _hg_file_io_t			hg_file_io_t;
 typedef enum _hg_file_mode_t			hg_file_mode_t;
 typedef enum _hg_file_pos_t			hg_file_pos_t;
-typedef enum _hg_file_backend_t			hg_file_backend_t;
-typedef struct _hg_file_master_t		hg_file_master_t;
 typedef struct _hg_file_vtable_t		hg_file_vtable_t;
 typedef struct _hg_file_t			hg_file_t;
 typedef struct _hg_file_io_data_t		hg_file_io_data_t;
-typedef struct _hg_file_mmapped_io_data_t	hg_file_mmapped_io_data_t;
 
 enum _hg_file_io_t {
 	HG_FILE_IO_FILE = 0,
