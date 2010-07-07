@@ -280,7 +280,7 @@ _hg_file_io_real_stdin_open(hg_file_t  *file,
 	hg_file_io_data_t *data;
 	hg_quark_t qdata;
 
-	hg_return_val_with_gerror_if_fail (file->mode >= HG_FILE_IO_MODE_END, FALSE, error);
+	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error);
 
 	if (file->io_type != HG_FILE_IO_STDIN) {
 		g_set_error(error, HG_ERROR, EINVAL,
@@ -328,7 +328,7 @@ _hg_file_io_real_stdout_open(hg_file_t  *file,
 	hg_file_io_data_t *data;
 	hg_quark_t qdata;
 
-	hg_return_val_with_gerror_if_fail (file->mode >= HG_FILE_IO_MODE_END, FALSE, error);
+	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error);
 
 	if (file->io_type != HG_FILE_IO_STDOUT) {
 		g_set_error(error, HG_ERROR, EINVAL,
@@ -376,7 +376,7 @@ _hg_file_io_real_stderr_open(hg_file_t  *file,
 	hg_file_io_data_t *data;
 	hg_quark_t qdata;
 
-	hg_return_val_with_gerror_if_fail (file->mode >= HG_FILE_IO_MODE_END, FALSE, error);
+	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error);
 
 	if (file->io_type != HG_FILE_IO_STDERR) {
 		g_set_error(error, HG_ERROR, EINVAL,
@@ -438,7 +438,7 @@ _hg_file_io_real_file_open(hg_file_t  *file,
 		O_RDWR | O_CREAT | O_APPEND,	/* HG_FILE_IO_MODE_READWRITE | HG_FILE_IO_MODE_APPEND */
 	};
 
-	hg_return_val_with_gerror_if_fail (file->mode >= HG_FILE_IO_MODE_END, FALSE, error);
+	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error);
 
 	if (file->io_type != HG_FILE_IO_FILE) {
 		g_set_error(error, HG_ERROR, EINVAL,
@@ -705,6 +705,8 @@ _hg_file_io_real_buffered_open(hg_file_t  *file,
 	hg_file_io_data_t *data;
 	hg_quark_t qdata;
 	hg_file_io_buffered_data_t *bd = user_data;
+
+	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error);
 
 	switch (file->io_type) {
 	    case HG_FILE_IO_FILE:

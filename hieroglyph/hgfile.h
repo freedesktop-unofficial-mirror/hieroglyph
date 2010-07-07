@@ -31,6 +31,7 @@
 G_BEGIN_DECLS
 
 #define HG_FILE_INIT						\
+	HG_STRING_INIT;						\
 	(hg_object_register(HG_TYPE_FILE,			\
 			    hg_object_file_get_vtable()))
 

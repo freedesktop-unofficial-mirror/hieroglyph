@@ -1,5 +1,13 @@
 2010-07-07  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgfile.h (HG_FILE_INIT): initialize the string object.
+
+	* hieroglyph/hgfile.c (_hg_file_io_real_stdin_open): fix a typo.
+	(_hg_file_io_real_stdout_open): likewise.
+	(_hg_file_io_real_stderr_open): likewise.
+	(_hg_file_io_real_file_open): likewise.
+	(_hg_file_io_real_buffered_open): likewise.
+
 	* hieroglyph/hgstring.h (HG_QSTRING): fix a typo.
 
 	* hieroglyph/hgstring.c (_hg_object_string_initialize): allow
