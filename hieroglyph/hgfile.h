@@ -24,6 +24,7 @@
 #ifndef __HIEROGLYPH_HGFILE_H__
 #define __HIEROGLYPH_HGFILE_H__
 
+#include <unistd.h>
 #include <hieroglyph/hgobject.h>
 #include <hieroglyph/hgstring.h>
 
