@@ -27,17 +27,8 @@
 
 #include <string.h>
 #include "hgerror.h"
-#include "hgencoding.h"
-#include "hgarray.h"
-#include "hgbool.h"
-#include "hgint.h"
-#include "hgmark.h"
-#include "hgname.h"
-#include "hgnull.h"
 #include "hgmem.h"
 #include "hgobject.h"
-#include "hgstring.h"
-#include "hgstack.h"
 
 
 static hg_quark_t _hg_object_new(hg_mem_t    *mem,
@@ -88,15 +79,8 @@ _hg_object_new(hg_mem_t     *mem,
 void
 hg_object_init(void)
 {
-	if (!is_initialized) {
-		is_initialized = TRUE;
-
-		hg_encoding_init();
-
-		vtables[HG_TYPE_STRING] = hg_object_string_get_vtable();
-		vtables[HG_TYPE_ARRAY] = hg_object_array_get_vtable();
-		vtables[HG_TYPE_STACK] = hg_object_stack_get_vtable();
-	}
+	memset(vtables, 0, sizeof (hg_quark_t) * (HG_TYPE_END - 1));
+	is_initialized = TRUE;
 }
 
 /**
@@ -107,9 +91,27 @@ hg_object_init(void)
 void
 hg_object_tini(void)
 {
-	hg_encoding_tini();
-
 	is_initialized = FALSE;
+}
+
+/**
+ * hg_object_register:
+ * @type:
+ * @vtable:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_object_register(hg_type_t           type,
+		   hg_object_vtable_t *vtable)
+{
+	hg_return_val_if_fail (is_initialized, FALSE);
+
+	vtables[type] = vtable;
+
+	return TRUE;
 }
 
 /**
@@ -135,6 +137,7 @@ hg_object_new(hg_mem_t  *mem,
 	gsize size;
 	va_list ap;
 
+	hg_return_val_if_fail (is_initialized, Qnil);
 	hg_return_val_if_fail (mem != NULL, Qnil);
 	hg_return_val_if_fail (type < HG_TYPE_END, Qnil);
 	hg_return_val_if_fail (vtables[type] != NULL, Qnil);
@@ -173,6 +176,7 @@ hg_object_free(hg_mem_t   *mem,
 	hg_object_t *object;
 	hg_object_vtable_t *v;
 
+	hg_return_if_fail (is_initialized);
 	hg_return_if_fail (mem != NULL);
 	hg_return_if_fail (index != Qnil);
 	hg_return_if_lock_fail (object, mem, index);

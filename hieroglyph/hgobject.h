@@ -91,15 +91,17 @@ struct _hg_object_t {
 };
 
 
-void       hg_object_init(void);
-void       hg_object_tini(void);
-hg_quark_t hg_object_new (hg_mem_t         *mem,
-                          gpointer         *ret,
-                          hg_type_t         type,
-                          gsize             preallocated_size,
-			  ...);
-void       hg_object_free(hg_mem_t         *mem,
-                          hg_quark_t        index);
+void       hg_object_init    (void);
+void       hg_object_tini    (void);
+gboolean   hg_object_register(hg_type_t           type,
+			      hg_object_vtable_t *vtable);
+hg_quark_t hg_object_new     (hg_mem_t           *mem,
+			      gpointer           *ret,
+			      hg_type_t           type,
+			      gsize               preallocated_size,
+			      ...);
+void       hg_object_free    (hg_mem_t           *mem,
+			      hg_quark_t          index);
 
 G_END_DECLS
 

@@ -29,6 +29,10 @@
 
 G_BEGIN_DECLS
 
+#define HG_FILE_INIT						\
+	(hg_object_register(HG_TYPE_FILE,			\
+			    hg_object_file_get_vtable()))
+
 typedef enum _hg_file_io_t			hg_file_io_t;
 typedef enum _hg_file_mode_t			hg_file_mode_t;
 typedef enum _hg_file_pos_t			hg_file_pos_t;

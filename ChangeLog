@@ -1,3 +1,17 @@
+2010-07-07  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgstring.h (HG_STRING_INIT): new.
+
+	* hieroglyph/hgstack.h (HG_STACK_INIT): new.
+
+	* hieroglyph/hgfile.h (HG_FILE_INIT): new.
+
+	* hieroglyph/hgdict.h (HG_DICT_INIT): new.
+
+	* hieroglyph/hgarray.h (HG_ARRAY_INIT): new.
+
+	* hieroglyph/hgobject.c (hg_object_register): new.
+
 2010-07-06  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgfile.[ch]: new.

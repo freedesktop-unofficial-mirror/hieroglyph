@@ -29,6 +29,10 @@
 
 G_BEGIN_DECLS
 
+#define HG_STACK_INIT						\
+	(hg_object_register(HG_TYPE_STACK,			\
+			    hg_object_stack_get_vtable()))
+
 typedef struct _hg_stack_t	hg_stack_t;
 
 

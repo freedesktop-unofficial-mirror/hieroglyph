@@ -29,6 +29,10 @@
 
 G_BEGIN_DECLS
 
+#define HG_DICT_INIT						\
+	(hg_object_register(HG_TYPE_DICT,			\
+			    hg_object_dict_get_vtable()))
+
 #define HG_IS_QDICT(_v_)				\
 	(hg_quark_get_type(_v_) == HG_TYPE_DICT)
 

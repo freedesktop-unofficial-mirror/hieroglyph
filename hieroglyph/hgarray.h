@@ -28,6 +28,10 @@
 
 G_BEGIN_DECLS
 
+#define HG_ARRAY_INIT						\
+	(hg_object_register(HG_TYPE_ARRAY,			\
+			    hg_object_array_get_vtable()))
+
 typedef struct _hg_bs_array_t	hg_bs_array_t;
 typedef struct _hg_array_t	hg_array_t;
 typedef gboolean (* hg_array_traverse_func_t) (hg_mem_t    *mem,
