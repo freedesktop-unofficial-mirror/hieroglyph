@@ -1,5 +1,8 @@
 2010-07-08  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgstring.c (hg_string_new_with_value): allow the negative
+	value for unsure sized string.
+
 	* hieroglyph/hgfile.c (_hg_file_get_io_type): allow the beggining of
 	'%' in the filename.
 	(hg_file_new_with_string): fix a typo.

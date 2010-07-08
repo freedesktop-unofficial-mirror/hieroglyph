@@ -133,7 +133,7 @@ hg_quark_t
 hg_string_new_with_value(hg_mem_t    *mem,
 			 gpointer    *ret,
 			 const gchar *string,
-			 gsize        length)
+			 gssize       length)
 {
 	hg_string_t *s = NULL;
 	hg_quark_t retval;
@@ -141,6 +141,9 @@ hg_string_new_with_value(hg_mem_t    *mem,
 	hg_return_val_if_fail (mem != NULL, Qnil);
 	hg_return_val_if_fail (string != NULL, Qnil);
 	hg_return_val_if_fail (length <= HG_STRING_MAX_SIZE, Qnil);
+
+	if (length < 0)
+		length = strlen(string);
 
 	retval = hg_object_new(mem, (gpointer *)&s, HG_TYPE_STRING, 0, string, 0, length);
 	if (ret)
