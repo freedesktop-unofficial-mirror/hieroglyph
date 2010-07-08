@@ -74,6 +74,21 @@ TDEF (hg_quark_is_simple_object)
 {
 } TEND
 
+TDEF (hg_quark_set_executable)
+{
+} TEND
+
+TDEF (hg_quark_is_executable)
+{
+	hg_quark_t q;
+
+	q = hg_quark_new(HG_TYPE_INT, 10);
+	fail_unless(q == 0x10000000a, "Unexpected result for integer quark");
+	q = hg_quark_set_executable(q, TRUE);
+	fail_unless(q == 0x110000000a, "Unexpected result to set a exec bit");
+	fail_unless(hg_quark_is_executable(q), "Unexpected result to check if one is executable");
+} TEND
+
 /****/
 Suite *
 hieroglyph_suite(void)
@@ -87,6 +102,8 @@ hieroglyph_suite(void)
 	T (hg_quark_get_type);
 	T (hg_quark_get_value);
 	T (hg_quark_is_simple_object);
+	T (hg_quark_set_executable);
+	T (hg_quark_is_executable);
 
 	suite_add_tcase(s, tc);
 

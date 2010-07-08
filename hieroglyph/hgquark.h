@@ -41,7 +41,7 @@ enum _hg_quark_type_bit_t {
 	HG_QUARK_TYPE_BIT_TYPE2 = 2,
 	HG_QUARK_TYPE_BIT_TYPE3 = 3,
 	HG_QUARK_TYPE_BIT_TYPE_END = 3,
-	HG_QUARK_TYPE_BIT_OBJECT_TYPE = 4, /* 0 .. simple object, 1 .. composite object */
+	HG_QUARK_TYPE_BIT_EXEC = 4,
 };
 enum _hg_type_t {
 	HG_TYPE_NULL      = 0,
@@ -127,7 +127,7 @@ _hg_quark_type_bit_validate_bits(hg_quark_t          v,
 				 hg_quark_type_bit_t begin,
 				 hg_quark_type_bit_t end)
 {
-	return v & _hg_quark_type_bit_mask_bits(begin, end);
+	return v & (_hg_quark_type_bit_mask_bits(begin, end) >> begin);
 }
 
 G_INLINE_FUNC hg_quark_t
@@ -143,10 +143,13 @@ _hg_quark_type_bit_set_bits(hg_quark_t          x,
 
 
 G_INLINE_FUNC hg_quark_t hg_quark_new             (hg_type_t   type,
-                                                   hg_quark_t  value);
+						   hg_quark_t  value);
 G_INLINE_FUNC hg_type_t  hg_quark_get_type        (hg_quark_t  quark);
 G_INLINE_FUNC hg_quark_t hg_quark_get_value       (hg_quark_t  quark);
 G_INLINE_FUNC gboolean   hg_quark_is_simple_object(hg_quark_t  quark);
+G_INLINE_FUNC hg_quark_t hg_quark_set_executable  (hg_quark_t  quark,
+						   gboolean    flag);
+G_INLINE_FUNC gboolean   hg_quark_is_executable   (hg_quark_t  quark);
 
 /**
  * hg_type_is_simple:
@@ -230,6 +233,41 @@ hg_quark_is_simple_object(hg_quark_t quark)
 	hg_type_t t = hg_quark_get_type(quark);
 
 	return hg_type_is_simple(t);
+}
+
+/**
+ * hg_quark_set_executable:
+ * @quark:
+ * @flag:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+G_INLINE_FUNC hg_quark_t
+hg_quark_set_executable(hg_quark_t quark,
+			gboolean   flag)
+{
+	return _hg_quark_type_bit_set_bits(quark,
+					   HG_QUARK_TYPE_BIT_EXEC,
+					   HG_QUARK_TYPE_BIT_EXEC,
+					   (flag == TRUE));
+}
+
+/**
+ * hg_quark_is_executable:
+ * @quark:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+G_INLINE_FUNC gboolean
+hg_quark_is_executable(hg_quark_t quark)
+{
+	return _hg_quark_type_bit_get_bits(quark,
+					   HG_QUARK_TYPE_BIT_EXEC,
+					   HG_QUARK_TYPE_BIT_EXEC) != 0;
 }
 
 G_END_DECLS
