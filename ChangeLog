@@ -1,5 +1,9 @@
 2010-07-08  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgfile.c (_hg_file_get_io_type): allow the beggining of
+	'%' in the filename.
+	(hg_file_new_with_string): fix a typo.
+
 	* hieroglyph/hgquark.h (_hg_quark_type_bit_validate_bits): fix
 	masking unexpected bits.
 	(hg_quark_set_executable): new.

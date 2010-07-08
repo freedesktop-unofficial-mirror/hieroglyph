@@ -268,7 +268,7 @@ _hg_file_get_io_type(const gchar *name)
 			return i + 1;
 	}
 
-	return HG_FILE_IO_END;
+	return HG_FILE_IO_FILE;
 }
 
 /** file IO callbacks **/
@@ -1053,7 +1053,7 @@ hg_file_new_with_string(hg_mem_t        *mem,
 	x->in = in;
 	x->out = out;
 	retval = hg_object_new(mem, (gpointer *)&f, HG_TYPE_FILE, 0,
-			       name, mode, __hg_file_io_buffered_vtable,
+			       name, mode, &__hg_file_io_buffered_vtable,
 			       x, error);
 
 	if (ret)
