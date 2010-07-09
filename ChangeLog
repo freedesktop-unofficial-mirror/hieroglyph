@@ -1,3 +1,14 @@
+2010-07-09  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgarray.h (HG_IS_ARRAY): new.
+
+	* hieroglyph/hgarray.c (_hg_object_array_initialize): delay to
+	allocate the container to save memory space in the real world.
+	(_hg_array_maybe_expand): new.
+	(hg_array_set): update.
+	(hg_array_get): update.
+	(hg_array_insert): update.
+
 2010-07-08  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgstring.c (hg_string_new_with_value): allow the negative

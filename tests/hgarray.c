@@ -86,7 +86,7 @@ TDEF (hg_array_set)
 	fail_unless(q != Qnil, "Unable to create an array object");
 	fail_unless(hg_array_length(a) == 0, "Unexpected result to obtain the size of the array.");
 	fail_unless(hg_array_maxlength(a) == 5, "Unexpected result to obtain the allocated size of the array.");
-	fail_unless(hg_array_set(a, HG_QINT (1), 0), "Unable to put a value into the array.");
+	fail_unless(hg_array_set(a, HG_QINT (1), 0, NULL), "Unable to put a value into the array.");
 	fail_unless(hg_array_length(a) == 1, "Unexpected result to obtain the size of the array after putting a value");
 	fail_unless(hg_array_get(a, 0, NULL) == HG_QINT (1), "Unexpected result to obtain the value in the array.");
 
@@ -94,7 +94,7 @@ TDEF (hg_array_set)
 	fail_unless(q != Qnil, "Unable to create an array object");
 	fail_unless(hg_array_length(a) == 0, "Unexpected result to obtain the size of the 0-array.");
 	fail_unless(hg_array_maxlength(a) == 0, "Unexpected result to obtain the allocated size of the 0-array.");
-	fail_unless(!hg_array_set(a, HG_QINT (1), 0), "Unexpected result to put a value into the 0-array.");
+	fail_unless(!hg_array_set(a, HG_QINT (1), 0, NULL), "Unexpected result to put a value into the 0-array.");
 	g_free(hieroglyph_test_pop_error());
 	fail_unless(hg_array_get(a, 0, NULL) == Qnil, "Unexpected result to obtain the value from the 0-array.");
 	g_free(hieroglyph_test_pop_error());
@@ -130,14 +130,14 @@ TDEF (hg_array_insert)
 
 	q = hg_array_new(mem, 8, (gpointer *)&a);
 	fail_unless(q != Qnil, "Unable to create an array object");
-	fail_unless(hg_array_insert(a, HG_QINT(2), 0), "Unable to insert a value into the array"); /* [2] */
+	fail_unless(hg_array_insert(a, HG_QINT(2), 0, NULL), "Unable to insert a value into the array"); /* [2] */
 	fail_unless(hg_array_length(a) == 1, "Unexpected result to obtain the current size of the array.");
-	fail_unless(hg_array_insert(a, HG_QINT(3), 0), "Unable to insert a value into the array [take 2]"); /* [3 2] */
+	fail_unless(hg_array_insert(a, HG_QINT(3), 0, NULL), "Unable to insert a value into the array [take 2]"); /* [3 2] */
 	fail_unless(hg_array_length(a) == 2, "Unexpected result to obtain the current size of the array. [take 2]");
 	fail_unless(hg_array_get(a, 1, NULL) == HG_QINT(2), "Unexpected result on shifting the content of the array after inserting.");
-	fail_unless(hg_array_insert(a, HG_QINT(4), 3), "Unable to insert a value into the array [take 3]"); /* [3 2 nil 4] */
+	fail_unless(hg_array_insert(a, HG_QINT(4), 3, NULL), "Unable to insert a value into the array [take 3]"); /* [3 2 nil 4] */
 	fail_unless(hg_array_length(a) == 4, "Unexpected result to obtain the current size of the array. [take 3]");
-	fail_unless(hg_array_insert(a, HG_QINT(5), 1), "Unable to insert a value into the array [take 4]"); /* [3 5 2 nil 4] */
+	fail_unless(hg_array_insert(a, HG_QINT(5), 1, NULL), "Unable to insert a value into the array [take 4]"); /* [3 5 2 nil 4] */
 	t = hg_array_get(a, 2, NULL);
 	fail_unless(t == HG_QINT(2), "Unexpected result on shifting the content of the array after inserting [take 4]: actual: %ld", hg_quark_get_value(t));
 	t = hg_array_get(a, 3, &err);

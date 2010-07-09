@@ -28,6 +28,7 @@
 #include <string.h>
 #include "hgerror.h"
 #include "hgmem.h"
+#include "hgnull.h"
 #include "hgarray.h"
 
 #define HG_ARRAY_ALLOC_SIZE	65535
@@ -57,18 +58,15 @@ _hg_object_array_initialize(hg_object_t *object,
 
 	array->offset = offset;
 	array->allocated_size = size;
-	array->length = 0;
 	array->qcontainer = qcontainer;
-	if (array->qcontainer == Qnil && size > 0) {
-		hg_quark_t *container = NULL;
-
-		array->qcontainer = hg_mem_alloc(array->o.mem, sizeof (hg_quark_t) * size, (gpointer *)&container);
-		hg_return_val_if_fail (array->qcontainer != Qnil, FALSE);
-
-		memset(container, 0, sizeof (hg_quark_t) * size);
-
-		hg_mem_unlock_object(array->o.mem, array->qcontainer);
+	if (array->qcontainer != Qnil) {
+		array->length = size - array->offset;
+		array->is_fixed_size = TRUE;
+	} else {
+		array->length = 0;
+		array->is_fixed_size = FALSE;
 	}
+	/* not allocating any containers here */
 
 	return TRUE;
 }
@@ -76,6 +74,37 @@ _hg_object_array_initialize(hg_object_t *object,
 static void
 _hg_object_array_free(hg_object_t *object)
 {
+	/* don't free array->qcontainer here
+	   it's likely to be referred in another subarray
+	*/
+}
+
+static gboolean
+_hg_array_maybe_expand(hg_array_t *array)
+{
+	if (array->is_fixed_size ||
+	    array->offset != 0)
+		return TRUE;
+
+	hg_return_val_if_fail ((array->length + 1) < array->allocated_size, FALSE);
+
+	if (array->qcontainer == Qnil) {
+		array->qcontainer = hg_mem_alloc(array->o.mem,
+						 sizeof (hg_quark_t) * (array->length + 1),
+						 NULL);
+	} else {
+		hg_quark_t q = hg_mem_realloc(array->o.mem,
+					      array->qcontainer,
+					      sizeof (hg_quark_t) * (array->length + 1),
+					      NULL);
+
+		if (q == Qnil)
+			return FALSE;
+		array->qcontainer = q;
+	}
+	array->length++;
+
+	return TRUE;
 }
 
 /*< public >*/
@@ -120,26 +149,51 @@ hg_array_new(hg_mem_t *mem,
  * Returns:
  */
 gboolean
-hg_array_set(hg_array_t *array,
-	     hg_quark_t  quark,
-	     gsize       index)
+hg_array_set(hg_array_t  *array,
+	     hg_quark_t   quark,
+	     gsize        index,
+	     GError     **error)
 {
 	hg_quark_t *container;
+	gsize old_length;
+	GError *err = NULL;
+	gboolean retval = TRUE;
 
-	hg_return_val_if_fail (array != NULL, FALSE);
-	hg_return_val_if_fail ((array->offset + index) < array->allocated_size, FALSE);
-	hg_return_val_if_lock_fail (container,
-				    array->o.mem,
-				    array->qcontainer,
-				    FALSE);
+	hg_return_val_with_gerror_if_fail (array != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail ((array->offset + index) < array->allocated_size, FALSE, error);
+
+	old_length = array->length;
+	array->length = MAX (index, array->length);
+	if (array->length >= old_length) {
+		if (!_hg_array_maybe_expand(array)) {
+			g_set_error(&err, HG_ERROR, ENOMEM,
+				    "Out of memory");
+			retval = FALSE;
+			goto finalize;
+		}
+	}
+	hg_return_val_with_gerror_if_lock_fail (container,
+						array->o.mem,
+						array->qcontainer,
+						error,
+						FALSE);
 
 	container[array->offset + index] = quark;
-	if (array->length < (array->offset + index + 1))
-		array->length = array->offset + index + 1;
 
 	hg_mem_unlock_object(array->o.mem, array->qcontainer);
+  finalize:
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s (code: %d)",
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+	}
 
-	return TRUE;
+	return retval;
 }
 
 /**
@@ -160,7 +214,13 @@ hg_array_get(hg_array_t  *array,
 	hg_quark_t *container;
 
 	hg_return_val_with_gerror_if_fail (array != NULL, Qnil, error);
-	hg_return_val_with_gerror_if_fail ((array->offset + index) < array->length, Qnil, error);
+
+	if (array->qcontainer == Qnil) {
+		/* emulate containing null */
+		return HG_QNULL;
+	}
+
+	hg_return_val_with_gerror_if_fail (index < array->length, Qnil, error);
 	hg_return_val_with_gerror_if_lock_fail (container,
 						array->o.mem,
 						array->qcontainer,
@@ -179,38 +239,47 @@ hg_array_get(hg_array_t  *array,
  * @array:
  * @quark:
  * @pos:
+ * @error:
  *
  * FIXME
  *
  * Returns:
  */
 gboolean
-hg_array_insert(hg_array_t *array,
-		hg_quark_t  quark,
-		gsize       pos)
+hg_array_insert(hg_array_t  *array,
+		hg_quark_t   quark,
+		gssize       pos,
+		GError     **error)
 {
 	gssize i;
 	hg_quark_t *container;
 
-	hg_return_val_if_fail (array != NULL, FALSE);
-	hg_return_val_if_fail ((array->offset + pos) < array->allocated_size, FALSE);
+	hg_return_val_with_gerror_if_fail (array != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (array->offset == 0, FALSE, error);
 
-	if ((array->offset + pos) < array->length) {
-		hg_return_val_if_fail ((array->length + 1) < array->allocated_size, FALSE);
-		hg_return_val_if_lock_fail (container,
-					    array->o.mem,
-					    array->qcontainer,
-					    FALSE);
+	if (pos < 0)
+		pos = array->length;
+
+	hg_return_val_with_gerror_if_fail (pos < array->allocated_size, FALSE, error);
+
+	if (pos < array->length) {
+		hg_return_val_with_gerror_if_fail ((array->length + 1) < array->allocated_size, FALSE, error);
+		hg_return_val_with_gerror_if_fail (array->qcontainer != Qnil, FALSE, error); /* unlikely */
+		hg_return_val_with_gerror_if_lock_fail (container,
+							array->o.mem,
+							array->qcontainer,
+							error,
+							FALSE);
 
 		array->length++;
-		for (i = array->length; i > array->offset + pos; i--) {
+		for (i = array->length; i > pos; i--) {
 			container[i] = container[i - 1];
 		}
-		container[array->offset + pos] = quark;
+		container[pos] = quark;
 
 		hg_mem_unlock_object(array->o.mem, array->qcontainer);
 	} else {
-		return hg_array_set(array, quark, pos);
+		return hg_array_set(array, quark, pos, error);
 	}
 
 	return TRUE;
@@ -234,7 +303,7 @@ hg_array_remove(hg_array_t *array,
 
 	hg_return_val_if_fail (array != NULL, FALSE);
 	hg_return_val_if_fail (array->offset == 0, FALSE);
-	hg_return_val_if_fail ((array->offset + pos) < array->length, FALSE);
+	hg_return_val_if_fail (pos < array->length, FALSE);
 	hg_return_val_if_lock_fail (container,
 				    array->o.mem,
 				    array->qcontainer,

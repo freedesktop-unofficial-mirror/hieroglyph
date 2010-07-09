@@ -31,6 +31,8 @@ G_BEGIN_DECLS
 #define HG_ARRAY_INIT						\
 	(hg_object_register(HG_TYPE_ARRAY,			\
 			    hg_object_array_get_vtable()))
+#define HG_IS_ARRAY(_q_)				\
+	(hg_quark_get_type((_q_)) == HG_TYPE_ARRAY)
 
 typedef struct _hg_bs_array_t	hg_bs_array_t;
 typedef struct _hg_array_t	hg_array_t;
@@ -60,13 +62,15 @@ hg_quark_t          hg_array_new              (hg_mem_t                  *mem,
                                                gpointer                  *ret);
 gboolean            hg_array_set              (hg_array_t                *array,
                                                hg_quark_t                 quark,
-                                               gsize                      index);
+                                               gsize                      index,
+					       GError                   **error);
 hg_quark_t          hg_array_get              (hg_array_t                *array,
                                                gsize                      index,
                                                GError                   **error);
 gboolean            hg_array_insert           (hg_array_t                *array,
                                                hg_quark_t                 quark,
-                                               gsize                      pos);
+                                               gssize                     pos,
+					       GError                   **error);
 gboolean            hg_array_remove           (hg_array_t                *array,
                                                gsize                      pos);
 gsize               hg_array_length           (hg_array_t                *array);
