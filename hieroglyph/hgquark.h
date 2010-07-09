@@ -42,6 +42,7 @@ enum _hg_quark_type_bit_t {
 	HG_QUARK_TYPE_BIT_TYPE3 = 3,
 	HG_QUARK_TYPE_BIT_TYPE_END = 3,
 	HG_QUARK_TYPE_BIT_EXEC = 4,
+	HG_QUARK_TYPE_BIT_NEED_LOOKUP = 5,
 };
 enum _hg_type_t {
 	HG_TYPE_NULL      = 0,
@@ -150,6 +151,9 @@ G_INLINE_FUNC gboolean   hg_quark_is_simple_object(hg_quark_t  quark);
 G_INLINE_FUNC hg_quark_t hg_quark_set_executable  (hg_quark_t  quark,
 						   gboolean    flag);
 G_INLINE_FUNC gboolean   hg_quark_is_executable   (hg_quark_t  quark);
+G_INLINE_FUNC hg_quark_t hg_quark_set_lookup      (hg_quark_t  quark,
+						   gboolean    flag);
+G_INLINE_FUNC gboolean   hg_quark_is_lookup_needed(hg_quark_t  quark);
 
 /**
  * hg_type_is_simple:
@@ -268,6 +272,44 @@ hg_quark_is_executable(hg_quark_t quark)
 	return _hg_quark_type_bit_get_bits(quark,
 					   HG_QUARK_TYPE_BIT_EXEC,
 					   HG_QUARK_TYPE_BIT_EXEC) != 0;
+}
+
+/**
+ * hg_quark_set_lookup:
+ * @quark:
+ * @flag:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+G_INLINE_FUNC hg_quark_t
+hg_quark_set_lookup(hg_quark_t quark,
+		    gboolean   flag)
+{
+	if (hg_quark_get_type(quark) != HG_TYPE_NAME)
+		return quark;
+
+	return _hg_quark_type_bit_set_bits(quark,
+					   HG_QUARK_TYPE_BIT_NEED_LOOKUP,
+					   HG_QUARK_TYPE_BIT_NEED_LOOKUP,
+					   (flag == TRUE));
+}
+
+/**
+ * hg_quark_is_lookup_needed:
+ * @quark:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+G_INLINE_FUNC gboolean
+hg_quark_is_lookup_needed(hg_quark_t quark)
+{
+	return _hg_quark_type_bit_get_bits(quark,
+					   HG_QUARK_TYPE_BIT_NEED_LOOKUP,
+					   HG_QUARK_TYPE_BIT_NEED_LOOKUP) != 0;
 }
 
 G_END_DECLS

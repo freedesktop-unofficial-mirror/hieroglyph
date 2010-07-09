@@ -1,5 +1,8 @@
 2010-07-09  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgquark.h (hg_quark_set_lookup): new.
+	(hg_quark_is_lookup_needed): new.
+
 	* hieroglyph/hgarray.h (HG_IS_ARRAY): new.
 
 	* hieroglyph/hgarray.c (_hg_object_array_initialize): delay to
