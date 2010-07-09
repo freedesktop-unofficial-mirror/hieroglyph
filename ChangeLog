@@ -1,3 +1,7 @@
+2010-07-10  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgstack.c (hg_stack_free): new.
+
 2010-07-09  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgfile.c (hg_file_get_io_type): make it public.

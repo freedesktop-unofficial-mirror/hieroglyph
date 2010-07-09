@@ -40,6 +40,7 @@ typedef struct _hg_stack_t	hg_stack_t;
 hg_object_vtable_t *hg_object_stack_get_vtable(void);
 hg_stack_t         *hg_stack_new              (hg_mem_t                  *mem,
                                                gsize                      max_depth);
+void                hg_stack_free             (hg_stack_t                *stack);
 void                hg_stack_set_validation   (hg_stack_t                *stack,
                                                gboolean                   flag);
 gsize               hg_stack_depth            (hg_stack_t                *stack);

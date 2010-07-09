@@ -151,6 +151,21 @@ hg_stack_new(hg_mem_t *mem,
 }
 
 /**
+ * hg_stack_free:
+ * @stack:
+ *
+ * FIXME
+ */
+void
+hg_stack_free(hg_stack_t *stack)
+{
+	if (!stack)
+		return;
+
+	hg_mem_free(stack->o.mem, stack->self);
+}
+
+/**
  * hg_stack_set_validation:
  * @stack:
  * @flag:
