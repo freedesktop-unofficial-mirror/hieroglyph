@@ -16,6 +16,7 @@ configure
 depcomp
 install-sh
 intltool-*
+hieroglyph/hgscanner.c
 hieroglyph/hgversion.h
 libtool
 ltmain\.sh
@@ -26,3 +27,4 @@ po/POTFILES
 stamp*
 t\.c
 tests/test-*
+ylwrap

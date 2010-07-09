@@ -73,6 +73,7 @@ hg_sources =							\
 	hgmem.c							\
 	hgname.c						\
 	hgobject.c						\
+	hgscanner.l						\
 	hgstack.c						\
 	hgstring.c						\
 	$(NULL)

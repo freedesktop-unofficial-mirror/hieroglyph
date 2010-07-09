@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * version.h
- * Copyright (C) 2005-2010 Akira TAGOH
+ * hgscanner.h
+ * Copyright (C) 2010 Akira TAGOH
  * 
  * Authors:
  *   Akira TAGOH  <akira@tagoh.org>
@@ -21,19 +21,28 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HIEROGLYPH__VERSION_H__
-#define __HIEROGLYPH__VERSION_H__
+#ifndef __HIEROGLYPH_HGSCANNER_H__
+#define __HIEROGLYPH_HGSCANNER_H__
 
-#include <glib/gmacros.h>
-
+#include <hieroglyph/hgtypes.h>
+#include <hieroglyph/hgfile.h>
+#include <hieroglyph/hgname.h>
 
 G_BEGIN_DECLS
 
-#define HIEROGLYPH_VERSION	"@VERSION@"
-#define HIEROGLYPH_UUID		"0a290529-3b09-43e7-87e9-b2213be1030e"
+typedef struct _hg_scanner_t		hg_scanner_t;
 
-const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
+
+hg_scanner_t *hg_scanner_new        (hg_mem_t      *mem,
+				     hg_name_t     *name);
+void          hg_scanner_destroy    (hg_scanner_t  *scanner);
+gboolean      hg_scanner_attach_file(hg_scanner_t  *scanner,
+				     hg_file_t     *file);
+gboolean      hg_scanner_scan       (hg_scanner_t  *scanner,
+				     hg_mem_t      *mem,
+			 	     GError       **error);
+hg_quark_t    hg_scanner_get_token  (hg_scanner_t  *scanner);
 
 G_END_DECLS
 
-#endif /* __HIEROGLYPH__VERSION_H__ */
+#endif /* __HIEROGLYPH_HGSCANNER_H__ */
