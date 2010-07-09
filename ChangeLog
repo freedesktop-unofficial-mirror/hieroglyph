@@ -1,5 +1,9 @@
 2010-07-09  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgfile.c (hg_file_get_io_type): make it public.
+
+	* hieroglyph/hgfile.h (HG_IS_FILE): new.
+
 	* hieroglyph/hgscanner.l: add a lexical scanner.
 
 	* hieroglyph/hgquark.h (hg_quark_set_lookup): new.

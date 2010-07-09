@@ -43,7 +43,6 @@ typedef struct _hg_file_io_buffered_data_t {
 } hg_file_io_buffered_data_t;
 
 
-static hg_file_io_t _hg_file_get_io_type               (const gchar   *name);
 static gboolean     _hg_file_io_real_stdin_open        (hg_file_t     *file,
 							gpointer       user_data,
 							GError       **error);
@@ -199,7 +198,7 @@ _hg_object_file_initialize(hg_object_t *object,
 		return FALSE;
 
 	file->qfilename = HG_QSTRING (file->o.mem, name);
-	file->io_type   = _hg_file_get_io_type(name);
+	file->io_type   = hg_file_get_io_type(name);
 	file->mode      = mode;
 	file->vtable    = vtable;
 	file->size      = 0;
@@ -242,33 +241,6 @@ _hg_object_file_free(hg_object_t *object)
 	hg_mem_free(file->o.mem, file->qfilename);
 	if (file->data)
 		hg_mem_free(file->o.mem, file->data->self);
-}
-
-static hg_file_io_t
-_hg_file_get_io_type(const gchar *name)
-{
-	const gchar *reserved_names[] = {
-		"stdin",
-		"stdout",
-		"stderr",
-		"lineedit",
-		"statementedit",
-		NULL
-	};
-	gint i;
-
-	hg_return_val_if_fail (name != NULL, HG_FILE_IO_END);
-	hg_return_val_if_fail (name[0] != 0, HG_FILE_IO_END);
-
-	if (name[0] != '%')
-		return HG_FILE_IO_FILE;
-
-	for (i = 0; reserved_names[i] != NULL; i++) {
-		if (strcmp(&name[1], reserved_names[i]) == 0)
-			return i + 1;
-	}
-
-	return HG_FILE_IO_FILE;
 }
 
 /** file IO callbacks **/
@@ -925,6 +897,41 @@ _hg_file_io_real_buffered_clear_eof(hg_file_t  *file,
 
 /*< public >*/
 /**
+ * hg_file_get_io_type:
+ * @name:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_file_io_t
+hg_file_get_io_type(const gchar *name)
+{
+	const gchar *reserved_names[] = {
+		"stdin",
+		"stdout",
+		"stderr",
+		"lineedit",
+		"statementedit",
+		NULL
+	};
+	gint i;
+
+	hg_return_val_if_fail (name != NULL, HG_FILE_IO_END);
+	hg_return_val_if_fail (name[0] != 0, HG_FILE_IO_END);
+
+	if (name[0] != '%')
+		return HG_FILE_IO_FILE;
+
+	for (i = 0; reserved_names[i] != NULL; i++) {
+		if (strcmp(&name[1], reserved_names[i]) == 0)
+			return i + 1;
+	}
+
+	return HG_FILE_IO_FILE;
+}
+
+/**
  * hg_file_new:
  * @mem:
  * @name:
@@ -950,7 +957,7 @@ hg_file_new(hg_mem_t        *mem,
 	hg_return_val_with_gerror_if_fail (name != NULL, Qnil, error);
 	hg_return_val_with_gerror_if_fail (name[0] != 0, Qnil, error);
 
-	io = _hg_file_get_io_type(name);
+	io = hg_file_get_io_type(name);
 	switch (io) {
 	    case HG_FILE_IO_FILE:
 		    vtable = &__hg_file_io_file_vtable;
