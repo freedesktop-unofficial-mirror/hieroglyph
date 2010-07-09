@@ -2,7 +2,7 @@
 # Global definitions
 NULL =
 INCLUDES =						\
-	$(HG_CFLAGS)					\
+	$(GLIB_CFLAGS)					\
 	$(CHECK_CFLAGS)					\
 	-I$(top_srcdir)					\
 	-I$(top_srcdir)/hieroglyph			\
@@ -12,7 +12,7 @@ DEPS =							\
 	$(NULL)
 LIBS =							\
 	@LDFLAGS@					\
-	$(HG_LIBS)					\
+	$(GLIB_LIBS)					\
 	$(CHECK_LIBS)					\
 	$(top_builddir)/hieroglyph/libhieroglyph.la	\
 	$(NULL)

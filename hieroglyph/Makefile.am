@@ -2,12 +2,12 @@
 # Global definitions
 NULL =
 INCLUDES =							\
-	$(HG_CFLAGS)						\
+	$(GLIB_CFLAGS)						\
 	-I$(top_srcdir)						\
 	$(NULL)
 LIBS =								\
 	@LDFLAGS@						\
-	$(HG_LIBS)						\
+	$(GLIB_LIBS)						\
 	-lm							\
 	$(NULL)
 EXTRA_DIST =							\
