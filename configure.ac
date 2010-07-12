@@ -114,13 +114,10 @@ AM_GLIB_GNU_GETTEXT
 dnl ======================================================================
 dnl check pkg-config stuff
 dnl ======================================================================
-PKG_CHECK_MODULES(HG, glib-2.0)
 PKG_CHECK_MODULES(CHECK, check >= $CHECK_REQUIRED,
 	[use_check="yes"],
 	[use_check="no"])
 
-AC_SUBST(HG_CFLAGS)
-AC_SUBST(HG_LIBS)
 AC_SUBST(CHECK_CFLAGS)
 AC_SUBST(CHECK_LIBS)
 
@@ -158,8 +155,8 @@ dnl result
 dnl ======================================================================
 echo ""
 echo "========== Build Information =========="
-echo " CFLAGS:			$CFLAGS $HG_CFLAGS"
-echo " LDFLAGS:			$LDFLAGS $HG_LIBS"
+echo " CFLAGS:			$CFLAGS $GLIB_CFLAGS"
+echo " LDFLAGS:			$LDFLAGS $GLIB_LIBS"
 echo ""
 echo " Enable the debugging build:	$enable_debug"
 echo " Unit testing:			$use_check"
