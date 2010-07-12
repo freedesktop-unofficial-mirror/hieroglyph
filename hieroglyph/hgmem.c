@@ -252,3 +252,19 @@ hg_mem_unlock_object(hg_mem_t   *mem,
 	return mem->allocator->unlock_object(mem->data,
 					     hg_quark_get_value (data));
 }
+
+/**
+ * hg_mem_get_id:
+ * @mem:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gint
+hg_mem_get_id(hg_mem_t *mem)
+{
+	hg_return_val_if_fail (mem != NULL, -1);
+
+	return mem->id;
+}

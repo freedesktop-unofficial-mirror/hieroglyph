@@ -49,6 +49,7 @@ gpointer    hg_mem_lock_object       (hg_mem_t        *mem,
                                       hg_quark_t       data);
 void        hg_mem_unlock_object     (hg_mem_t        *mem,
                                       hg_quark_t       data);
+gint        hg_mem_get_id            (hg_mem_t        *mem);
 
 G_INLINE_FUNC gpointer hg_mem_lock_object_with_gerror(hg_mem_t     *mem,
 						      hg_quark_t    quark,

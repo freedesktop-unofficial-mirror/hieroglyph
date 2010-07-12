@@ -1,6 +1,7 @@
 2010-07-12  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgmem.c (hg_mem_new_with_allocator): set a mem id.
+	(hg_mem_get_id): new.
 
 	* hieroglyph/hgallocator.c (_hg_allocator_initialize): set a mem id.
 	(_hg_allocator_alloc): likewise.
