@@ -76,9 +76,11 @@ TDEF (hg_string_new)
 	fail_unless(s->allocated_size == 100, "Unexpected result of the allocated size: expect: %" G_GSIZE_FORMAT " actual: %" G_GSIZE_FORMAT, 100, s->allocated_size);
 	hg_mem_free(mem, q);
 
+/* it's valid now
 	q = hg_string_new(mem, NULL, 0);
 	fail_unless(q == Qnil, "Unexpected result to create the 0-sized string");
 	g_free(hieroglyph_test_pop_error());
+*/
 	q = hg_string_new(mem, NULL, 65536);
 	fail_unless(q == Qnil, "Unexpected result to create too long string");
 	g_free(hieroglyph_test_pop_error());
@@ -92,9 +94,11 @@ TDEF (hg_string_new_with_value)
 	q = hg_string_new_with_value(mem, NULL, NULL, 1);
 	fail_unless(q == Qnil, "Unexpected result to create the string object with NULL string");
 	g_free(hieroglyph_test_pop_error());
+/* it's valid now
 	q = hg_string_new_with_value(mem, NULL, "a", 0);
 	fail_unless(q == Qnil, "Unexpected result to create the string object with 0-sized string");
 	g_free(hieroglyph_test_pop_error());
+*/
 	q = hg_string_new_with_value(mem, NULL, "a", 65536);
 	fail_unless(q == Qnil, "Unexpected result to create the string object with too long string");
 	g_free(hieroglyph_test_pop_error());
