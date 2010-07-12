@@ -30,6 +30,7 @@ G_BEGIN_DECLS
 
 struct _hg_mem_t {
 	hg_mem_vtable_t     *allocator;
+	gint                 id;
 	hg_allocator_data_t *data;
 };
 

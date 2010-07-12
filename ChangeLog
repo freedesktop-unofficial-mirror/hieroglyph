@@ -1,5 +1,12 @@
 2010-07-12  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgmem.c (hg_mem_new_with_allocator): set a mem id.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_initialize): set a mem id.
+	(_hg_allocator_alloc): likewise.
+	(_hg_allocator_lock_object): likewise.
+	(_hg_allocator_unlock_object): likewise.
+
 	* hieroglyph/hgscanner.l: check the overflow in ASCII85.
 
 2010-07-10  Akira TAGOH  <akira@tagoh.org>

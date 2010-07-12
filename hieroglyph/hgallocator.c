@@ -27,6 +27,7 @@
 
 #include <string.h>
 #include "hgerror.h"
+#include "hgquark.h"
 #include "hgallocator.h"
 #include "hgallocator-private.h"
 
@@ -50,7 +51,7 @@ static void                   _hg_allocator_bitmap_clear              (hg_alloca
                                                                        gint32                  index);
 static gboolean               _hg_allocator_bitmap_is_marked          (hg_allocator_bitmap_t  *bitmap,
                                                                        gint32                  index);
-static gpointer               _hg_allocator_initialize                (void);
+static gpointer               _hg_allocator_initialize                (gint                    id);
 static void                   _hg_allocator_finalize                  (hg_allocator_data_t    *data);
 static gboolean               _hg_allocator_resize_heap               (hg_allocator_data_t    *data,
                                                                        gsize                   size);
@@ -337,13 +338,20 @@ _hg_allocator_bitmap_is_marked(hg_allocator_bitmap_t *bitmap,
 
 /** allocator **/
 static gpointer
-_hg_allocator_initialize(void)
+_hg_allocator_initialize(gint id)
 {
 	hg_allocator_private_t *retval;
 
+	if (_hg_quark_type_bit_validate_bits(id,
+					     HG_QUARK_TYPE_BIT_MEM_ID,
+					     HG_QUARK_TYPE_BIT_MEM_ID_END) != id) {
+		g_warning("too many memory spooler being created.");
+		return NULL;
+	}
 	retval = g_new0(hg_allocator_private_t, 1);
 	if (retval) {
 		retval->current_id = 2;
+		retval->mem_id = id;
 		retval->block_in_use = g_tree_new(&_btree_key_compare);
 	}
 
@@ -406,10 +414,15 @@ _hg_allocator_alloc(hg_allocator_data_t *data,
 	obj_size = hg_mem_aligned_size (sizeof (hg_allocator_block_t) + size);
 	index = _hg_allocator_bitmap_alloc(priv->bitmap, obj_size);
 	if (index != Qnil) {
+		hg_quark_t id = priv->current_id++;
+
 		block = _hg_allocator_internal_lock_object(priv, index, TRUE);
 		block->index = index;
 		block->size = obj_size;
-		retval = priv->current_id++;
+		retval = _hg_quark_type_bit_set_bits(id,
+						     HG_QUARK_TYPE_BIT_MEM_ID,
+						     HG_QUARK_TYPE_BIT_MEM_ID_END,
+						     priv->mem_id);
 		g_tree_insert(priv->block_in_use, HGQUARK_TO_POINTER (retval), block);
 		/* NOTE: No unlock yet here.
 		 *       any objects are supposed to be unlocked
@@ -538,6 +551,12 @@ _hg_allocator_lock_object(hg_allocator_data_t *data,
 			  hg_quark_t           index)
 {
 	hg_allocator_block_t *retval = NULL;
+	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
+
+	if (_hg_quark_type_bit_get_bits(index,
+					HG_QUARK_TYPE_BIT_MEM_ID,
+					HG_QUARK_TYPE_BIT_MEM_ID_END) != priv->mem_id)
+		return NULL;
 
 	G_LOCK (allocator);
 
@@ -572,6 +591,14 @@ _hg_allocator_unlock_object(hg_allocator_data_t *data,
 	hg_allocator_block_t *retval = NULL;
 
 	priv = (hg_allocator_private_t *)data;
+
+	if (_hg_quark_type_bit_get_bits(index,
+					HG_QUARK_TYPE_BIT_MEM_ID,
+					HG_QUARK_TYPE_BIT_MEM_ID_END) != priv->mem_id) {
+		g_warning("Trying to unlock the object on the wrong memory spooler.");
+
+		return;
+	}
 	if ((retval = g_tree_lookup(priv->block_in_use, HGQUARK_TO_POINTER (index))) != NULL)
 		_hg_allocator_real_unlock_object(retval);
 }

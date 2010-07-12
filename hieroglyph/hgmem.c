@@ -32,6 +32,8 @@
 #include "hgmem.h"
 #include "hgmem-private.h"
 
+static gint __hg_mem_id = 0;
+
 /*< private >*/
 
 /*< public >*/
@@ -69,10 +71,12 @@ hg_mem_new_with_allocator(hg_mem_vtable_t *allocator,
 	hg_return_val_if_fail (allocator != NULL, NULL);
 	hg_return_val_if_fail (allocator->initialize != NULL, NULL);
 	hg_return_val_if_fail (size > 0, NULL);
+	hg_return_val_if_fail (__hg_mem_id >= 0, NULL);
 
 	retval = g_new0(hg_mem_t, 1);
 	retval->allocator = allocator;
-	retval->data = allocator->initialize();
+	retval->id = __hg_mem_id++;
+	retval->data = allocator->initialize(retval->id);
 	if (!retval->data) {
 		hg_mem_destroy(retval);
 		retval = NULL;

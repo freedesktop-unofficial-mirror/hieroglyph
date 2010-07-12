@@ -43,7 +43,7 @@ typedef enum _hg_system_encoding_t	hg_system_encoding_t;
 
 /* hgmem.h */
 struct _hg_mem_vtable_t {
-	gpointer   (* initialize)    (void);
+	gpointer   (* initialize)    (gint                 id);
 	void       (* finalize)      (hg_allocator_data_t *data);
 	gboolean   (* resize_heap)   (hg_allocator_data_t *data,
 				      gsize                size);
