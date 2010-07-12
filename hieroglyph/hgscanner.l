@@ -207,13 +207,19 @@ HEXDIGITS	[0-9a-fA-F]
 		} else {
 			buf_ascii85[ascii85_counter++] = yytext[0];
 			if (ascii85_counter == 5) {
-				gint32 decoded = 0;
+				guint64 decoded = 0;
 
-				decoded += (buf_ascii85[0] - 33) * 0x31c84b1;
-				decoded += (buf_ascii85[1] - 33) * 0x95eed;
-				decoded += (buf_ascii85[2] - 33) * 0x1c39;
-				decoded += (buf_ascii85[3] - 33) * 0x55;
+				decoded += (buf_ascii85[0] - 33) * 0x31c84b1LL;
+				decoded += (buf_ascii85[1] - 33) * 0x95eedLL;
+				decoded += (buf_ascii85[2] - 33) * 0x1c39LL;
+				decoded += (buf_ascii85[3] - 33) * 0x55LL;
 				decoded += (buf_ascii85[4] - 33);
+				if (decoded > G_MAXUINT32) {
+					g_set_error(error, HG_ERROR, EINVAL,
+						    "Syntax error");
+					g_string_free(string, TRUE);
+					yyterminate();
+				}
 				g_string_append_c(string, (decoded & 0xff000000) >> 24);
 				g_string_append_c(string, (decoded & 0x00ff0000) >> 16);
 				g_string_append_c(string, (decoded & 0x0000ff00) >> 8);

@@ -1,3 +1,7 @@
+2010-07-12  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgscanner.l: check the overflow in ASCII85.
+
 2010-07-10  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgstack.c (hg_stack_free): new.
