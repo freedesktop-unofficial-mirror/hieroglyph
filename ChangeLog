@@ -1,5 +1,8 @@
 2010-07-13  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgscanner.l (hg_scanner_attach_file): restore a lineno.
+	(hg_scanner_scan): save a lineno.
+
 	* hieroglyph/hgfile.c (hg_file_set_lineno): new.
 	(hg_file_get_lineno): new.
 	(hg_file_get_position): new.

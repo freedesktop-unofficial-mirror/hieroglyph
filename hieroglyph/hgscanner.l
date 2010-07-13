@@ -491,7 +491,7 @@ hg_scanner_attach_file(hg_scanner_t *scanner,
 	}
 	yystate = yy_create_buffer(NULL, YY_BUF_SIZE, scanner->yyscanner);
 	yypush_buffer_state(yystate, scanner->yyscanner);
-	yyset_lineno(1, scanner->yyscanner);
+	yyset_lineno(hg_file_get_lineno(file), scanner->yyscanner);
 
 	return TRUE;
 }
@@ -510,13 +510,18 @@ hg_scanner_scan(hg_scanner_t  *scanner,
 		hg_mem_t      *mem,
 		GError       **error)
 {
+	gboolean retval;
+
 	hg_return_val_with_gerror_if_fail (scanner != NULL, FALSE, error);
 	hg_return_val_with_gerror_if_fail (mem != NULL, FALSE, error);
 	hg_return_val_if_fail (error != NULL, FALSE);
 
 	scanner->result = Qnil;
 
-	return _hg_scanner_yylex(scanner, scanner->yyscanner, mem, error);
+	retval = _hg_scanner_yylex(scanner, scanner->yyscanner, mem, error);
+	hg_file_set_lineno(scanner->infile, yyget_lineno(scanner->yyscanner));
+
+	return retval;
 }
 
 /**
