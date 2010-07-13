@@ -1,3 +1,9 @@
+2010-07-13  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgfile.c (hg_file_set_lineno): new.
+	(hg_file_get_lineno): new.
+	(hg_file_get_position): new.
+
 2010-07-12  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgmem.c (hg_mem_new_with_allocator): set a mem id.

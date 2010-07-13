@@ -203,7 +203,7 @@ _hg_object_file_initialize(hg_object_t *object,
 	file->vtable    = vtable;
 	file->size      = 0;
 	file->position  = 0;
-	file->line      = 0;
+	file->lineno    = 0;
 	file->is_closed = TRUE;
 	file->data      = NULL;
 	file->user_data = user_data;
@@ -1260,4 +1260,53 @@ hg_file_append_vprintf(hg_file_t   *file,
 	}
 
 	return retval;
+}
+
+/**
+ * hg_file_set_lineno:
+ * @file:
+ * @n:
+ *
+ * FIXME
+ */
+void
+hg_file_set_lineno(hg_file_t *file,
+		   gssize     n)
+{
+	hg_return_if_fail (file != NULL);
+	hg_return_if_fail (n > 0);
+
+	file->lineno = n;
+}
+
+/**
+ * hg_file_get_lineno:
+ * @file:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gssize
+hg_file_get_lineno(hg_file_t *file)
+{
+	hg_return_val_if_fail (file != NULL, -1);
+
+	return file->lineno;
+}
+
+/**
+ * hg_file_get_position:
+ * @file:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gssize
+hg_file_get_position(hg_file_t *file)
+{
+	hg_return_val_if_fail (file != NULL, -1);
+
+	return file->position;
 }

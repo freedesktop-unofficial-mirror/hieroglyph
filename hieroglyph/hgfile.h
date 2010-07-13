@@ -104,8 +104,8 @@ struct _hg_file_t {
 	hg_file_mode_t     mode;
 	hg_file_vtable_t  *vtable;
 	gsize              size;
-	gsize              position;
-	gsize              line;
+	gssize             position;
+	gssize             lineno;
 	gboolean           is_closed;
 	hg_file_io_data_t *data;
 	gpointer           user_data;
@@ -163,6 +163,11 @@ gssize              hg_file_append_printf    (hg_file_t         *file,
 gssize              hg_file_append_vprintf   (hg_file_t         *file,
 					      gchar const       *format,
 					      va_list            args);
+void                hg_file_set_lineno       (hg_file_t         *file,
+					      gssize             n);
+gssize              hg_file_get_lineno       (hg_file_t         *file);
+gssize              hg_file_get_position     (hg_file_t         *file);
+
 
 G_END_DECLS
 
