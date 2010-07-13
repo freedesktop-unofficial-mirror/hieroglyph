@@ -86,8 +86,9 @@ struct _hg_object_vtable_t {
 	void       (* free)                (hg_object_t *object);
 };
 struct _hg_object_t {
-	hg_mem_t *mem;
-	hg_type_t type;
+	hg_mem_t   *mem;
+	hg_quark_t  self;
+	hg_type_t   type;
 };
 
 

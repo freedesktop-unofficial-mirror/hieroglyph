@@ -1,5 +1,10 @@
 2010-07-13  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgfile.c (_hg_file_io_real_buffered_close):
+	add more finalization.
+	(hg_file_new_with_string): lock object since it's referring
+	the real object.
+
 	* hieroglyph/hgscanner.l (hg_scanner_attach_file): restore a lineno.
 	(hg_scanner_scan): save a lineno.
 

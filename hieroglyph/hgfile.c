@@ -239,8 +239,10 @@ _hg_object_file_free(hg_object_t *object)
 		}
 	}
 	hg_mem_free(file->o.mem, file->qfilename);
-	if (file->data)
+	if (file->data) {
 		hg_mem_free(file->o.mem, file->data->self);
+		file->data = NULL;
+	}
 }
 
 /** file IO callbacks **/
@@ -475,8 +477,6 @@ _hg_file_io_real_file_close(hg_file_t  *file,
 	if (data->fd != -1) {
 		close(data->fd);
 	}
-	hg_mem_free(file->o.mem, data->self);
-	file->data = NULL;
 	file->is_closed = TRUE;
 }
 
@@ -736,10 +736,14 @@ _hg_file_io_real_buffered_close(hg_file_t  *file,
 				gpointer    user_data,
 				GError    **error)
 {
-	hg_file_io_data_t *data = file->data;
+	hg_file_io_buffered_data_t *bd = user_data;
 
-	hg_mem_free(file->o.mem, data->self);
-	file->data = NULL;
+	if (bd->in)
+		hg_mem_unlock_object(bd->in->o.mem, bd->in->o.self);
+	if (bd->out)
+		hg_mem_unlock_object(bd->out->o.mem, bd->out->o.self);
+	hg_mem_free(file->o.mem, bd->self);
+	file->user_data = NULL;
 	file->is_closed = TRUE;
 }
 
@@ -1062,6 +1066,12 @@ hg_file_new_with_string(hg_mem_t        *mem,
 	retval = hg_object_new(mem, (gpointer *)&f, HG_TYPE_FILE, 0,
 			       name, mode, &__hg_file_io_buffered_vtable,
 			       x, error);
+	if (retval != Qnil) {
+		if (x->in)
+			hg_mem_lock_object(x->in->o.mem, x->in->o.self);
+		if (x->out)
+			hg_mem_lock_object(x->out->o.mem, x->out->o.self);
+	}
 
 	if (ret)
 		*ret = f;
