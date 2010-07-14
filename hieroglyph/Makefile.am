@@ -4,6 +4,7 @@ NULL =
 INCLUDES =							\
 	$(GLIB_CFLAGS)						\
 	-I$(top_srcdir)						\
+	-DHIEROGLYPH_LIBDIR="\"$(HIEROGLYPH_LIBDIR)\""		\
 	$(NULL)
 LIBS =								\
 	@LDFLAGS@						\
@@ -37,6 +38,7 @@ hg_public_headers =						\
 	hgname.h						\
 	hgnull.h						\
 	hgobject.h						\
+	hgoperator.h						\
 	hgquark.h						\
 	hgreal.h						\
 	hgstack.h						\
@@ -73,6 +75,7 @@ hg_sources =							\
 	hgmem.c							\
 	hgname.c						\
 	hgobject.c						\
+	hgoperator.c						\
 	hgscanner.l						\
 	hgstack.c						\
 	hgstring.c						\

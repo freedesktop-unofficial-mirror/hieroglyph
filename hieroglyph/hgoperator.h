@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * version.h
+ * hgoperator.h
  * Copyright (C) 2005-2010 Akira TAGOH
  * 
  * Authors:
@@ -21,19 +21,29 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HIEROGLYPH__VERSION_H__
-#define __HIEROGLYPH__VERSION_H__
+#ifndef __HIEROGLYPH_HGOPERATOR_H__
+#define __HIEROGLYPH_HGOPERATOR_H__
 
-#include <glib/gmacros.h>
-
+#include <hieroglyph/hgtypes.h>
 
 G_BEGIN_DECLS
 
-#define HIEROGLYPH_VERSION	"@VERSION@"
-#define HIEROGLYPH_UUID		"78e9c7aa-5f35-427e-a4b8-b21272d67abb"
+#define HG_QOPER(_v_)				\
+	(hg_quark_new(HG_TYPE_OPER, (_v_)))
+#define HG_IS_QOPER(_v_)				\
+	(hg_quark_get_type((_v_)) == HG_TYPE_OPER)
 
-const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
+typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
+					 GError  **error);
+
+
+gboolean     hg_operator_init    (void);
+void         hg_operator_tini    (void);
+gboolean     hg_operator_invoke  (hg_quark_t   qoper,
+				  hg_vm_t     *vm,
+				  GError     **error);
+const gchar *hg_operator_get_name(hg_quark_t   qoper);
 
 G_END_DECLS
 
-#endif /* __HIEROGLYPH__VERSION_H__ */
+#endif /* __HIEROGLYPH_HGOPERATOR_H__ */

@@ -66,6 +66,9 @@ struct _hg_allocator_data_t {
 	gsize used_size;
 };
 
+/* hgvm.h */
+typedef struct _hg_vm_t			hg_vm_t;
+
 /**/
 struct _hg_bs_template_t {
 	union {

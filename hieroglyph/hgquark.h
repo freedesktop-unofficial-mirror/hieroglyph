@@ -57,7 +57,7 @@ enum _hg_type_t {
 	HG_TYPE_STRING    = 5,
 	HG_TYPE_EVAL_NAME = 6,
 	HG_TYPE_DICT      = 7, /* undocumented */
-	HG_TYPE_OPERATOR  = 8, /* undocumented */
+	HG_TYPE_OPER      = 8, /* undocumented */
 	HG_TYPE_ARRAY     = 9,
 	HG_TYPE_MARK      = 10,
 	HG_TYPE_FILE      = 11, /* undocumented */

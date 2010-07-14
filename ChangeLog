@@ -1,3 +1,7 @@
+2010-07-14  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.[ch]: new.
+
 2010-07-13  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgfile.c (_hg_file_io_real_buffered_close):
