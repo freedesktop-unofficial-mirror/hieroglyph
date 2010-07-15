@@ -57,7 +57,7 @@ TDEF (initialize)
 	hg_allocator_data_t *retval;
 	hg_allocator_private_t *priv;
 
-	retval = vtable->initialize(0);
+	retval = vtable->initialize();
 	fail_unless(retval != NULL, "Unable to initialize the allocator.");
 	fail_unless(retval->total_size == 0, "Unable to initialize total memory size.");
 	fail_unless(retval->used_size == 0, "Unable to initialize used memory size.");
@@ -66,19 +66,6 @@ TDEF (initialize)
 
 	fail_unless(priv->bitmap == NULL, "Detected the garbage entry on the bitmap table.");
 	fail_unless(priv->heap == NULL, "Detected the garbage entry on the heap.");
-
-	vtable->finalize(retval);
-
-	retval = vtable->initialize(1);
-	fail_unless(retval != NULL, "Unable to initialize the allocator.");
-	fail_unless(retval->total_size == 0, "Unable to initialize total memory size.");
-	fail_unless(retval->used_size == 0, "Unable to initialize used memory size.");
-
-	priv = (hg_allocator_private_t *)retval;
-
-	fail_unless(priv->bitmap == NULL, "Detected the garbage entry on the bitmap table.");
-	fail_unless(priv->heap == NULL, "Detected the garbage entry on the heap.");
-	fail_unless(priv->mem_id == 1, "Unexpected result on the mem id");
 
 	vtable->finalize(retval);
 } TEND
@@ -93,7 +80,7 @@ TDEF (resize_heap)
 	hg_allocator_data_t *retval;
 	hg_allocator_private_t *priv;
 
-	retval = vtable->initialize(0);
+	retval = vtable->initialize();
 	fail_unless(retval != NULL, "Unable to initialize the allocator.");
 	fail_unless(vtable->resize_heap(retval, 256), "Unable to initialize the heap.");
 	priv = (hg_allocator_private_t *)retval;
@@ -114,7 +101,7 @@ TDEF (alloc)
 	hg_allocator_data_t *retval;
 	hg_quark_t t, t2, t3;
 
-	retval = vtable->initialize(0);
+	retval = vtable->initialize();
 	fail_unless(retval != NULL, "Unable to initialize the allocator.");
 	fail_unless(vtable->resize_heap(retval, 256), "Unable to initialize the heap.");
 
@@ -130,18 +117,6 @@ TDEF (alloc)
 	fail_unless(t3 != Qnil, "Unable to allocate the memory.");
 
 	vtable->finalize(retval);
-
-	retval = vtable->initialize(1);
-	fail_unless(retval != NULL, "Unable to initialize the allocator.");
-	fail_unless(vtable->resize_heap(retval, 256), "Unable to initialize the heap.");
-
-	t = vtable->alloc(retval, 128, NULL);
-	fail_unless(t != Qnil, "Unable to allocate the memory [take 2]");
-	fail_unless(_hg_quark_type_bit_get_bits(t,
-						HG_QUARK_TYPE_BIT_MEM_ID,
-						HG_QUARK_TYPE_BIT_MEM_ID_END) == 1, "Unexpected result to obtain the mem id");
-
-	vtable->finalize(retval);
 } TEND
 
 TDEF (realloc)
@@ -150,7 +125,7 @@ TDEF (realloc)
 	hg_quark_t t, t2, t3;
 	gpointer p, p2;
 
-	retval = vtable->initialize(0);
+	retval = vtable->initialize();
 	fail_unless(retval != NULL, "Unable to initialize the allocator.");
 	fail_unless(vtable->resize_heap(retval, 256), "Unable to initialize the heap.");
 
@@ -203,7 +178,7 @@ TDEF (lock_object)
 	gpointer p, p2;
 	hg_allocator_block_t *b;
 
-	retval = vtable->initialize(0);
+	retval = vtable->initialize();
 	fail_unless(retval != NULL, "Unable to initialize the allocator.");
 	fail_unless(vtable->resize_heap(retval, 256), "Unable to initialize the heap.");
 

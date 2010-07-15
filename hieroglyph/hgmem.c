@@ -76,7 +76,15 @@ hg_mem_new_with_allocator(hg_mem_vtable_t *allocator,
 	retval = g_new0(hg_mem_t, 1);
 	retval->allocator = allocator;
 	retval->id = __hg_mem_id++;
-	retval->data = allocator->initialize(retval->id);
+	if (_hg_quark_type_bit_validate_bits(retval->id,
+					     HG_QUARK_TYPE_BIT_MEM_ID,
+					     HG_QUARK_TYPE_BIT_MEM_ID_END) != retval->id) {
+		g_warning("too many memory spooler being created.");
+		g_free(retval);
+
+		return NULL;
+	}
+	retval->data = allocator->initialize();
 	if (!retval->data) {
 		hg_mem_destroy(retval);
 		retval = NULL;
@@ -146,13 +154,23 @@ hg_mem_alloc(hg_mem_t *mem,
 	     gsize     size,
 	     gpointer *ret)
 {
+	hg_quark_t retval;
+
 	hg_return_val_if_fail (mem != NULL, Qnil);
 	hg_return_val_if_fail (mem->allocator != NULL, Qnil);
 	hg_return_val_if_fail (mem->allocator->alloc != NULL, Qnil);
 	hg_return_val_if_fail (mem->data != NULL, Qnil);
 	hg_return_val_if_fail (size > 0, Qnil);
 
-	return mem->allocator->alloc(mem->data, size, ret);
+	retval = mem->allocator->alloc(mem->data, size, ret);
+	if (retval != Qnil) {
+		retval = _hg_quark_type_bit_set_bits(retval,
+						     HG_QUARK_TYPE_BIT_MEM_ID,
+						     HG_QUARK_TYPE_BIT_MEM_ID_END,
+						     mem->id);
+	}
+
+	return retval;
 }
 
 /**
@@ -172,14 +190,28 @@ hg_mem_realloc(hg_mem_t   *mem,
 	       gsize       size,
 	       gpointer   *ret)
 {
+	hg_quark_t retval;
+
 	hg_return_val_if_fail (mem != NULL, Qnil);
 	hg_return_val_if_fail (mem->allocator != NULL, Qnil);
 	hg_return_val_if_fail (mem->allocator->realloc != NULL, Qnil);
 	hg_return_val_if_fail (mem->data != NULL, Qnil);
 	hg_return_val_if_fail (data != Qnil, Qnil);
 	hg_return_val_if_fail (size > 0, Qnil);
+	hg_return_val_if_fail (hg_quark_has_same_mem_id(data, mem->id), Qnil);
 
-	return mem->allocator->realloc(mem->data, data, size, ret);
+	retval = mem->allocator->realloc(mem->data,
+					 hg_quark_get_value(data),
+					 size,
+					 ret);
+	if (retval != Qnil) {
+		retval = _hg_quark_type_bit_set_bits(retval,
+						     HG_QUARK_TYPE_BIT_MEM_ID,
+						     HG_QUARK_TYPE_BIT_MEM_ID_END,
+						     mem->id);
+	}
+
+	return retval;
 }
 
 /**
@@ -200,6 +232,8 @@ hg_mem_free(hg_mem_t   *mem,
 
 	if (data == Qnil)
 		return;
+
+	hg_return_if_fail (hg_quark_has_same_mem_id(data, mem->id));
 
 	mem->allocator->free(mem->data,
 			     hg_quark_get_value (data));
@@ -226,8 +260,10 @@ hg_mem_lock_object(hg_mem_t   *mem,
 	if (data == Qnil)
 		return NULL;
 
+	hg_return_val_if_fail (hg_quark_has_same_mem_id(data, mem->id), NULL);
+
 	return mem->allocator->lock_object(mem->data,
-					   hg_quark_get_value (data));
+					   hg_quark_get_value(data));
 }
 
 /**
@@ -248,6 +284,8 @@ hg_mem_unlock_object(hg_mem_t   *mem,
 
 	if (data == Qnil)
 		return;
+
+	hg_return_if_fail (hg_quark_has_same_mem_id(data, mem->id));
 
 	return mem->allocator->unlock_object(mem->data,
 					     hg_quark_get_value (data));

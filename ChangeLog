@@ -1,3 +1,18 @@
+2010-07-16  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgmem.c (hg_mem_new_with_allocator): check the id here.
+	(hg_mem_alloc): set the mem id to the quark.
+	(hg_mem_realloc): likewise.
+	(hg_mem_free): check the mem id.
+	(hg_mem_lock_object): likewise.
+	(hg_mem_unlock_object): likewise.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_initialize): revert
+	the change.
+	(_hg_allocator_alloc): likewise.
+	(_hg_allocator_lock_object): likewise.
+	(_hg_allocator_unlock_object): likewise.
+
 2010-07-14  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgoperator.[ch]: new.

@@ -51,7 +51,7 @@ static void                   _hg_allocator_bitmap_clear              (hg_alloca
                                                                        gint32                  index);
 static gboolean               _hg_allocator_bitmap_is_marked          (hg_allocator_bitmap_t  *bitmap,
                                                                        gint32                  index);
-static gpointer               _hg_allocator_initialize                (gint                    id);
+static gpointer               _hg_allocator_initialize                (void);
 static void                   _hg_allocator_finalize                  (hg_allocator_data_t    *data);
 static gboolean               _hg_allocator_resize_heap               (hg_allocator_data_t    *data,
                                                                        gsize                   size);
@@ -167,7 +167,6 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 	hg_return_val_if_fail (size > 0, Qnil);
 
 	aligned_size = hg_mem_aligned_to(size, BLOCK_SIZE) / BLOCK_SIZE;
-#define HG_MEM_DEBUG
 #if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
 	g_print("ALLOC: %" G_GSIZE_FORMAT " blocks required\n", aligned_size);
 	g_print("Bitmap: %" G_GSIZE_FORMAT " blocks allocated\n", bitmap->size);
@@ -220,7 +219,7 @@ _hg_allocator_bitmap_realloc(hg_allocator_bitmap_t *bitmap,
 			     gsize                  old_size,
 			     gsize                  size)
 {
-	hg_quark_t i, j;
+	hg_quark_t i;
 	gsize aligned_size, old_aligned_size, required_size;
 
 	hg_return_val_if_fail (bitmap != NULL, Qnil);
@@ -229,7 +228,6 @@ _hg_allocator_bitmap_realloc(hg_allocator_bitmap_t *bitmap,
 
 	aligned_size = hg_mem_aligned_to(size, BLOCK_SIZE) / BLOCK_SIZE;
 	old_aligned_size = hg_mem_aligned_to(old_size, BLOCK_SIZE) / BLOCK_SIZE;
-#define HG_MEM_DEBUG
 #if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
 	g_print("ALLOC: %" G_GSIZE_FORMAT " blocks to be grown from %" G_GSIZE_FORMAT " blocks at index %" G_GSIZE_FORMAT "\n", aligned_size, old_aligned_size, index);
 	g_print("Bitmap: %" G_GSIZE_FORMAT " blocks allocated\n", bitmap->size);
@@ -245,8 +243,8 @@ _hg_allocator_bitmap_realloc(hg_allocator_bitmap_t *bitmap,
 	required_size = aligned_size - old_aligned_size;
 	if (!_hg_allocator_bitmap_is_marked(bitmap, index + old_aligned_size)) {
 		required_size--;
-		for (j = index + old_aligned_size + 1; required_size > 0 && j < bitmap->size; j++) {
-			if (!_hg_allocator_bitmap_is_marked(bitmap, j)) {
+		for (i = index + old_aligned_size + 1; required_size > 0 && i < bitmap->size; i++) {
+			if (!_hg_allocator_bitmap_is_marked(bitmap, i)) {
 				required_size--;
 			} else {
 				break;
@@ -256,8 +254,8 @@ _hg_allocator_bitmap_realloc(hg_allocator_bitmap_t *bitmap,
 	if (required_size == 0) {
 		G_LOCK (bitmap);
 
-		for (j = index + old_aligned_size; j < (index + aligned_size); j++)
-			_hg_allocator_bitmap_mark(bitmap, j);
+		for (i = index + old_aligned_size; i < (index + aligned_size); i++)
+			_hg_allocator_bitmap_mark(bitmap, i);
 
 		G_UNLOCK (bitmap);
 
@@ -338,20 +336,13 @@ _hg_allocator_bitmap_is_marked(hg_allocator_bitmap_t *bitmap,
 
 /** allocator **/
 static gpointer
-_hg_allocator_initialize(gint id)
+_hg_allocator_initialize(void)
 {
 	hg_allocator_private_t *retval;
 
-	if (_hg_quark_type_bit_validate_bits(id,
-					     HG_QUARK_TYPE_BIT_MEM_ID,
-					     HG_QUARK_TYPE_BIT_MEM_ID_END) != id) {
-		g_warning("too many memory spooler being created.");
-		return NULL;
-	}
 	retval = g_new0(hg_allocator_private_t, 1);
 	if (retval) {
 		retval->current_id = 2;
-		retval->mem_id = id;
 		retval->block_in_use = g_tree_new(&_btree_key_compare);
 	}
 
@@ -414,15 +405,10 @@ _hg_allocator_alloc(hg_allocator_data_t *data,
 	obj_size = hg_mem_aligned_size (sizeof (hg_allocator_block_t) + size);
 	index = _hg_allocator_bitmap_alloc(priv->bitmap, obj_size);
 	if (index != Qnil) {
-		hg_quark_t id = priv->current_id++;
-
 		block = _hg_allocator_internal_lock_object(priv, index, TRUE);
 		block->index = index;
 		block->size = obj_size;
-		retval = _hg_quark_type_bit_set_bits(id,
-						     HG_QUARK_TYPE_BIT_MEM_ID,
-						     HG_QUARK_TYPE_BIT_MEM_ID_END,
-						     priv->mem_id);
+		retval = priv->current_id++;
 		g_tree_insert(priv->block_in_use, HGQUARK_TO_POINTER (retval), block);
 		/* NOTE: No unlock yet here.
 		 *       any objects are supposed to be unlocked
@@ -551,12 +537,6 @@ _hg_allocator_lock_object(hg_allocator_data_t *data,
 			  hg_quark_t           index)
 {
 	hg_allocator_block_t *retval = NULL;
-	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
-
-	if (_hg_quark_type_bit_get_bits(index,
-					HG_QUARK_TYPE_BIT_MEM_ID,
-					HG_QUARK_TYPE_BIT_MEM_ID_END) != priv->mem_id)
-		return NULL;
 
 	G_LOCK (allocator);
 
@@ -592,13 +572,6 @@ _hg_allocator_unlock_object(hg_allocator_data_t *data,
 
 	priv = (hg_allocator_private_t *)data;
 
-	if (_hg_quark_type_bit_get_bits(index,
-					HG_QUARK_TYPE_BIT_MEM_ID,
-					HG_QUARK_TYPE_BIT_MEM_ID_END) != priv->mem_id) {
-		g_warning("Trying to unlock the object on the wrong memory spooler.");
-
-		return;
-	}
 	if ((retval = g_tree_lookup(priv->block_in_use, HGQUARK_TO_POINTER (index))) != NULL)
 		_hg_allocator_real_unlock_object(retval);
 }

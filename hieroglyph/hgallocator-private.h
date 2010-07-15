@@ -49,7 +49,6 @@ struct _hg_allocator_private_t {
 	hg_allocator_data_t    parent;
 	hg_allocator_bitmap_t *bitmap;
 	gpointer               heap;
-	gint                   mem_id;
 	hg_quark_t             current_id;
 	GTree                 *block_in_use;
 };
