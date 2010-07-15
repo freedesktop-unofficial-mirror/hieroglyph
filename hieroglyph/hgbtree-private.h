@@ -30,6 +30,9 @@
 
 #define HG_BTREE_NODE_LOCK(_mem_,_node_quark_,_nodeprefix_,_comment_,_error_) \
 	G_STMT_START {							\
+		_nodeprefix_ ## _keys = NULL;				\
+		_nodeprefix_ ## _vals = NULL;				\
+		_nodeprefix_ ## _nodes = NULL;				\
 		_nodeprefix_ ## _node = hg_mem_lock_object((_mem_), (_node_quark_)); \
 		if (_nodeprefix_ ## _node == NULL) {			\
 			g_set_error((_error_), HG_ERROR, EINVAL,	\
