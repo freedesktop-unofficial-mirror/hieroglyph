@@ -57,14 +57,15 @@ _hg_object_new(hg_mem_t     *mem,
 		retval = Qnil;
 	} else {
 		retval = hg_mem_alloc(mem, sizeof (hg_object_t) > size ? sizeof (hg_object_t) : size, (gpointer *)&object);
-		if (retval != Qnil) {
-			memset(object, 0, sizeof (hg_object_t));
-			object->type = type;
-			object->mem = mem;
+		if (retval == Qnil)
+			return retval;
 
-			if (ret)
-				*ret = object;
-		}
+		memset(object, 0, sizeof (hg_object_t));
+		object->type = type;
+		object->mem = mem;
+
+		if (ret)
+			*ret = object;
 	}
 
 	return hg_quark_new(type, retval);
