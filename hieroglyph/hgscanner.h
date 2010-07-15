@@ -30,8 +30,6 @@
 
 G_BEGIN_DECLS
 
-typedef struct _hg_scanner_t		hg_scanner_t;
-
 
 hg_scanner_t *hg_scanner_new        (hg_mem_t      *mem,
 				     hg_name_t     *name);

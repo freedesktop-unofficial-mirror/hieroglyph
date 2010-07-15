@@ -32,8 +32,11 @@ G_BEGIN_DECLS
 	hg_name_new_with_string(_n_,_s_, -1)
 #define HG_IS_QNAME(_v_)				\
 	(hg_quark_get_type(_v_) == HG_TYPE_NAME)
+#define HG_QEVALNAME(_n_,_s_)						\
+	(hg_quark_new(HG_TYPE_EVAL_NAME, HG_QNAME ((_n_),(_s_))))
+#define HG_IS_QEVALNAME(_v_)				\
+	(hg_quark_get_type(_v_) == HG_TYPE_EVAL_NAME)
 
-typedef struct _hg_name_t	hg_name_t;
 typedef struct _hg_bs_name_t	hg_bs_name_t;
 typedef enum _hg_bs_name_type_t	hg_bs_name_type_t;
 

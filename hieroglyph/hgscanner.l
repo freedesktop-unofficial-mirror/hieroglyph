@@ -299,8 +299,7 @@ HEXDIGITS	[0-9a-fA-F]
 		string = g_string_new(NULL);
 	}
 \/\/[^\x04%\(\)/<>\[\]\{\}\t\f\r\n ]+/{CONTROL}|{SPACE}	{
-		scanner->result = HG_QNAME (scanner->name, &yytext[2]);
-		scanner->result = hg_quark_set_lookup(scanner->result, TRUE);
+		scanner->result = HG_QEVALNAME (scanner->name, &yytext[2]);
 		scanner->result = hg_quark_set_executable(scanner->result, TRUE);
 		return TRUE;
 	}
@@ -402,7 +401,7 @@ HEXDIGITS	[0-9a-fA-F]
 	}
 [^\x04%\(\)/<>\[\]\{\}\t\f\r\n ]+|<<|>>|\[|\]|\{|\}/{CONTROL}|{SPACE}	{
 		scanner->result = HG_QNAME (scanner->name, yytext);
-		scanner->result = hg_quark_set_lookup(scanner->result, TRUE);
+		scanner->result = hg_quark_set_executable(scanner->result, TRUE);
 		return TRUE;
 	}
 <<EOF>>		{

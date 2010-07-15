@@ -188,10 +188,11 @@ hg_name_lookup(hg_name_t  *name,
 {
 	const gchar *retval;
 	hg_quark_t value;
+	hg_type_t type = hg_quark_get_type(quark);
 
 	hg_return_val_if_fail (name != NULL, NULL);
 	hg_return_val_if_fail (quark != Qnil, NULL);
-	hg_return_val_if_fail (hg_quark_get_type (quark) == HG_TYPE_NAME, NULL);
+	hg_return_val_if_fail (type == HG_TYPE_NAME || type == HG_TYPE_EVAL_NAME, NULL);
 
 	value = hg_quark_get_value(quark);
 	if ((hg_system_encoding_t)value > HG_enc_POSTSCRIPT_RESERVED_END) {

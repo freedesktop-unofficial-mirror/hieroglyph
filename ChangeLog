@@ -1,5 +1,13 @@
 2010-07-16  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgscanner.l: create the object with HG_TYPE_EVAL_NAME for
+	//blahblahblah and set the exec bit.
+
+	* hieroglyph/hgname.h (HG_QEVALNAME): new.
+	(HG_IS_QEVALNAME): new.
+
+	* hieroglyph/hgname.c (hg_name_lookup): allow HG_TYPE_EVAL_NAME as well.
+
 	* hieroglyph/hgstring.c (hg_string_new): don't try to unlock the object
 	if Qnil.
 	(hg_string_new_with_value): likewise.
