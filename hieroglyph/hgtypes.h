@@ -43,7 +43,7 @@ typedef enum _hg_system_encoding_t	hg_system_encoding_t;
 
 /* hgmem.h */
 struct _hg_mem_vtable_t {
-	gpointer   (* initialize)    (gint                 id);
+	gpointer   (* initialize)    (void);
 	void       (* finalize)      (hg_allocator_data_t *data);
 	gboolean   (* resize_heap)   (hg_allocator_data_t *data,
 				      gsize                size);
@@ -66,8 +66,25 @@ struct _hg_allocator_data_t {
 	gsize used_size;
 };
 
+/* hgdict.h */
+typedef struct _hg_dict_t		hg_dict_t;
+
+/* hgname.h */
+typedef struct _hg_name_t		hg_name_t;
+
+/* hgscanner.h */
+typedef struct _hg_scanner_t		hg_scanner_t;
+
 /* hgvm.h */
 typedef struct _hg_vm_t			hg_vm_t;
+typedef enum _hg_vm_langlevel_t		hg_vm_langlevel_t;
+
+enum _hg_vm_langlevel_t {
+	HG_LANG_LEVEL_1 = 0,
+	HG_LANG_LEVEL_2,
+	HG_LANG_LEVEL_3,
+	HG_LANG_LEVEL_END
+};
 
 /**/
 struct _hg_bs_template_t {
