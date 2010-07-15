@@ -1,5 +1,8 @@
 2010-07-16  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgquark.h (hg_quark_has_same_mem_id): new.
+	cleanup.
+
 	* hieroglyph/hgscanner.l: create the object with HG_TYPE_EVAL_NAME for
 	//blahblahblah and set the exec bit.
 
