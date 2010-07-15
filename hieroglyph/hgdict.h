@@ -37,7 +37,6 @@ G_BEGIN_DECLS
 	(hg_quark_get_type(_v_) == HG_TYPE_DICT)
 
 typedef struct _hg_bs_dict_t	hg_bs_dict_t;
-typedef struct _hg_dict_t	hg_dict_t;
 
 struct _hg_bs_dict_t {
 };

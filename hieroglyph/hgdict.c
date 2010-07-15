@@ -88,7 +88,7 @@ hg_dict_new(hg_mem_t *mem,
 	hg_dict_t *dict;
 
 	hg_return_val_if_fail (mem != NULL, Qnil);
-	hg_return_val_if_fail (size < HG_DICT_MAX_SIZE, Qnil);
+	hg_return_val_if_fail (size < (HG_DICT_MAX_SIZE + 1), Qnil);
 
 	retval = hg_object_new(mem, (gpointer *)&dict, HG_TYPE_DICT, 0, size);
 	if (ret)
@@ -118,7 +118,7 @@ hg_dict_add(hg_dict_t *dict,
 	GError *err = NULL;
 
 	hg_return_val_if_fail (dict != NULL, FALSE);
-	hg_return_val_if_fail (HG_IS_QSTRING (qkey), FALSE);
+	hg_return_val_if_fail (!HG_IS_QSTRING (qkey), FALSE);
 	hg_return_val_if_lock_fail (tree,
 				    dict->o.mem,
 				    dict->qdict,
@@ -157,7 +157,7 @@ hg_dict_remove(hg_dict_t  *dict,
 	gboolean retval;
 
 	hg_return_val_if_fail (dict != NULL, FALSE);
-	hg_return_val_if_fail (HG_IS_QSTRING (qkey), FALSE);
+	hg_return_val_if_fail (!HG_IS_QSTRING (qkey), FALSE);
 	hg_return_val_if_lock_fail (tree,
 				    dict->o.mem,
 				    dict->qdict,
@@ -197,7 +197,7 @@ hg_dict_lookup(hg_dict_t  *dict,
 	GError *err = NULL;
 
 	hg_return_val_if_fail (dict != NULL, Qnil);
-	hg_return_val_if_fail (HG_IS_QSTRING (qkey), Qnil);
+	hg_return_val_if_fail (!HG_IS_QSTRING (qkey), Qnil);
 	hg_return_val_if_lock_fail (tree,
 				    dict->o.mem,
 				    dict->qdict,

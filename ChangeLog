@@ -1,5 +1,10 @@
 2010-07-16  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgdict.c (hg_dict_new): fix a typo.
+	(hg_dict_add): likewise.
+	(hg_dict_remove): likewise.
+	(hg_dict_lookup): likewise.
+
 	* hieroglyph/hgbtree-private.h (HG_BTREE_NODE_LOCK): initialize
 	values to void segfault when failing the lock.
 
