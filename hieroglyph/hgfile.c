@@ -397,6 +397,7 @@ _hg_file_io_real_file_open(hg_file_t  *file,
 {
 	hg_file_io_data_t *data;
 	hg_quark_t qdata;
+	hg_string_t *sfilename;
 	const gchar *filename;
 	struct stat st;
 	int fd;
@@ -432,11 +433,12 @@ _hg_file_io_real_file_open(hg_file_t  *file,
 	data->mmapped_buffer = NULL;
 	file->data = data;
 
-	hg_return_val_with_gerror_if_lock_fail (filename,
+	hg_return_val_with_gerror_if_lock_fail (sfilename,
 						file->o.mem,
 						file->qfilename,
 						error,
 						FALSE);
+	filename = hg_string_get_static_cstr(sfilename);
 	errno = 0;
 	if (stat(filename, &st) == -1 && (file->mode & HG_FILE_IO_MODE_READ) != 0) {
 		goto exception;
@@ -444,6 +446,7 @@ _hg_file_io_real_file_open(hg_file_t  *file,
 	if ((fd = open(filename, modes[file->mode])) == -1) {
 		goto exception;
 	}
+	hg_mem_unlock_object(file->o.mem, file->qfilename);
 	data->fd = fd;
 	if ((buffer = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0)) != MAP_FAILED) {
 		data->mmapped_buffer = buffer;
@@ -1018,10 +1021,12 @@ hg_file_new_with_vtable(hg_mem_t          *mem,
 
 	retval = hg_object_new(mem, (gpointer *)&f, HG_TYPE_FILE, 0, name, mode, vtable, user_data, error);
 
-	if (ret)
-		*ret = f;
-	else
-		hg_mem_unlock_object(mem, retval);
+	if (retval != Qnil) {
+		if (ret)
+			*ret = f;
+		else
+			hg_mem_unlock_object(mem, retval);
+	}
 
 	return retval;
 }

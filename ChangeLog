@@ -1,5 +1,8 @@
 2010-07-16  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgfile.c (_hg_file_io_real_file_open): fix a typo.
+	(hg_file_new_with_vtable): don't try to unlock the object if Qnil.
+
 	* hieroglyph/hgdict.c (hg_dict_new): fix a typo.
 	(hg_dict_add): likewise.
 	(hg_dict_remove): likewise.
