@@ -1,5 +1,9 @@
 2010-07-16  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgstring.c (hg_string_new): don't try to unlock the object
+	if Qnil.
+	(hg_string_new_with_value): likewise.
+
 	* hieroglyph/hgobject.c (_hg_object_new): exit the function immediately
 	if the memory allocation failed.
 

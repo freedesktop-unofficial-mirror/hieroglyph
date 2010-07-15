@@ -110,10 +110,12 @@ hg_string_new(hg_mem_t *mem,
 	hg_return_val_if_fail (requisition_size <= HG_STRING_MAX_SIZE, Qnil);
 
 	retval = hg_object_new(mem, (gpointer *)&s, HG_TYPE_STRING, 0, NULL, 0, requisition_size);
-	if (ret)
-		*ret = s;
-	else
-		hg_mem_unlock_object(mem, retval);
+	if (retval != Qnil) {
+		if (ret)
+			*ret = s;
+		else
+			hg_mem_unlock_object(mem, retval);
+	}
 
 	return retval;
 }
@@ -146,10 +148,12 @@ hg_string_new_with_value(hg_mem_t    *mem,
 		length = strlen(string);
 
 	retval = hg_object_new(mem, (gpointer *)&s, HG_TYPE_STRING, 0, string, 0, length);
-	if (ret)
-		*ret = s;
-	else
-		hg_mem_unlock_object(mem, retval);
+	if (retval != Qnil) {
+		if (ret)
+			*ret = s;
+		else
+			hg_mem_unlock_object(mem, retval);
+	}
 
 	return retval;
 }
