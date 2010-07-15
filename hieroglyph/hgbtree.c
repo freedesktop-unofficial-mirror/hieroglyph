@@ -198,7 +198,6 @@ _hg_btree_node_insert(hg_mem_t    *mem,
 	if (qnode_keys[qnode_node->n_data - 1] >= *qkey) {
 		for (i = 0; i < qnode_node->n_data && qnode_keys[i] < *qkey; i++);
 		if (i < qnode_node->n_data && qnode_keys[i] == *qkey) {
-#define HG_BTREE_DEBUG
 #if defined(HG_DEBUG) && defined(HG_BTREE_DEBUG)
 			g_print("Inserting val %" G_GSIZE_FORMAT " with key %" G_GSIZE_FORMAT " at index %" G_GSIZE_FORMAT " on node %p\n", *qval, *qkey, i, qnode_nodes);
 #endif
