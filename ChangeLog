@@ -2,6 +2,10 @@
 
 	* hieroglyph/hgquark.h (hg_quark_has_same_mem_id): new.
 	cleanup.
+	(_hg_quark_type_bit_shift): renamed.
+	(_hg_quark_type_bit_set_bits): changed API to not being confused.
+	(hg_quark_set_executable): likewise.
+	(hg_quark_set_mem_id): new.
 
 	* hieroglyph/hgscanner.l: create the object with HG_TYPE_EVAL_NAME for
 	//blahblahblah and set the exec bit.

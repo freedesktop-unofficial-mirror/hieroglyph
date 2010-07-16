@@ -164,10 +164,7 @@ hg_mem_alloc(hg_mem_t *mem,
 
 	retval = mem->allocator->alloc(mem->data, size, ret);
 	if (retval != Qnil) {
-		retval = _hg_quark_type_bit_set_bits(retval,
-						     HG_QUARK_TYPE_BIT_MEM_ID,
-						     HG_QUARK_TYPE_BIT_MEM_ID_END,
-						     mem->id);
+		hg_quark_set_mem_id(&retval, mem->id);
 	}
 
 	return retval;
@@ -205,10 +202,8 @@ hg_mem_realloc(hg_mem_t   *mem,
 					 size,
 					 ret);
 	if (retval != Qnil) {
-		retval = _hg_quark_type_bit_set_bits(retval,
-						     HG_QUARK_TYPE_BIT_MEM_ID,
-						     HG_QUARK_TYPE_BIT_MEM_ID_END,
-						     mem->id);
+		hg_quark_set_mem_id(&retval,
+				    mem->id);
 	}
 
 	return retval;

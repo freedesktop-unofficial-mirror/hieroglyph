@@ -84,7 +84,7 @@ TDEF (hg_quark_is_executable)
 
 	q = hg_quark_new(HG_TYPE_INT, 10);
 	fail_unless(q == 0x10000000aLL, "Unexpected result for integer quark");
-	q = hg_quark_set_executable(q, TRUE);
+	hg_quark_set_executable(&q, TRUE);
 	fail_unless(q == 0x110000000aLL, "Unexpected result to set a exec bit");
 	fail_unless(hg_quark_is_executable(q), "Unexpected result to check if one is executable");
 } TEND

@@ -67,7 +67,7 @@ enum _hg_type_t {
 
 
 G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_get          (hg_quark_t           v) G_GNUC_CONST;
-G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_set          (hg_quark_t           v) G_GNUC_CONST;
+G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_shift        (hg_quark_t           v) G_GNUC_CONST;
 G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_get_value    (hg_quark_t           v) G_GNUC_CONST;
 G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_mask_bits    (hg_quark_type_bit_t  begin,
 							  hg_quark_type_bit_t  end) G_GNUC_CONST;
@@ -80,7 +80,7 @@ G_INLINE_FUNC gint       _hg_quark_type_bit_get_bits     (hg_quark_t           v
 G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_validate_bits(hg_quark_t           v,
                                                           hg_quark_type_bit_t  begin,
                                                           hg_quark_type_bit_t  end) G_GNUC_CONST;
-G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_set_bits     (hg_quark_t           x,
+G_INLINE_FUNC void       _hg_quark_type_bit_set_bits     (hg_quark_t          *x,
                                                           hg_quark_type_bit_t  begin,
                                                           hg_quark_type_bit_t  end,
                                                           hg_quark_t           v) G_GNUC_CONST;
@@ -92,7 +92,7 @@ _hg_quark_type_bit_get(hg_quark_t v)
 }
 
 G_INLINE_FUNC hg_quark_t
-_hg_quark_type_bit_set(hg_quark_t v)
+_hg_quark_type_bit_shift(hg_quark_t v)
 {
 	return v << HG_QUARK_TYPE_BIT_SHIFT;
 }
@@ -134,15 +134,17 @@ _hg_quark_type_bit_validate_bits(hg_quark_t          v,
 	return v & (_hg_quark_type_bit_mask_bits(begin, end) >> begin);
 }
 
-G_INLINE_FUNC hg_quark_t
-_hg_quark_type_bit_set_bits(hg_quark_t          x,
-			    hg_quark_type_bit_t begin,
-			    hg_quark_type_bit_t end,
-			    hg_quark_t          v)
+G_INLINE_FUNC void
+_hg_quark_type_bit_set_bits(hg_quark_t          *x,
+			    hg_quark_type_bit_t  begin,
+			    hg_quark_type_bit_t  end,
+			    hg_quark_t           v)
 {
-	return _hg_quark_type_bit_set(_hg_quark_type_bit_clear_bits(x, begin, end) |
+	hg_quark_t _x_ = *x;
+
+	*x = _hg_quark_type_bit_shift(_hg_quark_type_bit_clear_bits(_x_, begin, end) |
 				      (_hg_quark_type_bit_validate_bits(v, begin, end) << begin)) |
-		_hg_quark_type_bit_get_value(x);
+		_hg_quark_type_bit_get_value(_x_);
 }
 
 
@@ -151,10 +153,12 @@ G_INLINE_FUNC hg_quark_t hg_quark_new             (hg_type_t   type,
 G_INLINE_FUNC hg_type_t  hg_quark_get_type        (hg_quark_t  quark);
 G_INLINE_FUNC hg_quark_t hg_quark_get_value       (hg_quark_t  quark);
 G_INLINE_FUNC gboolean   hg_quark_is_simple_object(hg_quark_t  quark);
-G_INLINE_FUNC hg_quark_t hg_quark_set_executable  (hg_quark_t  quark,
+G_INLINE_FUNC void       hg_quark_set_executable  (hg_quark_t *quark,
 						   gboolean    flag);
 G_INLINE_FUNC gboolean   hg_quark_is_executable   (hg_quark_t  quark);
 G_INLINE_FUNC gboolean   hg_quark_has_same_mem_id (hg_quark_t  quark,
+						   guint       id);
+G_INLINE_FUNC void       hg_quark_set_mem_id      (hg_quark_t *quark,
 						   guint       id);
 
 /**
@@ -189,10 +193,14 @@ G_INLINE_FUNC hg_quark_t
 hg_quark_new(hg_type_t  type,
 	     hg_quark_t value)
 {
-	return _hg_quark_type_bit_set_bits(value,
-					   HG_QUARK_TYPE_BIT_TYPE,
-					   HG_QUARK_TYPE_BIT_TYPE_END,
-					   type);
+	hg_quark_t retval = value;
+
+	_hg_quark_type_bit_set_bits(&retval,
+				    HG_QUARK_TYPE_BIT_TYPE,
+				    HG_QUARK_TYPE_BIT_TYPE_END,
+				    type);
+
+	return retval;
 }
 
 /**
@@ -247,17 +255,15 @@ hg_quark_is_simple_object(hg_quark_t quark)
  * @flag:
  *
  * FIXME
- *
- * Returns:
  */
-G_INLINE_FUNC hg_quark_t
-hg_quark_set_executable(hg_quark_t quark,
-			gboolean   flag)
+G_INLINE_FUNC void
+hg_quark_set_executable(hg_quark_t *quark,
+			gboolean    flag)
 {
-	return _hg_quark_type_bit_set_bits(quark,
-					   HG_QUARK_TYPE_BIT_EXEC,
-					   HG_QUARK_TYPE_BIT_EXEC,
-					   (flag == TRUE));
+	_hg_quark_type_bit_set_bits(quark,
+				    HG_QUARK_TYPE_BIT_EXEC,
+				    HG_QUARK_TYPE_BIT_EXEC,
+				    (flag == TRUE));
 }
 
 /**
@@ -291,6 +297,23 @@ hg_quark_has_same_mem_id(hg_quark_t quark,
 	return _hg_quark_type_bit_get_bits(quark,
 					   HG_QUARK_TYPE_BIT_MEM_ID,
 					   HG_QUARK_TYPE_BIT_MEM_ID_END) == id;
+}
+
+/**
+ * hg_quark_set_mem_id:
+ * @quark:
+ * @id:
+ *
+ * FIXME
+ */
+G_INLINE_FUNC void
+hg_quark_set_mem_id(hg_quark_t *quark,
+		    guint       id)
+{
+	_hg_quark_type_bit_set_bits(quark,
+				    HG_QUARK_TYPE_BIT_MEM_ID,
+				    HG_QUARK_TYPE_BIT_MEM_ID_END,
+				    id);
 }
 
 G_END_DECLS
