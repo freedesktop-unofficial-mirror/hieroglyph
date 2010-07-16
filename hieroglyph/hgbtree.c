@@ -870,6 +870,9 @@ hg_btree_find(hg_btree_t  *tree,
 	hg_return_val_with_gerror_if_fail (tree != NULL, Qnil, error);
 
 	qnode = tree->root;
+	if (qnode == Qnil)
+		return Qnil;
+
 	HG_BTREE_NODE_LOCK (tree->mem, qnode, qnode, "", &err);
 	while (qnode_node != NULL) {
 		hg_quark_t q;
@@ -887,6 +890,10 @@ hg_btree_find(hg_btree_t  *tree,
 		q = qnode_nodes[i];
 		HG_BTREE_NODE_UNLOCK_NO_LABEL (tree->mem, qnode, qnode);
 		qnode = q;
+		if (qnode == Qnil) {
+			/* escape the loop here to avoid a warning at follow. */
+			return Qnil;
+		}
 		HG_BTREE_NODE_LOCK (tree->mem, qnode, qnode, "", &err);
 	}
 

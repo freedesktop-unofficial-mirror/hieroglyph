@@ -1,5 +1,7 @@
 2010-07-16  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgbtree.c (hg_btree_find): avoid unnecessary warnings.
+
 	* hieroglyph/hgquark.h (hg_quark_has_same_mem_id): new.
 	cleanup.
 	(_hg_quark_type_bit_shift): renamed.
