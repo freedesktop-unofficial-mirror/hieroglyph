@@ -87,6 +87,20 @@ _hg_object_string_free(hg_object_t *object)
 {
 }
 
+static hg_quark_t
+_hg_object_string_copy(hg_object_t *object,
+		       gpointer    *ret)
+{
+	return Qnil;
+}
+
+static hg_quark_t
+_hg_object_string_to_string(hg_object_t *object,
+			    gpointer    *ret)
+{
+	return Qnil;
+}
+
 /*< public >*/
 /**
  * hg_string_new:

@@ -30,15 +30,21 @@
 G_BEGIN_DECLS
 
 #define HG_DEFINE_VTABLE(_name_)					\
-	static gsize    _hg_object_ ## _name_ ## _get_capsulated_size(void); \
-	static gboolean _hg_object_ ## _name_ ## _initialize         (hg_object_t *object, \
-								      va_list      args); \
-	static void     _hg_object_ ## _name_ ## _free               (hg_object_t *object); \
+	static gsize      _hg_object_ ## _name_ ## _get_capsulated_size(void); \
+	static gboolean   _hg_object_ ## _name_ ## _initialize         (hg_object_t *object, \
+									va_list      args); \
+	static void       _hg_object_ ## _name_ ## _free               (hg_object_t *object); \
+	static hg_quark_t _hg_object_ ## _name_ ## _copy               (hg_object_t *object, \
+									gpointer    *ret); \
+	static hg_quark_t _hg_object_ ## _name_ ## _to_string          (hg_object_t *object, \
+									gpointer    *ret); \
 									\
 	static hg_object_vtable_t __hg_object_ ## _name_ ## _vtable = {	\
 		.get_capsulated_size = _hg_object_ ## _name_ ## _get_capsulated_size, \
 		.initialize          = _hg_object_ ## _name_ ## _initialize, \
 		.free                = _hg_object_ ## _name_ ## _free,	\
+		.copy                = _hg_object_ ## _name_ ## _copy,	\
+		.to_string           = _hg_object_ ## _name_ ## _to_string, \
 	};								\
 									\
 	hg_object_vtable_t *						\
@@ -84,6 +90,10 @@ struct _hg_object_vtable_t {
 	gboolean   (* initialize)          (hg_object_t *object,
 					    va_list      args);
 	void       (* free)                (hg_object_t *object);
+	hg_quark_t (* copy)                (hg_object_t *object,
+					    gpointer    *ret);
+	hg_quark_t (* to_string)           (hg_object_t *object,
+					    gpointer    *ret);
 };
 struct _hg_object_t {
 	hg_mem_t   *mem;
@@ -92,17 +102,21 @@ struct _hg_object_t {
 };
 
 
-void       hg_object_init    (void);
-void       hg_object_tini    (void);
-gboolean   hg_object_register(hg_type_t           type,
-			      hg_object_vtable_t *vtable);
-hg_quark_t hg_object_new     (hg_mem_t           *mem,
-			      gpointer           *ret,
-			      hg_type_t           type,
-			      gsize               preallocated_size,
-			      ...);
-void       hg_object_free    (hg_mem_t           *mem,
-			      hg_quark_t          index);
+void       hg_object_init     (void);
+void       hg_object_tini     (void);
+gboolean   hg_object_register (hg_type_t           type,
+			       hg_object_vtable_t *vtable);
+hg_quark_t hg_object_new      (hg_mem_t           *mem,
+			       gpointer           *ret,
+			       hg_type_t           type,
+			       gsize               preallocated_size,
+			       ...);
+void       hg_object_free     (hg_mem_t           *mem,
+			       hg_quark_t          index);
+hg_quark_t hg_object_copy     (hg_object_t        *object,
+			       gpointer           *ret);
+hg_quark_t hg_object_to_string(hg_object_t        *object,
+			       gpointer           *ret);
 
 G_END_DECLS
 

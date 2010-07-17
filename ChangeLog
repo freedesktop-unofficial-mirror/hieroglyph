@@ -1,3 +1,8 @@
+2010-07-17  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgobject.c (hg_object_copy): new.
+	(hg_object_to_string): new.
+
 2010-07-16  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgbtree.c (hg_btree_find): avoid unnecessary warnings.

@@ -68,6 +68,20 @@ _hg_object_dict_free(hg_object_t *object)
 		hg_btree_destroy(dict->o.mem, dict->qdict);
 }
 
+static hg_quark_t
+_hg_object_dict_copy(hg_object_t *object,
+		     gpointer    *ret)
+{
+	return Qnil;
+}
+
+static hg_quark_t
+_hg_object_dict_to_string(hg_object_t *object,
+			  gpointer    *ret)
+{
+	return Qnil;
+}
+
 /*< public >*/
 /**
  * hg_dict_new:

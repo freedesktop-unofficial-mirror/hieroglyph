@@ -182,10 +182,63 @@ hg_object_free(hg_mem_t   *mem,
 	hg_return_if_fail (index != Qnil);
 	hg_return_if_lock_fail (object, mem, index);
 	hg_return_if_fail (object->type < HG_TYPE_END);
+	hg_return_if_fail (__hg_object_vtables[type] != NULL);
 
 	v = __hg_object_vtables[object->type];
 	v->free(object);
 
 	hg_mem_unlock_object(mem, index);
 	hg_mem_free(mem, index);
+}
+
+/**
+ * hg_object_copy:
+ * @object:
+ * @ret:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_quark_t
+hg_object_copy(hg_object_t *object,
+	       gpointer    *ret)
+{
+	hg_object_t *object;
+	hg_object_vtable_t *v;
+
+	hg_return_val_if_fail (__hg_object_is_initialized, Qnil);
+	hg_return_val_if_fail (object != NULL, Qnil);
+	hg_return_val_if_fail (object->type < HG_TYPE_END, Qnil);
+	hg_return_val_if_fail (__hg_object_vtables[type] != NULL, Qnil);
+
+	v = __hg_object_vtables[object->type];
+
+	return v->copy(object, ret);
+}
+
+/**
+ * hg_object_to_string:
+ * @object:
+ * @ret:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_quark_t
+hg_object_to_string(hg_object_t *object,
+		    gpointer    *ret)
+{
+	hg_object_t *object;
+	hg_object_vtable_t *v;
+
+	hg_return_val_if_fail (__hg_object_is_initialized, Qnil);
+	hg_return_val_if_fail (object != NULL, Qnil);
+	hg_return_val_if_fail (object->type < HG_TYPE_END, Qnil);
+	hg_return_val_if_fail (__hg_object_vtables[type] != NULL, Qnil);
+
+	v = __hg_object_vtables[object->type];
+
+	return v->to_string(object, ret);
 }

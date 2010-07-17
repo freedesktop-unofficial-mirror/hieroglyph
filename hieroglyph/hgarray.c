@@ -79,6 +79,20 @@ _hg_object_array_free(hg_object_t *object)
 	*/
 }
 
+static hg_quark_t
+_hg_object_array_copy(hg_object_t *object,
+		      gpointer    *ret)
+{
+	return Qnil;
+}
+
+static hg_quark_t
+_hg_object_array_to_string(hg_object_t *object,
+			   gpointer    *ret)
+{
+	return Qnil;
+}
+
 static gboolean
 _hg_array_maybe_expand(hg_array_t *array)
 {

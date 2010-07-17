@@ -71,6 +71,20 @@ _hg_object_stack_free(hg_object_t *object)
 	_hg_list_free(stack->o.mem, stack->stack);
 }
 
+static hg_quark_t
+_hg_object_stack_copy(hg_object_t *object,
+		      gpointer    *ret)
+{
+	return Qnil;
+}
+
+static hg_quark_t
+_hg_object_stack_to_string(hg_object_t *object,
+			   gpointer    *ret)
+{
+	return Qnil;
+}
+
 static hg_list_t *
 _hg_list_new(hg_mem_t *mem)
 {

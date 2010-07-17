@@ -203,7 +203,7 @@ _hg_object_file_initialize(hg_object_t *object,
 	file->vtable    = vtable;
 	file->size      = 0;
 	file->position  = 0;
-	file->lineno    = 0;
+	file->lineno    = 1;
 	file->is_closed = TRUE;
 	file->data      = NULL;
 	file->user_data = user_data;
@@ -243,6 +243,20 @@ _hg_object_file_free(hg_object_t *object)
 		hg_mem_free(file->o.mem, file->data->self);
 		file->data = NULL;
 	}
+}
+
+static hg_quark_t
+_hg_object_file_copy(hg_object_t *object,
+		     gpointer    *ret)
+{
+	return Qnil;
+}
+
+static hg_quark_t
+_hg_object_file_to_string(hg_object_t *object,
+			  gpointer    *ret)
+{
+	return Qnil;
 }
 
 /** file IO callbacks **/
