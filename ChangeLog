@@ -1,5 +1,7 @@
 2010-07-17  Akira TAGOH  <akira@tagoh.org>
 
+	* .gdbinit (hgquarkinfo): add a macro.
+
 	* hieroglyph/hgobject.c (hg_object_copy): new.
 	(hg_object_to_string): new.
 

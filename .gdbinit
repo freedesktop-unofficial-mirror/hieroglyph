@@ -1,8 +1,8 @@
 # .gdbinit
-# Copyright (C) 2006 Akira TAGOH
+# Copyright (C) 2006,2010 Akira TAGOH
 
 # Authors:
-#   Akira TAGOH  <at@gclab.org>
+#   Akira TAGOH  <akira@tagoh.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,95 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
+
+set $_hg_q_bit_type0  = 0
+set $_hg_q_bit_type1  = 1
+set $_hg_q_bit_type2  = 2
+set $_hg_q_bit_type3  = 3
+set $_hg_q_bit_exec   = 4
+set $_hg_q_bit_memid0 = 5
+set $_hg_q_bit_memid1 = 6
+
+define hgquarkinfo
+  set $_memid = ($arg0 >> 32 & (((1 << ($_hg_q_bit_memid1-$_hg_q_bit_memid0+1)) - 1) << $_hg_q_bit_memid0)) >> $_hg_q_bit_memid0
+  set $_exec  = ($arg0 >> 32 & (((1 << ($_hg_q_bit_exec-$_hg_q_bit_exec+1)) - 1) << $_hg_q_bit_exec)) >> $_hg_q_bit_exec
+  set $_typeid = ($arg0 >> 32 & (((1 << ($_hg_q_bit_type3-$_hg_q_bit_type0+1)) - 1) << $_hg_q_bit_type0)) >> $_hg_q_bit_type0
+  set $_value = ($arg0 & ((1LL << 32) - 1))
+
+  if ($arg0 == 0)
+    printf "nil\n"
+  else
+    printf "(hg_quark_t)%p\n", $arg0
+    printf "  [mem ID]: %d\n", $_memid
+    printf "  [exec bit]: "
+    if ($_exec == 0)
+      printf "false"
+    else
+      printf "true"
+    end
+    printf "\n"
+    printf "  [type]: "
+    if ($_typeid == 0)
+      printf "null"
+    else
+      if ($_typeid == 1)
+	printf "integer"
+      else
+	if ($_typeid == 2)
+	  printf "real"
+	else
+	  if ($_typeid == 3)
+	    printf "name"
+	  else
+	    if ($_typeid == 4)
+	      printf "boolean"
+	    else
+	      if ($_typeid == 5)
+		printf "string"
+	      else
+		if ($_typeid == 6)
+		  printf "immediately evaluated name"
+		else
+		  if ($_typeid == 7)
+		    printf "dict"
+		  else
+		    if ($_typeid == 8)
+		      printf "oper"
+		    else
+		      if ($_typeid == 9)
+			printf "array"
+		      else
+			if ($_typeid == 10)
+			  printf "mark"
+			else
+			  if ($_typeid == 11)
+			    printf "file"
+			  else
+			    if ($_typeid == 12)
+			      printf "save"
+			    else
+			      if ($_typeid == 13)
+				printf "stack"
+			      else
+				printf "unknown"
+			      end
+			    end
+			  end
+			end
+		      end
+		    end
+		  end
+		end
+	      end
+	    end
+	  end
+	end
+      end
+    end
+    printf "\n"
+    printf "  [value]: %d (%p)\n", $_value, $_value
+  end
+end
 
 define _hggetmemobj
   set $_obj = (HgMemObject *)($arg0)
