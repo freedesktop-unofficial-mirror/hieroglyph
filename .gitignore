@@ -13,6 +13,7 @@ aclocal\.m4
 autom4te\.cache
 config\.*
 configure
+core.*
 depcomp
 install-sh
 intltool-*
