@@ -44,6 +44,7 @@ hg_public_headers =						\
 	hgstack.h						\
 	hgstring.h						\
 	hgtypes.h						\
+	hgvm.h							\
 	$(NULL)
 hg_private_headers =						\
 	hgallocator-private.h					\
@@ -79,6 +80,7 @@ hg_sources =							\
 	hgscanner.l						\
 	hgstack.c						\
 	hgstring.c						\
+	hgvm.c							\
 	$(NULL)
 #
 stamp_files =							\
