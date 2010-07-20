@@ -173,7 +173,7 @@ hg_mem_alloc(hg_mem_t *mem,
 /**
  * hg_mem_realloc:
  * @mem:
- * @data:
+ * @qdata:
  * @size:
  * @ret:
  *
@@ -183,22 +183,24 @@ hg_mem_alloc(hg_mem_t *mem,
  */
 hg_quark_t
 hg_mem_realloc(hg_mem_t   *mem,
-	       hg_quark_t  data,
+	       hg_quark_t  qdata,
 	       gsize       size,
 	       gpointer   *ret)
 {
 	hg_quark_t retval;
 
+	if (qdata == Qnil)
+		return hg_mem_alloc(mem, size, ret);
+
 	hg_return_val_if_fail (mem != NULL, Qnil);
 	hg_return_val_if_fail (mem->allocator != NULL, Qnil);
 	hg_return_val_if_fail (mem->allocator->realloc != NULL, Qnil);
 	hg_return_val_if_fail (mem->data != NULL, Qnil);
-	hg_return_val_if_fail (data != Qnil, Qnil);
 	hg_return_val_if_fail (size > 0, Qnil);
-	hg_return_val_if_fail (hg_quark_has_same_mem_id(data, mem->id), Qnil);
+	hg_return_val_if_fail (hg_quark_has_same_mem_id(qdata, mem->id), Qnil);
 
 	retval = mem->allocator->realloc(mem->data,
-					 hg_quark_get_value(data),
+					 hg_quark_get_value(qdata),
 					 size,
 					 ret);
 	if (retval != Qnil) {
@@ -212,13 +214,13 @@ hg_mem_realloc(hg_mem_t   *mem,
 /**
  * hg_mem_free:
  * @mem:
- * @data:
+ * @qdata:
  *
  * FIXME
  */
 void
 hg_mem_free(hg_mem_t   *mem,
-	    hg_quark_t  data)
+	    hg_quark_t  qdata)
 {
 	hg_return_if_fail (mem != NULL);
 	hg_return_if_fail (mem->allocator != NULL);
@@ -237,7 +239,7 @@ hg_mem_free(hg_mem_t   *mem,
 /**
  * hg_mem_lock_object:
  * @mem:
- * @data:
+ * @qdata:
  *
  * FIXME
  *
@@ -245,7 +247,7 @@ hg_mem_free(hg_mem_t   *mem,
  */
 gpointer
 hg_mem_lock_object(hg_mem_t   *mem,
-		   hg_quark_t  data)
+		   hg_quark_t  qdata)
 {
 	hg_return_val_if_fail (mem != NULL, NULL);
 	hg_return_val_if_fail (mem->allocator != NULL, NULL);
@@ -264,13 +266,13 @@ hg_mem_lock_object(hg_mem_t   *mem,
 /**
  * hg_mem_unlock_object:
  * @mem:
- * @data:
+ * @qdata:
  *
  * FIXME
  */
 void
 hg_mem_unlock_object(hg_mem_t   *mem,
-		     hg_quark_t  data)
+		     hg_quark_t  qdata)
 {
 	hg_return_if_fail (mem != NULL);
 	hg_return_if_fail (mem->allocator != NULL);

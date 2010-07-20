@@ -1,5 +1,8 @@
 2010-07-20  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgmem.c (hg_mem_realloc): just invoke hg_mem_alloc
+	if qdata is Qnil. behaving similarly to libc's realloc.
+
 	* hieroglyph/hgname.h (HG_NAME): new.
 
 	* hieroglyph/hgbool.h (HG_BOOL): new.

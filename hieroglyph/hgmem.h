@@ -40,15 +40,15 @@ hg_quark_t  hg_mem_alloc             (hg_mem_t        *mem,
                                       gsize            size,
 				      gpointer        *ret);
 hg_quark_t  hg_mem_realloc           (hg_mem_t        *mem,
-				      hg_quark_t       data,
+				      hg_quark_t       qdata,
 				      gsize            size,
 				      gpointer        *ret);
 void        hg_mem_free              (hg_mem_t        *mem,
-                                      hg_quark_t       data);
+                                      hg_quark_t       qdata);
 gpointer    hg_mem_lock_object       (hg_mem_t        *mem,
-                                      hg_quark_t       data);
+                                      hg_quark_t       qdata);
 void        hg_mem_unlock_object     (hg_mem_t        *mem,
-                                      hg_quark_t       data);
+                                      hg_quark_t       qdata);
 gint        hg_mem_get_id            (hg_mem_t        *mem);
 
 G_INLINE_FUNC gpointer hg_mem_lock_object_with_gerror(hg_mem_t     *mem,
