@@ -1,5 +1,10 @@
 2010-07-20  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgquark.h (hg_quark_set_readable): new.
+	(hg_quark_is_readable): new.
+	(hg_quark_set_writable): new.
+	(hg_quark_is_writable): new.
+
 	* hieroglyph/hgmem.c (hg_mem_realloc): just invoke hg_mem_alloc
 	if qdata is Qnil. behaving similarly to libc's realloc.
 

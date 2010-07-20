@@ -35,17 +35,25 @@ typedef enum _hg_quark_type_bit_t	hg_quark_type_bit_t;
 typedef enum _hg_type_t			hg_type_t;
 
 enum _hg_quark_type_bit_t {
-	HG_QUARK_TYPE_BIT_TYPE = 0,
-	HG_QUARK_TYPE_BIT_TYPE0 = 0,
-	HG_QUARK_TYPE_BIT_TYPE1 = 1,
-	HG_QUARK_TYPE_BIT_TYPE2 = 2,
-	HG_QUARK_TYPE_BIT_TYPE3 = 3,
-	HG_QUARK_TYPE_BIT_TYPE_END = 3,
-	HG_QUARK_TYPE_BIT_EXEC = 4,
-	HG_QUARK_TYPE_BIT_MEM_ID = 5,
-	HG_QUARK_TYPE_BIT_MEM_ID0 = 5,
-	HG_QUARK_TYPE_BIT_MEM_ID1 = 6,
-	HG_QUARK_TYPE_BIT_MEM_ID_END = 6,
+	HG_QUARK_TYPE_BIT_BIT0 = 0,
+	HG_QUARK_TYPE_BIT_TYPE = HG_QUARK_TYPE_BIT_BIT0,		/* 0 */
+	HG_QUARK_TYPE_BIT_TYPE0 = HG_QUARK_TYPE_BIT_TYPE + 0,		/* 0 */
+	HG_QUARK_TYPE_BIT_TYPE1 = HG_QUARK_TYPE_BIT_TYPE + 1,		/* 1 */
+	HG_QUARK_TYPE_BIT_TYPE2 = HG_QUARK_TYPE_BIT_TYPE + 2,		/* 2 */
+	HG_QUARK_TYPE_BIT_TYPE3 = HG_QUARK_TYPE_BIT_TYPE + 3,		/* 3 */
+	HG_QUARK_TYPE_BIT_TYPE_END = HG_QUARK_TYPE_BIT_TYPE3,		/* 3 */
+	HG_QUARK_TYPE_BIT_ACCESS = HG_QUARK_TYPE_BIT_TYPE_END + 1,	/* 4 */
+	HG_QUARK_TYPE_BIT_ACCESS0 = HG_QUARK_TYPE_BIT_ACCESS + 0,	/* 4 */
+	HG_QUARK_TYPE_BIT_ACCESS1 = HG_QUARK_TYPE_BIT_ACCESS0 + 1,	/* 5 */
+	HG_QUARK_TYPE_BIT_ACCESS2 = HG_QUARK_TYPE_BIT_ACCESS0 + 2,	/* 6 */
+	HG_QUARK_TYPE_BIT_ACCESS_END = HG_QUARK_TYPE_BIT_ACCESS2,	/* 6 */
+	HG_QUARK_TYPE_BIT_EXECUTABLE = HG_QUARK_TYPE_BIT_ACCESS0,	/* 4 */
+	HG_QUARK_TYPE_BIT_READABLE = HG_QUARK_TYPE_BIT_ACCESS1,		/* 5 */
+	HG_QUARK_TYPE_BIT_WRITABLE = HG_QUARK_TYPE_BIT_ACCESS2,		/* 6 */
+	HG_QUARK_TYPE_BIT_MEM_ID = HG_QUARK_TYPE_BIT_ACCESS_END + 1,	/* 7 */
+	HG_QUARK_TYPE_BIT_MEM_ID0 = HG_QUARK_TYPE_BIT_MEM_ID + 0,	/* 7 */
+	HG_QUARK_TYPE_BIT_MEM_ID1 = HG_QUARK_TYPE_BIT_MEM_ID + 1,	/* 8 */
+	HG_QUARK_TYPE_BIT_MEM_ID_END = HG_QUARK_TYPE_BIT_MEM_ID1,	/* 8 */
 };
 enum _hg_type_t {
 	HG_TYPE_NULL      = 0,
@@ -64,7 +72,6 @@ enum _hg_type_t {
 	HG_TYPE_STACK     = 13, /* undocumented */
 	HG_TYPE_END /* 15 */
 };
-
 
 G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_get          (hg_quark_t           v) G_GNUC_CONST;
 G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_shift        (hg_quark_t           v) G_GNUC_CONST;
@@ -156,6 +163,12 @@ G_INLINE_FUNC gboolean   hg_quark_is_simple_object(hg_quark_t  quark);
 G_INLINE_FUNC void       hg_quark_set_executable  (hg_quark_t *quark,
 						   gboolean    flag);
 G_INLINE_FUNC gboolean   hg_quark_is_executable   (hg_quark_t  quark);
+G_INLINE_FUNC void       hg_quark_set_readable    (hg_quark_t *quark,
+						   gboolean    flag);
+G_INLINE_FUNC gboolean   hg_quark_is_readable     (hg_quark_t  quark);
+G_INLINE_FUNC void       hg_quark_set_writable    (hg_quark_t *quark,
+						   gboolean    flag);
+G_INLINE_FUNC gboolean   hg_quark_is_writable     (hg_quark_t  quark);
 G_INLINE_FUNC gboolean   hg_quark_has_same_mem_id (hg_quark_t  quark,
 						   guint       id);
 G_INLINE_FUNC void       hg_quark_set_mem_id      (hg_quark_t *quark,
@@ -261,8 +274,8 @@ hg_quark_set_executable(hg_quark_t *quark,
 			gboolean    flag)
 {
 	_hg_quark_type_bit_set_bits(quark,
-				    HG_QUARK_TYPE_BIT_EXEC,
-				    HG_QUARK_TYPE_BIT_EXEC,
+				    HG_QUARK_TYPE_BIT_EXECUTABLE,
+				    HG_QUARK_TYPE_BIT_EXECUTABLE,
 				    (flag == TRUE));
 }
 
@@ -278,8 +291,74 @@ G_INLINE_FUNC gboolean
 hg_quark_is_executable(hg_quark_t quark)
 {
 	return _hg_quark_type_bit_get_bits(quark,
-					   HG_QUARK_TYPE_BIT_EXEC,
-					   HG_QUARK_TYPE_BIT_EXEC) != 0;
+					   HG_QUARK_TYPE_BIT_EXECUTABLE,
+					   HG_QUARK_TYPE_BIT_EXECUTABLE) != 0;
+}
+
+/**
+ * hg_quark_set_readable:
+ * quark:
+ * flag:
+ *
+ * FIXME
+ */
+G_INLINE_FUNC void
+hg_quark_set_readable(hg_quark_t *quark,
+		      gboolean    flag)
+{
+	_hg_quark_type_bit_set_bits(quark,
+				    HG_QUARK_TYPE_BIT_READABLE,
+				    HG_QUARK_TYPE_BIT_READABLE,
+				    (flag == TRUE));
+}
+
+/**
+ * hg_quark_is_readable:
+ * @quark:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+G_INLINE_FUNC gboolean
+hg_quark_is_readable(hg_quark_t quark)
+{
+	return _hg_quark_type_bit_get_bits(quark,
+					   HG_QUARK_TYPE_BIT_READABLE,
+					   HG_QUARK_TYPE_BIT_READABLE) != 0;
+}
+
+/**
+ * hg_quark_set_writable:
+ * quark:
+ * flag:
+ *
+ * FIXME
+ */
+G_INLINE_FUNC void
+hg_quark_set_writable(hg_quark_t *quark,
+		      gboolean    flag)
+{
+	_hg_quark_type_bit_set_bits(quark,
+				    HG_QUARK_TYPE_BIT_WRITABLE,
+				    HG_QUARK_TYPE_BIT_WRITABLE,
+				    (flag == TRUE));
+}
+
+/**
+ * hg_quark_is_writable:
+ * @quark:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+G_INLINE_FUNC gboolean
+hg_quark_is_writable(hg_quark_t quark)
+{
+	return _hg_quark_type_bit_get_bits(quark,
+					   HG_QUARK_TYPE_BIT_WRITABLE,
+					   HG_QUARK_TYPE_BIT_WRITABLE) != 0;
 }
 
 /**
