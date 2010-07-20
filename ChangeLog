@@ -1,3 +1,9 @@
+2010-07-20  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgname.h (HG_NAME): new.
+
+	* hieroglyph/hgbool.h (HG_BOOL): new.
+
 2010-07-17  Akira TAGOH  <akira@tagoh.org>
 
 	* .gdbinit (hgquarkinfo): add a macro.

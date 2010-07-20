@@ -30,6 +30,8 @@ G_BEGIN_DECLS
 
 #define HG_QNAME(_n_,_s_)			\
 	hg_name_new_with_string(_n_,_s_, -1)
+#define HG_NAME(_n_,_q_)			\
+	(hg_name_lookup((_n_), (_q_)))
 #define HG_IS_QNAME(_v_)				\
 	(hg_quark_get_type(_v_) == HG_TYPE_NAME)
 #define HG_QEVALNAME(_n_,_s_)						\
