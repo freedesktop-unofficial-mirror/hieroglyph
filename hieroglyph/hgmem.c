@@ -227,13 +227,13 @@ hg_mem_free(hg_mem_t   *mem,
 	hg_return_if_fail (mem->allocator->free != NULL);
 	hg_return_if_fail (mem->data != NULL);
 
-	if (data == Qnil)
+	if (qdata == Qnil)
 		return;
 
-	hg_return_if_fail (hg_quark_has_same_mem_id(data, mem->id));
+	hg_return_if_fail (hg_quark_has_same_mem_id(qdata, mem->id));
 
 	mem->allocator->free(mem->data,
-			     hg_quark_get_value (data));
+			     hg_quark_get_value (qdata));
 }
 
 /**
@@ -254,13 +254,13 @@ hg_mem_lock_object(hg_mem_t   *mem,
 	hg_return_val_if_fail (mem->allocator->lock_object != NULL, NULL);
 	hg_return_val_if_fail (mem->data != NULL, NULL);
 
-	if (data == Qnil)
+	if (qdata == Qnil)
 		return NULL;
 
-	hg_return_val_if_fail (hg_quark_has_same_mem_id(data, mem->id), NULL);
+	hg_return_val_if_fail (hg_quark_has_same_mem_id(qdata, mem->id), NULL);
 
 	return mem->allocator->lock_object(mem->data,
-					   hg_quark_get_value(data));
+					   hg_quark_get_value(qdata));
 }
 
 /**
@@ -279,13 +279,13 @@ hg_mem_unlock_object(hg_mem_t   *mem,
 	hg_return_if_fail (mem->allocator->unlock_object != NULL);
 	hg_return_if_fail (mem->data != NULL);
 
-	if (data == Qnil)
+	if (qdata == Qnil)
 		return;
 
-	hg_return_if_fail (hg_quark_has_same_mem_id(data, mem->id));
+	hg_return_if_fail (hg_quark_has_same_mem_id(qdata, mem->id));
 
 	return mem->allocator->unlock_object(mem->data,
-					     hg_quark_get_value (data));
+					     hg_quark_get_value (qdata));
 }
 
 /**
