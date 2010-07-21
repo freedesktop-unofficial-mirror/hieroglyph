@@ -43,9 +43,8 @@
 		_result_ = hg_file_read(_scanner_->infile,	\
 					(_buf_),		\
 					1,			\
-					(_max_size_),		\
+					1,			\
 					NULL);			\
-		g_print("%d\n", _result_);			\
 	} G_STMT_END
 #define YY_EXTRA_TYPE hg_scanner_t *
 #define YY_USER_INIT	yyextra = scanner;
