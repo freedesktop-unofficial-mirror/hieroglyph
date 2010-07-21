@@ -1,5 +1,11 @@
 2010-07-21  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgquark.h (hg_quark_get_hash): new.
+
+	* hieroglyph/hgdict.c (hg_dict_add): mask the access flags.
+	(hg_dict_remove): likewise.
+	(hg_dict_lookup): likewise.
+
 	* hieroglyph/hgstring.c (_hg_object_string_initialize): delay
 	to allocate the container to save the memory space
 	in the real world.

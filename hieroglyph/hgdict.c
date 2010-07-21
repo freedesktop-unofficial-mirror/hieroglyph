@@ -130,6 +130,7 @@ hg_dict_add(hg_dict_t *dict,
 {
 	hg_btree_t *tree;
 	GError *err = NULL;
+	hg_quark_t qmasked;
 
 	hg_return_val_if_fail (dict != NULL, FALSE);
 	hg_return_val_if_fail (!HG_IS_QSTRING (qkey), FALSE);
@@ -138,7 +139,8 @@ hg_dict_add(hg_dict_t *dict,
 				    dict->qdict,
 				    FALSE);
 
-	hg_btree_add(tree, qkey, qval, &err);
+	qmasked = hg_quark_get_hash(qkey);
+	hg_btree_add(tree, qmasked, qval, &err);
 
 	hg_mem_unlock_object(dict->o.mem, dict->qdict);
 
@@ -169,6 +171,7 @@ hg_dict_remove(hg_dict_t  *dict,
 	hg_btree_t *tree;
 	GError *err = NULL;
 	gboolean retval;
+	hg_quark_t qmasked;
 
 	hg_return_val_if_fail (dict != NULL, FALSE);
 	hg_return_val_if_fail (!HG_IS_QSTRING (qkey), FALSE);
@@ -177,7 +180,8 @@ hg_dict_remove(hg_dict_t  *dict,
 				    dict->qdict,
 				    FALSE);
 
-	retval = hg_btree_remove(tree, qkey, &err);
+	qmasked = hg_quark_get_hash(qkey);
+	retval = hg_btree_remove(tree, qmasked, &err);
 
 	hg_mem_unlock_object(dict->o.mem, dict->qdict);
 
@@ -206,7 +210,7 @@ hg_quark_t
 hg_dict_lookup(hg_dict_t  *dict,
 	       hg_quark_t  qkey)
 {
-	hg_quark_t retval;
+	hg_quark_t retval, qmasked;
 	hg_btree_t *tree;
 	GError *err = NULL;
 
@@ -217,7 +221,8 @@ hg_dict_lookup(hg_dict_t  *dict,
 				    dict->qdict,
 				    Qnil);
 
-	retval = hg_btree_find(tree, qkey, &err);
+	qmasked = hg_quark_get_hash(qkey);
+	retval = hg_btree_find(tree, qmasked, &err);
 
 	hg_mem_unlock_object(dict->o.mem, dict->qdict);
 
