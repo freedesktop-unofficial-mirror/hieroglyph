@@ -25,6 +25,7 @@ missing
 mkinstalldirs
 po/Makefile*
 po/POTFILES
+src/hgs/hgs
 stamp*
 t\.c
 tests/test-*
