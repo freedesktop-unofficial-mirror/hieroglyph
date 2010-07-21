@@ -1,5 +1,8 @@
 2010-07-21  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (DEFUNC_UNIMPLEMENTED_OPER):
+	raise VMerror when invoking not-implemented operator.
+
 	* hieroglyph/hgvm.c (hg_vm_quark_to_string): implemented.
 	(hg_vm_dict_lookup): return a result exactly.
 

@@ -43,23 +43,25 @@ typedef enum _hg_system_encoding_t	hg_system_encoding_t;
 
 /* hgmem.h */
 struct _hg_mem_vtable_t {
-	gpointer   (* initialize)    (void);
-	void       (* finalize)      (hg_allocator_data_t *data);
-	gboolean   (* resize_heap)   (hg_allocator_data_t *data,
-				      gsize                size);
-	hg_quark_t (* alloc)         (hg_allocator_data_t *data,
-				      gsize                size,
-				      gpointer            *ret);
-	hg_quark_t (* realloc)       (hg_allocator_data_t *data,
-				      hg_quark_t           quark,
-				      gsize                size,
-				      gpointer            *ret);
-	void       (* free)          (hg_allocator_data_t *data,
-				      hg_quark_t           quark);
-	gpointer   (* lock_object)   (hg_allocator_data_t *data,
-				      hg_quark_t           quark);
-	void       (* unlock_object) (hg_allocator_data_t *data,
-				      hg_quark_t           quark);
+	gpointer   (* initialize)      (void);
+	void       (* finalize)        (hg_allocator_data_t *data);
+	gboolean   (* resize_heap)     (hg_allocator_data_t *data,
+					gsize                size);
+	hg_quark_t (* alloc)           (hg_allocator_data_t *data,
+					gsize                size,
+					gpointer            *ret);
+	hg_quark_t (* realloc)         (hg_allocator_data_t *data,
+					hg_quark_t           quark,
+					gsize                size,
+					gpointer            *ret);
+	void       (* free)            (hg_allocator_data_t *data,
+					hg_quark_t           quark);
+	gpointer   (* lock_object)     (hg_allocator_data_t *data,
+					hg_quark_t           quark);
+	void       (* unlock_object)   (hg_allocator_data_t *data,
+					hg_quark_t           quark);
+	gboolean   (* collect_garbage) (hg_allocator_data_t *data,
+					hg_quark_t          *root);
 };
 struct _hg_allocator_data_t {
 	gsize total_size;
@@ -595,6 +597,8 @@ enum _hg_system_encoding_t {
 	HG_enc_DeviceN,
 
 	HG_enc_POSTSCRIPT_RESERVED_END,
+
+	HG_enc_private_setglobal,
 
 	HG_enc_END
 };

@@ -30,6 +30,7 @@
 #include "hgdict.h"
 #include "hgname.h"
 #include "hgquark.h"
+#include "hgvm.h"
 #include "hgoperator.h"
 
 
@@ -58,8 +59,13 @@ static gboolean __hg_operator_is_initialized = FALSE;
 				  GError  **error)			\
 	{								\
 		g_warning("%s isn't yet implemented.", #_n_);		\
+		hg_vm_set_error(vm,					\
+				hg_stack_index(vm->stacks[HG_VM_STACK_ESTACK], 0, error), \
+				HG_VM_e_VMerror);					\
 		return FALSE;						\
 	}
+
+DEFUNC_UNIMPLEMENTED_OPER (private_setglobal);
 
 DEFUNC_UNIMPLEMENTED_OPER (abs);
 DEFUNC_UNIMPLEMENTED_OPER (add);
@@ -457,7 +463,7 @@ DEFUNC_UNIMPLEMENTED_OPER (DeviceN);
 				 HG_QOPER (HG_enc_ ## _o_)))		\
 			return FALSE;					\
 	} G_STMT_END
-#define REG_OPER2(_d_,_n_,_k_,_o_)					\
+#define REG_PRIV_OPER(_d_,_n_,_k_,_o_)					\
 	G_STMT_START {							\
 		hg_quark_t __o_name__ = HG_QNAME ((_n_),#_k_);		\
 									\
@@ -482,6 +488,8 @@ _hg_operator_level1_register(hg_dict_t *dict,
 {
 	REG_VALUE (dict, name, true, HG_QBOOL (TRUE));
 	REG_VALUE (dict, name, false, HG_QBOOL (FALSE));
+
+	REG_PRIV_OPER (dict, name, .setglobal, private_setglobal);
 
 	REG_OPER (dict, name, abs);
 	REG_OPER (dict, name, add);
@@ -690,7 +698,6 @@ _hg_operator_level1_register(hg_dict_t *dict,
 	REG_OPER (dict, name, executeonly);
 
 	REG_OPER (dict, name, exp);
-	REG_OPER (dict, name, false);
 //	REG_OPER (dict, name, fork); /* ??? */
 //	REG_OPER (dict, name, framedevice); /* ??? */
 	REG_OPER (dict, name, grestoreall);
@@ -934,13 +941,15 @@ hg_operator_init(void)
 			return FALSE;					\
 		__hg_operator_func_table[HG_enc_ ## _n_] = _hg_operator_real_ ## _n_; \
 	} G_STMT_END
-#define DECL_OPER2(_on_,_n_)						\
+#define DECL_PRIV_OPER(_on_,_n_)						\
 	G_STMT_START {							\
 		__hg_operator_name_table[HG_enc_ ## _n_] = g_strdup("--" #_on_ "--"); \
 		if (__hg_operator_name_table[HG_enc_ ## _n_] == NULL)	\
 			return FALSE;					\
 		__hg_operator_func_table[HG_enc_ ## _n_] = _hg_operator_real_ ## _n_; \
 	} G_STMT_END
+
+	DECL_PRIV_OPER (.setglobal, private_setglobal);
 
 	DECL_OPER (abs);
 	DECL_OPER (add);
