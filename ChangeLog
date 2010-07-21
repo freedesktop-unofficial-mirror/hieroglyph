@@ -1,5 +1,8 @@
 2010-07-21  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgvm.c (hg_vm_quark_to_string): implemented.
+	(hg_vm_dict_lookup): return a result exactly.
+
 	* hieroglyph/hgscanner.l (YY_INPUT): read 1-byte only.
 
 	* hieroglyph/hgquark.h (hg_quark_get_hash): new.

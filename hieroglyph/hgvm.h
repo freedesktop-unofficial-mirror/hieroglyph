@@ -36,10 +36,17 @@ G_BEGIN_DECLS
 #define HG_VM_UNLOCK(_v_,_q_)			\
 	(hg_vm_unlock_object((_v_),(_q_)))
 
+typedef enum _hg_vm_access_t		hg_vm_access_t;
 typedef enum _hg_vm_mem_type_t		hg_vm_mem_type_t;
 typedef enum _hg_vm_stack_type_t	hg_vm_stack_type_t;
 typedef enum _hg_vm_error_t		hg_vm_error_t;
 
+enum _hg_vm_access_t {
+	HG_VM_ACCESS_EXECUTABLE = 1 << 0,
+	HG_VM_ACCESS_READABLE   = 1 << 1,
+	HG_VM_ACCESS_WRITABLE   = 1 << 2,
+	HG_VM_ACCESS_END
+};
 enum _hg_vm_mem_type_t {
 	HG_VM_MEM_GLOBAL = 0,
 	HG_VM_MEM_LOCAL = 1,
@@ -127,7 +134,8 @@ hg_quark_t         hg_vm_quark_copy        (hg_vm_t           *vm,
 					    gpointer          *ret);
 hg_quark_t         hg_vm_quark_to_string   (hg_vm_t           *vm,
 					    hg_quark_t         qdata,
-					    gpointer          *ret);
+					    gpointer          *ret,
+					    GError           **error);
 hg_mem_t          *hg_vm_get_mem           (hg_vm_t           *vm);
 void               hg_vm_use_global_mem    (hg_vm_t           *vm,
 					    gboolean           flag);

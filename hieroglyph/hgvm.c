@@ -26,10 +26,13 @@
 #endif
 
 #include <stdlib.h>
+#include "hgbool.h"
 #include "hgdict.h"
+#include "hgint.h"
 #include "hgmem.h"
 #include "hgname.h"
 #include "hgoperator.h"
+#include "hgreal.h"
 #include "hgscanner.h"
 #include "hgvm.h"
 
@@ -489,23 +492,121 @@ hg_vm_quark_copy(hg_vm_t    *vm,
  * Returns:
  */
 hg_quark_t
-hg_vm_quark_to_string(hg_vm_t    *vm,
-		      hg_quark_t  qdata,
-		      gpointer   *ret)
+hg_vm_quark_to_string(hg_vm_t     *vm,
+		      hg_quark_t   qdata,
+		      gpointer    *ret,
+		      GError     **error)
 {
 	hg_object_t *o;
 	hg_quark_t retval = Qnil;
+	hg_string_t *s;
+	GError *err = NULL;
+	const gchar const *types[] = {
+		"-null-",
+		"-integer-",
+		"-real-",
+		"-name-",
+		"-bool-",
+		"-string-",
+		"-ename-",
+		"-dict-",
+		"-oper-",
+		"-array-",
+		"-mark-",
+		"-file-",
+		"-save-",
+		"-stack-",
+		NULL
+	};
 
 	hg_return_val_if_fail (vm != NULL, Qnil);
 
-	if (qdata == Qnil)
-		return Qnil;
+	retval = hg_string_new(hg_vm_get_mem(vm),
+			       (gpointer *)&s,
+			       65535);
+	if (retval == Qnil) {
+		g_set_error(&err, HG_ERROR, ENOMEM,
+			    "Out of memory.");
+		goto error;
+	}
+	if (hg_quark_is_simple_object(qdata) ||
+	    HG_IS_QOPER (qdata)) {
+		switch (hg_quark_get_type(qdata)) {
+		    case HG_TYPE_NULL:
+		    case HG_TYPE_MARK:
+			    hg_string_append(s, types[hg_quark_get_type(qdata)], -1, &err);
+			    break;
+		    case HG_TYPE_INT:
+			    hg_string_append_printf(s, "%d", HG_INT (qdata));
+			    break;
+		    case HG_TYPE_REAL:
+			    hg_string_append_printf(s, "%f", HG_REAL (qdata));
+			    break;
+		    case HG_TYPE_EVAL_NAME:
+			    hg_string_append_printf(s, "//%s", HG_NAME (vm->name, qdata));
+			    break;
+		    case HG_TYPE_NAME:
+			    if (hg_quark_is_executable(qdata))
+				    hg_string_append_printf(s, "%s", HG_NAME (vm->name, qdata));
+			    else
+				    hg_string_append_printf(s, "/%s", HG_NAME (vm->name, qdata));
+			    break;
+		    case HG_TYPE_BOOL:
+			    hg_string_append(s, HG_BOOL (qdata) ? "true" : "false", -1, &err);
+			    break;
+		    case HG_TYPE_OPER:
+			    hg_string_append_printf(s, "--%s--",
+						    hg_operator_get_name(qdata));
+			    break;
+		    default:
+			    g_set_error(&err, HG_ERROR, EINVAL,
+					"Unknown simple object type: %d",
+					hg_quark_get_type(qdata));
+			    goto error;
+		}
+	} else {
+		if (!hg_quark_is_readable(qdata)) {
+			hg_string_append(s, types[hg_quark_get_type(qdata)], -1, &err);
+		} else {
+			switch (hg_quark_get_type(qdata)) {
+			    case HG_TYPE_STRING:
+			    case HG_TYPE_DICT:
+			    case HG_TYPE_ARRAY:
+			    case HG_TYPE_FILE:
+			    case HG_TYPE_SAVE:
+			    case HG_TYPE_STACK:
+				    o = _HG_VM_LOCK (vm, qdata, NULL);
+				    if (o) {
+					    retval = hg_object_to_string(o, ret);
 
-	o = _HG_VM_LOCK (vm, qdata, NULL);
-	if (o) {
-		retval = hg_object_to_string(o, ret);
-
-		_HG_VM_UNLOCK (vm, qdata);
+					    _HG_VM_UNLOCK (vm, qdata);
+				    }
+				    break;
+			    default:
+				    g_set_error(&err, HG_ERROR, EINVAL,
+						"Unknown complex object type: %d",
+						hg_quark_get_type(qdata));
+				    goto error;
+			}
+		}
+	}
+  error:
+	if (retval != Qnil) {
+		if (ret)
+			*ret = s;
+		else
+			_HG_VM_UNLOCK (vm, retval);
+	}
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s (code: %d)",
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+		retval = Qnil;
 	}
 
 	return retval;
@@ -830,7 +931,7 @@ hg_vm_dict_lookup(hg_vm_t    *vm,
 	ldata.result = Qnil;
 	ldata.qname = quark;
 	hg_stack_foreach(dstack, _hg_vm_real_dict_lookup, &ldata, &err);
-
+	retval = ldata.result;
   error:
 	if (err) {
 		/* XXX: remove name too to reduce the memory usage */
@@ -956,7 +1057,6 @@ hg_vm_stepi(hg_vm_t  *vm,
 	}
 
   evaluate:
-	g_print("%lx\n", qexecobj);
 	switch (hg_quark_get_type(qexecobj)) {
 	    case HG_TYPE_NULL:
 	    case HG_TYPE_INT:
@@ -1065,6 +1165,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 				    *is_proceeded = TRUE;
 				    break;
 			    }
+			    g_print("%s\n", err->message);
 			    hg_vm_set_error(vm, qexecobj,
 					    HG_VM_e_syntaxerror);
 
@@ -1074,25 +1175,18 @@ hg_vm_stepi(hg_vm_t  *vm,
 #define HG_VM_DEBUG
 #if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
 		    G_STMT_START {
-			    const gchar *__hg_q_type[] = {
-				    "-null-",
-				    "-int-",
-				    "-real-",
-				    "-name-",
-				    "-bool-",
-				    "-string-",
-				    "-eval-",
-				    "-dict-",
-				    "-oper-",
-				    "-array-",
-				    "-mark-",
-				    "-file-",
-				    "-save-",
-				    "-stack-",
-				    "",
-				    NULL
-			    };
-			    g_print("I: scanning %s", __hg_q_type[hg_quark_get_type(qresult)]);
+			    hg_quark_t qs;
+			    hg_string_t *s;
+
+			    qs = hg_vm_quark_to_string(vm, qresult, (gpointer *)&s, &err);
+			    if (err) {
+				    g_print("W: Unable to look up the scanned object: %lx: %s", qresult, err->message);
+				    g_clear_error(&err);
+			    } else {
+				    g_print("I: scanning... %s\n",
+					    hg_string_get_static_cstr(s));
+				    hg_vm_mfree(vm, qs);
+			    }
 		    } G_STMT_END;
 #endif
 		    hg_stack_push(estack, qresult);
@@ -1195,7 +1289,6 @@ hg_vm_eval(hg_vm_t     *vm,
 	switch(hg_quark_get_type(qeval)) {
 	    case HG_TYPE_STRING:
 	    case HG_TYPE_FILE:
-		    g_print("%lx\n", qeval);
 		    if (!hg_quark_is_executable(qeval)) {
 			    /* XXX */
 			    return FALSE;
@@ -1499,7 +1592,8 @@ hg_vm_set_error(hg_vm_t       *vm,
 
 			q = hg_vm_quark_to_string(vm,
 						  qresult_cmd,
-						  (gpointer *)&s);
+						  (gpointer *)&s,
+						  &err);
 			if (q == Qnil)
 				scommand = g_strdup("--unknown--");
 			else
@@ -1508,7 +1602,8 @@ hg_vm_set_error(hg_vm_t       *vm,
 		}
 		qwhere = hg_vm_quark_to_string(vm,
 					       qdata,
-					       (gpointer *)&where);
+					       (gpointer *)&where,
+					       &err);
 		if (qwhere == Qnil)
 			swhere = g_strdup("--unknown--");
 		else
