@@ -146,6 +146,8 @@ AC_CONFIG_FILES([
 	hieroglyph.pc
 	hieroglyph-uninstalled.pc
 	po/Makefile.in
+	src/Makefile
+	src/hgs/Makefile
 	tests/Makefile
 ])
 AC_OUTPUT

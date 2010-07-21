@@ -1,5 +1,7 @@
 2010-07-21  Akira TAGOH  <akira@tagoh.org>
 
+	* src/hgs/hgs.c: add an interpreter on CUI.
+
 	* hieroglyph/hgoperator.c (DEFUNC_UNIMPLEMENTED_OPER):
 	raise VMerror when invoking not-implemented operator.
 
