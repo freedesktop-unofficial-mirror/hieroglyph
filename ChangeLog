@@ -1,3 +1,11 @@
+2010-07-21  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgstring.c (_hg_object_string_initialize): delay
+	to allocate the container to save the memory space
+	in the real world.
+	(_hg_string_maybe_expand): new.
+	(hg_string_append_printf): new.
+
 2010-07-20  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgquark.h (hg_quark_set_readable): new.

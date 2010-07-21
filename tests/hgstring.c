@@ -73,7 +73,7 @@ TDEF (hg_string_new)
 	q = hg_string_new(mem, (gpointer *)&s, 100);
 	fail_unless(q != Qnil, "Unable to create the string object.");
 	fail_unless(hg_quark_get_type(q) == HG_TYPE_STRING, "No type information in the quark");
-	fail_unless(s->allocated_size == 100, "Unexpected result of the allocated size: expect: %" G_GSIZE_FORMAT " actual: %" G_GSIZE_FORMAT, 100, s->allocated_size);
+	fail_unless(s->allocated_size == 101, "Unexpected result of the allocated size: expect: %" G_GSIZE_FORMAT " actual: %" G_GSIZE_FORMAT, 100, s->allocated_size);
 	hg_mem_free(mem, q);
 
 /* it's valid now
@@ -105,7 +105,7 @@ TDEF (hg_string_new_with_value)
 	q = hg_string_new_with_value(mem, (gpointer *)&s, "abc", 3);
 	fail_unless(q != Qnil, "Unable to create the string object.");
 	fail_unless(hg_quark_get_type(q) == HG_TYPE_STRING, "No type information in the quark");
-	fail_unless(hg_string_maxlength(s) == 3, "Unexpected result of the allocated size: expect: %" G_GSIZE_FORMAT " actual: %" G_GSIZE_FORMAT, 100, s->allocated_size);
+	fail_unless(hg_string_maxlength(s) == 3, "Unexpected result of the allocated size: expect: %" G_GSIZE_FORMAT " actual: %" G_GSIZE_FORMAT, 3, s->allocated_size);
 	fail_unless(hg_string_length(s) == 3, "Unexpected result of the string size: expect: %" G_GSIZE_FORMAT " actual: %" G_GSIZE_FORMAT, 3, s->length);
 
 	hg_mem_free(mem, q);
@@ -140,19 +140,19 @@ TDEF (hg_string_append_c)
 
 	q = hg_string_new(mem, (gpointer *)&s, 3);
 	fail_unless(q != Qnil, "Unable to create the string object.");
-	fail_unless(hg_string_append_c(s, 'a'), "Unable to add a character into the string object.");
+	fail_unless(hg_string_append_c(s, 'a', NULL), "Unable to add a character into the string object.");
 	fail_unless(hg_string_length(s) == 1, "Unexpected result after adding a character.");
 	fail_unless(hg_string_maxlength(s) == 3, "Unexpected result on the allocated size");
 	fail_unless(hg_string_ncompare_with_cstr(s, "a", 1), "Unexpected result on the string after adding.");
-	fail_unless(hg_string_append_c(s, 'b'), "Unable to add a character into the string object. [take 2]");
+	fail_unless(hg_string_append_c(s, 'b', NULL), "Unable to add a character into the string object. [take 2]");
 	fail_unless(hg_string_length(s) == 2, "Unexpected result after adding a character. [take 2]");
 	fail_unless(hg_string_maxlength(s) == 3, "Unexpected result on the allocated size [take 2]");
 	fail_unless(hg_string_ncompare_with_cstr(s, "ab", 2), "Unexpected result on the string after adding. [take 2]");
-	fail_unless(hg_string_append_c(s, 'c'), "Unable to add a character into the string object. [take 3]");
+	fail_unless(hg_string_append_c(s, 'c', NULL), "Unable to add a character into the string object. [take 3]");
 	fail_unless(hg_string_length(s) == 3, "Unexpected result after adding a character. [take 3]");
 	fail_unless(hg_string_maxlength(s) == 3, "Unexpected result on the allocated size [take 3]");
 	fail_unless(hg_string_ncompare_with_cstr(s, "abc", 3), "Unexpected result on the string after adding. [take 3]");
-	fail_unless(hg_string_append_c(s, 'd'), "Unable to add a character into the string object. [take 4]");
+	fail_unless(hg_string_append_c(s, 'd', NULL), "Unable to add a character into the string object. [take 4]");
 	fail_unless(hg_string_length(s) == 4, "Unexpected result after adding a character. [take 4]");
 	fail_unless(hg_string_maxlength(s) > 3, "Unexpected result on the allocated size [take 4]");
 	fail_unless(hg_string_ncompare_with_cstr(s, "abcd", 4), "Unexpected result on the string after adding. [take 4]");
@@ -165,22 +165,22 @@ TDEF (hg_string_append)
 
 	q = hg_string_new(mem, (gpointer *)&s, 3);
 	fail_unless(q != Qnil, "Unable to create the string object.");
-	fail_unless(hg_string_append(s, "ab", -1), "Unable to add a character into the string object.");
+	fail_unless(hg_string_append(s, "ab", -1, NULL), "Unable to add a character into the string object.");
 	fail_unless(hg_string_length(s) == 2, "Unexpected result after adding a character.");
 	fail_unless(hg_string_maxlength(s) == 3, "Unexpected result on the allocated size");
 	fail_unless(hg_string_ncompare_with_cstr(s, "ab", 2), "Unexpected result on the string after adding.");
-	fail_unless(hg_string_append(s, "cd", -1), "Unable to add a character into the string object. [take 2]");
+	fail_unless(hg_string_append(s, "cd", -1, NULL), "Unable to add a character into the string object. [take 2]");
 	fail_unless(hg_string_length(s) == 4, "Unexpected result after adding a character. [take 2]");
 	fail_unless(hg_string_maxlength(s) > 3, "Unexpected result on the allocated size [take 2]");
 	fail_unless(hg_string_ncompare_with_cstr(s, "abcd", 4), "Unexpected result on the string after adding. [take 2]");
-	fail_unless(hg_string_append(s, "efg", 2), "Unable to add a character into the string object. [take 3]");
+	fail_unless(hg_string_append(s, "efg", 2, NULL), "Unable to add a character into the string object. [take 3]");
 	fail_unless(hg_string_length(s) == 6, "Unexpected result after adding a character. [take 3]");
 	fail_unless(hg_string_ncompare_with_cstr(s, "abcdef", 6), "Unexpected result on the string after adding. [take 3]");
-	fail_unless(!hg_string_append(s, "a", 65536), "Unexpected result to add too long string.");
+	fail_unless(!hg_string_append(s, "a", 65536, NULL), "Unexpected result to add too long string.");
 	g_free(hieroglyph_test_pop_error());
 } TEND
 
-TDEF (hg_string_insert_c)
+TDEF (hg_string_overwrite_c)
 {
 /*
 	hg_quark_t q;
@@ -335,7 +335,7 @@ hieroglyph_suite(void)
 	T (hg_string_clear);
 	T (hg_string_append_c);
 	T (hg_string_append);
-	T (hg_string_insert_c);
+	T (hg_string_overwrite_c);
 	T (hg_string_erase);
 	T (hg_string_concat);
 	T (hg_string_index);

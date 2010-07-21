@@ -821,9 +821,8 @@ _hg_file_io_real_buffered_write(hg_file_t       *file,
 		errno = EBADF;
 		goto exception;
 	}
-	if (!hg_string_append(bd->out, buffer, size * n)) {
-		errno = ENOMEM;
-		goto exception;
+	if (!hg_string_append(bd->out, buffer, size * n, error)) {
+		return -1;
 	}
 
 	return size * n;

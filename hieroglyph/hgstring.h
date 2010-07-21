@@ -57,43 +57,49 @@ struct _hg_string_t {
 };
 
 hg_object_vtable_t *hg_object_string_get_vtable (void);
-hg_quark_t          hg_string_new               (hg_mem_t          *mem,
-                                                 gpointer          *ret,
-                                                 gsize              requisition_size);
-hg_quark_t          hg_string_new_with_value    (hg_mem_t          *mem,
-                                                 gpointer          *ret,
-                                                 const gchar       *string,
-                                                 gssize             length);
-guint               hg_string_length            (const hg_string_t *string);
-guint               hg_string_maxlength         (const hg_string_t *string);
-gboolean            hg_string_clear             (hg_string_t       *string);
-gboolean            hg_string_append_c          (hg_string_t       *string,
-                                                 gchar              c);
-gboolean            hg_string_append            (hg_string_t       *string,
-                                                 const gchar       *str,
-                                                 gssize             length);
-gboolean            hg_string_insert_c          (hg_string_t       *string,
-                                                 gchar              c,
-                                                 guint              index);
-gboolean            hg_string_erase             (hg_string_t       *string,
-                                                 gssize             pos,
-                                                 gssize             length);
-gboolean            hg_string_concat            (hg_string_t       *string1,
-                                                 hg_string_t       *string2);
-gchar               hg_string_index             (hg_string_t       *string,
-                                                 guint              index);
-const gchar        *hg_string_get_static_cstr   (hg_string_t       *string);
-hg_quark_t          hg_string_get_cstr          (hg_string_t       *string,
-                                                 gpointer          *ret);
-gboolean            hg_string_fix_string_size   (hg_string_t       *string);
-gboolean            hg_string_compare           (const hg_string_t *a,
-                                                 const hg_string_t *b);
-gboolean            hg_string_ncompare          (const hg_string_t *a,
-                                                 const hg_string_t *b,
-                                                 guint              length);
-gboolean            hg_string_ncompare_with_cstr(const hg_string_t *a,
-                                                 const gchar       *b,
-                                                 gssize             length);
+hg_quark_t          hg_string_new               (hg_mem_t           *mem,
+                                                 gpointer           *ret,
+                                                 gsize               requisition_size);
+hg_quark_t          hg_string_new_with_value    (hg_mem_t           *mem,
+                                                 gpointer           *ret,
+                                                 const gchar        *string,
+                                                 gssize              length);
+guint               hg_string_length            (const hg_string_t  *string);
+guint               hg_string_maxlength         (const hg_string_t  *string);
+gboolean            hg_string_clear             (hg_string_t        *string);
+gboolean            hg_string_append_c          (hg_string_t        *string,
+                                                 gchar               c,
+						 GError            **error);
+gboolean            hg_string_append            (hg_string_t        *string,
+                                                 const gchar        *str,
+                                                 gssize              length,
+						 GError            **error);
+gboolean            hg_string_overwrite_c       (hg_string_t        *string,
+                                                 gchar               c,
+                                                 guint               index,
+						 GError            **error);
+gboolean            hg_string_erase             (hg_string_t        *string,
+                                                 gssize              pos,
+                                                 gssize              length);
+gboolean            hg_string_concat            (hg_string_t        *string1,
+                                                 hg_string_t        *string2);
+gchar               hg_string_index             (hg_string_t        *string,
+                                                 guint               index);
+const gchar        *hg_string_get_static_cstr   (hg_string_t        *string);
+hg_quark_t          hg_string_get_cstr          (hg_string_t        *string,
+                                                 gpointer           *ret);
+gboolean            hg_string_fix_string_size   (hg_string_t        *string);
+gboolean            hg_string_compare           (const hg_string_t  *a,
+                                                 const hg_string_t  *b);
+gboolean            hg_string_ncompare          (const hg_string_t  *a,
+                                                 const hg_string_t  *b,
+                                                 guint               length);
+gboolean            hg_string_ncompare_with_cstr(const hg_string_t  *a,
+                                                 const gchar        *b,
+                                                 gssize              length);
+gboolean            hg_string_append_printf     (hg_string_t        *string,
+						 const gchar        *format,
+						 ...);
 
 G_END_DECLS
 

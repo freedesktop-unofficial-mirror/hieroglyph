@@ -50,7 +50,6 @@ _hg_object_string_initialize(hg_object_t *object,
 {
 	hg_string_t *str = (hg_string_t *)object;
 	const gchar *string = NULL;
-	gchar *p = NULL;
 	gsize length;
 
 	str->qstring = Qnil;
@@ -62,22 +61,13 @@ _hg_object_string_initialize(hg_object_t *object,
 
 	length = va_arg(args, gsize);
 
-	if (length > 0) {
-		str->qstring = hg_mem_alloc(object->mem, length, (gpointer *)&p);
-		if (str->qstring == Qnil)
-			return FALSE;
-	} else {
-		str->qstring = Qnil;
-	}
-	str->allocated_size = length;
+	/* not allocating any containers here */
+	str->allocated_size = length + 1;
 	str->is_fixed_size = FALSE;
 
 	if (string) {
-		memcpy(p, string + str->offset, length);
-		str->length = length;
+		return hg_string_append(str, string, length, NULL);
 	}
-	/* unlock the memory spaces for strings */
-	hg_mem_unlock_object(object->mem, str->qstring);
 
 	return TRUE;
 }
@@ -99,6 +89,32 @@ _hg_object_string_to_string(hg_object_t *object,
 			    gpointer    *ret)
 {
 	return Qnil;
+}
+
+static gboolean
+_hg_string_maybe_expand(hg_string_t *string)
+{
+	if (string->is_fixed_size ||
+	    string->offset != 0)
+		return TRUE;
+
+	hg_return_val_if_fail (string->length < string->allocated_size, FALSE);
+
+	if (string->qstring == Qnil) {
+		string->qstring = hg_mem_alloc(string->o.mem,
+					       string->length + 1,
+					       NULL);
+	} else {
+		hg_quark_t q = hg_mem_realloc(string->o.mem,
+					      string->qstring,
+					      string->length + 1,
+					      NULL);
+		if (q == Qnil)
+			return FALSE;
+		string->qstring = q;
+	}
+
+	return TRUE;
 }
 
 /*< public >*/
@@ -201,7 +217,7 @@ hg_string_maxlength(const hg_string_t *string)
 {
 	hg_return_val_if_fail (string != NULL, -1);
 
-	return string->allocated_size;
+	return string->allocated_size - 1;
 }
 
 /**
@@ -218,6 +234,11 @@ hg_string_clear(hg_string_t *string)
 	gchar *s;
 
 	hg_return_val_if_fail (string != NULL, FALSE);
+
+	if (string->qstring == Qnil ||
+	    string->length == 0)
+		return TRUE;
+
 	hg_return_val_if_lock_fail (s, string->o.mem, string->qstring, FALSE);
 
 	string->length = 0;
@@ -237,28 +258,38 @@ hg_string_clear(hg_string_t *string)
  * Returns:
  */
 gboolean
-hg_string_append_c(hg_string_t *string,
-		   gchar        c)
+hg_string_append_c(hg_string_t  *string,
+		   gchar         c,
+		   GError      **error)
 {
 	gchar *s;
 	gboolean retval = FALSE;
+	gsize old_length;
+	GError *err = NULL;
 
 	hg_return_val_if_fail (string != NULL, FALSE);
 
-	if (string->length < string->allocated_size) {
+	if (string->length < hg_string_maxlength(string)) {
+		old_length = string->length;
+		string->length++;
+		if (!_hg_string_maybe_expand(string)) {
+			g_set_error(&err, HG_ERROR, ENOMEM,
+				    "Out of memory");
+			goto finalize;
+		}
 		hg_return_val_if_lock_fail (s,
 					    string->o.mem,
 					    string->qstring,
 					    FALSE);
 
-		s[string->length++] = c;
+		s[old_length] = c;
 		hg_mem_unlock_object(string->o.mem, string->qstring);
 		retval = TRUE;
 	} else {
 		if (!string->is_fixed_size) {
 			hg_quark_t new_qstr = Qnil;
 
-			hg_return_val_if_fail (string->allocated_size <= HG_STRING_MAX_SIZE, FALSE);
+			hg_return_val_if_fail (hg_string_maxlength(string) <= HG_STRING_MAX_SIZE, FALSE);
 
 			new_qstr = hg_mem_realloc(string->o.mem,
 						  string->qstring,
@@ -272,6 +303,17 @@ hg_string_append_c(hg_string_t *string,
 			hg_mem_unlock_object(string->o.mem, new_qstr);
 			retval = TRUE;
 		}
+	}
+  finalize:
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s (code: %d)",
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
 	}
 
 	return retval;
@@ -288,33 +330,44 @@ hg_string_append_c(hg_string_t *string,
  * Returns:
  */
 gboolean
-hg_string_append(hg_string_t *string,
-		 const gchar *str,
-		 gssize       length)
+hg_string_append(hg_string_t  *string,
+		 const gchar  *str,
+		 gssize        length,
+		 GError      **error)
 {
 	gchar *s;
 	gboolean retval = FALSE;
-	gssize i;
+	gssize i, old_length;
+	GError *err = NULL;
 
 	hg_return_val_if_fail (string != NULL, FALSE);
 
 	if (length < 0)
 		length = strlen(str);
-	if ((string->length + length) < string->allocated_size) {
+	if (string->length == 0 ||
+	    (string->length + length) < hg_string_maxlength(string)) {
+		old_length = string->length;
+		string->length += length;
+		if (!_hg_string_maybe_expand(string)) {
+			g_set_error(&err, HG_ERROR, ENOMEM,
+				    "Out of memory");
+			goto finalize;
+		}
+
 		hg_return_val_if_lock_fail (s,
 					    string->o.mem,
 					    string->qstring,
 					    FALSE);
 
-		for (i = 0; i < length; i++)
-			s[string->length++] = str[i];
+		memcpy(&s[old_length], str, length);
+
 		hg_mem_unlock_object(string->o.mem, string->qstring);
 		retval = TRUE;
 	} else {
 		if (!string->is_fixed_size) {
 			hg_quark_t new_qstr = Qnil;
 
-			hg_return_val_if_fail ((string->allocated_size + length) <= HG_STRING_MAX_SIZE, FALSE);
+			hg_return_val_if_fail ((hg_string_maxlength(string) + length) <= HG_STRING_MAX_SIZE, FALSE);
 
 			new_qstr = hg_mem_realloc(string->o.mem,
 						  string->qstring,
@@ -330,12 +383,23 @@ hg_string_append(hg_string_t *string,
 			retval = TRUE;
 		}
 	}
+  finalize:
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s (code: %d)",
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+	}
 
 	return retval;
 }
 
 /**
- * hg_string_insert_c:
+ * hg_string_overwrite_c:
  * @string:
  * @c:
  * @index:
@@ -345,16 +409,28 @@ hg_string_append(hg_string_t *string,
  * Returns:
  */
 gboolean
-hg_string_insert_c(hg_string_t *string,
-		   gchar        c,
-		   guint        index)
+hg_string_overwrite_c(hg_string_t  *string,
+		      gchar         c,
+		      guint         index,
+		      GError      **error)
 {
 	gchar *s;
 	gboolean retval = FALSE;
 	gsize i;
+	GError *err = NULL;
 
 	hg_return_val_if_fail (string != NULL, FALSE);
-	hg_return_val_if_fail (index < string->allocated_size, FALSE);
+	hg_return_val_if_fail (index < hg_string_maxlength(string), FALSE);
+
+	if (string->length <= index) {
+		string->length = index;
+		if (!_hg_string_maybe_expand(string)) {
+			g_set_error(&err, HG_ERROR, ENOMEM,
+				    "Out of memory");
+			goto error;
+		}
+	}
+
 	hg_return_val_if_lock_fail (s,
 				    string->o.mem,
 				    string->qstring,
@@ -362,17 +438,30 @@ hg_string_insert_c(hg_string_t *string,
 
 	s[index] = c;
 
-	for (i = 0; i < string->allocated_size; i++) {
+	for (i = index; i < string->allocated_size; i++) {
 		if (s[i] == 0) {
 			string->length = i;
 			retval = TRUE;
 		}
 	}
 	if (!retval)
-		string->length = string->allocated_size;
+		string->length = hg_string_maxlength(string);
 	hg_mem_unlock_object(string->o.mem, string->qstring);
 
 	return TRUE;
+  error:
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s (code: %d)",
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+	}
+
+	return FALSE;
 }
 
 /**
@@ -396,6 +485,10 @@ hg_string_erase(hg_string_t *string,
 	hg_return_val_if_fail (string != NULL, FALSE);
 	hg_return_val_if_fail (pos > 0, FALSE);
 
+	if (string->qstring == Qnil) {
+		/* no data yet */
+		return TRUE;
+	}
 	if (length < 0)
 		length = string->length - pos;
 
@@ -437,7 +530,7 @@ hg_string_concat(hg_string_t *string1,
 				    string2->qstring,
 				    FALSE);
 
-	retval = hg_string_append(string1, s, string2->length);
+	retval = hg_string_append(string1, s, string2->length, NULL);
 	hg_mem_unlock_object(string2->o.mem, string2->qstring);
 
 	return retval;
@@ -461,6 +554,11 @@ hg_string_index(hg_string_t *string,
 
 	hg_return_val_if_fail (string != NULL, 0);
 	hg_return_val_if_fail (index < string->length, 0);
+
+	if (string->qstring == Qnil) {
+		/* no data yet */
+		return 0;
+	}
 	hg_return_val_if_lock_fail (s,
 				    string->o.mem,
 				    string->qstring,
@@ -563,7 +661,7 @@ hg_string_fix_string_size(hg_string_t *string)
 		if (new_qstr == Qnil)
 			return FALSE;
 		string->is_fixed_size = TRUE;
-		string->allocated_size = string->length;
+		string->allocated_size = string->length + 1;
 	}
 
 	return TRUE;
@@ -653,6 +751,38 @@ hg_string_ncompare_with_cstr(const hg_string_t *a,
 	retval = memcmp(sa, b, length) == 0;
 
 	hg_mem_unlock_object(a->o.mem, a->qstring);
+
+	return retval;
+}
+
+/**
+ * hg_string_append_printf:
+ * @string:
+ * @format:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_string_append_printf(hg_string_t *string,
+			const gchar *format,
+			...)
+{
+	va_list ap;
+	gchar *ret;
+	gboolean retval;
+
+	hg_return_val_if_fail (string != NULL, FALSE);
+	hg_return_val_if_fail (format != NULL, FALSE);
+
+	va_start(ap, format);
+
+	ret = g_strdup_vprintf(format, ap);
+	retval = hg_string_append(string, ret, -1, NULL);
+	g_free(ret);
+
+	va_end(ap);
 
 	return retval;
 }
