@@ -262,7 +262,6 @@ DEFUNC_UNIMPLEMENTED_OPER (stringwidth);
 DEFUNC_UNIMPLEMENTED_OPER (stroke);
 DEFUNC_UNIMPLEMENTED_OPER (strokepath);
 DEFUNC_UNIMPLEMENTED_OPER (sub);
-DEFUNC_UNIMPLEMENTED_OPER (systemdict);
 DEFUNC_UNIMPLEMENTED_OPER (token);
 DEFUNC_UNIMPLEMENTED_OPER (transform);
 DEFUNC_UNIMPLEMENTED_OPER (translate);
@@ -298,7 +297,6 @@ DEFUNC_UNIMPLEMENTED_OPER (currentglobal);
 DEFUNC_UNIMPLEMENTED_OPER (execform);
 DEFUNC_UNIMPLEMENTED_OPER (filter);
 DEFUNC_UNIMPLEMENTED_OPER (findresource);
-DEFUNC_UNIMPLEMENTED_OPER (globaldict);
 DEFUNC_UNIMPLEMENTED_OPER (makepattern);
 DEFUNC_UNIMPLEMENTED_OPER (setcolor);
 DEFUNC_UNIMPLEMENTED_OPER (setcolorspace);
@@ -668,7 +666,6 @@ _hg_operator_level1_register(hg_dict_t *dict,
 	REG_OPER (dict, name, stroke);
 	REG_OPER (dict, name, strokepath);
 	REG_OPER (dict, name, sub);
-	REG_OPER (dict, name, systemdict);
 	REG_OPER (dict, name, token);
 	REG_OPER (dict, name, transform);
 	REG_OPER (dict, name, translate);
@@ -863,7 +860,6 @@ _hg_operator_level2_register(hg_dict_t *dict,
 	REG_OPER (dict, name, execform);
 	REG_OPER (dict, name, filter);
 	REG_OPER (dict, name, findresource);
-	REG_OPER (dict, name, globaldict);
 
 	REG_OPER (dict, name, makepattern);
 	REG_OPER (dict, name, setcolor);
@@ -1146,7 +1142,6 @@ hg_operator_init(void)
 	DECL_OPER (stroke);
 	DECL_OPER (strokepath);
 	DECL_OPER (sub);
-	DECL_OPER (systemdict);
 	DECL_OPER (token);
 	DECL_OPER (transform);
 	DECL_OPER (translate);
@@ -1182,7 +1177,6 @@ hg_operator_init(void)
 	DECL_OPER (execform);
 	DECL_OPER (filter);
 	DECL_OPER (findresource);
-	DECL_OPER (globaldict);
 	DECL_OPER (makepattern);
 	DECL_OPER (setcolor);
 	DECL_OPER (setcolorspace);

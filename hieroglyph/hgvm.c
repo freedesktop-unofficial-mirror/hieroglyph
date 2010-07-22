@@ -800,11 +800,25 @@ hg_vm_setup(hg_vm_t           *vm,
 	}
 	/* userdict will be created/pushed in PostScript */
 
-	/* initialize build-in operators */
+	/* add built-in items into systemdict */
 	dict = _HG_VM_LOCK (vm, vm->qsystemdict, NULL);
 	if (dict == NULL)
 		goto error;
 
+	if (!hg_dict_add(dict,
+			 HG_QNAME (vm->name, "systemdict"),
+			 vm->qsystemdict))
+		goto error;
+	if (!hg_dict_add(dict,
+			 HG_QNAME (vm->name, "globaldict"),
+			 vm->qglobaldict))
+		goto error;
+	if (!hg_dict_add(dict,
+			 HG_QNAME (vm->name, "$error"),
+			 vm->qerror))
+		goto error;
+
+	/* initialize build-in operators */
 	if (!hg_operator_register(dict, vm->name, lang_level))
 		goto error;
 

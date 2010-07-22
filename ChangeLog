@@ -1,3 +1,8 @@
+2010-07-23  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgvm.c (hg_vm_setup): add /systemdict, /globaldict and
+	/$error into systemdict.
+
 2010-07-22  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgvm.c (hg_vm_stepi): drop a object on the exec stack
