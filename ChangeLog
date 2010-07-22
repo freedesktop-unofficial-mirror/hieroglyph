@@ -1,5 +1,9 @@
 2010-07-23  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgfile.h (HG_IS_QFILE): fix a typo.
+
+	* hieroglyph/hgarray.h (HG_IS_QARRAY): fix a typo.
+
 	* hieroglyph/hgoperator.c (hg_operator_real_dict): implemented.
 
 	* hieroglyph/hgvm.c (hg_vm_setup): add /systemdict, /globaldict and

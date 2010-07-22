@@ -31,7 +31,7 @@ G_BEGIN_DECLS
 #define HG_ARRAY_INIT						\
 	(hg_object_register(HG_TYPE_ARRAY,			\
 			    hg_object_array_get_vtable()))
-#define HG_IS_ARRAY(_q_)				\
+#define HG_IS_QARRAY(_q_)				\
 	(hg_quark_get_type((_q_)) == HG_TYPE_ARRAY)
 
 typedef struct _hg_bs_array_t	hg_bs_array_t;
