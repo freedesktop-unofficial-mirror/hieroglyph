@@ -20,6 +20,25 @@
 % Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 % Boston, MA 02111-1307, USA.
 
+% Initialize dictionaries on minimum requirements
+false .setglobal
+%% On local memory
+systemdict /errordict known not {
+    systemdict /errordict 10 dict .forceput
+} if
+systemdict /userdict known not {
+    systemdict /userdict 200 dict .forceput
+} if
+systemdict /statusdict known not {
+    systemdict /statusdict 10 dict .forceput
+} if
+
+/FontDirectory
+
+true .setglobal
+%% On global memory
+/GlobalFontDirectory
+
 % Initialize against current language level.
 systemdict /languagelevel known {
     languagelevel dup 1 eq {

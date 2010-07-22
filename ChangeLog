@@ -1,5 +1,7 @@
 2010-07-23  Akira TAGOH  <akira@tagoh.org>
 
+	* lib/hg_init.ps: create dictionaries.
+
 	* hieroglyph/hgoperator.c (hg_operator_real_private_forceput):
 	implemented.
 
