@@ -34,7 +34,7 @@ G_BEGIN_DECLS
 	HG_STRING_INIT;						\
 	(hg_object_register(HG_TYPE_FILE,			\
 			    hg_object_file_get_vtable()))
-#define HG_IS_FILE(_q_)					\
+#define HG_IS_QFILE(_q_)				\
 	(hg_quark_get_type((_q_)) == HG_TYPE_FILE)
 
 typedef enum _hg_file_io_t			hg_file_io_t;
