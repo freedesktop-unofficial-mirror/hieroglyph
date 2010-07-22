@@ -28,6 +28,7 @@
 #include "hgerror.h"
 #include "hgbool.h"
 #include "hgdict.h"
+#include "hgint.h"
 #include "hgname.h"
 #include "hgquark.h"
 #include "hgvm.h"
@@ -73,7 +74,15 @@ static gboolean __hg_operator_is_initialized = FALSE;
 			return FALSE;					\
 		}							\
 	} G_STMT_END
+#define STACK_PUSH(_s_,_q_)						\
+	G_STMT_START {							\
+		if (!hg_stack_push((_s_), (_q_))) {			\
+			hg_vm_set_error(vm, qself, HG_VM_e_stackoverflow); \
+			return FALSE;					\
+		}							\
+	} G_STMT_END
 
+/* <bool> .setglobal - */
 DEFUNC_OPER (private_setglobal)
 G_STMT_START {
 	hg_quark_t arg0;
@@ -146,7 +155,38 @@ DEFUNC_UNIMPLEMENTED_OPER (cvs);
 DEFUNC_UNIMPLEMENTED_OPER (cvx);
 DEFUNC_UNIMPLEMENTED_OPER (def);
 DEFUNC_UNIMPLEMENTED_OPER (defineusername);
-DEFUNC_UNIMPLEMENTED_OPER (dict);
+
+/* <int> dict <dict> */
+DEFUNC_OPER (dict)
+G_STMT_START {
+	hg_quark_t arg0, ret;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QINT (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (HG_INT (arg0) > G_MAXUSHORT) {
+		hg_vm_set_error(vm, qself, HG_VM_e_limitcheck);
+		return FALSE;
+	}
+	ret = hg_dict_new(hg_vm_get_mem(vm),
+			  HG_INT (arg0),
+			  NULL);
+	if (ret == Qnil) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	hg_stack_pop(ostack, error);
+
+	STACK_PUSH (ostack, ret);
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (div);
 DEFUNC_UNIMPLEMENTED_OPER (dtransform);
 DEFUNC_UNIMPLEMENTED_OPER (dup);

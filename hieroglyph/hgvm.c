@@ -1194,14 +1194,32 @@ hg_vm_stepi(hg_vm_t  *vm,
 		    G_STMT_START {
 			    hg_quark_t qs;
 			    hg_string_t *s;
+			    const gchar const *types[] = {
+				    "nulltype",
+				    "inttype",
+				    "realtype",
+				    "nametype",
+				    "booltype",
+				    "stringtype",
+				    "enametype",
+				    "dicttype",
+				    "opertype",
+				    "arraytype",
+				    "marktype",
+				    "filetype",
+				    "savetype",
+				    "stacktype",
+				    NULL
+			    };
 
 			    qs = hg_vm_quark_to_string(vm, qresult, (gpointer *)&s, &err);
 			    if (err) {
 				    g_print("W: Unable to look up the scanned object: %lx: %s", qresult, err->message);
 				    g_clear_error(&err);
 			    } else {
-				    g_print("I: scanning... %s\n",
-					    hg_string_get_static_cstr(s));
+				    g_print("I: scanning... %s [%s]\n",
+					    hg_string_get_static_cstr(s),
+					    hg_quark_get_type(qresult) < HG_TYPE_END ? types[hg_quark_get_type(qresult)] : "unknowntype");
 				    hg_vm_mfree(vm, qs);
 			    }
 		    } G_STMT_END;
