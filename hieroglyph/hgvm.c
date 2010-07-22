@@ -698,7 +698,7 @@ hg_vm_set_io(hg_vm_t      *vm,
 {
 	hg_return_if_fail (vm != NULL);
 	hg_return_if_fail (type < HG_FILE_IO_END);
-	hg_return_if_fail (HG_IS_FILE (file));
+	hg_return_if_fail (HG_IS_QFILE (file));
 
 	vm->qio[type] = file;
 }
