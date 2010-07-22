@@ -1,5 +1,8 @@
 2010-07-23  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (hg_operator_real_private_forceput):
+	implemented.
+
 	* hieroglyph/hgvm.c (hg_vm_set_io): fix a typo.
 
 	* hieroglyph/hgfile.h (HG_IS_QFILE): fix a typo.

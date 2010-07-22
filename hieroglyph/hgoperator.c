@@ -82,6 +82,78 @@ static gboolean __hg_operator_is_initialized = FALSE;
 		}							\
 	} G_STMT_END
 
+/* <array> <index> <any> .forceput -
+ * <dict> <key> <any> .forceput -
+ * <string> <index> <int> .forceput -
+ */
+DEFUNC_OPER (private_forceput)
+G_STMT_START {
+	hg_quark_t arg0, arg1, arg2;
+
+	CHECK_STACK (ostack, 3);
+	arg0 = hg_stack_index(ostack, 0, error);
+	arg1 = hg_stack_index(ostack, 1, error);
+	arg2 = hg_stack_index(ostack, 2, error);
+	if (HG_IS_QARRAY (arg0)) {
+		gsize index;
+		hg_array_t *a;
+
+		if (!HG_IS_QINT (arg1)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+			return FALSE;
+		}
+		a = HG_VM_LOCK (vm, arg0, error);
+		if (a == NULL) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
+		index = HG_INT (arg1);
+		if (hg_array_length(a) < index) {
+			HG_VM_UNLOCK (vm, arg0);
+			hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+			return FALSE;
+		}
+		retval = hg_array_set(a, arg2, index, error);
+
+		HG_VM_UNLOCK (vm, arg0);
+	} else if (HG_IS_QDICT (arg0)) {
+		hg_dict_t *d;
+
+		d = HG_VM_LOCK (vm, arg0, error);
+		if (d == NULL) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
+		retval = hg_dict_add(d, arg1, arg2);
+
+		HG_VM_UNLOCK (vm, arg0);
+	} else if (HG_IS_QSTRING (arg0)) {
+		hg_string_t *s;
+
+		if (!HG_IS_QINT (arg1) ||
+		    !HG_IS_QINT (arg2)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+			return FALSE;
+		}
+		s = HG_VM_LOCK (vm, arg0, error);
+		if (s == NULL) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
+		retval = hg_string_overwrite_c(s, arg2, arg1, error);
+
+		HG_VM_UNLOCK (vm, arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+
+	hg_stack_pop(ostack, error);
+	hg_stack_pop(ostack, error);
+	hg_stack_pop(ostack, error);
+} G_STMT_END;
+DEFUNC_OPER_END
+
 /* <bool> .setglobal - */
 DEFUNC_OPER (private_setglobal)
 G_STMT_START {
@@ -553,6 +625,7 @@ _hg_operator_level1_register(hg_dict_t *dict,
 	REG_VALUE (dict, name, true, HG_QBOOL (TRUE));
 	REG_VALUE (dict, name, false, HG_QBOOL (FALSE));
 
+	REG_PRIV_OPER (dict, name, .forceput, private_forceput);
 	REG_PRIV_OPER (dict, name, .setglobal, private_setglobal);
 
 	REG_OPER (dict, name, abs);
@@ -1011,6 +1084,7 @@ hg_operator_init(void)
 		__hg_operator_func_table[HG_enc_ ## _n_] = _hg_operator_real_ ## _n_; \
 	} G_STMT_END
 
+	DECL_PRIV_OPER (.forceput, private_forceput);
 	DECL_PRIV_OPER (.setglobal, private_setglobal);
 
 	DECL_OPER (abs);
