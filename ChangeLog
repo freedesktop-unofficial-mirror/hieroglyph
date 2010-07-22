@@ -1,3 +1,11 @@
+2010-07-22  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgvm.c (hg_vm_stepi): drop a object on the exec stack
+	if success.
+
+	* hieroglyph/hgoperator.c (hg_operator_real_private_setglobal):
+	implemented.
+
 2010-07-21  Akira TAGOH  <akira@tagoh.org>
 
 	* src/hgs/hgs.c: add an interpreter on CUI.

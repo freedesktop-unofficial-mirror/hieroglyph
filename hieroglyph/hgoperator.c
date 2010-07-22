@@ -47,6 +47,7 @@ static gboolean __hg_operator_is_initialized = FALSE;
 		hg_stack_t *ostack G_GNUC_UNUSED = vm->stacks[HG_VM_STACK_OSTACK]; \
 		hg_stack_t *estack G_GNUC_UNUSED = vm->stacks[HG_VM_STACK_ESTACK]; \
 		hg_stack_t *dstack G_GNUC_UNUSED = vm->stacks[HG_VM_STACK_DSTACK]; \
+		hg_quark_t qself G_GNUC_UNUSED = hg_stack_index(estack, 0, error); \
 		gboolean retval = FALSE;
 
 #define DEFUNC_OPER_END					\
@@ -65,7 +66,32 @@ static gboolean __hg_operator_is_initialized = FALSE;
 		return FALSE;						\
 	}
 
-DEFUNC_UNIMPLEMENTED_OPER (private_setglobal);
+#define CHECK_STACK(_s_,_n_)						\
+	G_STMT_START {							\
+		if (hg_stack_depth((_s_)) < (_n_)) {			\
+			hg_vm_set_error(vm, qself, HG_VM_e_stackunderflow); \
+			return FALSE;					\
+		}							\
+	} G_STMT_END
+
+DEFUNC_OPER (private_setglobal)
+G_STMT_START {
+	hg_quark_t arg0;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QBOOL(arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	hg_vm_use_global_mem(vm, HG_BOOL (arg0));
+
+	hg_stack_pop(ostack, error);
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (abs);
 DEFUNC_UNIMPLEMENTED_OPER (add);
@@ -1787,6 +1813,7 @@ hg_operator_invoke(hg_quark_t   qoper,
 			*error = g_error_copy(err);
 		}
 		g_error_free(err);
+		retval = FALSE;
 	}
 
 	return retval;

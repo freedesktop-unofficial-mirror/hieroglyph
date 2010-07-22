@@ -1147,6 +1147,9 @@ hg_vm_stepi(hg_vm_t  *vm,
 		    retval = hg_operator_invoke(qexecobj,
 						vm,
 						&err);
+		    if (retval) {
+			    hg_stack_pop(estack, &err);
+		    }
 		    *is_proceeded = TRUE;
 		    break;
 	    case HG_TYPE_FILE:
@@ -1197,6 +1200,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 	}
 
 	if (err) {
+		hg_vm_set_error(vm, qexecobj, HG_VM_e_VMerror);
 		/* XXX */
 		g_error_free(err);
 	}
