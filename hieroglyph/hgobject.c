@@ -236,6 +236,8 @@ hg_object_to_string(hg_object_t *object,
 	hg_return_val_if_fail (object->type < HG_TYPE_END, Qnil);
 	hg_return_val_if_fail (__hg_object_vtables[object->type] != NULL, Qnil);
 
+	if (ret)
+		*ret = NULL;
 	v = __hg_object_vtables[object->type];
 
 	return v->to_string(object, ret);
