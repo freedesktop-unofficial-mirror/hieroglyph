@@ -1,5 +1,13 @@
 2010-07-24  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgvm.c (_hg_vm_stack_real_dump): don't prepent to dump
+	the stacks even if to_string failed.
+	(hg_vm_stepi_in_exec_array): fix a segfault when to_string failed.
+	(hg_vm_stepi): likewise.
+	(hg_vm_stepi_in_exec_array): set the appropriate permissions.
+	(hg_vm_mfree): ignore Qnil.
+	(hg_vm_quark_set_attributes): ignore Qnil.
+
 	* hieroglyph/hgoperator.c (STACK_PUSH_AS_IS): set the appropriate
 	error against given stack.
 	(_hg_operator_real_if): impelemented.

@@ -198,8 +198,6 @@ _hg_vm_stack_real_dump(hg_mem_t    *mem,
 	hg_string_t *s;
 
 	q = hg_vm_quark_to_string(ddata->vm, qdata, (gpointer *)&s, error);
-	if (q == Qnil)
-		return FALSE;
 
 	hg_file_append_printf(ddata->ofile, "0x%016lx|%-12s| %c%c%c|%s\n",
 			      qdata,
@@ -207,7 +205,7 @@ _hg_vm_stack_real_dump(hg_mem_t    *mem,
 			      (hg_quark_is_readable(qdata) ? 'r' : '-'),
 			      (hg_quark_is_writable(qdata) ? 'w' : '-'),
 			      (hg_quark_is_executable(qdata) ? 'x' : '-'),
-			      hg_string_get_static_cstr(s));
+			      q == Qnil ? "..." : hg_string_get_static_cstr(s));
 
 	hg_vm_mfree(ddata->vm, q);
 
@@ -286,9 +284,13 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 			    hg_string_t *s;
 
 			    qs = hg_vm_quark_to_string(vm, qresult, (gpointer *)&s, &err);
-			    if (err) {
-				    g_print("WW: Unable to look up the scanned object: %lx: %s", qresult, err->message);
-				    g_clear_error(&err);
+			    if (qs == Qnil) {
+				    if (err) {
+					    g_print("WW: Unable to look up the scanned object: %lx: %s\n", qresult, err->message);
+					    g_clear_error(&err);
+				    } else {
+					    g_print("WW: Unable to look up the scanned object: %lx\n", qresult);
+				    }
 			    } else {
 				    g_print("II: scanning... %s [%s]\n",
 					    hg_string_get_static_cstr(s),
@@ -328,6 +330,8 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 							    HG_VM_e_VMerror);
 					    return FALSE;
 				    }
+				    hg_vm_quark_set_attributes(vm, &qresult);
+				    hg_quark_set_executable(&qresult, TRUE);
 				    for (i = idx; i > 0; i--) {
 					    q = hg_stack_index(ostack, i, &err);
 					    if (err)
@@ -345,7 +349,8 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 					    }
 				    }
 				    if (!hg_stack_push(ostack, qresult))
-					    hg_vm_set_error(vm, qparent, HG_VM_e_stackoverflow);
+					    hg_vm_set_error(vm, qparent,
+							    HG_VM_e_stackoverflow);
 
 				    return FALSE;
 			    }
@@ -624,6 +629,9 @@ hg_vm_mfree(hg_vm_t    *vm,
 {
 	hg_return_if_fail (vm != NULL);
 
+	if (qdata == Qnil)
+		return;
+
 	hg_mem_free(_hg_vm_get_mem(vm, qdata), qdata);
 }
 
@@ -848,6 +856,8 @@ hg_vm_quark_set_attributes(hg_vm_t    *vm,
 	hg_return_if_fail (vm != NULL);
 	hg_return_if_fail (qdata != NULL);
 
+	if (*qdata == Qnil)
+		return;
 	/* do not reset an exec bit here */
 	_hg_quark_type_bit_set_bits(qdata,
 				    HG_QUARK_TYPE_BIT_ACCESS1,
@@ -1394,6 +1404,8 @@ hg_vm_stepi(hg_vm_t  *vm,
 		     * { ... } ... exec bit
 		     */
 		    if (hg_quark_is_executable(qexecobj)) {
+			    g_print("FIXME!!\n");
+			    hg_vm_set_error(vm, qexecobj, HG_VM_e_VMerror);
 			    /* XXX */
 			    break;
 		    }
@@ -1459,9 +1471,13 @@ hg_vm_stepi(hg_vm_t  *vm,
 			    hg_string_t *s;
 
 			    qs = hg_vm_quark_to_string(vm, qresult, (gpointer *)&s, &err);
-			    if (err) {
-				    g_print("W: Unable to look up the scanned object: %lx: %s", qresult, err->message);
-				    g_clear_error(&err);
+			    if (qs == Qnil) {
+				    if (err) {
+					    g_print("W: Unable to look up the scanned object: %lx: %s\n", qresult, err->message);
+					    g_clear_error(&err);
+				    } else {
+					    g_print("W: Unable to look up the scanned object: %lx\n", qresult);
+				    }
 			    } else {
 				    g_print("I: scanning... %s [%s]\n",
 					    hg_string_get_static_cstr(s),
@@ -1477,6 +1493,11 @@ hg_vm_stepi(hg_vm_t  *vm,
 				    qresult = hg_vm_step_in_exec_array(vm, qexecobj);
 				    if (qresult == Qnil)
 					    break;
+				    if (!hg_stack_push(ostack, qresult)) {
+					    hg_vm_set_error(vm, qexecobj,
+							    HG_VM_e_stackoverflow);
+				    }
+				    return TRUE;
 			    } else if (!strcmp(name, "}")) {
 				    hg_vm_set_error(vm, qexecobj, HG_VM_e_syntaxerror);
 				    return TRUE;
@@ -1989,11 +2010,11 @@ hg_vm_set_error(hg_vm_t       *vm,
 		if (ofile == NULL) {
 			g_printerr("  Unable to obtain stderr.\n");
 		} else {
-			hg_file_append_printf(ofile, "* Operand stack:\n");
+			hg_file_append_printf(ofile, "* Operand stack(%d):\n", hg_stack_depth(vm->stacks[HG_VM_STACK_OSTACK]));
 			hg_vm_stack_dump(vm, vm->stacks[HG_VM_STACK_OSTACK], ofile);
-			hg_file_append_printf(ofile, "\n* Exec stack:\n");
+			hg_file_append_printf(ofile, "\n* Exec stack(%d):\n", hg_stack_depth(vm->stacks[HG_VM_STACK_ESTACK]));
 			hg_vm_stack_dump(vm, vm->stacks[HG_VM_STACK_ESTACK], ofile);
-			hg_file_append_printf(ofile, "\n* Dict stack:\n");
+			hg_file_append_printf(ofile, "\n* Dict stack(%d):\n", hg_stack_depth(vm->stacks[HG_VM_STACK_DSTACK]));
 			hg_vm_stack_dump(vm, vm->stacks[HG_VM_STACK_DSTACK], ofile);
 			_HG_VM_UNLOCK (vm, qo);
 		}
