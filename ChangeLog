@@ -1,5 +1,8 @@
 2010-07-23  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgquark.h (hg_quark_set_access_bits): new.
+	(hg_quark_get_type_name): new.
+
 	* lib/hg_init.ps: create dictionaries.
 
 	* hieroglyph/hgoperator.c (hg_operator_real_private_forceput):

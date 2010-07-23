@@ -25,6 +25,7 @@
 #define __HIEROGLYPH_HGQUARK_H__
 
 #include <hieroglyph/hgtypes.h>
+#include <hieroglyph/hgerror.h>
 
 G_BEGIN_DECLS
 
@@ -155,25 +156,30 @@ _hg_quark_type_bit_set_bits(hg_quark_t          *x,
 }
 
 
-G_INLINE_FUNC hg_quark_t hg_quark_new             (hg_type_t   type,
-						   hg_quark_t  value);
-G_INLINE_FUNC hg_type_t  hg_quark_get_type        (hg_quark_t  quark);
-G_INLINE_FUNC hg_quark_t hg_quark_get_value       (hg_quark_t  quark);
-G_INLINE_FUNC gboolean   hg_quark_is_simple_object(hg_quark_t  quark);
-G_INLINE_FUNC void       hg_quark_set_executable  (hg_quark_t *quark,
-						   gboolean    flag);
-G_INLINE_FUNC gboolean   hg_quark_is_executable   (hg_quark_t  quark);
-G_INLINE_FUNC void       hg_quark_set_readable    (hg_quark_t *quark,
-						   gboolean    flag);
-G_INLINE_FUNC gboolean   hg_quark_is_readable     (hg_quark_t  quark);
-G_INLINE_FUNC void       hg_quark_set_writable    (hg_quark_t *quark,
-						   gboolean    flag);
-G_INLINE_FUNC gboolean   hg_quark_is_writable     (hg_quark_t  quark);
-G_INLINE_FUNC gboolean   hg_quark_has_same_mem_id (hg_quark_t  quark,
-						   guint       id);
-G_INLINE_FUNC void       hg_quark_set_mem_id      (hg_quark_t *quark,
-						   guint       id);
-G_INLINE_FUNC hg_quark_t hg_quark_get_hash        (hg_quark_t  quark);
+G_INLINE_FUNC hg_quark_t   hg_quark_new             (hg_type_t   type,
+                                                     hg_quark_t  value);
+G_INLINE_FUNC hg_type_t    hg_quark_get_type        (hg_quark_t  quark);
+G_INLINE_FUNC hg_quark_t   hg_quark_get_value       (hg_quark_t  quark);
+G_INLINE_FUNC gboolean     hg_quark_is_simple_object(hg_quark_t  quark);
+G_INLINE_FUNC void         hg_quark_set_executable  (hg_quark_t *quark,
+                                                     gboolean    flag);
+G_INLINE_FUNC gboolean     hg_quark_is_executable   (hg_quark_t  quark);
+G_INLINE_FUNC void         hg_quark_set_readable    (hg_quark_t *quark,
+                                                     gboolean    flag);
+G_INLINE_FUNC gboolean     hg_quark_is_readable     (hg_quark_t  quark);
+G_INLINE_FUNC void         hg_quark_set_writable    (hg_quark_t *quark,
+                                                     gboolean    flag);
+G_INLINE_FUNC gboolean     hg_quark_is_writable     (hg_quark_t  quark);
+G_INLINE_FUNC void         hg_quark_set_access_bits (hg_quark_t *quark,
+						     gboolean    readable,
+						     gboolean    writable,
+						     gboolean    executable);
+G_INLINE_FUNC gboolean     hg_quark_has_same_mem_id (hg_quark_t  quark,
+                                                     guint       id);
+G_INLINE_FUNC void         hg_quark_set_mem_id      (hg_quark_t *quark,
+                                                     guint       id);
+G_INLINE_FUNC hg_quark_t   hg_quark_get_hash        (hg_quark_t  quark);
+G_INLINE_FUNC const gchar *hg_quark_get_type_name   (hg_quark_t  qdata);
 
 /**
  * hg_type_is_simple:
@@ -363,6 +369,29 @@ hg_quark_is_writable(hg_quark_t quark)
 }
 
 /**
+ * hg_quark_set_access_bits:
+ * @quark:
+ * @readable:
+ * @writable:
+ * @executable:
+ *
+ * FIXME
+ */
+G_INLINE_FUNC
+void hg_quark_set_access_bits(hg_quark_t *quark,
+			      gboolean    readable,
+			      gboolean    writable,
+			      gboolean    executable)
+{
+	_hg_quark_type_bit_set_bits(quark,
+				    HG_QUARK_TYPE_BIT_ACCESS,
+				    HG_QUARK_TYPE_BIT_ACCESS_END,
+				    ((readable << HG_QUARK_TYPE_BIT_READABLE) |
+				     (writable << HG_QUARK_TYPE_BIT_WRITABLE) |
+				     (executable << HG_QUARK_TYPE_BIT_EXECUTABLE)) >> HG_QUARK_TYPE_BIT_ACCESS);
+}
+
+/**
  * hg_quark_has_same_mem_id:
  * @quark:
  *
@@ -411,6 +440,41 @@ hg_quark_get_hash(hg_quark_t quark)
 								      HG_QUARK_TYPE_BIT_ACCESS,
 								      HG_QUARK_TYPE_BIT_ACCESS_END)) |
 		_hg_quark_type_bit_get_value(quark);
+}
+
+/**
+ * hg_quark_get_type_name:
+ * @qdata:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+G_INLINE_FUNC const gchar *
+hg_quark_get_type_name(hg_quark_t  qdata)
+{
+	static const gchar const *types[] = {
+		"nulltype",
+		"integertype",
+		"realtype",
+		"nametype",
+		"booleantype",
+		"stringtype",
+		"enametype",
+		"dicttype",
+		"operatortype",
+		"arraytype",
+		"marktype",
+		"filetype",
+		"savetype",
+		"stacktype",
+		NULL
+	};
+	static const gchar const *unknown = "unknowntype";
+
+	hg_return_val_if_fail (hg_quark_get_type(qdata) < HG_TYPE_END, unknown);
+
+	return types[hg_quark_get_type(qdata)];
 }
 
 G_END_DECLS
