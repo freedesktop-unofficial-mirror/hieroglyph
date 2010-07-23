@@ -1,5 +1,10 @@
 2010-07-23  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgvm.c (hg_vm_quark_set_attributes): new.
+	(hg_vm_set_default_attributes): new.
+	(hg_vm_setup): set certain attributes to the built-in values.
+	(hg_vm_stack_dump): new.
+
 	* hieroglyph/hgoperator.c (STACK_PUSH): set a default attribute.
 	(STACK_PUSH_AS_IS): new.
 

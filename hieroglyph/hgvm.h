@@ -35,6 +35,10 @@ G_BEGIN_DECLS
 	(hg_vm_lock_object((_v_),(_q_),__PRETTY_FUNCTION__,(_e_)))
 #define HG_VM_UNLOCK(_v_,_q_)			\
 	(hg_vm_unlock_object((_v_),(_q_)))
+#define HG_VM_ATTRIBUTE(_a_)			\
+	((_a_) << HG_QUARK_TYPE_BIT_ACCESS1)
+#define HG_VM_ATTRIBUTE1(_a_)			\
+	((_a_) >> 1)
 
 typedef enum _hg_vm_access_t		hg_vm_access_t;
 typedef enum _hg_vm_mem_type_t		hg_vm_mem_type_t;
@@ -107,93 +111,103 @@ struct _hg_vm_t {
 	gboolean           shutdown:1;
 	gboolean           has_error:1;
 	gint               error_code;
+	guint              qattributes;
 };
 
 
-gboolean           hg_vm_init              (void);
-void               hg_vm_tini              (void);
-hg_vm_t           *hg_vm_new               (void);
-void               hg_vm_destroy           (hg_vm_t           *vm);
-hg_quark_t         hg_vm_malloc            (hg_vm_t           *vm,
-					    gsize              size,
-					    gpointer          *ret);
-hg_quark_t         hg_vm_realloc           (hg_vm_t           *vm,
-					    hg_quark_t         qdata,
-					    gsize              size,
-					    gpointer          *ret);
-void               hg_vm_mfree             (hg_vm_t           *vm,
-					    hg_quark_t         qdata);
-gpointer           hg_vm_lock_object       (hg_vm_t           *vm,
-					    hg_quark_t         qdata,
-					    const gchar       *pretty_function,
-					    GError           **error);
-void               hg_vm_unlock_object     (hg_vm_t           *vm,
-					    hg_quark_t         qdata);
-hg_quark_t         hg_vm_quark_copy        (hg_vm_t           *vm,
-					    hg_quark_t         qdata,
-					    gpointer          *ret);
-hg_quark_t         hg_vm_quark_to_string   (hg_vm_t           *vm,
-					    hg_quark_t         qdata,
-					    gpointer          *ret,
-					    GError           **error);
-hg_mem_t          *hg_vm_get_mem           (hg_vm_t           *vm);
-void               hg_vm_use_global_mem    (hg_vm_t           *vm,
-					    gboolean           flag);
-gboolean           hg_vm_is_global_mem_used(hg_vm_t           *vm);
-hg_quark_t         hg_vm_get_io            (hg_vm_t           *vm,
-					    hg_file_io_t       type);
-void               hg_vm_set_io            (hg_vm_t           *vm,
-					    hg_file_io_t       type,
-					    hg_quark_t         file);
-gboolean           hg_vm_setup             (hg_vm_t           *vm,
-					    hg_vm_langlevel_t  lang_level,
-					    hg_quark_t         stdin,
-					    hg_quark_t         stdout,
-					    hg_quark_t         stderr);
-void               hg_vm_finish            (hg_vm_t           *vm);
-hg_vm_langlevel_t  hg_vm_get_language_level(hg_vm_t           *vm);
-gboolean           hg_vm_set_language_level(hg_vm_t           *vm,
-					    hg_vm_langlevel_t  level);
-hg_quark_t         hg_vm_dict_lookup       (hg_vm_t           *vm,
-					    hg_quark_t         qname);
-gboolean           hg_vm_dict_remove       (hg_vm_t           *vm,
-					    hg_quark_t         qname,
-					    gboolean           remove_all);
-hg_quark_t         hg_vm_get_dict          (hg_vm_t           *vm);
-gboolean           hg_vm_stepi             (hg_vm_t           *vm,
-					    gboolean          *is_proceeded);
-gboolean           hg_vm_step              (hg_vm_t           *vm);
-gboolean           hg_vm_main_loop         (hg_vm_t           *vm);
-gboolean           hg_vm_eval              (hg_vm_t           *vm,
-					    hg_quark_t         qeval,
-					    hg_stack_t        *ostack,
-					    hg_stack_t        *estack,
-					    hg_stack_t        *dstack,
-					    GError           **error);
-gboolean           hg_vm_eval_from_cstring (hg_vm_t           *vm,
-					    const gchar       *cstring,
-					    hg_stack_t        *ostack,
-					    hg_stack_t        *estack,
-					    hg_stack_t        *dstack,
-					    GError           **error);
-gboolean           hg_vm_eval_from_file    (hg_vm_t           *vm,
-					    const gchar       *initfile,
-					    hg_stack_t        *ostack,
-					    hg_stack_t        *estack,
-					    hg_stack_t        *dstack,
-					    GError           **error);
-gint               hg_vm_get_error_code    (hg_vm_t           *vm);
-void               hg_vm_set_error_code    (hg_vm_t           *vm,
-					    gint               error_code);
-gboolean           hg_vm_startjob          (hg_vm_t           *vm,
-					    hg_vm_langlevel_t  lang_level,
-					    const gchar       *initfile,
-					    gboolean           encapsulated);
-void               hg_vm_shutdown          (hg_vm_t           *vm,
-					    gint               error_code);
-gboolean           hg_vm_set_error         (hg_vm_t           *vm,
-					    hg_quark_t         qdata,
-					    hg_vm_error_t      error);
+gboolean           hg_vm_init                  (void);
+void               hg_vm_tini                  (void);
+hg_vm_t           *hg_vm_new                   (void);
+void               hg_vm_destroy               (hg_vm_t            *vm);
+hg_quark_t         hg_vm_malloc                (hg_vm_t            *vm,
+						gsize               size,
+						gpointer           *ret);
+hg_quark_t         hg_vm_realloc               (hg_vm_t            *vm,
+						hg_quark_t          qdata,
+						gsize               size,
+						gpointer           *ret);
+void               hg_vm_mfree                 (hg_vm_t            *vm,
+						hg_quark_t          qdata);
+gpointer           hg_vm_lock_object           (hg_vm_t            *vm,
+						hg_quark_t          qdata,
+						const gchar        *pretty_function,
+						GError            **error);
+void               hg_vm_unlock_object         (hg_vm_t            *vm,
+						hg_quark_t          qdata);
+hg_quark_t         hg_vm_quark_copy            (hg_vm_t            *vm,
+						hg_quark_t          qdata,
+						gpointer           *ret);
+hg_quark_t         hg_vm_quark_to_string       (hg_vm_t            *vm,
+						hg_quark_t          qdata,
+						gpointer           *ret,
+						GError            **error);
+const gchar       *hg_vm_quark_get_type_name   (hg_vm_t            *vm,
+						hg_quark_t          qdata);
+void               hg_vm_quark_set_attributes  (hg_vm_t            *vm,
+						hg_quark_t         *qdata);
+void               hg_vm_set_default_attributes(hg_vm_t            *vm,
+						guint               qattributes);
+hg_mem_t          *hg_vm_get_mem               (hg_vm_t            *vm);
+void               hg_vm_use_global_mem        (hg_vm_t            *vm,
+						gboolean            flag);
+gboolean           hg_vm_is_global_mem_used    (hg_vm_t            *vm);
+hg_quark_t         hg_vm_get_io                (hg_vm_t            *vm,
+						hg_file_io_t        type);
+void               hg_vm_set_io                (hg_vm_t            *vm,
+						hg_file_io_t        type,
+						hg_quark_t          file);
+gboolean           hg_vm_setup                 (hg_vm_t            *vm,
+						hg_vm_langlevel_t   lang_level,
+						hg_quark_t          stdin,
+						hg_quark_t          stdout,
+						hg_quark_t          stderr);
+void               hg_vm_finish                (hg_vm_t            *vm);
+hg_vm_langlevel_t  hg_vm_get_language_level    (hg_vm_t            *vm);
+gboolean           hg_vm_set_language_level    (hg_vm_t            *vm,
+						hg_vm_langlevel_t   level);
+hg_quark_t         hg_vm_dict_lookup           (hg_vm_t            *vm,
+						hg_quark_t          qname);
+gboolean           hg_vm_dict_remove           (hg_vm_t            *vm,
+						hg_quark_t          qname,
+						gboolean            remove_all);
+hg_quark_t         hg_vm_get_dict              (hg_vm_t            *vm);
+gboolean           hg_vm_stepi                 (hg_vm_t            *vm,
+						gboolean           *is_proceeded);
+gboolean           hg_vm_step                  (hg_vm_t            *vm);
+gboolean           hg_vm_main_loop             (hg_vm_t            *vm);
+gboolean           hg_vm_eval                  (hg_vm_t            *vm,
+						hg_quark_t          qeval,
+						hg_stack_t         *ostack,
+						hg_stack_t         *estack,
+						hg_stack_t         *dstack,
+						GError            **error);
+gboolean           hg_vm_eval_from_cstring     (hg_vm_t            *vm,
+						const gchar        *cstring,
+						hg_stack_t         *ostack,
+						hg_stack_t         *estack,
+						hg_stack_t         *dstack,
+						GError            **error);
+gboolean           hg_vm_eval_from_file        (hg_vm_t            *vm,
+						const gchar        *initfile,
+						hg_stack_t         *ostack,
+						hg_stack_t         *estack,
+						hg_stack_t         *dstack,
+						GError            **error);
+gint               hg_vm_get_error_code        (hg_vm_t            *vm);
+void               hg_vm_set_error_code        (hg_vm_t            *vm,
+						gint                error_code);
+gboolean           hg_vm_startjob              (hg_vm_t            *vm,
+						hg_vm_langlevel_t   lang_level,
+						const gchar        *initfile,
+						gboolean            encapsulated);
+void               hg_vm_shutdown              (hg_vm_t            *vm,
+						gint                error_code);
+gboolean           hg_vm_set_error             (hg_vm_t            *vm,
+						hg_quark_t          qdata,
+						hg_vm_error_t       error);
+void               hg_vm_stack_dump            (hg_vm_t            *vm,
+						hg_stack_t         *stack,
+						hg_file_t          *output);
 
 G_END_DECLS
 

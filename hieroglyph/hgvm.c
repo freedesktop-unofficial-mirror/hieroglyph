@@ -56,7 +56,11 @@ typedef struct _hg_vm_dict_remove_data_t {
 	gboolean    remove_all;
 	gboolean    result;
 } hg_vm_dict_remove_data_t;
-
+typedef struct _hg_vm_stack_dump_data_t {
+	hg_vm_t    *vm;
+	hg_stack_t *stack;
+	hg_file_t  *ofile;
+} hg_vm_stack_dump_data_t;
 
 hg_mem_t *__hg_vm_mem = NULL;
 gboolean __hg_vm_is_initialized = FALSE;
@@ -178,6 +182,33 @@ _hg_vm_find_file(const gchar *initfile)
 	return filename;
 }
 
+static gboolean
+_hg_vm_stack_real_dump(hg_mem_t    *mem,
+		       hg_quark_t   qdata,
+		       gpointer     data,
+		       GError     **error)
+{
+	hg_vm_stack_dump_data_t *ddata = data;
+	hg_quark_t q;
+	hg_string_t *s;
+
+	q = hg_vm_quark_to_string(ddata->vm, qdata, (gpointer *)&s, error);
+	if (q == Qnil)
+		return FALSE;
+
+	hg_file_append_printf(ddata->ofile, "0x%016lx|%-12s| %c%c%c|%s\n",
+			      qdata,
+			      hg_quark_get_type_name(qdata),
+			      (hg_quark_is_readable(qdata) ? 'r' : '-'),
+			      (hg_quark_is_writable(qdata) ? 'w' : '-'),
+			      (hg_quark_is_executable(qdata) ? 'x' : '-'),
+			      hg_string_get_static_cstr(s));
+
+	hg_vm_mfree(ddata->vm, q);
+
+	return TRUE;
+}
+
 /*< public >*/
 /**
  * hg_vm_init:
@@ -277,6 +308,8 @@ hg_vm_new(void)
 	    retval->stacks[HG_VM_STACK_ESTACK] == NULL ||
 	    retval->stacks[HG_VM_STACK_DSTACK] == NULL)
 		goto error;
+
+	hg_vm_set_default_attributes(retval, HG_VM_ACCESS_READABLE|HG_VM_ACCESS_WRITABLE);
 
 #define DECL_ERROR(_v_,_n_)						\
 	(_v_)->qerror_name[HG_VM_e_ ## _n_] = HG_QNAME ((_v_)->name, #_n_);
@@ -555,7 +588,7 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 			    hg_string_append(s, HG_BOOL (qdata) ? "true" : "false", -1, &err);
 			    break;
 		    case HG_TYPE_OPER:
-			    hg_string_append_printf(s, "--%s--",
+			    hg_string_append_printf(s, "%s",
 						    hg_operator_get_name(qdata));
 			    break;
 		    default:
@@ -610,6 +643,44 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 	}
 
 	return retval;
+}
+
+/**
+ * hg_vm_quark_set_attributes:
+ * @vm:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+void
+hg_vm_quark_set_attributes(hg_vm_t    *vm,
+			   hg_quark_t *qdata)
+{
+	hg_return_if_fail (vm != NULL);
+	hg_return_if_fail (qdata != NULL);
+
+	/* do not reset an exec bit here */
+	_hg_quark_type_bit_set_bits(qdata,
+				    HG_QUARK_TYPE_BIT_ACCESS1,
+				    HG_QUARK_TYPE_BIT_ACCESS_END,
+				    vm->qattributes);
+}
+
+/**
+ * hg_vm_set_default_attributes:
+ * @vm:
+ * @qattributes:
+ *
+ * FIXME
+ */
+void
+hg_vm_set_default_attributes(hg_vm_t    *vm,
+			     guint       qattributes)
+{
+	hg_return_if_fail (vm != NULL);
+
+	vm->qattributes = HG_VM_ATTRIBUTE1 (qattributes);
 }
 
 /**
@@ -745,6 +816,7 @@ hg_vm_setup(hg_vm_t           *vm,
 	} else {
 		qf = stdin;
 	}
+	hg_quark_set_access_bits(&qf, TRUE, FALSE, TRUE);
 	vm->qio[HG_FILE_IO_STDIN] = qf;
 	if (stdout == Qnil) {
 		qf  = hg_file_new(hg_vm_get_mem(vm),
@@ -755,6 +827,7 @@ hg_vm_setup(hg_vm_t           *vm,
 	} else {
 		qf = stdout;
 	}
+	hg_quark_set_access_bits(&qf, FALSE, TRUE, TRUE);
 	vm->qio[HG_FILE_IO_STDOUT] = qf;
 	if (stderr == Qnil) {
 		qf = hg_file_new(hg_vm_get_mem(vm),
@@ -765,6 +838,7 @@ hg_vm_setup(hg_vm_t           *vm,
 	} else {
 		qf = stderr;
 	}
+	hg_quark_set_access_bits(&qf, FALSE, TRUE, TRUE);
 	vm->qio[HG_FILE_IO_STDERR] = qf;
 
 	if (vm->qio[HG_FILE_IO_STDIN] == Qnil ||
@@ -792,6 +866,10 @@ hg_vm_setup(hg_vm_t           *vm,
 	    vm->qglobaldict == Qnil ||
 	    vm->qerror == Qnil)
 		goto error;
+
+	hg_quark_set_access_bits(&vm->qsystemdict, TRUE, TRUE, FALSE);
+	hg_quark_set_access_bits(&vm->qglobaldict, TRUE, TRUE, FALSE);
+	hg_quark_set_access_bits(&vm->qerror, TRUE, TRUE, FALSE);
 
 	hg_stack_push(vm->stacks[HG_VM_STACK_DSTACK], vm->qsystemdict);
 	if (lang_level >= HG_LANG_LEVEL_2) {
@@ -1189,28 +1267,12 @@ hg_vm_stepi(hg_vm_t  *vm,
 			    return TRUE;
 		    }
 		    qresult = hg_scanner_get_token(vm->scanner);
+		    hg_vm_quark_set_attributes(vm, &qresult);
 #define HG_VM_DEBUG
 #if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
 		    G_STMT_START {
 			    hg_quark_t qs;
 			    hg_string_t *s;
-			    const gchar const *types[] = {
-				    "nulltype",
-				    "inttype",
-				    "realtype",
-				    "nametype",
-				    "booltype",
-				    "stringtype",
-				    "enametype",
-				    "dicttype",
-				    "opertype",
-				    "arraytype",
-				    "marktype",
-				    "filetype",
-				    "savetype",
-				    "stacktype",
-				    NULL
-			    };
 
 			    qs = hg_vm_quark_to_string(vm, qresult, (gpointer *)&s, &err);
 			    if (err) {
@@ -1219,7 +1281,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 			    } else {
 				    g_print("I: scanning... %s [%s]\n",
 					    hg_string_get_static_cstr(s),
-					    hg_quark_get_type(qresult) < HG_TYPE_END ? types[hg_quark_get_type(qresult)] : "unknowntype");
+					    hg_quark_get_type_name(qresult));
 				    hg_vm_mfree(vm, qs);
 			    }
 		    } G_STMT_END;
@@ -1622,7 +1684,7 @@ hg_vm_set_error(hg_vm_t       *vm,
 		_HG_VM_UNLOCK (vm, vm->qerror);
 
 		if (qresult_cmd == Qnil) {
-			scommand = g_strdup("--unknown--");
+			scommand = g_strdup("-%unknown%-");
 		} else {
 			hg_string_t *s;
 
@@ -1631,7 +1693,7 @@ hg_vm_set_error(hg_vm_t       *vm,
 						  (gpointer *)&s,
 						  &err);
 			if (q == Qnil)
-				scommand = g_strdup("--unknown--");
+				scommand = g_strdup("-%unknown%-");
 			else
 				scommand = g_strdup(hg_string_get_static_cstr(s));
 			hg_vm_mfree(vm, q);
@@ -1641,7 +1703,7 @@ hg_vm_set_error(hg_vm_t       *vm,
 					       (gpointer *)&where,
 					       &err);
 		if (qwhere == Qnil)
-			swhere = g_strdup("--unknown--");
+			swhere = g_strdup("-%unknown%-");
 		else
 			swhere = g_strdup(hg_string_get_static_cstr(where));
 		hg_vm_mfree(vm, qwhere);
@@ -1702,6 +1764,8 @@ hg_vm_set_error(hg_vm_t       *vm,
   fatal_error:
 	G_STMT_START {
 		const gchar *errname = hg_name_lookup(vm->name, vm->qerror_name[error]);
+		hg_file_t *ofile;
+		hg_quark_t qo;
 
 		if (errname) {
 			g_printerr("Fatal error during recovering from /%s: %s\n", errname, (err ? err->message : "no details"));
@@ -1709,7 +1773,47 @@ hg_vm_set_error(hg_vm_t       *vm,
 			g_printerr("Fatal error during recovering from the unknown error: %s\n", err ? err->message : "no details");
 		}
 		if (err)
-			g_error_free(err);
+			g_clear_error(&err);
+		qo = hg_vm_get_io(vm, HG_FILE_IO_STDERR);
+		ofile = _HG_VM_LOCK (vm, qo, &err);
+		if (ofile == NULL) {
+			g_printerr("  Unable to obtain stderr.\n");
+		} else {
+			hg_file_append_printf(ofile, "* Operand stack:\n");
+			hg_vm_stack_dump(vm, vm->stacks[HG_VM_STACK_OSTACK], ofile);
+			hg_file_append_printf(ofile, "\n* Exec stack:\n");
+			hg_vm_stack_dump(vm, vm->stacks[HG_VM_STACK_ESTACK], ofile);
+			hg_file_append_printf(ofile, "\n* Dict stack:\n");
+			hg_vm_stack_dump(vm, vm->stacks[HG_VM_STACK_DSTACK], ofile);
+			_HG_VM_UNLOCK (vm, qo);
+		}
 		abort();
 	} G_STMT_END;
+}
+
+/**
+ * hg_vm_stack_dump:
+ * @stack:
+ * @file:
+ *
+ * FIXME
+ */
+void
+hg_vm_stack_dump(hg_vm_t    *vm,
+		 hg_stack_t *stack,
+		 hg_file_t  *output)
+{
+	hg_vm_stack_dump_data_t data;
+
+	hg_return_if_fail (vm != NULL);
+	hg_return_if_fail (stack != NULL);
+	hg_return_if_fail (output != NULL);
+
+	data.vm = vm;
+	data.stack = stack;
+	data.ofile = output;
+
+	hg_file_append_printf(output, "       value      |    type    |attr|content\n");
+	hg_file_append_printf(output, "----------========+------------+----+---------------------------------\n");
+	hg_stack_foreach(stack, _hg_vm_stack_real_dump, &data, NULL);
 }
