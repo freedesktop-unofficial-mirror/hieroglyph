@@ -1,11 +1,17 @@
 2010-07-23  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (_hg_operator_real_private_forceput):
+	fix a typo.
+	(_hg_operator_real_private_forceput): raise /invalidaccess
+	if no appropriate permissions.
+	(_hg_operator_real_known): implemented.
+
 	* hieroglyph/hgquark.h (hg_quark_set_access_bits): new.
 	(hg_quark_get_type_name): new.
 
 	* lib/hg_init.ps: create dictionaries.
 
-	* hieroglyph/hgoperator.c (hg_operator_real_private_forceput):
+	* hieroglyph/hgoperator.c (_hg_operator_real_private_forceput):
 	implemented.
 
 	* hieroglyph/hgvm.c (hg_vm_set_io): fix a typo.
@@ -14,7 +20,7 @@
 
 	* hieroglyph/hgarray.h (HG_IS_QARRAY): fix a typo.
 
-	* hieroglyph/hgoperator.c (hg_operator_real_dict): implemented.
+	* hieroglyph/hgoperator.c (_hg_operator_real_dict): implemented.
 
 	* hieroglyph/hgvm.c (hg_vm_setup): add /systemdict, /globaldict and
 	/$error into systemdict.
@@ -24,7 +30,7 @@
 	* hieroglyph/hgvm.c (hg_vm_stepi): drop a object on the exec stack
 	if success.
 
-	* hieroglyph/hgoperator.c (hg_operator_real_private_setglobal):
+	* hieroglyph/hgoperator.c (_hg_operator_real_private_setglobal):
 	implemented.
 
 2010-07-21  Akira TAGOH  <akira@tagoh.org>

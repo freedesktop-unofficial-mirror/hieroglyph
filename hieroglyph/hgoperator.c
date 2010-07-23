@@ -91,9 +91,13 @@ G_STMT_START {
 	hg_quark_t arg0, arg1, arg2;
 
 	CHECK_STACK (ostack, 3);
-	arg0 = hg_stack_index(ostack, 0, error);
+	arg0 = hg_stack_index(ostack, 2, error);
 	arg1 = hg_stack_index(ostack, 1, error);
-	arg2 = hg_stack_index(ostack, 2, error);
+	arg2 = hg_stack_index(ostack, 0, error);
+	if (!hg_quark_is_writable(arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
 	if (HG_IS_QARRAY (arg0)) {
 		gsize index;
 		hg_array_t *a;
@@ -301,7 +305,45 @@ DEFUNC_UNIMPLEMENTED_OPER (inueofill);
 DEFUNC_UNIMPLEMENTED_OPER (inufill);
 DEFUNC_UNIMPLEMENTED_OPER (invertmatrix);
 DEFUNC_UNIMPLEMENTED_OPER (itransform);
-DEFUNC_UNIMPLEMENTED_OPER (known);
+
+/* <dict> <key> known <bool> */
+DEFUNC_OPER (known)
+G_STMT_START {
+	hg_quark_t arg0, arg1;
+	hg_dict_t *d;
+	gboolean ret;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+
+	if (!HG_IS_QDICT (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!hg_quark_is_readable(arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+	d = HG_VM_LOCK (vm, arg0, error);
+	if (d == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	ret = hg_dict_lookup(d, arg1);
+
+	HG_VM_UNLOCK (vm, arg0);
+
+	hg_stack_pop(ostack, error);
+	hg_stack_pop(ostack, error);
+
+	STACK_PUSH (ostack, HG_QBOOL (ret));
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (le);
 DEFUNC_UNIMPLEMENTED_OPER (length);
 DEFUNC_UNIMPLEMENTED_OPER (lineto);
