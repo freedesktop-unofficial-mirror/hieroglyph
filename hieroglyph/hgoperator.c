@@ -365,7 +365,33 @@ DEFUNC_UNIMPLEMENTED_OPER (mul);
 DEFUNC_UNIMPLEMENTED_OPER (ne);
 DEFUNC_UNIMPLEMENTED_OPER (neg);
 DEFUNC_UNIMPLEMENTED_OPER (newpath);
-DEFUNC_UNIMPLEMENTED_OPER (not);
+
+/* <bool> not <bool>
+ * <int> not <int>
+ */
+DEFUNC_OPER (not)
+G_STMT_START {
+	hg_quark_t arg0, ret;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (HG_IS_QBOOL (arg0)) {
+		ret = HG_QBOOL (!HG_BOOL (arg0));
+	} else if (HG_IS_QINT (arg0)) {
+		ret = HG_QINT (-HG_INT (arg0));
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	hg_stack_pop(ostack, error);
+
+	STACK_PUSH (ostack, ret);
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (or);
 DEFUNC_UNIMPLEMENTED_OPER (pathbbox);
 DEFUNC_UNIMPLEMENTED_OPER (pathforall);
