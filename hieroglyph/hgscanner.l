@@ -482,6 +482,11 @@ hg_scanner_attach_file(hg_scanner_t *scanner,
 	hg_return_val_if_fail (file != NULL, FALSE);
 
 	yyg = (struct yyguts_t *)scanner->yyscanner;
+	if (scanner->infile != NULL &&
+	    scanner->infile != file) {
+		hg_mem_unlock_object(scanner->infile->o.mem,
+				     scanner->infile->o.self);
+	}
 	scanner->infile = file;
 
 	if (YY_CURRENT_BUFFER) {
