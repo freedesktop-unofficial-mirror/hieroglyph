@@ -77,7 +77,13 @@ static gboolean __hg_operator_is_initialized = FALSE;
 #define STACK_PUSH_AS_IS(_s_,_q_)					\
 	G_STMT_START {							\
 		if (!hg_stack_push((_s_), (_q_))) {			\
-			hg_vm_set_error(vm, qself, HG_VM_e_stackoverflow); \
+			if ((_s_) == ostack) {				\
+				hg_vm_set_error(vm, qself, HG_VM_e_stackoverflow); \
+			} else if ((_s_) == estack) {			\
+				hg_vm_set_error(vm, qself, HG_VM_e_execstackoverflow); \
+			} else {					\
+				hg_vm_set_error(vm, qself, HG_VM_e_dictstackoverflow); \
+			}						\
 			return FALSE;					\
 		}							\
 	} G_STMT_END
@@ -299,7 +305,41 @@ DEFUNC_UNIMPLEMENTED_OPER (gt);
 DEFUNC_UNIMPLEMENTED_OPER (identmatrix);
 DEFUNC_UNIMPLEMENTED_OPER (idiv);
 DEFUNC_UNIMPLEMENTED_OPER (idtransform);
-DEFUNC_UNIMPLEMENTED_OPER (if);
+
+/* <bool> <proc> if - */
+DEFUNC_OPER (if)
+G_STMT_START {
+	hg_quark_t arg0, arg1, q;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QBOOL (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!HG_IS_QARRAY (arg1) ||
+	    !hg_quark_is_executable(arg1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!hg_quark_is_readable(arg1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+	if (HG_BOOL (arg0)) {
+		q = hg_vm_quark_copy(vm, arg1, NULL);
+		STACK_PUSH (estack, q);
+		hg_stack_roll(estack, 2, 1, error);
+	}
+	hg_stack_pop(ostack, error);
+	hg_stack_pop(ostack, error);
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (ifelse);
 DEFUNC_UNIMPLEMENTED_OPER (image);
 DEFUNC_UNIMPLEMENTED_OPER (imagemask);
@@ -952,7 +992,6 @@ _hg_operator_level1_register(hg_dict_t *dict,
 	REG_OPER (dict, name, status);
 	REG_OPER (dict, name, statusdict);
 
-	REG_OPER (dict, name, true);
 	REG_OPER (dict, name, usertime);
 	REG_OPER (dict, name, version);
 	REG_OPER (dict, name, vmstatus);

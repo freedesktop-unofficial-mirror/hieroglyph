@@ -1,3 +1,9 @@
+2010-07-24  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (STACK_PUSH_AS_IS): set the appropriate
+	error against given stack.
+	(_hg_operator_real_if): impelemented.
+
 2010-07-23  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgobject.c (hg_object_to_string): initialize
