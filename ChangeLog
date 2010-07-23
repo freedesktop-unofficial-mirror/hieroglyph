@@ -1,5 +1,10 @@
 2010-07-23  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgvm.c (hg_vm_stepi_in_exec_array): new.
+	(hg_vm_step_in_exec_array): new.
+	(hg_vm_stepi): process the executable array.
+	(hg_vm_has_error): new.
+
 	* hieroglyph/hgarray.c (_hg_array_maybe_expand): fix a typo.
 
 	* hieroglyph/hgscanner.l (hg_scanner_attach_file): unlock the object

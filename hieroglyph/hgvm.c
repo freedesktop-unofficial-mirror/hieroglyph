@@ -29,6 +29,7 @@
 #include "hgbool.h"
 #include "hgdict.h"
 #include "hgint.h"
+#include "hgmark.h"
 #include "hgmem.h"
 #include "hgname.h"
 #include "hgoperator.h"
@@ -61,6 +62,10 @@ typedef struct _hg_vm_stack_dump_data_t {
 	hg_stack_t *stack;
 	hg_file_t  *ofile;
 } hg_vm_stack_dump_data_t;
+
+
+static hg_quark_t hg_vm_step_in_exec_array(hg_vm_t    *vm,
+					   hg_quark_t  qparent);
 
 hg_mem_t *__hg_vm_mem = NULL;
 gboolean __hg_vm_is_initialized = FALSE;
@@ -207,6 +212,189 @@ _hg_vm_stack_real_dump(hg_mem_t    *mem,
 	hg_vm_mfree(ddata->vm, q);
 
 	return TRUE;
+}
+
+static gboolean
+hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
+			  hg_quark_t  qparent)
+{
+	hg_stack_t *ostack, *estack;
+	hg_quark_t qexecobj, qresult;
+	hg_file_t *file;
+	GError *err = NULL;
+	gboolean retval = TRUE;
+	const gchar *name;
+
+	ostack = vm->stacks[HG_VM_STACK_OSTACK];
+	estack = vm->stacks[HG_VM_STACK_ESTACK];
+
+	qexecobj = hg_stack_index(estack, 0, &err);
+	if (err) {
+		hg_vm_set_error(vm, qparent, HG_VM_e_stackunderflow);
+		goto finalize;
+	}
+
+	switch (hg_quark_get_type(qexecobj)) {
+	    case HG_TYPE_EVAL_NAME:
+		    if (hg_quark_is_executable(qexecobj)) {
+			    qresult = hg_vm_dict_lookup(vm, qexecobj);
+			    if (qresult == Qnil) {
+				    hg_vm_set_error(vm, qparent,
+						    HG_VM_e_undefined);
+				    return FALSE;
+			    }
+			    qexecobj = qresult;
+		    } else {
+			    g_warning("Immediately evaluated name object somehow doesn't have a exec bit turned on: %s", hg_name_lookup(vm->name, qexecobj));
+		    }
+	    case HG_TYPE_NULL:
+	    case HG_TYPE_INT:
+	    case HG_TYPE_REAL:
+	    case HG_TYPE_BOOL:
+	    case HG_TYPE_DICT:
+	    case HG_TYPE_MARK:
+	    case HG_TYPE_NAME:
+	    case HG_TYPE_ARRAY:
+	    case HG_TYPE_STRING:
+	    case HG_TYPE_OPER:
+		    if (!hg_stack_push(ostack, qexecobj)) {
+			    hg_vm_set_error(vm, qparent,
+					    HG_VM_e_stackoverflow);
+			    return FALSE;
+		    }
+		    hg_stack_pop(estack, &err);
+		    break;
+	    case HG_TYPE_FILE:
+		    file = _HG_VM_LOCK (vm, qexecobj, &err);
+		    if (file == NULL)
+			    break;
+		    hg_scanner_attach_file(vm->scanner, file);
+		    if (!hg_scanner_scan(vm->scanner,
+					 hg_vm_get_mem(vm),
+					 &err)) {
+			    hg_vm_set_error(vm, qparent,
+					    HG_VM_e_syntaxerror);
+			    retval = FALSE;
+			    break;
+		    }
+		    qresult = hg_scanner_get_token(vm->scanner);
+		    hg_vm_quark_set_attributes(vm, &qresult);
+#define HG_VM_DEBUG
+#if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
+		    G_STMT_START {
+			    hg_quark_t qs;
+			    hg_string_t *s;
+
+			    qs = hg_vm_quark_to_string(vm, qresult, (gpointer *)&s, &err);
+			    if (err) {
+				    g_print("WW: Unable to look up the scanned object: %lx: %s", qresult, err->message);
+				    g_clear_error(&err);
+			    } else {
+				    g_print("II: scanning... %s [%s]\n",
+					    hg_string_get_static_cstr(s),
+					    hg_quark_get_type_name(qresult));
+				    hg_vm_mfree(vm, qs);
+			    }
+		    } G_STMT_END;
+#endif
+		    /* exception for processing the executable array */
+		    if (HG_IS_QNAME (qresult) &&
+			(name = hg_name_lookup(vm->name, qresult)) != NULL) {
+			    if (!strcmp(name, "{")) {
+				    qresult = hg_vm_step_in_exec_array(vm, qparent);
+				    if (qresult == Qnil)
+					    return FALSE;
+			    } else if (!strcmp(name, "}")) {
+				    gssize i, idx = 0;
+				    hg_quark_t q;
+				    hg_array_t *a;
+
+				    while (1) {
+					    q = hg_stack_index(ostack, idx, &err);
+					    if (err) {
+						    hg_vm_set_error(vm, qparent,
+								    HG_VM_e_unmatchedmark);
+						    goto finalize;
+					    }
+					    if (HG_IS_QMARK (q))
+						    break;
+					    idx++;
+				    }
+				    qresult = hg_array_new(hg_vm_get_mem(vm),
+							   idx,
+							   (gpointer *)&a);
+				    if (qresult == Qnil) {
+					    hg_vm_set_error(vm, qparent,
+							    HG_VM_e_VMerror);
+					    return FALSE;
+				    }
+				    for (i = idx; i > 0; i--) {
+					    q = hg_stack_index(ostack, i, &err);
+					    if (err)
+						    goto finalize;
+					    hg_array_set(a, q, idx - i, &err);
+					    if (err)
+						    goto finalize;
+				    }
+				    for (i = 0; i <= idx; i++) {
+					    hg_stack_pop(ostack, &err);
+					    if (err) {
+						    hg_vm_set_error(vm, qparent,
+								    HG_VM_e_stackunderflow);
+						    goto finalize;
+					    }
+				    }
+				    if (!hg_stack_push(ostack, qresult))
+					    hg_vm_set_error(vm, qparent, HG_VM_e_stackoverflow);
+
+				    return FALSE;
+			    }
+		    }
+		    hg_stack_push(estack, qresult);
+		    break;
+	    default:
+		    g_warning("Unknown object type: %d\n", hg_quark_get_type(qexecobj));
+		    return FALSE;
+	}
+
+  finalize:
+	if (err) {
+		g_warning("%s (code: %d)",
+			  err->message,
+			  err->code);
+		if (!hg_vm_has_error(vm))
+			hg_vm_set_error(vm, qexecobj, HG_VM_e_VMerror);
+		g_error_free(err);
+		retval = FALSE;
+	}
+
+	return retval;
+}
+
+static hg_quark_t
+hg_vm_step_in_exec_array(hg_vm_t    *vm,
+			 hg_quark_t  qparent)
+{
+	hg_stack_t *old_ostack;
+	hg_quark_t retval = Qnil;
+
+	old_ostack = vm->stacks[HG_VM_STACK_OSTACK];
+	vm->stacks[HG_VM_STACK_OSTACK] = hg_stack_new(hg_vm_get_mem(vm),
+						      65535);
+
+	hg_stack_push(vm->stacks[HG_VM_STACK_OSTACK],
+		      HG_QMARK);
+
+	while (hg_vm_stepi_in_exec_array(vm, qparent));
+	if (!hg_vm_has_error(vm)) {
+		retval = hg_stack_index(vm->stacks[HG_VM_STACK_OSTACK],
+					0, NULL);
+	}
+
+	hg_stack_free(vm->stacks[HG_VM_STACK_OSTACK]);
+	vm->stacks[HG_VM_STACK_OSTACK] = old_ostack;
+
+	return retval;
 }
 
 /*< public >*/
@@ -1131,9 +1319,9 @@ hg_vm_stepi(hg_vm_t  *vm,
 	hg_stack_t *estack, *ostack;
 	hg_quark_t qexecobj, qresult;
 	hg_file_t *file;
-	hg_mem_t *m;
 	GError *err = NULL;
 	gboolean retval = TRUE;
+	const gchar *name;
 
 	hg_return_val_if_fail (vm != NULL, FALSE);
 	hg_return_val_if_fail (is_proceeded != NULL, FALSE);
@@ -1144,7 +1332,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 	qexecobj = hg_stack_index(estack, 0, &err);
 	*is_proceeded = FALSE;
 	if (err) {
-		/* XXX */
+		hg_vm_set_error(vm, Qnil, HG_VM_e_stackunderflow);
 		return FALSE;
 	}
 
@@ -1157,8 +1345,9 @@ hg_vm_stepi(hg_vm_t  *vm,
 	    case HG_TYPE_DICT:
 	    case HG_TYPE_MARK:
 	    push_stack:
-		    if (hg_stack_push(ostack, qexecobj) == FALSE) {
-			    retval = FALSE;
+		    if (!hg_stack_push(ostack, qexecobj)) {
+			    hg_vm_set_error(vm, qexecobj, HG_VM_e_stackoverflow);
+			    return TRUE;
 		    }
 		    hg_stack_pop(estack, &err);
 		    *is_proceeded = TRUE;
@@ -1214,10 +1403,8 @@ hg_vm_stepi(hg_vm_t  *vm,
 			    hg_string_t *s;
 
 			    s = _HG_VM_LOCK (vm, qexecobj, &err);
-			    if (s == NULL) {
-				    /* XXX */
-				    return FALSE;
-			    }
+			    if (s == NULL)
+				    break;
 			    qresult = hg_file_new_with_string(hg_vm_get_mem(vm),
 							      "%sfile",
 							      HG_FILE_IO_MODE_READ,
@@ -1245,12 +1432,9 @@ hg_vm_stepi(hg_vm_t  *vm,
 		    *is_proceeded = TRUE;
 		    break;
 	    case HG_TYPE_FILE:
-		    m = _hg_vm_get_mem(vm, qexecobj);
-		    file = hg_mem_lock_object(m, qexecobj);
-		    if (file == NULL) {
-			    /* XXX */
-			    return FALSE;
-		    }
+		    file = _HG_VM_LOCK (vm, qexecobj, &err);
+		    if (file == NULL)
+			    break;
 		    hg_scanner_attach_file(vm->scanner, file);
 		    if (!hg_scanner_scan(vm->scanner,
 					 hg_vm_get_mem(vm),
@@ -1286,6 +1470,18 @@ hg_vm_stepi(hg_vm_t  *vm,
 			    }
 		    } G_STMT_END;
 #endif
+		    /* exception for processing the executable array */
+		    if (HG_IS_QNAME (qresult) &&
+			(name = hg_name_lookup(vm->name, qresult)) != NULL) {
+			    if (!strcmp(name, "{")) {
+				    qresult = hg_vm_step_in_exec_array(vm, qexecobj);
+				    if (qresult == Qnil)
+					    break;
+			    } else if (!strcmp(name, "}")) {
+				    hg_vm_set_error(vm, qexecobj, HG_VM_e_syntaxerror);
+				    return TRUE;
+			    }
+		    }
 		    hg_stack_push(estack, qresult);
 		    break;
 	    default:
@@ -1297,6 +1493,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 		hg_vm_set_error(vm, qexecobj, HG_VM_e_VMerror);
 		/* XXX */
 		g_error_free(err);
+		retval = FALSE;
 	}
 
 	return retval;
@@ -1644,6 +1841,22 @@ hg_vm_get_systemdict(hg_vm_t *vm)
 #endif
 
 /**
+ * hg_vm_has_error:
+ * @vm:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_vm_has_error(hg_vm_t *vm)
+{
+	hg_return_val_if_fail (vm != NULL, TRUE);
+
+	return vm->has_error;
+}
+
+/**
  * hg_vm_set_error:
  * @vm:
  * @qdata:
@@ -1674,11 +1887,8 @@ hg_vm_set_error(hg_vm_t       *vm,
 		gchar *scommand, *swhere;
 
 		derror = _HG_VM_LOCK (vm, vm->qerror, &err);
-		if (derror == NULL) {
-			g_set_error(&err, HG_ERROR, EINVAL,
-				    "Unable to obtain $error object.");
+		if (derror == NULL)
 			goto fatal_error;
-		}
 		qresult_err = hg_dict_lookup(derror, qerrorname);
 		qresult_cmd = hg_dict_lookup(derror, qcommand);
 		_HG_VM_UNLOCK (vm, vm->qerror);
