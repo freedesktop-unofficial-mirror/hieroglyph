@@ -100,7 +100,7 @@ _hg_array_maybe_expand(hg_array_t *array)
 	    array->offset != 0)
 		return TRUE;
 
-	hg_return_val_if_fail ((array->length + 1) < array->allocated_size, FALSE);
+	hg_return_val_if_fail ((array->length + 1) <= array->allocated_size, FALSE);
 
 	if (array->qcontainer == Qnil) {
 		array->qcontainer = hg_mem_alloc(array->o.mem,

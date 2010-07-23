@@ -1,5 +1,7 @@
 2010-07-23  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgarray.c (_hg_array_maybe_expand): fix a typo.
+
 	* hieroglyph/hgscanner.l (hg_scanner_attach_file): unlock the object
 	if different file object is being attached.
 
