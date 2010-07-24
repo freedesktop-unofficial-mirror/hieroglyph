@@ -1,5 +1,8 @@
 2010-07-24  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgquark.h (_hg_quark_type_bit_set_bits): fix a typo
+	to not getting rid of the function by the optimization.
+
 	* .gdbinit (hgquarkinfo): update to show the permissions.
 
 	* hieroglyph/hgvm.c (_hg_vm_stack_real_dump): don't prepent to dump

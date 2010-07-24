@@ -27,8 +27,8 @@
 #include <hieroglyph/hgtypes.h>
 #include <hieroglyph/hgerror.h>
 
-G_BEGIN_DECLS
 
+G_BEGIN_DECLS
 
 #define HG_QUARK_TYPE_BIT_SHIFT		32
 
@@ -91,39 +91,41 @@ G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_validate_bits(hg_quark_t           v
 G_INLINE_FUNC void       _hg_quark_type_bit_set_bits     (hg_quark_t          *x,
                                                           hg_quark_type_bit_t  begin,
                                                           hg_quark_type_bit_t  end,
-                                                          hg_quark_t           v) G_GNUC_CONST;
+                                                          hg_quark_t           v);
 
 G_INLINE_FUNC hg_quark_t
 _hg_quark_type_bit_get(hg_quark_t v)
 {
-	return v >> HG_QUARK_TYPE_BIT_SHIFT;
+	return (v >> HG_QUARK_TYPE_BIT_SHIFT);
 }
 
 G_INLINE_FUNC hg_quark_t
 _hg_quark_type_bit_shift(hg_quark_t v)
 {
-	return v << HG_QUARK_TYPE_BIT_SHIFT;
+	return (v << HG_QUARK_TYPE_BIT_SHIFT);
 }
 
 G_INLINE_FUNC hg_quark_t
 _hg_quark_type_bit_get_value(hg_quark_t v)
 {
-	return v & ((1LL << HG_QUARK_TYPE_BIT_SHIFT) - 1);
+	return (v & (_hg_quark_type_bit_shift(1LL) - 1));
 }
 
 G_INLINE_FUNC hg_quark_t
 _hg_quark_type_bit_mask_bits(hg_quark_type_bit_t begin,
 			     hg_quark_type_bit_t end)
 {
-	return ((1LL << (end - begin + 1)) - 1) << begin;
+	hg_return_val_if_fail (begin <= end, Qnil);
+
+	return (((1LL << (end - begin + 1)) - 1) << begin);
 }
 
 G_INLINE_FUNC hg_quark_t
-_hg_quark_type_bit_clear_bits(hg_quark_t        v,
+_hg_quark_type_bit_clear_bits(hg_quark_t          v,
 			      hg_quark_type_bit_t begin,
 			      hg_quark_type_bit_t end)
 {
-	return _hg_quark_type_bit_get(v) & ~(_hg_quark_type_bit_mask_bits(begin, end));
+	return (_hg_quark_type_bit_get(v) & ~(_hg_quark_type_bit_mask_bits(begin, end)));
 }
 
 G_INLINE_FUNC gint
@@ -280,6 +282,8 @@ G_INLINE_FUNC void
 hg_quark_set_executable(hg_quark_t *quark,
 			gboolean    flag)
 {
+	hg_return_if_fail (quark != NULL);
+
 	_hg_quark_type_bit_set_bits(quark,
 				    HG_QUARK_TYPE_BIT_EXECUTABLE,
 				    HG_QUARK_TYPE_BIT_EXECUTABLE,
@@ -313,6 +317,8 @@ G_INLINE_FUNC void
 hg_quark_set_readable(hg_quark_t *quark,
 		      gboolean    flag)
 {
+	hg_return_if_fail (quark != NULL);
+
 	_hg_quark_type_bit_set_bits(quark,
 				    HG_QUARK_TYPE_BIT_READABLE,
 				    HG_QUARK_TYPE_BIT_READABLE,
@@ -346,6 +352,8 @@ G_INLINE_FUNC void
 hg_quark_set_writable(hg_quark_t *quark,
 		      gboolean    flag)
 {
+	hg_return_if_fail (quark != NULL);
+
 	_hg_quark_type_bit_set_bits(quark,
 				    HG_QUARK_TYPE_BIT_WRITABLE,
 				    HG_QUARK_TYPE_BIT_WRITABLE,
@@ -377,12 +385,14 @@ hg_quark_is_writable(hg_quark_t quark)
  *
  * FIXME
  */
-G_INLINE_FUNC
-void hg_quark_set_access_bits(hg_quark_t *quark,
-			      gboolean    readable,
-			      gboolean    writable,
-			      gboolean    executable)
+G_INLINE_FUNC void
+hg_quark_set_access_bits(hg_quark_t *quark,
+			 gboolean    readable,
+			 gboolean    writable,
+			 gboolean    executable)
 {
+	hg_return_if_fail (quark != NULL);
+
 	_hg_quark_type_bit_set_bits(quark,
 				    HG_QUARK_TYPE_BIT_ACCESS,
 				    HG_QUARK_TYPE_BIT_ACCESS_END,
