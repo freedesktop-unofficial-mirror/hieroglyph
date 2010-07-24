@@ -859,10 +859,17 @@ hg_vm_quark_set_attributes(hg_vm_t    *vm,
 	if (*qdata == Qnil)
 		return;
 	/* do not reset an exec bit here */
-	_hg_quark_type_bit_set_bits(qdata,
-				    HG_QUARK_TYPE_BIT_ACCESS1,
-				    HG_QUARK_TYPE_BIT_ACCESS_END,
-				    vm->qattributes);
+	if (hg_quark_is_simple_object(*qdata)) {
+		hg_quark_set_access_bits(qdata,
+					 (vm->qattributes & HG_VM_ATTRIBUTE1 (HG_VM_ACCESS_READABLE)),
+					 FALSE,
+					 hg_quark_is_executable(*qdata));
+	} else {
+		_hg_quark_type_bit_set_bits(qdata,
+					    HG_QUARK_TYPE_BIT_ACCESS1,
+					    HG_QUARK_TYPE_BIT_ACCESS_END,
+					    vm->qattributes);
+	}
 }
 
 /**
@@ -1733,6 +1740,7 @@ hg_vm_eval_from_file(hg_vm_t      *vm,
 		if (qfile == Qnil)
 			goto error;
 		hg_quark_set_executable(&qfile, TRUE);
+		hg_vm_quark_set_attributes(vm, &qfile);
 		retval = hg_vm_eval(vm, qfile, ostack, estack, dstack, &err);
 		hg_vm_mfree(vm, qfile);
 	  error:
