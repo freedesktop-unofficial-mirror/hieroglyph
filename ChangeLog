@@ -1,5 +1,9 @@
 2010-07-24  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgvm.c (hg_vm_quark_set_attributes): don't set a write
+	permission to the simple object.
+	(hg_vm_eval_from_file): set a default permission to the file object.
+
 	* hieroglyph/hgquark.h (_hg_quark_type_bit_set_bits): fix a typo
 	to not getting rid of the function by the optimization.
 

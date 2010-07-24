@@ -46,6 +46,28 @@ teardown(void)
 }
 
 /** test cases **/
+TDEF (bits)
+{
+	fail_unless(HG_QUARK_TYPE_BIT_TYPE == 0, "not matching a bit type");
+	fail_unless(HG_QUARK_TYPE_BIT_TYPE0 == 0, "not matching a bit type0");
+	fail_unless(HG_QUARK_TYPE_BIT_TYPE1 == 1, "not matching a bit type1");
+	fail_unless(HG_QUARK_TYPE_BIT_TYPE2 == 2, "not matching a bit type2");
+	fail_unless(HG_QUARK_TYPE_BIT_TYPE3 == 3, "not matching a bit type3");
+	fail_unless(HG_QUARK_TYPE_BIT_TYPE_END == 3, "not matching a bit type end");
+	fail_unless(HG_QUARK_TYPE_BIT_ACCESS == 4, "not matching a bit access");
+	fail_unless(HG_QUARK_TYPE_BIT_ACCESS0 == 4, "not matching a bit access0");
+	fail_unless(HG_QUARK_TYPE_BIT_ACCESS1 == 5, "not matching a bit access1");
+	fail_unless(HG_QUARK_TYPE_BIT_ACCESS2 == 6, "not matching a bit access2");
+	fail_unless(HG_QUARK_TYPE_BIT_ACCESS_END == 6, "not matching a bit access end");
+	fail_unless(HG_QUARK_TYPE_BIT_EXECUTABLE == 4, "not matching a bit exec");
+	fail_unless(HG_QUARK_TYPE_BIT_READABLE == 5, "not matching a bit read");
+	fail_unless(HG_QUARK_TYPE_BIT_WRITABLE == 6, "not matching a bit write");
+	fail_unless(HG_QUARK_TYPE_BIT_MEM_ID == 7, "not matching a bit mem id");
+	fail_unless(HG_QUARK_TYPE_BIT_MEM_ID0 == 7, "not matching a bit mem id0");
+	fail_unless(HG_QUARK_TYPE_BIT_MEM_ID1 == 8, "not matching a bit mem id1");
+	fail_unless(HG_QUARK_TYPE_BIT_MEM_ID_END == 8, "not matching a bit mem id end");
+} TEND
+
 TDEF (hg_quark_new)
 {
 	hg_quark_t q = hg_quark_new(HG_TYPE_INT, 0);
@@ -87,6 +109,69 @@ TDEF (hg_quark_is_executable)
 	hg_quark_set_executable(&q, TRUE);
 	fail_unless(q == 0x110000000aLL, "Unexpected result to set a exec bit");
 	fail_unless(hg_quark_is_executable(q), "Unexpected result to check if one is executable");
+	hg_quark_set_executable(&q, FALSE);
+	fail_unless(q == 0x10000000aLL, "Unexpected result to unset a exec bit");
+	fail_unless(!hg_quark_is_executable(q), "Unexpected result to check if one isn't executable");
+	hg_quark_set_readable(&q, TRUE);
+	hg_quark_set_writable(&q, TRUE);
+	hg_quark_set_executable(&q, TRUE);
+	fail_unless(q == 0x710000000aLL, "Unexpected result to set all bits");
+	fail_unless(hg_quark_is_executable(q), "Unexpected result to check if one is executable [take 2]");
+	hg_quark_set_executable(&q, FALSE);
+	fail_unless(q == 0x610000000aLL, "Unexpected result to unset a exec bit only");
+	fail_unless(!hg_quark_is_executable(q), "Unexpected result to check if one isn't executable [take 2]");
+} TEND
+
+TDEF (hg_quark_set_readable)
+{
+} TEND
+
+TDEF (hg_quark_is_readable)
+{
+	hg_quark_t q;
+
+	q = hg_quark_new(HG_TYPE_INT, 10);
+	fail_unless(q == 0x10000000aLL, "Unexpected result for integer quark");
+	hg_quark_set_readable(&q, TRUE);
+	fail_unless(q == 0x210000000aLL, "Unexpected result to set a read bit");
+	fail_unless(hg_quark_is_readable(q), "Unexpected result to check if one is readable");
+	hg_quark_set_readable(&q, FALSE);
+	fail_unless(q == 0x10000000aLL, "Unexpected result to unset a read bit");
+	fail_unless(!hg_quark_is_readable(q), "Unexpected result to check if one isn't readable");
+	hg_quark_set_readable(&q, TRUE);
+	hg_quark_set_writable(&q, TRUE);
+	hg_quark_set_executable(&q, TRUE);
+	fail_unless(q == 0x710000000aLL, "Unexpected result to set all bits");
+	fail_unless(hg_quark_is_readable(q), "Unexpected result to check if one is readable [take 2]");
+	hg_quark_set_readable(&q, FALSE);
+	fail_unless(q == 0x510000000aLL, "Unexpected result to unset a read bit only");
+	fail_unless(!hg_quark_is_readable(q), "Unexpected result to check if one isn't readable [take 2]");
+} TEND
+
+TDEF (hg_quark_set_writable)
+{
+} TEND
+
+TDEF (hg_quark_is_writable)
+{
+	hg_quark_t q;
+
+	q = hg_quark_new(HG_TYPE_INT, 10);
+	fail_unless(q == 0x10000000aLL, "Unexpected result for integer quark");
+	hg_quark_set_writable(&q, TRUE);
+	fail_unless(q == 0x410000000aLL, "Unexpected result to set a write bit");
+	fail_unless(hg_quark_is_writable(q), "Unexpected result to check if one is writable");
+	hg_quark_set_writable(&q, FALSE);
+	fail_unless(q == 0x10000000aLL, "Unexpected result to unset a write bit");
+	fail_unless(!hg_quark_is_writable(q), "Unexpected result to check if one isn't writable");
+	hg_quark_set_readable(&q, TRUE);
+	hg_quark_set_writable(&q, TRUE);
+	hg_quark_set_executable(&q, TRUE);
+	fail_unless(q == 0x710000000aLL, "Unexpected result to set all bits");
+	fail_unless(hg_quark_is_writable(q), "Unexpected result to check if one is writable [take 2]");
+	hg_quark_set_writable(&q, FALSE);
+	fail_unless(q == 0x310000000aLL, "Unexpected result to unset a write bit only");
+	fail_unless(!hg_quark_is_writable(q), "Unexpected result to check if one isn't writable [take 2]");
 } TEND
 
 /****/
@@ -98,12 +183,17 @@ hieroglyph_suite(void)
 
 	tcase_add_checked_fixture(tc, setup, teardown);
 
+	T (bits);
 	T (hg_quark_new);
 	T (hg_quark_get_type);
 	T (hg_quark_get_value);
 	T (hg_quark_is_simple_object);
 	T (hg_quark_set_executable);
 	T (hg_quark_is_executable);
+	T (hg_quark_set_readable);
+	T (hg_quark_is_readable);
+	T (hg_quark_set_writable);
+	T (hg_quark_is_writable);
 
 	suite_add_tcase(s, tc);
 
