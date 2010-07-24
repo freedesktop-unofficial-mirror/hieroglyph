@@ -1,5 +1,7 @@
 2010-07-24  Akira TAGOH  <akira@tagoh.org>
 
+	* .gdbinit (hgquarkinfo): update to show the permissions.
+
 	* hieroglyph/hgvm.c (_hg_vm_stack_real_dump): don't prepent to dump
 	the stacks even if to_string failed.
 	(hg_vm_stepi_in_exec_array): fix a segfault when to_string failed.
