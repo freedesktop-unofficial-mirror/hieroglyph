@@ -80,15 +80,64 @@ _hg_object_array_free(hg_object_t *object)
 }
 
 static hg_quark_t
-_hg_object_array_copy(hg_object_t *object,
-		      gpointer    *ret)
+_hg_object_array_copy(hg_object_t              *object,
+		      hg_quark_iterate_func_t   func,
+		      gpointer                  user_data,
+		      gpointer                 *ret,
+		      GError                  **error)
 {
-	return Qnil;
+	hg_array_t *array = (hg_array_t *)object, *a;
+	hg_quark_t retval, q, qr;
+	gsize i, len;
+	GError *err = NULL;
+
+	len = hg_array_length(array);
+	retval = hg_array_new(array->o.mem,
+			      len,
+			      (gpointer *)&a);
+	if (retval != Qnil) {
+		for (i = 0; i < len; i++) {
+			q = hg_array_get(array, i, &err);
+			if (err)
+				goto finalize;
+			qr = func(q, user_data, NULL, &err);
+			if (err)
+				goto finalize;
+			hg_array_set(a, qr, i, &err);
+			if (err)
+				goto finalize;
+		}
+		if (ret)
+			*ret = a;
+		else
+			hg_mem_unlock_object(a->o.mem, retval);
+	} else {
+		g_set_error(&err, HG_ERROR, ENOMEM,
+			    "Out of memory");
+	}
+  finalize:
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s (code: %d)",
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+
+		retval = Qnil;
+	}
+
+	return retval;
 }
 
 static hg_quark_t
-_hg_object_array_to_string(hg_object_t *object,
-			   gpointer    *ret)
+_hg_object_array_to_string(hg_object_t              *object,
+			   hg_quark_iterate_func_t   func,
+			   gpointer                  user_data,
+			   gpointer                 *ret,
+			   GError                  **error)
 {
 	return Qnil;
 }

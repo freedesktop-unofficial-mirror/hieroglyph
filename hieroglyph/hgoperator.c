@@ -329,7 +329,11 @@ G_STMT_START {
 		return FALSE;
 	}
 	if (HG_BOOL (arg0)) {
-		q = hg_vm_quark_copy(vm, arg1, NULL);
+		q = hg_vm_quark_copy(vm, arg1, NULL, error);
+		if (error && *error) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
 		STACK_PUSH (estack, q);
 		hg_stack_roll(estack, 2, 1, error);
 	}

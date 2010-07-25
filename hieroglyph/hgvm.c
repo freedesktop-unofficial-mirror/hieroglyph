@@ -402,6 +402,24 @@ hg_vm_step_in_exec_array(hg_vm_t    *vm,
 	return retval;
 }
 
+static hg_quark_t
+_hg_vm_quark_iterate_copy(hg_quark_t   qdata,
+			  gpointer     user_data,
+			  gpointer    *ret,
+			  GError     **error)
+{
+	return hg_vm_quark_copy((hg_vm_t *)user_data, qdata, ret, error);
+}
+
+static hg_quark_t
+_hg_vm_quark_iterate_to_string(hg_quark_t   qdata,
+			       gpointer     user_data,
+			       gpointer    *ret,
+			       GError     **error)
+{
+	return hg_vm_quark_to_string((hg_vm_t *)user_data, qdata, ret, error);
+}
+
 /*< public >*/
 /**
  * hg_vm_init:
@@ -678,20 +696,23 @@ hg_vm_unlock_object(hg_vm_t    *vm,
  * @vm:
  * @qdata:
  * @ret:
+ * @error:
  *
  * FIXME
  *
  * Returns:
  */
 hg_quark_t
-hg_vm_quark_copy(hg_vm_t    *vm,
-		 hg_quark_t  qdata,
-		 gpointer   *ret)
+hg_vm_quark_copy(hg_vm_t     *vm,
+		 hg_quark_t   qdata,
+		 gpointer    *ret,
+		 GError     **error)
 {
 	hg_object_t *o;
 	hg_quark_t retval = Qnil;
+	GError *err = NULL;
 
-	hg_return_val_if_fail (vm != NULL, Qnil);
+	hg_return_val_with_gerror_if_fail (vm != NULL, Qnil, error);
 
 	if (qdata == Qnil)
 		return Qnil;
@@ -700,11 +721,21 @@ hg_vm_quark_copy(hg_vm_t    *vm,
 	    HG_IS_QOPER (qdata))
 		return qdata;
 
-	o = _HG_VM_LOCK (vm, qdata, NULL);
+	o = _HG_VM_LOCK (vm, qdata, &err);
 	if (o) {
-		retval = hg_object_copy(o, ret);
+		retval = hg_object_copy(o, _hg_vm_quark_iterate_copy, vm, ret, &err);
 
 		_HG_VM_UNLOCK (vm, qdata);
+	}
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s (code: %d)",
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
 	}
 
 	return retval;
@@ -715,6 +746,7 @@ hg_vm_quark_copy(hg_vm_t    *vm,
  * @vm:
  * @qdata:
  * @ret:
+ * @error:
  *
  * FIXME
  *
@@ -804,9 +836,9 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 			    case HG_TYPE_FILE:
 			    case HG_TYPE_SAVE:
 			    case HG_TYPE_STACK:
-				    o = _HG_VM_LOCK (vm, qdata, NULL);
+				    o = _HG_VM_LOCK (vm, qdata, &err);
 				    if (o) {
-					    retval = hg_object_to_string(o, ret);
+					    retval = hg_object_to_string(o, _hg_vm_quark_iterate_to_string, vm, ret, &err);
 
 					    _HG_VM_UNLOCK (vm, qdata);
 				    }
@@ -1989,12 +2021,9 @@ hg_vm_set_error(hg_vm_t       *vm,
 		goto fatal_error;
 	}
 
-	q = hg_vm_quark_copy(vm, qhandler, NULL);
-	if (q == Qnil) {
-		g_set_error(&err, HG_ERROR, ENOMEM,
-			    "Out of memory.");
+	q = hg_vm_quark_copy(vm, qhandler, NULL, &err);
+	if (err)
 		goto fatal_error;
-	}
 	hg_stack_push(vm->stacks[HG_VM_STACK_ESTACK], q);
 	hg_stack_push(vm->stacks[HG_VM_STACK_OSTACK], qdata);
 	vm->has_error = TRUE;

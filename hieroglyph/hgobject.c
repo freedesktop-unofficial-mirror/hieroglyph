@@ -194,51 +194,65 @@ hg_object_free(hg_mem_t   *mem,
 /**
  * hg_object_copy:
  * @object:
+ * @func:
+ * @user_data:
  * @ret:
+ * @error:
  *
  * FIXME
  *
  * Returns:
  */
 hg_quark_t
-hg_object_copy(hg_object_t *object,
-	       gpointer    *ret)
+hg_object_copy(hg_object_t              *object,
+	       hg_quark_iterate_func_t   func,
+	       gpointer                  user_data,
+	       gpointer                 *ret,
+	       GError                  **error)
 {
 	hg_object_vtable_t *v;
 
-	hg_return_val_if_fail (__hg_object_is_initialized, Qnil);
-	hg_return_val_if_fail (object != NULL, Qnil);
-	hg_return_val_if_fail (object->type < HG_TYPE_END, Qnil);
-	hg_return_val_if_fail (__hg_object_vtables[object->type] != NULL, Qnil);
+	hg_return_val_with_gerror_if_fail (__hg_object_is_initialized, Qnil, error);
+	hg_return_val_with_gerror_if_fail (object != NULL, Qnil, error);
+	hg_return_val_with_gerror_if_fail (object->type < HG_TYPE_END, Qnil, error);
+	hg_return_val_with_gerror_if_fail (__hg_object_vtables[object->type] != NULL, Qnil, error);
+	hg_return_val_with_gerror_if_fail (func != NULL, Qnil, error);
 
 	v = __hg_object_vtables[object->type];
 
-	return v->copy(object, ret);
+	return v->copy(object, func, user_data, ret, error);
 }
 
 /**
  * hg_object_to_string:
  * @object:
+ * @func:
+ * @user_data:
  * @ret:
+ * @error:
  *
  * FIXME
  *
  * Returns:
  */
 hg_quark_t
-hg_object_to_string(hg_object_t *object,
-		    gpointer    *ret)
+hg_object_to_string(hg_object_t              *object,
+		    hg_quark_iterate_func_t   func,
+		    gpointer                  user_data,
+		    gpointer                 *ret,
+		    GError                  **error)
 {
 	hg_object_vtable_t *v;
 
-	hg_return_val_if_fail (__hg_object_is_initialized, Qnil);
-	hg_return_val_if_fail (object != NULL, Qnil);
-	hg_return_val_if_fail (object->type < HG_TYPE_END, Qnil);
-	hg_return_val_if_fail (__hg_object_vtables[object->type] != NULL, Qnil);
+	hg_return_val_with_gerror_if_fail (__hg_object_is_initialized, Qnil, error);
+	hg_return_val_with_gerror_if_fail (object != NULL, Qnil, error);
+	hg_return_val_with_gerror_if_fail (object->type < HG_TYPE_END, Qnil, error);
+	hg_return_val_with_gerror_if_fail (__hg_object_vtables[object->type] != NULL, Qnil, error);
+	hg_return_val_with_gerror_if_fail (func != NULL, Qnil, error);
 
 	if (ret)
 		*ret = NULL;
 	v = __hg_object_vtables[object->type];
 
-	return v->to_string(object, ret);
+	return v->to_string(object, func, user_data, ret, error);
 }

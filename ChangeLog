@@ -1,3 +1,15 @@
+2010-07-26  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgvm.c (hg_vm_quark_copy): changed API.
+	(hg_vm_quark_to_string): likewise.
+
+	* hieroglyph/hgquark.h (hg_quark_iterate_func_t): new.
+
+	* hieroglyph/hgobject.c (hg_object_copy): changed API.
+	(hg_object_to_string): likewise.
+
+	* hieroglyph/hgarray.c (_hg_object_array_copy): implemented.
+
 2010-07-24  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgvm.c (hg_vm_quark_set_attributes): don't set a write

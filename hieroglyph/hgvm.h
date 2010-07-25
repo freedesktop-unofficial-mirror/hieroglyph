@@ -136,7 +136,8 @@ void               hg_vm_unlock_object         (hg_vm_t            *vm,
 						hg_quark_t          qdata);
 hg_quark_t         hg_vm_quark_copy            (hg_vm_t            *vm,
 						hg_quark_t          qdata,
-						gpointer           *ret);
+						gpointer           *ret,
+						GError            **error);
 hg_quark_t         hg_vm_quark_to_string       (hg_vm_t            *vm,
 						hg_quark_t          qdata,
 						gpointer           *ret,

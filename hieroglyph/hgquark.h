@@ -32,6 +32,10 @@ G_BEGIN_DECLS
 
 #define HG_QUARK_TYPE_BIT_SHIFT		32
 
+typedef hg_quark_t (* hg_quark_iterate_func_t)	(hg_quark_t   qdata,
+						 gpointer     user_data,
+						 gpointer    *ret,
+						 GError     **error);
 typedef enum _hg_quark_type_bit_t	hg_quark_type_bit_t;
 typedef enum _hg_type_t			hg_type_t;
 
@@ -74,20 +78,20 @@ enum _hg_type_t {
 	HG_TYPE_END /* 15 */
 };
 
-G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_get          (hg_quark_t           v) G_GNUC_CONST;
-G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_shift        (hg_quark_t           v) G_GNUC_CONST;
-G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_get_value    (hg_quark_t           v) G_GNUC_CONST;
+G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_get          (hg_quark_t           v);
+G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_shift        (hg_quark_t           v);
+G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_get_value    (hg_quark_t           v);
 G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_mask_bits    (hg_quark_type_bit_t  begin,
-							  hg_quark_type_bit_t  end) G_GNUC_CONST;
+							  hg_quark_type_bit_t  end);
 G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_clear_bits   (hg_quark_t           v,
                                                           hg_quark_type_bit_t  begin,
-                                                          hg_quark_type_bit_t  end) G_GNUC_CONST;
+                                                          hg_quark_type_bit_t  end);
 G_INLINE_FUNC gint       _hg_quark_type_bit_get_bits     (hg_quark_t           v,
                                                           hg_quark_type_bit_t  begin,
-                                                          hg_quark_type_bit_t  end) G_GNUC_CONST;
+                                                          hg_quark_type_bit_t  end);
 G_INLINE_FUNC hg_quark_t _hg_quark_type_bit_validate_bits(hg_quark_t           v,
                                                           hg_quark_type_bit_t  begin,
-                                                          hg_quark_type_bit_t  end) G_GNUC_CONST;
+                                                          hg_quark_type_bit_t  end);
 G_INLINE_FUNC void       _hg_quark_type_bit_set_bits     (hg_quark_t          *x,
                                                           hg_quark_type_bit_t  begin,
                                                           hg_quark_type_bit_t  end,

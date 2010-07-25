@@ -78,15 +78,21 @@ _hg_object_string_free(hg_object_t *object)
 }
 
 static hg_quark_t
-_hg_object_string_copy(hg_object_t *object,
-		       gpointer    *ret)
+_hg_object_string_copy(hg_object_t              *object,
+		       hg_quark_iterate_func_t   func,
+		       gpointer                  user_data,
+		       gpointer                 *ret,
+		       GError                  **error)
 {
 	return Qnil;
 }
 
 static hg_quark_t
-_hg_object_string_to_string(hg_object_t *object,
-			    gpointer    *ret)
+_hg_object_string_to_string(hg_object_t              *object,
+			    hg_quark_iterate_func_t   func,
+			    gpointer                  user_data,
+			    gpointer                 *ret,
+			    GError                  **error)
 {
 	return Qnil;
 }
