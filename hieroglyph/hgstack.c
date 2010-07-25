@@ -81,14 +81,13 @@ _hg_object_stack_copy(hg_object_t              *object,
 	return Qnil;
 }
 
-static hg_quark_t
-_hg_object_stack_to_string(hg_object_t              *object,
-			   hg_quark_iterate_func_t   func,
-			   gpointer                  user_data,
-			   gpointer                 *ret,
-			   GError                  **error)
+static gchar *
+_hg_object_stack_to_cstr(hg_object_t              *object,
+			 hg_quark_iterate_func_t   func,
+			 gpointer                  user_data,
+			 GError                  **error)
 {
-	return Qnil;
+	return g_strdup("-stack-");
 }
 
 static hg_list_t *

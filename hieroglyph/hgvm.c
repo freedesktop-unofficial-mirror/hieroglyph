@@ -332,11 +332,11 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 				    }
 				    hg_vm_quark_set_attributes(vm, &qresult);
 				    hg_quark_set_executable(&qresult, TRUE);
-				    for (i = idx; i > 0; i--) {
+				    for (i = idx - 1; i >= 0; i--) {
 					    q = hg_stack_index(ostack, i, &err);
 					    if (err)
 						    goto finalize;
-					    hg_array_set(a, q, idx - i, &err);
+					    hg_array_set(a, q, idx - i - 1, &err);
 					    if (err)
 						    goto finalize;
 				    }
@@ -412,12 +412,23 @@ _hg_vm_quark_iterate_copy(hg_quark_t   qdata,
 }
 
 static hg_quark_t
-_hg_vm_quark_iterate_to_string(hg_quark_t   qdata,
-			       gpointer     user_data,
-			       gpointer    *ret,
-			       GError     **error)
+_hg_vm_quark_iterate_to_cstr(hg_quark_t   qdata,
+			     gpointer     user_data,
+			     gpointer    *ret,
+			     GError     **error)
 {
-	return hg_vm_quark_to_string((hg_vm_t *)user_data, qdata, ret, error);
+	hg_vm_t *vm = (hg_vm_t *)user_data;
+	hg_string_t *s;
+	hg_quark_t q;
+	gchar *cstr = NULL;
+
+	q = hg_vm_quark_to_string(vm, qdata, (gpointer *)&s, error);
+	if (s) {
+		cstr = g_strdup(hg_string_get_static_cstr(s));
+	}
+	hg_vm_mfree(vm, q);
+
+	return HGPOINTER_TO_QUARK (cstr);
 }
 
 /*< public >*/
@@ -736,6 +747,11 @@ hg_vm_quark_copy(hg_vm_t     *vm,
 				  err->code);
 		}
 		g_error_free(err);
+	} else {
+		hg_quark_set_access_bits(&retval,
+					 hg_quark_is_readable(qdata),
+					 hg_quark_is_writable(qdata),
+					 hg_quark_is_executable(qdata));
 	}
 
 	return retval;
@@ -779,6 +795,7 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 		"-stack-",
 		NULL
 	};
+	gchar *cstr;
 
 	hg_return_val_if_fail (vm != NULL, Qnil);
 
@@ -838,7 +855,12 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 			    case HG_TYPE_STACK:
 				    o = _HG_VM_LOCK (vm, qdata, &err);
 				    if (o) {
-					    retval = hg_object_to_string(o, _hg_vm_quark_iterate_to_string, vm, ret, &err);
+					    cstr = hg_object_to_cstr(o, _hg_vm_quark_iterate_to_cstr, vm, &err);
+					    if (cstr && HG_IS_QARRAY (qdata) && hg_quark_is_executable(qdata)) {
+						    cstr[0] = '{';
+						    cstr[strlen(cstr)-1] = '}';
+					    }
+					    hg_string_append(s, cstr, -1, &err);
 
 					    _HG_VM_UNLOCK (vm, qdata);
 				    }

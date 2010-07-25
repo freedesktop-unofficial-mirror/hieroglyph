@@ -39,10 +39,9 @@ G_BEGIN_DECLS
 									gpointer                  user_data, \
 									gpointer                 *ret, \
 									GError                  **error); \
-	static hg_quark_t _hg_object_ ## _name_ ## _to_string          (hg_object_t              *object, \
+	static gchar    * _hg_object_ ## _name_ ## _to_cstr            (hg_object_t              *object, \
 									hg_quark_iterate_func_t   func, \
 									gpointer                  user_data, \
-									gpointer                 *ret, \
 									GError                  **error); \
 									\
 	static hg_object_vtable_t __hg_object_ ## _name_ ## _vtable = {	\
@@ -50,7 +49,7 @@ G_BEGIN_DECLS
 		.initialize          = _hg_object_ ## _name_ ## _initialize, \
 		.free                = _hg_object_ ## _name_ ## _free,	\
 		.copy                = _hg_object_ ## _name_ ## _copy,	\
-		.to_string           = _hg_object_ ## _name_ ## _to_string, \
+		.to_cstr             = _hg_object_ ## _name_ ## _to_cstr, \
 	};								\
 									\
 	hg_object_vtable_t *						\
@@ -101,10 +100,9 @@ struct _hg_object_vtable_t {
 					    gpointer                  user_data,
 					    gpointer                 *ret,
 					    GError                  **error);
-	hg_quark_t (* to_string)           (hg_object_t              *object,
+	gchar    * (* to_cstr)             (hg_object_t              *object,
 					    hg_quark_iterate_func_t   func,
 					    gpointer                  user_data,
-					    gpointer                 *ret,
 					    GError                  **error);
 };
 struct _hg_object_t {
@@ -114,26 +112,25 @@ struct _hg_object_t {
 };
 
 
-void       hg_object_init     (void);
-void       hg_object_tini     (void);
-gboolean   hg_object_register (hg_type_t                 type,
+void        hg_object_init    (void);
+void        hg_object_tini    (void);
+gboolean    hg_object_register(hg_type_t                 type,
 			       hg_object_vtable_t       *vtable);
-hg_quark_t hg_object_new      (hg_mem_t                 *mem,
+hg_quark_t  hg_object_new     (hg_mem_t                 *mem,
 			       gpointer                 *ret,
 			       hg_type_t                 type,
 			       gsize                     preallocated_size,
 			       ...);
-void       hg_object_free     (hg_mem_t                 *mem,
+void        hg_object_free    (hg_mem_t                 *mem,
 			       hg_quark_t                index);
-hg_quark_t hg_object_copy     (hg_object_t              *object,
+hg_quark_t  hg_object_copy    (hg_object_t              *object,
 			       hg_quark_iterate_func_t   func,
 			       gpointer                  user_data,
 			       gpointer                 *ret,
 			       GError                  **error);
-hg_quark_t hg_object_to_string(hg_object_t              *object,
+gchar      *hg_object_to_cstr (hg_object_t              *object,
 			       hg_quark_iterate_func_t   func,
 			       gpointer                  user_data,
-			       gpointer                 *ret,
 			       GError                  **error);
 
 G_END_DECLS

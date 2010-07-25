@@ -1,5 +1,16 @@
 2010-07-26  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgvm.c (hg_vm_stepi_in_exec_array): fix a typo.
+	(_hg_vm_quark_iterate_to_cstr): implemented.
+	(hg_vm_quark_copy): copy permissions.
+	(hg_vm_quark_to_string): update strings for executable array.
+
+	* hieroglyph/hgstring.c (_hg_object_string_to_cstr): implemented.
+
+	* hieroglyph/hgobject.c (hg_object_to_cstr): changed API.
+
+	* hieroglyph/hgarray.c (_hg_object_array_to_cstr): implemented.
+
 	* hieroglyph/hgvm.c (hg_vm_quark_copy): changed API.
 	(hg_vm_quark_to_string): likewise.
 

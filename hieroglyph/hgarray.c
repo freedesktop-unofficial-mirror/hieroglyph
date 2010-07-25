@@ -132,14 +132,43 @@ _hg_object_array_copy(hg_object_t              *object,
 	return retval;
 }
 
-static hg_quark_t
-_hg_object_array_to_string(hg_object_t              *object,
-			   hg_quark_iterate_func_t   func,
-			   gpointer                  user_data,
-			   gpointer                 *ret,
-			   GError                  **error)
+static gchar *
+_hg_object_array_to_cstr(hg_object_t              *object,
+			 hg_quark_iterate_func_t   func,
+			 gpointer                  user_data,
+			 GError                  **error)
 {
-	return Qnil;
+	hg_array_t *array = (hg_array_t *)object;
+	hg_quark_t q, qr;
+	gsize i, len;
+	GString *retval = g_string_new(NULL);
+	GError *err = NULL;
+	gchar *s;
+
+	g_string_append_c(retval, '[');
+	len = hg_array_length(array);
+	for (i = 0; i < len; i++) {
+		if (i != 0)
+			g_string_append_c(retval, ' ');
+		q = hg_array_get(array, i, &err);
+		if (err) {
+			g_string_append(retval, "...");
+			g_clear_error(&err);
+			continue;
+		}
+		qr = func(q, user_data, NULL, NULL);
+		s = (gchar *)HGQUARK_TO_POINTER (qr);
+		if (s == NULL) {
+			g_string_append(retval, "...");
+			continue;
+		} else {
+			g_string_append(retval, s);
+			g_free(s);
+		}
+	}
+	g_string_append_c(retval, ']');
+
+	return g_string_free(retval, FALSE);
 }
 
 static gboolean

@@ -87,14 +87,18 @@ _hg_object_string_copy(hg_object_t              *object,
 	return Qnil;
 }
 
-static hg_quark_t
-_hg_object_string_to_string(hg_object_t              *object,
-			    hg_quark_iterate_func_t   func,
-			    gpointer                  user_data,
-			    gpointer                 *ret,
-			    GError                  **error)
+static gchar *
+_hg_object_string_to_cstr(hg_object_t              *object,
+			  hg_quark_iterate_func_t   func,
+			  gpointer                  user_data,
+			  GError                  **error)
 {
-	return Qnil;
+	GString *retval = g_string_new(NULL);
+
+	g_string_append_printf(retval, "(%s)",
+			       hg_string_get_static_cstr((hg_string_t *)object));
+
+	return g_string_free(retval, FALSE);
 }
 
 static gboolean
@@ -409,6 +413,7 @@ hg_string_append(hg_string_t  *string,
  * @string:
  * @c:
  * @index:
+ * @error:
  *
  * FIXME
  *
