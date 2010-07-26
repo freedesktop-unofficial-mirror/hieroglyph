@@ -1408,6 +1408,28 @@ hg_vm_stepi(hg_vm_t  *vm,
 	}
 
   evaluate:
+#define HG_VM_DEBUG
+#if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
+	G_STMT_START {
+		hg_quark_t qs;
+		hg_string_t *s;
+
+		qs = hg_vm_quark_to_string(vm, qexecobj, (gpointer *)&s, &err);
+		if (qs == Qnil) {
+			if (err) {
+				g_print("W: Unable to look up the object being executed: %lx: %s\n", qexecobj, err->message);
+				g_clear_error(&err);
+			} else {
+				g_print("W: Unable to look up the object being executed: %lx\n", qexecobj);
+			}
+		} else {
+			g_print("I: executing... %s [%s]\n",
+				hg_string_get_static_cstr(s),
+				hg_quark_get_type_name(qexecobj));
+			hg_vm_mfree(vm, qs);
+		}
+	} G_STMT_END;
+#endif
 	switch (hg_quark_get_type(qexecobj)) {
 	    case HG_TYPE_NULL:
 	    case HG_TYPE_INT:
@@ -1959,6 +1981,21 @@ hg_vm_has_error(hg_vm_t *vm)
 }
 
 /**
+ * hg_vm_clear_error:
+ * @vm:
+ *
+ * FIXME
+ */
+void
+hg_vm_clear_error(hg_vm_t *vm)
+{
+	hg_return_if_fail (vm != NULL);
+
+	hg_vm_eval_from_cstring(vm, "$error begin /newerror false def /errorname null def end", NULL, NULL, NULL, NULL);
+	vm->has_error = FALSE;
+}
+
+/**
  * hg_vm_set_error:
  * @vm:
  * @qdata:
@@ -2098,6 +2135,57 @@ hg_vm_set_error(hg_vm_t       *vm,
 		}
 		abort();
 	} G_STMT_END;
+}
+
+/**
+ * hg_vm_set_error_from_gerror:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_vm_set_error_from_gerror(hg_vm_t    *vm,
+			    hg_quark_t  qdata,
+			    GError     *error)
+{
+	if (error == NULL) {
+		/* no error */
+	} else {
+		switch (error->code) {
+		    case 0:
+			    /* ??? */
+			    break;
+		    case EACCES:
+		    case EBADF:
+		    case EEXIST:
+		    case ENOTDIR:
+		    case ENOTEMPTY:
+		    case EPERM:
+		    case EROFS:
+			    return hg_vm_set_error(vm, qdata, HG_VM_e_invalidaccess);
+		    case EAGAIN:
+		    case EBUSY:
+		    case EIO:
+		    case ENOSPC:
+			    return hg_vm_set_error(vm, qdata, HG_VM_e_ioerror);
+		    case EMFILE:
+			    return hg_vm_set_error(vm, qdata, HG_VM_e_limitcheck);
+		    case ENAMETOOLONG:
+		    case ENODEV:
+		    case ENOENT:
+			    return hg_vm_set_error(vm, qdata, HG_VM_e_undefinedfilename);
+		    case ENOMEM:
+			    return hg_vm_set_error(vm, qdata, HG_VM_e_VMerror);
+		    default:
+			    g_warning("No matching error code for: %s (code: %d)",
+				      error->message, error->code);
+			    return hg_vm_set_error(vm, qdata, HG_VM_e_VMerror);
+		}
+	}
+
+	return TRUE;
 }
 
 /**

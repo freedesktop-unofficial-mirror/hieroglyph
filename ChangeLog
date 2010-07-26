@@ -1,5 +1,8 @@
 2010-07-26  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgvm.c (hg_vm_clear_error): new.
+	(hg_vm_set_error_from_gerror): new.
+
 	* hieroglyph/hgarray.c (hg_array_set): don't try to expand
 	if the index is less than the length of the array.
 

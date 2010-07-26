@@ -204,9 +204,13 @@ gboolean           hg_vm_startjob              (hg_vm_t            *vm,
 void               hg_vm_shutdown              (hg_vm_t            *vm,
 						gint                error_code);
 gboolean           hg_vm_has_error             (hg_vm_t            *vm);
+void               hg_vm_clear_error           (hg_vm_t            *vm);
 gboolean           hg_vm_set_error             (hg_vm_t            *vm,
 						hg_quark_t          qdata,
 						hg_vm_error_t       error);
+gboolean           hg_vm_set_error_from_gerror (hg_vm_t            *vm,
+						hg_quark_t          qdata,
+						GError             *error);
 void               hg_vm_stack_dump            (hg_vm_t            *vm,
 						hg_stack_t         *stack,
 						hg_file_t          *output);
