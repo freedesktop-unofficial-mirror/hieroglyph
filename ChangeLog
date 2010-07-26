@@ -1,3 +1,8 @@
+2010-07-27  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgarray.c (hg_array_get): return Qnil if index is out
+	of array.
+
 2010-07-26  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_get): implemented.

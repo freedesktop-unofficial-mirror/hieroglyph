@@ -320,6 +320,7 @@ hg_array_get(hg_array_t  *array,
 	hg_quark_t *container;
 
 	hg_return_val_with_gerror_if_fail (array != NULL, Qnil, error);
+	hg_return_val_with_gerror_if_fail (index < array->allocated_size, Qnil, error);
 
 	if (array->qcontainer == Qnil) {
 		/* emulate containing null */
