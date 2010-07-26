@@ -1218,7 +1218,102 @@ DEFUNC_UNIMPLEMENTED_OPER (flushfile);
 DEFUNC_UNIMPLEMENTED_OPER (for);
 DEFUNC_UNIMPLEMENTED_OPER (forall);
 DEFUNC_UNIMPLEMENTED_OPER (ge);
-DEFUNC_UNIMPLEMENTED_OPER (get);
+
+/* <array> <index> get <any>
+ * <packedarray> <index> get <any>
+ * <dict> <key> get <any>
+ * <string> <index> get <int>
+ */
+DEFUNC_OPER (get)
+G_STMT_START {
+	hg_quark_t arg0, arg1, q = Qnil;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+
+	if (!hg_quark_is_readable(arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+	if (HG_IS_QARRAY (arg0)) {
+		hg_array_t *a;
+		gssize index, len;
+
+		if (!HG_IS_QINT (arg1)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+			return FALSE;
+		}
+		a = HG_VM_LOCK (vm, arg0, error);
+		if (a == NULL) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
+		index = HG_INT (arg1);
+		len = hg_array_length(a);
+		if (index < 0 || index >= len) {
+			hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+			goto a_error;
+		}
+		q = hg_array_get(a, index, error);
+
+		retval = TRUE;
+	  a_error:
+		HG_VM_UNLOCK (vm, arg0);
+	} else if (HG_IS_QDICT (arg0)) {
+		hg_dict_t *d;
+
+		d = HG_VM_LOCK (vm, arg0, error);
+		if (d == NULL) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
+		q = hg_dict_lookup(d, arg1);
+		HG_VM_UNLOCK (vm, arg0);
+
+		if (q == Qnil) {
+			hg_vm_set_error(vm, qself, HG_VM_e_undefined);
+			return FALSE;
+		}
+		retval = TRUE;
+	} else if (HG_IS_QSTRING (arg0)) {
+		hg_string_t *s;
+		gssize index, len;
+		gchar c;
+
+		if (!HG_IS_QINT (arg1)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+			return FALSE;
+		}
+		s = HG_VM_LOCK (vm, arg0, error);
+		if (s == NULL) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
+		index = HG_INT (arg1);
+		len = hg_string_length(s);
+		if (index < 0 || index >= len) {
+			hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+			goto s_error;
+		}
+		c = hg_string_index(s, index);
+		q = HG_QINT (c);
+
+		retval = TRUE;
+	  s_error:
+		HG_VM_UNLOCK (vm, arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	hg_stack_pop(ostack, error);
+	hg_stack_pop(ostack, error);
+
+	STACK_PUSH (ostack, q);
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (getinterval);
 DEFUNC_UNIMPLEMENTED_OPER (grestore);
 DEFUNC_UNIMPLEMENTED_OPER (gsave);
@@ -1345,7 +1440,35 @@ DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (image);
 DEFUNC_UNIMPLEMENTED_OPER (imagemask);
-DEFUNC_UNIMPLEMENTED_OPER (index);
+
+/* <any> ... <n> index <any> ... */
+DEFUNC_OPER (index)
+G_STMT_START {
+	hg_quark_t arg0, q;
+	gsize n;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QINT (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	n = HG_INT (arg0);
+
+	if (n < 0 || (n + 1) >= hg_stack_depth(ostack)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		return FALSE;
+	}
+	q = hg_stack_index(ostack, n + 1, error);
+	hg_stack_pop(ostack, error);
+
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (ineofill);
 DEFUNC_UNIMPLEMENTED_OPER (infill);
 DEFUNC_UNIMPLEMENTED_OPER (initviewclip);
