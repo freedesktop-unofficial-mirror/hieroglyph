@@ -11,6 +11,7 @@
 	(_hg_operator_real_idiv): implemented.
 	(_hg_operator_real_put): implemented.
 	(_hg_operator_real_roll): implemented.
+	(_hg_operator_real_dup): implemented.
 
 	* hieroglyph/hgvm.c (hg_vm_stepi): push a copy to the estack for
 	a result of the name lookup.

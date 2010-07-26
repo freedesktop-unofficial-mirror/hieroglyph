@@ -1094,7 +1094,22 @@ DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (div);
 DEFUNC_UNIMPLEMENTED_OPER (dtransform);
-DEFUNC_UNIMPLEMENTED_OPER (dup);
+
+/* <any> dup <any> */
+DEFUNC_OPER (dup)
+G_STMT_START {
+	hg_quark_t arg0;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+
+	STACK_PUSH (ostack, arg0);
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (end);
 DEFUNC_UNIMPLEMENTED_OPER (eoclip);
 DEFUNC_UNIMPLEMENTED_OPER (eofill);
