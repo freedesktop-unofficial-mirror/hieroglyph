@@ -75,7 +75,7 @@ _hg_object_dict_copy(hg_object_t              *object,
 		     gpointer                 *ret,
 		     GError                  **error)
 {
-	return Qnil;
+	return object->self;
 }
 
 static gchar *

@@ -1,5 +1,8 @@
 2010-07-26  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgdict.c (_hg_object_dict_copy): return itself instead of
+	a copy.
+
 	* hieroglyph/hgstring.c (hg_string_make_substring): new.
 	(hg_string_copy_as_substring): new.
 
