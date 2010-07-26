@@ -1,5 +1,7 @@
 2010-07-26  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgnull.h (HG_QNULL): deal with null differently to Qnil.
+
 	* hieroglyph/hgdict.c (_hg_object_dict_copy): return itself instead of
 	a copy.
 
