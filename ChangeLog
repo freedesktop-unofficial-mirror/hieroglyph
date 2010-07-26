@@ -1,5 +1,12 @@
 2010-07-26  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (_hg_operator_real_bind): implemented.
+	(_hg_operator_real_file): implemented.
+	(_hg_operator_real_known): return a bool value if the given name is
+	really in dictionaries.
+	(REG_OPER): set a exec bit.
+	(REG_PRIV_OPER): likewise.
+
 	* hieroglyph/hgvm.c (hg_vm_clear_error): new.
 	(hg_vm_set_error_from_gerror): new.
 

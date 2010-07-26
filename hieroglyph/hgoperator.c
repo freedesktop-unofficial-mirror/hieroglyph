@@ -30,6 +30,7 @@
 #include "hgdict.h"
 #include "hgint.h"
 #include "hgname.h"
+#include "hgnull.h"
 #include "hgquark.h"
 #include "hgvm.h"
 #include "hgoperator.h"
@@ -204,7 +205,51 @@ DEFUNC_UNIMPLEMENTED_OPER (ashow);
 DEFUNC_UNIMPLEMENTED_OPER (astore);
 DEFUNC_UNIMPLEMENTED_OPER (awidthshow);
 DEFUNC_UNIMPLEMENTED_OPER (begin);
-DEFUNC_UNIMPLEMENTED_OPER (bind);
+
+/* <proc> bind <proc> */
+DEFUNC_OPER (bind)
+G_STMT_START {
+	hg_quark_t arg0, q;
+	hg_array_t *a;
+	gsize len, i;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QARRAY (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!hg_quark_is_writable(arg0)) {
+		/* ignore it */
+		return TRUE;
+	}
+	a = HG_VM_LOCK (vm, arg0, error);
+	if (a == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	len = hg_array_length(a);
+	for (i = 0; i < len; i++) {
+		q = hg_array_get(a, i, error);
+		if (hg_quark_is_executable(q)) {
+			if (HG_IS_QARRAY (q)) {
+				STACK_PUSH (ostack, q);
+				_hg_operator_real_bind(vm, error);
+				hg_stack_pop(ostack, error);
+			} else if (HG_IS_QNAME (q)) {
+				hg_quark_t qop = hg_vm_dict_lookup(vm, q);
+
+				if (HG_IS_QOPER (qop)) {
+					hg_array_set(a, qop, i, error);
+				}
+			}
+		}
+	}
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (bitshift);
 DEFUNC_UNIMPLEMENTED_OPER (ceiling);
 DEFUNC_UNIMPLEMENTED_OPER (charpath);
@@ -286,7 +331,97 @@ DEFUNC_UNIMPLEMENTED_OPER (eq);
 DEFUNC_UNIMPLEMENTED_OPER (exch);
 DEFUNC_UNIMPLEMENTED_OPER (exec);
 DEFUNC_UNIMPLEMENTED_OPER (exit);
-DEFUNC_UNIMPLEMENTED_OPER (file);
+
+/* <filename> <access> file -file- */
+DEFUNC_OPER (file)
+G_STMT_START {
+	hg_quark_t arg0, arg1, q;
+	hg_file_io_t iotype;
+	hg_file_mode_t iomode;
+	hg_string_t *fname, *faccess;
+	gchar *filename, *fmode;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QSTRING (arg0) ||
+	    !HG_IS_QSTRING (arg1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	fname = HG_VM_LOCK (vm, arg0, error);
+	faccess = HG_VM_LOCK (vm, arg1, error);
+	if (fname == NULL || faccess == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	filename = g_strdup(hg_string_get_static_cstr(fname));
+	fmode = g_strdup(hg_string_get_static_cstr(faccess));
+	HG_VM_UNLOCK (vm, arg0);
+	HG_VM_UNLOCK (vm, arg1);
+
+	iotype = hg_file_get_io_type(filename);
+	if (fmode == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		goto error;
+	}
+	switch (fmode[0]) {
+	    case 'r':
+		    iomode = HG_FILE_IO_MODE_READ;
+		    break;
+	    case 'w':
+		    iomode = HG_FILE_IO_MODE_WRITE;
+		    break;
+	    case 'a':
+		    iomode = HG_FILE_IO_MODE_APPEND;
+		    break;
+	    default:
+		    hg_vm_set_error(vm, qself, HG_VM_e_invalidfileaccess);
+		    goto error;
+	}
+	if (fmode[1] == '+') {
+		switch (iomode) {
+		    case HG_FILE_IO_MODE_READ:
+		    case HG_FILE_IO_MODE_WRITE:
+			    iomode |= HG_FILE_IO_MODE_APPEND;
+			    break;
+		    case HG_FILE_IO_MODE_APPEND:
+			    iomode |= HG_FILE_IO_MODE_READWRITE;
+			    break;
+		    default:
+			    hg_vm_set_error(vm, qself, HG_VM_e_invalidfileaccess);
+			    goto error;
+		}
+	} else if (fmode[1] != 0) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidfileaccess);
+		goto error;
+	}
+	if (iotype != HG_FILE_IO_FILE) {
+		q = hg_vm_get_io(vm, iotype);
+	} else {
+		q = hg_file_new(hg_vm_get_mem(vm),
+				filename, iomode, error, NULL);
+		if (q == Qnil) {
+			hg_vm_set_error_from_gerror(vm, qself, *error);
+			goto error;
+		}
+		hg_quark_set_access_bits(&q,
+					 iomode & (HG_FILE_IO_MODE_READ|HG_FILE_IO_MODE_APPEND),
+					 iomode & (HG_FILE_IO_MODE_WRITE|HG_FILE_IO_MODE_APPEND),
+					 TRUE);
+	}
+	hg_stack_pop(ostack, error);
+	hg_stack_pop(ostack, error);
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+  error:
+	g_free(filename);
+	g_free(fmode);
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (fill);
 DEFUNC_UNIMPLEMENTED_OPER (findfont);
 DEFUNC_UNIMPLEMENTED_OPER (flattenpath);
@@ -439,7 +574,7 @@ G_STMT_START {
 	hg_stack_pop(ostack, error);
 	hg_stack_pop(ostack, error);
 
-	STACK_PUSH (ostack, HG_QBOOL (ret));
+	STACK_PUSH (ostack, HG_QBOOL (ret != Qnil));
 
 	retval = TRUE;
 } G_STMT_END;
@@ -763,18 +898,23 @@ DEFUNC_UNIMPLEMENTED_OPER (DeviceN);
 	G_STMT_START {							\
 		hg_quark_t __o_name__ = hg_name_new_with_encoding((_n_),	\
 								  HG_enc_ ## _o_); \
+		hg_quark_t __op__ = HG_QOPER (HG_enc_ ## _o_);		\
+									\
+		hg_quark_set_executable(&__op__, TRUE);			\
 		if (!hg_dict_add((_d_),					\
 				 __o_name__,				\
-				 HG_QOPER (HG_enc_ ## _o_)))		\
+				 __op__))				\
 			return FALSE;					\
 	} G_STMT_END
 #define REG_PRIV_OPER(_d_,_n_,_k_,_o_)					\
 	G_STMT_START {							\
 		hg_quark_t __o_name__ = HG_QNAME ((_n_),#_k_);		\
+		hg_quark_t __op__ = HG_QOPER (HG_enc_ ## _o_);		\
 									\
+		hg_quark_set_executable(&__op__, TRUE);			\
 		if (!hg_dict_add((_d_),					\
 				 __o_name__,				\
-				 HG_QOPER (HG_enc_ ## _o_)))		\
+				 __op__))				\
 			return FALSE;					\
 	} G_STMT_END
 #define REG_VALUE(_d_,_n_,_k_,_v_)				\
@@ -793,6 +933,7 @@ _hg_operator_level1_register(hg_dict_t *dict,
 {
 	REG_VALUE (dict, name, true, HG_QBOOL (TRUE));
 	REG_VALUE (dict, name, false, HG_QBOOL (FALSE));
+	REG_VALUE (dict, name, null, HG_QNULL);
 
 	REG_PRIV_OPER (dict, name, .forceput, private_forceput);
 	REG_PRIV_OPER (dict, name, .setglobal, private_setglobal);
@@ -901,7 +1042,6 @@ _hg_operator_level1_register(hg_dict_t *dict,
 	REG_OPER (dict, name, neg);
 	REG_OPER (dict, name, newpath);
 	REG_OPER (dict, name, not);
-	REG_OPER (dict, name, null);
 	REG_OPER (dict, name, or);
 	REG_OPER (dict, name, pathbbox);
 	REG_OPER (dict, name, pathforall);
