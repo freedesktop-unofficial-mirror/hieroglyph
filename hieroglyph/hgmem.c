@@ -289,6 +289,33 @@ hg_mem_unlock_object(hg_mem_t   *mem,
 }
 
 /**
+ * hg_mem_gc_mark:
+ * @mem:
+ * @qdata:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_mem_gc_mark(hg_mem_t   *mem,
+	       hg_quark_t  qdata)
+{
+	hg_return_val_if_fail (mem != NULL, FALSE);
+	hg_return_val_if_fail (mem->allocator != NULL, FALSE);
+	hg_return_val_if_fail (mem->allocator->gc_mark != NULL, FALSE);
+	hg_return_val_if_fail (mem->data != NULL, FALSE);
+
+	if (qdata == Qnil)
+		return TRUE;
+
+	hg_return_val_if_fail (hg_quark_has_same_mem_id(qdata, mem->id), FALSE);
+
+	return mem->allocator->gc_mark(mem->data,
+				       hg_quark_get_value (qdata));
+}
+
+/**
  * hg_mem_get_id:
  * @mem:
  *

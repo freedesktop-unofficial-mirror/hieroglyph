@@ -1,5 +1,7 @@
 2010-07-27  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgmem.c (hg_mem_gc_mark): new.
+
 	* hieroglyph/hgvm.c (hg_vm_quark_gc_mark): new.
 	(hg_vm_collect_garbage): new.
 
