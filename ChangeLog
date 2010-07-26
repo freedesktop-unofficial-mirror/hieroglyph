@@ -1,5 +1,7 @@
 2010-07-26  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgquark.h (hg_type_is_simple): add HG_TYPE_EVAL_NAME.
+
 	* hieroglyph/hgmem.h (hg_mem_lock_object_with_gerror): change
 	the message to not be confused.
 

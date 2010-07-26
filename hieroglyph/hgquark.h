@@ -203,7 +203,8 @@ hg_type_is_simple(hg_type_t type)
 		type == HG_TYPE_REAL ||
 		type == HG_TYPE_BOOL ||
 		type == HG_TYPE_MARK ||
-		type == HG_TYPE_NAME;
+		type == HG_TYPE_NAME ||
+		type == HG_TYPE_EVAL_NAME;
 }
 
 /**
