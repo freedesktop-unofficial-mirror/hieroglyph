@@ -264,6 +264,15 @@ _hg_object_file_to_cstr(hg_object_t              *object,
 	return g_strdup("-file-");
 }
 
+static gboolean
+_hg_object_file_gc_mark(hg_object_t           *object,
+			hg_gc_iterate_func_t   func,
+			gpointer               user_data,
+			GError               **error)
+{
+	return FALSE;
+}
+
 /** file IO callbacks **/
 static gboolean
 _hg_file_io_real_stdin_open(hg_file_t  *file,

@@ -252,3 +252,33 @@ hg_object_to_cstr(hg_object_t              *object,
 
 	return v->to_cstr(object, func, user_data, error);
 }
+
+/**
+ * hg_object_gc_mark:
+ * @object:
+ * @func:
+ * @user_data:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_object_gc_mark(hg_object_t           *object,
+		  hg_gc_iterate_func_t   func,
+		  gpointer               user_data,
+		  GError               **error)
+{
+	hg_object_vtable_t *v;
+
+	hg_return_val_with_gerror_if_fail (__hg_object_is_initialized, FALSE, error);
+	hg_return_val_with_gerror_if_fail (object != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (object->type < HG_TYPE_END, FALSE, error);
+	hg_return_val_with_gerror_if_fail (__hg_object_vtables[object->type] != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (func != NULL, FALSE, error);
+
+	v = __hg_object_vtables[object->type];
+
+	return v->gc_mark(object, func, user_data, error);
+}

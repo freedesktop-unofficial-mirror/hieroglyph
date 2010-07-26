@@ -186,6 +186,15 @@ _hg_object_array_to_cstr(hg_object_t              *object,
 }
 
 static gboolean
+_hg_object_array_gc_mark(hg_object_t           *object,
+			 hg_gc_iterate_func_t   func,
+			 gpointer               user_data,
+			 GError               **error)
+{
+	return FALSE;
+}
+
+static gboolean
 _hg_array_maybe_expand(hg_array_t *array)
 {
 	if (array->is_fixed_size ||

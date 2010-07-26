@@ -74,6 +74,10 @@ typedef struct _hg_dict_t		hg_dict_t;
 /* hgname.h */
 typedef struct _hg_name_t		hg_name_t;
 
+/* hgobject.h */
+typedef gboolean (* hg_gc_iterate_func_t)	(hg_quark_t   qdata,
+						 gpointer     user_data,
+						 GError     **error);
 /* hgscanner.h */
 typedef struct _hg_scanner_t		hg_scanner_t;
 

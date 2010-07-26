@@ -124,6 +124,15 @@ _hg_object_string_to_cstr(hg_object_t              *object,
 }
 
 static gboolean
+_hg_object_string_gc_mark(hg_object_t           *object,
+			  hg_gc_iterate_func_t   func,
+			  gpointer               user_data,
+			  GError               **error)
+{
+	return FALSE;
+}
+
+static gboolean
 _hg_string_maybe_expand(hg_string_t *string)
 {
 	if (string->is_fixed_size ||

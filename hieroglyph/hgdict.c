@@ -87,6 +87,15 @@ _hg_object_dict_to_cstr(hg_object_t              *object,
 	return g_strdup("-dict-");
 }
 
+static gboolean
+_hg_object_dict_gc_mark(hg_object_t           *object,
+			hg_gc_iterate_func_t   func,
+			gpointer               user_data,
+			GError               **error)
+{
+	return FALSE;
+}
+
 /*< public >*/
 /**
  * hg_dict_new:

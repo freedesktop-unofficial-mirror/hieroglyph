@@ -134,6 +134,9 @@ gpointer           hg_vm_lock_object           (hg_vm_t            *vm,
 						GError            **error);
 void               hg_vm_unlock_object         (hg_vm_t            *vm,
 						hg_quark_t          qdata);
+gboolean           hg_vm_quark_gc_mark         (hg_vm_t            *vm,
+						hg_quark_t          qdata,
+						GError            **error);
 hg_quark_t         hg_vm_quark_copy            (hg_vm_t            *vm,
 						hg_quark_t          qdata,
 						gpointer           *ret,
@@ -214,6 +217,7 @@ gboolean           hg_vm_set_error_from_gerror (hg_vm_t            *vm,
 void               hg_vm_stack_dump            (hg_vm_t            *vm,
 						hg_stack_t         *stack,
 						hg_file_t          *output);
+gboolean           hg_vm_collect_garbage       (hg_vm_t            *vm);
 
 G_END_DECLS
 

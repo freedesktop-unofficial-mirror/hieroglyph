@@ -402,6 +402,14 @@ hg_vm_step_in_exec_array(hg_vm_t    *vm,
 	return retval;
 }
 
+static gboolean
+_hg_vm_quark_iterate_gc_mark(hg_quark_t   qdata,
+			     gpointer     user_data,
+			     GError     **error)
+{
+	return hg_vm_quark_gc_mark((hg_vm_t *)user_data, qdata, error);
+}
+
 static hg_quark_t
 _hg_vm_quark_iterate_copy(hg_quark_t   qdata,
 			  gpointer     user_data,
@@ -700,6 +708,54 @@ hg_vm_unlock_object(hg_vm_t    *vm,
 	hg_return_if_fail (vm != NULL);
 
 	_hg_vm_real_unlock_object(vm, qdata);
+}
+
+/**
+ * hg_vm_quark_gc_mark:
+ * @vm:
+ * @qdata:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_vm_quark_gc_mark(hg_vm_t     *vm,
+		    hg_quark_t   qdata,
+		    GError     **error)
+{
+	hg_object_t *o;
+	GError *err = NULL;
+	gboolean retval = FALSE;
+
+	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error);
+
+	if (qdata == Qnil)
+		return TRUE;
+
+	if (hg_quark_is_simple_object(qdata) ||
+	    HG_IS_QOPER (qdata))
+		return TRUE;
+
+	o = _HG_VM_LOCK (vm, qdata, &err);
+	if (o) {
+		retval = hg_object_gc_mark(o, _hg_vm_quark_iterate_gc_mark, vm, &err);
+
+		_HG_VM_UNLOCK (vm, qdata);
+	}
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s (code: %d)",
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+	}
+
+	return retval;
 }
 
 /**
@@ -2236,4 +2292,52 @@ hg_vm_stack_dump(hg_vm_t    *vm,
 	hg_file_append_printf(output, "       value      |    type    |attr|content\n");
 	hg_file_append_printf(output, "----------========+------------+----+---------------------------------\n");
 	hg_stack_foreach(stack, _hg_vm_stack_real_dump, &data, NULL);
+}
+
+/**
+ * hg_vm_collect_garbage:
+ * @vm:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_vm_collect_garbage(hg_vm_t *vm)
+{
+	gsize i;
+	GError *err = NULL;
+
+	hg_return_val_if_fail (vm != NULL, FALSE);
+
+	/* marking objects */
+	/** marking I/O **/
+	for (i = 0; i < HG_FILE_IO_END; i++) {
+		if (!hg_vm_quark_gc_mark(vm, vm->qio[i], &err))
+			goto error;
+	}
+	/** marking stacks **/
+	for (i = 0; i < HG_VM_STACK_END; i++) {
+		hg_stack_t *s = vm->stacks[i];
+
+		if (!hg_object_gc_mark((hg_object_t *)s,
+				       _hg_vm_quark_iterate_gc_mark,
+				       vm,
+				       &err))
+			goto error;
+	}
+	/** marking miscellaneous **/
+	if (!hg_vm_quark_gc_mark(vm, vm->qerror, &err))
+		goto error;
+	if (!hg_vm_quark_gc_mark(vm, vm->qsystemdict, &err))
+		goto error;
+	if (!hg_vm_quark_gc_mark(vm, vm->qglobaldict, &err))
+		goto error;
+	/** XXX: marking scanner */
+
+	/* sweeping objects */
+
+	return TRUE;
+  error:
+	return FALSE;
 }

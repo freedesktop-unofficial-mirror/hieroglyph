@@ -43,6 +43,10 @@ G_BEGIN_DECLS
 									hg_quark_iterate_func_t   func, \
 									gpointer                  user_data, \
 									GError                  **error); \
+	static gboolean   _hg_object_ ## _name_ ## _gc_mark            (hg_object_t              *object, \
+									hg_gc_iterate_func_t      func, \
+									gpointer                  user_data, \
+									GError                  **error); \
 									\
 	static hg_object_vtable_t __hg_object_ ## _name_ ## _vtable = {	\
 		.get_capsulated_size = _hg_object_ ## _name_ ## _get_capsulated_size, \
@@ -50,6 +54,7 @@ G_BEGIN_DECLS
 		.free                = _hg_object_ ## _name_ ## _free,	\
 		.copy                = _hg_object_ ## _name_ ## _copy,	\
 		.to_cstr             = _hg_object_ ## _name_ ## _to_cstr, \
+		.gc_mark             = _hg_object_ ## _name_ ## _gc_mark,	\
 	};								\
 									\
 	hg_object_vtable_t *						\
@@ -104,6 +109,10 @@ struct _hg_object_vtable_t {
 					    hg_quark_iterate_func_t   func,
 					    gpointer                  user_data,
 					    GError                  **error);
+	gboolean   (* gc_mark)             (hg_object_t              *object,
+					    hg_gc_iterate_func_t      func,
+					    gpointer                  user_data,
+					    GError                  **error);
 };
 struct _hg_object_t {
 	hg_mem_t   *mem;
@@ -130,6 +139,10 @@ hg_quark_t  hg_object_copy    (hg_object_t              *object,
 			       GError                  **error);
 gchar      *hg_object_to_cstr (hg_object_t              *object,
 			       hg_quark_iterate_func_t   func,
+			       gpointer                  user_data,
+			       GError                  **error);
+gboolean    hg_object_gc_mark (hg_object_t              *object,
+			       hg_gc_iterate_func_t      func,
 			       gpointer                  user_data,
 			       GError                  **error);
 

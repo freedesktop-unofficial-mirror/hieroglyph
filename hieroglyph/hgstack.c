@@ -90,6 +90,15 @@ _hg_object_stack_to_cstr(hg_object_t              *object,
 	return g_strdup("-stack-");
 }
 
+static gboolean
+_hg_object_stack_gc_mark(hg_object_t           *object,
+			 hg_gc_iterate_func_t   func,
+			 gpointer               user_data,
+			 GError               **error)
+{
+	return FALSE;
+}
+
 static hg_list_t *
 _hg_list_new(hg_mem_t *mem)
 {
