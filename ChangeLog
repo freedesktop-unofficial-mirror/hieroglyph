@@ -1,5 +1,8 @@
 2010-07-26  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgmem.h (hg_mem_lock_object_with_gerror): change
+	the message to not be confused.
+
 	* hieroglyph/hgoperator.c (_hg_operator_real_private_odef):
 	implemented.
 	(_hg_operator_real_private_odef): implemented.

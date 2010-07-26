@@ -70,7 +70,7 @@ hg_mem_lock_object_with_gerror(hg_mem_t     *mem,
 	retval = hg_mem_lock_object(mem, quark);
 	if (retval == NULL) {
 		g_set_error(&err, HG_ERROR, EINVAL,
-			    "%s: Invalid quark to obtain the real object [mem: %p, quark: %" G_GSIZE_FORMAT "]",
+			    "%s: Invalid quark to obtain the actual object [mem: %p, quark: %" G_GSIZE_FORMAT "]",
 			    pretty_function,
 			    mem,
 			    quark);
