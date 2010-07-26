@@ -819,3 +819,101 @@ hg_string_append_printf(hg_string_t *string,
 
 	return retval;
 }
+
+/**
+ * hg_string_make_substring:
+ * @string:
+ * @start_index:
+ * @end_index:
+ * @ret:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_quark_t
+hg_string_make_substring(hg_string_t  *string,
+			 gsize         start_index,
+			 gsize         end_index,
+			 gpointer     *ret,
+			 GError      **error)
+{
+	hg_string_t *s;
+	hg_quark_t retval;
+	GError *err = NULL;
+
+	hg_return_val_with_gerror_if_fail (string != NULL, Qnil, error);
+
+	retval = hg_string_new(string->o.mem, (gpointer *)&s, 0);
+	if (retval == Qnil) {
+		g_set_error(&err, HG_ERROR, ENOMEM,
+			    "Out of memory");
+		goto error;
+	}
+	if (end_index > HG_STRING_MAX_SIZE) {
+		/* make an empty string */
+	} else {
+		if (!hg_string_copy_as_substring(string, s,
+						 start_index,
+						 end_index,
+						 &err)) {
+			hg_mem_free(string->o.mem, retval);
+			retval = Qnil;
+		}
+		if (ret)
+			*ret = s;
+		else
+			hg_mem_unlock_object(string->o.mem, retval);
+	}
+  error:
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s (code: %d)",
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+	}
+
+	return retval;
+}
+
+/**
+ * hg_string_copy_as_substring:
+ * @src:
+ * @dest:
+ * @start_index:
+ * @end_index:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_string_copy_as_substring(hg_string_t  *src,
+			    hg_string_t  *dest,
+			    gsize         start_index,
+			    gsize         end_index,
+			    GError      **error)
+{
+	hg_return_val_with_gerror_if_fail (src != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (dest != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (start_index < hg_string_maxlength(src), FALSE, error);
+	hg_return_val_with_gerror_if_fail (end_index < hg_string_maxlength(src), FALSE, error);
+	hg_return_val_with_gerror_if_fail (start_index <= end_index, FALSE, error);
+
+	/* destroy the unnecessary destination's container */
+	hg_mem_free(dest->o.mem, dest->qstring);
+	/* make a substring */
+	dest->qstring = src->qstring;
+	dest->length = end_index - start_index + 1;
+	dest->allocated_size = dest->length + 1;
+	dest->is_fixed_size = TRUE;
+	dest->offset = start_index;
+
+	return TRUE;
+}
