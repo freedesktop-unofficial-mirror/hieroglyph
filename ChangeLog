@@ -1,5 +1,8 @@
 2010-07-27  Akira TAGOH  <akira@tagoh.org>
 
+	* tests/hgnull.c (test_new): update related to
+	4aacdf47fe70c01f421a23d2ea353f07f3d0d81d
+
 	* hieroglyph/hgarray.c (hg_array_get): return Qnil if index is out
 	of array.
 
