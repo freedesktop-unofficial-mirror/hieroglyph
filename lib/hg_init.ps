@@ -1,6 +1,6 @@
 %!PS-Adobe-1.0
 % hg_init.ps
-% Copyright (C) 2010 Akira TAGOH
+% Copyright (C) 2005-2010 Akira TAGOH
 %
 % Authors:
 %   Akira TAGOH  <akira@tagoh.org>
@@ -36,21 +36,106 @@ systemdict /statusdict known not {
 /FontDirectory
 
 true .setglobal
+
 %% On global memory
 /GlobalFontDirectory
 
-% Initialize against current language level.
-systemdict /languagelevel known {
-    languagelevel dup 1 eq {
-	(hg_init_l1.ps)
-    } {
-	2 eq {
-	    (hg_init_l2.ps)
+%%
+%% Define procedures
+%%
+
+%%%
+%%% pre-required operators
+% <key> <any> odef -
+/odef {
+    {
+	% prepare for error recovery
+	count copy count 2 idiv array astore
+	$error /.ostack 3 -1 roll put
+	null stopped {
+	    $error /command null put
+	    clear $error /.ostack get aload pop
+	    stop
+	} if
+    }					% -key- -any- -proc-
+    dup 13 4 -1 roll .forceput		% -key- -proc-
+    dup 15 get				% -key- -proc- -proc-
+    2 3 index .forceput
+    .odef
+} bind .odef
+%% disable .forceput for security reason
+systemdict /.forceput .undef
+systemdict /.odef .undef
+
+%%%
+%%% these aren't official operators/procedures for PostScript
+% <string> runlibfile -
+/runlibfile {
+	.findlibfile {
+	    run
 	} {
-	    (hg_init_l3.ps)
+	    errordict /undefinedfilename get exec
 	} ifelse
+} bind def
+% <file> any write=only -
+/write=only {
+    .stringcvs writestring
+} bind odef
+% <file> <any> write==only -
+/write==only {
+    .write==only
+} bind odef
+% <any> =only -
+/=only {
+    (%stdout) (w) file exch write=only
+} bind odef
+% <any> ==only -
+/==only {
+    (%stdout) (w) file exch write==only
+} bind odef
+% <string> <string> .concatstring <string>
+/.concatstring {
+    exch dup length 2 index length add string
+    dup dup 4 2 roll copy
+    length 4 -1 roll putinterval
+} bind def
+% - .printversion -
+/.printversion {
+    .product print .revision dup 1000000 idiv exch 1000000 mod dup 1000 idiv exch 1000 mod
+    ( ) print 3 -1 roll ==only (.) print exch ==only (.) print ==only
+    ( \(r) print .hgrevision ==only (\)\n\n) print
+} bind def
+% - .promptmsg <string>
+/.promptmsg {
+    count mark (PS) 3 -1 roll dup 0 ne {
+	([) exch 4 string cvs (])
+	counttomark 1 sub {
+	    .concatstring
+	} repeat
+    } {
+	pop
     } ifelse
+    (>) .concatstring
+    exch pop
+} bind def
+systemdict /.statementedit known {
+    /..statementedit {
+	% null isn't exactly used. it7s just pushed to align the depth of the stack.
+	.promptmsg //null exch .statementedit exch pop
+    } bind def
 } {
-    (hg_init_l1.ps)
+    /..statementedit {
+	prompt (%statementedit) (r) file
+    } bind def
 } ifelse
-(r) file cvx exec
+
+% Initialize against current language level.
+(hg_init_l1.ps) (r) file cvx exec
+systemdict /languagelevel known {
+    languagelevel dup 2 ge {
+	(hg_init_l2.ps) (r) file cvx exec
+    } if
+    3 ge {
+	(hg_init_l3.ps) (r) file cvx exec
+    } if
+} if
