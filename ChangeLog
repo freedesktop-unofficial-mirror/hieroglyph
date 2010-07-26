@@ -1,5 +1,8 @@
 2010-07-26  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgarray.c (hg_array_set): don't try to expand
+	if the index is less than the length of the array.
+
 	* hieroglyph/hgscanner.l: fix mis-scanning a negative decimal number.
 
 	* hieroglyph/hgstring.c (_hg_object_string_copy): implemented.
