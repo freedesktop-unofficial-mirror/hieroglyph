@@ -1,5 +1,8 @@
 2010-07-26  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgvm.c (hg_vm_quark_to_string): don't update for
+	the executable array if the name is set to the array.
+
 	* hieroglyph/hgarray.c (hg_array_set_name): new.
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_bind): implemented.

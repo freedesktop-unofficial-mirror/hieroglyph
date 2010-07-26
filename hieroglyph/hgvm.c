@@ -857,8 +857,10 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 				    if (o) {
 					    cstr = hg_object_to_cstr(o, _hg_vm_quark_iterate_to_cstr, vm, &err);
 					    if (cstr && HG_IS_QARRAY (qdata) && hg_quark_is_executable(qdata)) {
-						    cstr[0] = '{';
-						    cstr[strlen(cstr)-1] = '}';
+						    if (cstr[0] == '[') {
+							    cstr[0] = '{';
+							    cstr[strlen(cstr)-1] = '}';
+						    }
 					    }
 					    hg_string_append(s, cstr, -1, &err);
 
