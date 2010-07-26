@@ -1,6 +1,6 @@
 NULL =
 AUTOMAKE_OPTIONS = dist-bzip2
-SUBDIRS = hieroglyph src tests
+SUBDIRS = hieroglyph src lib tests
 
 ACLOCAL_AMFLAGS =		\
 	-I m4macros		\

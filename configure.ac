@@ -145,6 +145,7 @@ AC_CONFIG_FILES([
 	hieroglyph/hgversion.h
 	hieroglyph.pc
 	hieroglyph-uninstalled.pc
+	lib/Makefile
 	po/Makefile.in
 	src/Makefile
 	src/hgs/Makefile
