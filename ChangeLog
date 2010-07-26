@@ -1,5 +1,8 @@
 2010-07-26  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgvm.c (hg_vm_dict_lookup): covert HG_TYPE_EVAL_NAME to
+	HG_TYPE_NAME if specified as the key.
+
 	* hieroglyph/hgquark.h (hg_type_is_simple): add HG_TYPE_EVAL_NAME.
 
 	* hieroglyph/hgmem.h (hg_mem_lock_object_with_gerror): change

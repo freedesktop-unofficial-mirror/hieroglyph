@@ -1276,6 +1276,8 @@ hg_vm_dict_lookup(hg_vm_t    *vm,
 		quark = hg_name_new_with_string(vm->name, str, -1);
 
 		_HG_VM_UNLOCK (vm, qname);
+	} else if (HG_IS_QEVALNAME (qname)) {
+		quark = hg_quark_new(HG_TYPE_NAME, qname);
 	} else {
 		quark = qname;
 	}
