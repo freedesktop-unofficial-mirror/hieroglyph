@@ -344,7 +344,58 @@ G_STMT_START {
 } G_STMT_END;
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (ifelse);
+/* <bool> <proc1> <proc2> ifelse - */
+DEFUNC_OPER (ifelse)
+G_STMT_START {
+	hg_quark_t arg0, arg1, arg2, q;
+
+	CHECK_STACK (ostack, 3);
+
+	arg0 = hg_stack_index(ostack, 2, error);
+	arg1 = hg_stack_index(ostack, 1, error);
+	arg2 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QBOOL (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!HG_IS_QARRAY (arg1) ||
+	    !hg_quark_is_executable(arg1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!hg_quark_is_readable(arg1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+	if (!HG_IS_QARRAY (arg2) ||
+	    !hg_quark_is_executable(arg2)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!hg_quark_is_readable(arg2)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+	if (HG_BOOL (arg0)) {
+		q = hg_vm_quark_copy(vm, arg1, NULL, error);
+	} else {
+		q = hg_vm_quark_copy(vm, arg2, NULL, error);
+	}
+	if (error && *error) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	STACK_PUSH (estack, q);
+	hg_stack_roll(estack, 2, 1, error);
+
+	hg_stack_pop(ostack, error);
+	hg_stack_pop(ostack, error);
+	hg_stack_pop(ostack, error);
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (image);
 DEFUNC_UNIMPLEMENTED_OPER (imagemask);
 DEFUNC_UNIMPLEMENTED_OPER (index);
