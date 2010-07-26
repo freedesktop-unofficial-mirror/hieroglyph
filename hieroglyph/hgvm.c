@@ -1465,9 +1465,28 @@ hg_vm_stepi(hg_vm_t  *vm,
 		     * { ... } ... exec bit
 		     */
 		    if (hg_quark_is_executable(qexecobj)) {
-			    g_print("FIXME!!\n");
-			    hg_vm_set_error(vm, qexecobj, HG_VM_e_VMerror);
-			    /* XXX */
+			    hg_array_t *a = _HG_VM_LOCK (vm, qexecobj, &err);
+
+			    if (a == NULL) {
+				    hg_vm_set_error(vm, qexecobj, HG_VM_e_VMerror);
+				    return TRUE;
+			    }
+			    if (hg_array_length(a) > 0) {
+				    qresult = hg_array_get(a, 0, &err);
+				    if (err) {
+					    hg_vm_set_error(vm, qexecobj, HG_VM_e_VMerror);
+					    return TRUE;
+				    }
+				    if (!hg_stack_push(estack, qresult)) {
+					    hg_vm_set_error(vm, qexecobj,
+							    HG_VM_e_execstackoverflow);
+					    return TRUE;
+				    }
+				    hg_array_remove(a, 0);
+			    } else {
+				    hg_stack_pop(estack, &err);
+			    }
+			    _HG_VM_UNLOCK (vm, qexecobj);
 			    break;
 		    }
 		    goto push_stack;

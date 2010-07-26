@@ -4,6 +4,7 @@
 	(_hg_vm_quark_iterate_to_cstr): implemented.
 	(hg_vm_quark_copy): copy permissions.
 	(hg_vm_quark_to_string): update strings for executable array.
+	(hg_vm_stepi): implemented executing array.
 
 	* hieroglyph/hgstring.c (_hg_object_string_to_cstr): implemented.
 
