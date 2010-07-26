@@ -1,5 +1,9 @@
 2010-07-26  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgvm.c (hg_vm_stepi): push a copy to the estack for
+	a result of the name lookup.
+	(hg_vm_stepi): fix wrong order for execution.
+
 	* hieroglyph/hgobject.c (_hg_object_new): set self quark.
 
 	* hieroglyph/hgnull.h (HG_QNULL): deal with null differently to Qnil.

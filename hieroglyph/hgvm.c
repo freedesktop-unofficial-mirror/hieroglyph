@@ -1466,6 +1466,8 @@ hg_vm_stepi(hg_vm_t  *vm,
 		     * foo   ... exec bit
 		     */
 		    if (hg_quark_is_executable(qexecobj)) {
+			    hg_quark_t q;
+
 			    qresult = hg_vm_dict_lookup(vm, qexecobj);
 			    if (qresult == Qnil) {
 				    hg_vm_set_error(vm, qexecobj,
@@ -1473,7 +1475,13 @@ hg_vm_stepi(hg_vm_t  *vm,
 
 				    return TRUE;
 			    }
-			    if (!hg_stack_push(estack, qresult)) {
+			    q = hg_vm_quark_copy(vm, qresult, NULL, &err);
+			    if (err) {
+				    hg_vm_set_error(vm, qexecobj,
+						    HG_VM_e_VMerror);
+				    return TRUE;
+			    }
+			    if (!hg_stack_push(estack, q)) {
 				    hg_vm_set_error(vm, qexecobj,
 						    HG_VM_e_stackoverflow);
 
@@ -1499,17 +1507,28 @@ hg_vm_stepi(hg_vm_t  *vm,
 				    qresult = hg_array_get(a, 0, &err);
 				    if (err) {
 					    hg_vm_set_error(vm, qexecobj, HG_VM_e_VMerror);
-					    return TRUE;
+					    goto a_error;
 				    }
-				    if (!hg_stack_push(estack, qresult)) {
-					    hg_vm_set_error(vm, qexecobj,
-							    HG_VM_e_execstackoverflow);
-					    return TRUE;
+				    if (hg_quark_is_executable(qresult) &&
+					(HG_IS_QNAME (qresult) ||
+					 HG_IS_QOPER (qresult))) {
+					    if (!hg_stack_push(estack, qresult)) {
+						    hg_vm_set_error(vm, qexecobj,
+								    HG_VM_e_execstackoverflow);
+						    goto a_error;
+					    }
+				    } else {
+					    if (!hg_stack_push(ostack, qresult)) {
+						    hg_vm_set_error(vm, qexecobj,
+								    HG_VM_e_stackoverflow);
+						    goto a_error;
+					    }
 				    }
 				    hg_array_remove(a, 0);
 			    } else {
 				    hg_stack_pop(estack, &err);
 			    }
+		      a_error:
 			    _HG_VM_UNLOCK (vm, qexecobj);
 			    break;
 		    }
