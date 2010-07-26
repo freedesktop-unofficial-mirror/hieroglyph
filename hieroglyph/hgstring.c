@@ -84,7 +84,29 @@ _hg_object_string_copy(hg_object_t              *object,
 		       gpointer                 *ret,
 		       GError                  **error)
 {
-	return Qnil;
+	hg_string_t *s = (hg_string_t *)object;
+	hg_quark_t retval;
+	GError *err = NULL;
+
+	retval = hg_string_new_with_value(s->o.mem, NULL,
+					  hg_string_get_static_cstr(s),
+					  -1);
+	if (retval == Qnil) {
+		g_set_error(&err, HG_ERROR, ENOMEM,
+			    "Out of memory");
+	}
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s (code: %d)",
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+	}
+
+	return retval;
 }
 
 static gchar *
