@@ -1,5 +1,17 @@
 2010-07-26  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (_hg_operator_real_private_odef):
+	implemented.
+	(_hg_operator_real_private_odef): implemented.
+	(_hg_operator_real_array): implemented.
+	(_hg_operator_real_astore): implemented.
+	(_hg_operator_real_copy): implemented.
+	(_hg_operator_real_count): implemented.
+	(_hg_operator_real_def): implemented.
+	(_hg_operator_real_idiv): implemented.
+	(_hg_operator_real_put): implemented.
+	(_hg_operator_real_roll): implemented.
+
 	* hieroglyph/hgvm.c (hg_vm_stepi): push a copy to the estack for
 	a result of the name lookup.
 	(hg_vm_stepi): fix wrong order for execution.

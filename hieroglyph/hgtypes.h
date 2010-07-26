@@ -599,7 +599,9 @@ enum _hg_system_encoding_t {
 	HG_enc_POSTSCRIPT_RESERVED_END,
 
 	HG_enc_private_forceput,
+	HG_enc_private_odef,
 	HG_enc_private_setglobal,
+	HG_enc_private_undef,
 
 	HG_enc_END
 };

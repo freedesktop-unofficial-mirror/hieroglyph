@@ -41,6 +41,9 @@ static gchar *__hg_operator_name_table[HG_enc_END];
 static gboolean __hg_operator_is_initialized = FALSE;
 
 /*< private >*/
+#define PROTO_OPER(_n_)							\
+	static gboolean _hg_operator_real_ ## _n_(hg_vm_t  *vm,		\
+						  GError  **error);
 #define DEFUNC_OPER(_n_)						\
 	static gboolean							\
 	_hg_operator_real_ ## _n_(hg_vm_t  *vm,				\
@@ -94,6 +97,393 @@ static gboolean __hg_operator_is_initialized = FALSE;
 		hg_vm_quark_set_attributes(vm, &_qq_);			\
 		STACK_PUSH_AS_IS ((_s_), _qq_);				\
 	} G_STMT_END
+
+
+PROTO_OPER (private_forceput);
+PROTO_OPER (private_odef);
+PROTO_OPER (private_setglobal);
+PROTO_OPER (private_undef);
+PROTO_OPER (abs);
+PROTO_OPER (add);
+PROTO_OPER (aload);
+PROTO_OPER (anchorsearch);
+PROTO_OPER (and);
+PROTO_OPER (arc);
+PROTO_OPER (arcn);
+PROTO_OPER (arct);
+PROTO_OPER (arcto);
+PROTO_OPER (array);
+PROTO_OPER (ashow);
+PROTO_OPER (astore);
+PROTO_OPER (awidthshow);
+PROTO_OPER (begin);
+PROTO_OPER (bind);
+PROTO_OPER (bitshift);
+PROTO_OPER (ceiling);
+PROTO_OPER (charpath);
+PROTO_OPER (clear);
+PROTO_OPER (cleartomark);
+PROTO_OPER (clip);
+PROTO_OPER (clippath);
+PROTO_OPER (closepath);
+PROTO_OPER (concat);
+PROTO_OPER (concatmatrix);
+PROTO_OPER (copy);
+PROTO_OPER (count);
+PROTO_OPER (counttomark);
+PROTO_OPER (currentcmykcolor);
+PROTO_OPER (currentdash);
+PROTO_OPER (currentdict);
+PROTO_OPER (currentfile);
+PROTO_OPER (currentfont);
+PROTO_OPER (currentgray);
+PROTO_OPER (currentgstate);
+PROTO_OPER (currenthsbcolor);
+PROTO_OPER (currentlinecap);
+PROTO_OPER (currentlinejoin);
+PROTO_OPER (currentlinewidth);
+PROTO_OPER (currentmatrix);
+PROTO_OPER (currentpoint);
+PROTO_OPER (currentrgbcolor);
+PROTO_OPER (currentshared);
+PROTO_OPER (curveto);
+PROTO_OPER (cvi);
+PROTO_OPER (cvlit);
+PROTO_OPER (cvn);
+PROTO_OPER (cvr);
+PROTO_OPER (cvrs);
+PROTO_OPER (cvs);
+PROTO_OPER (cvx);
+PROTO_OPER (def);
+PROTO_OPER (defineusername);
+PROTO_OPER (dict);
+PROTO_OPER (div);
+PROTO_OPER (dtransform);
+PROTO_OPER (dup);
+PROTO_OPER (end);
+PROTO_OPER (eoclip);
+PROTO_OPER (eofill);
+PROTO_OPER (eoviewclip);
+PROTO_OPER (eq);
+PROTO_OPER (exch);
+PROTO_OPER (exec);
+PROTO_OPER (exit);
+PROTO_OPER (file);
+PROTO_OPER (fill);
+PROTO_OPER (findfont);
+PROTO_OPER (flattenpath);
+PROTO_OPER (floor);
+PROTO_OPER (flush);
+PROTO_OPER (flushfile);
+PROTO_OPER (for);
+PROTO_OPER (forall);
+PROTO_OPER (ge);
+PROTO_OPER (get);
+PROTO_OPER (getinterval);
+PROTO_OPER (grestore);
+PROTO_OPER (gsave);
+PROTO_OPER (gstate);
+PROTO_OPER (gt);
+PROTO_OPER (identmatrix);
+PROTO_OPER (idiv);
+PROTO_OPER (idtransform);
+PROTO_OPER (if);
+PROTO_OPER (ifelse);
+PROTO_OPER (image);
+PROTO_OPER (imagemask);
+PROTO_OPER (index);
+PROTO_OPER (ineofill);
+PROTO_OPER (infill);
+PROTO_OPER (initviewclip);
+PROTO_OPER (inueofill);
+PROTO_OPER (inufill);
+PROTO_OPER (invertmatrix);
+PROTO_OPER (itransform);
+PROTO_OPER (known);
+PROTO_OPER (le);
+PROTO_OPER (length);
+PROTO_OPER (lineto);
+PROTO_OPER (load);
+PROTO_OPER (loop);
+PROTO_OPER (lt);
+PROTO_OPER (makefont);
+PROTO_OPER (matrix);
+PROTO_OPER (maxlength);
+PROTO_OPER (mod);
+PROTO_OPER (moveto);
+PROTO_OPER (mul);
+PROTO_OPER (ne);
+PROTO_OPER (neg);
+PROTO_OPER (newpath);
+PROTO_OPER (not);
+PROTO_OPER (or);
+PROTO_OPER (pathbbox);
+PROTO_OPER (pathforall);
+PROTO_OPER (pop);
+PROTO_OPER (print);
+PROTO_OPER (printobject);
+PROTO_OPER (put);
+PROTO_OPER (putinterval);
+PROTO_OPER (rcurveto);
+PROTO_OPER (read);
+PROTO_OPER (readhexstring);
+PROTO_OPER (readline);
+PROTO_OPER (readstring);
+PROTO_OPER (rectclip);
+PROTO_OPER (rectfill);
+PROTO_OPER (rectstroke);
+PROTO_OPER (rectviewclip);
+PROTO_OPER (repeat);
+PROTO_OPER (restore);
+PROTO_OPER (rlineto);
+PROTO_OPER (rmoveto);
+PROTO_OPER (roll);
+PROTO_OPER (rotate);
+PROTO_OPER (round);
+PROTO_OPER (save);
+PROTO_OPER (scale);
+PROTO_OPER (scalefont);
+PROTO_OPER (search);
+PROTO_OPER (selectfont);
+PROTO_OPER (setbbox);
+PROTO_OPER (setcachedevice);
+PROTO_OPER (setcachedevice2);
+PROTO_OPER (setcharwidth);
+PROTO_OPER (setcmykcolor);
+PROTO_OPER (setdash);
+PROTO_OPER (setfont);
+PROTO_OPER (setgray);
+PROTO_OPER (setgstate);
+PROTO_OPER (sethsbcolor);
+PROTO_OPER (setlinecap);
+PROTO_OPER (setlinejoin);
+PROTO_OPER (setlinewidth);
+PROTO_OPER (setmatrix);
+PROTO_OPER (setrgbcolor);
+PROTO_OPER (setshared);
+PROTO_OPER (shareddict);
+PROTO_OPER (show);
+PROTO_OPER (showpage);
+PROTO_OPER (stop);
+PROTO_OPER (stopped);
+PROTO_OPER (store);
+PROTO_OPER (string);
+PROTO_OPER (stringwidth);
+PROTO_OPER (stroke);
+PROTO_OPER (strokepath);
+PROTO_OPER (sub);
+PROTO_OPER (token);
+PROTO_OPER (transform);
+PROTO_OPER (translate);
+PROTO_OPER (truncate);
+PROTO_OPER (type);
+PROTO_OPER (uappend);
+PROTO_OPER (ucache);
+PROTO_OPER (ueofill);
+PROTO_OPER (ufill);
+PROTO_OPER (undef);
+PROTO_OPER (upath);
+PROTO_OPER (userdict);
+PROTO_OPER (ustroke);
+PROTO_OPER (viewclip);
+PROTO_OPER (viewclippath);
+PROTO_OPER (where);
+PROTO_OPER (widthshow);
+PROTO_OPER (write);
+PROTO_OPER (writehexstring);
+PROTO_OPER (writeobject);
+PROTO_OPER (writestring);
+PROTO_OPER (wtranslation);
+PROTO_OPER (xor);
+PROTO_OPER (xshow);
+PROTO_OPER (xyshow);
+PROTO_OPER (yshow);
+PROTO_OPER (FontDirectory);
+PROTO_OPER (SharedFontDirectory);
+PROTO_OPER (execuserobject);
+PROTO_OPER (currentcolor);
+PROTO_OPER (currentcolorspace);
+PROTO_OPER (currentglobal);
+PROTO_OPER (execform);
+PROTO_OPER (filter);
+PROTO_OPER (findresource);
+PROTO_OPER (makepattern);
+PROTO_OPER (setcolor);
+PROTO_OPER (setcolorspace);
+PROTO_OPER (setglobal);
+PROTO_OPER (setpagedevice);
+PROTO_OPER (setpattern);
+PROTO_OPER (sym_eq);
+PROTO_OPER (sym_eqeq);
+PROTO_OPER (ISOLatin1Encoding);
+PROTO_OPER (StandardEncoding);
+PROTO_OPER (sym_left_square_bracket);
+PROTO_OPER (sym_right_square_bracket);
+PROTO_OPER (atan);
+PROTO_OPER (banddevice);
+PROTO_OPER (bytesavailable);
+PROTO_OPER (cachestatus);
+PROTO_OPER (closefile);
+PROTO_OPER (colorimage);
+PROTO_OPER (condition);
+PROTO_OPER (copypage);
+PROTO_OPER (cos);
+PROTO_OPER (countdictstack);
+PROTO_OPER (countexecstack);
+PROTO_OPER (cshow);
+PROTO_OPER (currentblackgeneration);
+PROTO_OPER (currentcacheparams);
+PROTO_OPER (currentcolorscreen);
+PROTO_OPER (currentcolortransfer);
+PROTO_OPER (currentcontext);
+PROTO_OPER (currentflat);
+PROTO_OPER (currenthalftone);
+PROTO_OPER (currenthalftonephase);
+PROTO_OPER (currentmiterlimit);
+PROTO_OPER (currentobjectformat);
+PROTO_OPER (currentpacking);
+PROTO_OPER (currentscreen);
+PROTO_OPER (currentstrokeadjust);
+PROTO_OPER (currenttransfer);
+PROTO_OPER (currentundercolorremoval);
+PROTO_OPER (defaultmatrix);
+PROTO_OPER (definefont);
+PROTO_OPER (deletefile);
+PROTO_OPER (detach);
+PROTO_OPER (deviceinfo);
+PROTO_OPER (dictstack);
+PROTO_OPER (echo);
+PROTO_OPER (erasepage);
+PROTO_OPER (execstack);
+PROTO_OPER (executeonly);
+PROTO_OPER (exp);
+PROTO_OPER (filenameforall);
+PROTO_OPER (fileposition);
+PROTO_OPER (fork);
+PROTO_OPER (framedevice);
+PROTO_OPER (grestoreall);
+PROTO_OPER (handleerror);
+PROTO_OPER (initclip);
+PROTO_OPER (initgraphics);
+PROTO_OPER (initmatrix);
+PROTO_OPER (instroke);
+PROTO_OPER (inustroke);
+PROTO_OPER (join);
+PROTO_OPER (kshow);
+PROTO_OPER (ln);
+PROTO_OPER (lock);
+PROTO_OPER (log);
+PROTO_OPER (mark);
+PROTO_OPER (monitor);
+PROTO_OPER (noaccess);
+PROTO_OPER (notify);
+PROTO_OPER (nulldevice);
+PROTO_OPER (packedarray);
+PROTO_OPER (quit);
+PROTO_OPER (rand);
+PROTO_OPER (rcheck);
+PROTO_OPER (readonly);
+PROTO_OPER (realtime);
+PROTO_OPER (renamefile);
+PROTO_OPER (renderbands);
+PROTO_OPER (resetfile);
+PROTO_OPER (reversepath);
+PROTO_OPER (rootfont);
+PROTO_OPER (rrand);
+PROTO_OPER (run);
+PROTO_OPER (scheck);
+PROTO_OPER (setblackgeneration);
+PROTO_OPER (setcachelimit);
+PROTO_OPER (setcacheparams);
+PROTO_OPER (setcolorscreen);
+PROTO_OPER (setcolortransfer);
+PROTO_OPER (setfileposition);
+PROTO_OPER (setflat);
+PROTO_OPER (sethalftone);
+PROTO_OPER (sethalftonephase);
+PROTO_OPER (setmiterlimit);
+PROTO_OPER (setobjectformat);
+PROTO_OPER (setpacking);
+PROTO_OPER (setscreen);
+PROTO_OPER (setstrokeadjust);
+PROTO_OPER (settransfer);
+PROTO_OPER (setucacheparams);
+PROTO_OPER (setundercolorremoval);
+PROTO_OPER (sin);
+PROTO_OPER (sqrt);
+PROTO_OPER (srand);
+PROTO_OPER (stack);
+PROTO_OPER (status);
+PROTO_OPER (statusdict);
+PROTO_OPER (ucachestatus);
+PROTO_OPER (undefinefont);
+PROTO_OPER (usertime);
+PROTO_OPER (ustrokepath);
+PROTO_OPER (version);
+PROTO_OPER (vmreclaim);
+PROTO_OPER (vmstatus);
+PROTO_OPER (wait);
+PROTO_OPER (wcheck);
+PROTO_OPER (xcheck);
+PROTO_OPER (yield);
+PROTO_OPER (defineuserobject);
+PROTO_OPER (undefineuserobject);
+PROTO_OPER (UserObjects);
+PROTO_OPER (cleardictstack);
+PROTO_OPER (setvmthreshold);
+PROTO_OPER (sym_begin_dict_mark);
+PROTO_OPER (sym_end_dict_mark);
+PROTO_OPER (currentcolorrendering);
+PROTO_OPER (currentdevparams);
+PROTO_OPER (currentoverprint);
+PROTO_OPER (currentpagedevice);
+PROTO_OPER (currentsystemparams);
+PROTO_OPER (currentuserparams);
+PROTO_OPER (defineresource);
+PROTO_OPER (findencoding);
+PROTO_OPER (gcheck);
+PROTO_OPER (glyphshow);
+PROTO_OPER (languagelevel);
+PROTO_OPER (product);
+PROTO_OPER (pstack);
+PROTO_OPER (resourceforall);
+PROTO_OPER (resourcestatus);
+PROTO_OPER (revision);
+PROTO_OPER (serialnumber);
+PROTO_OPER (setcolorrendering);
+PROTO_OPER (setdevparams);
+PROTO_OPER (setoverprint);
+PROTO_OPER (setsystemparams);
+PROTO_OPER (setuserparams);
+PROTO_OPER (startjob);
+PROTO_OPER (undefineresource);
+PROTO_OPER (GlobalFontDirectory);
+PROTO_OPER (ASCII85Decode);
+PROTO_OPER (ASCII85Encode);
+PROTO_OPER (ASCIIHexDecode);
+PROTO_OPER (ASCIIHexEncode);
+PROTO_OPER (CCITTFaxDecode);
+PROTO_OPER (CCITTFaxEncode);
+PROTO_OPER (DCTDecode);
+PROTO_OPER (DCTEncode);
+PROTO_OPER (LZWDecode);
+PROTO_OPER (LZWEncode);
+PROTO_OPER (NullEncode);
+PROTO_OPER (RunLengthDecode);
+PROTO_OPER (RunLengthEncode);
+PROTO_OPER (SubFileDecode);
+PROTO_OPER (CIEBasedA);
+PROTO_OPER (CIEBasedABC);
+PROTO_OPER (DeviceCMYK);
+PROTO_OPER (DeviceGray);
+PROTO_OPER (DeviceRGB);
+PROTO_OPER (Indexed);
+PROTO_OPER (Pattern);
+PROTO_OPER (Separation);
+PROTO_OPER (CIEBasedDEF);
+PROTO_OPER (CIEBasedDEFG);
+PROTO_OPER (DeviceN);
+
 
 /* <array> <index> <any> .forceput -
  * <dict> <key> <any> .forceput -
@@ -171,6 +561,36 @@ G_STMT_START {
 } G_STMT_END;
 DEFUNC_OPER_END
 
+/* <dict> <key> <proc> .odef - */
+DEFUNC_OPER (private_odef)
+G_STMT_START {
+	hg_quark_t arg0, arg1;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QNAME (arg0) ||
+	    !HG_IS_QARRAY (arg1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (hg_quark_is_executable(arg1)) {
+		hg_array_t *a = HG_VM_LOCK (vm, arg1, error);
+		const gchar *name = hg_name_lookup(vm->name, arg0);
+
+		hg_array_set_name(a, name);
+		HG_VM_UNLOCK (vm, arg1);
+
+		hg_quark_set_access_bits(&arg1, FALSE, FALSE, TRUE);
+	}
+	hg_stack_pop(ostack, error);
+
+	STACK_PUSH (ostack, arg1);
+	retval = _hg_operator_real_def(vm, error);
+} G_STMT_END;
+DEFUNC_OPER_END
+
 /* <bool> .setglobal - */
 DEFUNC_OPER (private_setglobal)
 G_STMT_START {
@@ -191,6 +611,40 @@ G_STMT_START {
 } G_STMT_END;
 DEFUNC_OPER_END
 
+/* <dict> <key> .undef - */
+DEFUNC_OPER (private_undef)
+G_STMT_START {
+	hg_quark_t arg0, arg1;
+	hg_dict_t *dict;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QDICT (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!hg_quark_is_writable(arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+	dict = HG_VM_LOCK (vm, arg0, error);
+	if (dict == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	hg_dict_remove(dict, arg1);
+
+	HG_VM_UNLOCK (vm, arg0);
+
+	hg_stack_pop(ostack, error);
+	hg_stack_pop(ostack, error);
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (abs);
 DEFUNC_UNIMPLEMENTED_OPER (add);
 DEFUNC_UNIMPLEMENTED_OPER (aload);
@@ -200,9 +654,98 @@ DEFUNC_UNIMPLEMENTED_OPER (arc);
 DEFUNC_UNIMPLEMENTED_OPER (arcn);
 DEFUNC_UNIMPLEMENTED_OPER (arct);
 DEFUNC_UNIMPLEMENTED_OPER (arcto);
-DEFUNC_UNIMPLEMENTED_OPER (array);
+
+/* <int> array <array> */
+DEFUNC_OPER (array)
+G_STMT_START {
+	hg_quark_t arg0, q;
+	hg_array_t *a;
+	gsize i;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QINT (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (HG_INT (arg0) < 0 ||
+	    HG_INT (arg0) > 65535) {
+		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		return FALSE;
+	}
+	q = hg_array_new(hg_vm_get_mem(vm), HG_INT (arg0), (gpointer *)&a);
+	if (q == Qnil) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	for (i = 0; i < HG_INT (arg0); i++) {
+		hg_array_set(a, HG_QNULL, i, error);
+	}
+	HG_VM_UNLOCK (vm, q);
+
+	hg_stack_pop(ostack, error);
+
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (ashow);
-DEFUNC_UNIMPLEMENTED_OPER (astore);
+
+/* <any> ... <array> astore <array> */
+DEFUNC_OPER (astore)
+G_STMT_START {
+	hg_quark_t arg0, q;
+	hg_array_t *a;
+	gsize len, i;
+	gboolean is_in_global;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QARRAY (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!hg_quark_is_writable(arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+	a = HG_VM_LOCK (vm, arg0, error);
+	if (a == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	len = hg_array_length(a);
+	if (hg_stack_depth(ostack) < (len + 1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_stackunderflow);
+		goto error;
+	}
+	is_in_global = hg_quark_has_same_mem_id(arg0, vm->mem_id[HG_VM_MEM_GLOBAL]);
+	for (i = 0; i < len; i++) {
+		q = hg_stack_index(ostack, len - i, error);
+		if (is_in_global) {
+			if (!hg_quark_is_simple_object(q) &&
+			    hg_quark_has_same_mem_id(q, vm->mem_id[HG_VM_MEM_LOCAL])) {
+				hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+				goto error;
+			}
+		}
+		hg_array_set(a, q, i, error);
+	}
+	for (i = 0; i <= len; i++)
+		hg_stack_pop(ostack, error);
+
+	STACK_PUSH (ostack, arg0);
+
+	retval = TRUE;
+  error:
+	HG_VM_UNLOCK (vm, arg0);
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (awidthshow);
 DEFUNC_UNIMPLEMENTED_OPER (begin);
 
@@ -260,8 +803,187 @@ DEFUNC_UNIMPLEMENTED_OPER (clippath);
 DEFUNC_UNIMPLEMENTED_OPER (closepath);
 DEFUNC_UNIMPLEMENTED_OPER (concat);
 DEFUNC_UNIMPLEMENTED_OPER (concatmatrix);
-DEFUNC_UNIMPLEMENTED_OPER (copy);
-DEFUNC_UNIMPLEMENTED_OPER (count);
+
+static gboolean
+_hg_operator_copy_real_traverse_dict(hg_mem_t    *mem,
+				     hg_quark_t   qkey,
+				     hg_quark_t   qval,
+				     gpointer     data,
+				     GError     **error)
+{
+	hg_dict_t *d2 = (hg_dict_t *)data;
+
+	hg_dict_add(d2, qkey, qval);
+
+	return TRUE;
+}
+
+/* <any> ... <n> copy <any> ...
+ * <array1> <array2> copy <subarray2>
+ * <dict1> <dict2> copy <dict2>
+ * <string1> <string2> copy <substring2>
+ * <packedarray> <array> copy <subarray2>
+ * <gstate1> <gstate2> copy <gstate2>
+ */
+DEFUNC_OPER (copy)
+G_STMT_START {
+	hg_quark_t arg0, arg1, q = Qnil;
+	gsize i;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (HG_IS_QINT (arg0)) {
+		gsize n = HG_INT (arg0);
+
+		if (n < 0 || n >= hg_stack_depth(ostack)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+			return FALSE;
+		}
+		hg_stack_pop(ostack, error);
+		for (i = 0; i < n; i++) {
+			if (!hg_stack_push(ostack, hg_stack_index(ostack, n - 1, error))) {
+				hg_vm_set_error(vm, qself, HG_VM_e_stackoverflow);
+				return FALSE;
+			}
+		}
+		retval = TRUE;
+	} else {
+		CHECK_STACK (ostack, 2);
+
+		arg1 = arg0;
+		arg0 = hg_stack_index(ostack, 1, error);
+		if (!hg_quark_is_readable(arg0) ||
+		    !hg_quark_is_writable(arg1)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+			return FALSE;
+		}
+		if (HG_IS_QARRAY (arg0) &&
+		    HG_IS_QARRAY (arg1)) {
+			hg_array_t *a1, *a2;
+			gsize len1, len2;
+
+			a1 = HG_VM_LOCK (vm, arg0, error);
+			a2 = HG_VM_LOCK (vm, arg1, error);
+			if (a1 == NULL || a2 == NULL) {
+				hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+				goto a_error;
+			}
+			len1 = hg_array_length(a1);
+			len2 = hg_array_length(a2);
+			if (len1 > len2) {
+				hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+				goto a_error;
+			}
+			for (i = 0; i < len1; i++) {
+				hg_quark_t qq;
+
+				qq = hg_array_get(a1, i, error);
+				hg_array_set(a2, qq, i, error);
+			}
+			if (len2 > len1) {
+				q = hg_array_make_subarray(a2, 0, len1 - 1, NULL, error);
+				if (q == Qnil) {
+					hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+					goto a_error;
+				}
+			} else {
+				q = arg1;
+			}
+			retval = TRUE;
+		  a_error:
+			if (a1)
+				HG_VM_UNLOCK (vm, arg0);
+			if (a2)
+				HG_VM_UNLOCK (vm, arg1);
+		} else if (HG_IS_QDICT (arg0) &&
+			   HG_IS_QDICT (arg1)) {
+			hg_dict_t *d1, *d2;
+
+			d1 = HG_VM_LOCK (vm, arg0, error);
+			d2 = HG_VM_LOCK (vm, arg1, error);
+			if (d1 == NULL || d2 == NULL) {
+				hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+				goto d_error;
+			}
+			if (hg_vm_get_language_level(vm) == HG_LANG_LEVEL_1) {
+				if (hg_dict_length(d2) != 0 ||
+				    hg_dict_maxlength(d1) != hg_dict_maxlength(d2)) {
+					hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+					goto d_error;
+				}
+			}
+			hg_dict_foreach(d1, _hg_operator_copy_real_traverse_dict, d2, error);
+			q = arg1;
+
+			retval = TRUE;
+		  d_error:
+			if (d1)
+				HG_VM_UNLOCK (vm, arg0);
+			if (d2)
+				HG_VM_UNLOCK (vm, arg1);
+		} else if (HG_IS_QSTRING (arg0) &&
+			   HG_IS_QSTRING (arg1)) {
+			hg_string_t *s1, *s2;
+			gsize len, len1, len2;
+
+			s1 = HG_VM_LOCK (vm, arg0, error);
+			s2 = HG_VM_LOCK (vm, arg1, error);
+			if (s1 == NULL || s2 == NULL) {
+				hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+				goto s_error;
+			}
+			len = hg_string_length(s1);
+			len1 = hg_string_maxlength(s1);
+			len2 = hg_string_maxlength(s2);
+			if (len1 > len2) {
+				hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+				goto s_error;
+			}
+			for (i = 0; i < len; i++) {
+				gchar c = hg_string_index(s1, i);
+
+				hg_string_overwrite_c(s2, c, i, error);
+			}
+			if (len2 > len1) {
+				q = hg_string_make_substring(s2, 0, len1 - 1, NULL, error);
+				if (q == Qnil) {
+					hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+					goto s_error;
+				}
+			} else {
+				q = arg1;
+			}
+			retval = TRUE;
+		  s_error:
+			if (s1)
+				HG_VM_UNLOCK (vm, arg0);
+			if (s2)
+				HG_VM_UNLOCK (vm, arg1);
+		} else {
+			hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+			return FALSE;
+		}
+
+		if (retval) {
+			hg_stack_pop(ostack, error);
+			hg_stack_pop(ostack, error);
+
+			STACK_PUSH (ostack, q);
+		}
+	}
+} G_STMT_END;
+DEFUNC_OPER_END
+
+/* - count <int> */
+DEFUNC_OPER (count)
+G_STMT_START {
+	STACK_PUSH (ostack, HG_QINT (hg_stack_depth(ostack)));
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (counttomark);
 DEFUNC_UNIMPLEMENTED_OPER (currentcmykcolor);
 DEFUNC_UNIMPLEMENTED_OPER (currentdash);
@@ -286,7 +1008,57 @@ DEFUNC_UNIMPLEMENTED_OPER (cvr);
 DEFUNC_UNIMPLEMENTED_OPER (cvrs);
 DEFUNC_UNIMPLEMENTED_OPER (cvs);
 DEFUNC_UNIMPLEMENTED_OPER (cvx);
-DEFUNC_UNIMPLEMENTED_OPER (def);
+
+/* <key> <value> def - */
+DEFUNC_OPER (def)
+G_STMT_START {
+	hg_quark_t arg0, arg1, qd;
+	gboolean is_dict_global;
+	hg_dict_t *dict;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+	qd = hg_stack_index(dstack, 0, error);
+	if (!hg_quark_is_writable(qd)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+	is_dict_global = hg_quark_has_same_mem_id(qd, vm->mem_id[HG_VM_MEM_GLOBAL]);
+	if (is_dict_global) {
+		if (!hg_quark_is_simple_object(arg0) &&
+		    hg_quark_has_same_mem_id(arg0, vm->mem_id[HG_VM_MEM_LOCAL])) {
+			hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+			return FALSE;
+		}
+		if (!hg_quark_is_simple_object(arg1) &&
+		    hg_quark_has_same_mem_id(arg1, vm->mem_id[HG_VM_MEM_LOCAL])) {
+			hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+			return FALSE;
+		}
+	}
+	dict = HG_VM_LOCK (vm, qd, error);
+	if (dict == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	if (hg_vm_get_language_level(vm) == HG_LANG_LEVEL_1) {
+		if (hg_dict_length(dict) == hg_dict_maxlength(dict) &&
+		    hg_dict_lookup(dict, arg0) == Qnil) {
+			hg_vm_set_error(vm, qself, HG_VM_e_dictfull);
+			goto error;
+		}
+	}
+	retval = hg_dict_add(dict, arg0, arg1);
+
+	hg_stack_pop(ostack, error);
+	hg_stack_pop(ostack, error);
+  error:
+	HG_VM_UNLOCK (vm, qd);
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (defineusername);
 
 /* <int> dict <dict> */
@@ -438,7 +1210,32 @@ DEFUNC_UNIMPLEMENTED_OPER (gsave);
 DEFUNC_UNIMPLEMENTED_OPER (gstate);
 DEFUNC_UNIMPLEMENTED_OPER (gt);
 DEFUNC_UNIMPLEMENTED_OPER (identmatrix);
-DEFUNC_UNIMPLEMENTED_OPER (idiv);
+
+/* <int1> <int2> idiv <quotient> */
+DEFUNC_OPER (idiv)
+G_STMT_START {
+	hg_quark_t arg0, arg1, q;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QINT (arg0) ||
+	    !HG_IS_QINT (arg1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	q = HG_QINT (HG_INT (arg0) / HG_INT (arg1));
+
+	hg_stack_pop(ostack, error);
+	hg_stack_pop(ostack, error);
+
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (idtransform);
 
 /* <bool> <proc> if - */
@@ -628,7 +1425,98 @@ DEFUNC_UNIMPLEMENTED_OPER (pathforall);
 DEFUNC_UNIMPLEMENTED_OPER (pop);
 DEFUNC_UNIMPLEMENTED_OPER (print);
 DEFUNC_UNIMPLEMENTED_OPER (printobject);
-DEFUNC_UNIMPLEMENTED_OPER (put);
+
+/* <array> <index> <any> put -
+ * <dict> <key> <value> put -
+ * <string> <index> <int> put -
+ */
+DEFUNC_OPER (put)
+G_STMT_START {
+	hg_quark_t arg0, arg1, arg2;
+	gboolean is_in_global;
+
+	CHECK_STACK (ostack, 3);
+
+	arg0 = hg_stack_index(ostack, 2, error);
+	arg1 = hg_stack_index(ostack, 1, error);
+	arg2 = hg_stack_index(ostack, 0, error);
+	if (!hg_quark_is_writable(arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+	is_in_global = hg_quark_has_same_mem_id(arg2, vm->mem_id[HG_VM_MEM_GLOBAL]);
+	if (is_in_global &&
+	    !hg_quark_is_simple_object(arg0) &&
+	    hg_quark_has_same_mem_id(arg0, vm->mem_id[HG_VM_MEM_LOCAL])) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+	if (HG_IS_QARRAY (arg0)) {
+		gsize index;
+		hg_array_t *a;
+
+		if (!HG_IS_QINT (arg1)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+			return FALSE;
+		}
+		a = HG_VM_LOCK (vm, arg0, error);
+		if (a == NULL) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
+		index = HG_INT (arg1);
+		if (hg_array_length(a) < index) {
+			HG_VM_UNLOCK (vm, arg0);
+			hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+			return FALSE;
+		}
+		retval = hg_array_set(a, arg2, index, error);
+
+		HG_VM_UNLOCK (vm, arg0);
+	} else if (HG_IS_QDICT (arg0)) {
+		hg_dict_t *d;
+
+		d = HG_VM_LOCK (vm, arg0, error);
+		if (d == NULL) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
+		if (hg_vm_get_language_level(vm) == HG_LANG_LEVEL_1 &&
+		    hg_dict_length(d) == hg_dict_maxlength(d) &&
+		    hg_dict_lookup(d, arg1) == Qnil) {
+			hg_vm_set_error(vm, qself, HG_VM_e_dictfull);
+			goto d_error;
+		}
+		retval = hg_dict_add(d, arg1, arg2);
+	  d_error:
+		HG_VM_UNLOCK (vm, arg0);
+	} else if (HG_IS_QSTRING (arg0)) {
+		hg_string_t *s;
+
+		if (!HG_IS_QINT (arg1) ||
+		    !HG_IS_QINT (arg2)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+			return FALSE;
+		}
+		s = HG_VM_LOCK (vm, arg0, error);
+		if (s == NULL) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
+		retval = hg_string_overwrite_c(s, arg2, arg1, error);
+
+		HG_VM_UNLOCK (vm, arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+
+	hg_stack_pop(ostack, error);
+	hg_stack_pop(ostack, error);
+	hg_stack_pop(ostack, error);
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (putinterval);
 DEFUNC_UNIMPLEMENTED_OPER (rcurveto);
 DEFUNC_UNIMPLEMENTED_OPER (read);
@@ -643,7 +1531,37 @@ DEFUNC_UNIMPLEMENTED_OPER (repeat);
 DEFUNC_UNIMPLEMENTED_OPER (restore);
 DEFUNC_UNIMPLEMENTED_OPER (rlineto);
 DEFUNC_UNIMPLEMENTED_OPER (rmoveto);
-DEFUNC_UNIMPLEMENTED_OPER (roll);
+
+/* <any> ... <n> <j> roll <any> ... */
+DEFUNC_OPER (roll)
+G_STMT_START {
+	hg_quark_t arg0, arg1;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+
+	if (!HG_IS_QINT (arg0) ||
+	    !HG_IS_QINT (arg1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (HG_INT (arg0) < 0) {
+		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		return FALSE;
+	}
+	CHECK_STACK (ostack, HG_INT (arg0) + 2);
+
+	hg_stack_pop(ostack, error);
+	hg_stack_pop(ostack, error);
+
+	hg_stack_roll(ostack, HG_INT (arg0), HG_INT (arg1), error);
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (rotate);
 DEFUNC_UNIMPLEMENTED_OPER (round);
 DEFUNC_UNIMPLEMENTED_OPER (save);
@@ -890,6 +1808,7 @@ DEFUNC_UNIMPLEMENTED_OPER (CIEBasedDEF);
 DEFUNC_UNIMPLEMENTED_OPER (CIEBasedDEFG);
 DEFUNC_UNIMPLEMENTED_OPER (DeviceN);
 
+#undef PROTO_OPER
 #undef DEFUNC_OPER
 #undef DEFUNC_OPER_END
 #undef DEFUNC_UNIMPLEMENTED_OPER
@@ -936,7 +1855,9 @@ _hg_operator_level1_register(hg_dict_t *dict,
 	REG_VALUE (dict, name, null, HG_QNULL);
 
 	REG_PRIV_OPER (dict, name, .forceput, private_forceput);
+	REG_PRIV_OPER (dict, name, .odef, private_odef);
 	REG_PRIV_OPER (dict, name, .setglobal, private_setglobal);
+	REG_PRIV_OPER (dict, name, .undef, private_undef);
 
 	REG_OPER (dict, name, abs);
 	REG_OPER (dict, name, add);
@@ -1393,7 +2314,9 @@ hg_operator_init(void)
 	} G_STMT_END
 
 	DECL_PRIV_OPER (.forceput, private_forceput);
+	DECL_PRIV_OPER (.odef, private_odef);
 	DECL_PRIV_OPER (.setglobal, private_setglobal);
+	DECL_PRIV_OPER (.undef, private_undef);
 
 	DECL_OPER (abs);
 	DECL_OPER (add);
