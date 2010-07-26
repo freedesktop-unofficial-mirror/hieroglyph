@@ -1,5 +1,7 @@
 2010-07-26  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgscanner.l: fix mis-scanning a negative decimal number.
+
 	* hieroglyph/hgstring.c (_hg_object_string_copy): implemented.
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_ifelse): implemented.

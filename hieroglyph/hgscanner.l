@@ -374,13 +374,13 @@ HEXDIGITS	[0-9a-fA-F]
 		gint sign = 0;
 
 		if (yytext[0] == '+' ||
-		    yytext[1] == '-') {
-			sign = (yytext[1] == '-' ? -1 : 0);
+		    yytext[0] == '-') {
+			sign = (yytext[0] == '-' ? -1 : 0);
 			pos++;
 		}
 		for (i = pos; i < yyleng; i++) {
 			f = yytext[i] - '0';
-			result += f * exp10((gdouble)(yyleng + sign - i - 1));
+			result += f * exp10((gdouble)(yyleng - i - 1));
 		}
 		if (sign < 0)
 			result = -result;
