@@ -1,5 +1,7 @@
 2010-07-26  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgarray.c (hg_array_set_name): new.
+
 	* hieroglyph/hgoperator.c (_hg_operator_real_bind): implemented.
 	(_hg_operator_real_file): implemented.
 	(_hg_operator_real_known): return a bool value if the given name is

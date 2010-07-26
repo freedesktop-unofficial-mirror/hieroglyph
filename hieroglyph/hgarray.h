@@ -53,6 +53,7 @@ struct _hg_array_t {
 	guint16     length;
 	gsize       allocated_size;
 	gboolean    is_fixed_size;
+	hg_quark_t  qname;
 };
 
 
@@ -79,6 +80,8 @@ void                hg_array_foreach          (hg_array_t                *array,
                                                hg_array_traverse_func_t   func,
                                                gpointer                   data,
                                                GError                   **error);
+void                hg_array_set_name         (hg_array_t                *array,
+					       const gchar               *name);
 
 
 G_END_DECLS

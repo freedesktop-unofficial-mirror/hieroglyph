@@ -67,6 +67,7 @@ _hg_object_array_initialize(hg_object_t *object,
 		array->is_fixed_size = FALSE;
 	}
 	/* not allocating any containers here */
+	array->qname = Qnil;
 
 	return TRUE;
 }
@@ -74,9 +75,12 @@ _hg_object_array_initialize(hg_object_t *object,
 static void
 _hg_object_array_free(hg_object_t *object)
 {
+	hg_array_t *a = (hg_array_t *)object;
+
 	/* don't free array->qcontainer here
 	   it's likely to be referred in another subarray
 	*/
+	hg_mem_free(a->o.mem, a->qname);
 }
 
 static hg_quark_t
@@ -144,6 +148,16 @@ _hg_object_array_to_cstr(hg_object_t              *object,
 	GString *retval = g_string_new(NULL);
 	GError *err = NULL;
 	gchar *s;
+
+	if (array->qname != Qnil) {
+		const gchar *p;
+
+		p = HG_MEM_LOCK (array->o.mem, array->qname, error);
+		s = g_strdup(p);
+		hg_mem_unlock_object(array->o.mem, array->qname);
+
+		return s;
+	}
 
 	g_string_append_c(retval, '[');
 	len = hg_array_length(array);
@@ -472,4 +486,31 @@ hg_array_foreach(hg_array_t                *array,
 			break;
 	}
 	hg_mem_unlock_object(array->o.mem, array->qcontainer);
+}
+
+/**
+ * hg_array_set_name:
+ * @array:
+ * @name:
+ *
+ * FIXME
+ */
+void
+hg_array_set_name(hg_array_t  *array,
+		  const gchar *name)
+{
+	gchar *p;
+	gsize len;
+
+	hg_return_if_fail (array != NULL);
+	hg_return_if_fail (name != NULL);
+
+	len = strlen(name);
+	array->qname = hg_mem_alloc(array->o.mem, len, (gpointer *)&p);
+	if (array->qname == Qnil) {
+		g_warning("%s: Unable to allocate memory.", __PRETTY_FUNCTION__);
+	} else {
+		memcpy(p, name, len);
+	}
+	hg_mem_unlock_object(array->o.mem, array->qname);
 }
