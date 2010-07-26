@@ -1,5 +1,8 @@
 2010-07-26  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgarray.c (hg_array_make_subarray): new.
+	(hg_array_copy_as_subarray): new.
+
 	* hieroglyph/hgvm.c (hg_vm_quark_to_string): don't update for
 	the executable array if the name is set to the array.
 

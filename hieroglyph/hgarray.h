@@ -49,11 +49,12 @@ struct _hg_bs_array_t {
 struct _hg_array_t {
 	hg_object_t o;
 	hg_quark_t  qcontainer;
+	hg_quark_t  qname;
 	guint16     offset;
 	guint16     length;
 	gsize       allocated_size;
-	gboolean    is_fixed_size;
-	hg_quark_t  qname;
+	gboolean    is_fixed_size:1;
+	gboolean    is_subarray:1;
 };
 
 
@@ -82,6 +83,16 @@ void                hg_array_foreach          (hg_array_t                *array,
                                                GError                   **error);
 void                hg_array_set_name         (hg_array_t                *array,
 					       const gchar               *name);
+hg_quark_t          hg_array_make_subarray    (hg_array_t                *array,
+					       gsize                      start_index,
+					       gsize                      end_index,
+					       gpointer                  *ret,
+					       GError                   **error);
+gboolean            hg_array_copy_as_subarray (hg_array_t                *src,
+					       hg_array_t                *dest,
+					       gsize                      start_index,
+					       gsize                      end_index,
+					       GError                   **error);
 
 
 G_END_DECLS

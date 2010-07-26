@@ -514,3 +514,101 @@ hg_array_set_name(hg_array_t  *array,
 	}
 	hg_mem_unlock_object(array->o.mem, array->qname);
 }
+
+/**
+ * hg_array_make_subarray:
+ * @array:
+ * @start_index:
+ * @end_index:
+ * @ret:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_quark_t
+hg_array_make_subarray(hg_array_t  *array,
+		       gsize        start_index,
+		       gsize        end_index,
+		       gpointer    *ret,
+		       GError     **error)
+{
+	hg_quark_t retval;
+	GError *err = NULL;
+	hg_array_t *a;
+
+	hg_return_val_with_gerror_if_fail (array != NULL, Qnil, error);
+
+	retval = hg_array_new(array->o.mem, 0, (gpointer *)&a);
+	if (retval == Qnil) {
+		g_set_error(&err, HG_ERROR, ENOMEM,
+			    "Out of memory");
+		goto error;
+	}
+	if (end_index > HG_ARRAY_MAX_SIZE) {
+		/* make an empty array */
+	} else {
+		if (!hg_array_copy_as_subarray(array, a,
+					       start_index,
+					       end_index,
+					       &err)) {
+			hg_mem_free(array->o.mem, retval);
+			retval = Qnil;
+		}
+		if (ret)
+			*ret = a;
+		else
+			hg_mem_unlock_object(array->o.mem, retval);
+	}
+  error:
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s (code: %d)",
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+	}
+
+	return retval;
+}
+
+/**
+ * hg_array_copy_as_subarray:
+ * @src:
+ * @dest:
+ * @start_index:
+ * @end_index:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_array_copy_as_subarray(hg_array_t  *src,
+			  hg_array_t  *dest,
+			  gsize        start_index,
+			  gsize        end_index,
+			  GError     **error)
+{
+	hg_return_val_with_gerror_if_fail (src != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (dest != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (start_index < hg_array_length(src), FALSE, error);
+	hg_return_val_with_gerror_if_fail (end_index < hg_array_length(src), FALSE, error);
+	hg_return_val_with_gerror_if_fail (start_index <= end_index, FALSE, error);
+
+	/* destroy the unnecessary destination's container */
+	hg_mem_free(dest->o.mem, dest->qcontainer);
+	/* make a subarray */
+	dest->qcontainer = src->qcontainer;
+	dest->allocated_size = dest->length = end_index - start_index + 1;
+	dest->offset = start_index;
+	dest->is_fixed_size = TRUE;
+	dest->is_subarray = TRUE;
+
+	return TRUE;
+}
