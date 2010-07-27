@@ -398,7 +398,8 @@ HEXDIGITS	[0-9a-fA-F]
 		}
 		return TRUE;
 	}
-[^\x04%\(\)/<>\[\]\{\}\t\f\r\n ]+|<<|>>|\[|\]|\{|\}/{CONTROL}|{SPACE}	{
+\<\<|\>\>|\[|\]|\{|\}					|
+[^\x04%\(\)/<>\[\]\{\}\t\f\r\n ]+/{CONTROL}|{SPACE}	{
 		scanner->result = HG_QNAME (scanner->name, yytext);
 		hg_quark_set_executable(&scanner->result, TRUE);
 		return TRUE;
@@ -482,19 +483,20 @@ hg_scanner_attach_file(hg_scanner_t *scanner,
 	hg_return_val_if_fail (file != NULL, FALSE);
 
 	yyg = (struct yyguts_t *)scanner->yyscanner;
-	if (scanner->infile != NULL &&
-	    scanner->infile != file) {
-		hg_mem_unlock_object(scanner->infile->o.mem,
-				     scanner->infile->o.self);
-	}
-	scanner->infile = file;
+	if (scanner->infile != file) {
+		if (scanner->infile != NULL)
+			hg_mem_unlock_object(scanner->infile->o.mem,
+					     scanner->infile->o.self);
 
-	if (YY_CURRENT_BUFFER) {
-		yypop_buffer_state(scanner->yyscanner);
+		scanner->infile = file;
+
+		if (YY_CURRENT_BUFFER) {
+			yypop_buffer_state(scanner->yyscanner);
+		}
+		yystate = yy_create_buffer(NULL, YY_BUF_SIZE, scanner->yyscanner);
+		yypush_buffer_state(yystate, scanner->yyscanner);
+		yyset_lineno(hg_file_get_lineno(file), scanner->yyscanner);
 	}
-	yystate = yy_create_buffer(NULL, YY_BUF_SIZE, scanner->yyscanner);
-	yypush_buffer_state(yystate, scanner->yyscanner);
-	yyset_lineno(hg_file_get_lineno(file), scanner->yyscanner);
 
 	return TRUE;
 }
