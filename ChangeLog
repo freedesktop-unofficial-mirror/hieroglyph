@@ -1,5 +1,14 @@
 2010-07-27  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgvm.c (hg_vm_step_in_exec_array): check null after
+	creating the stack.
+	(hg_vm_setup): initialize $error dict.
+	(hg_vm_stepi): fix a typo.
+	(hg_vm_eval_from_cstring): add \n at the end to avoid failing
+	on scanner for last token.
+	(hg_vm_clear_error): implemented the native code instead of
+	evaluating PostScript.
+
 	* hieroglyph/hgstack.c (hg_stack_new): initialize the return value to
 	avoid segfault when OOM.
 

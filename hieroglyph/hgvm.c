@@ -32,6 +32,7 @@
 #include "hgmark.h"
 #include "hgmem.h"
 #include "hgname.h"
+#include "hgnull.h"
 #include "hgoperator.h"
 #include "hgreal.h"
 #include "hgscanner.h"
@@ -195,7 +196,7 @@ _hg_vm_stack_real_dump(hg_mem_t    *mem,
 {
 	hg_vm_stack_dump_data_t *ddata = data;
 	hg_quark_t q;
-	hg_string_t *s;
+	hg_string_t *s = NULL;
 
 	q = hg_vm_quark_to_string(ddata->vm, qdata, (gpointer *)&s, error);
 
@@ -397,6 +398,13 @@ hg_vm_step_in_exec_array(hg_vm_t    *vm,
 	old_ostack = vm->stacks[HG_VM_STACK_OSTACK];
 	vm->stacks[HG_VM_STACK_OSTACK] = hg_stack_new(hg_vm_get_mem(vm),
 						      65535);
+	if (vm->stacks[HG_VM_STACK_OSTACK] == NULL) {
+		/* unable to dup the correct stacks in this case */
+		vm->stacks[HG_VM_STACK_OSTACK] = old_ostack;
+		hg_vm_set_error(vm, qparent, HG_VM_e_VMerror);
+
+		return FALSE;
+	}
 
 	hg_stack_push(vm->stacks[HG_VM_STACK_OSTACK],
 		      HG_QMARK);
@@ -1128,7 +1136,7 @@ hg_vm_setup(hg_vm_t           *vm,
 	    hg_quark_t         stderr)
 {
 	hg_quark_t qf;
-	hg_dict_t *dict = NULL;
+	hg_dict_t *dict = NULL, *dict_error;
 
 	hg_return_val_if_fail (vm != NULL, FALSE);
 	hg_return_val_if_fail (lang_level < HG_LANG_LEVEL_END, FALSE);
@@ -1197,7 +1205,7 @@ hg_vm_setup(hg_vm_t           *vm,
 				      NULL);
 	vm->qerror = hg_dict_new(hg_vm_get_mem(vm),
 				 65535,
-				 NULL);
+				 (gpointer *)&dict_error);
 	if (vm->qsystemdict == Qnil ||
 	    vm->qglobaldict == Qnil ||
 	    vm->qerror == Qnil)
@@ -1213,6 +1221,20 @@ hg_vm_setup(hg_vm_t           *vm,
 			      vm->qglobaldict);
 	}
 	/* userdict will be created/pushed in PostScript */
+
+	/* initialize $error */
+	if (!hg_dict_add(dict_error,
+			 HG_QNAME (vm->name, "newerror"),
+			 HG_QBOOL (FALSE)))
+		goto error;
+	if (!hg_dict_add(dict_error,
+			 HG_QNAME (vm->name, "errorname"),
+			 HG_QNULL))
+		goto error;
+	if (!hg_dict_add(dict_error,
+			 HG_QNAME (vm->name, ".isstop"),
+			 HG_QBOOL (FALSE)))
+		goto error;
 
 	/* add built-in items into systemdict */
 	dict = _HG_VM_LOCK (vm, vm->qsystemdict, NULL);
@@ -1564,7 +1586,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 			    }
 			    if (!hg_stack_push(estack, q)) {
 				    hg_vm_set_error(vm, qexecobj,
-						    HG_VM_e_stackoverflow);
+						    HG_VM_e_execstackoverflow);
 
 				    return TRUE;
 			    }
@@ -1629,9 +1651,10 @@ hg_vm_stepi(hg_vm_t  *vm,
 							      &err,
 							      NULL);
 			    _HG_VM_UNLOCK (vm, qexecobj);
+			    hg_stack_pop(estack, &err);
 			    if (!hg_stack_push(estack, qresult)) {
 				    hg_vm_set_error(vm, qexecobj,
-						    HG_VM_e_stackoverflow);
+						    HG_VM_e_execstackoverflow);
 
 				    return TRUE;
 			    }
@@ -1656,6 +1679,9 @@ hg_vm_stepi(hg_vm_t  *vm,
 					 hg_vm_get_mem(vm),
 					 &err)) {
 			    if (!err && hg_file_is_eof(file)) {
+#if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
+				    g_print("I: EOF detected\n");
+#endif
 				    hg_stack_pop(estack, &err);
 				    *is_proceeded = TRUE;
 				    break;
@@ -1871,13 +1897,17 @@ hg_vm_eval_from_cstring(hg_vm_t      *vm,
 	hg_quark_t qstring;
 	GError *err = NULL;
 	gboolean retval = FALSE;
+	gchar *str;
 
 	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error);
 	hg_return_val_with_gerror_if_fail (cstring != NULL, FALSE, error);
 
+	/* add \n at the end to avoid failing on scanner */
+	str = g_strdup_printf("%s\n", cstring);
 	qstring = hg_string_new_with_value(hg_vm_get_mem(vm),
 					   NULL,
-					   cstring, -1);
+					   str, -1);
+	g_free(str);
 	if (qstring == Qnil) {
 		g_set_error(&err, HG_ERROR, ENOMEM,
 			    "Out of memory");
@@ -2095,10 +2125,33 @@ hg_vm_has_error(hg_vm_t *vm)
 void
 hg_vm_clear_error(hg_vm_t *vm)
 {
+	hg_dict_t *dict_error;
+
 	hg_return_if_fail (vm != NULL);
 
-	hg_vm_eval_from_cstring(vm, "$error begin /newerror false def /errorname null def end", NULL, NULL, NULL, NULL);
+	dict_error = _HG_VM_LOCK (vm, vm->qerror, NULL);
+	if (dict_error == NULL) {
+		g_printerr("Unable to obtain $error dict\n");
+		return;
+	}
+	if (!hg_dict_add(dict_error,
+			 HG_QNAME (vm->name, "newerror"),
+			 HG_QBOOL (FALSE)))
+		goto error;
+	if (!hg_dict_add(dict_error,
+			 HG_QNAME (vm->name, "errorname"),
+			 HG_QNULL))
+		goto error;
+	if (!hg_dict_add(dict_error,
+			 HG_QNAME (vm->name, ".isstop"),
+			 HG_QBOOL (FALSE)))
+		goto error;
+
 	vm->has_error = FALSE;
+
+	return;
+  error:
+	g_printerr("Unable to reset entries in $error dict\n");
 }
 
 /**
