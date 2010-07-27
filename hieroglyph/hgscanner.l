@@ -48,7 +48,7 @@
 	} G_STMT_END
 #define YY_EXTRA_TYPE		hg_scanner_t *
 #define YY_USER_INIT		yyextra = scanner;
-#define ECHO			g_assert_not_reached()
+#define ECHO			do { if (fwrite(yytext, yyleng, 1, yyout)){}; fflush(yyout); g_assert_not_reached();} while (0)
 
 
 struct _hg_scanner_t {
@@ -75,7 +75,7 @@ void yyset_column(int column_no, yyscan_t yyscanner);
 %x STRING HEXSTRING ASCII85
 
 CONTROL		[\x04%\(\)/<>\[\]\{\}]
-SPACE		[\t\f\r\n ]
+SPACE		[\t\f\r\n\0 ]
 HEXDIGITS	[0-9a-fA-F]
 %%
 	gint string_count = 0;
@@ -400,14 +400,12 @@ HEXDIGITS	[0-9a-fA-F]
 		return TRUE;
 	}
 \<\<|\>\>|\[|\]|\{|\}					|
-[^\x04%\(\)/<>\[\]\{\}\t\f\r\n ]+/{CONTROL}|{SPACE}	{
+[^\x04%\(\)/\<\>\[\]\{\}\t\f\r\n ]+/{CONTROL}|{SPACE}	{
 		scanner->result = HG_QNAME (scanner->name, yytext);
 		hg_quark_set_executable(&scanner->result, TRUE);
 		return TRUE;
 	}
 <<EOF>>		{
-		g_set_error(error, HG_ERROR, EINVAL,
-			    "Reached the end of the file during scanning a token");
 		yyterminate();
 	}
 %%

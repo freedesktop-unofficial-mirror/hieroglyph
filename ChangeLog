@@ -1,5 +1,7 @@
 2010-07-27  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgscanner.l: do not set an error when EOF.
+
 	* hieroglyph/hgquark.h (hg_quark_new): set a exec bit for
 	the immediately evaluated name object.
 
