@@ -1,5 +1,15 @@
 2010-07-27  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (_hg_operator_real_protected_repeat_continue):
+	implemented.
+	(_hg_operator_real_protected_stopped_continue): likewise.
+	(_hg_operator_real_counttomark): likewise.
+	(_hg_operator_real_exch): likewise.
+	(_hg_operator_real_repeat): likewise.
+	(_hg_operator_real_stopped): likewise.
+	(_hg_operator_real_where): likewise.
+	(_hg_operator_level1_register): define [, ].
+
 	* hieroglyph/hgvm.c (hg_vm_step_in_exec_array): check null after
 	creating the stack.
 	(hg_vm_setup): initialize $error dict.

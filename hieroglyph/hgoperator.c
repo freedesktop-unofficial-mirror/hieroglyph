@@ -104,10 +104,12 @@ PROTO_OPER (private_forceput);
 PROTO_OPER (private_odef);
 PROTO_OPER (private_setglobal);
 PROTO_OPER (private_undef);
+PROTO_OPER (protected_arraytomark);
+PROTO_OPER (protected_repeat_continue);
+PROTO_OPER (protected_stopped_continue);
 PROTO_OPER (abs);
 PROTO_OPER (add);
 PROTO_OPER (aload);
-PROTO_OPER (anchorsearch);
 PROTO_OPER (and);
 PROTO_OPER (arc);
 PROTO_OPER (arcn);
@@ -153,7 +155,6 @@ PROTO_OPER (cvlit);
 PROTO_OPER (cvn);
 PROTO_OPER (cvr);
 PROTO_OPER (cvrs);
-PROTO_OPER (cvs);
 PROTO_OPER (cvx);
 PROTO_OPER (def);
 PROTO_OPER (defineusername);
@@ -171,9 +172,7 @@ PROTO_OPER (exec);
 PROTO_OPER (exit);
 PROTO_OPER (file);
 PROTO_OPER (fill);
-PROTO_OPER (findfont);
 PROTO_OPER (flattenpath);
-PROTO_OPER (floor);
 PROTO_OPER (flush);
 PROTO_OPER (flushfile);
 PROTO_OPER (for);
@@ -204,11 +203,9 @@ PROTO_OPER (known);
 PROTO_OPER (le);
 PROTO_OPER (length);
 PROTO_OPER (lineto);
-PROTO_OPER (load);
 PROTO_OPER (loop);
 PROTO_OPER (lt);
 PROTO_OPER (makefont);
-PROTO_OPER (matrix);
 PROTO_OPER (maxlength);
 PROTO_OPER (mod);
 PROTO_OPER (moveto);
@@ -224,7 +221,6 @@ PROTO_OPER (pop);
 PROTO_OPER (print);
 PROTO_OPER (printobject);
 PROTO_OPER (put);
-PROTO_OPER (putinterval);
 PROTO_OPER (rcurveto);
 PROTO_OPER (read);
 PROTO_OPER (readhexstring);
@@ -267,7 +263,6 @@ PROTO_OPER (show);
 PROTO_OPER (showpage);
 PROTO_OPER (stop);
 PROTO_OPER (stopped);
-PROTO_OPER (store);
 PROTO_OPER (string);
 PROTO_OPER (stringwidth);
 PROTO_OPER (stroke);
@@ -348,7 +343,6 @@ PROTO_OPER (currentstrokeadjust);
 PROTO_OPER (currenttransfer);
 PROTO_OPER (currentundercolorremoval);
 PROTO_OPER (defaultmatrix);
-PROTO_OPER (definefont);
 PROTO_OPER (deletefile);
 PROTO_OPER (detach);
 PROTO_OPER (deviceinfo);
@@ -363,7 +357,6 @@ PROTO_OPER (fileposition);
 PROTO_OPER (fork);
 PROTO_OPER (framedevice);
 PROTO_OPER (grestoreall);
-PROTO_OPER (handleerror);
 PROTO_OPER (initclip);
 PROTO_OPER (initgraphics);
 PROTO_OPER (initmatrix);
@@ -379,7 +372,6 @@ PROTO_OPER (noaccess);
 PROTO_OPER (notify);
 PROTO_OPER (nulldevice);
 PROTO_OPER (packedarray);
-PROTO_OPER (quit);
 PROTO_OPER (rand);
 PROTO_OPER (rcheck);
 PROTO_OPER (readonly);
@@ -390,7 +382,6 @@ PROTO_OPER (resetfile);
 PROTO_OPER (reversepath);
 PROTO_OPER (rootfont);
 PROTO_OPER (rrand);
-PROTO_OPER (run);
 PROTO_OPER (scheck);
 PROTO_OPER (setblackgeneration);
 PROTO_OPER (setcachelimit);
@@ -412,14 +403,11 @@ PROTO_OPER (setundercolorremoval);
 PROTO_OPER (sin);
 PROTO_OPER (sqrt);
 PROTO_OPER (srand);
-PROTO_OPER (stack);
 PROTO_OPER (status);
 PROTO_OPER (statusdict);
 PROTO_OPER (ucachestatus);
-PROTO_OPER (undefinefont);
 PROTO_OPER (usertime);
 PROTO_OPER (ustrokepath);
-PROTO_OPER (version);
 PROTO_OPER (vmreclaim);
 PROTO_OPER (vmstatus);
 PROTO_OPER (wait);
@@ -445,7 +433,6 @@ PROTO_OPER (gcheck);
 PROTO_OPER (glyphshow);
 PROTO_OPER (languagelevel);
 PROTO_OPER (product);
-PROTO_OPER (pstack);
 PROTO_OPER (resourceforall);
 PROTO_OPER (resourcestatus);
 PROTO_OPER (revision);
@@ -645,10 +632,75 @@ G_STMT_START {
 } G_STMT_END;
 DEFUNC_OPER_END
 
+/* */
+DEFUNC_UNIMPLEMENTED_OPER (protected_arraytomark);
+
+/* <n> <proc> %repeat_continue - */
+DEFUNC_OPER (protected_repeat_continue)
+G_STMT_START {
+	hg_quark_t arg0, arg1, self, q;
+
+	arg0 = hg_stack_index(estack, 2, error);
+	arg1 = hg_stack_index(estack, 1, error);
+	self = hg_stack_index(estack, 0, error);
+
+	hg_stack_pop(estack, error);
+	hg_stack_pop(estack, error);
+	hg_stack_pop(estack, error);
+
+	if (HG_INT (arg0) > 0) {
+		arg0 = HG_QINT (HG_INT (arg0) - 1);
+
+		STACK_PUSH (estack, arg0);
+		STACK_PUSH (estack, arg1);
+		STACK_PUSH (estack, self);
+
+		q = hg_vm_quark_copy(vm, arg1, NULL, error);
+		if (q == Qnil) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
+		STACK_PUSH (estack, q);
+	}
+
+	/* dummy */
+	STACK_PUSH (estack, self);
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
+/* %stopped_continue */
+DEFUNC_OPER (protected_stopped_continue)
+G_STMT_START {
+	hg_dict_t *dict;
+	hg_quark_t q, qn;
+	gboolean ret = FALSE;
+
+	dict = HG_VM_LOCK (vm, vm->qerror, error);
+	if (dict == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	qn = HG_QNAME (vm->name, ".isstop");
+	q = hg_dict_lookup(dict, qn);
+	HG_VM_UNLOCK (vm, vm->qerror);
+
+	if (q != Qnil &&
+	    HG_IS_QBOOL (q) &&
+	    HG_BOOL (q)) {
+		hg_vm_clear_error(vm);
+		ret = TRUE;
+	}
+	STACK_PUSH (ostack, HG_QBOOL (ret));
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (abs);
 DEFUNC_UNIMPLEMENTED_OPER (add);
 DEFUNC_UNIMPLEMENTED_OPER (aload);
-DEFUNC_UNIMPLEMENTED_OPER (anchorsearch);
 DEFUNC_UNIMPLEMENTED_OPER (and);
 DEFUNC_UNIMPLEMENTED_OPER (arc);
 DEFUNC_UNIMPLEMENTED_OPER (arcn);
@@ -984,7 +1036,31 @@ G_STMT_START {
 } G_STMT_END;
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (counttomark);
+/* <mark> ... counttomark <int> */
+DEFUNC_OPER (counttomark)
+G_STMT_START {
+	gsize i, depth = hg_stack_depth(ostack);
+	hg_quark_t q = Qnil;
+
+	for (i = 0; i < depth; i++) {
+		hg_quark_t qq = hg_stack_index(ostack, i, error);
+
+		if (HG_IS_QMARK (qq)) {
+			q = HG_QINT (i);
+			break;
+		}
+	}
+	if (q == Qnil) {
+		hg_vm_set_error(vm, qself, HG_VM_e_unmatchedmark);
+		return FALSE;
+	}
+
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (currentcmykcolor);
 DEFUNC_UNIMPLEMENTED_OPER (currentdash);
 DEFUNC_UNIMPLEMENTED_OPER (currentdict);
@@ -1006,7 +1082,6 @@ DEFUNC_UNIMPLEMENTED_OPER (cvlit);
 DEFUNC_UNIMPLEMENTED_OPER (cvn);
 DEFUNC_UNIMPLEMENTED_OPER (cvr);
 DEFUNC_UNIMPLEMENTED_OPER (cvrs);
-DEFUNC_UNIMPLEMENTED_OPER (cvs);
 DEFUNC_UNIMPLEMENTED_OPER (cvx);
 
 /* <key> <value> def - */
@@ -1115,7 +1190,24 @@ DEFUNC_UNIMPLEMENTED_OPER (eoclip);
 DEFUNC_UNIMPLEMENTED_OPER (eofill);
 DEFUNC_UNIMPLEMENTED_OPER (eoviewclip);
 DEFUNC_UNIMPLEMENTED_OPER (eq);
-DEFUNC_UNIMPLEMENTED_OPER (exch);
+
+/* <any1> <any2> exch <any2> <any1> */
+DEFUNC_OPER (exch)
+G_STMT_START {
+	hg_quark_t arg0, arg1;
+
+	CHECK_STACK (ostack, 2);
+
+	arg1 = hg_stack_pop(ostack, error);
+	arg0 = hg_stack_pop(ostack, error);
+
+	STACK_PUSH (ostack, arg1);
+	STACK_PUSH (ostack, arg0);
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (exec);
 DEFUNC_UNIMPLEMENTED_OPER (exit);
 
@@ -1210,9 +1302,7 @@ G_STMT_START {
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (fill);
-DEFUNC_UNIMPLEMENTED_OPER (findfont);
 DEFUNC_UNIMPLEMENTED_OPER (flattenpath);
-DEFUNC_UNIMPLEMENTED_OPER (floor);
 DEFUNC_UNIMPLEMENTED_OPER (flush);
 DEFUNC_UNIMPLEMENTED_OPER (flushfile);
 DEFUNC_UNIMPLEMENTED_OPER (for);
@@ -1518,11 +1608,9 @@ DEFUNC_OPER_END
 DEFUNC_UNIMPLEMENTED_OPER (le);
 DEFUNC_UNIMPLEMENTED_OPER (length);
 DEFUNC_UNIMPLEMENTED_OPER (lineto);
-DEFUNC_UNIMPLEMENTED_OPER (load);
 DEFUNC_UNIMPLEMENTED_OPER (loop);
 DEFUNC_UNIMPLEMENTED_OPER (lt);
 DEFUNC_UNIMPLEMENTED_OPER (makefont);
-DEFUNC_UNIMPLEMENTED_OPER (matrix);
 DEFUNC_UNIMPLEMENTED_OPER (maxlength);
 DEFUNC_UNIMPLEMENTED_OPER (mod);
 DEFUNC_UNIMPLEMENTED_OPER (moveto);
@@ -1655,7 +1743,6 @@ G_STMT_START {
 } G_STMT_END;
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (putinterval);
 DEFUNC_UNIMPLEMENTED_OPER (rcurveto);
 DEFUNC_UNIMPLEMENTED_OPER (read);
 DEFUNC_UNIMPLEMENTED_OPER (readhexstring);
@@ -1665,7 +1752,59 @@ DEFUNC_UNIMPLEMENTED_OPER (rectclip);
 DEFUNC_UNIMPLEMENTED_OPER (rectfill);
 DEFUNC_UNIMPLEMENTED_OPER (rectstroke);
 DEFUNC_UNIMPLEMENTED_OPER (rectviewclip);
-DEFUNC_UNIMPLEMENTED_OPER (repeat);
+
+/* <int> <proc> repeat - */
+DEFUNC_OPER (repeat)
+G_STMT_START {
+	hg_quark_t arg0, arg1, q;
+	hg_dict_t *dict;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+
+	if (!HG_IS_QINT (arg0) ||
+	    !HG_IS_QARRAY (arg1) ||
+	    !hg_quark_is_executable(arg1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!hg_quark_is_readable(arg1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+	if (HG_INT (arg0) < 0) {
+		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		return FALSE;
+	}
+
+	dict = HG_VM_LOCK (vm, vm->qsystemdict, error);
+	if (dict == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%repeat_continue"));
+	if (q == Qnil) {
+		hg_vm_set_error(vm, qself, HG_VM_e_undefined);
+		HG_VM_UNLOCK (vm, vm->qsystemdict);
+		return FALSE;
+	}
+	HG_VM_UNLOCK (vm, vm->qsystemdict);
+
+	STACK_PUSH (estack, arg0);
+	STACK_PUSH (estack, arg1);
+	STACK_PUSH (estack, q);
+
+	hg_stack_roll(estack, 4, -1, error);
+
+	hg_stack_pop(ostack, error);
+	hg_stack_pop(ostack, error);
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (restore);
 DEFUNC_UNIMPLEMENTED_OPER (rlineto);
 DEFUNC_UNIMPLEMENTED_OPER (rmoveto);
@@ -1727,8 +1866,49 @@ DEFUNC_UNIMPLEMENTED_OPER (shareddict);
 DEFUNC_UNIMPLEMENTED_OPER (show);
 DEFUNC_UNIMPLEMENTED_OPER (showpage);
 DEFUNC_UNIMPLEMENTED_OPER (stop);
-DEFUNC_UNIMPLEMENTED_OPER (stopped);
-DEFUNC_UNIMPLEMENTED_OPER (store);
+
+/* <any> stopped <bool> */
+DEFUNC_OPER (stopped)
+G_STMT_START {
+	hg_quark_t arg0, q;
+	hg_dict_t *dict;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!hg_quark_is_simple_object(arg0) &&
+	    !HG_IS_QOPER (arg0) &&
+	    !hg_quark_is_readable(arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+	if (hg_quark_is_executable(arg0)) {
+		dict = HG_VM_LOCK (vm, vm->qsystemdict, error);
+		if (dict == NULL) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
+		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%stopped_continue"));
+		if (q == Qnil) {
+			hg_vm_set_error(vm, qself, HG_VM_e_undefined);
+			return FALSE;
+		}
+		STACK_PUSH (estack, q);
+		STACK_PUSH (estack, arg0);
+
+		hg_stack_roll(estack, 3, -1, error);
+
+		hg_stack_pop(ostack, error);
+	} else {
+		hg_stack_pop(ostack, error);
+
+		STACK_PUSH (ostack, HG_QBOOL (FALSE));
+	}
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (string);
 DEFUNC_UNIMPLEMENTED_OPER (stringwidth);
 DEFUNC_UNIMPLEMENTED_OPER (stroke);
@@ -1749,7 +1929,50 @@ DEFUNC_UNIMPLEMENTED_OPER (userdict);
 DEFUNC_UNIMPLEMENTED_OPER (ustroke);
 DEFUNC_UNIMPLEMENTED_OPER (viewclip);
 DEFUNC_UNIMPLEMENTED_OPER (viewclippath);
-DEFUNC_UNIMPLEMENTED_OPER (where);
+
+/* <key> where <dict> <true>
+ * <key> where <false>
+ */
+DEFUNC_OPER (where)
+G_STMT_START {
+	hg_quark_t arg0, q = Qnil, qq = Qnil;
+	gsize ddepth = hg_stack_depth(dstack), i;
+	hg_dict_t *dict;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	for (i = 0; i < ddepth; i++) {
+		q = hg_stack_index(dstack, i, error);
+		if (!HG_IS_QDICT (q)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
+		dict = HG_VM_LOCK (vm, q, error);
+		if (dict == NULL) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
+		qq = hg_dict_lookup(dict, arg0);
+		HG_VM_UNLOCK (vm, q);
+
+		if (qq != Qnil)
+			break;
+	}
+
+	hg_stack_pop(ostack, error);
+
+	if (qq == Qnil) {
+		STACK_PUSH (ostack, HG_QBOOL (FALSE));
+	} else {
+		STACK_PUSH (ostack, q);
+		STACK_PUSH (ostack, HG_QBOOL (TRUE));
+	}
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (widthshow);
 DEFUNC_UNIMPLEMENTED_OPER (write);
 DEFUNC_UNIMPLEMENTED_OPER (writehexstring);
@@ -1809,7 +2032,6 @@ DEFUNC_UNIMPLEMENTED_OPER (currentstrokeadjust);
 DEFUNC_UNIMPLEMENTED_OPER (currenttransfer);
 DEFUNC_UNIMPLEMENTED_OPER (currentundercolorremoval);
 DEFUNC_UNIMPLEMENTED_OPER (defaultmatrix);
-DEFUNC_UNIMPLEMENTED_OPER (definefont);
 DEFUNC_UNIMPLEMENTED_OPER (deletefile);
 DEFUNC_UNIMPLEMENTED_OPER (detach);
 DEFUNC_UNIMPLEMENTED_OPER (deviceinfo);
@@ -1824,7 +2046,6 @@ DEFUNC_UNIMPLEMENTED_OPER (fileposition);
 DEFUNC_UNIMPLEMENTED_OPER (fork);
 DEFUNC_UNIMPLEMENTED_OPER (framedevice);
 DEFUNC_UNIMPLEMENTED_OPER (grestoreall);
-DEFUNC_UNIMPLEMENTED_OPER (handleerror);
 DEFUNC_UNIMPLEMENTED_OPER (initclip);
 DEFUNC_UNIMPLEMENTED_OPER (initgraphics);
 DEFUNC_UNIMPLEMENTED_OPER (initmatrix);
@@ -1840,7 +2061,6 @@ DEFUNC_UNIMPLEMENTED_OPER (noaccess);
 DEFUNC_UNIMPLEMENTED_OPER (notify);
 DEFUNC_UNIMPLEMENTED_OPER (nulldevice);
 DEFUNC_UNIMPLEMENTED_OPER (packedarray);
-DEFUNC_UNIMPLEMENTED_OPER (quit);
 DEFUNC_UNIMPLEMENTED_OPER (rand);
 DEFUNC_UNIMPLEMENTED_OPER (rcheck);
 DEFUNC_UNIMPLEMENTED_OPER (readonly);
@@ -1851,7 +2071,6 @@ DEFUNC_UNIMPLEMENTED_OPER (resetfile);
 DEFUNC_UNIMPLEMENTED_OPER (reversepath);
 DEFUNC_UNIMPLEMENTED_OPER (rootfont);
 DEFUNC_UNIMPLEMENTED_OPER (rrand);
-DEFUNC_UNIMPLEMENTED_OPER (run);
 DEFUNC_UNIMPLEMENTED_OPER (scheck);
 DEFUNC_UNIMPLEMENTED_OPER (setblackgeneration);
 DEFUNC_UNIMPLEMENTED_OPER (setcachelimit);
@@ -1873,14 +2092,11 @@ DEFUNC_UNIMPLEMENTED_OPER (setundercolorremoval);
 DEFUNC_UNIMPLEMENTED_OPER (sin);
 DEFUNC_UNIMPLEMENTED_OPER (sqrt);
 DEFUNC_UNIMPLEMENTED_OPER (srand);
-DEFUNC_UNIMPLEMENTED_OPER (stack);
 DEFUNC_UNIMPLEMENTED_OPER (status);
 DEFUNC_UNIMPLEMENTED_OPER (statusdict);
 DEFUNC_UNIMPLEMENTED_OPER (ucachestatus);
-DEFUNC_UNIMPLEMENTED_OPER (undefinefont);
 DEFUNC_UNIMPLEMENTED_OPER (usertime);
 DEFUNC_UNIMPLEMENTED_OPER (ustrokepath);
-DEFUNC_UNIMPLEMENTED_OPER (version);
 DEFUNC_UNIMPLEMENTED_OPER (vmreclaim);
 DEFUNC_UNIMPLEMENTED_OPER (vmstatus);
 DEFUNC_UNIMPLEMENTED_OPER (wait);
@@ -1906,7 +2122,6 @@ DEFUNC_UNIMPLEMENTED_OPER (gcheck);
 DEFUNC_UNIMPLEMENTED_OPER (glyphshow);
 DEFUNC_UNIMPLEMENTED_OPER (languagelevel);
 DEFUNC_UNIMPLEMENTED_OPER (product);
-DEFUNC_UNIMPLEMENTED_OPER (pstack);
 DEFUNC_UNIMPLEMENTED_OPER (resourceforall);
 DEFUNC_UNIMPLEMENTED_OPER (resourcestatus);
 DEFUNC_UNIMPLEMENTED_OPER (revision);
@@ -1991,16 +2206,21 @@ _hg_operator_level1_register(hg_dict_t *dict,
 	REG_VALUE (dict, name, mark, HG_QMARK);
 	REG_VALUE (dict, name, null, HG_QNULL);
 	REG_VALUE (dict, name, true, HG_QBOOL (TRUE));
+	REG_VALUE (dict, name, [, HG_QMARK);
+	REG_VALUE (dict, name, ], HG_QEVALNAME (name, "%arraytomark"));
 
 	REG_PRIV_OPER (dict, name, .forceput, private_forceput);
 	REG_PRIV_OPER (dict, name, .odef, private_odef);
 	REG_PRIV_OPER (dict, name, .setglobal, private_setglobal);
 	REG_PRIV_OPER (dict, name, .undef, private_undef);
 
+	REG_PRIV_OPER (dict, name, %repeat_continue, protected_repeat_continue);
+	REG_PRIV_OPER (dict, name, %stopped_continue, protected_stopped_continue);
+	REG_PRIV_OPER (dict, name, %arraytomark, protected_arraytomark);
+
 	REG_OPER (dict, name, abs);
 	REG_OPER (dict, name, add);
 	REG_OPER (dict, name, aload);
-	REG_OPER (dict, name, anchorsearch);
 	REG_OPER (dict, name, and);
 	REG_OPER (dict, name, arc);
 	REG_OPER (dict, name, arcn);
@@ -2042,7 +2262,6 @@ _hg_operator_level1_register(hg_dict_t *dict,
 	REG_OPER (dict, name, cvn);
 	REG_OPER (dict, name, cvr);
 	REG_OPER (dict, name, cvrs);
-	REG_OPER (dict, name, cvs);
 	REG_OPER (dict, name, cvx);
 	REG_OPER (dict, name, def);
 //	REG_OPER (dict, name, defineusername); /* ??? */
@@ -2060,9 +2279,7 @@ _hg_operator_level1_register(hg_dict_t *dict,
 	REG_OPER (dict, name, exit);
 	REG_OPER (dict, name, file);
 	REG_OPER (dict, name, fill);
-	REG_OPER (dict, name, findfont);
 	REG_OPER (dict, name, flattenpath);
-	REG_OPER (dict, name, floor);
 	REG_OPER (dict, name, flush);
 	REG_OPER (dict, name, flushfile);
 	REG_OPER (dict, name, for);
@@ -2088,11 +2305,9 @@ _hg_operator_level1_register(hg_dict_t *dict,
 	REG_OPER (dict, name, le);
 	REG_OPER (dict, name, length);
 	REG_OPER (dict, name, lineto);
-	REG_OPER (dict, name, load);
 	REG_OPER (dict, name, loop);
 	REG_OPER (dict, name, lt);
 	REG_OPER (dict, name, makefont);
-	REG_OPER (dict, name, matrix);
 	REG_OPER (dict, name, maxlength);
 	REG_OPER (dict, name, mod);
 	REG_OPER (dict, name, moveto);
@@ -2107,7 +2322,6 @@ _hg_operator_level1_register(hg_dict_t *dict,
 	REG_OPER (dict, name, pop);
 	REG_OPER (dict, name, print);
 	REG_OPER (dict, name, put);
-	REG_OPER (dict, name, putinterval);
 	REG_OPER (dict, name, rcurveto);
 	REG_OPER (dict, name, read);
 	REG_OPER (dict, name, readhexstring);
@@ -2192,7 +2406,6 @@ _hg_operator_level1_register(hg_dict_t *dict,
 	REG_OPER (dict, name, currenttransfer);
 	REG_OPER (dict, name, defaultmatrix);
 
-	REG_OPER (dict, name, definefont);
 //	REG_OPER (dict, name, detach); /* ??? */
 //	REG_OPER (dict, name, deviceinfo); /* ??? */
 	REG_OPER (dict, name, dictstack);
@@ -2205,7 +2418,6 @@ _hg_operator_level1_register(hg_dict_t *dict,
 //	REG_OPER (dict, name, fork); /* ??? */
 //	REG_OPER (dict, name, framedevice); /* ??? */
 	REG_OPER (dict, name, grestoreall);
-	REG_OPER (dict, name, handleerror);
 	REG_OPER (dict, name, initclip);
 	REG_OPER (dict, name, initgraphics);
 
@@ -2221,7 +2433,6 @@ _hg_operator_level1_register(hg_dict_t *dict,
 //	REG_OPER (dict, name, notify); /* ??? */
 	REG_OPER (dict, name, nulldevice);
 	REG_OPER (dict, name, packedarray);
-	REG_OPER (dict, name, quit);
 	REG_OPER (dict, name, rand);
 	REG_OPER (dict, name, rcheck);
 	REG_OPER (dict, name, readonly);
@@ -2230,7 +2441,6 @@ _hg_operator_level1_register(hg_dict_t *dict,
 	REG_OPER (dict, name, resetfile);
 	REG_OPER (dict, name, reversepath);
 	REG_OPER (dict, name, rrand);
-	REG_OPER (dict, name, run);
 	REG_OPER (dict, name, setcachelimit);
 	REG_OPER (dict, name, setflat);
 //	REG_OPER (dict, name, sethalftonephase); /* ??? */
@@ -2246,7 +2456,6 @@ _hg_operator_level1_register(hg_dict_t *dict,
 	REG_OPER (dict, name, statusdict);
 
 	REG_OPER (dict, name, usertime);
-	REG_OPER (dict, name, version);
 	REG_OPER (dict, name, vmstatus);
 //	REG_OPER (dict, name, wait); /* ??? */
 	REG_OPER (dict, name, wcheck);
@@ -2259,8 +2468,6 @@ _hg_operator_level1_register(hg_dict_t *dict,
 
 	REG_OPER (dict, name, sym_end_dict_mark);
 
-
-	REG_OPER (dict, name, pstack);
 
 #if 0
 	REG_OPER (dict, name, ASCII85Decode);
@@ -2379,7 +2586,6 @@ _hg_operator_level2_register(hg_dict_t *dict,
 	REG_OPER (dict, name, setucacheparams);
 	REG_OPER (dict, name, setundercolorremoval);
 	REG_OPER (dict, name, ucachestatus);
-	REG_OPER (dict, name, undefinefont);
 	REG_OPER (dict, name, ustrokepath);
 	REG_OPER (dict, name, vmreclaim);
 	REG_OPER (dict, name, defineuserobject);
@@ -2455,10 +2661,13 @@ hg_operator_init(void)
 	DECL_PRIV_OPER (.setglobal, private_setglobal);
 	DECL_PRIV_OPER (.undef, private_undef);
 
+	DECL_PRIV_OPER (%arraytomark, protected_arraytomark);
+	DECL_PRIV_OPER (%repeat_continue, protected_repeat_continue);
+	DECL_PRIV_OPER (%stopped_continue, protected_stopped_continue);
+
 	DECL_OPER (abs);
 	DECL_OPER (add);
 	DECL_OPER (aload);
-	DECL_OPER (anchorsearch);
 	DECL_OPER (and);
 	DECL_OPER (arc);
 	DECL_OPER (arcn);
@@ -2504,7 +2713,6 @@ hg_operator_init(void)
 	DECL_OPER (cvn);
 	DECL_OPER (cvr);
 	DECL_OPER (cvrs);
-	DECL_OPER (cvs);
 	DECL_OPER (cvx);
 	DECL_OPER (def);
 	DECL_OPER (defineusername);
@@ -2522,9 +2730,7 @@ hg_operator_init(void)
 	DECL_OPER (exit);
 	DECL_OPER (file);
 	DECL_OPER (fill);
-	DECL_OPER (findfont);
 	DECL_OPER (flattenpath);
-	DECL_OPER (floor);
 	DECL_OPER (flush);
 	DECL_OPER (flushfile);
 	DECL_OPER (for);
@@ -2555,11 +2761,9 @@ hg_operator_init(void)
 	DECL_OPER (le);
 	DECL_OPER (length);
 	DECL_OPER (lineto);
-	DECL_OPER (load);
 	DECL_OPER (loop);
 	DECL_OPER (lt);
 	DECL_OPER (makefont);
-	DECL_OPER (matrix);
 	DECL_OPER (maxlength);
 	DECL_OPER (mod);
 	DECL_OPER (moveto);
@@ -2575,7 +2779,6 @@ hg_operator_init(void)
 	DECL_OPER (print);
 	DECL_OPER (printobject);
 	DECL_OPER (put);
-	DECL_OPER (putinterval);
 	DECL_OPER (rcurveto);
 	DECL_OPER (read);
 	DECL_OPER (readhexstring);
@@ -2618,7 +2821,6 @@ hg_operator_init(void)
 	DECL_OPER (showpage);
 	DECL_OPER (stop);
 	DECL_OPER (stopped);
-	DECL_OPER (store);
 	DECL_OPER (string);
 	DECL_OPER (stringwidth);
 	DECL_OPER (stroke);
@@ -2699,7 +2901,6 @@ hg_operator_init(void)
 	DECL_OPER (currenttransfer);
 	DECL_OPER (currentundercolorremoval);
 	DECL_OPER (defaultmatrix);
-	DECL_OPER (definefont);
 	DECL_OPER (deletefile);
 	DECL_OPER (detach);
 	DECL_OPER (deviceinfo);
@@ -2714,7 +2915,6 @@ hg_operator_init(void)
 	DECL_OPER (fork);
 	DECL_OPER (framedevice);
 	DECL_OPER (grestoreall);
-	DECL_OPER (handleerror);
 	DECL_OPER (initclip);
 	DECL_OPER (initgraphics);
 	DECL_OPER (initmatrix);
@@ -2730,7 +2930,6 @@ hg_operator_init(void)
 	DECL_OPER (notify);
 	DECL_OPER (nulldevice);
 	DECL_OPER (packedarray);
-	DECL_OPER (quit);
 	DECL_OPER (rand);
 	DECL_OPER (rcheck);
 	DECL_OPER (readonly);
@@ -2741,7 +2940,6 @@ hg_operator_init(void)
 	DECL_OPER (reversepath);
 	DECL_OPER (rootfont);
 	DECL_OPER (rrand);
-	DECL_OPER (run);
 	DECL_OPER (scheck);
 	DECL_OPER (setblackgeneration);
 	DECL_OPER (setcachelimit);
@@ -2763,14 +2961,11 @@ hg_operator_init(void)
 	DECL_OPER (sin);
 	DECL_OPER (sqrt);
 	DECL_OPER (srand);
-	DECL_OPER (stack);
 	DECL_OPER (status);
 	DECL_OPER (statusdict);
 	DECL_OPER (ucachestatus);
-	DECL_OPER (undefinefont);
 	DECL_OPER (usertime);
 	DECL_OPER (ustrokepath);
-	DECL_OPER (version);
 	DECL_OPER (vmreclaim);
 	DECL_OPER (vmstatus);
 	DECL_OPER (wait);
@@ -2796,7 +2991,6 @@ hg_operator_init(void)
 	DECL_OPER (glyphshow);
 	DECL_OPER (languagelevel);
 	DECL_OPER (product);
-	DECL_OPER (pstack);
 	DECL_OPER (resourceforall);
 	DECL_OPER (resourcestatus);
 	DECL_OPER (revision);
@@ -2858,10 +3052,17 @@ hg_operator_tini(void)
 		__hg_operator_func_table[HG_enc_ ## _n_] = NULL;		\
 	} G_STMT_END
 
+	UNDECL_OPER (private_forceput);
+	UNDECL_OPER (private_odef);
+	UNDECL_OPER (private_setglobal);
+	UNDECL_OPER (private_undef);
+	UNDECL_OPER (protected_arraytomark);
+	UNDECL_OPER (protected_repeat_continue);
+	UNDECL_OPER (protected_stopped_continue);
+
 	UNDECL_OPER (abs);
 	UNDECL_OPER (add);
 	UNDECL_OPER (aload);
-	UNDECL_OPER (anchorsearch);
 	UNDECL_OPER (and);
 	UNDECL_OPER (arc);
 	UNDECL_OPER (arcn);
@@ -2907,7 +3108,6 @@ hg_operator_tini(void)
 	UNDECL_OPER (cvn);
 	UNDECL_OPER (cvr);
 	UNDECL_OPER (cvrs);
-	UNDECL_OPER (cvs);
 	UNDECL_OPER (cvx);
 	UNDECL_OPER (def);
 	UNDECL_OPER (defineusername);
@@ -2925,9 +3125,7 @@ hg_operator_tini(void)
 	UNDECL_OPER (exit);
 	UNDECL_OPER (file);
 	UNDECL_OPER (fill);
-	UNDECL_OPER (findfont);
 	UNDECL_OPER (flattenpath);
-	UNDECL_OPER (floor);
 	UNDECL_OPER (flush);
 	UNDECL_OPER (flushfile);
 	UNDECL_OPER (for);
@@ -2958,11 +3156,9 @@ hg_operator_tini(void)
 	UNDECL_OPER (le);
 	UNDECL_OPER (length);
 	UNDECL_OPER (lineto);
-	UNDECL_OPER (load);
 	UNDECL_OPER (loop);
 	UNDECL_OPER (lt);
 	UNDECL_OPER (makefont);
-	UNDECL_OPER (matrix);
 	UNDECL_OPER (maxlength);
 	UNDECL_OPER (mod);
 	UNDECL_OPER (moveto);
@@ -2978,7 +3174,6 @@ hg_operator_tini(void)
 	UNDECL_OPER (print);
 	UNDECL_OPER (printobject);
 	UNDECL_OPER (put);
-	UNDECL_OPER (putinterval);
 	UNDECL_OPER (rcurveto);
 	UNDECL_OPER (read);
 	UNDECL_OPER (readhexstring);
@@ -3021,7 +3216,6 @@ hg_operator_tini(void)
 	UNDECL_OPER (showpage);
 	UNDECL_OPER (stop);
 	UNDECL_OPER (stopped);
-	UNDECL_OPER (store);
 	UNDECL_OPER (string);
 	UNDECL_OPER (stringwidth);
 	UNDECL_OPER (stroke);
@@ -3104,7 +3298,6 @@ hg_operator_tini(void)
 	UNDECL_OPER (currenttransfer);
 	UNDECL_OPER (currentundercolorremoval);
 	UNDECL_OPER (defaultmatrix);
-	UNDECL_OPER (definefont);
 	UNDECL_OPER (deletefile);
 	UNDECL_OPER (detach);
 	UNDECL_OPER (deviceinfo);
@@ -3119,7 +3312,6 @@ hg_operator_tini(void)
 	UNDECL_OPER (fork);
 	UNDECL_OPER (framedevice);
 	UNDECL_OPER (grestoreall);
-	UNDECL_OPER (handleerror);
 	UNDECL_OPER (initclip);
 	UNDECL_OPER (initgraphics);
 	UNDECL_OPER (initmatrix);
@@ -3136,7 +3328,6 @@ hg_operator_tini(void)
 	UNDECL_OPER (notify);
 	UNDECL_OPER (nulldevice);
 	UNDECL_OPER (packedarray);
-	UNDECL_OPER (quit);
 	UNDECL_OPER (rand);
 	UNDECL_OPER (rcheck);
 	UNDECL_OPER (readonly);
@@ -3147,7 +3338,6 @@ hg_operator_tini(void)
 	UNDECL_OPER (reversepath);
 	UNDECL_OPER (rootfont);
 	UNDECL_OPER (rrand);
-	UNDECL_OPER (run);
 	UNDECL_OPER (scheck);
 	UNDECL_OPER (setblackgeneration);
 	UNDECL_OPER (setcachelimit);
@@ -3169,14 +3359,11 @@ hg_operator_tini(void)
 	UNDECL_OPER (sin);
 	UNDECL_OPER (sqrt);
 	UNDECL_OPER (srand);
-	UNDECL_OPER (stack);
 	UNDECL_OPER (status);
 	UNDECL_OPER (statusdict);
 	UNDECL_OPER (ucachestatus);
-	UNDECL_OPER (undefinefont);
 	UNDECL_OPER (usertime);
 	UNDECL_OPER (ustrokepath);
-	UNDECL_OPER (version);
 	UNDECL_OPER (vmreclaim);
 	UNDECL_OPER (vmstatus);
 	UNDECL_OPER (wait);
@@ -3202,7 +3389,6 @@ hg_operator_tini(void)
 	UNDECL_OPER (glyphshow);
 	UNDECL_OPER (languagelevel);
 	UNDECL_OPER (product);
-	UNDECL_OPER (pstack);
 	UNDECL_OPER (resourceforall);
 	UNDECL_OPER (resourcestatus);
 	UNDECL_OPER (revision);

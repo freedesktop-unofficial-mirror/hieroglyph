@@ -604,6 +604,10 @@ enum _hg_system_encoding_t {
 
 	HG_enc_POSTSCRIPT_RESERVED_END,
 
+	HG_enc_protected_arraytomark,
+	HG_enc_protected_repeat_continue,
+	HG_enc_protected_stopped_continue,
+
 	HG_enc_private_forceput,
 	HG_enc_private_odef,
 	HG_enc_private_setglobal,
