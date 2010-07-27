@@ -1001,6 +1001,11 @@ hg_vm_quark_set_attributes(hg_vm_t    *vm,
 					 (vm->qattributes & HG_VM_ATTRIBUTE1 (HG_VM_ACCESS_READABLE)),
 					 FALSE,
 					 hg_quark_is_executable(*qdata));
+	} else if (HG_IS_QOPER (*qdata)) {
+		hg_quark_set_access_bits(qdata,
+					 FALSE,
+					 FALSE,
+					 hg_quark_is_executable(*qdata));
 	} else {
 		_hg_quark_type_bit_set_bits(qdata,
 					    HG_QUARK_TYPE_BIT_ACCESS1,
