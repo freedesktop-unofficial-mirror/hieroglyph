@@ -226,6 +226,8 @@ hg_quark_new(hg_type_t  type,
 				    HG_QUARK_TYPE_BIT_TYPE,
 				    HG_QUARK_TYPE_BIT_TYPE_END,
 				    type);
+	if (type == HG_TYPE_EVAL_NAME)
+		hg_quark_set_executable(&retval, TRUE);
 
 	return retval;
 }

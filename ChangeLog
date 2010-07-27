@@ -1,5 +1,8 @@
 2010-07-27  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgquark.h (hg_quark_new): set a exec bit for
+	the immediately evaluated name object.
+
 	* hieroglyph/hgscanner.l: update a regexp to not ignore some control
 	characters.
 	(hg_scanner_attach_file): do not reinitialize if infile isn't changed.
