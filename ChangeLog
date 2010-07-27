@@ -1,5 +1,8 @@
 2010-07-27  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgstack.c (hg_stack_new): initialize the return value to
+	avoid segfault when OOM.
+
 	* hieroglyph/hgscanner.l: do not set an error when EOF.
 
 	* hieroglyph/hgquark.h (hg_quark_new): set a exec bit for

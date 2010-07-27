@@ -164,7 +164,7 @@ hg_stack_t *
 hg_stack_new(hg_mem_t *mem,
 	     gsize     max_depth)
 {
-	hg_stack_t *retval;
+	hg_stack_t *retval = NULL;
 	hg_quark_t self;
 
 	hg_return_val_if_fail (mem != NULL, Qnil);
