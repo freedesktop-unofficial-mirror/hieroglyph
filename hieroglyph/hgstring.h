@@ -64,6 +64,8 @@ hg_quark_t          hg_string_new_with_value    (hg_mem_t           *mem,
                                                  gpointer           *ret,
                                                  const gchar        *string,
                                                  gssize              length);
+void                hg_string_free              (hg_string_t        *string,
+						 gboolean            free_segment);
 guint               hg_string_length            (const hg_string_t  *string);
 guint               hg_string_maxlength         (const hg_string_t  *string);
 gboolean            hg_string_clear             (hg_string_t        *string);

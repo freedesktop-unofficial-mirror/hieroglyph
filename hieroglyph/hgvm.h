@@ -112,6 +112,7 @@ struct _hg_vm_t {
 	gboolean           has_error:1;
 	gint               error_code;
 	guint              qattributes;
+	guint              n_nest_scan;
 };
 
 
