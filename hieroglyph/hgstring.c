@@ -230,6 +230,25 @@ hg_string_new_with_value(hg_mem_t    *mem,
 }
 
 /**
+ * hg_string_free:
+ * @string:
+ * @free_segment:
+ *
+ * FIXME
+ */
+void
+hg_string_free(hg_string_t *string,
+	       gboolean     free_segment)
+{
+	if (string == NULL)
+		return;
+
+	if (free_segment)
+		hg_mem_free(string->o.mem, string->qstring);
+	hg_mem_free(string->o.mem, string->o.self);
+}
+
+/**
  * hg_string_length:
  * @string:
  *

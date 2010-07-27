@@ -207,7 +207,11 @@ _hg_vm_stack_real_dump(hg_mem_t    *mem,
 			      (hg_quark_is_executable(qdata) ? 'x' : '-'),
 			      q == Qnil ? "..." : hg_string_get_static_cstr(s));
 
-	hg_vm_mfree(ddata->vm, q);
+	/* this is an instant object.
+	 * surely no reference to the container.
+	 * so it can be safely destroyed.
+	 */
+	hg_string_free(s, TRUE);
 
 	return TRUE;
 }
@@ -292,10 +296,15 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 					    g_print("WW: Unable to look up the scanned object: %lx\n", qresult);
 				    }
 			    } else {
-				    g_print("II: scanning... %s [%s]\n",
+				    g_print("I(%d): scanning... %s [%s]\n",
+					    vm->n_nest_scan,
 					    hg_string_get_static_cstr(s),
 					    hg_quark_get_type_name(qresult));
-				    hg_vm_mfree(vm, qs);
+				    /* this is an instant object.
+				     * surely no reference to the container.
+				     * so it can be safely destroyed.
+				     */
+				    hg_string_free(s, TRUE);
 			    }
 		    } G_STMT_END;
 #endif
@@ -383,6 +392,8 @@ hg_vm_step_in_exec_array(hg_vm_t    *vm,
 	hg_stack_t *old_ostack;
 	hg_quark_t retval = Qnil;
 
+	vm->n_nest_scan++;
+
 	old_ostack = vm->stacks[HG_VM_STACK_OSTACK];
 	vm->stacks[HG_VM_STACK_OSTACK] = hg_stack_new(hg_vm_get_mem(vm),
 						      65535);
@@ -398,6 +409,8 @@ hg_vm_step_in_exec_array(hg_vm_t    *vm,
 
 	hg_stack_free(vm->stacks[HG_VM_STACK_OSTACK]);
 	vm->stacks[HG_VM_STACK_OSTACK] = old_ostack;
+
+	vm->n_nest_scan--;
 
 	return retval;
 }
@@ -434,7 +447,11 @@ _hg_vm_quark_iterate_to_cstr(hg_quark_t   qdata,
 	if (s) {
 		cstr = g_strdup(hg_string_get_static_cstr(s));
 	}
-	hg_vm_mfree(vm, q);
+	/* this is an instant object.
+	 * surely no reference to the container.
+	 * so it can be safely destroyed.
+	 */
+	hg_string_free(s, TRUE);
 
 	return HGPOINTER_TO_QUARK (cstr);
 }
@@ -1123,6 +1140,8 @@ hg_vm_setup(hg_vm_t           *vm,
 
 	hg_vm_use_global_mem(vm, TRUE);
 
+	vm->n_nest_scan = 0;
+
 	/* initialize I/O */
 	if (stdin == Qnil) {
 		qf = hg_file_new(hg_vm_get_mem(vm),
@@ -1486,7 +1505,11 @@ hg_vm_stepi(hg_vm_t  *vm,
 			g_print("I: executing... %s [%s]\n",
 				hg_string_get_static_cstr(s),
 				hg_quark_get_type_name(qexecobj));
-			hg_vm_mfree(vm, qs);
+			/* this is an instant object.
+			 * surely no reference to the container.
+			 * so it can be safely destroyed.
+			 */
+			hg_string_free(s, TRUE);
 		}
 	} G_STMT_END;
 #endif
@@ -1663,7 +1686,11 @@ hg_vm_stepi(hg_vm_t  *vm,
 				    g_print("I: scanning... %s [%s]\n",
 					    hg_string_get_static_cstr(s),
 					    hg_quark_get_type_name(qresult));
-				    hg_vm_mfree(vm, qs);
+				    /* this is an instant object.
+				     * surely no reference to the container.
+				     * so it can be safely destroyed.
+				     */
+				    hg_string_free(s, TRUE);
 			    }
 		    } G_STMT_END;
 #endif
@@ -2124,7 +2151,11 @@ hg_vm_set_error(hg_vm_t       *vm,
 				scommand = g_strdup("-%unknown%-");
 			else
 				scommand = g_strdup(hg_string_get_static_cstr(s));
-			hg_vm_mfree(vm, q);
+			/* this is an instant object.
+			 * surely no reference to the container.
+			 * so it can be safely destroyed.
+			 */
+			hg_string_free(s, TRUE);
 		}
 		qwhere = hg_vm_quark_to_string(vm,
 					       qdata,
