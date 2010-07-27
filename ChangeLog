@@ -1,5 +1,31 @@
 2010-07-27  Akira TAGOH  <akira@tagoh.org>
 
+	* lib/hg_init.ps (anchorsearch): defined.
+	(cvs): ditto.
+	(definefont): ditto.
+	(executive): ditto.
+	(findfont): ditto.
+	(floor): ditto.
+	(load): ditto.
+	(matrix): ditto.
+	(pstack): ditto.
+	(prompt): ditto.
+	(putinterval): ditto.
+	(quit): ditto.
+	(run): ditto.
+	(stack): ditto.
+	(start): ditto.
+	(store): ditto.
+	(undefinefont): ditto.
+	(version): ditto.
+	(=): ditto.
+	(==): ditto.
+	(.seterror): ditto.
+	(.defaulterrorhandler): ditto.
+	(handleerror): ditto.
+	(.printerror): ditto.
+	(/StandardEncoding): ditto.
+
 	* hieroglyph/hgoperator.c (_hg_operator_real_protected_repeat_continue):
 	implemented.
 	(_hg_operator_real_protected_stopped_continue): likewise.
