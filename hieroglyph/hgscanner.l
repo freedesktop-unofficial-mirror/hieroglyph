@@ -46,8 +46,9 @@
 					1,			\
 					NULL);			\
 	} G_STMT_END
-#define YY_EXTRA_TYPE hg_scanner_t *
-#define YY_USER_INIT	yyextra = scanner;
+#define YY_EXTRA_TYPE		hg_scanner_t *
+#define YY_USER_INIT		yyextra = scanner;
+#define ECHO			g_assert_not_reached()
 
 
 struct _hg_scanner_t {
