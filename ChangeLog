@@ -1,5 +1,12 @@
 2010-07-27  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (_hg_operator_real_protected_arraytomark):
+	implemented.
+	(_hg_operator_real_cvx): likewise.
+	(_hg_operator_real_exec): likewise.
+	(_hg_operator_real_pop): likewise.
+	(_hg_operator_real_put): fix a typo.
+
 	* hieroglyph/hgvm.c (hg_vm_quark_set_attributes): set an exec bit only
 	for operator.
 

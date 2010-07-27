@@ -632,8 +632,24 @@ G_STMT_START {
 } G_STMT_END;
 DEFUNC_OPER_END
 
-/* */
-DEFUNC_UNIMPLEMENTED_OPER (protected_arraytomark);
+/* <mark> ... %arraytomark <array> */
+DEFUNC_OPER (protected_arraytomark)
+G_STMT_START {
+	/* %arraytomark is the same to {counttomark array astore exch pop} */
+	if (!hg_operator_invoke(HG_QOPER (HG_enc_counttomark), vm, error))
+		return FALSE;
+	if (!hg_operator_invoke(HG_QOPER (HG_enc_array), vm, error))
+		return FALSE;
+	if (!hg_operator_invoke(HG_QOPER (HG_enc_astore), vm, error))
+		return FALSE;
+	if (!hg_operator_invoke(HG_QOPER (HG_enc_exch), vm, error))
+		return FALSE;
+	if (!hg_operator_invoke(HG_QOPER (HG_enc_pop), vm, error))
+		return FALSE;
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
 
 /* <n> <proc> %repeat_continue - */
 DEFUNC_OPER (protected_repeat_continue)
@@ -1082,7 +1098,22 @@ DEFUNC_UNIMPLEMENTED_OPER (cvlit);
 DEFUNC_UNIMPLEMENTED_OPER (cvn);
 DEFUNC_UNIMPLEMENTED_OPER (cvr);
 DEFUNC_UNIMPLEMENTED_OPER (cvrs);
-DEFUNC_UNIMPLEMENTED_OPER (cvx);
+
+/* <any> cvx <any> */
+DEFUNC_OPER (cvx)
+G_STMT_START {
+	hg_quark_t arg0;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_pop(ostack, error);
+	hg_quark_set_executable(&arg0, TRUE);
+
+	STACK_PUSH (ostack, arg0);
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
 
 /* <key> <value> def - */
 DEFUNC_OPER (def)
@@ -1208,7 +1239,31 @@ G_STMT_START {
 } G_STMT_END;
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (exec);
+/* <any> exec - */
+DEFUNC_OPER (exec)
+G_STMT_START {
+	hg_quark_t arg0;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (hg_quark_is_executable(arg0)) {
+		if (!HG_IS_QOPER (arg0) &&
+		    !hg_quark_is_readable(arg0)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+			return FALSE;
+		}
+		hg_stack_pop(ostack, error);
+
+		STACK_PUSH (estack, arg0);
+
+		hg_stack_roll(estack, 2, 1, error);
+	}
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (exit);
 
 /* <filename> <access> file -file- */
@@ -1648,7 +1703,17 @@ DEFUNC_OPER_END
 DEFUNC_UNIMPLEMENTED_OPER (or);
 DEFUNC_UNIMPLEMENTED_OPER (pathbbox);
 DEFUNC_UNIMPLEMENTED_OPER (pathforall);
-DEFUNC_UNIMPLEMENTED_OPER (pop);
+
+DEFUNC_OPER (pop)
+G_STMT_START {
+	CHECK_STACK (ostack, 1);
+
+	hg_stack_pop(ostack, error);
+
+	retval = TRUE;
+} G_STMT_END;
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (print);
 DEFUNC_UNIMPLEMENTED_OPER (printobject);
 
@@ -1670,10 +1735,10 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
 		return FALSE;
 	}
-	is_in_global = hg_quark_has_same_mem_id(arg2, vm->mem_id[HG_VM_MEM_GLOBAL]);
+	is_in_global = hg_quark_has_same_mem_id(arg0, vm->mem_id[HG_VM_MEM_GLOBAL]);
 	if (is_in_global &&
-	    !hg_quark_is_simple_object(arg0) &&
-	    hg_quark_has_same_mem_id(arg0, vm->mem_id[HG_VM_MEM_LOCAL])) {
+	    !hg_quark_is_simple_object(arg2) &&
+	    hg_quark_has_same_mem_id(arg2, vm->mem_id[HG_VM_MEM_LOCAL])) {
 		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
 		return FALSE;
 	}
