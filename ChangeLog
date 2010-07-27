@@ -1,5 +1,8 @@
 2010-07-27  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (_hg_operator_level1_register):
+	add mark as value.
+
 	* hieroglyph/hgstring.c (hg_string_free): new for convenience
 
 	* hieroglyph/hgmem.c (hg_mem_gc_mark): new.

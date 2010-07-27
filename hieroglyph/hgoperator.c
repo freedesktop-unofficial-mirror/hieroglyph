@@ -29,6 +29,7 @@
 #include "hgbool.h"
 #include "hgdict.h"
 #include "hgint.h"
+#include "hgmark.h"
 #include "hgname.h"
 #include "hgnull.h"
 #include "hgquark.h"
@@ -373,7 +374,6 @@ PROTO_OPER (kshow);
 PROTO_OPER (ln);
 PROTO_OPER (lock);
 PROTO_OPER (log);
-PROTO_OPER (mark);
 PROTO_OPER (monitor);
 PROTO_OPER (noaccess);
 PROTO_OPER (notify);
@@ -1835,7 +1835,6 @@ DEFUNC_UNIMPLEMENTED_OPER (kshow);
 DEFUNC_UNIMPLEMENTED_OPER (ln);
 DEFUNC_UNIMPLEMENTED_OPER (lock);
 DEFUNC_UNIMPLEMENTED_OPER (log);
-DEFUNC_UNIMPLEMENTED_OPER (mark);
 DEFUNC_UNIMPLEMENTED_OPER (monitor);
 DEFUNC_UNIMPLEMENTED_OPER (noaccess);
 DEFUNC_UNIMPLEMENTED_OPER (notify);
@@ -1988,9 +1987,10 @@ static gboolean
 _hg_operator_level1_register(hg_dict_t *dict,
 			     hg_name_t *name)
 {
-	REG_VALUE (dict, name, true, HG_QBOOL (TRUE));
 	REG_VALUE (dict, name, false, HG_QBOOL (FALSE));
+	REG_VALUE (dict, name, mark, HG_QMARK);
 	REG_VALUE (dict, name, null, HG_QNULL);
+	REG_VALUE (dict, name, true, HG_QBOOL (TRUE));
 
 	REG_PRIV_OPER (dict, name, .forceput, private_forceput);
 	REG_PRIV_OPER (dict, name, .odef, private_odef);
@@ -2215,7 +2215,6 @@ _hg_operator_level1_register(hg_dict_t *dict,
 	REG_OPER (dict, name, ln);
 //	REG_OPER (dict, name, lock); /* ??? */
 	REG_OPER (dict, name, log);
-	REG_OPER (dict, name, mark);
 //	REG_OPER (dict, name, monitor); /* ??? */
 
 	REG_OPER (dict, name, noaccess);
@@ -2726,7 +2725,6 @@ hg_operator_init(void)
 	DECL_OPER (ln);
 	DECL_OPER (lock);
 	DECL_OPER (log);
-	DECL_OPER (mark);
 	DECL_OPER (monitor);
 	DECL_OPER (noaccess);
 	DECL_OPER (notify);
