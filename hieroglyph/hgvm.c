@@ -1202,13 +1202,13 @@ hg_vm_setup(hg_vm_t           *vm,
 	hg_stack_clear(vm->stacks[HG_VM_STACK_DSTACK]);
 
 	/* initialize dictionaries */
-	vm->qsystemdict = hg_dict_new(hg_vm_get_mem(vm),
+	vm->qsystemdict = hg_dict_new(vm->mem[HG_VM_MEM_GLOBAL],
 				      65535,
 				      NULL);
-	vm->qglobaldict = hg_dict_new(hg_vm_get_mem(vm),
+	vm->qglobaldict = hg_dict_new(vm->mem[HG_VM_MEM_GLOBAL],
 				      65535,
 				      NULL);
-	vm->qerror = hg_dict_new(hg_vm_get_mem(vm),
+	vm->qerror = hg_dict_new(vm->mem[HG_VM_MEM_LOCAL],
 				 65535,
 				 (gpointer *)&dict_error);
 	if (vm->qsystemdict == Qnil ||
