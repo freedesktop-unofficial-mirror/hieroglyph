@@ -30,6 +30,8 @@ G_BEGIN_DECLS
 
 #define HG_QOPER(_v_)				\
 	(hg_quark_new(HG_TYPE_OPER, (_v_)))
+#define HG_OPER(_q_)						\
+	((hg_system_encoding_t)hg_quark_get_value((_q_)))
 #define HG_IS_QOPER(_v_)				\
 	(hg_quark_get_type((_v_)) == HG_TYPE_OPER)
 

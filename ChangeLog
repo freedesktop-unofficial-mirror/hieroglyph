@@ -1,5 +1,7 @@
 2010-07-28  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.h (HG_OPER): new.
+
 	* hieroglyph/hgarray.c (hg_array_set): restore the array length
 	if expand fail.
 
