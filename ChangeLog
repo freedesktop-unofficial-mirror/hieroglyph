@@ -1,5 +1,9 @@
 2010-07-28  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgversion.h.in.in (HIEROGLYPH_MAJOR_VERSION): new.
+	(HIEROGLYPH_MINOR_VERSION): new.
+	(HIEROGLYPH_RELEASE_VERSION): new.
+
 	* hieroglyph/hgstring.c (_hg_object_string_to_cstr): revised to print
 	out the non-printable characters.
 	(hg_string_append_c): restore the string length if expand fail.
