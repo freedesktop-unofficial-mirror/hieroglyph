@@ -1,5 +1,7 @@
 2010-07-28  Akira TAGOH  <akira@tagoh.org>
 
+	* lib/hg_init.ps: update.
+
 	* hieroglyph/hgvm.c (_hg_vm_quark_iterate_to_cstr): fix a segfault
 	when the lock fail.
 	(hg_vm_quark_compare): new.

@@ -20,6 +20,12 @@
 % Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 % Boston, MA 02111-1307, USA.
 
+%% NOTE: don't use "end" operator until initialization is finished
+%% NOTE: and push userdict into the dictionary stack.
+%% NOTE: otherwise all initialization will fails due to invalid
+%% NOTE: dictionary stack. at this time, systemdict is only in
+%% NOTE: the dictionary stack.
+
 % Initialize dictionaries on minimum requirements
 false .setglobal
 %% On local memory
@@ -31,6 +37,9 @@ systemdict /userdict known not {
 } if
 systemdict /statusdict known not {
     systemdict /statusdict 10 dict .forceput
+} if
+systemdict /serverdict known not {
+    systemdict /serverdict 10 dict .forceput
 } if
 
 /FontDirectory
@@ -441,12 +450,57 @@ cleartomark
     /lslash /oslash /oe /germandbls /.notdef /.notdef /.notdef /.notdef] def
 
 % Initialize against current language level.
-(hg_init_l1.ps) (r) file cvx exec
-systemdict /languagelevel known {
-    languagelevel dup 2 ge {
-	(hg_init_l2.ps) (r) file cvx exec
-    } if
-    3 ge {
-	(hg_init_l3.ps) (r) file cvx exec
-    } if
+{
+    (hg_init_l1.ps) runlibfile
+    systemdict /languagelevel known {
+	languagelevel dup 2 ge {
+	    (hg_init_l2.ps) runlibfile
 } if
+	3 ge {
+	    (hg_init_l3.ps) runlibfile
+	} if
+    } if
+} stopped {
+    (No initialization scripts found\n) print
+    .abort
+} if
+
+false .setglobal
+userdict begin
+
+%%
+%% almost initialization finished here
+%% and allows 'end' operator to be described now.
+%%
+
+%% initialize $error dictionary
+%   $error is a built-in dictionary on hieroglyph.
+$error begin
+    /newerror false def
+    /command null def
+end
+%% initialize handleerror in errordict
+errordict begin
+    /handleerror /.printerror load def
+end
+%% initialize serverdict
+serverdict begin
+    /exitserver { } def
+end
+
+%%
+%% Initialize the plugins
+%%
+%.initplugins
+
+%%
+%% Set the default value for system parapeters
+%%
+/QUIET where not {/QUIET false def} {pop} ifelse
+
+%%
+%% ready to go
+%%
+QUIET not {.printversion} if
+
+% /start will be invoked.
