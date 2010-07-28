@@ -1,5 +1,11 @@
 2010-07-28  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgstring.c (_hg_object_string_to_cstr): revised to print
+	out the non-printable characters.
+	(hg_string_append_c): restore the string length if expand fail.
+	(hg_string_append): likewise.
+	(hg_string_overwrite_c): likewise.
+
 	* hieroglyph/hgquark.h (hg_quark_compare): new.
 
 	* hieroglyph/hgoperator.h (HG_OPER): new.

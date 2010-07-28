@@ -25,6 +25,7 @@
 #include "config.h"
 #endif
 
+#include <ctype.h>
 #include <string.h>
 #include "hgerror.h"
 #include "hgmem.h"
@@ -116,9 +117,41 @@ _hg_object_string_to_cstr(hg_object_t              *object,
 			  GError                  **error)
 {
 	GString *retval = g_string_new(NULL);
+	hg_string_t *s = (hg_string_t *)object;
+	const gchar *cstr = hg_string_get_static_cstr(s);
+	gchar buffer[8];
+	gsize i;
 
-	g_string_append_printf(retval, "(%s)",
-			       hg_string_get_static_cstr((hg_string_t *)object));
+	g_string_append_c(retval, '(');
+	for (i = s->offset; i < hg_string_maxlength(s); i++) {
+		if (isprint(cstr[i])) {
+			g_string_append_c(retval, cstr[i]);
+		} else {
+			switch (cstr[i]) {
+			    case '\n':
+				    g_string_append(retval, "\\n");
+				    break;
+			    case '\r':
+				    g_string_append(retval, "\\r");
+				    break;
+			    case '\t':
+				    g_string_append(retval, "\\t");
+				    break;
+			    case '\b':
+				    g_string_append(retval, "\\b");
+				    break;
+			    case '\f':
+				    g_string_append(retval, "\\f");
+				    break;
+			    default:
+				    snprintf(buffer, 8, "%04o", cstr[i] & 0xff);
+				    g_string_append_c(retval, '\\');
+				    g_string_append(retval, buffer);
+				    break;
+			}
+		}
+	}
+	g_string_append_c(retval, ')');
 
 	return g_string_free(retval, FALSE);
 }
@@ -333,6 +366,7 @@ hg_string_append_c(hg_string_t  *string,
 		old_length = string->length;
 		string->length++;
 		if (!_hg_string_maybe_expand(string)) {
+			string->length = old_length;
 			g_set_error(&err, HG_ERROR, ENOMEM,
 				    "Out of memory");
 			goto finalize;
@@ -409,6 +443,7 @@ hg_string_append(hg_string_t  *string,
 		old_length = string->length;
 		string->length += length;
 		if (!_hg_string_maybe_expand(string)) {
+			string->length = old_length;
 			g_set_error(&err, HG_ERROR, ENOMEM,
 				    "Out of memory");
 			goto finalize;
@@ -477,15 +512,17 @@ hg_string_overwrite_c(hg_string_t  *string,
 {
 	gchar *s;
 	gboolean retval = FALSE;
-	gsize i;
+	gsize i, old_length;
 	GError *err = NULL;
 
 	hg_return_val_if_fail (string != NULL, FALSE);
 	hg_return_val_if_fail (index < hg_string_maxlength(string), FALSE);
 
 	if (string->length <= index) {
+		old_length = string->length;
 		string->length = index;
 		if (!_hg_string_maybe_expand(string)) {
+			string->length = old_length;
 			g_set_error(&err, HG_ERROR, ENOMEM,
 				    "Out of memory");
 			goto error;
