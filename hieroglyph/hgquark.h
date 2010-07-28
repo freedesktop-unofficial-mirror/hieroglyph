@@ -36,6 +36,9 @@ typedef hg_quark_t (* hg_quark_iterate_func_t)	(hg_quark_t   qdata,
 						 gpointer     user_data,
 						 gpointer    *ret,
 						 GError     **error);
+typedef gboolean   (* hg_quark_compare_func_t)  (hg_quark_t   q1,
+						 hg_quark_t   q2,
+						 gpointer     user_data);
 typedef enum _hg_quark_type_bit_t	hg_quark_type_bit_t;
 typedef enum _hg_type_t			hg_type_t;
 
@@ -162,30 +165,34 @@ _hg_quark_type_bit_set_bits(hg_quark_t          *x,
 }
 
 
-G_INLINE_FUNC hg_quark_t   hg_quark_new             (hg_type_t   type,
-                                                     hg_quark_t  value);
-G_INLINE_FUNC hg_type_t    hg_quark_get_type        (hg_quark_t  quark);
-G_INLINE_FUNC hg_quark_t   hg_quark_get_value       (hg_quark_t  quark);
-G_INLINE_FUNC gboolean     hg_quark_is_simple_object(hg_quark_t  quark);
-G_INLINE_FUNC void         hg_quark_set_executable  (hg_quark_t *quark,
-                                                     gboolean    flag);
-G_INLINE_FUNC gboolean     hg_quark_is_executable   (hg_quark_t  quark);
-G_INLINE_FUNC void         hg_quark_set_readable    (hg_quark_t *quark,
-                                                     gboolean    flag);
-G_INLINE_FUNC gboolean     hg_quark_is_readable     (hg_quark_t  quark);
-G_INLINE_FUNC void         hg_quark_set_writable    (hg_quark_t *quark,
-                                                     gboolean    flag);
-G_INLINE_FUNC gboolean     hg_quark_is_writable     (hg_quark_t  quark);
-G_INLINE_FUNC void         hg_quark_set_access_bits (hg_quark_t *quark,
-						     gboolean    readable,
-						     gboolean    writable,
-						     gboolean    executable);
-G_INLINE_FUNC gboolean     hg_quark_has_same_mem_id (hg_quark_t  quark,
-                                                     guint       id);
-G_INLINE_FUNC void         hg_quark_set_mem_id      (hg_quark_t *quark,
-                                                     guint       id);
-G_INLINE_FUNC hg_quark_t   hg_quark_get_hash        (hg_quark_t  quark);
-G_INLINE_FUNC const gchar *hg_quark_get_type_name   (hg_quark_t  qdata);
+G_INLINE_FUNC hg_quark_t   hg_quark_new             (hg_type_t                type,
+                                                     hg_quark_t               value);
+G_INLINE_FUNC hg_type_t    hg_quark_get_type        (hg_quark_t               quark);
+G_INLINE_FUNC hg_quark_t   hg_quark_get_value       (hg_quark_t               quark);
+G_INLINE_FUNC gboolean     hg_quark_is_simple_object(hg_quark_t               quark);
+G_INLINE_FUNC void         hg_quark_set_executable  (hg_quark_t              *quark,
+                                                     gboolean                 flag);
+G_INLINE_FUNC gboolean     hg_quark_is_executable   (hg_quark_t               quark);
+G_INLINE_FUNC void         hg_quark_set_readable    (hg_quark_t              *quark,
+                                                     gboolean                 flag);
+G_INLINE_FUNC gboolean     hg_quark_is_readable     (hg_quark_t               quark);
+G_INLINE_FUNC void         hg_quark_set_writable    (hg_quark_t              *quark,
+                                                     gboolean                 flag);
+G_INLINE_FUNC gboolean     hg_quark_is_writable     (hg_quark_t               quark);
+G_INLINE_FUNC void         hg_quark_set_access_bits (hg_quark_t              *quark,
+                                                     gboolean                 readable,
+                                                     gboolean                 writable,
+                                                     gboolean                 executable);
+G_INLINE_FUNC gboolean     hg_quark_has_same_mem_id (hg_quark_t               quark,
+                                                     guint                    id);
+G_INLINE_FUNC void         hg_quark_set_mem_id      (hg_quark_t              *quark,
+                                                     guint                    id);
+G_INLINE_FUNC hg_quark_t   hg_quark_get_hash        (hg_quark_t               quark);
+G_INLINE_FUNC const gchar *hg_quark_get_type_name   (hg_quark_t               qdata);
+G_INLINE_FUNC gboolean     hg_quark_compare         (hg_quark_t               qdata1,
+                                                     hg_quark_t               qdata2,
+                                                     hg_quark_compare_func_t  func,
+						     gpointer                 user_data);
 
 /**
  * hg_type_is_simple:
@@ -492,6 +499,35 @@ hg_quark_get_type_name(hg_quark_t  qdata)
 	hg_return_val_if_fail (hg_quark_get_type(qdata) < HG_TYPE_END, unknown);
 
 	return types[hg_quark_get_type(qdata)];
+}
+
+/**
+ * hg_quark_compare:
+ * @qdata1:
+ * @qdata2:
+ * @func:
+ * @user_data:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+G_INLINE_FUNC gboolean
+hg_quark_compare(hg_quark_t              qdata1,
+		 hg_quark_t              qdata2,
+		 hg_quark_compare_func_t func,
+		 gpointer                user_data)
+{
+	hg_return_val_if_fail (func != NULL, FALSE);
+
+	if (hg_quark_get_type(qdata1) != hg_quark_get_type(qdata2))
+		return FALSE;
+
+	if (hg_quark_is_simple_object(qdata1) ||
+	    hg_quark_get_type(qdata1) == HG_TYPE_OPER)
+		return qdata1 == qdata2;
+
+	return func(qdata1, qdata2, user_data);
 }
 
 G_END_DECLS
