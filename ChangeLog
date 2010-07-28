@@ -1,5 +1,13 @@
 2010-07-28  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgvm.c (_hg_vm_quark_iterate_to_cstr): fix a segfault
+	when the lock fail.
+	(hg_vm_quark_compare): new.
+	(hg_vm_stepi): raise VMerror only if no error is set.
+	(hg_vm_find_libfile): new.
+	(hg_vm_startjob): evaluate the main script to keep VM in a loop.
+	(hg_vm_set_error): fix a segfault when the lock fail.
+
 	* hieroglyph/hgversion.h.in.in (HIEROGLYPH_MAJOR_VERSION): new.
 	(HIEROGLYPH_MINOR_VERSION): new.
 	(HIEROGLYPH_RELEASE_VERSION): new.

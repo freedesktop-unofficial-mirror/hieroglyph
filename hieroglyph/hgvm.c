@@ -282,7 +282,6 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 		    }
 		    qresult = hg_scanner_get_token(vm->scanner);
 		    hg_vm_quark_set_attributes(vm, &qresult);
-#define HG_VM_DEBUG
 #if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
 		    G_STMT_START {
 			    hg_quark_t qs;
@@ -447,7 +446,7 @@ _hg_vm_quark_iterate_to_cstr(hg_quark_t   qdata,
 			     GError     **error)
 {
 	hg_vm_t *vm = (hg_vm_t *)user_data;
-	hg_string_t *s;
+	hg_string_t *s = NULL;
 	hg_quark_t q;
 	gchar *cstr = NULL;
 
@@ -462,6 +461,48 @@ _hg_vm_quark_iterate_to_cstr(hg_quark_t   qdata,
 	hg_string_free(s, TRUE);
 
 	return HGPOINTER_TO_QUARK (cstr);
+}
+
+static gboolean
+_hg_vm_quark_complex_compare(hg_quark_t q1,
+			     hg_quark_t q2,
+			     gpointer   user_data)
+{
+	hg_vm_t *vm = (hg_vm_t *)user_data;
+	gboolean retval = FALSE;
+
+	switch (hg_quark_get_type(q1)) {
+	    case HG_TYPE_STRING:
+		    G_STMT_START {
+			    hg_string_t *s1, *s2;
+
+			    s1 = _HG_VM_LOCK (vm, q1, NULL);
+			    s2 = _HG_VM_LOCK (vm, q2, NULL);
+			    if (s1 == NULL ||
+				s2 == NULL) {
+				    g_warning("%s: Unable to obtain the actual object.", __PRETTY_FUNCTION__);
+			    } else {
+				    retval = hg_string_compare(s1, s2);
+			    }
+			    if (s1)
+				    _HG_VM_UNLOCK (vm, q1);
+			    if (s2)
+				    _HG_VM_UNLOCK (vm, q2);
+		    } G_STMT_END;
+		    break;
+	    case HG_TYPE_DICT:
+	    case HG_TYPE_ARRAY:
+	    case HG_TYPE_FILE:
+	    case HG_TYPE_SAVE:
+	    case HG_TYPE_STACK:
+		    retval = (q1 == q2);
+		    break;
+	    default:
+		    g_warn_if_reached();
+		    break;
+	}
+
+	return retval;
 }
 
 /*< public >*/
@@ -976,6 +1017,24 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 	}
 
 	return retval;
+}
+
+/**
+ * hg_vm_quark_compare:
+ * @vm:
+ * @qdata1:
+ * @qdata2:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_vm_quark_compare(hg_vm_t    *vm,
+		    hg_quark_t  qdata1,
+		    hg_quark_t  qdata2)
+{
+	return hg_quark_compare(qdata1, qdata2, _hg_vm_quark_complex_compare, vm);
 }
 
 /**
@@ -1514,7 +1573,6 @@ hg_vm_stepi(hg_vm_t  *vm,
 	}
 
   evaluate:
-#define HG_VM_DEBUG
 #if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
 	G_STMT_START {
 		hg_quark_t qs;
@@ -1699,7 +1757,6 @@ hg_vm_stepi(hg_vm_t  *vm,
 		    }
 		    qresult = hg_scanner_get_token(vm->scanner);
 		    hg_vm_quark_set_attributes(vm, &qresult);
-#define HG_VM_DEBUG
 #if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
 		    G_STMT_START {
 			    hg_quark_t qs;
@@ -1750,7 +1807,8 @@ hg_vm_stepi(hg_vm_t  *vm,
 	}
 
 	if (err) {
-		hg_vm_set_error(vm, qexecobj, HG_VM_e_VMerror);
+		if (!hg_vm_has_error(vm))
+			hg_vm_set_error(vm, qexecobj, HG_VM_e_VMerror);
 		/* XXX */
 		g_error_free(err);
 		retval = FALSE;
@@ -1809,6 +1867,25 @@ hg_vm_main_loop(hg_vm_t *vm)
 	}
 
 	return retval;
+}
+
+/**
+ * hg_vm_find_libfile:
+ * @vm:
+ * @filename:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gchar *
+hg_vm_find_libfile(hg_vm_t     *vm G_GNUC_UNUSED,
+		   const gchar *filename)
+{
+	hg_return_val_if_fail (filename != NULL, NULL);
+
+	return _hg_vm_find_file(filename);
 }
 
 /**
@@ -2033,7 +2110,7 @@ hg_vm_set_error_code(hg_vm_t *vm,
 /**
  * hg_vm_startjob:
  * @vm:
- * @initfile:
+ * @initializer:
  * @encapsulated:
  *
  * FIXME
@@ -2043,10 +2120,12 @@ hg_vm_set_error_code(hg_vm_t *vm,
 gboolean
 hg_vm_startjob(hg_vm_t           *vm,
 	       hg_vm_langlevel_t  lang_level,
-	       const gchar       *initfile,
+	       const gchar       *initializer,
 	       gboolean           encapsulated)
 {
 	GError *err = NULL;
+	hg_dict_t *dict;
+	gboolean retval;
 
 	hg_return_val_if_fail (vm != NULL, FALSE);
 
@@ -2067,9 +2146,35 @@ hg_vm_startjob(hg_vm_t           *vm,
 	/* change the default memory */
 	hg_vm_use_global_mem(vm, FALSE);
 
-	hg_vm_eval_from_file(vm, "hg_init.ps", Qnil, Qnil, Qnil, &err);
+	retval = hg_vm_eval_from_file(vm, "hg_init.ps", NULL, NULL, NULL, &err);
 
-	return TRUE;
+	/* make systemdict read-only */
+	dict = _HG_VM_LOCK (vm, vm->qsystemdict, &err);
+	if (dict == NULL) {
+		g_warning("Unable to obtain systemdict");
+		return FALSE;
+	}
+	hg_quark_set_writable(&vm->qsystemdict, FALSE);
+	if (!hg_dict_add(dict, HG_QNAME (vm->name, "systemdict"),
+			 vm->qsystemdict)) {
+		g_warning("Unable to update the entry for systemdict");
+		return FALSE;
+	}
+	_HG_VM_UNLOCK (vm, vm->qsystemdict);
+
+	if (initializer && initializer[0] == 0) {
+		return TRUE;
+	} else if (initializer) {
+		gchar *s = g_strdup_printf("{prompt(%s)(r)file dup type/filetype eq{cvx exec}if}stopped{$error/newerror get{errordict/handleerror get exec 1 .quit}if}if", initializer);
+
+		retval = hg_vm_eval_from_cstring(vm, s, NULL, NULL, NULL, NULL);
+
+		g_free(s);
+
+		return retval;
+	}
+
+	return (retval ? hg_vm_eval_from_cstring(vm, "systemdict/.loadhistory known{(.hghistory).loadhistory}if start systemdict/.savehistory known{(.hghistory).savehistory}if", NULL, NULL, NULL, NULL) : FALSE);
 }
 
 /**
@@ -2199,7 +2304,7 @@ hg_vm_set_error(hg_vm_t       *vm,
 		if (qresult_cmd == Qnil) {
 			scommand = g_strdup("-%unknown%-");
 		} else {
-			hg_string_t *s;
+			hg_string_t *s = NULL;
 
 			q = hg_vm_quark_to_string(vm,
 						  qresult_cmd,
@@ -2244,7 +2349,7 @@ hg_vm_set_error(hg_vm_t       *vm,
 		g_free(swhere);
 		g_free(scommand);
 
-		abort();
+		hg_operator_invoke(HG_QOPER (HG_enc_private_abort), vm, &err);
 	}
 	qnerrordict = HG_QNAME (vm->name, "errordict");
 	qerrordict = hg_vm_dict_lookup(vm, qnerrordict);
@@ -2278,8 +2383,6 @@ hg_vm_set_error(hg_vm_t       *vm,
   fatal_error:
 	G_STMT_START {
 		const gchar *errname = hg_name_lookup(vm->name, vm->qerror_name[error]);
-		hg_file_t *ofile;
-		hg_quark_t qo;
 
 		if (errname) {
 			g_printerr("Fatal error during recovering from /%s: %s\n", errname, (err ? err->message : "no details"));
@@ -2288,20 +2391,8 @@ hg_vm_set_error(hg_vm_t       *vm,
 		}
 		if (err)
 			g_clear_error(&err);
-		qo = hg_vm_get_io(vm, HG_FILE_IO_STDERR);
-		ofile = _HG_VM_LOCK (vm, qo, &err);
-		if (ofile == NULL) {
-			g_printerr("  Unable to obtain stderr.\n");
-		} else {
-			hg_file_append_printf(ofile, "* Operand stack(%d):\n", hg_stack_depth(vm->stacks[HG_VM_STACK_OSTACK]));
-			hg_vm_stack_dump(vm, vm->stacks[HG_VM_STACK_OSTACK], ofile);
-			hg_file_append_printf(ofile, "\n* Exec stack(%d):\n", hg_stack_depth(vm->stacks[HG_VM_STACK_ESTACK]));
-			hg_vm_stack_dump(vm, vm->stacks[HG_VM_STACK_ESTACK], ofile);
-			hg_file_append_printf(ofile, "\n* Dict stack(%d):\n", hg_stack_depth(vm->stacks[HG_VM_STACK_DSTACK]));
-			hg_vm_stack_dump(vm, vm->stacks[HG_VM_STACK_DSTACK], ofile);
-			_HG_VM_UNLOCK (vm, qo);
-		}
-		abort();
+
+		return hg_operator_invoke(HG_QOPER (HG_enc_private_abort), vm, &err);
 	} G_STMT_END;
 }
 

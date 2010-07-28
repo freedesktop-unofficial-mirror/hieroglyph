@@ -146,8 +146,9 @@ hg_quark_t         hg_vm_quark_to_string       (hg_vm_t            *vm,
 						hg_quark_t          qdata,
 						gpointer           *ret,
 						GError            **error);
-const gchar       *hg_vm_quark_get_type_name   (hg_vm_t            *vm,
-						hg_quark_t          qdata);
+gboolean           hg_vm_quark_compare         (hg_vm_t            *vm,
+						hg_quark_t          qdata1,
+						hg_quark_t          qdata2);
 void               hg_vm_quark_set_attributes  (hg_vm_t            *vm,
 						hg_quark_t         *qdata);
 void               hg_vm_set_default_attributes(hg_vm_t            *vm,
@@ -180,6 +181,8 @@ gboolean           hg_vm_stepi                 (hg_vm_t            *vm,
 						gboolean           *is_proceeded);
 gboolean           hg_vm_step                  (hg_vm_t            *vm);
 gboolean           hg_vm_main_loop             (hg_vm_t            *vm);
+gchar             *hg_vm_find_libfile          (hg_vm_t            *vm G_GNUC_UNUSED,
+						const gchar        *filename);
 gboolean           hg_vm_eval                  (hg_vm_t            *vm,
 						hg_quark_t          qeval,
 						hg_stack_t         *ostack,
