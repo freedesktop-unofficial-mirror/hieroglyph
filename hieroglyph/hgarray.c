@@ -281,6 +281,7 @@ hg_array_set(hg_array_t  *array,
 	array->length = MAX (index, array->length);
 	if (index >= array->length && array->length >= old_length) {
 		if (!_hg_array_maybe_expand(array)) {
+			array->length = old_length;
 			g_set_error(&err, HG_ERROR, ENOMEM,
 				    "Out of memory");
 			retval = FALSE;
