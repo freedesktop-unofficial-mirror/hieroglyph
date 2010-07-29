@@ -604,14 +604,25 @@ enum _hg_system_encoding_t {
 
 	HG_enc_POSTSCRIPT_RESERVED_END,
 
+	HG_enc_private_abort,
+	HG_enc_private_findlibfile,
+	HG_enc_private_forceput,
+	HG_enc_private_hgrevision,
+	HG_enc_private_odef,
+	HG_enc_private_product,
+	HG_enc_private_revision,
+	HG_enc_private_setglobal,
+	HG_enc_private_stringcvs,
+	HG_enc_private_undef,
+	HG_enc_private_write_eqeq_only,
+
 	HG_enc_protected_arraytomark,
+	HG_enc_protected_forall_array_continue,
+	HG_enc_protected_forall_dict_continue,
+	HG_enc_protected_forall_string_continue,
+	HG_enc_protected_loop_continue,
 	HG_enc_protected_repeat_continue,
 	HG_enc_protected_stopped_continue,
-
-	HG_enc_private_forceput,
-	HG_enc_private_odef,
-	HG_enc_private_setglobal,
-	HG_enc_private_undef,
 
 	HG_enc_END
 };

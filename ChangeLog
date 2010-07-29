@@ -1,3 +1,52 @@
+2010-07-29  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (INIT_STACK_VALIDATOR): add debug macro.
+	(VALIDATE_STACK_SIZE): likewise.
+	(_hg_operator_real_private_abort): implemented.
+	(_hg_operator_real_private_findlibfile): implemented.
+	(_hg_operator_real_private_hgrevision): implemented.
+	(_hg_operator_real_private_product): implemented.
+	(_hg_operator_real_private_revision): implemented.
+	(_hg_operator_real_private_stringcvs): implemented.
+	(_hg_operator_real_private_write_eqeq_only): implemented.
+	(_hg_operator_real_protected_forall_array_continue): implemented.
+	(_hg_operator_real_protected_forall_string_continue): implemented.
+	(_hg_operator_real_protected_loop_continue): implemented.
+	(_hg_operator_real_add): implemented.
+	(_hg_operator_real_aload): implemented.
+	(_hg_operator_real_array): implemented.
+	(_hg_operator_real_astore): implemented.
+	(_hg_operator_real_begin): implemented.
+	(_hg_operator_real_clear): implemented.
+	(_hg_operator_real_cleartomark): implemented.
+	(_hg_operator_real_end): implemented.
+	(_hg_operator_real_eq): implemented.
+	(_hg_operator_real_file): if the built-in I/O is Qnil, raise
+	/undefinedfilename.
+	(_hg_operator_real_flush): implemented.
+	(_hg_operator_real_forall): implemented.
+	(_hg_operator_real_ge): implemented.
+	(_hg_operator_real_getinterval): implemented.
+	(_hg_operator_real_gt): implemented.
+	(_hg_operator_real_length): implemented.
+	(_hg_operator_real_loop): implemented.
+	(_hg_operator_real_lt): implemented.
+	(_hg_operator_real_mod): implemented.
+	(_hg_operator_real_ne): implemented.
+	(_hg_operator_real_pop): implemented.
+	(_hg_operator_real_print): implemented.
+	(_hg_operator_real_stop): implemented.
+	(_hg_operator_real_stopped): unlock the systemdict after used.
+	(_hg_operator_real_string): implemented.
+	(_hg_operator_real_sub): implemented.
+	(_hg_operator_real_type): implemented.
+	(_hg_operator_real_writestring): implemented.
+	(_hg_operator_real_countdictstack): implemented.
+	(_hg_operator_real_countexecstack): implemented.
+	(_hg_operator_real_dictstack): implemented.
+	(_hg_operator_real_execstack): implemented.
+	(_hg_operator_real_languagelevel): implemented.
+
 2010-07-28  Akira TAGOH  <akira@tagoh.org>
 
 	* lib/hg_init.ps: update.
