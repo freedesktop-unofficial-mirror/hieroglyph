@@ -60,15 +60,26 @@ true .setglobal
     {
 	% prepare for error recovery
 	count copy count 2 idiv array astore
-	$error /.ostack 3 -1 roll put
+	% save the operand stack when no saved array available
+	$error /.ostack known not {
+	    $error /.ostack 3 -1 roll put
+	} {
+	    pop
+	} ifelse
 	null stopped {
 	    $error /command null put
-	    clear $error /.ostack get aload pop
+	    $error /.ostack known {
+		clear $error /.ostack get aload pop
+		$error /.ostack .undef
+	    } if
 	    stop
-	} if
+	} {
+	    $error /.ostack .undef
+	} ifelse
     }					% -key- -any- -proc-
-    dup 13 4 -1 roll .forceput		% -key- -proc-
-    dup 15 get				% -key- -proc- -proc-
+    dup length array copy cvx
+    dup 14 4 -1 roll .forceput		% -key- -proc-
+    dup 16 get				% -key- -proc- -proc-
     2 3 index .forceput
     .odef
 } bind .odef
@@ -129,7 +140,7 @@ systemdict /.odef .undef
 } bind def
 systemdict /.statementedit known {
     /..statementedit {
-	% null isn't exactly used. it7s just pushed to align the depth of the stack.
+	% null isn't exactly used. it's just pushed to align the depth of the stack.
 	.promptmsg //null exch .statementedit exch pop
     } bind def
 } {
@@ -455,7 +466,7 @@ cleartomark
     systemdict /languagelevel known {
 	languagelevel dup 2 ge {
 	    (hg_init_l2.ps) runlibfile
-} if
+	} if
 	3 ge {
 	    (hg_init_l3.ps) runlibfile
 	} if

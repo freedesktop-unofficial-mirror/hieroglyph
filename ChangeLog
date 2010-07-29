@@ -1,5 +1,8 @@
 2010-07-29  Akira TAGOH  <akira@tagoh.org>
 
+	* lib/hg_init.ps (odef): copy the procedure exactly and try to avoid
+	overwrite the saved operand stack.
+
 	* hieroglyph/hgoperator.c (INIT_STACK_VALIDATOR): add debug macro.
 	(VALIDATE_STACK_SIZE): likewise.
 	(_hg_operator_real_private_abort): implemented.
