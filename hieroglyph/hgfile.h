@@ -118,7 +118,7 @@ struct _hg_file_io_data_t {
 };
 
 
-hg_object_vtable_t *hg_object_file_get_vtable(void);
+hg_object_vtable_t *hg_object_file_get_vtable(void) G_GNUC_CONST;
 hg_file_io_t        hg_file_get_io_type      (const gchar       *name);
 hg_quark_t          hg_file_new              (hg_mem_t          *mem,
 					      const gchar       *name,

@@ -58,7 +58,7 @@ struct _hg_array_t {
 };
 
 
-hg_object_vtable_t *hg_object_array_get_vtable(void);
+hg_object_vtable_t *hg_object_array_get_vtable(void) G_GNUC_CONST;
 hg_quark_t          hg_array_new              (hg_mem_t                  *mem,
                                                gsize                      size,
                                                gpointer                  *ret);

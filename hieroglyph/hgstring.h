@@ -56,7 +56,7 @@ struct _hg_string_t {
 	gboolean    is_fixed_size;
 };
 
-hg_object_vtable_t *hg_object_string_get_vtable (void);
+hg_object_vtable_t *hg_object_string_get_vtable (void) G_GNUC_CONST;
 hg_quark_t          hg_string_new               (hg_mem_t           *mem,
                                                  gpointer           *ret,
                                                  gsize               requisition_size);
