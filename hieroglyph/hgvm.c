@@ -1810,6 +1810,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 		if (!hg_vm_has_error(vm))
 			hg_vm_set_error(vm, qexecobj, HG_VM_e_VMerror);
 		/* XXX */
+		g_warning("%s (code: %d)", err->message, err->code);
 		g_error_free(err);
 		retval = FALSE;
 	}
