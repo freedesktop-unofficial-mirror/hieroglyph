@@ -26,6 +26,7 @@
 
 #include <hieroglyph/hgtypes.h>
 #include <hieroglyph/hgfile.h>
+#include <hieroglyph/hglineedit.h>
 #include <hieroglyph/hgscanner.h>
 #include <hieroglyph/hgstack.h>
 
@@ -106,6 +107,7 @@ struct _hg_vm_t {
 	hg_quark_t         qsystemdict;
 	hg_quark_t         qglobaldict;
 	hg_scanner_t      *scanner;
+	hg_lineedit_t     *lineedit;
 	hg_vm_langlevel_t  language_level;
 	gboolean           is_initialized:1;
 	gboolean           shutdown:1;

@@ -1,5 +1,8 @@
 2010-07-30  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgvm.c (hg_vm_get_io): generate hg_file_t for %lineedit
+	and %statementedit.
+
 	* hieroglyph/hgfile.c (hg_file_get_lineedit_vtable): new.
 
 	* hieroglyph/hglineedit.[lh]: new.

@@ -1157,6 +1157,24 @@ hg_vm_get_io(hg_vm_t      *vm,
 	hg_return_val_if_fail (vm != NULL, Qnil);
 	hg_return_val_if_fail (type < HG_FILE_IO_END, Qnil);
 
+	if (type == HG_FILE_IO_LINEEDIT) {
+		return hg_file_new_with_vtable(hg_vm_get_mem(vm),
+					       "%lineedit",
+					       HG_FILE_IO_MODE_READ,
+					       hg_file_get_lineedit_vtable(),
+					       vm->lineedit,
+					       NULL,
+					       NULL);
+	} else if (type == HG_FILE_IO_STATEMENTEDIT) {
+		return hg_file_new_with_vtable(hg_vm_get_mem(vm),
+					       "%statementedit",
+					       HG_FILE_IO_MODE_READ,
+					       hg_file_get_lineedit_vtable(),
+					       vm->lineedit,
+					       NULL,
+					       NULL);
+	}
+
 	return vm->qio[type];
 }
 
@@ -1201,6 +1219,7 @@ hg_vm_setup(hg_vm_t           *vm,
 {
 	hg_quark_t qf;
 	hg_dict_t *dict = NULL, *dict_error;
+	hg_file_t *fstdin, *fstdout;
 
 	hg_return_val_if_fail (vm != NULL, FALSE);
 	hg_return_val_if_fail (lang_level < HG_LANG_LEVEL_END, FALSE);
@@ -1220,7 +1239,7 @@ hg_vm_setup(hg_vm_t           *vm,
 				 "%stdin",
 				 HG_FILE_IO_MODE_READ,
 				 NULL,
-				 NULL);
+				 (gpointer *)&fstdin);
 	} else {
 		qf = stdin;
 	}
@@ -1231,7 +1250,7 @@ hg_vm_setup(hg_vm_t           *vm,
 				  "%stdout",
 				  HG_FILE_IO_MODE_WRITE,
 				  NULL,
-				  NULL);
+				  (gpointer *)&fstdout);
 	} else {
 		qf = stdout;
 	}
@@ -1254,6 +1273,13 @@ hg_vm_setup(hg_vm_t           *vm,
 	    vm->qio[HG_FILE_IO_STDERR] == Qnil) {
 		goto error;
 	}
+
+	vm->lineedit = hg_lineedit_new(hg_vm_get_mem(vm),
+				       hg_lineedit_get_default_vtable(),
+				       fstdin,
+				       fstdout);
+	if (vm->lineedit == NULL)
+		goto error;
 
 	/* initialize stacks */
 	hg_stack_clear(vm->stacks[HG_VM_STACK_OSTACK]);
@@ -1363,6 +1389,11 @@ hg_vm_finish(hg_vm_t *vm)
 			hg_stack_free(vm->stacks[i]);
 	}
 	/* XXX: finalizing I/O */
+
+	if (vm->lineedit) {
+		hg_lineedit_destroy(vm->lineedit);
+		vm->lineedit = NULL;
+	}
 
 	vm->is_initialized = FALSE;
 }
