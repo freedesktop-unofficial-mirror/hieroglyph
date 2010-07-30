@@ -1,5 +1,7 @@
 2010-07-31  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgscanner.l: specify the prefix.
+
 	* hieroglyph/hglineedit.l (hg_lineedit_get_statement): fix a typo.
 
 2010-07-30  Akira TAGOH  <akira@tagoh.org>

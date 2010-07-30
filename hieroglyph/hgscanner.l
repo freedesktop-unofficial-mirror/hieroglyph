@@ -76,6 +76,7 @@ void yyset_column(int column_no, yyscan_t yyscanner);
 #endif
 %}
 %option nounput noyywrap warn nounistd reentrant
+%option prefix="hgscanner"
 %x STRING HEXSTRING ASCII85
 
 CONTROL		[\x04%\(\)/<>\[\]\{\}]
