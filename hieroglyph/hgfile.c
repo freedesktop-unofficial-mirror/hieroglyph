@@ -32,6 +32,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "hglineedit.h"
 #include "hgmem.h"
 #include "hgfile.h"
 
@@ -112,6 +113,9 @@ static gboolean     _hg_file_io_real_buffered_is_eof   (hg_file_t     *file,
 							gpointer       user_data);
 static void         _hg_file_io_real_buffered_clear_eof(hg_file_t     *file,
 							gpointer       user_data);
+static gboolean     _hg_file_io_real_lineedit_open     (hg_file_t     *file,
+							gpointer       user_data,
+							GError       **error);
 
 
 static hg_file_vtable_t __hg_file_io_stdin_vtable = {
@@ -156,6 +160,16 @@ static hg_file_vtable_t __hg_file_io_file_vtable = {
 };
 static hg_file_vtable_t __hg_file_io_buffered_vtable = {
 	.open      = _hg_file_io_real_buffered_open,
+	.close     = _hg_file_io_real_buffered_close,
+	.read      = _hg_file_io_real_buffered_read,
+	.write     = _hg_file_io_real_buffered_write,
+	.flush     = _hg_file_io_real_buffered_flush,
+	.seek      = _hg_file_io_real_buffered_seek,
+	.is_eof    = _hg_file_io_real_buffered_is_eof,
+	.clear_eof = _hg_file_io_real_buffered_clear_eof,
+};
+static hg_file_vtable_t __hg_file_io_lineedit_vtable = {
+	.open      = _hg_file_io_real_lineedit_open,
 	.close     = _hg_file_io_real_buffered_close,
 	.read      = _hg_file_io_real_buffered_read,
 	.write     = _hg_file_io_real_buffered_write,
@@ -929,7 +943,109 @@ _hg_file_io_real_buffered_clear_eof(hg_file_t  *file,
 	data->is_eof = FALSE;
 }
 
+/** lineedit I/O callbacks **/
+static gboolean
+_hg_file_io_real_lineedit_open(hg_file_t  *file,
+			       gpointer    user_data,
+			       GError    **error)
+{
+	hg_file_io_data_t *data;
+	hg_quark_t qdata, q, qs;
+	hg_file_io_buffered_data_t *bd;
+	gchar *buf;
+	hg_lineedit_t *lineedit = (hg_lineedit_t *)user_data;
+	hg_string_t *s;
+
+	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error);
+
+	switch (file->io_type) {
+	    case HG_FILE_IO_LINEEDIT:
+		    if ((file->mode & HG_FILE_IO_MODE_WRITE) != 0) {
+			    errno = EBADF;
+			    goto exception;
+		    }
+		    buf = hg_lineedit_get_line(lineedit, NULL, TRUE);
+		    if (buf == NULL) {
+			    errno = ENOENT;
+			    goto exception;
+		    }
+		    break;
+	    case HG_FILE_IO_STATEMENTEDIT:
+		    if ((file->mode & HG_FILE_IO_MODE_WRITE) != 0) {
+			    errno = EBADF;
+			    goto exception;
+		    }
+		    buf = hg_lineedit_get_statement(lineedit, NULL, TRUE);
+		    if (buf == NULL) {
+			    errno = ENOENT;
+			    goto exception;
+		    }
+		    break;
+	    default:
+		    g_set_error(error, HG_ERROR, EINVAL,
+				"%s: Invalid I/O request.",
+				__PRETTY_FUNCTION__);
+		    return FALSE;
+	}
+	qs = hg_string_new_with_value(file->o.mem,
+				      (gpointer *)&s,
+				      buf, -1);
+	if (qs == Qnil) {
+		errno = ENOENT;
+		goto exception;
+	}
+	q = hg_mem_alloc(file->o.mem,
+			  sizeof (hg_file_io_buffered_data_t),
+			  (gpointer *)&bd);
+	if (q == Qnil) {
+		errno = ENOMEM;
+		goto exception;
+	}
+	bd->self = q;
+	bd->in = s;
+	bd->out = NULL;
+	qdata = hg_mem_alloc(file->o.mem,
+			     sizeof (hg_file_io_data_t),
+			     (gpointer *)&data);
+	if (qdata == Qnil) {
+		errno = ENOMEM;
+		goto exception;
+	}
+	data->self = qdata;
+	data->fd = -1;
+	data->mmapped_buffer = NULL;
+	file->data = data;
+	file->size = hg_string_length(bd->in);
+	file->user_data = bd;
+	file->is_closed = FALSE;
+
+	return TRUE;
+  exception:
+	G_STMT_START {
+		gint errno_ = errno;
+
+		g_set_error(error, HG_ERROR, errno_,
+			    "%s",
+			    g_strerror(errno_));
+	} G_STMT_END;
+
+	return FALSE;
+}
+
 /*< public >*/
+/**
+ * hg_file_get_lineedit_vtable:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+const hg_file_vtable_t *
+hg_file_get_lineedit_vtable(void)
+{
+	return &__hg_file_io_lineedit_vtable;
+}
+
 /**
  * hg_file_get_io_type:
  * @name:
@@ -1007,7 +1123,6 @@ hg_file_new(hg_mem_t        *mem,
 		    break;
 	    case HG_FILE_IO_LINEEDIT:
 	    case HG_FILE_IO_STATEMENTEDIT:
-		    
 	    default:
 		    break;
 	}
@@ -1030,13 +1145,13 @@ hg_file_new(hg_mem_t        *mem,
  * Returns:
  */
 hg_quark_t
-hg_file_new_with_vtable(hg_mem_t          *mem,
-			const gchar       *name,
-			hg_file_mode_t     mode,
-			hg_file_vtable_t  *vtable,
-			gpointer           user_data,
-			GError           **error,
-			gpointer          *ret)
+hg_file_new_with_vtable(hg_mem_t                *mem,
+			const gchar             *name,
+			hg_file_mode_t           mode,
+			const hg_file_vtable_t  *vtable,
+			gpointer                 user_data,
+			GError                 **error,
+			gpointer                *ret)
 {
 	hg_quark_t retval;
 	hg_file_t *f = NULL;

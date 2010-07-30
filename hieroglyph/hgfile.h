@@ -118,55 +118,56 @@ struct _hg_file_io_data_t {
 };
 
 
-hg_object_vtable_t *hg_object_file_get_vtable(void) G_GNUC_CONST;
-hg_file_io_t        hg_file_get_io_type      (const gchar       *name);
-hg_quark_t          hg_file_new              (hg_mem_t          *mem,
-					      const gchar       *name,
-					      hg_file_mode_t     mode,
-					      GError           **error,
-					      gpointer          *ret);
-hg_quark_t          hg_file_new_with_vtable  (hg_mem_t          *mem,
-					      const gchar       *name,
-					      hg_file_mode_t     mode,
-					      hg_file_vtable_t  *vtable,
-					      gpointer           user_data,
-					      GError           **error,
-					      gpointer          *ret);
-hg_quark_t          hg_file_new_with_string  (hg_mem_t          *mem,
-					      const gchar       *name,
-					      hg_file_mode_t     mode,
-					      hg_string_t       *in,
-					      hg_string_t       *out,
-					      GError           **error,
-					      gpointer          *ret);
-gssize              hg_file_read             (hg_file_t         *file,
-					      gpointer           buffer,
-					      gsize              size,
-					      gsize              n,
-					      GError           **error);
-gssize              hg_file_write            (hg_file_t         *file,
-					      gpointer           buffer,
-					      gsize              size,
-					      gsize              n,
-					      GError           **error);
-gboolean            hg_file_flush            (hg_file_t         *file,
-					      GError           **error);
-gssize              hg_file_seek             (hg_file_t         *file,
-					      gssize             offset,
-					      hg_file_pos_t      whence,
-					      GError           **error);
-gboolean            hg_file_is_eof           (hg_file_t         *file);
-void                hg_file_clear_eof        (hg_file_t         *file);
-gssize              hg_file_append_printf    (hg_file_t         *file,
-					      gchar const       *format,
-					      ...);
-gssize              hg_file_append_vprintf   (hg_file_t         *file,
-					      gchar const       *format,
-					      va_list            args);
-void                hg_file_set_lineno       (hg_file_t         *file,
-					      gssize             n);
-gssize              hg_file_get_lineno       (hg_file_t         *file);
-gssize              hg_file_get_position     (hg_file_t         *file);
+hg_object_vtable_t     *hg_object_file_get_vtable  (void) G_GNUC_CONST;
+const hg_file_vtable_t *hg_file_get_lineedit_vtable(void) G_GNUC_CONST;
+hg_file_io_t            hg_file_get_io_type        (const gchar             *name);
+hg_quark_t              hg_file_new                (hg_mem_t                *mem,
+                                                    const gchar             *name,
+                                                    hg_file_mode_t           mode,
+                                                    GError                 **error,
+                                                    gpointer                *ret);
+hg_quark_t              hg_file_new_with_vtable    (hg_mem_t                *mem,
+                                                    const gchar             *name,
+                                                    hg_file_mode_t           mode,
+                                                    const hg_file_vtable_t  *vtable,
+                                                    gpointer                 user_data,
+                                                    GError                 **error,
+                                                    gpointer                *ret);
+hg_quark_t              hg_file_new_with_string    (hg_mem_t                *mem,
+                                                    const gchar             *name,
+                                                    hg_file_mode_t           mode,
+                                                    hg_string_t             *in,
+                                                    hg_string_t             *out,
+                                                    GError                 **error,
+                                                    gpointer                *ret);
+gssize                  hg_file_read               (hg_file_t               *file,
+                                                    gpointer                 buffer,
+                                                    gsize                    size,
+                                                    gsize                    n,
+                                                    GError                 **error);
+gssize                  hg_file_write              (hg_file_t               *file,
+                                                    gpointer                 buffer,
+                                                    gsize                    size,
+                                                    gsize                    n,
+                                                    GError                 **error);
+gboolean                hg_file_flush              (hg_file_t               *file,
+                                                    GError                 **error);
+gssize                  hg_file_seek               (hg_file_t               *file,
+                                                    gssize                   offset,
+                                                    hg_file_pos_t            whence,
+                                                    GError                 **error);
+gboolean                hg_file_is_eof             (hg_file_t               *file);
+void                    hg_file_clear_eof          (hg_file_t               *file);
+gssize                  hg_file_append_printf      (hg_file_t               *file,
+						    gchar const             *format,
+						    ...);
+gssize                  hg_file_append_vprintf     (hg_file_t               *file,
+						    gchar const             *format,
+						    va_list                  args);
+void                    hg_file_set_lineno         (hg_file_t               *file,
+						    gssize                   n);
+gssize                  hg_file_get_lineno         (hg_file_t               *file);
+gssize                  hg_file_get_position       (hg_file_t               *file);
 
 
 G_END_DECLS
