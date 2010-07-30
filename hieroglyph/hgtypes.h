@@ -66,8 +66,9 @@ struct _hg_mem_vtable_t {
 					hg_quark_t          *root);
 };
 struct _hg_allocator_data_t {
-	gsize total_size;
-	gsize used_size;
+	gsize    total_size;
+	gsize    used_size;
+	gboolean resizable;
 };
 
 /* hgdict.h */

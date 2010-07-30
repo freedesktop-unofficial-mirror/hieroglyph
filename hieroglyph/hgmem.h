@@ -36,6 +36,8 @@ hg_mem_t   *hg_mem_new_with_allocator(hg_mem_vtable_t *allocator,
 void        hg_mem_destroy           (gpointer         data);
 gboolean    hg_mem_resize_heap       (hg_mem_t        *mem,
                                       gsize            size);
+void        hg_mem_set_resizable     (hg_mem_t        *mem,
+				      gboolean         flag);
 hg_quark_t  hg_mem_alloc             (hg_mem_t        *mem,
                                       gsize            size,
 				      gpointer        *ret);

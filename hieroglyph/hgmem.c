@@ -89,6 +89,7 @@ hg_mem_new_with_allocator(hg_mem_vtable_t *allocator,
 		hg_mem_destroy(retval);
 		retval = NULL;
 	} else {
+		retval->data->resizable = FALSE;
 		hg_mem_resize_heap(retval, size);
 	}
 
@@ -137,6 +138,23 @@ hg_mem_resize_heap(hg_mem_t  *mem,
 	hg_return_val_if_fail (size > 0, FALSE);
 
 	return mem->allocator->resize_heap(mem->data, size);
+}
+
+/**
+ * hg_mem_set_resizable:
+ * @mem:
+ * @flag:
+ *
+ * FIXME
+ */
+void
+hg_mem_set_resizable(hg_mem_t *mem,
+		     gboolean  flag)
+{
+	hg_return_if_fail (mem != NULL);
+	hg_return_if_fail (mem->data != NULL);
+
+	mem->data->resizable = (flag == TRUE);
 }
 
 /**

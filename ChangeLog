@@ -1,5 +1,7 @@
 2010-07-31  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgmem.c (hg_mem_set_resizable): new.
+
 	* hieroglyph/hgstring.c (hg_string_append): assert if str is null.
 
 	* hieroglyph/hgscanner.l: specify the prefix.
