@@ -435,6 +435,7 @@ hg_string_append(hg_string_t  *string,
 	GError *err = NULL;
 
 	hg_return_val_if_fail (string != NULL, FALSE);
+	hg_return_val_if_fail (str != NULL, FALSE);
 
 	if (length < 0)
 		length = strlen(str);
