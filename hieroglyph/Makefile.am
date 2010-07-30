@@ -32,6 +32,7 @@ hg_public_headers =						\
 	hgerror.h						\
 	hgfile.h						\
 	hgint.h							\
+	hglineedit.h						\
 	hgmacros.h						\
 	hgmark.h						\
 	hgmem.h							\
@@ -73,6 +74,7 @@ hg_sources =							\
 	hgencoding.c						\
 	hgerror.c						\
 	hgfile.c						\
+	hglineedit.l						\
 	hgmem.c							\
 	hgname.c						\
 	hgobject.c						\
@@ -85,6 +87,8 @@ hg_sources =							\
 #
 stamp_files =							\
 	$(NULL)
+#
+LEX_OUTPUT_ROOT=lex.$(basename $<)
 
 ##
 # Local Rules
