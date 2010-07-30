@@ -89,7 +89,7 @@ static hg_lineedit_vtable_t __hg_lineedit_default_vtable = {
 	.save_history = _hg_lineedit_real_save_history
 };
 %}
-%option nounput noyywrap warn nounistd reentrant batch
+%option nounput noyywrap warn nounistd reentrant
 %option prefix="hglineedit"
 %x STRING HEXSTRING
 %s PROC
@@ -374,7 +374,7 @@ hg_lineedit_get_statement(hg_lineedit_t *lineedit,
 
 	retval = _hg_lineedit_yylex(lineedit, lineedit->yyscanner);
 
-	return NULL;
+	return retval;
 }
 
 /**
