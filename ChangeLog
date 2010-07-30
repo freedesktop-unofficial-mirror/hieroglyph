@@ -1,5 +1,15 @@
 2010-07-31  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (_hg_operator_real_private_clearerror):
+	implemented.
+	(_hg_operator_real_protected_forall_array_continue): fix stack
+	validation.
+	(_hg_operator_real_protected_stop_continue): fix not ignoring entire
+	exception.
+	(_hg_operator_real_maxlength): implemented.
+	(_hg_operator_real_wcheck): implemented.
+	(_hg_operator_real_gcheck): implemented.
+
 	* hieroglyph/hgmem.c (hg_mem_set_resizable): new.
 
 	* hieroglyph/hgstring.c (hg_string_append): assert if str is null.

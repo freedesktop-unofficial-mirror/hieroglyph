@@ -124,6 +124,7 @@ static gboolean __hg_operator_is_initialized = FALSE;
 
 
 PROTO_OPER (private_abort);
+PROTO_OPER (private_clearerror);
 PROTO_OPER (private_findlibfile);
 PROTO_OPER (private_forceput);
 PROTO_OPER (private_hgrevision);
@@ -529,6 +530,16 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
+/* - .clearerror - */
+DEFUNC_OPER (private_clearerror)
+G_STMT_START {
+	hg_vm_clear_error(vm);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 /* <filename> .findlibfile <filename> <true>
  * <filename> .findlibfile <false>
  */
@@ -889,6 +900,7 @@ DEFUNC_OPER_END
 
 /* <int> <array> <proc> %forall_array_continue - */
 DEFUNC_OPER (protected_forall_array_continue)
+gint __n G_GNUC_UNUSED = 0;
 G_STMT_START {
 	hg_quark_t self, proc, val, n, q, qq;
 	hg_array_t *a;
@@ -913,6 +925,7 @@ G_STMT_START {
 		hg_stack_pop(estack, error);
 
 		retval = TRUE;
+		__n = 3;
 		break;
 	}
 	hg_stack_roll(estack, 4, -1, error);
@@ -936,7 +949,7 @@ G_STMT_START {
 
 	retval = TRUE;
 } G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
+VALIDATE_STACK_SIZE (__n != 0 ? 0 : 1, __n != 0 ? -__n : 2, 0);
 DEFUNC_OPER_END
 
 /* <int> <dict> <proc> %forall_dict_continue - */
@@ -1070,14 +1083,15 @@ G_STMT_START {
 	}
 	qn = HG_QNAME (vm->name, ".isstop");
 	q = hg_dict_lookup(dict, qn);
-	HG_VM_UNLOCK (vm, vm->qerror);
 
 	if (q != Qnil &&
 	    HG_IS_QBOOL (q) &&
 	    HG_BOOL (q)) {
-		hg_vm_clear_error(vm);
+		hg_dict_add(dict, qn, HG_QBOOL (FALSE));
 		ret = TRUE;
 	}
+
+	HG_VM_UNLOCK (vm, vm->qerror);
 	STACK_PUSH (ostack, HG_QBOOL (ret));
 
 	retval = TRUE;
@@ -2779,7 +2793,36 @@ VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (makefont);
-DEFUNC_UNIMPLEMENTED_OPER (maxlength);
+
+/* <dict> maxlength <int> */
+DEFUNC_OPER (maxlength)
+G_STMT_START {
+	hg_quark_t arg0, q;
+	hg_dict_t *dict;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QDICT (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	dict = HG_VM_LOCK (vm, arg0, error);
+	if (dict == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	q = HG_QINT (hg_dict_maxlength(dict));
+	HG_VM_UNLOCK (vm, arg0);
+
+	hg_stack_pop(ostack, error);
+
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
 
 /* <int1> <int2> mod <remainder> */
 DEFUNC_OPER (mod)
@@ -3756,7 +3799,36 @@ DEFUNC_UNIMPLEMENTED_OPER (ustrokepath);
 DEFUNC_UNIMPLEMENTED_OPER (vmreclaim);
 DEFUNC_UNIMPLEMENTED_OPER (vmstatus);
 DEFUNC_UNIMPLEMENTED_OPER (wait);
-DEFUNC_UNIMPLEMENTED_OPER (wcheck);
+
+/* <array> wcheck <bool>
+ * <packedarray> wcheck <false>
+ * <dict> wcheck <bool>
+ * <file> wcheck <bool>
+ * <string> wcheck <bool>
+ */
+DEFUNC_OPER (wcheck)
+G_STMT_START {
+	hg_quark_t arg0;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QARRAY (arg0) &&
+	    !HG_IS_QDICT (arg0) &&
+	    !HG_IS_QFILE (arg0) &&
+	    !HG_IS_QSTRING (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	hg_stack_pop(ostack, error);
+
+	STACK_PUSH (ostack, HG_QBOOL (hg_quark_is_writable(arg0)));
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (xcheck);
 DEFUNC_UNIMPLEMENTED_OPER (yield);
 DEFUNC_UNIMPLEMENTED_OPER (defineuserobject);
@@ -3774,7 +3846,32 @@ DEFUNC_UNIMPLEMENTED_OPER (currentsystemparams);
 DEFUNC_UNIMPLEMENTED_OPER (currentuserparams);
 DEFUNC_UNIMPLEMENTED_OPER (defineresource);
 DEFUNC_UNIMPLEMENTED_OPER (findencoding);
-DEFUNC_UNIMPLEMENTED_OPER (gcheck);
+
+/* <any> gcheck <bool> */
+DEFUNC_OPER (gcheck)
+G_STMT_START {
+	hg_quark_t arg0;
+	gboolean ret;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (hg_quark_is_simple_object(arg0) ||
+	    HG_IS_QOPER (arg0)) {
+		ret = TRUE;
+	} else {
+		ret = hg_quark_has_same_mem_id(arg0, vm->mem_id[HG_VM_MEM_GLOBAL]);
+	}
+
+	hg_stack_pop(ostack, error);
+
+	STACK_PUSH (ostack, HG_QBOOL (ret));
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (glyphshow);
 
 /* - languagelevel <int> */
@@ -3876,6 +3973,7 @@ _hg_operator_level1_register(hg_dict_t *dict,
 	REG_VALUE (dict, name, ], HG_QEVALNAME (name, "%arraytomark"));
 
 	REG_PRIV_OPER (dict, name, .abort, private_abort);
+	REG_PRIV_OPER (dict, name, .clearerror, private_clearerror);
 	REG_PRIV_OPER (dict, name, .findlibfile, private_findlibfile);
 	REG_PRIV_OPER (dict, name, .forceput, private_forceput);
 	REG_PRIV_OPER (dict, name, .hgrevision, private_hgrevision);
@@ -4333,6 +4431,7 @@ hg_operator_init(void)
 	} G_STMT_END
 
 	DECL_PRIV_OPER (.abort, private_abort);
+	DECL_PRIV_OPER (.clearerror, private_clearerror);
 	DECL_PRIV_OPER (.findlibfile, private_findlibfile);
 	DECL_PRIV_OPER (.forceput, private_forceput);
 	DECL_PRIV_OPER (.hgrevision, private_hgrevision);
@@ -4739,6 +4838,7 @@ hg_operator_tini(void)
 	} G_STMT_END
 
 	UNDECL_OPER (private_abort);
+	UNDECL_OPER (private_clearerror);
 	UNDECL_OPER (private_findlibfile);
 	UNDECL_OPER (private_forceput);
 	UNDECL_OPER (private_hgrevision);
