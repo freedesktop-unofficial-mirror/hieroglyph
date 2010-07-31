@@ -1889,7 +1889,7 @@ DEFUNC_OPER_END
 DEFUNC_OPER (exec)
 gboolean __flag G_GNUC_UNUSED = FALSE;
 G_STMT_START {
-	hg_quark_t arg0;
+	hg_quark_t arg0, q;
 
 	CHECK_STACK (ostack, 1);
 
@@ -1900,9 +1900,15 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
 			return FALSE;
 		}
+
+		q = hg_vm_quark_copy(vm, arg0, NULL, error);
+		if (q == Qnil) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
 		hg_stack_pop(ostack, error);
 
-		STACK_PUSH (estack, arg0);
+		STACK_PUSH (estack, q);
 
 		hg_stack_roll(estack, 2, 1, error);
 		__flag = TRUE;
