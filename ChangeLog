@@ -1,6 +1,7 @@
 2010-07-31  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_exec): copy the object.
+	(_hg_operator_real_private_exit): implemented.
 
 	* hieroglyph/hgfile.c (_hg_object_file_copy): implemented.
 

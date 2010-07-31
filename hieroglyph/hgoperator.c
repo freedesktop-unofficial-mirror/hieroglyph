@@ -125,6 +125,7 @@ static gboolean __hg_operator_is_initialized = FALSE;
 
 PROTO_OPER (private_abort);
 PROTO_OPER (private_clearerror);
+PROTO_OPER (private_exit);
 PROTO_OPER (private_findlibfile);
 PROTO_OPER (private_forceput);
 PROTO_OPER (private_hgrevision);
@@ -538,6 +539,57 @@ G_STMT_START {
 	retval = TRUE;
 } G_STMT_END;
 VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
+/* - .exit - */
+DEFUNC_OPER (private_exit)
+gssize __n G_GNUC_UNUSED = 0;
+G_STMT_START {
+	gsize i, j, edepth = hg_stack_depth(estack);
+	hg_quark_t q;
+
+	for (i = 0; i < edepth; i++) {
+		q = hg_stack_index(estack, i, error);
+		if (HG_IS_QOPER (q)) {
+/*			if (HG_OPER (q) == HG_enc_protected_for_pos_int_continue ||
+			    HG_OPER (q) == HG_enc_protected_for_pos_real_continue) {
+				hg_stack_pop(estack, error);
+				hg_stack_pop(estack, error);
+				hg_stack_pop(estack, error);
+				hg_stack_pop(estack, error);
+				__n = i + 4;
+				} else*/ if (HG_OPER (q) == HG_enc_protected_loop_continue) {
+				hg_stack_pop(estack, error);
+				__n = i + 1;
+			} else if (HG_OPER (q) == HG_enc_protected_repeat_continue) {
+				hg_stack_pop(estack, error);
+				hg_stack_pop(estack, error);
+				__n = i + 2;
+			} else if (HG_OPER (q) == HG_enc_protected_forall_array_continue ||
+				   HG_OPER (q) == HG_enc_protected_forall_dict_continue ||
+				   HG_OPER (q) == HG_enc_protected_forall_string_continue) {
+				hg_stack_pop(estack, error);
+				hg_stack_pop(estack, error);
+				hg_stack_pop(estack, error);
+				__n = i + 3;
+			} else {
+				continue;
+			}
+			for (j = 0; j < i; j++)
+				hg_stack_pop(estack, error);
+			break;
+		} else if (HG_IS_QFILE (q)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_invalidexit);
+			break;
+		}
+	}
+	if (i == edepth) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidexit);
+	} else {
+		retval = TRUE;
+	}
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, -__n, 0);
 DEFUNC_OPER_END
 
 /* <filename> .findlibfile <filename> <true>
@@ -3980,6 +4032,7 @@ _hg_operator_level1_register(hg_dict_t *dict,
 
 	REG_PRIV_OPER (dict, name, .abort, private_abort);
 	REG_PRIV_OPER (dict, name, .clearerror, private_clearerror);
+	REG_PRIV_OPER (dict, name, .exit, private_exit);
 	REG_PRIV_OPER (dict, name, .findlibfile, private_findlibfile);
 	REG_PRIV_OPER (dict, name, .forceput, private_forceput);
 	REG_PRIV_OPER (dict, name, .hgrevision, private_hgrevision);
@@ -4438,6 +4491,7 @@ hg_operator_init(void)
 
 	DECL_PRIV_OPER (.abort, private_abort);
 	DECL_PRIV_OPER (.clearerror, private_clearerror);
+	DECL_PRIV_OPER (.exit, private_exit);
 	DECL_PRIV_OPER (.findlibfile, private_findlibfile);
 	DECL_PRIV_OPER (.forceput, private_forceput);
 	DECL_PRIV_OPER (.hgrevision, private_hgrevision);
@@ -4845,6 +4899,7 @@ hg_operator_tini(void)
 
 	UNDECL_OPER (private_abort);
 	UNDECL_OPER (private_clearerror);
+	UNDECL_OPER (private_exit);
 	UNDECL_OPER (private_findlibfile);
 	UNDECL_OPER (private_forceput);
 	UNDECL_OPER (private_hgrevision);
