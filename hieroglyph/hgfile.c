@@ -266,7 +266,7 @@ _hg_object_file_copy(hg_object_t              *object,
 		     gpointer                 *ret,
 		     GError                  **error)
 {
-	return Qnil;
+	return object->self;
 }
 
 static gchar *
