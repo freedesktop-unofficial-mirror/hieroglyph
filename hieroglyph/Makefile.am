@@ -18,6 +18,8 @@ EXTRA_DIST =							\
 MAINTAINERCLEANFILES =						\
 	$(NULL)
 CLEANFILES =							\
+	hglineedit.c						\
+	hgscanner.c						\
 	$(NULL)
 
 ##
