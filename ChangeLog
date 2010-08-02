@@ -1,5 +1,7 @@
 2010-08-02  Akira TAGOH  <akira@tagoh.org>
 
+	* configure.ac: add --enable-profile option.
+
 	* hieroglyph/Makefile.am (CLEANFILES): clean up generated source code.
 
 2010-07-31  Akira TAGOH  <akira@tagoh.org>

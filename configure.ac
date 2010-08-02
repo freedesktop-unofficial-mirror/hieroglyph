@@ -135,6 +135,23 @@ AM_PATH_GLIB_2_0($GLIB_REQUIRED, :,
 dnl ======================================================================
 dnl options
 dnl ======================================================================
+AC_ARG_ENABLE(profile,
+	AC_HELP_STRING([--enable-profile], [build with the profiler option enabled.])
+	,,
+	enable_profile=no)
+
+dnl ======================================================================
+dnl options - profile
+dnl ======================================================================
+AC_MSG_CHECKING(whether to enable the profiler)
+if test "x$enable_profile" = xno; then
+	AC_MSG_RESULT(no)
+else
+	AC_MSG_RESULT(yes)
+	changequote(,) dnl
+	CFLAGS="`echo $CFLAGS | sed -e 's/[ \t]-O[0-9][ \t]/ /'` -pg"
+	changequote([,]) dnl
+fi
 
 dnl ======================================================================
 dnl output
@@ -162,5 +179,6 @@ echo " CFLAGS:			$CFLAGS $GLIB_CFLAGS"
 echo " LDFLAGS:			$LDFLAGS $GLIB_LIBS"
 echo ""
 echo " Enable the debugging build:	$enable_debug"
+echo " Enable the profile:		$enable_profile"
 echo " Unit testing:			$use_check"
 echo ""
