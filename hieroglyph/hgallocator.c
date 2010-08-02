@@ -31,6 +31,8 @@
 #include "hgallocator.h"
 #include "hgallocator-private.h"
 
+#define DEFAULT_RESIZE_SIZE	65535
+
 
 G_INLINE_FUNC hg_allocator_bitmap_t *_hg_allocator_bitmap_new        (gsize                   size);
 G_INLINE_FUNC void                   _hg_allocator_bitmap_destroy    (gpointer                data);
@@ -423,6 +425,7 @@ _hg_allocator_alloc(hg_allocator_data_t *data,
 	priv = (hg_allocator_private_t *)data;
 
 	obj_size = hg_mem_aligned_size (sizeof (hg_allocator_block_t) + size);
+  retry:
 	index = _hg_allocator_bitmap_alloc(priv->bitmap, obj_size);
 	if (index != Qnil) {
 		block = _hg_allocator_get_internal_block(priv, index, TRUE);
@@ -437,6 +440,17 @@ _hg_allocator_alloc(hg_allocator_data_t *data,
 			*ret = hg_get_allocated_object (block);
 		else
 			_hg_allocator_real_unlock_object(block);
+	} else {
+		if (data->resizable) {
+			gsize resize_size = MAX (size, DEFAULT_RESIZE_SIZE);
+
+			if (resize_size == size) {
+				/* We'll be here soon */
+				resize_size = MAX (resize_size, data->total_size);
+			}
+			if (_hg_allocator_resize_heap(data, data->total_size + resize_size))
+				goto retry;
+		}
 	}
 
 	return retval;
@@ -465,6 +479,7 @@ _hg_allocator_realloc(hg_allocator_data_t *data,
 		make_sure_if_no_referrer = g_atomic_int_get(&block->lock_count);
 		hg_return_val_after_eval_if_fail (make_sure_if_no_referrer == 1, Qnil, _hg_allocator_real_unlock_object(block));
 
+	  retry:
 		index = _hg_allocator_bitmap_realloc(priv->bitmap, qdata, block->size, obj_size);
 		if (index != Qnil) {
 			new_block = _hg_allocator_get_internal_block(priv, index, FALSE);
@@ -482,6 +497,17 @@ _hg_allocator_realloc(hg_allocator_data_t *data,
 				*ret = hg_get_allocated_object (new_block);
 			else
 				_hg_allocator_real_unlock_object(new_block);
+		} else {
+			if (data->resizable) {
+				gsize resize_size = MAX (size, DEFAULT_RESIZE_SIZE);
+
+				if (resize_size == size) {
+					/* We'll be here soon */
+					resize_size = MAX (resize_size, data->total_size);
+				}
+				if (_hg_allocator_resize_heap(data, data->total_size + resize_size))
+					goto retry;
+			}
 		}
 	} else {
 #if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
