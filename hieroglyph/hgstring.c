@@ -125,7 +125,9 @@ _hg_object_string_to_cstr(hg_object_t              *object,
 
 	g_string_append_c(retval, '(');
 	for (i = s->offset; i < hg_string_maxlength(s); i++) {
-		if (isprint(cstr[i])) {
+		if (cstr == NULL) {
+			g_string_append(retval, "\\000");
+		} else if (isprint(cstr[i])) {
 			g_string_append_c(retval, cstr[i]);
 		} else {
 			switch (cstr[i]) {
