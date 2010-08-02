@@ -31,7 +31,6 @@
 #include "hgallocator.h"
 #include "hgallocator-private.h"
 
-#define HG_MEM_DEBUG
 
 G_INLINE_FUNC hg_allocator_bitmap_t *_hg_allocator_bitmap_new        (gsize                   size);
 G_INLINE_FUNC void                   _hg_allocator_bitmap_destroy    (gpointer                data);
