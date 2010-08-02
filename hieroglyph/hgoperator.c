@@ -1694,7 +1694,92 @@ DEFUNC_UNIMPLEMENTED_OPER (cvi);
 DEFUNC_UNIMPLEMENTED_OPER (cvlit);
 DEFUNC_UNIMPLEMENTED_OPER (cvn);
 DEFUNC_UNIMPLEMENTED_OPER (cvr);
-DEFUNC_UNIMPLEMENTED_OPER (cvrs);
+
+/* <num> <radix> <string> cvrs <substring> */
+DEFUNC_OPER (cvrs)
+G_STMT_START {
+	hg_quark_t arg0, arg1, arg2, q;
+	gdouble d1;
+	gint radix;
+	hg_string_t *s;
+	gboolean is_real;
+	gchar *cstr = NULL;
+
+	CHECK_STACK (ostack, 3);
+
+	arg0 = hg_stack_index(ostack, 2, error);
+	arg1 = hg_stack_index(ostack, 1, error);
+	arg2 = hg_stack_index(ostack, 0, error);
+	if (HG_IS_QREAL (arg0)) {
+		d1 = HG_REAL (arg0);
+		is_real = TRUE;
+	} else if (HG_IS_QINT (arg0)) {
+		d1 = HG_INT (arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!HG_IS_QINT (arg1) ||
+	    !HG_IS_QSTRING (arg2)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	radix = HG_INT (arg1);
+	if (radix < 2 || radix > 36) {
+		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		return FALSE;
+	}
+	if (radix == 10) {
+		if (is_real) {
+			cstr = g_strdup_printf("%f", d1);
+		} else {
+			cstr = g_strdup_printf("%d", (gint)d1);
+		}
+	} else {
+		const gchar __radix_to_c[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+		GString *str = g_string_new(NULL);
+		guint x = (guint)d1;
+
+		do {
+			g_string_append_c(str, __radix_to_c[x % radix]);
+			x /= radix;
+		} while (x != 0);
+
+		cstr = g_string_free(str, FALSE);
+	}
+	s = HG_VM_LOCK (vm, arg2, error);
+	if (s == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		goto error;
+	}
+	if (strlen(cstr) > hg_string_maxlength(s)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		goto error;
+	}
+	hg_string_append(s, cstr, -1, error);
+	if (hg_string_maxlength(s) > hg_string_length(s)) {
+		q = hg_string_make_substring(s, 0, hg_string_length(s) - 1, NULL, error);
+		if (q == Qnil) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			goto error;
+		}
+	} else {
+		q = arg2;
+	}
+	hg_stack_pop(ostack, error);
+	hg_stack_pop(ostack, error);
+	hg_stack_pop(ostack, error);
+
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+  error:
+	if (s)
+		HG_VM_UNLOCK (vm, arg2);
+	g_free(cstr);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-2, 0, 0);
+DEFUNC_OPER_END
 
 /* <any> cvx <any> */
 DEFUNC_OPER (cvx)
