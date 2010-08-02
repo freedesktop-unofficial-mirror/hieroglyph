@@ -1,5 +1,12 @@
 2010-08-02  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgallocator.c (_hg_allocator_bitmap_alloc): improve
+	the performance to find out a free space.
+	(_hg_allocator_bitmap_realloc): do not allocate difference place
+	when the size is reducing.
+	(_hg_allocator_alloc): return an index instead of the serial number.
+	(_hg_allocator_realloc): likewise.
+
 	* configure.ac: add --enable-profile option.
 
 	* hieroglyph/Makefile.am (CLEANFILES): clean up generated source code.

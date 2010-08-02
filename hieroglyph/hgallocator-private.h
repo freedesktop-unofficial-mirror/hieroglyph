@@ -37,11 +37,12 @@ G_BEGIN_DECLS
 
 
 struct _hg_allocator_bitmap_t {
-	guint32 *bitmaps;
-	gsize    size;
+	guint32    *bitmaps;
+	gsize       size;
+	gsize       last_allocated_size;
+	hg_quark_t  last_index;
 };
 struct _hg_allocator_block_t {
-	hg_quark_t     index;
 	gsize          size;
 	volatile guint lock_count;
 };
@@ -49,8 +50,6 @@ struct _hg_allocator_private_t {
 	hg_allocator_data_t    parent;
 	hg_allocator_bitmap_t *bitmap;
 	gpointer               heap;
-	hg_quark_t             current_id;
-	GTree                 *block_in_use;
 };
 
 G_END_DECLS

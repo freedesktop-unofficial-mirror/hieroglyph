@@ -31,49 +31,50 @@
 #include "hgallocator.h"
 #include "hgallocator-private.h"
 
+#define HG_MEM_DEBUG
 
-static hg_allocator_bitmap_t *_hg_allocator_bitmap_new                (gsize                   size);
-static void                   _hg_allocator_bitmap_destroy            (gpointer                data);
-static gboolean               _hg_allocator_bitmap_resize             (hg_allocator_bitmap_t  *bitmap,
-                                                                       gsize                   size);
-static hg_quark_t             _hg_allocator_bitmap_alloc              (hg_allocator_bitmap_t  *bitmap,
-                                                                       gsize                   size);
-static hg_quark_t             _hg_allocator_bitmap_realloc            (hg_allocator_bitmap_t  *bitmap,
-								       hg_quark_t              index,
-								       gsize                   old_size,
-								       gsize                   size);
-static void                   _hg_allocator_bitmap_free               (hg_allocator_bitmap_t  *bitmap,
-                                                                       hg_quark_t              index,
-                                                                       gsize                   size);
-static void                   _hg_allocator_bitmap_mark               (hg_allocator_bitmap_t  *bitmap,
-                                                                       gint32                  index);
-static void                   _hg_allocator_bitmap_clear              (hg_allocator_bitmap_t  *bitmap,
-                                                                       gint32                  index);
-static gboolean               _hg_allocator_bitmap_is_marked          (hg_allocator_bitmap_t  *bitmap,
-                                                                       gint32                  index);
-static gpointer               _hg_allocator_initialize                (void);
-static void                   _hg_allocator_finalize                  (hg_allocator_data_t    *data);
-static gboolean               _hg_allocator_resize_heap               (hg_allocator_data_t    *data,
-                                                                       gsize                   size);
-static hg_quark_t             _hg_allocator_alloc                     (hg_allocator_data_t    *data,
-                                                                       gsize                   size,
-								       gpointer               *ret);
-static hg_quark_t             _hg_allocator_realloc                   (hg_allocator_data_t    *data,
-								       hg_quark_t              quark,
-								       gsize                   size,
-								       gpointer               *ret);
-static void                   _hg_allocator_free                      (hg_allocator_data_t    *data,
-                                                                       hg_quark_t              index);
-static gpointer               _hg_allocator_internal_lock_object      (hg_allocator_private_t *data,
-                                                                       hg_quark_t              index,
-								       gboolean                initialize);
-static gpointer               _hg_allocator_real_lock_object          (hg_allocator_data_t    *data,
-								       hg_quark_t              index);
-static gpointer               _hg_allocator_lock_object               (hg_allocator_data_t    *data,
-                                                                       hg_quark_t              index);
-static void                   _hg_allocator_real_unlock_object        (hg_allocator_block_t   *block);
-static void                   _hg_allocator_unlock_object             (hg_allocator_data_t    *data,
-                                                                       hg_quark_t              index);
+G_INLINE_FUNC hg_allocator_bitmap_t *_hg_allocator_bitmap_new        (gsize                   size);
+G_INLINE_FUNC void                   _hg_allocator_bitmap_destroy    (gpointer                data);
+G_INLINE_FUNC gboolean               _hg_allocator_bitmap_resize     (hg_allocator_bitmap_t  *bitmap,
+                                                                      gsize                   size);
+G_INLINE_FUNC hg_quark_t             _hg_allocator_bitmap_alloc      (hg_allocator_bitmap_t  *bitmap,
+                                                                      gsize                   size);
+G_INLINE_FUNC hg_quark_t             _hg_allocator_bitmap_realloc    (hg_allocator_bitmap_t  *bitmap,
+                                                                      hg_quark_t              index,
+                                                                      gsize                   old_size,
+                                                                      gsize                   size);
+G_INLINE_FUNC void                   _hg_allocator_bitmap_free       (hg_allocator_bitmap_t  *bitmap,
+                                                                      hg_quark_t              index,
+                                                                      gsize                   size);
+G_INLINE_FUNC void                   _hg_allocator_bitmap_mark       (hg_allocator_bitmap_t  *bitmap,
+                                                                      gint32                  index);
+G_INLINE_FUNC void                   _hg_allocator_bitmap_clear      (hg_allocator_bitmap_t  *bitmap,
+                                                                      gint32                  index);
+G_INLINE_FUNC gboolean               _hg_allocator_bitmap_is_marked  (hg_allocator_bitmap_t  *bitmap,
+                                                                      gint32                  index);
+static gpointer                      _hg_allocator_initialize        (void);
+static void                          _hg_allocator_finalize          (hg_allocator_data_t    *data);
+static gboolean                      _hg_allocator_resize_heap       (hg_allocator_data_t    *data,
+                                                                      gsize                   size);
+static hg_quark_t                    _hg_allocator_alloc             (hg_allocator_data_t    *data,
+                                                                      gsize                   size,
+                                                                      gpointer               *ret);
+static hg_quark_t                    _hg_allocator_realloc           (hg_allocator_data_t    *data,
+                                                                      hg_quark_t              quark,
+                                                                      gsize                   size,
+                                                                      gpointer               *ret);
+static void                          _hg_allocator_free              (hg_allocator_data_t    *data,
+                                                                      hg_quark_t              index);
+static gpointer                      _hg_allocator_get_internal_block(hg_allocator_private_t *data,
+                                                                      hg_quark_t              index,
+                                                                      gboolean                initialize);
+static gpointer                      _hg_allocator_real_lock_object  (hg_allocator_data_t    *data,
+                                                                      hg_quark_t              index);
+static gpointer                      _hg_allocator_lock_object       (hg_allocator_data_t    *data,
+                                                                      hg_quark_t              index);
+static void                          _hg_allocator_real_unlock_object(hg_allocator_block_t   *block);
+static void                          _hg_allocator_unlock_object     (hg_allocator_data_t    *data,
+                                                                      hg_quark_t              index);
 
 static hg_mem_vtable_t __hg_allocator_vtable = {
 	.initialize    = _hg_allocator_initialize,
@@ -89,15 +90,9 @@ G_LOCK_DEFINE_STATIC (bitmap);
 G_LOCK_DEFINE_STATIC (allocator);
 
 /*< private >*/
-static gint
-_btree_key_compare(gconstpointer a,
-		   gconstpointer b)
-{
-	return HGPOINTER_TO_QUARK (a) - HGPOINTER_TO_QUARK (b);
-}
 
 /** bitmap operation **/
-static hg_allocator_bitmap_t *
+G_INLINE_FUNC hg_allocator_bitmap_t *
 _hg_allocator_bitmap_new(gsize size)
 {
 	hg_allocator_bitmap_t *retval;
@@ -116,7 +111,7 @@ _hg_allocator_bitmap_new(gsize size)
 	return retval;
 }
 
-static void
+G_INLINE_FUNC void
 _hg_allocator_bitmap_destroy(gpointer data)
 {
 	hg_allocator_bitmap_t *bitmap = data;
@@ -127,7 +122,7 @@ _hg_allocator_bitmap_destroy(gpointer data)
 	g_free(bitmap);
 }
 
-static gboolean
+G_INLINE_FUNC gboolean
 _hg_allocator_bitmap_resize(hg_allocator_bitmap_t *bitmap,
 			    gsize                  size)
 {
@@ -156,12 +151,13 @@ _hg_allocator_bitmap_resize(hg_allocator_bitmap_t *bitmap,
 	return retval;
 }
 
-static hg_quark_t
+G_INLINE_FUNC hg_quark_t
 _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 			   gsize                  size)
 {
-	hg_quark_t i, j;
+	hg_quark_t i, j, idx = 0;
 	gsize aligned_size, required_size;
+	gboolean retry = FALSE;
 
 	hg_return_val_if_fail (bitmap != NULL, Qnil);
 	hg_return_val_if_fail (size > 0, Qnil);
@@ -180,7 +176,17 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 	g_print("\n");
 #endif
 	required_size = aligned_size;
-	for (i = 0; i < bitmap->size; i++) {
+	if (required_size >= bitmap->last_allocated_size) {
+		/* that may be less likely to get a space
+		 * prior to the place where allocated last time
+		 */
+		idx = bitmap->last_index;
+	} else {
+		bitmap->last_allocated_size = 0;
+		bitmap->last_index = 0;
+	}
+  find_free_bitmap:
+	for (i = idx; i < bitmap->size; i++) {
 		if (!_hg_allocator_bitmap_is_marked(bitmap, i + 1)) {
 			required_size--;
 			for (j = i + 1; required_size > 0 && j < bitmap->size; j++) {
@@ -201,6 +207,8 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 #if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
 				g_print("Allocated at %" G_GSIZE_FORMAT "\n", i);
 #endif
+				bitmap->last_allocated_size = aligned_size;
+				bitmap->last_index = ((i + 1) >= bitmap->size ? 0 : i);
 
 				return i + 1;
 			} else {
@@ -209,18 +217,24 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 			}
 		}
 	}
+	if (idx != 0 && !retry) {
+		/* retry to find out a free space at the beginning again */
+		retry = TRUE;
+		idx = 0;
+		goto find_free_bitmap;
+	}
 
 	return Qnil;
 }
 
-static hg_quark_t
+G_INLINE_FUNC hg_quark_t
 _hg_allocator_bitmap_realloc(hg_allocator_bitmap_t *bitmap,
 			     hg_quark_t             index,
 			     gsize                  old_size,
 			     gsize                  size)
 {
 	hg_quark_t i;
-	gsize aligned_size, old_aligned_size, required_size;
+	gssize aligned_size, old_aligned_size, required_size;
 
 	hg_return_val_if_fail (bitmap != NULL, Qnil);
 	hg_return_val_if_fail (index != Qnil, Qnil);
@@ -241,6 +255,16 @@ _hg_allocator_bitmap_realloc(hg_allocator_bitmap_t *bitmap,
 	g_print("\n");
 #endif
 	required_size = aligned_size - old_aligned_size;
+	if (required_size < 0) {
+		G_LOCK (bitmap);
+
+		for (i = index + aligned_size; i < (index + old_aligned_size); i++)
+			_hg_allocator_bitmap_clear(bitmap, i);
+
+		G_UNLOCK (bitmap);
+
+		return index;
+	}
 	if (!_hg_allocator_bitmap_is_marked(bitmap, index + old_aligned_size)) {
 		required_size--;
 		for (i = index + old_aligned_size + 1; required_size > 0 && i < bitmap->size; i++) {
@@ -270,7 +294,7 @@ _hg_allocator_bitmap_realloc(hg_allocator_bitmap_t *bitmap,
 	return Qnil;
 }
 
-static void
+G_INLINE_FUNC void
 _hg_allocator_bitmap_free(hg_allocator_bitmap_t *bitmap,
 			  hg_quark_t             index,
 			  gsize                  size)
@@ -288,6 +312,10 @@ _hg_allocator_bitmap_free(hg_allocator_bitmap_t *bitmap,
 
 	for (i = index; i < (index + aligned_size); i++)
 		_hg_allocator_bitmap_clear(bitmap, i);
+	if (aligned_size >= bitmap->last_allocated_size) {
+		bitmap->last_index = i - 1;
+		bitmap->last_allocated_size = aligned_size;
+	}
 
 	G_UNLOCK (bitmap);
 
@@ -304,7 +332,7 @@ _hg_allocator_bitmap_free(hg_allocator_bitmap_t *bitmap,
 #endif
 }
 
-static void
+G_INLINE_FUNC void
 _hg_allocator_bitmap_mark(hg_allocator_bitmap_t *bitmap,
 			  gint32                 index)
 {
@@ -314,7 +342,7 @@ _hg_allocator_bitmap_mark(hg_allocator_bitmap_t *bitmap,
 	bitmap->bitmaps[(index - 1) / sizeof (gint32)] |= 1 << ((index - 1) % sizeof (gint32));
 }
 
-static void
+G_INLINE_FUNC void
 _hg_allocator_bitmap_clear(hg_allocator_bitmap_t *bitmap,
 			   gint32                 index)
 {
@@ -324,7 +352,7 @@ _hg_allocator_bitmap_clear(hg_allocator_bitmap_t *bitmap,
 	bitmap->bitmaps[(index - 1) / sizeof (gint32)] &= ~(1 << ((index - 1) % sizeof (gint32)));
 }
 
-static gboolean
+G_INLINE_FUNC gboolean
 _hg_allocator_bitmap_is_marked(hg_allocator_bitmap_t *bitmap,
 			       gint32                 index)
 {
@@ -341,10 +369,6 @@ _hg_allocator_initialize(void)
 	hg_allocator_private_t *retval;
 
 	retval = g_new0(hg_allocator_private_t, 1);
-	if (retval) {
-		retval->current_id = 2;
-		retval->block_in_use = g_tree_new(&_btree_key_compare);
-	}
 
 	return retval;
 }
@@ -358,7 +382,6 @@ _hg_allocator_finalize(hg_allocator_data_t *data)
 		return;
 
 	priv = (hg_allocator_private_t *)data;
-	g_tree_destroy(priv->block_in_use);
 	g_free(priv->heap);
 	_hg_allocator_bitmap_destroy(priv->bitmap);
 
@@ -400,16 +423,12 @@ _hg_allocator_alloc(hg_allocator_data_t *data,
 
 	priv = (hg_allocator_private_t *)data;
 
-	hg_return_val_if_fail (priv->current_id != 0, Qnil); /* FIXME: need to find out the free id */
-
 	obj_size = hg_mem_aligned_size (sizeof (hg_allocator_block_t) + size);
 	index = _hg_allocator_bitmap_alloc(priv->bitmap, obj_size);
 	if (index != Qnil) {
-		block = _hg_allocator_internal_lock_object(priv, index, TRUE);
-		block->index = index;
+		block = _hg_allocator_get_internal_block(priv, index, TRUE);
 		block->size = obj_size;
-		retval = priv->current_id++;
-		g_tree_insert(priv->block_in_use, HGQUARK_TO_POINTER (retval), block);
+		retval = index;
 		/* NOTE: No unlock yet here.
 		 *       any objects are supposed to be unlocked
 		 *       when it's entered into the stack where PostScript
@@ -426,7 +445,7 @@ _hg_allocator_alloc(hg_allocator_data_t *data,
 
 static hg_quark_t
 _hg_allocator_realloc(hg_allocator_data_t *data,
-		      hg_quark_t           quark,
+		      hg_quark_t           qdata,
 		      gsize                size,
 		      gpointer            *ret)
 {
@@ -440,27 +459,25 @@ _hg_allocator_realloc(hg_allocator_data_t *data,
 	priv = (hg_allocator_private_t *)data;
 
 	obj_size = hg_mem_aligned_size (sizeof (hg_allocator_block_t) + size);
-	block = _hg_allocator_real_lock_object(data, quark);
+	block = _hg_allocator_real_lock_object(data, qdata);
 	if (block) {
 		volatile gint make_sure_if_no_referrer;
 
 		make_sure_if_no_referrer = g_atomic_int_get(&block->lock_count);
 		hg_return_val_after_eval_if_fail (make_sure_if_no_referrer == 1, Qnil, _hg_allocator_real_unlock_object(block));
 
-		index = _hg_allocator_bitmap_realloc(priv->bitmap, block->index, block->size, obj_size);
+		index = _hg_allocator_bitmap_realloc(priv->bitmap, qdata, block->size, obj_size);
 		if (index != Qnil) {
-			new_block = _hg_allocator_internal_lock_object(priv, index, FALSE);
+			new_block = _hg_allocator_get_internal_block(priv, index, FALSE);
 			if (new_block != block) {
 				memcpy(new_block, block, block->size);
 
-				new_block->index = index;
 				new_block->lock_count = make_sure_if_no_referrer;
 
-				_hg_allocator_bitmap_free(priv->bitmap, block->index, block->size);
+				_hg_allocator_bitmap_free(priv->bitmap, qdata, block->size);
 			}
 			new_block->size = obj_size;
-			retval = quark;
-			g_tree_replace(priv->block_in_use, HGQUARK_TO_POINTER (retval), new_block);
+			retval = index;
 
 			if (ret)
 				*ret = hg_get_allocated_object (new_block);
@@ -488,8 +505,7 @@ _hg_allocator_free(hg_allocator_data_t *data,
 	priv = (hg_allocator_private_t *)data;
 	block = _hg_allocator_real_lock_object(data, index);
 	if (block) {
-		g_tree_remove(priv->block_in_use, HGQUARK_TO_POINTER (index));
-		_hg_allocator_bitmap_free(priv->bitmap, block->index, block->size);
+		_hg_allocator_bitmap_free(priv->bitmap, index, block->size);
 	} else {
 #if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
 		g_warning("%lx isn't the allocated object.\n", index);
@@ -498,9 +514,9 @@ _hg_allocator_free(hg_allocator_data_t *data,
 }
 
 G_INLINE_FUNC gpointer
-_hg_allocator_internal_lock_object(hg_allocator_private_t *priv,
-				   hg_quark_t              index,
-				   gboolean                initialize)
+_hg_allocator_get_internal_block(hg_allocator_private_t *priv,
+				 hg_quark_t              index,
+				 gboolean                initialize)
 {
 	hg_allocator_block_t *retval;
 
@@ -525,7 +541,9 @@ _hg_allocator_real_lock_object(hg_allocator_data_t *data,
 	gint old_val;
 
 	priv = (hg_allocator_private_t *)data;
-	if ((retval = g_tree_lookup(priv->block_in_use, HGQUARK_TO_POINTER (index))) != NULL) {
+	if (_hg_allocator_bitmap_is_marked(priv->bitmap, index)) {
+		/* XXX: maybe better validate the block size too? */
+		retval = _hg_allocator_get_internal_block(priv, index, FALSE);
 		old_val = g_atomic_int_exchange_and_add((int *)&retval->lock_count, 1);
 	}
 
@@ -572,8 +590,11 @@ _hg_allocator_unlock_object(hg_allocator_data_t *data,
 
 	priv = (hg_allocator_private_t *)data;
 
-	if ((retval = g_tree_lookup(priv->block_in_use, HGQUARK_TO_POINTER (index))) != NULL)
+	if (_hg_allocator_bitmap_is_marked(priv->bitmap, index)) {
+		/* XXX: maybe better validate the block size too? */
+		retval = _hg_allocator_get_internal_block(priv, index, FALSE);
 		_hg_allocator_real_unlock_object(retval);
+	}
 }
 
 /*< public >*/

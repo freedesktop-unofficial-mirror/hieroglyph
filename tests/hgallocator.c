@@ -127,7 +127,7 @@ TDEF (realloc)
 
 	retval = vtable->initialize();
 	fail_unless(retval != NULL, "Unable to initialize the allocator.");
-	fail_unless(vtable->resize_heap(retval, 256), "Unable to initialize the heap.");
+	fail_unless(vtable->resize_heap(retval, 384), "Unable to initialize the heap.");
 
 	t = vtable->alloc(retval, 32, NULL);
 	fail_unless(t != Qnil, "Unable to allocate the memory.");
@@ -141,9 +141,9 @@ TDEF (realloc)
 	fail_unless(p == p2, "Unexpected result to grow the space.");
 	t3 = vtable->alloc(retval, 8, NULL);
 	fail_unless(t3 != Qnil, "Unable to allocate the memory.");
-	t2 = vtable->realloc(retval, t, 80, NULL);
+	t2 = vtable->realloc(retval, t, 90, NULL);
 	fail_unless(t2 != Qnil, "Unable to re-allocate the memory.");
-	fail_unless(t == t2, "Unexpected result to keep quark.");
+	fail_unless(t != t2, "Unexpected result to keep quark.");
 	p2 = vtable->lock_object(retval, t2);
 	vtable->unlock_object(retval, t2);
 	fail_unless(p != p2, "Unexpected result to re-allocate: original: %x, reallocated: %x", p, p2);
@@ -161,7 +161,11 @@ TDEF (realloc)
 	g_free(hieroglyph_test_pop_error());
 	vtable->unlock_object(retval, t);
 	t2 = vtable->realloc(retval, t, 64, &p2);
-	fail_unless(t2 == t, "Unable to re-allocate the memory after unlocking the indirect locked memory.");
+	fail_unless(t2 != Qnil && t2 != t, "Unable to re-allocate the memory after unlocking the indirect locked memory.");
+	vtable->unlock_object(retval, t2);
+	t = vtable->realloc(retval, t2, 8, NULL);
+	fail_unless(t == t2, "Unable to resize the memory less than current size");
+	t = vtable->alloc(retval, 8, NULL);
 
 	vtable->finalize(retval);
 } TEND
