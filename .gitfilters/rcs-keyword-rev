@@ -1,4 +1,4 @@
 #! /usr/bin/env ruby
 d = STDIN.read
-rev = `git log | grep commit | wc -l`
+rev = `git log | grep -E "^commit " | wc -l`
 puts d.gsub('$Rev$', '$Rev: ' + rev.to_s.chomp("\n") + ' $')
