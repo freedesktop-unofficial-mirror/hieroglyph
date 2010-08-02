@@ -1,5 +1,7 @@
 2010-08-02  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgarray.c (_hg_object_array_copy): copy the name too.
+
 	* hieroglyph/hgstring.c (hg_string_append_c): set a quark. it may be
 	likely to get a different quark by reallocating.
 	(hg_string_append): likewise.

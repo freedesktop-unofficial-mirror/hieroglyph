@@ -111,6 +111,9 @@ _hg_object_array_copy(hg_object_t              *object,
 			if (err)
 				goto finalize;
 		}
+		a->qname = func(array->qname, user_data, NULL, &err);
+		if (err)
+			goto finalize;
 		if (ret)
 			*ret = a;
 		else
