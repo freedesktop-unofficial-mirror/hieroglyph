@@ -392,6 +392,7 @@ hg_string_append_c(hg_string_t  *string,
 			if (new_qstr == Qnil)
 				return FALSE;
 
+			string->qstring = new_qstr;
 			string->allocated_size = MIN (string->allocated_size + HG_STRING_ALLOC_SIZE, HG_STRING_MAX_SIZE);
 			s[string->length++] = c;
 			hg_mem_unlock_object(string->o.mem, new_qstr);
@@ -472,6 +473,7 @@ hg_string_append(hg_string_t  *string,
 			if (new_qstr == Qnil)
 				return FALSE;
 
+			string->qstring = new_qstr;
 			string->allocated_size = MIN (string->allocated_size + length + HG_STRING_ALLOC_SIZE, HG_STRING_MAX_SIZE);
 			for (i = 0; i < length; i++)
 				s[string->length++] = str[i];
@@ -759,6 +761,7 @@ hg_string_fix_string_size(hg_string_t *string)
 		new_qstr = hg_mem_realloc(string->o.mem, string->qstring, string->length + 1, NULL);
 		if (new_qstr == Qnil)
 			return FALSE;
+		string->qstring = new_qstr;
 		string->is_fixed_size = TRUE;
 		string->allocated_size = string->length + 1;
 	}

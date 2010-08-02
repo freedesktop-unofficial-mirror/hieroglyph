@@ -1,5 +1,10 @@
 2010-08-02  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgstring.c (hg_string_append_c): set a quark. it may be
+	likely to get a different quark by reallocating.
+	(hg_string_append): likewise.
+	(hg_string_fix_string_size): likewise.
+
 	* hieroglyph/hgallocator.c (_hg_allocator_bitmap_alloc): improve
 	the performance to find out a free space.
 	(_hg_allocator_bitmap_realloc): do not allocate difference place

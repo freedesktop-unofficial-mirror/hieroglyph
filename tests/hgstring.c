@@ -235,7 +235,7 @@ TDEF (hg_string_concat)
 	fail_unless(!hg_string_concat(NULL, s2), "Unexpected result on concatenating the string object with NULL. [2]");
 	g_free(hieroglyph_test_pop_error());
 	fail_unless(hg_string_concat(s1, s2), "Unable to concatenate the objects.");
-	fail_unless(hg_string_ncompare_with_cstr(s1, "abcdefgh", -1), "Unexpected result after concatenating the objects.");
+	fail_unless(hg_string_ncompare_with_cstr(s1, "abcdefgh", -1), "Unexpected result after concatenating the objects: cstr in obj: %s", hg_string_get_static_cstr(s1));
 	fail_unless(hg_string_ncompare_with_cstr(s2, "efgh", -1), "Unexpected result after concatenating the objects [2]");
 } TEND
 
