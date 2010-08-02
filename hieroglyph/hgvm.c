@@ -39,8 +39,8 @@
 #include "hgvm.h"
 
 #define HG_VM_MEM_SIZE		10000
-#define HG_VM_GLOBAL_MEM_SIZE	240000
-#define HG_VM_LOCAL_MEM_SIZE	10000
+#define HG_VM_GLOBAL_MEM_SIZE	2400000
+#define HG_VM_LOCAL_MEM_SIZE	100000
 #define _HG_VM_LOCK(_v_,_q_,_e_)					\
 	(_hg_vm_real_lock_object((_v_),(_q_),__PRETTY_FUNCTION__,(_e_)))
 #define _HG_VM_UNLOCK(_v_,_q_)				\
@@ -197,8 +197,11 @@ _hg_vm_stack_real_dump(hg_mem_t    *mem,
 	hg_vm_stack_dump_data_t *ddata = data;
 	hg_quark_t q;
 	hg_string_t *s = NULL;
+	gchar *cstr = NULL;
 
 	q = hg_vm_quark_to_string(ddata->vm, qdata, (gpointer *)&s, error);
+	if (q != Qnil)
+		cstr = hg_string_get_cstr(s);
 
 	hg_file_append_printf(ddata->ofile, "0x%016lx|%-12s| %c%c%c|%s\n",
 			      qdata,
@@ -206,8 +209,9 @@ _hg_vm_stack_real_dump(hg_mem_t    *mem,
 			      (hg_quark_is_readable(qdata) ? 'r' : '-'),
 			      (hg_quark_is_writable(qdata) ? 'w' : '-'),
 			      (hg_quark_is_executable(qdata) ? 'x' : '-'),
-			      q == Qnil ? "..." : hg_string_get_static_cstr(s));
+			      q == Qnil ? "..." : cstr);
 
+	g_free(cstr);
 	/* this is an instant object.
 	 * surely no reference to the container.
 	 * so it can be safely destroyed.
@@ -452,7 +456,7 @@ _hg_vm_quark_iterate_to_cstr(hg_quark_t   qdata,
 
 	q = hg_vm_quark_to_string(vm, qdata, (gpointer *)&s, error);
 	if (s) {
-		cstr = g_strdup(hg_string_get_static_cstr(s));
+		cstr = hg_string_get_cstr(s);
 	}
 	/* this is an instant object.
 	 * surely no reference to the container.
@@ -1458,15 +1462,16 @@ hg_vm_dict_lookup(hg_vm_t    *vm,
 	hg_return_val_if_fail (vm != NULL, Qnil);
 
 	if (HG_IS_QSTRING (qname)) {
-		const gchar *str;
+		gchar *str;
 		hg_string_t *s;
 
 		s = _HG_VM_LOCK (vm, qname, &err);
 		if (s == NULL)
 			goto error;
-		str = hg_string_get_static_cstr(s);
+		str = hg_string_get_cstr(s);
 		quark = hg_name_new_with_string(vm->name, str, -1);
 
+		g_free(str);
 		_HG_VM_UNLOCK (vm, qname);
 	} else if (HG_IS_QEVALNAME (qname)) {
 		quark = hg_quark_new(HG_TYPE_NAME, qname);
@@ -1514,15 +1519,16 @@ hg_vm_dict_remove(hg_vm_t    *vm,
 	hg_return_val_if_fail (vm != NULL, FALSE);
 
 	if (HG_IS_QSTRING (qname)) {
-		const gchar *str;
+		gchar *str;
 		hg_string_t *s;
 
 		s = _HG_VM_LOCK (vm, qname, &err);
 		if (s == NULL)
 			goto error;
-		str = hg_string_get_static_cstr(s);
+		str = hg_string_get_cstr(s);
 		quark = hg_name_new_with_string(vm->name, str, -1);
 
+		g_free(str);
 		_HG_VM_UNLOCK (vm, qname);
 	} else {
 		quark = qname;
@@ -2345,7 +2351,7 @@ hg_vm_set_error(hg_vm_t       *vm,
 			if (q == Qnil)
 				scommand = g_strdup("-%unknown%-");
 			else
-				scommand = g_strdup(hg_string_get_static_cstr(s));
+				scommand = hg_string_get_cstr(s);
 			/* this is an instant object.
 			 * surely no reference to the container.
 			 * so it can be safely destroyed.
@@ -2359,7 +2365,7 @@ hg_vm_set_error(hg_vm_t       *vm,
 		if (qwhere == Qnil)
 			swhere = g_strdup("-%unknown%-");
 		else
-			swhere = g_strdup(hg_string_get_static_cstr(where));
+			swhere = hg_string_get_cstr(where);
 		hg_vm_mfree(vm, qwhere);
 
 		if (qresult_err == Qnil) {

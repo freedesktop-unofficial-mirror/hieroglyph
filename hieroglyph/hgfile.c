@@ -440,7 +440,7 @@ _hg_file_io_real_file_open(hg_file_t  *file,
 	hg_file_io_data_t *data;
 	hg_quark_t qdata;
 	hg_string_t *sfilename;
-	const gchar *filename;
+	gchar *filename;
 	struct stat st;
 	int fd;
 	gpointer buffer = NULL;
@@ -480,7 +480,7 @@ _hg_file_io_real_file_open(hg_file_t  *file,
 						file->qfilename,
 						error,
 						FALSE);
-	filename = hg_string_get_static_cstr(sfilename);
+	filename = hg_string_get_cstr(sfilename);
 	errno = 0;
 	if (stat(filename, &st) == -1 && (file->mode & HG_FILE_IO_MODE_READ) != 0) {
 		goto exception;
@@ -489,6 +489,7 @@ _hg_file_io_real_file_open(hg_file_t  *file,
 		goto exception;
 	}
 	hg_mem_unlock_object(file->o.mem, file->qfilename);
+	g_free(filename);
 	data->fd = fd;
 	if ((buffer = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0)) != MAP_FAILED) {
 		data->mmapped_buffer = buffer;
@@ -803,7 +804,7 @@ _hg_file_io_real_buffered_read(hg_file_t      *file,
 	gsize retval;
 	hg_file_io_data_t *data = file->data;
 	hg_file_io_buffered_data_t *bd = user_data;
-	const gchar *cstr;
+	gchar *cstr;
 
 	if ((file->mode & HG_FILE_IO_MODE_READ) == 0) {
 		errno = EBADF;
@@ -814,13 +815,14 @@ _hg_file_io_real_buffered_read(hg_file_t      *file,
 	} else {
 		retval = size * n;
 	}
-	cstr = hg_string_get_static_cstr(bd->in);
+	cstr = hg_string_get_cstr(bd->in);
 	memcpy(buffer, cstr + file->position, retval);
 	((gchar *)buffer)[retval] = 0;
 	if (retval == 0 &&
 	    file->position == file->size)
 		data->is_eof = TRUE;
 	file->position += retval;
+	g_free(cstr);
 
 	return retval;
   exception:

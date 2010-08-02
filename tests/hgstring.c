@@ -235,7 +235,7 @@ TDEF (hg_string_concat)
 	fail_unless(!hg_string_concat(NULL, s2), "Unexpected result on concatenating the string object with NULL. [2]");
 	g_free(hieroglyph_test_pop_error());
 	fail_unless(hg_string_concat(s1, s2), "Unable to concatenate the objects.");
-	fail_unless(hg_string_ncompare_with_cstr(s1, "abcdefgh", -1), "Unexpected result after concatenating the objects: cstr in obj: %s", hg_string_get_static_cstr(s1));
+	fail_unless(hg_string_ncompare_with_cstr(s1, "abcdefgh", -1), "Unexpected result after concatenating the objects: cstr in obj: %s", hg_string_get_cstr(s1));
 	fail_unless(hg_string_ncompare_with_cstr(s2, "efgh", -1), "Unexpected result after concatenating the objects [2]");
 } TEND
 
@@ -258,33 +258,17 @@ TDEF (hg_string_index)
 	g_free(hieroglyph_test_pop_error());
 } TEND
 
-TDEF (hg_string_get_static_cstr)
-{
-	hg_quark_t q;
-	hg_string_t *s;
-	const gchar *p;
-
-	q = hg_string_new_with_value(mem, (gpointer *)&s, "abc", 3);
-	fail_unless(q != Qnil, "Unable to create the string object.");
-	p = hg_string_get_static_cstr(s);
-	fail_unless(strcmp(p, "abc") == 0, "Unexpected result of the obtained string");
-} TEND
-
 TDEF (hg_string_get_cstr)
 {
-	hg_quark_t q, qs;
+	hg_quark_t q;
 	hg_string_t *s;
 	gchar *p;
 
 	q = hg_string_new_with_value(mem, (gpointer *)&s, "abc", 3);
 	fail_unless(q != Qnil, "Unable to create the string object.");
-	qs = hg_string_get_cstr(s, (gpointer *)&p);
-	fail_unless(qs != Qnil, "Unable to obtain the cstring");
-	fail_unless(strcmp(p, "abc") == 0, "Unexpected result on checking.");
-	p[0] = 'A';
-	qs = hg_string_get_cstr(s, (gpointer *)&p);
-	fail_unless(qs != Qnil, "Unable to obtain the cstring [2]");
-	fail_unless(strcmp(p, "abc") == 0, "Unexpected result on checking [2]");
+	p = hg_string_get_cstr(s);
+	fail_unless(strcmp(p, "abc") == 0, "Unexpected result of the obtained string");
+	g_free(p);
 } TEND
 
 TDEF (hg_string_fix_string_size)
@@ -339,7 +323,6 @@ hieroglyph_suite(void)
 	T (hg_string_erase);
 	T (hg_string_concat);
 	T (hg_string_index);
-	T (hg_string_get_static_cstr);
 	T (hg_string_get_cstr);
 	T (hg_string_fix_string_size);
 	T (hg_string_compare);

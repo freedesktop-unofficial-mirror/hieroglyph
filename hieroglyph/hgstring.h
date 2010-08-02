@@ -87,9 +87,7 @@ gboolean            hg_string_concat            (hg_string_t        *string1,
                                                  hg_string_t        *string2);
 gchar               hg_string_index             (hg_string_t        *string,
                                                  guint               index);
-const gchar        *hg_string_get_static_cstr   (hg_string_t        *string);
-hg_quark_t          hg_string_get_cstr          (hg_string_t        *string,
-                                                 gpointer           *ret);
+gchar              *hg_string_get_cstr          (hg_string_t        *string);
 gboolean            hg_string_fix_string_size   (hg_string_t        *string);
 gboolean            hg_string_compare           (const hg_string_t  *a,
                                                  const hg_string_t  *b);

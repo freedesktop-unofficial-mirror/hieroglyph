@@ -88,10 +88,11 @@ _hg_object_string_copy(hg_object_t              *object,
 	hg_string_t *s = (hg_string_t *)object;
 	hg_quark_t retval;
 	GError *err = NULL;
+	gchar *cstr = hg_string_get_cstr(s);
 
 	retval = hg_string_new_with_value(s->o.mem, NULL,
-					  hg_string_get_static_cstr(s),
-					  -1);
+					  cstr, -1);
+	g_free(cstr);
 	if (retval == Qnil) {
 		g_set_error(&err, HG_ERROR, ENOMEM,
 			    "Out of memory");
@@ -118,7 +119,7 @@ _hg_object_string_to_cstr(hg_object_t              *object,
 {
 	GString *retval = g_string_new(NULL);
 	hg_string_t *s = (hg_string_t *)object;
-	const gchar *cstr = hg_string_get_static_cstr(s);
+	gchar *cstr = hg_string_get_cstr(s);
 	gchar buffer[8];
 	gsize i;
 
@@ -151,6 +152,7 @@ _hg_object_string_to_cstr(hg_object_t              *object,
 			}
 		}
 	}
+	g_free(cstr);
 	g_string_append_c(retval, ')');
 
 	return g_string_free(retval, FALSE);
@@ -672,74 +674,33 @@ hg_string_index(hg_string_t *string,
 }
 
 /**
- * hg_string_get_static_cstr:
+ * hg_string_get_cstr:
  * @string:
  *
  * FIXME
  *
  * Returns:
  */
-const gchar *
-hg_string_get_static_cstr(hg_string_t *string)
+gchar *
+hg_string_get_cstr(hg_string_t *string)
 {
-	gchar *retval;
+	gchar *retval, *cstr;
 
 	hg_return_val_if_fail (string != NULL, NULL);
 
 	if (string->qstring == Qnil)
 		return NULL;
 
-	hg_return_val_if_lock_fail (retval,
+	hg_return_val_if_lock_fail (cstr,
 				    string->o.mem,
 				    string->qstring,
 				    NULL);
 
-	if (string->offset == 0)
-		retval[string->length] = 0;
+	retval = g_strndup(&cstr[string->offset], string->length);
+
+	hg_mem_unlock_object(string->o.mem, string->qstring);
 
 	return retval;
-}
-
-/**
- * hg_string_get_cstr:
- * @string:
- * @ret:
- *
- * FIXME
- *
- * Returns:
- */
-hg_quark_t
-hg_string_get_cstr(hg_string_t  *string,
-		   gpointer     *ret)
-{
-	hg_quark_t q;
-	gchar *retval = NULL, *s;
-	gsize i;
-
-	hg_return_val_if_fail (string != NULL, Qnil);
-	hg_return_val_if_fail (ret != NULL, Qnil);
-
-	if (string->qstring == Qnil) {
-		*ret = NULL;
-		return Qnil;
-	}
-
-	hg_return_val_if_lock_fail (s,
-				    string->o.mem,
-				    string->qstring,
-				    Qnil);
-
-	q = hg_mem_alloc(string->o.mem, string->length + 1, (gpointer *)&retval);
-	if (q != Qnil) {
-		for (i = 0; i < string->length; i++) {
-			retval[i] = s[string->offset + i];
-		}
-		retval[i] = 0;
-	}
-	*ret = retval;
-
-	return q;
 }
 
 /**

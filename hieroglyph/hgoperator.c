@@ -600,7 +600,7 @@ gboolean __flag G_GNUC_UNUSED = FALSE;
 G_STMT_START {
 	hg_quark_t arg0, q = Qnil;
 	hg_string_t *s;
-	gchar *filename;
+	gchar *filename, *cstr;
 	gboolean ret = FALSE;
 
 	CHECK_STACK (ostack, 1);
@@ -619,8 +619,11 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	filename = hg_vm_find_libfile(vm, hg_string_get_static_cstr(s));
+	cstr = hg_string_get_cstr(s);
 	HG_VM_UNLOCK (vm, arg0);
+
+	filename = hg_vm_find_libfile(vm, cstr);
+	g_free(cstr);
 
 	if (filename) {
 		q = hg_string_new_with_value(hg_vm_get_mem(vm),
@@ -889,6 +892,7 @@ G_STMT_START {
 	hg_quark_t arg0, arg1, q;
 	hg_string_t *s = NULL;
 	hg_file_t *f;
+	gchar *cstr;
 
 	CHECK_STACK (ostack, 2);
 
@@ -909,10 +913,12 @@ G_STMT_START {
 		hg_string_free(s, TRUE);
 		return FALSE;
 	}
-	hg_file_write(f, (gchar *)hg_string_get_static_cstr(s),
+	cstr = hg_string_get_cstr(s);
+	hg_file_write(f, cstr,
 		      sizeof (gchar), hg_string_length(s), error);
 	HG_VM_UNLOCK (vm, arg0);
 	hg_string_free(s, TRUE);
+	g_free(cstr);
 
 	if (error && *error) {
 		hg_vm_set_error_from_gerror(vm, qself, *error);
@@ -1869,7 +1875,7 @@ G_STMT_START {
 					hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 					return FALSE;
 				}
-				s1 = g_strdup(hg_string_get_static_cstr(s));
+				s1 = hg_string_get_cstr(s);
 				HG_VM_UNLOCK (vm, arg0);
 			}
 			if (HG_IS_QNAME (arg1) ||
@@ -1883,7 +1889,7 @@ G_STMT_START {
 					hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 					return FALSE;
 				}
-				s2 = g_strdup(hg_string_get_static_cstr(s));
+				s2 = hg_string_get_cstr(s);
 				HG_VM_UNLOCK (vm, arg1);
 			}
 			if (s1 != NULL && s2 != NULL)
@@ -1997,8 +2003,8 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	filename = g_strdup(hg_string_get_static_cstr(fname));
-	fmode = g_strdup(hg_string_get_static_cstr(faccess));
+	filename = hg_string_get_cstr(fname);
+	fmode = hg_string_get_cstr(faccess);
 	HG_VM_UNLOCK (vm, arg0);
 	HG_VM_UNLOCK (vm, arg1);
 
@@ -2199,6 +2205,7 @@ G_STMT_START {
 	} else if (HG_IS_QSTRING (arg0) &&
 		   HG_IS_QSTRING (arg1)) {
 		hg_string_t *s1, *s2;
+		gchar *cs1 = NULL, *cs2 = NULL;
 
 		if (!hg_quark_is_readable(arg0) ||
 		    !hg_quark_is_readable(arg1)) {
@@ -2211,14 +2218,17 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			goto s_error;
 		}
-		q = HG_QBOOL (strcmp(hg_string_get_static_cstr(s1),
-				     hg_string_get_static_cstr(s2)) >= 0);
+		cs1 = hg_string_get_cstr(s1);
+		cs2 = hg_string_get_cstr(s2);
+		q = HG_QBOOL (strcmp(cs1, cs2) >= 0);
 
 	  s_error:
 		if (s1)
 			HG_VM_UNLOCK (vm, arg0);
 		if (s2)
 			HG_VM_UNLOCK (vm, arg1);
+		g_free(cs1);
+		g_free(cs2);
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
@@ -2438,6 +2448,7 @@ G_STMT_START {
 	} else if (HG_IS_QSTRING (arg0) &&
 		   HG_IS_QSTRING (arg1)) {
 		hg_string_t *s1, *s2;
+		gchar *cs1 = NULL, *cs2 = NULL;
 
 		if (!hg_quark_is_readable(arg0) ||
 		    !hg_quark_is_readable(arg1)) {
@@ -2450,14 +2461,17 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			goto s_error;
 		}
-		q = HG_QBOOL (strcmp(hg_string_get_static_cstr(s1),
-				     hg_string_get_static_cstr(s2)) > 0);
+		cs1 = hg_string_get_cstr(s1);
+		cs2 = hg_string_get_cstr(s2);
+		q = HG_QBOOL (strcmp(cs1, cs2) > 0);
 
 	  s_error:
 		if (s1)
 			HG_VM_UNLOCK (vm, arg0);
 		if (s2)
 			HG_VM_UNLOCK (vm, arg1);
+		g_free(cs1);
+		g_free(cs2);
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
@@ -2815,6 +2829,7 @@ G_STMT_START {
 	} else if (HG_IS_QSTRING (arg0) &&
 		   HG_IS_QSTRING (arg1)) {
 		hg_string_t *s1, *s2;
+		gchar *cs1 = NULL, *cs2 = NULL;
 
 		if (!hg_quark_is_readable(arg0) ||
 		    !hg_quark_is_readable(arg1)) {
@@ -2827,14 +2842,17 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			goto s_error;
 		}
-		q = HG_QBOOL (strcmp(hg_string_get_static_cstr(s1),
-				     hg_string_get_static_cstr(s2)) < 0);
+		cs1 = hg_string_get_cstr(s1);
+		cs2 = hg_string_get_cstr(s2);
+		q = HG_QBOOL (strcmp(cs1, cs2) < 0);
 
 	  s_error:
 		if (s1)
 			HG_VM_UNLOCK (vm, arg0);
 		if (s2)
 			HG_VM_UNLOCK (vm, arg1);
+		g_free(cs1);
+		g_free(cs2);
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
@@ -2951,7 +2969,7 @@ G_STMT_START {
 					hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 					return FALSE;
 				}
-				s1 = g_strdup(hg_string_get_static_cstr(s));
+				s1 = hg_string_get_cstr(s);
 				HG_VM_UNLOCK (vm, arg0);
 			}
 			if (HG_IS_QNAME (arg1) ||
@@ -2965,7 +2983,7 @@ G_STMT_START {
 					hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 					return FALSE;
 				}
-				s2 = g_strdup(hg_string_get_static_cstr(s));
+				s2 = hg_string_get_cstr(s);
 				HG_VM_UNLOCK (vm, arg1);
 			}
 			if (s1 != NULL && s2 != NULL)
@@ -3052,6 +3070,7 @@ G_STMT_START {
 	hg_quark_t arg0, qstdout;
 	hg_string_t *s;
 	hg_file_t *stdout;
+	gchar *cstr;
 
 	CHECK_STACK (ostack, 1);
 
@@ -3078,11 +3097,12 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	hg_file_write(stdout,
-		      (gchar *)hg_string_get_static_cstr(s),
+	cstr = hg_string_get_cstr(s);
+	hg_file_write(stdout, cstr,
 		      sizeof (gchar),
 		      hg_string_length(s),
 		      error);
+	g_free(cstr);
 	if (error && *error) {
 		hg_vm_set_error_from_gerror(vm, qself, *error);
 	} else {
@@ -3573,6 +3593,7 @@ G_STMT_START {
 	hg_quark_t arg0, arg1;
 	hg_file_t *f;
 	hg_string_t *s;
+	gchar *cstr;
 
 	CHECK_STACK (ostack, 2);
 
@@ -3594,7 +3615,8 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		goto error;
 	}
-	hg_file_write(f, (gchar *)hg_string_get_static_cstr(s),
+	cstr = hg_string_get_cstr(s);
+	hg_file_write(f, cstr,
 		      sizeof (gchar), hg_string_length(s), error);
 	if (error && *error) {
 		hg_vm_set_error_from_gerror(vm, qself, *error);
