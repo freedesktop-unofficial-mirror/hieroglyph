@@ -2497,6 +2497,9 @@ hg_vm_stack_dump(hg_vm_t    *vm,
 	hg_return_if_fail (stack != NULL);
 	hg_return_if_fail (output != NULL);
 
+	/* to avoid unusable result when OOM */
+	hg_mem_set_resizable(hg_vm_get_mem(vm), TRUE);
+
 	data.vm = vm;
 	data.stack = stack;
 	data.ofile = output;

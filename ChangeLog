@@ -1,5 +1,8 @@
 2010-08-03  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgvm.c (hg_vm_stack_dump): turn on the resizable mode
+	to get more useful stack dump when OOM happens.
+
 	* hieroglyph/hgallocator.c (_hg_allocator_alloc): resize the heap
 	when the allocation fails and resizable is true.
 	(_hg_allocator_realloc): likewise.
