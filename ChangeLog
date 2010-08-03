@@ -1,5 +1,8 @@
 2010-08-03  Akira TAGOH  <akira@tagoh.org>
 
+	* lib/hg_init.ps (..statementedit): revert the change of
+	064ff153d206bf7e3c4f59f4a9539d5768fe70ed.
+
 	* hieroglyph/hgstring.c (_hg_object_string_copy): check the type.
 	(hg_string_free): likewise.
 	(hg_string_length): likewise.
