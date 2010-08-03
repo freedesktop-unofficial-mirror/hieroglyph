@@ -90,6 +90,8 @@ _hg_object_string_copy(hg_object_t              *object,
 	GError *err = NULL;
 	gchar *cstr = hg_string_get_cstr(s);
 
+	hg_return_val_if_fail (object->type == HG_TYPE_STRING, Qnil);
+
 	retval = hg_string_new_with_value(s->o.mem, NULL,
 					  cstr, -1);
 	g_free(cstr);
@@ -280,6 +282,8 @@ hg_string_free(hg_string_t *string,
 	if (string == NULL)
 		return;
 
+	hg_return_if_fail (string->o.type == HG_TYPE_STRING);
+
 	if (free_segment)
 		hg_mem_free(string->o.mem, string->qstring);
 	hg_mem_free(string->o.mem, string->o.self);
@@ -297,6 +301,7 @@ guint
 hg_string_length(const hg_string_t *string)
 {
 	hg_return_val_if_fail (string != NULL, -1);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, -1);
 
 	return string->length;
 }
@@ -313,6 +318,7 @@ guint
 hg_string_maxlength(const hg_string_t *string)
 {
 	hg_return_val_if_fail (string != NULL, -1);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, -1);
 
 	return string->allocated_size - 1;
 }
@@ -331,6 +337,7 @@ hg_string_clear(hg_string_t *string)
 	gchar *s;
 
 	hg_return_val_if_fail (string != NULL, FALSE);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, FALSE);
 
 	if (string->qstring == Qnil ||
 	    string->length == 0)
@@ -365,6 +372,7 @@ hg_string_append_c(hg_string_t  *string,
 	GError *err = NULL;
 
 	hg_return_val_if_fail (string != NULL, FALSE);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, FALSE);
 
 	if (string->length < hg_string_maxlength(string)) {
 		old_length = string->length;
@@ -423,6 +431,7 @@ hg_string_append_c(hg_string_t  *string,
  * @string:
  * @str:
  * @length:
+ * @error:
  *
  * FIXME
  *
@@ -441,6 +450,7 @@ hg_string_append(hg_string_t  *string,
 
 	hg_return_val_if_fail (string != NULL, FALSE);
 	hg_return_val_if_fail (str != NULL, FALSE);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, FALSE);
 
 	if (length < 0)
 		length = strlen(str);
@@ -518,16 +528,16 @@ hg_string_overwrite_c(hg_string_t  *string,
 		      GError      **error)
 {
 	gchar *s;
-	gboolean retval = FALSE;
-	gsize i, old_length;
+	gsize old_length;
 	GError *err = NULL;
 
 	hg_return_val_if_fail (string != NULL, FALSE);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, FALSE);
 	hg_return_val_if_fail (index < hg_string_maxlength(string), FALSE);
 
 	if (string->length <= index) {
 		old_length = string->length;
-		string->length = index;
+		string->length = index + 1;
 		if (!_hg_string_maybe_expand(string)) {
 			string->length = old_length;
 			g_set_error(&err, HG_ERROR, ENOMEM,
@@ -543,14 +553,6 @@ hg_string_overwrite_c(hg_string_t  *string,
 
 	s[index] = c;
 
-	for (i = index; i < string->allocated_size; i++) {
-		if (s[i] == 0) {
-			string->length = i;
-			retval = TRUE;
-		}
-	}
-	if (!retval)
-		string->length = hg_string_maxlength(string);
 	hg_mem_unlock_object(string->o.mem, string->qstring);
 
 	return TRUE;
@@ -588,6 +590,7 @@ hg_string_erase(hg_string_t *string,
 	gssize i, j;
 
 	hg_return_val_if_fail (string != NULL, FALSE);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, FALSE);
 	hg_return_val_if_fail (pos > 0, FALSE);
 
 	if (string->qstring == Qnil) {
@@ -629,7 +632,9 @@ hg_string_concat(hg_string_t *string1,
 	gboolean retval;
 
 	hg_return_val_if_fail (string1 != NULL, FALSE);
+	hg_return_val_if_fail (string1->o.type == HG_TYPE_STRING, FALSE);
 	hg_return_val_if_fail (string2 != NULL, FALSE);
+	hg_return_val_if_fail (string2->o.type == HG_TYPE_STRING, FALSE);
 	hg_return_val_if_lock_fail (s,
 				    string2->o.mem,
 				    string2->qstring,
@@ -658,6 +663,7 @@ hg_string_index(hg_string_t *string,
 	gchar retval;
 
 	hg_return_val_if_fail (string != NULL, 0);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, 0);
 	hg_return_val_if_fail (index < string->length, 0);
 
 	if (string->qstring == Qnil) {
@@ -689,6 +695,7 @@ hg_string_get_cstr(hg_string_t *string)
 	gchar *retval, *cstr;
 
 	hg_return_val_if_fail (string != NULL, NULL);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, NULL);
 
 	if (string->qstring == Qnil)
 		return NULL;
@@ -717,6 +724,7 @@ gboolean
 hg_string_fix_string_size(hg_string_t *string)
 {
 	hg_return_val_if_fail (string != NULL, FALSE);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, FALSE);
 
 	if (!string->is_fixed_size) {
 		hg_quark_t new_qstr;
@@ -769,7 +777,9 @@ hg_string_ncompare(const hg_string_t *a,
 	gboolean retval;
 
 	hg_return_val_if_fail (a != NULL, FALSE);
+	hg_return_val_if_fail (a->o.type == HG_TYPE_STRING, FALSE);
 	hg_return_val_if_fail (b != NULL, FALSE);
+	hg_return_val_if_fail (b->o.type == HG_TYPE_STRING, FALSE);
 	hg_return_val_if_lock_fail (sb,
 				    b->o.mem,
 				    b->qstring,
@@ -801,6 +811,7 @@ hg_string_ncompare_with_cstr(const hg_string_t *a,
 	gboolean retval;
 
 	hg_return_val_if_fail (a != NULL, FALSE);
+	hg_return_val_if_fail (a->o.type == HG_TYPE_STRING, FALSE);
 	hg_return_val_if_fail (b != NULL, FALSE);
 
 	if (length < 0)
@@ -839,6 +850,7 @@ hg_string_append_printf(hg_string_t *string,
 	gboolean retval;
 
 	hg_return_val_if_fail (string != NULL, FALSE);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, FALSE);
 	hg_return_val_if_fail (format != NULL, FALSE);
 
 	va_start(ap, format);
@@ -876,6 +888,7 @@ hg_string_make_substring(hg_string_t  *string,
 	GError *err = NULL;
 
 	hg_return_val_with_gerror_if_fail (string != NULL, Qnil, error);
+	hg_return_val_with_gerror_if_fail (string->o.type == HG_TYPE_STRING, Qnil, error);
 
 	retval = hg_string_new(string->o.mem, (gpointer *)&s, 0);
 	if (retval == Qnil) {
@@ -933,7 +946,9 @@ hg_string_copy_as_substring(hg_string_t  *src,
 			    GError      **error)
 {
 	hg_return_val_with_gerror_if_fail (src != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (src->o.type == HG_TYPE_STRING, FALSE, error);
 	hg_return_val_with_gerror_if_fail (dest != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (dest->o.type == HG_TYPE_STRING, FALSE, error);
 	hg_return_val_with_gerror_if_fail (start_index < hg_string_maxlength(src), FALSE, error);
 	hg_return_val_with_gerror_if_fail (end_index < hg_string_maxlength(src), FALSE, error);
 	hg_return_val_with_gerror_if_fail (start_index <= end_index, FALSE, error);

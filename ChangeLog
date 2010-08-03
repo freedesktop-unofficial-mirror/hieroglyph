@@ -1,5 +1,26 @@
 2010-08-03  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgstring.c (_hg_object_string_copy): check the type.
+	(hg_string_free): likewise.
+	(hg_string_length): likewise.
+	(hg_string_maxlength): likewise.
+	(hg_string_clear): likewise.
+	(hg_string_append_c): likewise.
+	(hg_string_append): likewise.
+	(hg_string_overwrite_c): likewise.
+	(hg_string_erase): likewise.
+	(hg_string_concat): likewise.
+	(hg_string_index): likewise.
+	(hg_string_get_cstr): likewise.
+	(hg_string_fix_string_size): likewise.
+	(hg_string_ncompare): likewise.
+	(hg_string_ncompare_with_cstr): likewise.
+	(hg_string_append_printf): likewise.
+	(hg_string_make_substring): likewise.
+	(hg_string_copy_as_substring): likewise.
+	(hg_string_overwrite_c): drop the unnecessary recalculation of
+	the size which causes a segfault.
+
 	* hieroglyph/hgmem.c (hg_mem_realloc): copy all of bits.
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_le): implemented.
