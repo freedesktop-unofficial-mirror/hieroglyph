@@ -1,5 +1,8 @@
 2010-08-03  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgallocator.c (_hg_allocator_get_internal_block):
+	validate index.
+
 	* lib/hg_init.ps (..statementedit): revert the change of
 	064ff153d206bf7e3c4f59f4a9539d5768fe70ed.
 

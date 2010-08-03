@@ -66,14 +66,14 @@ static hg_quark_t                    _hg_allocator_realloc           (hg_allocat
                                                                       gpointer               *ret);
 static void                          _hg_allocator_free              (hg_allocator_data_t    *data,
                                                                       hg_quark_t              index);
-static gpointer                      _hg_allocator_get_internal_block(hg_allocator_private_t *data,
+G_INLINE_FUNC gpointer               _hg_allocator_get_internal_block(hg_allocator_private_t *data,
                                                                       hg_quark_t              index,
                                                                       gboolean                initialize);
-static gpointer                      _hg_allocator_real_lock_object  (hg_allocator_data_t    *data,
+G_INLINE_FUNC gpointer               _hg_allocator_real_lock_object  (hg_allocator_data_t    *data,
                                                                       hg_quark_t              index);
 static gpointer                      _hg_allocator_lock_object       (hg_allocator_data_t    *data,
                                                                       hg_quark_t              index);
-static void                          _hg_allocator_real_unlock_object(hg_allocator_block_t   *block);
+G_INLINE_FUNC void                   _hg_allocator_real_unlock_object(hg_allocator_block_t   *block);
 static void                          _hg_allocator_unlock_object     (hg_allocator_data_t    *data,
                                                                       hg_quark_t              index);
 
@@ -544,8 +544,15 @@ _hg_allocator_get_internal_block(hg_allocator_private_t *priv,
 				 gboolean                initialize)
 {
 	hg_allocator_block_t *retval;
+	gsize idx = (index - 1) * BLOCK_SIZE;
 
-	retval = (hg_allocator_block_t *)((gulong)priv->heap + ((index - 1) * BLOCK_SIZE));
+	if (idx > ((hg_allocator_data_t *)priv)->total_size) {
+		gchar *s = hg_get_stacktrace();
+
+		g_warning("Invalid quark to access: 0x%lx\nStack trace:\n%s", index, s);
+		return NULL;
+	}
+	retval = (hg_allocator_block_t *)((gulong)priv->heap + idx);
 	if (initialize) {
 		memset(retval, 0, sizeof (hg_allocator_block_t));
 		retval->lock_count = 1;
