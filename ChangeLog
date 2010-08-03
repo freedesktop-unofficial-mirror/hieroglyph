@@ -1,5 +1,8 @@
 2010-08-03  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgvm.c (hg_vm_quark_to_string): fix the size.
+	(hg_vm_startjob): do not show the prompt if the file is specified.
+
 	* hieroglyph/hgoperator.c (_hg_operator_real_exit): implemented.
 	(_hg_operator_real_closefile): implemented.
 

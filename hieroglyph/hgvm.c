@@ -39,8 +39,8 @@
 #include "hgvm.h"
 
 #define HG_VM_MEM_SIZE		10000
-#define HG_VM_GLOBAL_MEM_SIZE	2400000
-#define HG_VM_LOCAL_MEM_SIZE	100000
+#define HG_VM_GLOBAL_MEM_SIZE	240000
+#define HG_VM_LOCAL_MEM_SIZE	10000
 #define _HG_VM_LOCK(_v_,_q_,_e_)					\
 	(_hg_vm_real_lock_object((_v_),(_q_),__PRETTY_FUNCTION__,(_e_)))
 #define _HG_VM_UNLOCK(_v_,_q_)				\
@@ -1010,6 +1010,10 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 	}
   error:
 	if (retval != Qnil) {
+		if (!hg_string_fix_string_size(s)) {
+			g_set_error(&err, HG_ERROR, ENOMEM,
+				    "Out of memory");
+		}
 		if (ret)
 			*ret = s;
 		else
@@ -2219,7 +2223,7 @@ hg_vm_startjob(hg_vm_t           *vm,
 	if (initializer && initializer[0] == 0) {
 		return TRUE;
 	} else if (initializer) {
-		gchar *s = g_strdup_printf("{prompt(%s)(r)file dup type/filetype eq{cvx exec}if}stopped{$error/newerror get{errordict/handleerror get exec 1 .quit}if}if", initializer);
+		gchar *s = g_strdup_printf("{(%s)(r)file dup type/filetype eq{cvx exec}if}stopped{$error/newerror get{errordict/handleerror get exec 1 .quit}if}if", initializer);
 
 		retval = hg_vm_eval_from_cstring(vm, s, NULL, NULL, NULL, NULL);
 
