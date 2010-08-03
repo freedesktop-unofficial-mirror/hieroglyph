@@ -2797,7 +2797,72 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (le);
+/* <num1> <num2> le <bool>
+ * <string1> <string2> le <bool>
+ */
+DEFUNC_OPER (le)
+G_STMT_START {
+	hg_quark_t arg0, arg1, q = Qnil;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+	if ((HG_IS_QINT (arg0) || HG_IS_QREAL (arg0)) &&
+	    (HG_IS_QINT (arg1) || HG_IS_QREAL (arg1))) {
+		gdouble d1, d2;
+
+		if (HG_IS_QINT (arg0))
+			d1 = HG_INT (arg0);
+		else
+			d1 = HG_REAL (arg0);
+		if (HG_IS_QINT (arg1))
+			d2 = HG_INT (arg1);
+		else
+			d2 = HG_INT (arg1);
+
+		q = HG_QBOOL (HG_REAL_EQUAL (d1, d2) || d1 < d2);
+	} else if (HG_IS_QSTRING (arg0) &&
+		   HG_IS_QSTRING (arg1)) {
+		hg_string_t *s1, *s2;
+		gchar *cs1 = NULL, *cs2 = NULL;
+
+		if (!hg_quark_is_readable(arg0) ||
+		    !hg_quark_is_readable(arg1)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+			return FALSE;
+		}
+		s1 = HG_VM_LOCK (vm, arg0, error);
+		s2 = HG_VM_LOCK (vm, arg1, error);
+		if (s1 == NULL || s2 == NULL) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			goto s_error;
+		}
+		cs1 = hg_string_get_cstr(s1);
+		cs2 = hg_string_get_cstr(s2);
+		q = HG_QBOOL (strcmp(cs1, cs2) <= 0);
+
+	  s_error:
+		if (s1)
+			HG_VM_UNLOCK (vm, arg0);
+		if (s2)
+			HG_VM_UNLOCK (vm, arg1);
+		g_free(cs1);
+		g_free(cs2);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (q != Qnil) {
+		hg_stack_pop(ostack, error);
+		hg_stack_pop(ostack, error);
+
+		STACK_PUSH (ostack, q);
+		retval = TRUE;
+	}
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
 
 /* <array> length <int>
  * <packedarray> length <int>
@@ -3318,7 +3383,57 @@ VALIDATE_STACK_SIZE (-3, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (rcurveto);
-DEFUNC_UNIMPLEMENTED_OPER (read);
+
+/* <file> read <int> <true>
+ * <file> read <false>
+ */
+DEFUNC_OPER (read)
+gboolean __flag G_GNUC_UNUSED = FALSE;
+G_STMT_START {
+	hg_quark_t arg0;
+	hg_file_t *f;
+	gchar c[2];
+	gboolean eof;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QFILE (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!hg_quark_is_readable(arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+	f = HG_VM_LOCK (vm, arg0, error);
+	if (f == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	hg_file_read(f, c, sizeof (gchar), 1, error);
+	eof = hg_file_is_eof(f);
+	HG_VM_UNLOCK (vm, arg0);
+
+	if (eof) {
+		hg_stack_pop(ostack, error);
+
+		STACK_PUSH (ostack, HG_QBOOL (FALSE));
+		retval = TRUE;
+	} else if (*error && error) {
+		hg_vm_set_error_from_gerror(vm, qself, *error);
+	} else {
+		hg_stack_pop(ostack, error);
+
+		STACK_PUSH (ostack, HG_QINT (c[0]));
+		STACK_PUSH (ostack, HG_QBOOL (TRUE));
+		__flag = TRUE;
+		retval = TRUE;
+	}
+} G_STMT_END;
+VALIDATE_STACK_SIZE (__flag ? 1 : 0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (readhexstring);
 DEFUNC_UNIMPLEMENTED_OPER (readline);
 DEFUNC_UNIMPLEMENTED_OPER (readstring);

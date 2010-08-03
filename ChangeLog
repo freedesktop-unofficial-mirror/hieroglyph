@@ -1,5 +1,8 @@
 2010-08-03  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (_hg_operator_real_le): implemented.
+	(_hg_operator_real_read): implemented.
+
 	* lib/hg_init.ps (..statementedit): set a exec bit to the file object.
 
 	* hieroglyph/hgvm.c (hg_vm_stepi_in_exec_array): only execute a file
