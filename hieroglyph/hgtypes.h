@@ -613,6 +613,7 @@ enum _hg_system_encoding_t {
 	HG_enc_private_hgrevision,
 	HG_enc_private_odef,
 	HG_enc_private_product,
+	HG_enc_private_quit,
 	HG_enc_private_revision,
 	HG_enc_private_setglobal,
 	HG_enc_private_stringcvs,

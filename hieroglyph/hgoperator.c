@@ -131,6 +131,7 @@ PROTO_OPER (private_forceput);
 PROTO_OPER (private_hgrevision);
 PROTO_OPER (private_odef);
 PROTO_OPER (private_product);
+PROTO_OPER (private_quit);
 PROTO_OPER (private_revision);
 PROTO_OPER (private_setglobal);
 PROTO_OPER (private_stringcvs);
@@ -790,6 +791,27 @@ G_STMT_START {
 	retval = TRUE;
 } G_STMT_END;
 VALIDATE_STACK_SIZE (1, 0, 0);
+DEFUNC_OPER_END
+
+/* <int> .quit - */
+DEFUNC_OPER (private_quit)
+G_STMT_START {
+	hg_quark_t arg0;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QINT (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	hg_vm_shutdown(vm, HG_INT (arg0));
+
+	hg_stack_pop(ostack, error);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
 /* - .revision <int> */
@@ -4145,6 +4167,7 @@ _hg_operator_level1_register(hg_dict_t *dict,
 	REG_PRIV_OPER (dict, name, .hgrevision, private_hgrevision);
 	REG_PRIV_OPER (dict, name, .odef, private_odef);
 	REG_PRIV_OPER (dict, name, .product, private_product);
+	REG_PRIV_OPER (dict, name, .quit, private_quit);
 	REG_PRIV_OPER (dict, name, .revision, private_revision);
 	REG_PRIV_OPER (dict, name, .setglobal, private_setglobal);
 	REG_PRIV_OPER (dict, name, .stringcvs, private_stringcvs);
@@ -4604,6 +4627,7 @@ hg_operator_init(void)
 	DECL_PRIV_OPER (.hgrevision, private_hgrevision);
 	DECL_PRIV_OPER (.odef, private_odef);
 	DECL_PRIV_OPER (.product, private_product);
+	DECL_PRIV_OPER (.quit, private_quit);
 	DECL_PRIV_OPER (.revision, private_revision);
 	DECL_PRIV_OPER (.setglobal, private_setglobal);
 	DECL_PRIV_OPER (.stringcvs, private_stringcvs);
@@ -5012,6 +5036,7 @@ hg_operator_tini(void)
 	UNDECL_OPER (private_hgrevision);
 	UNDECL_OPER (private_odef);
 	UNDECL_OPER (private_product);
+	UNDECL_OPER (private_quit);
 	UNDECL_OPER (private_revision);
 	UNDECL_OPER (private_setglobal);
 	UNDECL_OPER (private_stringcvs);

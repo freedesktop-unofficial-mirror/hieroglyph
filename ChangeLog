@@ -1,6 +1,7 @@
 2010-08-03  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_cvrs): implemented.
+	(_hg_operator_real_private_quit): implemented.
 
 	* hieroglyph/hgstring.c (hg_string_get_cstr): renamed from _static_cstr.
 	(_hg_object_string_to_cstr): just put \000 for lazy allocating.
