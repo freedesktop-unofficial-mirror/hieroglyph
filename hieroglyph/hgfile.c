@@ -548,7 +548,7 @@ _hg_file_io_real_file_read(hg_file_t  *file,
 			retval = size * n;
 		}
 		memcpy(buffer, (gchar *)data->mmapped_buffer + file->position, retval);
-		((gchar *)buffer)[retval] = 0;
+//		((gchar *)buffer)[retval] = 0;
 		if (retval == 0 &&
 		    file->position == file->size)
 			data->is_eof = TRUE;
@@ -817,7 +817,7 @@ _hg_file_io_real_buffered_read(hg_file_t      *file,
 	}
 	cstr = hg_string_get_cstr(bd->in);
 	memcpy(buffer, cstr + file->position, retval);
-	((gchar *)buffer)[retval] = 0;
+//	((gchar *)buffer)[retval] = 0;
 	if (retval == 0 &&
 	    file->position == file->size)
 		data->is_eof = TRUE;
@@ -1231,6 +1231,28 @@ hg_file_new_with_string(hg_mem_t        *mem,
 }
 
 /**
+ * hg_file_close:
+ * @file:
+ * @error:
+ *
+ * FIXME
+ */
+void
+hg_file_close(hg_file_t  *file,
+	      GError    **error)
+{
+	hg_return_with_gerror_if_fail (file != NULL, error);
+	hg_return_with_gerror_if_fail (file->vtable != NULL, error);
+	hg_return_with_gerror_if_fail (file->vtable->close != NULL, error);
+
+	if (file->is_closed) {
+		g_set_error(error, HG_ERROR, EBADF, "%s", g_strerror(EBADF));
+	} else {
+		file->vtable->close(file, file->user_data, error);
+	}
+}
+
+/**
  * hg_file_read:
  * @file:
  * @buffer:
@@ -1253,6 +1275,11 @@ hg_file_read(hg_file_t  *file,
 	hg_return_val_with_gerror_if_fail (buffer != NULL, -1, error);
 	hg_return_val_with_gerror_if_fail (file->vtable != NULL, -1, error);
 	hg_return_val_with_gerror_if_fail (file->vtable->read != NULL, -1, error);
+
+	if (file->is_closed) {
+		g_set_error(error, HG_ERROR, EBADF, "%s", g_strerror(EBADF));
+		return -1;
+	}
 
 	return file->vtable->read(file, file->user_data, buffer, size, n, error);
 }
@@ -1281,6 +1308,11 @@ hg_file_write(hg_file_t  *file,
 	hg_return_val_with_gerror_if_fail (file->vtable != NULL, -1, error);
 	hg_return_val_with_gerror_if_fail (file->vtable->write != NULL, -1, error);
 
+	if (file->is_closed) {
+		g_set_error(error, HG_ERROR, EBADF, "%s", g_strerror(EBADF));
+		return -1;
+	}
+
 	return file->vtable->write(file, file->user_data, buffer, size, n, error);
 }
 
@@ -1300,6 +1332,11 @@ hg_file_flush(hg_file_t  *file,
 	hg_return_val_with_gerror_if_fail (file != NULL, FALSE, error);
 	hg_return_val_with_gerror_if_fail (file->vtable != NULL, FALSE, error);
 	hg_return_val_with_gerror_if_fail (file->vtable->flush != NULL, FALSE, error);
+
+	if (file->is_closed) {
+		g_set_error(error, HG_ERROR, EBADF, "%s", g_strerror(EBADF));
+		return FALSE;
+	}
 
 	return file->vtable->flush(file, file->user_data, error);
 }
@@ -1325,6 +1362,11 @@ hg_file_seek(hg_file_t      *file,
 	hg_return_val_with_gerror_if_fail (file->vtable != NULL, -1, error);
 	hg_return_val_with_gerror_if_fail (file->vtable->seek != NULL, -1, error);
 
+	if (file->is_closed) {
+		g_set_error(error, HG_ERROR, EBADF, "%s", g_strerror(EBADF));
+		return -1;
+	}
+
 	return file->vtable->seek(file, file->user_data, offset, whence, error);
 }
 
@@ -1343,7 +1385,7 @@ hg_file_is_eof(hg_file_t *file)
 	hg_return_val_if_fail (file->vtable != NULL, TRUE);
 	hg_return_val_if_fail (file->vtable->is_eof != NULL, TRUE);
 
-	return file->vtable->is_eof(file, file->user_data);
+	return file->is_closed || file->vtable->is_eof(file, file->user_data);
 }
 
 /**

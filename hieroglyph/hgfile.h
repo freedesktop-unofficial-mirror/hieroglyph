@@ -140,6 +140,8 @@ hg_quark_t              hg_file_new_with_string    (hg_mem_t                *mem
                                                     hg_string_t             *out,
                                                     GError                 **error,
                                                     gpointer                *ret);
+void                    hg_file_close              (hg_file_t               *file,
+						    GError                 **error);
 gssize                  hg_file_read               (hg_file_t               *file,
                                                     gpointer                 buffer,
                                                     gsize                    size,

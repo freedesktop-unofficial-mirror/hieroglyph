@@ -1,5 +1,12 @@
 2010-08-03  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgfile.c (hg_file_close): new.
+	(hg_file_read): check if the file is closed.
+	(hg_file_write): likewise.
+	(hg_file_flush): likewise.
+	(hg_file_seek): likewise.
+	(hg_file_is_eof): likewise.
+
 	* hieroglyph/hgallocator.c (_hg_allocator_get_internal_block):
 	validate index.
 
