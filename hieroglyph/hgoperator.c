@@ -2842,7 +2842,7 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
-		q = HG_QINT (hg_string_length(s));
+		q = HG_QINT (hg_string_maxlength(s));
 		HG_VM_UNLOCK (vm, arg0);
 	} else if (HG_IS_QNAME (arg0) || HG_IS_QEVALNAME (arg0)) {
 		const gchar *n = hg_name_lookup(vm->name, arg0);
