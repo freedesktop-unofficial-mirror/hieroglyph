@@ -222,8 +222,7 @@ hg_mem_realloc(hg_mem_t   *mem,
 					 size,
 					 ret);
 	if (retval != Qnil) {
-		hg_quark_set_mem_id(&retval,
-				    mem->id);
+		retval = _hg_quark_type_bit_shift(_hg_quark_type_bit_get(qdata)) | retval;
 	}
 
 	return retval;

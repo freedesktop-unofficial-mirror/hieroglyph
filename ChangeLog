@@ -1,5 +1,7 @@
 2010-08-03  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgmem.c (hg_mem_realloc): copy all of bits.
+
 	* hieroglyph/hgoperator.c (_hg_operator_real_le): implemented.
 	(_hg_operator_real_read): implemented.
 
