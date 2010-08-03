@@ -2167,7 +2167,7 @@ G_STMT_START {
 		hg_quark_set_access_bits(&q,
 					 iomode & (HG_FILE_IO_MODE_READ|HG_FILE_IO_MODE_APPEND),
 					 iomode & (HG_FILE_IO_MODE_WRITE|HG_FILE_IO_MODE_APPEND),
-					 TRUE);
+					 FALSE);
 	}
 	hg_stack_pop(ostack, error);
 	hg_stack_pop(ostack, error);

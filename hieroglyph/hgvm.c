@@ -264,6 +264,7 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 	    case HG_TYPE_ARRAY:
 	    case HG_TYPE_STRING:
 	    case HG_TYPE_OPER:
+	    push_stack:
 		    if (!hg_stack_push(ostack, qexecobj)) {
 			    hg_vm_set_error(vm, qparent,
 					    HG_VM_e_stackoverflow);
@@ -272,103 +273,109 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 		    hg_stack_pop(estack, &err);
 		    break;
 	    case HG_TYPE_FILE:
-		    file = _HG_VM_LOCK (vm, qexecobj, &err);
-		    if (file == NULL)
-			    break;
-		    hg_scanner_attach_file(vm->scanner, file);
-		    if (!hg_scanner_scan(vm->scanner,
-					 hg_vm_get_mem(vm),
-					 &err)) {
-			    hg_vm_set_error(vm, qparent,
-					    HG_VM_e_syntaxerror);
-			    retval = FALSE;
-			    break;
-		    }
-		    qresult = hg_scanner_get_token(vm->scanner);
-		    hg_vm_quark_set_attributes(vm, &qresult);
+		    if (!hg_quark_is_executable(qexecobj)) {
+			    goto push_stack;
+		    } else {
+			    file = _HG_VM_LOCK (vm, qexecobj, &err);
+			    if (file == NULL)
+				    break;
+			    hg_scanner_attach_file(vm->scanner, file);
+			    if (!hg_scanner_scan(vm->scanner,
+						 hg_vm_get_mem(vm),
+						 &err)) {
+				    hg_vm_set_error(vm, qparent,
+						    HG_VM_e_syntaxerror);
+				    retval = FALSE;
+				    break;
+			    }
+			    qresult = hg_scanner_get_token(vm->scanner);
+			    hg_vm_quark_set_attributes(vm, &qresult);
 #if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
-		    G_STMT_START {
-			    hg_quark_t qs;
-			    hg_string_t *s;
+			    G_STMT_START {
+				    hg_quark_t qs;
+				    hg_string_t *s;
 
-			    qs = hg_vm_quark_to_string(vm, qresult, (gpointer *)&s, &err);
-			    if (qs == Qnil) {
-				    if (err) {
-					    g_print("WW: Unable to look up the scanned object: %lx: %s\n", qresult, err->message);
-					    g_clear_error(&err);
+				    qs = hg_vm_quark_to_string(vm, qresult, (gpointer *)&s, &err);
+				    if (qs == Qnil) {
+					    if (err) {
+						    g_print("WW: Unable to look up the scanned object: %lx: %s\n", qresult, err->message);
+						    g_clear_error(&err);
+					    } else {
+						    g_print("WW: Unable to look up the scanned object: %lx\n", qresult);
+					    }
 				    } else {
-					    g_print("WW: Unable to look up the scanned object: %lx\n", qresult);
+					    gchar *cstr = hg_string_get_cstr(s);
+
+					    g_print("I(%d): scanning... %s [%s]\n",
+						    vm->n_nest_scan, cstr,
+						    hg_quark_get_type_name(qresult));
+					    g_free(cstr);
+					    /* this is an instant object.
+					     * surely no reference to the container.
+					     * so it can be safely destroyed.
+					     */
+					    hg_string_free(s, TRUE);
 				    }
-			    } else {
-				    g_print("I(%d): scanning... %s [%s]\n",
-					    vm->n_nest_scan,
-					    hg_string_get_static_cstr(s),
-					    hg_quark_get_type_name(qresult));
-				    /* this is an instant object.
-				     * surely no reference to the container.
-				     * so it can be safely destroyed.
-				     */
-				    hg_string_free(s, TRUE);
-			    }
-		    } G_STMT_END;
+			    } G_STMT_END;
 #endif
-		    /* exception for processing the executable array */
-		    if (HG_IS_QNAME (qresult) &&
-			(name = hg_name_lookup(vm->name, qresult)) != NULL) {
-			    if (!strcmp(name, "{")) {
-				    qresult = hg_vm_step_in_exec_array(vm, qparent);
-				    if (qresult == Qnil)
-					    return FALSE;
-			    } else if (!strcmp(name, "}")) {
-				    gssize i, idx = 0;
-				    hg_quark_t q;
-				    hg_array_t *a;
+			    /* exception for processing the executable array */
+			    if (HG_IS_QNAME (qresult) &&
+				(name = hg_name_lookup(vm->name, qresult)) != NULL) {
+				    if (!strcmp(name, "{")) {
+					    qresult = hg_vm_step_in_exec_array(vm, qparent);
+					    if (qresult == Qnil)
+						    return FALSE;
+				    } else if (!strcmp(name, "}")) {
+					    gssize i, idx = 0;
+					    hg_quark_t q;
+					    hg_array_t *a;
 
-				    while (1) {
-					    q = hg_stack_index(ostack, idx, &err);
-					    if (err) {
-						    hg_vm_set_error(vm, qparent,
-								    HG_VM_e_unmatchedmark);
-						    goto finalize;
+					    while (1) {
+						    q = hg_stack_index(ostack, idx, &err);
+						    if (err) {
+							    hg_vm_set_error(vm, qparent,
+									    HG_VM_e_unmatchedmark);
+							    goto finalize;
+						    }
+						    if (HG_IS_QMARK (q))
+							    break;
+						    idx++;
 					    }
-					    if (HG_IS_QMARK (q))
-						    break;
-					    idx++;
-				    }
-				    qresult = hg_array_new(hg_vm_get_mem(vm),
-							   idx,
-							   (gpointer *)&a);
-				    if (qresult == Qnil) {
-					    hg_vm_set_error(vm, qparent,
-							    HG_VM_e_VMerror);
+					    qresult = hg_array_new(hg_vm_get_mem(vm),
+								   idx,
+								   (gpointer *)&a);
+					    if (qresult == Qnil) {
+						    hg_vm_set_error(vm, qparent,
+								    HG_VM_e_VMerror);
+						    return FALSE;
+					    }
+					    hg_vm_quark_set_attributes(vm, &qresult);
+					    hg_quark_set_executable(&qresult, TRUE);
+					    for (i = idx - 1; i >= 0; i--) {
+						    q = hg_stack_index(ostack, i, &err);
+						    if (err)
+							    goto finalize;
+						    hg_array_set(a, q, idx - i - 1, &err);
+						    if (err)
+							    goto finalize;
+					    }
+					    for (i = 0; i <= idx; i++) {
+						    hg_stack_pop(ostack, &err);
+						    if (err) {
+							    hg_vm_set_error(vm, qparent,
+									    HG_VM_e_stackunderflow);
+							    goto finalize;
+						    }
+					    }
+					    if (!hg_stack_push(ostack, qresult))
+						    hg_vm_set_error(vm, qparent,
+								    HG_VM_e_stackoverflow);
+
 					    return FALSE;
 				    }
-				    hg_vm_quark_set_attributes(vm, &qresult);
-				    hg_quark_set_executable(&qresult, TRUE);
-				    for (i = idx - 1; i >= 0; i--) {
-					    q = hg_stack_index(ostack, i, &err);
-					    if (err)
-						    goto finalize;
-					    hg_array_set(a, q, idx - i - 1, &err);
-					    if (err)
-						    goto finalize;
-				    }
-				    for (i = 0; i <= idx; i++) {
-					    hg_stack_pop(ostack, &err);
-					    if (err) {
-						    hg_vm_set_error(vm, qparent,
-								    HG_VM_e_stackunderflow);
-						    goto finalize;
-					    }
-				    }
-				    if (!hg_stack_push(ostack, qresult))
-					    hg_vm_set_error(vm, qparent,
-							    HG_VM_e_stackoverflow);
-
-				    return FALSE;
 			    }
+			    hg_stack_push(estack, qresult);
 		    }
-		    hg_stack_push(estack, qresult);
 		    break;
 	    default:
 		    g_warning("Unknown object type: %d\n", hg_quark_get_type(qexecobj));
@@ -1247,7 +1254,7 @@ hg_vm_setup(hg_vm_t           *vm,
 	} else {
 		qf = stdin;
 	}
-	hg_quark_set_access_bits(&qf, TRUE, FALSE, TRUE);
+	hg_quark_set_access_bits(&qf, TRUE, FALSE, FALSE);
 	vm->qio[HG_FILE_IO_STDIN] = qf;
 	if (stdout == Qnil) {
 		qf  = hg_file_new(hg_vm_get_mem(vm),
@@ -1258,7 +1265,7 @@ hg_vm_setup(hg_vm_t           *vm,
 	} else {
 		qf = stdout;
 	}
-	hg_quark_set_access_bits(&qf, FALSE, TRUE, TRUE);
+	hg_quark_set_access_bits(&qf, FALSE, TRUE, FALSE);
 	vm->qio[HG_FILE_IO_STDOUT] = qf;
 	if (stderr == Qnil) {
 		qf = hg_file_new(hg_vm_get_mem(vm),
@@ -1269,7 +1276,7 @@ hg_vm_setup(hg_vm_t           *vm,
 	} else {
 		qf = stderr;
 	}
-	hg_quark_set_access_bits(&qf, FALSE, TRUE, TRUE);
+	hg_quark_set_access_bits(&qf, FALSE, TRUE, FALSE);
 	vm->qio[HG_FILE_IO_STDERR] = qf;
 
 	if (vm->qio[HG_FILE_IO_STDIN] == Qnil ||
@@ -1624,9 +1631,11 @@ hg_vm_stepi(hg_vm_t  *vm,
 				g_print("W: Unable to look up the object being executed: %lx\n", qexecobj);
 			}
 		} else {
+			gchar *cstr = hg_string_get_cstr(s);
+
 			g_print("I: executing... %s [%s]\n",
-				hg_string_get_static_cstr(s),
-				hg_quark_get_type_name(qexecobj));
+				cstr, hg_quark_get_type_name(qexecobj));
+			g_free(cstr);
 			/* this is an instant object.
 			 * surely no reference to the container.
 			 * so it can be safely destroyed.
@@ -1750,6 +1759,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 							      NULL,
 							      &err,
 							      NULL);
+			    hg_quark_set_executable(&qresult, TRUE);
 			    _HG_VM_UNLOCK (vm, qexecobj);
 			    hg_stack_pop(estack, &err);
 			    if (!hg_stack_push(estack, qresult)) {
@@ -1771,72 +1781,78 @@ hg_vm_stepi(hg_vm_t  *vm,
 		    *is_proceeded = TRUE;
 		    break;
 	    case HG_TYPE_FILE:
-		    file = _HG_VM_LOCK (vm, qexecobj, &err);
-		    if (file == NULL)
-			    break;
-		    hg_scanner_attach_file(vm->scanner, file);
-		    if (!hg_scanner_scan(vm->scanner,
-					 hg_vm_get_mem(vm),
-					 &err)) {
-			    if (!err && hg_file_is_eof(file)) {
-#if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
-				    g_print("I: EOF detected\n");
-#endif
-				    hg_stack_pop(estack, &err);
-				    *is_proceeded = TRUE;
+		    if (!hg_quark_is_executable(qexecobj)) {
+			    goto push_stack;
+		    } else {
+			    file = _HG_VM_LOCK (vm, qexecobj, &err);
+			    if (file == NULL)
 				    break;
-			    }
-			    g_print("%s\n", err->message);
-			    hg_vm_set_error(vm, qexecobj,
-					    HG_VM_e_syntaxerror);
-
-			    return TRUE;
-		    }
-		    qresult = hg_scanner_get_token(vm->scanner);
-		    hg_vm_quark_set_attributes(vm, &qresult);
+			    hg_scanner_attach_file(vm->scanner, file);
+			    if (!hg_scanner_scan(vm->scanner,
+						 hg_vm_get_mem(vm),
+						 &err)) {
+				    if (!err && hg_file_is_eof(file)) {
 #if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
-		    G_STMT_START {
-			    hg_quark_t qs;
-			    hg_string_t *s;
-
-			    qs = hg_vm_quark_to_string(vm, qresult, (gpointer *)&s, &err);
-			    if (qs == Qnil) {
-				    if (err) {
-					    g_print("W: Unable to look up the scanned object: %lx: %s\n", qresult, err->message);
-					    g_clear_error(&err);
-				    } else {
-					    g_print("W: Unable to look up the scanned object: %lx\n", qresult);
-				    }
-			    } else {
-				    g_print("I: scanning... %s [%s]\n",
-					    hg_string_get_static_cstr(s),
-					    hg_quark_get_type_name(qresult));
-				    /* this is an instant object.
-				     * surely no reference to the container.
-				     * so it can be safely destroyed.
-				     */
-				    hg_string_free(s, TRUE);
-			    }
-		    } G_STMT_END;
+					    g_print("I: EOF detected\n");
 #endif
-		    /* exception for processing the executable array */
-		    if (HG_IS_QNAME (qresult) &&
-			(name = hg_name_lookup(vm->name, qresult)) != NULL) {
-			    if (!strcmp(name, "{")) {
-				    qresult = hg_vm_step_in_exec_array(vm, qexecobj);
-				    if (qresult == Qnil)
+					    hg_stack_pop(estack, &err);
+					    *is_proceeded = TRUE;
 					    break;
-				    if (!hg_stack_push(ostack, qresult)) {
-					    hg_vm_set_error(vm, qexecobj,
-							    HG_VM_e_stackoverflow);
 				    }
-				    return TRUE;
-			    } else if (!strcmp(name, "}")) {
-				    hg_vm_set_error(vm, qexecobj, HG_VM_e_syntaxerror);
+				    g_print("%s\n", err->message);
+				    hg_vm_set_error(vm, qexecobj,
+						    HG_VM_e_syntaxerror);
+
 				    return TRUE;
 			    }
+			    qresult = hg_scanner_get_token(vm->scanner);
+			    hg_vm_quark_set_attributes(vm, &qresult);
+#if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
+			    G_STMT_START {
+				    hg_quark_t qs;
+				    hg_string_t *s;
+
+				    qs = hg_vm_quark_to_string(vm, qresult, (gpointer *)&s, &err);
+				    if (qs == Qnil) {
+					    if (err) {
+						    g_print("W: Unable to look up the scanned object: %lx: %s\n", qresult, err->message);
+						    g_clear_error(&err);
+					    } else {
+						    g_print("W: Unable to look up the scanned object: %lx\n", qresult);
+					    }
+				    } else {
+					    gchar *cstr = hg_string_get_cstr(s);
+
+					    g_print("I: scanning... %s [%s]\n",
+						    cstr, hg_quark_get_type_name(qresult));
+					    g_free(cstr);
+					    /* this is an instant object.
+					     * surely no reference to the container.
+					     * so it can be safely destroyed.
+					     */
+					    hg_string_free(s, TRUE);
+				    }
+			    } G_STMT_END;
+#endif
+			    /* exception for processing the executable array */
+			    if (HG_IS_QNAME (qresult) &&
+				(name = hg_name_lookup(vm->name, qresult)) != NULL) {
+				    if (!strcmp(name, "{")) {
+					    qresult = hg_vm_step_in_exec_array(vm, qexecobj);
+					    if (qresult == Qnil)
+						    break;
+					    if (!hg_stack_push(ostack, qresult)) {
+						    hg_vm_set_error(vm, qexecobj,
+								    HG_VM_e_stackoverflow);
+					    }
+					    return TRUE;
+				    } else if (!strcmp(name, "}")) {
+					    hg_vm_set_error(vm, qexecobj, HG_VM_e_syntaxerror);
+					    return TRUE;
+				    }
+			    }
+			    hg_stack_push(estack, qresult);
 		    }
-		    hg_stack_push(estack, qresult);
 		    break;
 	    default:
 		    g_warning("Unknown object type: %d\n", hg_quark_get_type(qexecobj));

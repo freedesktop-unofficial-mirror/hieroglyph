@@ -1,7 +1,13 @@
 2010-08-03  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgvm.c (hg_vm_stepi_in_exec_array): only execute a file
+	object when has a exec bit.
+	(hg_vm_setup): do not set a exec bit.
+	(hg_vm_stepi): only execute a file object when has a exec bit.
+
 	* hieroglyph/hgoperator.c (_hg_operator_real_cvrs): implemented.
 	(_hg_operator_real_private_quit): implemented.
+	(_hg_operator_real_file): do not set a exec bit.
 
 	* hieroglyph/hgstring.c (hg_string_get_cstr): renamed from _static_cstr.
 	(_hg_object_string_to_cstr): just put \000 for lazy allocating.
