@@ -1,5 +1,7 @@
 2010-08-03  Akira TAGOH  <akira@tagoh.org>
 
+	* lib/hg_init.ps (..statementedit): set a exec bit to the file object.
+
 	* hieroglyph/hgvm.c (hg_vm_stepi_in_exec_array): only execute a file
 	object when has a exec bit.
 	(hg_vm_setup): do not set a exec bit.
