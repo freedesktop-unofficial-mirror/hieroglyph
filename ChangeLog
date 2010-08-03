@@ -1,5 +1,8 @@
 2010-08-03  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (_hg_operator_real_exit): implemented.
+	(_hg_operator_real_closefile): implemented.
+
 	* hieroglyph/hgfile.c (hg_file_close): new.
 	(hg_file_read): check if the file is closed.
 	(hg_file_write): likewise.

@@ -549,6 +549,9 @@ G_STMT_START {
 	gsize i, j, edepth = hg_stack_depth(estack);
 	hg_quark_t q;
 
+	/* almost code is shared with exit.
+	 * only difference is to trap on %stopped_continue or not
+	 */
 	for (i = 0; i < edepth; i++) {
 		q = hg_stack_index(estack, i, error);
 		if (HG_IS_QOPER (q)) {
@@ -581,7 +584,7 @@ G_STMT_START {
 			break;
 		} else if (HG_IS_QFILE (q)) {
 			hg_vm_set_error(vm, qself, HG_VM_e_invalidexit);
-			break;
+			return FALSE;
 		}
 	}
 	if (i == edepth) {
@@ -1610,7 +1613,7 @@ G_STMT_START {
 		} else if (HG_IS_QSTRING (arg0) &&
 			   HG_IS_QSTRING (arg1)) {
 			hg_string_t *s1, *s2;
-			gsize len1, len2;
+			gsize len1, mlen1, mlen2;
 
 			s1 = HG_VM_LOCK (vm, arg0, error);
 			s2 = HG_VM_LOCK (vm, arg1, error);
@@ -1619,8 +1622,9 @@ G_STMT_START {
 				goto s_error;
 			}
 			len1 = hg_string_length(s1);
-			len2 = hg_string_maxlength(s2);
-			if (len1 > len2) {
+			mlen1 = hg_string_maxlength(s1);
+			mlen2 = hg_string_maxlength(s2);
+			if (mlen1 > mlen2) {
 				hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 				goto s_error;
 			}
@@ -1629,7 +1633,7 @@ G_STMT_START {
 
 				hg_string_overwrite_c(s2, c, i, error);
 			}
-			if (len2 > len1) {
+			if (mlen2 > mlen1) {
 				q = hg_string_make_substring(s2, 0, len1 - 1, NULL, error);
 				if (q == Qnil) {
 					hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
@@ -2084,7 +2088,62 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (__flag ? -1 : 0, __flag ? 1 : 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (exit);
+/* - exit - */
+DEFUNC_OPER (exit)
+gssize __n G_GNUC_UNUSED = 0;
+G_STMT_START {
+	gsize i, j, edepth = hg_stack_depth(estack);
+	hg_quark_t q;
+
+	/* almost code is shared with .exit.
+	 * only difference is to trap on %stopped_continue or not
+	 */
+	for (i = 0; i < edepth; i++) {
+		q = hg_stack_index(estack, i, error);
+		if (HG_IS_QOPER (q)) {
+/*			if (HG_OPER (q) == HG_enc_protected_for_pos_int_continue ||
+			    HG_OPER (q) == HG_enc_protected_for_pos_real_continue) {
+				hg_stack_pop(estack, error);
+				hg_stack_pop(estack, error);
+				hg_stack_pop(estack, error);
+				hg_stack_pop(estack, error);
+				__n = i + 4;
+				} else*/ if (HG_OPER (q) == HG_enc_protected_loop_continue) {
+				hg_stack_pop(estack, error);
+				__n = i + 1;
+			} else if (HG_OPER (q) == HG_enc_protected_repeat_continue) {
+				hg_stack_pop(estack, error);
+				hg_stack_pop(estack, error);
+				__n = i + 2;
+			} else if (HG_OPER (q) == HG_enc_protected_forall_array_continue ||
+				   HG_OPER (q) == HG_enc_protected_forall_dict_continue ||
+				   HG_OPER (q) == HG_enc_protected_forall_string_continue) {
+				hg_stack_pop(estack, error);
+				hg_stack_pop(estack, error);
+				hg_stack_pop(estack, error);
+				__n = i + 3;
+			} else if (HG_OPER (q) == HG_enc_protected_stopped_continue) {
+				hg_vm_set_error(vm, qself, HG_VM_e_invalidexit);
+				return FALSE;
+			} else {
+				continue;
+			}
+			for (j = 0; j < i; j++)
+				hg_stack_pop(estack, error);
+			break;
+		} else if (HG_IS_QFILE (q)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_invalidexit);
+			return FALSE;
+		}
+	}
+	if (i == edepth) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidexit);
+	} else {
+		retval = TRUE;
+	}
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, -__n, 0);
+DEFUNC_OPER_END
 
 /* <filename> <access> file -file- */
 DEFUNC_OPER (file)
@@ -3884,7 +3943,41 @@ DEFUNC_UNIMPLEMENTED_OPER (atan);
 DEFUNC_UNIMPLEMENTED_OPER (banddevice);
 DEFUNC_UNIMPLEMENTED_OPER (bytesavailable);
 DEFUNC_UNIMPLEMENTED_OPER (cachestatus);
-DEFUNC_UNIMPLEMENTED_OPER (closefile);
+
+/* <file> closefile - */
+DEFUNC_OPER (closefile)
+G_STMT_START {
+	hg_quark_t arg0;
+	hg_file_t *f;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QFILE (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	f = HG_VM_LOCK (vm, arg0, error);
+	if (f == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	hg_file_close(f, error);
+	if (error && *error) {
+		hg_vm_set_error_from_gerror(vm, qself, *error);
+		HG_VM_UNLOCK (vm, arg0);
+
+		return FALSE;
+	}
+	HG_VM_UNLOCK (vm, arg0);
+
+	hg_stack_pop(ostack, error);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (colorimage);
 DEFUNC_UNIMPLEMENTED_OPER (condition);
 DEFUNC_UNIMPLEMENTED_OPER (copypage);
