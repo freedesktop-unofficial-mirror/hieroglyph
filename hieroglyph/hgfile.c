@@ -242,7 +242,9 @@ _hg_object_file_free(hg_object_t *object)
 	hg_file_t *file = (hg_file_t *)object;
 	GError *err = NULL;
 
-	if (file->vtable->close) {
+	hg_return_if_fail (object->type == HG_TYPE_FILE);
+
+	if (file->vtable && file->vtable->close) {
 		if (!file->is_closed)
 			file->vtable->close(file, file->user_data, &err);
 		if (err) {
@@ -266,6 +268,8 @@ _hg_object_file_copy(hg_object_t              *object,
 		     gpointer                 *ret,
 		     GError                  **error)
 {
+	hg_return_val_if_fail (object->type == HG_TYPE_FILE, Qnil);
+
 	return object->self;
 }
 
@@ -275,6 +279,8 @@ _hg_object_file_to_cstr(hg_object_t              *object,
 			gpointer                  user_data,
 			GError                  **error)
 {
+	hg_return_val_if_fail (object->type == HG_TYPE_FILE, NULL);
+
 	return g_strdup("-file-");
 }
 
@@ -284,6 +290,8 @@ _hg_object_file_gc_mark(hg_object_t           *object,
 			gpointer               user_data,
 			GError               **error)
 {
+	hg_return_val_if_fail (object->type == HG_TYPE_FILE, FALSE);
+
 	return FALSE;
 }
 
@@ -1242,6 +1250,7 @@ hg_file_close(hg_file_t  *file,
 	      GError    **error)
 {
 	hg_return_with_gerror_if_fail (file != NULL, error);
+	hg_return_with_gerror_if_fail (file->o.type == HG_TYPE_FILE, error);
 	hg_return_with_gerror_if_fail (file->vtable != NULL, error);
 	hg_return_with_gerror_if_fail (file->vtable->close != NULL, error);
 
@@ -1272,6 +1281,7 @@ hg_file_read(hg_file_t  *file,
 	     GError    **error)
 {
 	hg_return_val_with_gerror_if_fail (file != NULL, -1, error);
+	hg_return_val_with_gerror_if_fail (file->o.type == HG_TYPE_FILE, -1, error);
 	hg_return_val_with_gerror_if_fail (buffer != NULL, -1, error);
 	hg_return_val_with_gerror_if_fail (file->vtable != NULL, -1, error);
 	hg_return_val_with_gerror_if_fail (file->vtable->read != NULL, -1, error);
@@ -1304,6 +1314,7 @@ hg_file_write(hg_file_t  *file,
 	      GError    **error)
 {
 	hg_return_val_with_gerror_if_fail (file != NULL, -1, error);
+	hg_return_val_with_gerror_if_fail (file->o.type == HG_TYPE_FILE, -1, error);
 	hg_return_val_with_gerror_if_fail (buffer != NULL, -1, error);
 	hg_return_val_with_gerror_if_fail (file->vtable != NULL, -1, error);
 	hg_return_val_with_gerror_if_fail (file->vtable->write != NULL, -1, error);
@@ -1330,6 +1341,7 @@ hg_file_flush(hg_file_t  *file,
 	      GError    **error)
 {
 	hg_return_val_with_gerror_if_fail (file != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (file->o.type == HG_TYPE_FILE, FALSE, error);
 	hg_return_val_with_gerror_if_fail (file->vtable != NULL, FALSE, error);
 	hg_return_val_with_gerror_if_fail (file->vtable->flush != NULL, FALSE, error);
 
@@ -1359,6 +1371,7 @@ hg_file_seek(hg_file_t      *file,
 	     GError        **error)
 {
 	hg_return_val_with_gerror_if_fail (file != NULL, -1, error);
+	hg_return_val_with_gerror_if_fail (file->o.type == HG_TYPE_FILE, -1, error);
 	hg_return_val_with_gerror_if_fail (file->vtable != NULL, -1, error);
 	hg_return_val_with_gerror_if_fail (file->vtable->seek != NULL, -1, error);
 
@@ -1382,6 +1395,7 @@ gboolean
 hg_file_is_eof(hg_file_t *file)
 {
 	hg_return_val_if_fail (file != NULL, TRUE);
+	hg_return_val_if_fail (file->o.type == HG_TYPE_FILE, TRUE);
 	hg_return_val_if_fail (file->vtable != NULL, TRUE);
 	hg_return_val_if_fail (file->vtable->is_eof != NULL, TRUE);
 
@@ -1398,6 +1412,7 @@ void
 hg_file_clear_eof(hg_file_t *file)
 {
 	hg_return_if_fail (file != NULL);
+	hg_return_if_fail (file->o.type == HG_TYPE_FILE);
 	hg_return_if_fail (file->vtable != NULL);
 	hg_return_if_fail (file->vtable->clear_eof != NULL);
 
@@ -1448,6 +1463,7 @@ hg_file_append_vprintf(hg_file_t   *file,
 	GError *err = NULL;
 
 	hg_return_val_if_fail (file != NULL, -1);
+	hg_return_val_if_fail (file->o.type == HG_TYPE_FILE, -1);
 	hg_return_val_if_fail (format != NULL, -1);
 
 	buffer = g_strdup_vprintf(format, args);
@@ -1475,6 +1491,7 @@ hg_file_set_lineno(hg_file_t *file,
 		   gssize     n)
 {
 	hg_return_if_fail (file != NULL);
+	hg_return_if_fail (file->o.type == HG_TYPE_FILE);
 	hg_return_if_fail (n > 0);
 
 	file->lineno = n;
@@ -1508,6 +1525,7 @@ gssize
 hg_file_get_position(hg_file_t *file)
 {
 	hg_return_val_if_fail (file != NULL, -1);
+	hg_return_val_if_fail (file->o.type == HG_TYPE_FILE, -1);
 
 	return file->position;
 }

@@ -1,5 +1,20 @@
 2010-08-04  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgfile.c (_hg_object_file_free): check the type.
+	(_hg_object_file_copy): likewise.
+	(_hg_object_file_to_cstr): likewise.
+	(_hg_object_file_gc_mark): likewise.
+	(hg_file_close): likewise.
+	(hg_file_read): likewise.
+	(hg_file_write): likewise.
+	(hg_file_flush): likewise.
+	(hg_file_seek): likewise.
+	(hg_file_is_eof): likewise.
+	(hg_file_clear_eof): likewise.
+	(hg_file_append_vprintf): likewise.
+	(hg_file_set_lineno): likewise.
+	(hg_file_get_position): likewise.
+
 	* hieroglyph/hgdict.c (_hg_object_dict_free): check the type.
 	(_hg_object_dict_copy): likewise.
 	(_hg_object_dict_to_cstr): likewise.
