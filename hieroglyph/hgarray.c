@@ -77,6 +77,8 @@ _hg_object_array_free(hg_object_t *object)
 {
 	hg_array_t *a = (hg_array_t *)object;
 
+	hg_return_if_fail (object->type == HG_TYPE_ARRAY);
+
 	/* don't free array->qcontainer here
 	   it's likely to be referred in another subarray
 	*/
@@ -94,6 +96,8 @@ _hg_object_array_copy(hg_object_t              *object,
 	hg_quark_t retval, q, qr;
 	gsize i, len;
 	GError *err = NULL;
+
+	hg_return_val_if_fail (object->type == HG_TYPE_ARRAY, Qnil);
 
 	len = hg_array_length(array);
 	retval = hg_array_new(array->o.mem,
@@ -152,6 +156,8 @@ _hg_object_array_to_cstr(hg_object_t              *object,
 	GError *err = NULL;
 	gchar *s;
 
+	hg_return_val_if_fail (object->type == HG_TYPE_ARRAY, NULL);
+
 	if (array->qname != Qnil) {
 		const gchar *p;
 
@@ -194,6 +200,8 @@ _hg_object_array_gc_mark(hg_object_t           *object,
 			 gpointer               user_data,
 			 GError               **error)
 {
+	hg_return_val_if_fail (object->type == HG_TYPE_ARRAY, FALSE);
+
 	return FALSE;
 }
 
@@ -278,6 +286,7 @@ hg_array_set(hg_array_t  *array,
 	gboolean retval = TRUE;
 
 	hg_return_val_with_gerror_if_fail (array != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, FALSE, error);
 	hg_return_val_with_gerror_if_fail ((array->offset + index) < array->allocated_size, FALSE, error);
 
 	old_length = array->length;
@@ -333,6 +342,7 @@ hg_array_get(hg_array_t  *array,
 	hg_quark_t *container;
 
 	hg_return_val_with_gerror_if_fail (array != NULL, Qnil, error);
+	hg_return_val_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, Qnil, error);
 	hg_return_val_with_gerror_if_fail (index < array->allocated_size, Qnil, error);
 
 	if (array->qcontainer == Qnil) {
@@ -375,6 +385,7 @@ hg_array_insert(hg_array_t  *array,
 	hg_quark_t *container;
 
 	hg_return_val_with_gerror_if_fail (array != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, FALSE, error);
 	hg_return_val_with_gerror_if_fail (array->offset == 0, FALSE, error);
 
 	if (pos < 0)
@@ -422,6 +433,7 @@ hg_array_remove(hg_array_t *array,
 	hg_quark_t *container;
 
 	hg_return_val_if_fail (array != NULL, FALSE);
+	hg_return_val_if_fail (array->o.type == HG_TYPE_ARRAY, FALSE);
 	hg_return_val_if_fail (array->offset == 0, FALSE);
 	hg_return_val_if_fail (pos < array->length, FALSE);
 	hg_return_val_if_lock_fail (container,
@@ -451,6 +463,7 @@ gsize
 hg_array_length(hg_array_t *array)
 {
 	hg_return_val_if_fail (array != NULL, 0);
+	hg_return_val_if_fail (array->o.type == HG_TYPE_ARRAY, 0);
 
 	return array->length;
 }
@@ -467,6 +480,7 @@ gsize
 hg_array_maxlength(hg_array_t *array)
 {
 	hg_return_val_if_fail (array != NULL, 0);
+	hg_return_val_if_fail (array->o.type == HG_TYPE_ARRAY, 0);
 
 	return array->allocated_size;
 }
@@ -489,6 +503,7 @@ hg_array_foreach(hg_array_t                *array,
 	gsize i;
 
 	hg_return_with_gerror_if_fail (array != NULL, error);
+	hg_return_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, error);
 	hg_return_with_gerror_if_fail (func != NULL, error);
 	hg_return_with_gerror_if_lock_fail (container,
 					    array->o.mem,
@@ -517,6 +532,7 @@ hg_array_set_name(hg_array_t  *array,
 	gsize len;
 
 	hg_return_if_fail (array != NULL);
+	hg_return_if_fail (array->o.type == HG_TYPE_ARRAY);
 	hg_return_if_fail (name != NULL);
 
 	len = strlen(name);
@@ -553,6 +569,7 @@ hg_array_make_subarray(hg_array_t  *array,
 	hg_array_t *a;
 
 	hg_return_val_with_gerror_if_fail (array != NULL, Qnil, error);
+	hg_return_val_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, Qnil, error);
 
 	retval = hg_array_new(array->o.mem, 0, (gpointer *)&a);
 	if (retval == Qnil) {
@@ -610,7 +627,9 @@ hg_array_copy_as_subarray(hg_array_t  *src,
 			  GError     **error)
 {
 	hg_return_val_with_gerror_if_fail (src != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (src->o.type == HG_TYPE_ARRAY, FALSE, error);
 	hg_return_val_with_gerror_if_fail (dest != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (dest->o.type == HG_TYPE_ARRAY, FALSE, error);
 	hg_return_val_with_gerror_if_fail (start_index < hg_array_length(src), FALSE, error);
 	hg_return_val_with_gerror_if_fail (end_index < hg_array_length(src), FALSE, error);
 	hg_return_val_with_gerror_if_fail (start_index <= end_index, FALSE, error);

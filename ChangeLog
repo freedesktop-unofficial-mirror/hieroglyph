@@ -1,5 +1,20 @@
 2010-08-04  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgarray.c (_hg_object_array_free): check the type.
+	(_hg_object_array_copy): likewise.
+	(_hg_object_array_to_cstr): likewise.
+	(_hg_object_array_gc_mark): lkewise.
+	(hg_array_set): likewise.
+	(hg_array_get): likewise.
+	(hg_array_insert): likewise.
+	(hg_array_remove): likewise.
+	(hg_array_length): likewise.
+	(hg_array_maxlength): likewise.
+	(hg_array_foreach): likewise.
+	(hg_array_set_name): likewise.
+	(hg_array_make_subarray): likewise.
+	(hg_array_copy_as_subarray): likewise.
+
 	* hieroglyph/hgstring.c (_hg_object_string_to_cstr): check the type.
 	(_hg_object_string_gc_mark): likewise.
 
