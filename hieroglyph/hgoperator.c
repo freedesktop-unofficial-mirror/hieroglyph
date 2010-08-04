@@ -3484,7 +3484,7 @@ G_STMT_START {
 	} else {
 		hg_stack_pop(ostack, error);
 
-		STACK_PUSH (ostack, HG_QINT (c[0]));
+		STACK_PUSH (ostack, HG_QINT ((guint32)c[0]));
 		STACK_PUSH (ostack, HG_QBOOL (TRUE));
 		__flag = TRUE;
 		retval = TRUE;

@@ -1,3 +1,7 @@
+2010-08-05  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_read): cast the value to set the field correctly.
+
 2010-08-03  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgvm.c (hg_vm_quark_to_string): fix the size.
