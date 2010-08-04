@@ -76,6 +76,9 @@ _hg_object_string_initialize(hg_object_t *object,
 static void
 _hg_object_string_free(hg_object_t *object)
 {
+	/* do not free qstring here, because it may be likely
+	 * to be referred from the substring yet
+	 */
 }
 
 static hg_quark_t
@@ -125,6 +128,8 @@ _hg_object_string_to_cstr(hg_object_t              *object,
 	gchar buffer[8];
 	gsize i;
 
+	hg_return_val_if_fail (object->type == HG_TYPE_STRING, NULL);
+
 	g_string_append_c(retval, '(');
 	for (i = s->offset; i < hg_string_maxlength(s); i++) {
 		if (cstr == NULL) {
@@ -168,6 +173,8 @@ _hg_object_string_gc_mark(hg_object_t           *object,
 			  gpointer               user_data,
 			  GError               **error)
 {
+	hg_return_val_if_fail (object->type == HG_TYPE_STRING, FALSE);
+
 	return FALSE;
 }
 
