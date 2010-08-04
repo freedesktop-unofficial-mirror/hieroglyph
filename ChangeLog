@@ -1,5 +1,16 @@
 2010-08-04  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgdict.c (_hg_object_dict_free): check the type.
+	(_hg_object_dict_copy): likewise.
+	(_hg_object_dict_to_cstr): likewise.
+	(_hg_object_dict_gc_mark): likewise.
+	(hg_dict_add): likewise.
+	(hg_dict_remove): likewise.
+	(hg_dict_lookup): likewise.
+	(hg_dict_length): likewise.
+	(hg_dict_maxlength): likewise.
+	(hg_dict_foreach): likewise.
+
 	* hieroglyph/hgarray.c (_hg_object_array_free): check the type.
 	(_hg_object_array_copy): likewise.
 	(_hg_object_array_to_cstr): likewise.

@@ -64,6 +64,8 @@ _hg_object_dict_free(hg_object_t *object)
 {
 	hg_dict_t *dict = (hg_dict_t *)object;
 
+	hg_return_if_fail (object->type == HG_TYPE_DICT);
+
 	if (dict->qdict != Qnil)
 		hg_btree_destroy(dict->o.mem, dict->qdict);
 }
@@ -75,6 +77,8 @@ _hg_object_dict_copy(hg_object_t              *object,
 		     gpointer                 *ret,
 		     GError                  **error)
 {
+	hg_return_val_if_fail (object->type == HG_TYPE_DICT, Qnil);
+
 	return object->self;
 }
 
@@ -84,6 +88,8 @@ _hg_object_dict_to_cstr(hg_object_t              *object,
 			gpointer                  user_data,
 			GError                  **error)
 {
+	hg_return_val_if_fail (object->type == HG_TYPE_DICT, NULL);
+
 	return g_strdup("-dict-");
 }
 
@@ -93,6 +99,8 @@ _hg_object_dict_gc_mark(hg_object_t           *object,
 			gpointer               user_data,
 			GError               **error)
 {
+	hg_return_val_if_fail (object->type == HG_TYPE_DICT, FALSE);
+
 	return FALSE;
 }
 
@@ -147,6 +155,7 @@ hg_dict_add(hg_dict_t *dict,
 	hg_quark_t qmasked;
 
 	hg_return_val_if_fail (dict != NULL, FALSE);
+	hg_return_val_if_fail (dict->o.type == HG_TYPE_DICT, FALSE);
 	hg_return_val_if_fail (!HG_IS_QSTRING (qkey), FALSE);
 	hg_return_val_if_lock_fail (tree,
 				    dict->o.mem,
@@ -188,6 +197,7 @@ hg_dict_remove(hg_dict_t  *dict,
 	hg_quark_t qmasked;
 
 	hg_return_val_if_fail (dict != NULL, FALSE);
+	hg_return_val_if_fail (dict->o.type == HG_TYPE_DICT, FALSE);
 	hg_return_val_if_fail (!HG_IS_QSTRING (qkey), FALSE);
 	hg_return_val_if_lock_fail (tree,
 				    dict->o.mem,
@@ -229,6 +239,7 @@ hg_dict_lookup(hg_dict_t  *dict,
 	GError *err = NULL;
 
 	hg_return_val_if_fail (dict != NULL, Qnil);
+	hg_return_val_if_fail (dict->o.type == HG_TYPE_DICT, Qnil);
 	hg_return_val_if_fail (!HG_IS_QSTRING (qkey), Qnil);
 	hg_return_val_if_lock_fail (tree,
 				    dict->o.mem,
@@ -262,6 +273,7 @@ gsize
 hg_dict_length(hg_dict_t *dict)
 {
 	hg_return_val_if_fail (dict != NULL, 0);
+	hg_return_val_if_fail (dict->o.type == HG_TYPE_DICT, 0);
 
 	return dict->length;
 }
@@ -278,6 +290,7 @@ gsize
 hg_dict_maxlength(hg_dict_t *dict)
 {
 	hg_return_val_if_fail (dict != NULL, 0);
+	hg_return_val_if_fail (dict->o.type == HG_TYPE_DICT, 0);
 
 	return dict->allocated_size;
 }
@@ -300,6 +313,7 @@ hg_dict_foreach(hg_dict_t                 *dict,
 	hg_btree_t *tree;
 
 	hg_return_with_gerror_if_fail (dict != NULL, error);
+	hg_return_with_gerror_if_fail (dict->o.type == HG_TYPE_DICT, error);
 	hg_return_with_gerror_if_fail (func != NULL, error);
 	hg_return_with_gerror_if_lock_fail (tree,
 					    dict->o.mem,
