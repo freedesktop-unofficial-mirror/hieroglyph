@@ -309,7 +309,11 @@ systemdict /.statementedit known {
 	true
     } ifelse {
 	% record stacks
-	count copy count 2 idiv array astore $error /ostack 3 -1 roll put
+	$error /.ostack known {
+	    $error /.ostack get dup length array copy
+	} {
+	    count copy count 2 idiv array astore
+	} ifelse $error /ostack 3 -1 roll put
 	countexecstack array execstack $error /estack 3 -1 roll % -dict- /estack -array-
 	% modify estack to make a correct stack when an error actually happened
 	dup length 1 sub 0 exch getinterval % -dict- /estack -array-

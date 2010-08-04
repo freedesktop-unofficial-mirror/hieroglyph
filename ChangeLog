@@ -1,5 +1,8 @@
 2010-08-05  Akira TAGOH  <akira@tagoh.org>
 
+	* lib/hg_init.ps (.seterror): do not scan and record the operand stack
+	that stated with the objects where running the internal.
+
 	* hieroglyph/hgoperator.c (_hg_operator_real_read): cast the value to set the field correctly.
 
 2010-08-03  Akira TAGOH  <akira@tagoh.org>
