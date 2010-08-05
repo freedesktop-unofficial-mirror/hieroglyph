@@ -1,3 +1,11 @@
+2010-08-06  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_currentdict): implemented.
+	(_hg_operator_real_or): implemented.
+	(_hg_operator_real_rcheck): implemented.
+	(_hg_operator_real_xcheck): implemented.
+	(REG_VALUE): set a read bit.
+
 2010-08-05  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_protected_for_yield_int_continue):

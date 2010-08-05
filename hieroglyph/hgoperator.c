@@ -1810,7 +1810,20 @@ DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (currentcmykcolor);
 DEFUNC_UNIMPLEMENTED_OPER (currentdash);
-DEFUNC_UNIMPLEMENTED_OPER (currentdict);
+
+/* - currentdict <dict> */
+DEFUNC_OPER (currentdict)
+G_STMT_START {
+	hg_quark_t q;
+
+	q = hg_stack_index(dstack, 0, error);
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (1, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (currentfile);
 DEFUNC_UNIMPLEMENTED_OPER (currentfont);
 DEFUNC_UNIMPLEMENTED_OPER (currentgray);
@@ -3459,7 +3472,38 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (or);
+/* <bool1> <bool2> or <bool3>
+ * <int1> <int2> or <int3>
+ */
+DEFUNC_OPER (or)
+G_STMT_START {
+	hg_quark_t arg0, arg1, q;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+	if (HG_IS_QBOOL (arg0) &&
+	    HG_IS_QBOOL (arg1)) {
+		q = HG_QBOOL (HG_BOOL (arg0) | HG_BOOL (arg1));
+	} else if (HG_IS_QINT (arg0) &&
+		   HG_IS_QINT (arg1)) {
+		q = HG_QINT (HG_INT (arg0) | HG_INT (arg1));
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+
+	hg_stack_pop(ostack, error);
+	hg_stack_pop(ostack, error);
+
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (pathbbox);
 DEFUNC_UNIMPLEMENTED_OPER (pathforall);
 
@@ -4335,7 +4379,38 @@ DEFUNC_UNIMPLEMENTED_OPER (notify);
 DEFUNC_UNIMPLEMENTED_OPER (nulldevice);
 DEFUNC_UNIMPLEMENTED_OPER (packedarray);
 DEFUNC_UNIMPLEMENTED_OPER (rand);
-DEFUNC_UNIMPLEMENTED_OPER (rcheck);
+
+/* <array> rcheck <bool>
+ * <packedarray> rcheck <bool>
+ * <dict> rcheck <bool>
+ * <file> rcheck <bool>
+ * <string> rcheck <bool>
+ */
+DEFUNC_OPER (rcheck)
+G_STMT_START {
+	hg_quark_t arg0, q;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QARRAY (arg0) &&
+	    !HG_IS_QDICT (arg0) &&
+	    !HG_IS_QFILE (arg0) &&
+	    !HG_IS_QSTRING (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	q = HG_QBOOL (hg_quark_is_readable(arg0));
+
+	hg_stack_pop(ostack, error);
+
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (readonly);
 DEFUNC_UNIMPLEMENTED_OPER (realtime);
 DEFUNC_UNIMPLEMENTED_OPER (renamefile);
@@ -4403,7 +4478,35 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (xcheck);
+/* <array> xcheck <bool>
+ * <packedarray> xcheck <false>
+ * <dict> xcheck <bool>
+ * <file> xcheck <bool>
+ * <string> xcheck <bool>
+ */
+DEFUNC_OPER (xcheck)
+G_STMT_START {
+	hg_quark_t arg0;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QARRAY (arg0) &&
+	    !HG_IS_QDICT (arg0) &&
+	    !HG_IS_QFILE (arg0) &&
+	    !HG_IS_QSTRING (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	hg_stack_pop(ostack, error);
+
+	STACK_PUSH (ostack, HG_QBOOL (hg_quark_is_executable(arg0)));
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (yield);
 DEFUNC_UNIMPLEMENTED_OPER (defineuserobject);
 DEFUNC_UNIMPLEMENTED_OPER (undefineuserobject);
@@ -4528,10 +4631,12 @@ DEFUNC_UNIMPLEMENTED_OPER (DeviceN);
 #define REG_VALUE(_d_,_n_,_k_,_v_)				\
 	G_STMT_START {						\
 		hg_quark_t __o_name__ = HG_QNAME ((_n_),#_k_);	\
+		hg_quark_t __v__ = (_v_);			\
 								\
+		hg_quark_set_readable(&__v__, TRUE);		\
 		if (!hg_dict_add((_d_),				\
 				 __o_name__,			\
-				 (_v_)))			\
+				 __v__))			\
 			return FALSE;				\
 	} G_STMT_END
 
