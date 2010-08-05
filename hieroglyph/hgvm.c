@@ -39,8 +39,8 @@
 #include "hgvm.h"
 
 #define HG_VM_MEM_SIZE		10000
-#define HG_VM_GLOBAL_MEM_SIZE	240000
-#define HG_VM_LOCAL_MEM_SIZE	10000
+#define HG_VM_GLOBAL_MEM_SIZE	24000000
+#define HG_VM_LOCAL_MEM_SIZE	1000000
 #define _HG_VM_LOCK(_v_,_q_,_e_)					\
 	(_hg_vm_real_lock_object((_v_),(_q_),__PRETTY_FUNCTION__,(_e_)))
 #define _HG_VM_UNLOCK(_v_,_q_)				\
