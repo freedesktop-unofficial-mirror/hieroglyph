@@ -138,6 +138,8 @@ PROTO_OPER (private_stringcvs);
 PROTO_OPER (private_undef);
 PROTO_OPER (private_write_eqeq_only);
 PROTO_OPER (protected_arraytomark);
+PROTO_OPER (protected_for_yield_int_continue);
+PROTO_OPER (protected_for_yield_real_continue);
 PROTO_OPER (protected_forall_array_continue);
 PROTO_OPER (protected_forall_dict_continue);
 PROTO_OPER (protected_forall_string_continue);
@@ -555,14 +557,14 @@ G_STMT_START {
 	for (i = 0; i < edepth; i++) {
 		q = hg_stack_index(estack, i, error);
 		if (HG_IS_QOPER (q)) {
-/*			if (HG_OPER (q) == HG_enc_protected_for_pos_int_continue ||
-			    HG_OPER (q) == HG_enc_protected_for_pos_real_continue) {
+			if (HG_OPER (q) == HG_enc_protected_for_yield_int_continue ||
+			    HG_OPER (q) == HG_enc_protected_for_yield_real_continue) {
 				hg_stack_pop(estack, error);
 				hg_stack_pop(estack, error);
 				hg_stack_pop(estack, error);
 				hg_stack_pop(estack, error);
 				__n = i + 4;
-				} else*/ if (HG_OPER (q) == HG_enc_protected_loop_continue) {
+			} else if (HG_OPER (q) == HG_enc_protected_loop_continue) {
 				hg_stack_pop(estack, error);
 				__n = i + 1;
 			} else if (HG_OPER (q) == HG_enc_protected_repeat_continue) {
@@ -979,6 +981,112 @@ G_STMT_START {
  * if the result in all above is ok, everything would be fine then.
  */
 /* VALIDATE_STACK_SIZE (0, 0, 0); */
+DEFUNC_OPER_END
+
+/* <initial> <increment> <limit> <proc> %for_yield_int_continue - */
+DEFUNC_OPER (protected_for_yield_int_continue)
+gboolean __flag G_GNUC_UNUSED = FALSE;
+G_STMT_START {
+	hg_quark_t self, proc, limit, inc, init, q, qq;
+	gint iinit, iinc, ilimit;
+
+	self  = hg_stack_index(estack, 0, error);
+	proc  = hg_stack_index(estack, 1, error);
+	limit = hg_stack_index(estack, 2, error);
+	inc   = hg_stack_index(estack, 3, error);
+	init  = hg_stack_index(estack, 4, error);
+
+	iinit  = HG_INT (init);
+	iinc   = HG_INT (inc);
+	ilimit = HG_INT (limit);
+
+	if ((iinc > 0 && iinit > ilimit) ||
+	    (iinc < 0 && iinit < ilimit)) {
+		hg_stack_roll(estack, 5, 1, error);
+		hg_stack_pop(estack, error);
+		hg_stack_pop(estack, error);
+		hg_stack_pop(estack, error);
+		hg_stack_pop(estack, error);
+		__flag = TRUE;
+		retval = TRUE;
+
+		break;
+	}
+
+	qq = hg_vm_quark_copy(vm, proc, NULL, error);
+	if (qq == Qnil) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+
+	hg_stack_roll(estack, 5, -1, error);
+	hg_stack_pop(estack, error);
+
+	q = HG_QINT (iinit + iinc);
+	STACK_PUSH (estack, q);
+
+	hg_stack_roll(estack, 5, 1, error);
+
+	STACK_PUSH (ostack, init);
+	STACK_PUSH (estack, qq);
+	STACK_PUSH (estack, self); /* dummy */
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (__flag ? 0 : 1, __flag ? -4 : 2, 0);
+DEFUNC_OPER_END
+
+/* <initial> <increment> <limit> <proc> %for_yield_real_continue - */
+DEFUNC_OPER (protected_for_yield_real_continue)
+gboolean __flag G_GNUC_UNUSED = FALSE;
+G_STMT_START {
+	hg_quark_t self, proc, limit, inc, init, q, qq;
+	gdouble dinit, dinc, dlimit;
+
+	self  = hg_stack_index(estack, 0, error);
+	proc  = hg_stack_index(estack, 1, error);
+	limit = hg_stack_index(estack, 2, error);
+	inc   = hg_stack_index(estack, 3, error);
+	init  = hg_stack_index(estack, 4, error);
+
+	dinit  = HG_REAL (init);
+	dinc   = HG_REAL (inc);
+	dlimit = HG_REAL (limit);
+
+	if ((dinc > 0.0 && dinit > dlimit) ||
+	    (dinc < 0.0 && dinit < dlimit)) {
+		hg_stack_roll(estack, 5, 1, error);
+		hg_stack_pop(estack, error);
+		hg_stack_pop(estack, error);
+		hg_stack_pop(estack, error);
+		hg_stack_pop(estack, error);
+		__flag = TRUE;
+		retval = TRUE;
+
+		break;
+	}
+
+	qq = hg_vm_quark_copy(vm, proc, NULL, error);
+	if (qq == Qnil) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+
+	hg_stack_roll(estack, 5, -1, error);
+	hg_stack_pop(estack, error);
+
+	q = HG_QREAL (dinit + dinc);
+	STACK_PUSH (estack, q);
+
+	hg_stack_roll(estack, 5, 1, error);
+
+	STACK_PUSH (ostack, init);
+	STACK_PUSH (estack, qq);
+	STACK_PUSH (estack, self); /* dummy */
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (__flag ? 0 : 1, __flag ? -4 : 2, 0);
 DEFUNC_OPER_END
 
 /* <int> <array> <proc> %forall_array_continue - */
@@ -2101,14 +2209,14 @@ G_STMT_START {
 	for (i = 0; i < edepth; i++) {
 		q = hg_stack_index(estack, i, error);
 		if (HG_IS_QOPER (q)) {
-/*			if (HG_OPER (q) == HG_enc_protected_for_pos_int_continue ||
-			    HG_OPER (q) == HG_enc_protected_for_pos_real_continue) {
+			if (HG_OPER (q) == HG_enc_protected_for_yield_int_continue ||
+			    HG_OPER (q) == HG_enc_protected_for_yield_real_continue) {
 				hg_stack_pop(estack, error);
 				hg_stack_pop(estack, error);
 				hg_stack_pop(estack, error);
 				hg_stack_pop(estack, error);
 				__n = i + 4;
-				} else*/ if (HG_OPER (q) == HG_enc_protected_loop_continue) {
+			} else if (HG_OPER (q) == HG_enc_protected_loop_continue) {
 				hg_stack_pop(estack, error);
 				__n = i + 1;
 			} else if (HG_OPER (q) == HG_enc_protected_repeat_continue) {
@@ -2269,7 +2377,78 @@ VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (flushfile);
-DEFUNC_UNIMPLEMENTED_OPER (for);
+
+/* <initial> <increment> <limit> <proc> for - */
+DEFUNC_OPER (for)
+G_STMT_START {
+	hg_quark_t arg0, arg1, arg2, arg3, q;
+	gdouble dinit, dinc, dlimit;
+	hg_dict_t *dict;
+	gboolean fint = TRUE;
+
+	CHECK_STACK (ostack, 4);
+
+	arg0 = hg_stack_index(ostack, 3, error);
+	arg1 = hg_stack_index(ostack, 2, error);
+	arg2 = hg_stack_index(ostack, 1, error);
+	arg3 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QARRAY (arg3) ||
+	    !hg_quark_is_executable (arg3) ||
+	    (!HG_IS_QINT (arg2) && !HG_IS_QREAL (arg2)) ||
+	    (!HG_IS_QINT (arg1) && !HG_IS_QREAL (arg1)) ||
+	    (!HG_IS_QINT (arg0) && !HG_IS_QREAL (arg0))) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (HG_IS_QREAL (arg0) ||
+	    HG_IS_QREAL (arg1) ||
+	    HG_IS_QREAL (arg2))
+		fint = FALSE;
+
+	dinit  = (HG_IS_QINT (arg0) ? HG_INT (arg0) : HG_REAL (arg0));
+	dinc   = (HG_IS_QINT (arg1) ? HG_INT (arg1) : HG_REAL (arg1));
+	dlimit = (HG_IS_QINT (arg2) ? HG_INT (arg2) : HG_REAL (arg2));
+
+	dict = HG_VM_LOCK (vm, vm->qsystemdict, error);
+	if (dict == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	if (fint) {
+		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%for_yield_int_continue"));
+		arg0 = HG_QINT ((gint32)dinit);
+		arg1 = HG_QINT ((gint32)dinc);
+		arg2 = HG_QINT ((gint32)dlimit);
+	} else {
+		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%for_yield_real_continue"));
+		arg0 = HG_QREAL (dinit);
+		arg1 = HG_QREAL (dinc);
+		arg2 = HG_QREAL (dlimit);
+	}
+	HG_VM_UNLOCK (vm, vm->qsystemdict);
+
+	if (q == Qnil) {
+		hg_vm_set_error(vm, qself, HG_VM_e_undefined);
+		return FALSE;
+	}
+
+	STACK_PUSH (estack, arg0);
+	STACK_PUSH (estack, arg1);
+	STACK_PUSH (estack, arg2);
+	STACK_PUSH (estack, arg3);
+	STACK_PUSH (estack, q);
+
+	hg_stack_roll(estack, 6, -1, error);
+
+	hg_stack_pop(ostack, error);
+	hg_stack_pop(ostack, error);
+	hg_stack_pop(ostack, error);
+	hg_stack_pop(ostack, error);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-4, 5, 0);
+DEFUNC_OPER_END
 
 /* <array> <proc> forall -
  * <packedarray> <proc> forall -
@@ -4383,6 +4562,8 @@ _hg_operator_level1_register(hg_dict_t *dict,
 	REG_PRIV_OPER (dict, name, .write==only, private_write_eqeq_only);
 
 	REG_PRIV_OPER (dict, name, %arraytomark, protected_arraytomark);
+	REG_PRIV_OPER (dict, name, %for_yield_int_continue, protected_for_yield_int_continue);
+	REG_PRIV_OPER (dict, name, %for_yield_real_continue, protected_for_yield_real_continue);
 	REG_PRIV_OPER (dict, name, %forall_array_continue, protected_forall_array_continue);
 	REG_PRIV_OPER (dict, name, %forall_dict_continue, protected_forall_dict_continue);
 	REG_PRIV_OPER (dict, name, %forall_string_continue, protected_forall_string_continue);
@@ -4843,6 +5024,8 @@ hg_operator_init(void)
 	DECL_PRIV_OPER (.write==only, private_write_eqeq_only);
 
 	DECL_PRIV_OPER (%arraytomark, protected_arraytomark);
+	DECL_PRIV_OPER (%for_yield_int_continue, protected_for_yield_int_continue);
+	DECL_PRIV_OPER (%for_yield_real_continue, protected_for_yield_real_continue);
 	DECL_PRIV_OPER (%forall_array_continue, protected_forall_array_continue);
 	DECL_PRIV_OPER (%forall_dict_continue, protected_forall_dict_continue);
 	DECL_PRIV_OPER (%forall_string_continue, protected_forall_string_continue);
@@ -5251,6 +5434,8 @@ hg_operator_tini(void)
 	UNDECL_OPER (private_undef);
 	UNDECL_OPER (private_write_eqeq_only);
 	UNDECL_OPER (protected_arraytomark);
+	UNDECL_OPER (protected_for_yield_int_continue);
+	UNDECL_OPER (protected_for_yield_real_continue);
 	UNDECL_OPER (protected_forall_array_continue);
 	UNDECL_OPER (protected_forall_dict_continue);
 	UNDECL_OPER (protected_forall_string_continue);

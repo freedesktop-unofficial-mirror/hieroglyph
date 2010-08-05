@@ -621,6 +621,8 @@ enum _hg_system_encoding_t {
 	HG_enc_private_write_eqeq_only,
 
 	HG_enc_protected_arraytomark,
+	HG_enc_protected_for_yield_int_continue,
+	HG_enc_protected_for_yield_real_continue,
 	HG_enc_protected_forall_array_continue,
 	HG_enc_protected_forall_dict_continue,
 	HG_enc_protected_forall_string_continue,

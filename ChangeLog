@@ -1,5 +1,10 @@
 2010-08-05  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (_hg_operator_real_protected_for_yield_int_continue):
+	implemented.
+	(_hg_operator_real_protected_for_yield_real_continue): implemented.
+	(_hg_operator_real_for): implemented.
+
 	* lib/hg_init.ps (.seterror): do not scan and record the operand stack
 	that stated with the objects where running the internal.
 
