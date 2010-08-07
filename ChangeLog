@@ -1,3 +1,14 @@
+2010-08-08  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgmem.c (hg_mem_alloc): try to clean up spool
+	when the allocation failed if possible.
+	(hg_mem_realloc): likewise.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_bitmap_range_mark): new.
+	(_hg_allocator_gc_init): new.
+	(_hg_allocator_gc_mark): new.
+	(_hg_allocator_gc_finish): new.
+
 2010-08-07  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgmem.c (hg_mem_alloc): try the GC if the allocation failed.

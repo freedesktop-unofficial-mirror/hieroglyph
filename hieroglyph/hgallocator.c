@@ -53,6 +53,9 @@ G_INLINE_FUNC void                   _hg_allocator_bitmap_clear      (hg_allocat
                                                                       gint32                  index);
 G_INLINE_FUNC gboolean               _hg_allocator_bitmap_is_marked  (hg_allocator_bitmap_t  *bitmap,
                                                                       gint32                  index);
+G_INLINE_FUNC gboolean               _hg_allocator_bitmap_range_mark (hg_allocator_bitmap_t  *bitmap,
+								      gint32                 *index,
+								      gsize                   size);
 static gpointer                      _hg_allocator_initialize        (void);
 static void                          _hg_allocator_finalize          (hg_allocator_data_t    *data);
 static gboolean                      _hg_allocator_resize_heap       (hg_allocator_data_t    *data,
@@ -76,6 +79,12 @@ static gpointer                      _hg_allocator_lock_object       (hg_allocat
 G_INLINE_FUNC void                   _hg_allocator_real_unlock_object(hg_allocator_block_t   *block);
 static void                          _hg_allocator_unlock_object     (hg_allocator_data_t    *data,
                                                                       hg_quark_t              index);
+static gboolean                      _hg_allocator_gc_init           (hg_allocator_data_t    *data);
+static gboolean                      _hg_allocator_gc_mark           (hg_allocator_data_t    *data,
+								      hg_quark_t              index);
+static gboolean                      _hg_allocator_gc_finish         (hg_allocator_data_t    *data,
+								      gboolean                was_error);
+
 
 static hg_mem_vtable_t __hg_allocator_vtable = {
 	.initialize    = _hg_allocator_initialize,
@@ -86,6 +95,9 @@ static hg_mem_vtable_t __hg_allocator_vtable = {
 	.free          = _hg_allocator_free,
 	.lock_object   = _hg_allocator_lock_object,
 	.unlock_object = _hg_allocator_unlock_object,
+	.gc_init       = _hg_allocator_gc_init,
+	.gc_mark       = _hg_allocator_gc_mark,
+	.gc_finish     = _hg_allocator_gc_finish,
 };
 G_LOCK_DEFINE_STATIC (bitmap);
 G_LOCK_DEFINE_STATIC (allocator);
@@ -156,9 +168,10 @@ G_INLINE_FUNC hg_quark_t
 _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 			   gsize                  size)
 {
-	hg_quark_t i, j, idx = 0;
-	gsize aligned_size, required_size;
+	hg_quark_t i, idx = 0;
+	gsize aligned_size;
 	gboolean retry = FALSE;
+	gint32 j;
 
 	hg_return_val_if_fail (bitmap != NULL, Qnil);
 	hg_return_val_if_fail (size > 0, Qnil);
@@ -176,8 +189,7 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 	}
 	g_print("\n");
 #endif
-	required_size = aligned_size;
-	if (required_size >= bitmap->last_allocated_size) {
+	if (aligned_size >= bitmap->last_allocated_size) {
 		/* that may be less likely to get a space
 		 * prior to the place where allocated last time
 		 */
@@ -188,34 +200,18 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 	}
   find_free_bitmap:
 	for (i = idx; i < bitmap->size; i++) {
-		if (!_hg_allocator_bitmap_is_marked(bitmap, i + 1)) {
-			required_size--;
-			for (j = i + 1; required_size > 0 && j < bitmap->size; j++) {
-				if (!_hg_allocator_bitmap_is_marked(bitmap, j + 1)) {
-					required_size--;
-				} else {
-					break;
-				}
-			}
-			if (required_size == 0) {
-				G_LOCK (bitmap);
-
-				for (j = i; j < (i + aligned_size); j++)
-					_hg_allocator_bitmap_mark(bitmap, j + 1);
-
-				G_UNLOCK (bitmap);
+		j = i + 1;
+		if (_hg_allocator_bitmap_range_mark(bitmap, &j, aligned_size)) {
+			bitmap->last_allocated_size = aligned_size;
+			bitmap->last_index = ((i + 1) >= bitmap->size ? 0 : i);
 
 #if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
-				g_print("Allocated at %" G_GSIZE_FORMAT "\n", i);
+			g_print("Allocated at %" G_GSIZE_FORMAT "\n", i);
 #endif
-				bitmap->last_allocated_size = aligned_size;
-				bitmap->last_index = ((i + 1) >= bitmap->size ? 0 : i);
 
-				return i + 1;
-			} else {
-				i = j;
-				required_size = aligned_size;
-			}
+			return i + 1;
+		} else {
+			i = j;
 		}
 	}
 	if (idx != 0 && !retry) {
@@ -339,6 +335,7 @@ _hg_allocator_bitmap_mark(hg_allocator_bitmap_t *bitmap,
 {
 	hg_return_if_fail (bitmap != NULL);
 	hg_return_if_fail (index > 0);
+	hg_return_if_fail (!_hg_allocator_bitmap_is_marked(bitmap, index));
 
 	bitmap->bitmaps[(index - 1) / sizeof (gint32)] |= 1 << ((index - 1) % sizeof (gint32));
 }
@@ -361,6 +358,41 @@ _hg_allocator_bitmap_is_marked(hg_allocator_bitmap_t *bitmap,
 	hg_return_val_if_fail (index > 0, FALSE);
 
 	return bitmap->bitmaps[(index - 1) / sizeof (gint32)] & 1 << ((index - 1) % sizeof (gint32));
+}
+
+G_INLINE_FUNC gboolean
+_hg_allocator_bitmap_range_mark(hg_allocator_bitmap_t *bitmap,
+				gint32                *index,
+				gsize                  size)
+{
+	gsize required_size = size, j;
+
+	if (!_hg_allocator_bitmap_is_marked(bitmap, *index)) {
+		required_size--;
+		for (j = *index; required_size > 0 && j < bitmap->size; j++) {
+			if (!_hg_allocator_bitmap_is_marked(bitmap, j + 1)) {
+				required_size--;
+			} else {
+				break;
+			}
+		}
+		if (required_size == 0) {
+			G_LOCK (bitmap);
+
+			for (j = *index; j < (*index + size); j++)
+				_hg_allocator_bitmap_mark(bitmap, j);
+
+			G_UNLOCK (bitmap);
+
+			return TRUE;
+		} else {
+			*index = j;
+		}
+	} else {
+		(*index)--;
+	}
+
+	return FALSE;
 }
 
 /** allocator **/
@@ -627,6 +659,88 @@ _hg_allocator_unlock_object(hg_allocator_data_t *data,
 		retval = _hg_allocator_get_internal_block(priv, index, FALSE);
 		_hg_allocator_real_unlock_object(retval);
 	}
+}
+
+static gboolean
+_hg_allocator_gc_init(hg_allocator_data_t *data)
+{
+	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
+
+	if (priv->slave_bitmap) {
+		g_warning("GC is already ongoing.");
+		return FALSE;
+	}
+	priv->slave_bitmap = _hg_allocator_bitmap_new(priv->bitmap->size);
+	priv->slave.total_size = data->total_size;
+	priv->slave.used_size = 0;
+
+	return TRUE;
+}
+
+static gboolean
+_hg_allocator_gc_mark(hg_allocator_data_t *data,
+		      hg_quark_t           index)
+{
+	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
+	hg_allocator_block_t *block;
+	gint32 q;
+	gboolean retval = TRUE;
+
+	block = _hg_allocator_real_lock_object(data, index);
+	if (block) {
+		q = index;
+		if (!_hg_allocator_bitmap_range_mark(priv->slave_bitmap, &q, block->size)) {
+			g_warning("found the memory corruption during GC.");
+			return FALSE;
+		}
+		priv->slave.used_size += block->size;
+		_hg_allocator_real_unlock_object(block);
+	} else {
+#if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
+		g_warning("%lx isn't the allocated object.\n", index);
+#endif
+		retval = FALSE;
+	}
+
+	return retval;
+}
+
+static gboolean
+_hg_allocator_gc_finish(hg_allocator_data_t *data,
+			gboolean             was_error)
+{
+	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
+
+	if (!priv->slave_bitmap) {
+		g_warning("GC isn't yet started.");
+		return FALSE;
+	}
+
+	G_LOCK (allocator);
+
+#define HG_GC_DEBUG
+#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
+	if (!was_error)
+		g_print("GC: %ld -> %ld (%ld bytes freed)\n",
+			data->used_size, priv->slave.used_size,
+			data->used_size - priv->slave.used_size);
+	else
+		g_print("GC: failed.\n");
+#endif
+
+	if (was_error) {
+		_hg_allocator_bitmap_destroy(priv->slave_bitmap);
+		priv->slave_bitmap = NULL;
+	} else {
+		_hg_allocator_bitmap_destroy(priv->bitmap);
+		priv->bitmap = priv->slave_bitmap;
+		priv->slave_bitmap = NULL;
+		data->used_size = priv->slave.used_size;
+	}
+
+	G_UNLOCK (allocator);
+
+	return TRUE;
 }
 
 /*< public >*/

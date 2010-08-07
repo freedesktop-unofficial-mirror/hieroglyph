@@ -63,8 +63,11 @@ struct _hg_mem_vtable_t {
 					hg_quark_t           quark);
 	void       (* unlock_object)   (hg_allocator_data_t *data,
 					hg_quark_t           quark);
+	gboolean   (* gc_init)         (hg_allocator_data_t *data);
 	gboolean   (* gc_mark)         (hg_allocator_data_t *data,
 					hg_quark_t           quark);
+	gboolean   (* gc_finish)       (hg_allocator_data_t *data,
+					gboolean             was_error);
 	gboolean   (* collect_garbage) (hg_allocator_data_t *data,
 					hg_quark_t          *root);
 };

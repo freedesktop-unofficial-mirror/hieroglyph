@@ -186,10 +186,20 @@ hg_mem_alloc(hg_mem_t *mem,
 	if (retval != Qnil) {
 		hg_quark_set_mem_id(&retval, mem->id);
 	} else {
-		if (mem->gc_func && !retried) {
+		if (mem->gc_func &&
+		    mem->allocator->gc_init &&
+		    mem->allocator->gc_mark &&
+		    mem->allocator->gc_finish &&
+		    !retried) {
 			retried = TRUE;
-			if (mem->gc_func(mem, mem->gc_data))
-				goto retry;
+			if (mem->allocator->gc_init(mem->data)) {
+				gboolean ret = mem->gc_func(mem, mem->gc_data);
+
+				mem->allocator->gc_finish(mem->data, !ret);
+
+				if (ret)
+					goto retry;
+			}
 		}
 	}
 
@@ -234,10 +244,20 @@ hg_mem_realloc(hg_mem_t   *mem,
 	if (retval != Qnil) {
 		retval = _hg_quark_type_bit_shift(_hg_quark_type_bit_get(qdata)) | retval;
 	} else {
-		if (mem->gc_func && !retried) {
+		if (mem->gc_func &&
+		    mem->allocator->gc_init &&
+		    mem->allocator->gc_mark &&
+		    mem->allocator->gc_finish &&
+		    !retried) {
 			retried = TRUE;
-			if (mem->gc_func(mem, mem->gc_data))
-				goto retry;
+			if (mem->allocator->gc_init(mem->data)) {
+				gboolean ret = mem->gc_func(mem, mem->gc_data);
+
+				mem->allocator->gc_finish(mem->data, !ret);
+
+				if (ret)
+					goto retry;
+			}
 		}
 	}
 

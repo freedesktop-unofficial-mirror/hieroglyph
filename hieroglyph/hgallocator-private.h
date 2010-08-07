@@ -48,7 +48,9 @@ struct _hg_allocator_block_t {
 };
 struct _hg_allocator_private_t {
 	hg_allocator_data_t    parent;
+	hg_allocator_data_t    slave;
 	hg_allocator_bitmap_t *bitmap;
+	hg_allocator_bitmap_t *slave_bitmap;
 	gpointer               heap;
 };
 
