@@ -278,7 +278,11 @@ hg_object_gc_mark(hg_object_t           *object,
 	hg_return_val_with_gerror_if_fail (__hg_object_vtables[object->type] != NULL, FALSE, error);
 	hg_return_val_with_gerror_if_fail (func != NULL, FALSE, error);
 
-	v = __hg_object_vtables[object->type];
+	if (hg_mem_gc_mark(object->mem, object->self, error)) {
+		v = __hg_object_vtables[object->type];
 
-	return v->gc_mark(object, func, user_data, error);
+		return v->gc_mark(object, func, user_data, error);
+	}
+
+	return FALSE;
 }

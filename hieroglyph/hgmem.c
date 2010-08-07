@@ -364,14 +364,16 @@ hg_mem_set_garbage_collection(hg_mem_t     *mem,
  * hg_mem_gc_mark:
  * @mem:
  * @qdata:
+ * @error:
  *
  * FIXME
  *
  * Returns:
  */
 gboolean
-hg_mem_gc_mark(hg_mem_t   *mem,
-	       hg_quark_t  qdata)
+hg_mem_gc_mark(hg_mem_t    *mem,
+	       hg_quark_t   qdata,
+	       GError     **error)
 {
 	hg_return_val_if_fail (mem != NULL, FALSE);
 	hg_return_val_if_fail (mem->allocator != NULL, FALSE);
@@ -384,7 +386,8 @@ hg_mem_gc_mark(hg_mem_t   *mem,
 	hg_return_val_if_fail (hg_quark_has_same_mem_id(qdata, mem->id), FALSE);
 
 	return mem->allocator->gc_mark(mem->data,
-				       hg_quark_get_value (qdata));
+				       hg_quark_get_value (qdata),
+				       error);
 }
 
 /**

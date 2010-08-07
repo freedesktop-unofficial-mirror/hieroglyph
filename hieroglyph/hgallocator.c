@@ -34,56 +34,57 @@
 #define DEFAULT_RESIZE_SIZE	65535
 
 
-G_INLINE_FUNC hg_allocator_bitmap_t *_hg_allocator_bitmap_new        (gsize                   size);
-G_INLINE_FUNC void                   _hg_allocator_bitmap_destroy    (gpointer                data);
-G_INLINE_FUNC gboolean               _hg_allocator_bitmap_resize     (hg_allocator_bitmap_t  *bitmap,
-                                                                      gsize                   size);
-G_INLINE_FUNC hg_quark_t             _hg_allocator_bitmap_alloc      (hg_allocator_bitmap_t  *bitmap,
-                                                                      gsize                   size);
-G_INLINE_FUNC hg_quark_t             _hg_allocator_bitmap_realloc    (hg_allocator_bitmap_t  *bitmap,
-                                                                      hg_quark_t              index,
-                                                                      gsize                   old_size,
-                                                                      gsize                   size);
-G_INLINE_FUNC void                   _hg_allocator_bitmap_free       (hg_allocator_bitmap_t  *bitmap,
-                                                                      hg_quark_t              index,
-                                                                      gsize                   size);
-G_INLINE_FUNC void                   _hg_allocator_bitmap_mark       (hg_allocator_bitmap_t  *bitmap,
-                                                                      gint32                  index);
-G_INLINE_FUNC void                   _hg_allocator_bitmap_clear      (hg_allocator_bitmap_t  *bitmap,
-                                                                      gint32                  index);
-G_INLINE_FUNC gboolean               _hg_allocator_bitmap_is_marked  (hg_allocator_bitmap_t  *bitmap,
-                                                                      gint32                  index);
-G_INLINE_FUNC gboolean               _hg_allocator_bitmap_range_mark (hg_allocator_bitmap_t  *bitmap,
-								      gint32                 *index,
-								      gsize                   size);
+G_INLINE_FUNC hg_allocator_bitmap_t *_hg_allocator_bitmap_new        (gsize                    size);
+G_INLINE_FUNC void                   _hg_allocator_bitmap_destroy    (gpointer                 data);
+G_INLINE_FUNC gboolean               _hg_allocator_bitmap_resize     (hg_allocator_bitmap_t   *bitmap,
+                                                                      gsize                    size);
+G_INLINE_FUNC hg_quark_t             _hg_allocator_bitmap_alloc      (hg_allocator_bitmap_t   *bitmap,
+                                                                      gsize                    size);
+G_INLINE_FUNC hg_quark_t             _hg_allocator_bitmap_realloc    (hg_allocator_bitmap_t   *bitmap,
+                                                                      hg_quark_t               index,
+                                                                      gsize                    old_size,
+                                                                      gsize                    size);
+G_INLINE_FUNC void                   _hg_allocator_bitmap_free       (hg_allocator_bitmap_t   *bitmap,
+                                                                      hg_quark_t               index,
+                                                                      gsize                    size);
+G_INLINE_FUNC void                   _hg_allocator_bitmap_mark       (hg_allocator_bitmap_t   *bitmap,
+                                                                      gint32                   index);
+G_INLINE_FUNC void                   _hg_allocator_bitmap_clear      (hg_allocator_bitmap_t   *bitmap,
+                                                                      gint32                   index);
+G_INLINE_FUNC gboolean               _hg_allocator_bitmap_is_marked  (hg_allocator_bitmap_t   *bitmap,
+                                                                      gint32                   index);
+G_INLINE_FUNC gboolean               _hg_allocator_bitmap_range_mark (hg_allocator_bitmap_t   *bitmap,
+                                                                      gint32                  *index,
+                                                                      gsize                    size);
 static gpointer                      _hg_allocator_initialize        (void);
-static void                          _hg_allocator_finalize          (hg_allocator_data_t    *data);
-static gboolean                      _hg_allocator_resize_heap       (hg_allocator_data_t    *data,
-                                                                      gsize                   size);
-static hg_quark_t                    _hg_allocator_alloc             (hg_allocator_data_t    *data,
-                                                                      gsize                   size,
-                                                                      gpointer               *ret);
-static hg_quark_t                    _hg_allocator_realloc           (hg_allocator_data_t    *data,
-                                                                      hg_quark_t              quark,
-                                                                      gsize                   size,
-                                                                      gpointer               *ret);
-static void                          _hg_allocator_free              (hg_allocator_data_t    *data,
-                                                                      hg_quark_t              index);
-G_INLINE_FUNC gpointer               _hg_allocator_get_internal_block(hg_allocator_private_t *data,
-                                                                      hg_quark_t              index,
-                                                                      gboolean                initialize);
-G_INLINE_FUNC gpointer               _hg_allocator_real_lock_object  (hg_allocator_data_t    *data,
-                                                                      hg_quark_t              index);
-static gpointer                      _hg_allocator_lock_object       (hg_allocator_data_t    *data,
-                                                                      hg_quark_t              index);
-G_INLINE_FUNC void                   _hg_allocator_real_unlock_object(hg_allocator_block_t   *block);
-static void                          _hg_allocator_unlock_object     (hg_allocator_data_t    *data,
-                                                                      hg_quark_t              index);
-static gboolean                      _hg_allocator_gc_init           (hg_allocator_data_t    *data);
-static gboolean                      _hg_allocator_gc_mark           (hg_allocator_data_t    *data,
-								      hg_quark_t              index);
-static gboolean                      _hg_allocator_gc_finish         (hg_allocator_data_t    *data,
-								      gboolean                was_error);
+static void                          _hg_allocator_finalize          (hg_allocator_data_t     *data);
+static gboolean                      _hg_allocator_resize_heap       (hg_allocator_data_t     *data,
+                                                                      gsize                    size);
+static hg_quark_t                    _hg_allocator_alloc             (hg_allocator_data_t     *data,
+                                                                      gsize                    size,
+                                                                      gpointer                *ret);
+static hg_quark_t                    _hg_allocator_realloc           (hg_allocator_data_t     *data,
+                                                                      hg_quark_t               quark,
+                                                                      gsize                    size,
+                                                                      gpointer                *ret);
+static void                          _hg_allocator_free              (hg_allocator_data_t     *data,
+                                                                      hg_quark_t               index);
+G_INLINE_FUNC gpointer               _hg_allocator_get_internal_block(hg_allocator_private_t  *data,
+                                                                      hg_quark_t               index,
+                                                                      gboolean                 initialize);
+G_INLINE_FUNC gpointer               _hg_allocator_real_lock_object  (hg_allocator_data_t     *data,
+                                                                      hg_quark_t               index);
+static gpointer                      _hg_allocator_lock_object       (hg_allocator_data_t     *data,
+                                                                      hg_quark_t               index);
+G_INLINE_FUNC void                   _hg_allocator_real_unlock_object(hg_allocator_block_t    *block);
+static void                          _hg_allocator_unlock_object     (hg_allocator_data_t     *data,
+                                                                      hg_quark_t               index);
+static gboolean                      _hg_allocator_gc_init           (hg_allocator_data_t     *data);
+static gboolean                      _hg_allocator_gc_mark           (hg_allocator_data_t     *data,
+                                                                      hg_quark_t               index,
+                                                                      GError                 **error);
+static gboolean                      _hg_allocator_gc_finish         (hg_allocator_data_t     *data,
+                                                                      gboolean                 was_error);
 
 
 static hg_mem_vtable_t __hg_allocator_vtable = {
@@ -678,27 +679,44 @@ _hg_allocator_gc_init(hg_allocator_data_t *data)
 }
 
 static gboolean
-_hg_allocator_gc_mark(hg_allocator_data_t *data,
-		      hg_quark_t           index)
+_hg_allocator_gc_mark(hg_allocator_data_t  *data,
+		      hg_quark_t            index,
+		      GError              **error)
 {
 	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
 	hg_allocator_block_t *block;
 	gint32 q;
 	gboolean retval = TRUE;
+	GError *err = NULL;
+
+	/* this isn't the object in the targeted spool */
+	if (!priv->slave_bitmap)
+		return TRUE;
 
 	block = _hg_allocator_real_lock_object(data, index);
 	if (block) {
 		q = index;
 		if (!_hg_allocator_bitmap_range_mark(priv->slave_bitmap, &q, block->size)) {
-			g_warning("found the memory corruption during GC.");
-			return FALSE;
+			g_set_error(&err, HG_ERROR, EINVAL,
+				    "found the memory corruption during GC.");
+			goto finalize;
 		}
 		priv->slave.used_size += block->size;
 		_hg_allocator_real_unlock_object(block);
 	} else {
-#if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
-		g_warning("%lx isn't the allocated object.\n", index);
-#endif
+		g_set_error(&err, HG_ERROR, EINVAL,
+			    "%lx isn't an allocated object from this spool", index);
+	}
+  finalize:
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s (code: %d)",
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
 		retval = FALSE;
 	}
 

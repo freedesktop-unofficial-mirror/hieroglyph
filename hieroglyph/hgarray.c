@@ -212,9 +212,42 @@ _hg_object_array_gc_mark(hg_object_t           *object,
 			 gpointer               user_data,
 			 GError               **error)
 {
+	hg_array_t *array = (hg_array_t *)object;
+	hg_quark_t q;
+	gsize i, len;
+	GError *err = NULL;
+	gboolean retval = TRUE;
+
 	hg_return_val_if_fail (object->type == HG_TYPE_ARRAY, FALSE);
 
-	return FALSE;
+	if (!hg_mem_gc_mark(array->o.mem, array->qcontainer, &err))
+		goto finalize;
+	if (!hg_mem_gc_mark(array->o.mem, array->qname, &err))
+		goto finalize;
+
+	len = hg_array_length(array);
+
+	for (i = 0; i < len; i++) {
+		q = hg_array_get(array, i, &err);
+		if (err)
+			goto finalize;
+		if (!func(q, user_data, &err))
+			goto finalize;
+	}
+  finalize:
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s (code: %d)",
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+		retval = FALSE;
+	}
+
+	return retval;
 }
 
 static gboolean

@@ -173,9 +173,11 @@ _hg_object_string_gc_mark(hg_object_t           *object,
 			  gpointer               user_data,
 			  GError               **error)
 {
+	hg_string_t *string = (hg_string_t *)object;
+
 	hg_return_val_if_fail (object->type == HG_TYPE_STRING, FALSE);
 
-	return FALSE;
+	return hg_mem_gc_mark(string->o.mem, string->qstring, error);
 }
 
 static gboolean
