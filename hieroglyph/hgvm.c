@@ -2369,7 +2369,7 @@ hg_vm_set_error(hg_vm_t       *vm,
 						  (gpointer *)&s,
 						  &err);
 			if (q == Qnil)
-				scommand = g_strdup("-%unknown%-");
+				scommand = g_strdup("-%ENOMEM%-");
 			else
 				scommand = hg_string_get_cstr(s);
 			/* this is an instant object.
@@ -2383,7 +2383,7 @@ hg_vm_set_error(hg_vm_t       *vm,
 					       (gpointer *)&where,
 					       &err);
 		if (qwhere == Qnil)
-			swhere = g_strdup("-%unknown%-");
+			swhere = g_strdup("-%ENOMEM%-");
 		else
 			swhere = hg_string_get_cstr(where);
 		hg_vm_mfree(vm, qwhere);
