@@ -32,6 +32,8 @@ struct _hg_mem_t {
 	hg_mem_vtable_t     *allocator;
 	gint                 id;
 	hg_allocator_data_t *data;
+	hg_gc_func_t         gc_func;
+	gpointer             gc_data;
 };
 
 G_END_DECLS
