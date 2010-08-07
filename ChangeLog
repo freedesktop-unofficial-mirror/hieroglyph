@@ -1,5 +1,9 @@
 2010-08-08  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgarray.c (_hg_object_array_copy): fix a circular
+	reference issue.
+	(_hg_object_array_to_cstr): likewise.
+
 	* hieroglyph/hgmem.c (hg_mem_alloc): try to clean up spool
 	when the allocation failed if possible.
 	(hg_mem_realloc): likewise.

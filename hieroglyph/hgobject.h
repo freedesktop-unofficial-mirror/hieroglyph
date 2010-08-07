@@ -63,37 +63,9 @@ G_BEGIN_DECLS
 		return &__hg_object_ ## _name_ ## _vtable;		\
 	}
 
-typedef enum _hg_object_state_t			hg_object_state_t;
 typedef struct _hg_object_vtable_t		hg_object_vtable_t;
 typedef struct _hg_object_t			hg_object_t;
 
-
-enum {
-	HG_STATE_SHIFT_STATE       = 0,
-	HG_STATE_SHIFT_READABLE    = 0,
-	HG_STATE_SHIFT_WRITABLE    = 1,
-	HG_STATE_SHIFT_EXECUTABLE  = 2,
-	HG_STATE_SHIFT_EXECUTEONLY = 3,
-	HG_STATE_SHIFT_ACCESSIBLE  = 4,
-	HG_STATE_SHIFT_RESERVED5   = 5,
-	HG_STATE_SHIFT_RESERVED6   = 6,
-	HG_STATE_SHIFT_RESERVED7   = 7,
-	HG_STATE_SHIFT_STATE_END   = 8,
-	HG_STATE_SHIFT_PSEUDO      = 27,
-	HG_STATE_SHIFT_TYPE        = 28,
-	HG_STATE_SHIFT_TYPE_END    = 32,
-};
-enum _hg_object_state_t {
-	HG_STATE_READABLE    = 1 << HG_STATE_SHIFT_READABLE,
-	HG_STATE_WRITABLE    = 1 << HG_STATE_SHIFT_WRITABLE,
-	HG_STATE_EXECUTABLE  = 1 << HG_STATE_SHIFT_EXECUTABLE,
-	HG_STATE_EXECUTEONLY = 1 << HG_STATE_SHIFT_EXECUTEONLY,
-	HG_STATE_ACCESSIBLE  = 1 << HG_STATE_SHIFT_ACCESSIBLE,
-	HG_STATE_TYPE0       = 1 << HG_STATE_SHIFT_TYPE,	/* reserved area for object type */
-	HG_STATE_TYPE1       = 1 << (HG_STATE_SHIFT_TYPE+1),	/* reserved area for object type */
-	HG_STATE_TYPE2       = 1 << (HG_STATE_SHIFT_TYPE+2),	/* reserved area for object type */
-	HG_STATE_TYPE3       = 1 << (HG_STATE_SHIFT_TYPE+3),	/* reserved area for object type */
-};
 
 struct _hg_object_vtable_t {
 	gsize      (* get_capsulated_size) (void);
@@ -118,6 +90,7 @@ struct _hg_object_t {
 	hg_mem_t   *mem;
 	hg_quark_t  self;
 	hg_type_t   type;
+	hg_quark_t  on_copying;
 };
 
 

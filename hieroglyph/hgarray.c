@@ -28,6 +28,7 @@
 #include <string.h>
 #include "hgerror.h"
 #include "hgmem.h"
+#include "hgmark.h"
 #include "hgnull.h"
 #include "hgarray.h"
 
@@ -98,11 +99,15 @@ _hg_object_array_copy(hg_object_t              *object,
 	GError *err = NULL;
 
 	hg_return_val_if_fail (object->type == HG_TYPE_ARRAY, Qnil);
+	hg_return_val_if_fail (object->on_copying == Qnil || HG_IS_QARRAY (object->on_copying), Qnil);
+
+	if (object->on_copying != Qnil)
+		return object->on_copying;
 
 	len = hg_array_length(array);
-	retval = hg_array_new(array->o.mem,
-			      len,
-			      (gpointer *)&a);
+	object->on_copying = retval = hg_array_new(array->o.mem,
+						   len,
+						   (gpointer *)&a);
 	if (retval != Qnil) {
 		for (i = 0; i < len; i++) {
 			q = hg_array_get(array, i, &err);
@@ -139,6 +144,7 @@ _hg_object_array_copy(hg_object_t              *object,
 
 		retval = Qnil;
 	}
+	object->on_copying = Qnil;
 
 	return retval;
 }
@@ -168,6 +174,10 @@ _hg_object_array_to_cstr(hg_object_t              *object,
 		return s;
 	}
 
+	if (object->on_copying != Qnil)
+		return g_strdup("[...]");
+	object->on_copying = HG_QMARK;
+
 	g_string_append_c(retval, '[');
 	len = hg_array_length(array);
 	for (i = 0; i < len; i++) {
@@ -190,6 +200,8 @@ _hg_object_array_to_cstr(hg_object_t              *object,
 		}
 	}
 	g_string_append_c(retval, ']');
+
+	object->on_copying = Qnil;
 
 	return g_string_free(retval, FALSE);
 }
