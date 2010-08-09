@@ -461,6 +461,9 @@ _hg_allocator_alloc(hg_allocator_data_t *data,
   retry:
 	index = _hg_allocator_bitmap_alloc(priv->bitmap, obj_size);
 	if (index != Qnil) {
+		/* Update the used size */
+		data->used_size += obj_size;
+
 		block = _hg_allocator_get_internal_block(priv, index, TRUE);
 		block->size = obj_size;
 		retval = index;
@@ -515,6 +518,9 @@ _hg_allocator_realloc(hg_allocator_data_t *data,
 	  retry:
 		index = _hg_allocator_bitmap_realloc(priv->bitmap, qdata, block->size, obj_size);
 		if (index != Qnil) {
+			/* Update the used size */
+			data->used_size += (obj_size - block->size);
+
 			new_block = _hg_allocator_get_internal_block(priv, index, FALSE);
 			if (new_block != block) {
 				memcpy(new_block, block, block->size);
@@ -563,6 +569,9 @@ _hg_allocator_free(hg_allocator_data_t *data,
 	priv = (hg_allocator_private_t *)data;
 	block = _hg_allocator_real_lock_object(data, index);
 	if (block) {
+		/* Update the used size */
+		data->used_size -= block->size;
+
 		_hg_allocator_bitmap_free(priv->bitmap, index, block->size);
 	} else {
 #if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)

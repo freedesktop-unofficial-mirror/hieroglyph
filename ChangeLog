@@ -1,3 +1,9 @@
+2010-08-09  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgallocator.c (_hg_allocator_alloc): Update the used_size.
+	(_hg_allocator_realloc): likewise.
+	(_hg_allocator_free): likewise.
+
 2010-08-08  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgstring.c (_hg_object_string_gc_mark): implemented.
