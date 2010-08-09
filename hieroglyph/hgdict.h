@@ -25,7 +25,6 @@
 #define __HIEROGLYPH_HGDICT_H__
 
 #include <hieroglyph/hgobject.h>
-#include <hieroglyph/hgbtree.h>
 
 G_BEGIN_DECLS
 
