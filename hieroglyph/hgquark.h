@@ -78,6 +78,7 @@ enum _hg_type_t {
 	HG_TYPE_FILE      = 11, /* undocumented */
 	HG_TYPE_SAVE      = 12, /* undocumented */
 	HG_TYPE_STACK     = 13, /* undocumented */
+	HG_TYPE_DICT_NODE = 14, /* undocumented */
 	HG_TYPE_END /* 15 */
 };
 

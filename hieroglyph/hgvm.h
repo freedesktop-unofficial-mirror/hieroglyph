@@ -223,7 +223,6 @@ gboolean           hg_vm_set_error_from_gerror (hg_vm_t            *vm,
 void               hg_vm_stack_dump            (hg_vm_t            *vm,
 						hg_stack_t         *stack,
 						hg_file_t          *output);
-gboolean           hg_vm_collect_garbage       (hg_vm_t            *vm);
 
 G_END_DECLS
 

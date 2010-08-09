@@ -1,3 +1,7 @@
+2010-08-10  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgdict.[ch]: integrated hgbtree.c[h].
+
 2010-08-09  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgallocator.c (_hg_allocator_alloc): Update the used_size.

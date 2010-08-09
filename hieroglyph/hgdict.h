@@ -29,12 +29,18 @@
 
 G_BEGIN_DECLS
 
-#define HG_DICT_INIT						\
-	(hg_object_register(HG_TYPE_DICT,			\
-			    hg_object_dict_get_vtable()))
+#define HG_DICT_INIT							\
+	G_STMT_START {							\
+		hg_object_register(HG_TYPE_DICT,			\
+				   hg_object_dict_get_vtable());	\
+		hg_object_register(HG_TYPE_DICT_NODE,			\
+				   hg_object_dict_node_get_vtable());	\
+	} G_STMT_END
 
 #define HG_IS_QDICT(_v_)				\
 	(hg_quark_get_type(_v_) == HG_TYPE_DICT)
+#define HG_IS_QDICT_NODE(_v_)				\
+	(hg_quark_get_type(_v_) == HG_TYPE_DICT_NODE)
 
 typedef struct _hg_bs_dict_t	hg_bs_dict_t;
 
@@ -42,29 +48,33 @@ struct _hg_bs_dict_t {
 };
 struct _hg_dict_t {
 	hg_object_t o;
-	hg_quark_t  qdict;
+	hg_quark_t  qroot;
 	gsize       length;
 	gsize       allocated_size;
 };
 
 
-hg_object_vtable_t *hg_object_dict_get_vtable(void) G_GNUC_CONST;
-hg_quark_t          hg_dict_new              (hg_mem_t                 *mem,
-                                              gsize                     size,
-                                              gpointer                 *ret);
-gboolean            hg_dict_add              (hg_dict_t                *dict,
-                                              hg_quark_t                qkey,
-                                              hg_quark_t                qval);
-gboolean            hg_dict_remove           (hg_dict_t                *dict,
-                                              hg_quark_t                qkey);
-hg_quark_t          hg_dict_lookup           (hg_dict_t                *dict,
-                                              hg_quark_t                qkey);
-gsize               hg_dict_length           (hg_dict_t                *dict);
-gsize               hg_dict_maxlength        (hg_dict_t                *dict);
-void                hg_dict_foreach          (hg_dict_t                *dict,
-                                              hg_btree_traverse_func_t  func,
-                                              gpointer                  data,
-                                              GError                   **error);
+hg_object_vtable_t *hg_object_dict_get_vtable     (void) G_GNUC_CONST;
+hg_object_vtable_t *hg_object_dict_node_get_vtable(void) G_GNUC_CONST;
+hg_quark_t          hg_dict_new                   (hg_mem_t                 *mem,
+						   gsize                     size,
+						   gpointer                 *ret);
+gboolean            hg_dict_add                   (hg_dict_t                *dict,
+						   hg_quark_t                qkey,
+						   hg_quark_t                qval,
+						   GError                  **error);
+gboolean            hg_dict_remove                (hg_dict_t                *dict,
+						   hg_quark_t                qkey,
+						   GError                  **error);
+hg_quark_t          hg_dict_lookup                (hg_dict_t                *dict,
+						   hg_quark_t                qkey,
+						   GError                  **error);
+gsize               hg_dict_length                (hg_dict_t                *dict);
+gsize               hg_dict_maxlength             (hg_dict_t                *dict);
+void                hg_dict_foreach               (hg_dict_t                *dict,
+						   hg_dict_traverse_func_t   func,
+						   gpointer                  data,
+						   GError                  **error);
 
 
 G_END_DECLS

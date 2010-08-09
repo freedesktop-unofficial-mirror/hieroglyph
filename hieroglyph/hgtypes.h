@@ -78,6 +78,12 @@ struct _hg_allocator_data_t {
 
 /* hgdict.h */
 typedef struct _hg_dict_t		hg_dict_t;
+typedef struct _hg_dict_node_t		hg_dict_node_t;
+typedef gboolean (* hg_dict_traverse_func_t) (hg_mem_t    *mem,
+					      hg_quark_t   qkey,
+					      hg_quark_t   qval,
+					      gpointer     data,
+					      GError     **error);
 
 /* hgname.h */
 typedef struct _hg_name_t		hg_name_t;

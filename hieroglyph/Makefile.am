@@ -28,7 +28,6 @@ hg_public_headers =						\
 	hgallocator.h						\
 	hgarray.h						\
 	hgbool.h						\
-	hgbtree.h						\
 	hgdict.h						\
 	hgencoding.h						\
 	hgerror.h						\
@@ -51,7 +50,7 @@ hg_public_headers =						\
 	$(NULL)
 hg_private_headers =						\
 	hgallocator-private.h					\
-	hgbtree-private.h					\
+	hgdict-private.h					\
 	hgmem-private.h						\
 	hgstack-private.h					\
 	$(NULL)
@@ -71,7 +70,6 @@ hg_sources =							\
 	$(hg_built_sources)					\
 	hgallocator.c						\
 	hgarray.c						\
-	hgbtree.c						\
 	hgdict.c						\
 	hgencoding.c						\
 	hgerror.c						\

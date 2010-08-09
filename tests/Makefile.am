@@ -48,7 +48,7 @@ noinst_PROGRAMS +=					\
 	test-hgallocator				\
 	test-hgarray					\
 	test-hgbool					\
-	test-hgbtree					\
+	test-hgdict					\
 	test-hgencoding					\
 	test-hgint					\
 	test-hgmark					\
@@ -76,8 +76,8 @@ test_hgbool_SOURCES =					\
 	$(common_sources)				\
 	$(NULL)
 #
-test_hgbtree_SOURCES =					\
-	hgbtree.c					\
+test_hgdict_SOURCES =					\
+	hgdict.c					\
 	$(common_sources)				\
 	$(NULL)
 #

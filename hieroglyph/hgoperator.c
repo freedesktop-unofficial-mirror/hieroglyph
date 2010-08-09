@@ -700,7 +700,7 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
-		retval = hg_dict_add(d, arg1, arg2);
+		retval = hg_dict_add(d, arg1, arg2, error);
 
 		HG_VM_UNLOCK (vm, arg0);
 	} else if (HG_IS_QSTRING (arg0)) {
@@ -901,7 +901,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	hg_dict_remove(dict, arg1);
+	hg_dict_remove(dict, arg1, error);
 
 	HG_VM_UNLOCK (vm, arg0);
 
@@ -1273,12 +1273,12 @@ G_STMT_START {
 		return FALSE;
 	}
 	qn = HG_QNAME (vm->name, ".isstop");
-	q = hg_dict_lookup(dict, qn);
+	q = hg_dict_lookup(dict, qn, error);
 
 	if (q != Qnil &&
 	    HG_IS_QBOOL (q) &&
 	    HG_BOOL (q)) {
-		hg_dict_add(dict, qn, HG_QBOOL (FALSE));
+		hg_dict_add(dict, qn, HG_QBOOL (FALSE), error);
 		ret = TRUE;
 	}
 
@@ -1607,7 +1607,7 @@ _hg_operator_copy_real_traverse_dict(hg_mem_t    *mem,
 {
 	hg_dict_t *d2 = (hg_dict_t *)data;
 
-	hg_dict_add(d2, qkey, qval);
+	hg_dict_add(d2, qkey, qval, error);
 
 	return TRUE;
 }
@@ -1981,12 +1981,12 @@ G_STMT_START {
 	}
 	if (hg_vm_get_language_level(vm) == HG_LANG_LEVEL_1) {
 		if (hg_dict_length(dict) == hg_dict_maxlength(dict) &&
-		    hg_dict_lookup(dict, arg0) == Qnil) {
+		    hg_dict_lookup(dict, arg0, error) == Qnil) {
 			hg_vm_set_error(vm, qself, HG_VM_e_dictfull);
 			goto error;
 		}
 	}
-	retval = hg_dict_add(dict, arg0, arg1);
+	retval = hg_dict_add(dict, arg0, arg1, error);
 
 	hg_stack_pop(ostack, error);
 	hg_stack_pop(ostack, error);
@@ -2428,12 +2428,12 @@ G_STMT_START {
 		return FALSE;
 	}
 	if (fint) {
-		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%for_yield_int_continue"));
+		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%for_yield_int_continue"), error);
 		arg0 = HG_QINT ((gint32)dinit);
 		arg1 = HG_QINT ((gint32)dinc);
 		arg2 = HG_QINT ((gint32)dlimit);
 	} else {
-		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%for_yield_real_continue"));
+		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%for_yield_real_continue"), error);
 		arg0 = HG_QREAL (dinit);
 		arg1 = HG_QREAL (dinc);
 		arg2 = HG_QREAL (dlimit);
@@ -2493,7 +2493,7 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
-		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%forall_array_continue"));
+		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%forall_array_continue"), error);
 		HG_VM_UNLOCK (vm, vm->qsystemdict);
 	} else if (HG_IS_QDICT (arg0)) {
 		dict = HG_VM_LOCK (vm, vm->qsystemdict, error);
@@ -2501,7 +2501,7 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
-		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%forall_dict_continue"));
+		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%forall_dict_continue"), error);
 		HG_VM_UNLOCK (vm, vm->qsystemdict);
 	} else if (HG_IS_QSTRING (arg0)) {
 		dict = HG_VM_LOCK (vm, vm->qsystemdict, error);
@@ -2509,7 +2509,7 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
-		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%forall_string_continue"));
+		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%forall_string_continue"), error);
 		HG_VM_UNLOCK (vm, vm->qsystemdict);
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
@@ -2652,7 +2652,7 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
-		q = hg_dict_lookup(d, arg1);
+		q = hg_dict_lookup(d, arg1, error);
 		HG_VM_UNLOCK (vm, arg0);
 
 		if (q == Qnil) {
@@ -3034,7 +3034,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	ret = hg_dict_lookup(d, arg1);
+	ret = hg_dict_lookup(d, arg1, error);
 
 	HG_VM_UNLOCK (vm, arg0);
 
@@ -3206,7 +3206,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%loop_continue"));
+	q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%loop_continue"), error);
 	HG_VM_UNLOCK (vm, vm->qsystemdict);
 
 	if (q == Qnil) {
@@ -3629,11 +3629,11 @@ G_STMT_START {
 		}
 		if (hg_vm_get_language_level(vm) == HG_LANG_LEVEL_1 &&
 		    hg_dict_length(d) == hg_dict_maxlength(d) &&
-		    hg_dict_lookup(d, arg1) == Qnil) {
+		    hg_dict_lookup(d, arg1, error) == Qnil) {
 			hg_vm_set_error(vm, qself, HG_VM_e_dictfull);
 			goto d_error;
 		}
-		retval = hg_dict_add(d, arg1, arg2);
+		retval = hg_dict_add(d, arg1, arg2, error);
 	  d_error:
 		HG_VM_UNLOCK (vm, arg0);
 	} else if (HG_IS_QSTRING (arg0)) {
@@ -3755,7 +3755,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%repeat_continue"));
+	q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%repeat_continue"), error);
 	if (q == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_undefined);
 		HG_VM_UNLOCK (vm, vm->qsystemdict);
@@ -3866,7 +3866,7 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
-		if (!hg_dict_add(dict_error, HG_QNAME (vm->name, ".isstop"), HG_QBOOL (TRUE))) {
+		if (!hg_dict_add(dict_error, HG_QNAME (vm->name, ".isstop"), HG_QBOOL (TRUE), error)) {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
@@ -3899,7 +3899,7 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
-		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%stopped_continue"));
+		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%stopped_continue"), error);
 		HG_VM_UNLOCK (vm, vm->qsystemdict);
 
 		if (q == Qnil) {
@@ -4064,7 +4064,7 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
-		qq = hg_dict_lookup(dict, arg0);
+		qq = hg_dict_lookup(dict, arg0, error);
 		HG_VM_UNLOCK (vm, q);
 
 		if (qq != Qnil)
@@ -4614,7 +4614,8 @@ DEFUNC_UNIMPLEMENTED_OPER (DeviceN);
 		hg_quark_set_executable(&__op__, TRUE);			\
 		if (!hg_dict_add((_d_),					\
 				 __o_name__,				\
-				 __op__))				\
+				 __op__,				\
+				 NULL))					\
 			return FALSE;					\
 	} G_STMT_END
 #define REG_PRIV_OPER(_d_,_n_,_k_,_o_)					\
@@ -4625,7 +4626,8 @@ DEFUNC_UNIMPLEMENTED_OPER (DeviceN);
 		hg_quark_set_executable(&__op__, TRUE);			\
 		if (!hg_dict_add((_d_),					\
 				 __o_name__,				\
-				 __op__))				\
+				 __op__,				\
+				 NULL))					\
 			return FALSE;					\
 	} G_STMT_END
 #define REG_VALUE(_d_,_n_,_k_,_v_)				\
@@ -4636,7 +4638,8 @@ DEFUNC_UNIMPLEMENTED_OPER (DeviceN);
 		hg_quark_set_readable(&__v__, TRUE);		\
 		if (!hg_dict_add((_d_),				\
 				 __o_name__,			\
-				 __v__))			\
+				 __v__,				\
+				 NULL))				\
 			return FALSE;				\
 	} G_STMT_END
 
