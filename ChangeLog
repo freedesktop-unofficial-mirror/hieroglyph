@@ -1,5 +1,11 @@
 2010-08-10  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgdict.c (_hg_object_dict_gc_mark): implemented.
+	(_hg_object_dict_node_gc_mark): implemented.
+
+	* hieroglyph/hgarray.c (_hg_object_array_gc_mark): avoid the circular
+	reference on GC.
+
 	* hieroglyph/hgstring.c (_hg_object_string_free): removed.
 
 	* hieroglyph/hgstack.c (_hg_object_stack_free): removed.

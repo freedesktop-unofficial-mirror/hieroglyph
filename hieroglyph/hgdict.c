@@ -26,6 +26,7 @@
 #endif
 
 #include "hgerror.h"
+#include "hgmark.h"
 #include "hgmem.h"
 #include "hgstring.h"
 #include "hgdict-private.h"
@@ -161,9 +162,22 @@ _hg_object_dict_gc_mark(hg_object_t           *object,
 			gpointer               user_data,
 			GError               **error)
 {
+	hg_dict_t *dict;
+	gboolean retval = FALSE;
+
 	hg_return_val_if_fail (object->type == HG_TYPE_DICT, FALSE);
 
-	return FALSE;
+	dict = (hg_dict_t *)object;
+
+	/* just back because the object is ongoing for GC */
+	if (object->on_copying != Qnil)
+		return TRUE;
+
+	object->on_copying = HG_QMARK;
+	retval = func(dict->qroot, user_data, error);
+	object->on_copying = Qnil;
+
+	return retval;
 }
 
 static gsize
@@ -244,9 +258,67 @@ _hg_object_dict_node_gc_mark(hg_object_t           *object,
 			     gpointer               user_data,
 			     GError               **error)
 {
+	hg_dict_node_t *dnode = (hg_dict_node_t *)object;
+	GError *err = NULL;
+	gsize i;
+	hg_quark_t *qnode_keys = NULL, *qnode_vals = NULL, *qnode_nodes = NULL;
+	gboolean retval = FALSE;
+
 	hg_return_val_if_fail (object->type == HG_TYPE_DICT_NODE, FALSE);
 
-	return FALSE;
+	if (!hg_mem_gc_mark(dnode->o.mem, dnode->qkey, &err))
+		goto finalize;
+	if (!hg_mem_gc_mark(dnode->o.mem, dnode->qval, &err))
+		goto finalize;
+	if (!hg_mem_gc_mark(dnode->o.mem, dnode->qnodes, &err))
+		goto finalize;
+
+	qnode_keys = hg_mem_lock_object(dnode->o.mem, dnode->qkey);
+	qnode_vals = hg_mem_lock_object(dnode->o.mem, dnode->qval);
+	qnode_nodes = hg_mem_lock_object(dnode->o.mem, dnode->qnodes);
+	if (qnode_keys == NULL ||
+	    qnode_vals == NULL ||
+	    qnode_nodes == NULL) {
+		g_set_error(&err, HG_ERROR, EINVAL,
+			    "%s: Invalid quark to obtain the actual object in dnode", __PRETTY_FUNCTION__);
+		goto qfinalize;
+	}
+
+	for (i = 0; i < dnode->n_data; i++) {
+		if (!func(qnode_nodes[i], user_data, &err))
+			goto qfinalize;
+		if (!func(qnode_keys[i], user_data, &err))
+			goto qfinalize;
+		if (!func(qnode_vals[i], user_data, &err))
+			goto qfinalize;
+	}
+	if (!func(qnode_nodes[dnode->n_data], user_data, &err))
+		goto qfinalize;
+
+	retval = TRUE;
+
+  qfinalize:
+	if (qnode_keys)
+		hg_mem_unlock_object(dnode->o.mem, dnode->qkey);
+	if (qnode_vals)
+		hg_mem_unlock_object(dnode->o.mem, dnode->qval);
+	if (qnode_nodes)
+		hg_mem_unlock_object(dnode->o.mem, dnode->qnodes);
+
+  finalize:
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s (code: %d)",
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+		retval = FALSE;
+	}
+
+	return retval;
 }
 
 G_INLINE_FUNC hg_quark_t
