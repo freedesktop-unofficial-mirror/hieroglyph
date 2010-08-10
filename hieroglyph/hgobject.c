@@ -160,6 +160,9 @@ hg_object_new(hg_mem_t  *mem,
 	else
 		hg_mem_unlock_object(mem, index);
 
+	if (v->free)
+		hg_mem_add_gc_finalizer(mem, index, hg_object_free);
+
 	va_end(ap);
 
 	return index;
@@ -185,7 +188,10 @@ hg_object_free(hg_mem_t   *mem,
 	hg_return_if_fail (__hg_object_vtables[object->type] != NULL);
 
 	v = __hg_object_vtables[object->type];
-	v->free(object);
+	if (v->free) {
+		v->free(object);
+		hg_mem_remove_gc_finalizer(mem, index);
+	}
 
 	hg_mem_unlock_object(mem, index);
 	hg_mem_free(mem, index);

@@ -37,6 +37,8 @@ typedef gint64				hg_quark_t;
 typedef struct _hg_mem_t		hg_mem_t;
 typedef struct _hg_mem_vtable_t		hg_mem_vtable_t;
 typedef struct _hg_allocator_data_t	hg_allocator_data_t;
+typedef void (* hg_mem_finalizer_func_t) (hg_mem_t    *mem,
+					  hg_quark_t  index);
 
 typedef struct _hg_bs_template_t	hg_bs_template_t;
 typedef enum _hg_system_encoding_t	hg_system_encoding_t;

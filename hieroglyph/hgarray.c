@@ -36,7 +36,7 @@
 #define HG_ARRAY_MAX_SIZE	65535 /* defined as PostScript spec */
 
 
-HG_DEFINE_VTABLE (array)
+HG_DEFINE_VTABLE_WITH_FREE (array, NULL)
 
 /*< private >*/
 static gsize
@@ -71,19 +71,6 @@ _hg_object_array_initialize(hg_object_t *object,
 	array->qname = Qnil;
 
 	return TRUE;
-}
-
-static void
-_hg_object_array_free(hg_object_t *object)
-{
-	hg_array_t *a = (hg_array_t *)object;
-
-	hg_return_if_fail (object->type == HG_TYPE_ARRAY);
-
-	/* don't free array->qcontainer here
-	   it's likely to be referred in another subarray
-	*/
-	hg_mem_free(a->o.mem, a->qname);
 }
 
 static hg_quark_t
@@ -307,6 +294,22 @@ hg_array_new(hg_mem_t *mem,
 		hg_mem_unlock_object(mem, retval);
 
 	return retval;
+}
+
+/**
+ * hg_array_free:
+ * @array:
+ *
+ * FIXME
+ */
+void
+hg_array_free(hg_array_t *array)
+{
+	hg_return_if_fail (array != NULL);
+	hg_return_if_fail (array->o.type == HG_TYPE_ARRAY);
+
+	hg_mem_free(array->o.mem, array->qname);
+	hg_mem_free(array->o.mem, array->o.self);
 }
 
 /**

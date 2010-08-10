@@ -39,7 +39,7 @@ static gboolean   _hg_stack_push(hg_stack_t *stack,
                                  hg_quark_t  quark);
 
 
-HG_DEFINE_VTABLE (stack)
+HG_DEFINE_VTABLE_WITH_FREE (stack, NULL)
 
 /*< private >*/
 static gsize
@@ -61,14 +61,6 @@ _hg_object_stack_initialize(hg_object_t *object,
 	stack->validate_depth = TRUE;
 
 	return TRUE;
-}
-
-static void
-_hg_object_stack_free(hg_object_t *object)
-{
-	hg_stack_t *stack = (hg_stack_t *)object;
-
-	_hg_list_free(stack->o.mem, stack->stack);
 }
 
 static hg_quark_t

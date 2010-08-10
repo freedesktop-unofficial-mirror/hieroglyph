@@ -34,6 +34,8 @@ struct _hg_mem_t {
 	hg_allocator_data_t *data;
 	hg_gc_func_t         gc_func;
 	gpointer             gc_data;
+	GHashTable          *finalizer_table;
+	GHashTable          *slave_finalizer_table;
 };
 
 G_END_DECLS

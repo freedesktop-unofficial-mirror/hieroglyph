@@ -1,5 +1,27 @@
 2010-08-10  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgstring.c (_hg_object_string_free): removed.
+
+	* hieroglyph/hgstack.c (_hg_object_stack_free): removed.
+
+	* hieroglyph/hgobject.c (hg_object_new): add a finalizer if free
+	function is available.
+	(hg_object_free): remove a finalizer after freeing.
+
+	* hieroglyph/hgmem.c (_hg_mem_gc_init): new.
+	(_hg_mem_gc_finish): new.
+	(hg_mem_add_gc_finalizer): new.
+	(hg_mem_remove_gc_finalizer): new.
+
+	* hieroglyph/hgdict.c (_hg_object_dict_free): removed.
+	(_hg_object_dict_node_free): removed.
+	(hg_dict_add): fix a typo.
+	(hg_dict_remove): fix a typo.
+	(hg_dict_lookup): fix a typo.
+
+	* hieroglyph/hgarray.c (hg_array_free): new.
+	(_hg_object_array_free): removed.
+
 	* hieroglyph/hgdict.[ch]: integrated hgbtree.c[h].
 
 2010-08-09  Akira TAGOH  <akira@tagoh.org>

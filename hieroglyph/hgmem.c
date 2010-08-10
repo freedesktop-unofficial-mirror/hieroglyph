@@ -35,6 +35,32 @@
 static gint __hg_mem_id = 0;
 
 /*< private >*/
+G_INLINE_FUNC void
+_hg_mem_gc_init(hg_mem_t *mem)
+{
+	if (mem->slave_finalizer_table) {
+		g_warning("%s: slave instance already created.", __PRETTY_FUNCTION__);
+		g_hash_table_destroy(mem->slave_finalizer_table);
+	}
+	mem->slave_finalizer_table = g_hash_table_new(g_direct_hash, g_direct_equal);
+}
+
+G_INLINE_FUNC void
+_hg_mem_gc_finish(hg_mem_t *mem,
+		  gboolean  was_error)
+{
+	if (!mem->slave_finalizer_table) {
+		g_warning("%s: no slave instance created.", __PRETTY_FUNCTION__);
+		return;
+	}
+	if (!was_error) {
+		g_hash_table_destroy(mem->finalizer_table);
+		mem->finalizer_table = mem->slave_finalizer_table;
+	} else {
+		g_hash_table_destroy(mem->slave_finalizer_table);
+	}
+	mem->slave_finalizer_table = NULL;
+}
 
 /*< public >*/
 
@@ -91,6 +117,7 @@ hg_mem_new_with_allocator(hg_mem_vtable_t *allocator,
 	} else {
 		retval->data->resizable = FALSE;
 		hg_mem_resize_heap(retval, size);
+		retval->finalizer_table = g_hash_table_new(g_direct_hash, g_direct_equal);
 	}
 
 	return retval;
@@ -116,6 +143,8 @@ hg_mem_destroy(gpointer data)
 	hg_return_if_fail (mem->allocator->finalize != NULL);
 
 	mem->allocator->finalize(mem->data);
+	if (mem->finalizer_table)
+		g_hash_table_destroy(mem->finalizer_table);
 
 	g_free(mem);
 }
@@ -158,6 +187,43 @@ hg_mem_set_resizable(hg_mem_t *mem,
 }
 
 /**
+ * hg_mem_add_gc_finalizer:
+ * @mem:
+ * @index:
+ * @func:
+ *
+ * FIXME
+ */
+void
+hg_mem_add_gc_finalizer(hg_mem_t                *mem,
+			hg_quark_t               index,
+			hg_mem_finalizer_func_t  func)
+{
+	hg_return_if_fail (mem != NULL);
+	hg_return_if_fail (index != Qnil);
+	hg_return_if_fail (func != NULL);
+
+	g_hash_table_insert(mem->finalizer_table,
+			    HGQUARK_TO_POINTER (index),
+			    func);
+}
+
+/**
+ * hg_mem_remove_gc_finalizer:
+ * @mem:
+ * @index:
+ *
+ * FIXME
+ */
+void
+hg_mem_remove_gc_finalizer(hg_mem_t   *mem,
+			   hg_quark_t  index)
+{
+	g_hash_table_remove(mem->finalizer_table,
+			    HGQUARK_TO_POINTER (index));
+}
+
+/**
  * hg_mem_alloc:
  * @mem:
  * @size:
@@ -193,8 +259,11 @@ hg_mem_alloc(hg_mem_t *mem,
 		    !retried) {
 			retried = TRUE;
 			if (mem->allocator->gc_init(mem->data)) {
-				gboolean ret = mem->gc_func(mem, mem->gc_data);
+				gboolean ret;
 
+				_hg_mem_gc_init(mem);
+				ret = mem->gc_func(mem, mem->gc_data);
+				_hg_mem_gc_finish(mem, !ret);
 				mem->allocator->gc_finish(mem->data, !ret);
 
 				if (ret)
@@ -251,8 +320,11 @@ hg_mem_realloc(hg_mem_t   *mem,
 		    !retried) {
 			retried = TRUE;
 			if (mem->allocator->gc_init(mem->data)) {
-				gboolean ret = mem->gc_func(mem, mem->gc_data);
+				gboolean ret;
 
+				_hg_mem_gc_init(mem);
+				ret = mem->gc_func(mem, mem->gc_data);
+				_hg_mem_gc_finish(mem, !ret);
 				mem->allocator->gc_finish(mem->data, !ret);
 
 				if (ret)

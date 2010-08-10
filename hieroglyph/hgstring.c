@@ -36,7 +36,7 @@
 #define HG_STRING_MAX_SIZE	65535 /* defined as PostScript spec */
 
 
-HG_DEFINE_VTABLE (string)
+HG_DEFINE_VTABLE_WITH_FREE (string, NULL)
 
 /*< private >*/
 static gsize
@@ -71,14 +71,6 @@ _hg_object_string_initialize(hg_object_t *object,
 	}
 
 	return TRUE;
-}
-
-static void
-_hg_object_string_free(hg_object_t *object)
-{
-	/* do not free qstring here, because it may be likely
-	 * to be referred from the substring yet
-	 */
 }
 
 static hg_quark_t

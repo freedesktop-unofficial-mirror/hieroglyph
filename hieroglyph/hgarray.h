@@ -62,6 +62,7 @@ hg_object_vtable_t *hg_object_array_get_vtable(void) G_GNUC_CONST;
 hg_quark_t          hg_array_new              (hg_mem_t                  *mem,
                                                gsize                      size,
                                                gpointer                  *ret);
+void                hg_array_free             (hg_array_t                *array);
 gboolean            hg_array_set              (hg_array_t                *array,
                                                hg_quark_t                 quark,
                                                gsize                      index,
