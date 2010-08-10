@@ -697,6 +697,7 @@ _hg_allocator_gc_mark(hg_allocator_data_t  *data,
 	gint32 q;
 	gboolean retval = TRUE;
 	GError *err = NULL;
+	gsize aligned_size;
 
 	/* this isn't the object in the targeted spool */
 	if (!priv->slave_bitmap)
@@ -705,18 +706,15 @@ _hg_allocator_gc_mark(hg_allocator_data_t  *data,
 	block = _hg_allocator_real_lock_object(data, index);
 	if (block) {
 		q = index;
-		if (!_hg_allocator_bitmap_range_mark(priv->slave_bitmap, &q, block->size)) {
-			g_set_error(&err, HG_ERROR, EINVAL,
-				    "found the memory corruption during GC.");
-			goto finalize;
+		aligned_size = hg_mem_aligned_to(block->size, BLOCK_SIZE) / BLOCK_SIZE;
+		if (_hg_allocator_bitmap_range_mark(priv->slave_bitmap, &q, aligned_size)) {
+			priv->slave.used_size += block->size;
 		}
-		priv->slave.used_size += block->size;
 		_hg_allocator_real_unlock_object(block);
 	} else {
 		g_set_error(&err, HG_ERROR, EINVAL,
 			    "%lx isn't an allocated object from this spool", index);
 	}
-  finalize:
 	if (err) {
 		if (error) {
 			*error = g_error_copy(err);

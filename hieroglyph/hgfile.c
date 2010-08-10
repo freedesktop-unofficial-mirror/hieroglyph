@@ -38,12 +38,18 @@
 
 
 typedef struct _hg_file_io_buffered_data_t {
-	hg_quark_t   self;
-	hg_string_t *in;
-	hg_string_t *out;
+	hg_file_io_data_t  data;
+	hg_string_t       *in;
+	hg_string_t       *out;
 } hg_file_io_buffered_data_t;
 
 
+static gboolean     _hg_file_io_data_gc_mark           (hg_quark_t     qdata,
+							gpointer       user_data,
+							GError       **error);
+static gboolean     _hg_file_io_buffered_data_gc_mark  (hg_quark_t     qdata,
+							gpointer       user_data,
+							GError       **error);
 static gboolean     _hg_file_io_real_stdin_open        (hg_file_t     *file,
 							gpointer       user_data,
 							GError       **error);
@@ -219,7 +225,6 @@ _hg_object_file_initialize(hg_object_t *object,
 	file->position  = 0;
 	file->lineno    = 1;
 	file->is_closed = TRUE;
-	file->data      = NULL;
 	file->user_data = user_data;
 
 	retval = vtable->open(file, file->user_data, &err);
@@ -248,16 +253,17 @@ _hg_object_file_free(hg_object_t *object)
 		if (!file->is_closed)
 			file->vtable->close(file, file->user_data, &err);
 		if (err) {
-			g_warning("%s (code: %d)",
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
 				  err->message,
 				  err->code);
 			g_error_free(err);
 		}
 	}
 	hg_mem_free(file->o.mem, file->qfilename);
-	if (file->data) {
-		hg_mem_free(file->o.mem, file->data->self);
-		file->data = NULL;
+	if (file->user_data) {
+		hg_mem_free(file->o.mem, file->user_data->self);
+		file->user_data = NULL;
 	}
 }
 
@@ -290,9 +296,73 @@ _hg_object_file_gc_mark(hg_object_t           *object,
 			gpointer               user_data,
 			GError               **error)
 {
+	hg_file_t *file = (hg_file_t *)object;
+	GError *err = NULL;
+	gboolean retval = FALSE;
+	hg_file_gc_t g;
+
 	hg_return_val_if_fail (object->type == HG_TYPE_FILE, FALSE);
 
-	return FALSE;
+	if (!func(file->qfilename, user_data, &err))
+		goto finalize;
+	if (file->user_data) {
+		if (!file->user_data->func) {
+			if (!hg_mem_gc_mark(file->o.mem, file->user_data->self, &err))
+				goto finalize;
+		} else {
+			g.func = func;
+			g.user_data = user_data;
+			g.mem = file->o.mem;
+			g.data = file->user_data;
+
+			if (!file->user_data->func(file->user_data->self, &g, &err))
+				goto finalize;
+		}
+	}
+
+	retval = TRUE;
+  finalize:
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+	}
+
+	return retval;
+}
+
+static gboolean
+_hg_file_io_data_gc_mark(hg_quark_t   qdata,
+			 gpointer     user_data,
+			 GError     **error)
+{
+	hg_file_gc_t *g = user_data;
+
+	return hg_mem_gc_mark(g->mem, qdata, error);
+}
+
+static gboolean
+_hg_file_io_buffered_data_gc_mark(hg_quark_t   qdata,
+				  gpointer     user_data,
+				  GError     **error)
+{
+	hg_file_gc_t *g = user_data;
+	hg_file_io_buffered_data_t *bd = (hg_file_io_buffered_data_t *)g->data;
+
+	if (bd->in &&
+	    !g->func(bd->in->o.self, g->user_data, error))
+		return FALSE;
+	if (bd->out &&
+	    !g->func(bd->out->o.self, g->user_data, error))
+		return FALSE;
+
+	return hg_mem_gc_mark(g->mem, qdata, error);
 }
 
 /** file IO callbacks **/
@@ -301,7 +371,7 @@ _hg_file_io_real_stdin_open(hg_file_t  *file,
 			    gpointer    user_data,
 			    GError    **error)
 {
-	hg_file_io_data_t *data;
+	hg_file_io_data_t *data = user_data;
 	hg_quark_t qdata;
 
 	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error);
@@ -316,17 +386,20 @@ _hg_file_io_real_stdin_open(hg_file_t  *file,
 		errno = EBADF;
 		goto exception;
 	}
-	qdata = hg_mem_alloc(file->o.mem,
-			     sizeof (hg_file_io_data_t),
-			     (gpointer *)&data);
-	if (qdata == Qnil) {
-		errno = ENOMEM;
-		goto exception;
+	if (data == NULL) {
+		qdata = hg_mem_alloc(file->o.mem,
+				     sizeof (hg_file_io_data_t),
+				     (gpointer *)&data);
+		if (qdata == Qnil) {
+			errno = ENOMEM;
+			goto exception;
+		}
+		data->self = qdata;
+		data->func = _hg_file_io_data_gc_mark;
 	}
-	data->self = qdata;
 	data->fd = 0;
 	data->mmapped_buffer = NULL;
-	file->data = data;
+	file->user_data = data;
 
 	file->size = 0;
 	file->is_closed = FALSE;
@@ -349,7 +422,7 @@ _hg_file_io_real_stdout_open(hg_file_t  *file,
 			     gpointer    user_data,
 			     GError    **error)
 {
-	hg_file_io_data_t *data;
+	hg_file_io_data_t *data = user_data;
 	hg_quark_t qdata;
 
 	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error);
@@ -364,17 +437,20 @@ _hg_file_io_real_stdout_open(hg_file_t  *file,
 		errno = EBADF;
 		goto exception;
 	}
-	qdata = hg_mem_alloc(file->o.mem,
-			     sizeof (hg_file_io_data_t),
-			     (gpointer *)&data);
-	if (qdata == Qnil) {
-		errno = ENOMEM;
-		goto exception;
+	if (data == NULL) {
+		qdata = hg_mem_alloc(file->o.mem,
+				     sizeof (hg_file_io_data_t),
+				     (gpointer *)&data);
+		if (qdata == Qnil) {
+			errno = ENOMEM;
+			goto exception;
+		}
+		data->self = qdata;
+		data->func = _hg_file_io_data_gc_mark;
 	}
-	data->self = qdata;
 	data->fd = 1;
 	data->mmapped_buffer = NULL;
-	file->data = data;
+	file->user_data = data;
 
 	file->size = 0;
 	file->is_closed = FALSE;
@@ -397,7 +473,7 @@ _hg_file_io_real_stderr_open(hg_file_t  *file,
 			     gpointer    user_data,
 			     GError    **error)
 {
-	hg_file_io_data_t *data;
+	hg_file_io_data_t *data = user_data;
 	hg_quark_t qdata;
 
 	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error);
@@ -412,17 +488,20 @@ _hg_file_io_real_stderr_open(hg_file_t  *file,
 		errno = EBADF;
 		goto exception;
 	}
-	qdata = hg_mem_alloc(file->o.mem,
-			     sizeof (hg_file_io_data_t),
-			     (gpointer *)&data);
-	if (qdata == Qnil) {
-		errno = ENOMEM;
-		goto exception;
+	if (data == NULL) {
+		qdata = hg_mem_alloc(file->o.mem,
+				     sizeof (hg_file_io_data_t),
+				     (gpointer *)&data);
+		if (qdata == Qnil) {
+			errno = ENOMEM;
+			goto exception;
+		}
+		data->self = qdata;
+		data->func = _hg_file_io_data_gc_mark;
 	}
-	data->self = qdata;
 	data->fd = 2;
 	data->mmapped_buffer = NULL;
-	file->data = data;
+	file->user_data = data;
 
 	file->size = 0;
 	file->is_closed = FALSE;
@@ -445,7 +524,7 @@ _hg_file_io_real_file_open(hg_file_t  *file,
 			   gpointer    user_data,
 			   GError    **error)
 {
-	hg_file_io_data_t *data;
+	hg_file_io_data_t *data = user_data;
 	hg_quark_t qdata;
 	hg_string_t *sfilename;
 	gchar *filename;
@@ -471,17 +550,20 @@ _hg_file_io_real_file_open(hg_file_t  *file,
 			    __PRETTY_FUNCTION__);
 		return FALSE;
 	}
-	qdata = hg_mem_alloc(file->o.mem,
-			     sizeof (hg_file_io_data_t),
-			     (gpointer *)&data);
-	if (qdata == Qnil) {
-		errno = ENOMEM;
-		goto exception;
+	if (data == NULL) {
+		qdata = hg_mem_alloc(file->o.mem,
+				     sizeof (hg_file_io_data_t),
+				     (gpointer *)&data);
+		if (qdata == Qnil) {
+			errno = ENOMEM;
+			goto exception;
+		}
+		data->self = qdata;
+		data->func = _hg_file_io_data_gc_mark;
 	}
-	data->self = qdata;
 	data->fd = -1;
 	data->mmapped_buffer = NULL;
-	file->data = data;
+	file->user_data = data;
 
 	hg_return_val_with_gerror_if_lock_fail (sfilename,
 						file->o.mem,
@@ -523,7 +605,7 @@ _hg_file_io_real_file_close(hg_file_t  *file,
 			    gpointer    user_data,
 			    GError    **error)
 {
-	hg_file_io_data_t *data = file->data;
+	hg_file_io_data_t *data = user_data;
 
 	if (data->mmapped_buffer) {
 		munmap(data->mmapped_buffer, file->size);
@@ -543,7 +625,7 @@ _hg_file_io_real_file_read(hg_file_t  *file,
 			   GError    **error)
 {
 	gsize retval;
-	hg_file_io_data_t *data = file->data;
+	hg_file_io_data_t *data = user_data;
 
 	if ((file->mode & HG_FILE_IO_MODE_READ) == 0) {
 		errno = EBADF;
@@ -592,7 +674,7 @@ _hg_file_io_real_file_write(hg_file_t      *file,
 			    GError        **error)
 {
 	gsize retval;
-	hg_file_io_data_t *data = file->data;
+	hg_file_io_data_t *data = user_data;
 
 	if ((file->mode & HG_FILE_IO_MODE_WRITE) == 0) {
 		errno = EBADF;
@@ -621,7 +703,7 @@ _hg_file_io_real_file_flush(hg_file_t  *file,
 			    gpointer    user_data,
 			    GError    **error)
 {
-	hg_file_io_data_t *data = file->data;
+	hg_file_io_data_t *data = user_data;
 
 	if ((file->mode & HG_FILE_IO_MODE_WRITE) == 0) {
 		errno = EBADF;
@@ -652,7 +734,7 @@ _hg_file_io_real_file_seek(hg_file_t      *file,
 			   hg_file_pos_t   whence,
 			   GError        **error)
 {
-	hg_file_io_data_t *data = file->data;
+	hg_file_io_data_t *data = user_data;
 	gssize retval;
 
 	if (data->mmapped_buffer) {
@@ -708,7 +790,7 @@ static gboolean
 _hg_file_io_real_file_is_eof(hg_file_t *file,
 			     gpointer   user_data)
 {
-	hg_file_io_data_t *data = file->data;
+	hg_file_io_data_t *data = user_data;
 
 	return data->is_eof;
 }
@@ -717,7 +799,7 @@ static void
 _hg_file_io_real_file_clear_eof(hg_file_t *file,
 				gpointer   user_data)
 {
-	hg_file_io_data_t *data = file->data;
+	hg_file_io_data_t *data = user_data;
 
 	data->is_eof = FALSE;
 }
@@ -728,8 +810,6 @@ _hg_file_io_real_buffered_open(hg_file_t  *file,
 			       gpointer    user_data,
 			       GError    **error)
 {
-	hg_file_io_data_t *data;
-	hg_quark_t qdata;
 	hg_file_io_buffered_data_t *bd = user_data;
 
 	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error);
@@ -758,17 +838,8 @@ _hg_file_io_real_buffered_open(hg_file_t  *file,
 				__PRETTY_FUNCTION__);
 		    return FALSE;
 	}
-	qdata = hg_mem_alloc(file->o.mem,
-			     sizeof (hg_file_io_data_t),
-			     (gpointer *)&data);
-	if (qdata == Qnil) {
-		errno = ENOMEM;
-		goto exception;
-	}
-	data->self = qdata;
-	data->fd = -1;
-	data->mmapped_buffer = NULL;
-	file->data = data;
+	bd->data.fd = -1;
+	bd->data.mmapped_buffer = NULL;
 	file->size = hg_string_length(bd->in);
 	file->is_closed = FALSE;
 
@@ -796,7 +867,7 @@ _hg_file_io_real_buffered_close(hg_file_t  *file,
 		hg_mem_unlock_object(bd->in->o.mem, bd->in->o.self);
 	if (bd->out)
 		hg_mem_unlock_object(bd->out->o.mem, bd->out->o.self);
-	hg_mem_free(file->o.mem, bd->self);
+	hg_mem_free(file->o.mem, bd->data.self);
 	file->user_data = NULL;
 	file->is_closed = TRUE;
 }
@@ -810,7 +881,6 @@ _hg_file_io_real_buffered_read(hg_file_t      *file,
 			       GError        **error)
 {
 	gsize retval;
-	hg_file_io_data_t *data = file->data;
 	hg_file_io_buffered_data_t *bd = user_data;
 	gchar *cstr;
 
@@ -828,7 +898,7 @@ _hg_file_io_real_buffered_read(hg_file_t      *file,
 //	((gchar *)buffer)[retval] = 0;
 	if (retval == 0 &&
 	    file->position == file->size)
-		data->is_eof = TRUE;
+		bd->data.is_eof = TRUE;
 	file->position += retval;
 	g_free(cstr);
 
@@ -939,7 +1009,7 @@ static gboolean
 _hg_file_io_real_buffered_is_eof(hg_file_t  *file,
 				 gpointer    user_data)
 {
-	hg_file_io_data_t *data = file->data;
+	hg_file_io_data_t *data = user_data;
 
 	return data->is_eof;
 }
@@ -948,7 +1018,7 @@ static void
 _hg_file_io_real_buffered_clear_eof(hg_file_t  *file,
 				    gpointer    user_data)
 {
-	hg_file_io_data_t *data = file->data;
+	hg_file_io_data_t *data = user_data;
 
 	data->is_eof = FALSE;
 }
@@ -959,8 +1029,7 @@ _hg_file_io_real_lineedit_open(hg_file_t  *file,
 			       gpointer    user_data,
 			       GError    **error)
 {
-	hg_file_io_data_t *data;
-	hg_quark_t qdata, q, qs;
+	hg_quark_t q, qs;
 	hg_file_io_buffered_data_t *bd;
 	gchar *buf;
 	hg_lineedit_t *lineedit = (hg_lineedit_t *)user_data;
@@ -1011,22 +1080,14 @@ _hg_file_io_real_lineedit_open(hg_file_t  *file,
 		errno = ENOMEM;
 		goto exception;
 	}
-	bd->self = q;
+	bd->data.self = q;
+	bd->data.func = _hg_file_io_buffered_data_gc_mark;
 	bd->in = s;
 	bd->out = NULL;
-	qdata = hg_mem_alloc(file->o.mem,
-			     sizeof (hg_file_io_data_t),
-			     (gpointer *)&data);
-	if (qdata == Qnil) {
-		errno = ENOMEM;
-		goto exception;
-	}
-	data->self = qdata;
-	data->fd = -1;
-	data->mmapped_buffer = NULL;
-	file->data = data;
+	bd->data.fd = -1;
+	bd->data.mmapped_buffer = NULL;
+	file->user_data = (hg_file_io_data_t *)bd;
 	file->size = hg_string_length(bd->in);
-	file->user_data = bd;
 	file->is_closed = FALSE;
 
 	return TRUE;
@@ -1217,7 +1278,8 @@ hg_file_new_with_string(hg_mem_t        *mem,
 	if (qbdata == Qnil)
 		return Qnil;
 
-	x->self = qbdata;
+	x->data.self = qbdata;
+	x->data.func = _hg_file_io_buffered_data_gc_mark;
 	x->in = in;
 	x->out = out;
 	retval = hg_object_new(mem, (gpointer *)&f, HG_TYPE_FILE, 0,

@@ -547,11 +547,17 @@ _hg_vm_run_gc(hg_mem_t *mem,
 
 	/* marking objects */
 	/** marking I/O **/
+#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
+	g_print("GC: marking file objects\n");
+#endif
 	for (i = 0; i < HG_FILE_IO_END; i++) {
 		if (!hg_vm_quark_gc_mark(vm, vm->qio[i], &err))
 			goto error;
 	}
 	/** marking in stacks **/
+#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
+	g_print("GC: marking objects in stacks\n");
+#endif
 	for (i = 0; i < HG_VM_STACK_END; i++) {
 		hg_stack_t *s = vm->stacks[i];
 
@@ -560,10 +566,19 @@ _hg_vm_run_gc(hg_mem_t *mem,
 			goto error;
 	}
 	/** marking miscellaneous **/
+#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
+	g_print("GC: marking objects in $error\n");
+#endif
 	if (!hg_vm_quark_gc_mark(vm, vm->qerror, &err))
 		goto error;
+#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
+	g_print("GC: marking objects in systemdict\n");
+#endif
 	if (!hg_vm_quark_gc_mark(vm, vm->qsystemdict, &err))
 		goto error;
+#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
+	g_print("GC: marking objects in globaldict\n");
+#endif
 	if (!hg_vm_quark_gc_mark(vm, vm->qglobaldict, &err))
 		goto error;
 	/** XXX: marking scanner */

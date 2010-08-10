@@ -26,7 +26,6 @@
 #endif
 
 #include "hgerror.h"
-#include "hgmark.h"
 #include "hgmem.h"
 #include "hgstring.h"
 #include "hgdict-private.h"
@@ -169,13 +168,7 @@ _hg_object_dict_gc_mark(hg_object_t           *object,
 
 	dict = (hg_dict_t *)object;
 
-	/* just back because the object is ongoing for GC */
-	if (object->on_copying != Qnil)
-		return TRUE;
-
-	object->on_copying = HG_QMARK;
 	retval = func(dict->qroot, user_data, error);
-	object->on_copying = Qnil;
 
 	return retval;
 }
@@ -266,10 +259,19 @@ _hg_object_dict_node_gc_mark(hg_object_t           *object,
 
 	hg_return_val_if_fail (object->type == HG_TYPE_DICT_NODE, FALSE);
 
+#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
+	g_print("GC: (dict) marking key container\n");
+#endif
 	if (!hg_mem_gc_mark(dnode->o.mem, dnode->qkey, &err))
 		goto finalize;
+#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
+	g_print("GC: (dict) marking value container\n");
+#endif
 	if (!hg_mem_gc_mark(dnode->o.mem, dnode->qval, &err))
 		goto finalize;
+#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
+	g_print("GC: (dict) marking node container\n");
+#endif
 	if (!hg_mem_gc_mark(dnode->o.mem, dnode->qnodes, &err))
 		goto finalize;
 
@@ -285,13 +287,25 @@ _hg_object_dict_node_gc_mark(hg_object_t           *object,
 	}
 
 	for (i = 0; i < dnode->n_data; i++) {
+#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
+		g_print("GC: (dict) marking node[%ld]\n", i);
+#endif
 		if (!func(qnode_nodes[i], user_data, &err))
 			goto qfinalize;
+#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
+		g_print("GC: (dict) marking key[%ld]\n", i);
+#endif
 		if (!func(qnode_keys[i], user_data, &err))
 			goto qfinalize;
+#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
+		g_print("GC: (dict) marking value[%ld]\n", i);
+#endif
 		if (!func(qnode_vals[i], user_data, &err))
 			goto qfinalize;
 	}
+#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
+		g_print("GC: (dict) marking node[%ld]\n", dnode->n_data);
+#endif
 	if (!func(qnode_nodes[dnode->n_data], user_data, &err))
 		goto qfinalize;
 

@@ -1,3 +1,18 @@
+2010-08-11  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgobject.c (hg_object_gc_mark): set a flag to avoid
+	the circular references.
+
+	* hieroglyph/hgfile.c (_hg_object_file_gc_mark): implemented.
+
+	* hieroglyph/hgdict.c (_hg_object_dict_gc_mark): do not set
+	a on_copying flag here. it doesn't work as expected actually.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_gc_mark): fix the block size
+	to re-mark the bitmap.
+	(_hg_allocator_gc_mark): do not set an error even if marking the range
+	fails.
+
 2010-08-10  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgdict.c (_hg_object_dict_gc_mark): implemented.

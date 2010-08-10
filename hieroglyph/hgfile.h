@@ -43,6 +43,7 @@ typedef enum _hg_file_pos_t			hg_file_pos_t;
 typedef struct _hg_file_vtable_t		hg_file_vtable_t;
 typedef struct _hg_file_t			hg_file_t;
 typedef struct _hg_file_io_data_t		hg_file_io_data_t;
+typedef struct _hg_file_gc_t			hg_file_gc_t;
 
 enum _hg_file_io_t {
 	HG_FILE_IO_FILE = 0,
@@ -107,14 +108,20 @@ struct _hg_file_t {
 	gssize             position;
 	gssize             lineno;
 	gboolean           is_closed;
-	hg_file_io_data_t *data;
-	gpointer           user_data;
+	hg_file_io_data_t *user_data;
 };
 struct _hg_file_io_data_t {
-	hg_quark_t self;
-	gboolean   is_eof;
-	gint       fd;
-	gpointer   mmapped_buffer;
+	hg_quark_t           self;
+	hg_gc_iterate_func_t func;
+	gboolean             is_eof;
+	gint                 fd;
+	gpointer             mmapped_buffer;
+};
+struct _hg_file_gc_t {
+	hg_gc_iterate_func_t  func;
+	gpointer              user_data;
+	hg_mem_t             *mem;
+	hg_file_io_data_t    *data;
 };
 
 

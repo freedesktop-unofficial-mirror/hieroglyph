@@ -27,6 +27,7 @@
 
 #include <string.h>
 #include "hgerror.h"
+#include "hgmark.h"
 #include "hgmem.h"
 #include "hgobject.h"
 
@@ -277,6 +278,7 @@ hg_object_gc_mark(hg_object_t           *object,
 		  GError               **error)
 {
 	hg_object_vtable_t *v;
+	gboolean retval = FALSE;
 
 	hg_return_val_with_gerror_if_fail (__hg_object_is_initialized, FALSE, error);
 	hg_return_val_with_gerror_if_fail (object != NULL, FALSE, error);
@@ -284,11 +286,18 @@ hg_object_gc_mark(hg_object_t           *object,
 	hg_return_val_with_gerror_if_fail (__hg_object_vtables[object->type] != NULL, FALSE, error);
 	hg_return_val_with_gerror_if_fail (func != NULL, FALSE, error);
 
+	if (object->on_copying != Qnil)
+		return TRUE;
+
+	object->on_copying = HG_QMARK;
+
 	if (hg_mem_gc_mark(object->mem, object->self, error)) {
 		v = __hg_object_vtables[object->type];
 
-		return v->gc_mark(object, func, user_data, error);
+		retval = v->gc_mark(object, func, user_data, error);
 	}
 
-	return FALSE;
+	object->on_copying = Qnil;
+
+	return retval;
 }
