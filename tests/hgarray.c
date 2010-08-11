@@ -66,6 +66,40 @@ TDEF (get_capsulated_size)
 	fail_unless(size == sizeof (hg_array_t), "Obtaining the different size: expect: %" G_GSIZE_FORMAT " actual: %" G_GSIZE_FORMAT, sizeof (hg_array_t), size);
 } TEND
 
+static gboolean
+_gc_iter_func(hg_quark_t   qdata,
+	      gpointer     data,
+	      GError     **error)
+{
+	return TRUE;
+}
+
+static gboolean
+_gc_func(hg_mem_t *mem,
+	 gpointer  data)
+{
+	hg_array_t *a = data;
+
+	if (data == NULL)
+		return TRUE;
+
+	return hg_object_gc_mark((hg_object_t *)a, _gc_iter_func, NULL, NULL);
+}
+
+TDEF (gc_mark)
+{
+	hg_quark_t q;
+	hg_array_t *a;
+	gssize size = 0;
+	hg_mem_t *m = hg_mem_new(256);
+
+	q = hg_array_new(m, 10, (gpointer *)&a);
+	fail_unless(hg_array_set(a, HG_QINT (1), 9, NULL), "Unable to put a value into the array");
+	hg_mem_set_garbage_collection(m, _gc_func, a);
+	size = hg_mem_collect_garbage(m);
+	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
+} TEND
+
 TDEF (hg_array_new)
 {
 	hg_quark_t q;
@@ -181,6 +215,7 @@ hieroglyph_suite(void)
 	tcase_add_checked_fixture(tc, setup, teardown);
 
 	T (get_capsulated_size);
+	T (gc_mark);
 	T (hg_array_new);
 	T (hg_array_set);
 	T (hg_array_get);

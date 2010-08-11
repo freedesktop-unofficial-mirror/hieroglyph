@@ -1,5 +1,8 @@
 2010-08-11  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgallocator.c (_hg_allocator_bitmap_dump): new.
+	(_hg_allocator_gc_init): fix a typo.
+
 	* hieroglyph/hgmem.c (hg_mem_collect_garbage): new.
 
 	* hieroglyph/hgarray.c (_hg_object_array_gc_mark): do not set

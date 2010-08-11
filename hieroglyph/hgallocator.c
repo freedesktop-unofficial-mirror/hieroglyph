@@ -56,6 +56,7 @@ G_INLINE_FUNC gboolean               _hg_allocator_bitmap_is_marked  (hg_allocat
 G_INLINE_FUNC gboolean               _hg_allocator_bitmap_range_mark (hg_allocator_bitmap_t   *bitmap,
                                                                       gint32                  *index,
                                                                       gsize                    size);
+G_INLINE_FUNC void                   _hg_allocator_bitmap_dump       (hg_allocator_bitmap_t   *bitmap);
 static gpointer                      _hg_allocator_initialize        (void);
 static void                          _hg_allocator_finalize          (hg_allocator_data_t     *data);
 static gboolean                      _hg_allocator_resize_heap       (hg_allocator_data_t     *data,
@@ -180,15 +181,7 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 	aligned_size = hg_mem_aligned_to(size, BLOCK_SIZE) / BLOCK_SIZE;
 #if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
 	g_print("ALLOC: %" G_GSIZE_FORMAT " blocks required\n", aligned_size);
-	g_print("Bitmap: %" G_GSIZE_FORMAT " blocks allocated\n", bitmap->size);
-	g_print("         1         2         3         4         5\n");
-	g_print("12345678901234567890123456789012345678901234567890");
-	for (i = 0; i < bitmap->size; i++) {
-		if (i % 50 == 0)
-			g_print("\n");
-		g_print("%d", _hg_allocator_bitmap_is_marked(bitmap, i + 1) ? 1 : 0);
-	}
-	g_print("\n");
+	_hg_allocator_bitmap_dump(bitmap);
 #endif
 	if (aligned_size >= bitmap->last_allocated_size) {
 		/* that may be less likely to get a space
@@ -242,15 +235,7 @@ _hg_allocator_bitmap_realloc(hg_allocator_bitmap_t *bitmap,
 	old_aligned_size = hg_mem_aligned_to(old_size, BLOCK_SIZE) / BLOCK_SIZE;
 #if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
 	g_print("ALLOC: %" G_GSIZE_FORMAT " blocks to be grown from %" G_GSIZE_FORMAT " blocks at index %" G_GSIZE_FORMAT "\n", aligned_size, old_aligned_size, index);
-	g_print("Bitmap: %" G_GSIZE_FORMAT " blocks allocated\n", bitmap->size);
-	g_print("         1         2         3         4         5\n");
-	g_print("12345678901234567890123456789012345678901234567890");
-	for (i = 0; i < bitmap->size; i++) {
-		if (i % 50 == 0)
-			g_print("\n");
-		g_print("%d", _hg_allocator_bitmap_is_marked(bitmap, i + 1) ? 1 : 0);
-	}
-	g_print("\n");
+	_hg_allocator_bitmap_dump(bitmap);
 #endif
 	required_size = aligned_size - old_aligned_size;
 	if (required_size < 0) {
@@ -318,15 +303,8 @@ _hg_allocator_bitmap_free(hg_allocator_bitmap_t *bitmap,
 	G_UNLOCK (bitmap);
 
 #if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
-	g_print("After freed bitmap: %" G_GSIZE_FORMAT " blocks allocated\n", bitmap->size);
-	g_print("         1         2         3         4         5\n");
-	g_print("12345678901234567890123456789012345678901234567890");
-	for (i = 0; i < bitmap->size; i++) {
-		if (i % 50 == 0)
-			g_print("\n");
-		g_print("%d", _hg_allocator_bitmap_is_marked(bitmap, i + 1) ? 1 : 0);
-	}
-	g_print("\n");
+	g_print("After freed");
+	_hg_allocator_bitmap_dump(bitmap);
 #endif
 }
 
@@ -394,6 +372,22 @@ _hg_allocator_bitmap_range_mark(hg_allocator_bitmap_t *bitmap,
 	}
 
 	return FALSE;
+}
+
+G_INLINE_FUNC void
+_hg_allocator_bitmap_dump(hg_allocator_bitmap_t *bitmap)
+{
+	gsize i;
+
+	g_print("bitmap: %" G_GSIZE_FORMAT " blocks allocated\n", bitmap->size);
+	g_print("         1         2         3         4         5         6         7         8\n");
+	g_print("12345678901234567890123456789012345678901234567890123456789012345678901234567890");
+	for (i = 0; i < bitmap->size; i++) {
+		if (i % 80 == 0)
+			g_print("\n");
+		g_print("%d", _hg_allocator_bitmap_is_marked(bitmap, i + 1) ? 1 : 0);
+	}
+	g_print("\n");
 }
 
 /** allocator **/
@@ -680,7 +674,7 @@ _hg_allocator_gc_init(hg_allocator_data_t *data)
 		g_warning("GC is already ongoing.");
 		return FALSE;
 	}
-	priv->slave_bitmap = _hg_allocator_bitmap_new(priv->bitmap->size);
+	priv->slave_bitmap = _hg_allocator_bitmap_new(priv->bitmap->size * BLOCK_SIZE);
 	priv->slave.total_size = data->total_size;
 	priv->slave.used_size = 0;
 
@@ -708,7 +702,15 @@ _hg_allocator_gc_mark(hg_allocator_data_t  *data,
 		q = index;
 		aligned_size = hg_mem_aligned_to(block->size, BLOCK_SIZE) / BLOCK_SIZE;
 		if (_hg_allocator_bitmap_range_mark(priv->slave_bitmap, &q, aligned_size)) {
+#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
+			g_print("GC: Marked index %ld, size: %ld\n", index, aligned_size);
+			_hg_allocator_bitmap_dump(priv->slave_bitmap);
+#endif
 			priv->slave.used_size += block->size;
+		} else {
+#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
+			g_print("GC: already marked index %ld\n", index);
+#endif
 		}
 		_hg_allocator_real_unlock_object(block);
 	} else {
