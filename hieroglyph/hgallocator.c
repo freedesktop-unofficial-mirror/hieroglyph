@@ -737,6 +737,7 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 			gboolean             was_error)
 {
 	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
+	gsize i, used_size;
 
 	if (!priv->slave_bitmap) {
 		g_warning("GC isn't yet started.");
@@ -746,7 +747,40 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 	G_LOCK (allocator);
 
 #define HG_GC_DEBUG
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
+	if (!was_error) {
+		used_size = data->used_size - priv->slave.used_size;
+
+#if defined (HG_DEBUG) && defined (HG_GC_DEBUG)
+		g_print("GC: marking the locked objects\n");
+#endif
+		/* give aid to the locked blocks */
+		for (i = 0; used_size > 0 && i < priv->bitmap->size; i++) {
+			if (_hg_allocator_bitmap_is_marked(priv->bitmap, i + 1)) {
+				hg_allocator_block_t *block;
+				gsize aligned_size;
+
+				block = _hg_allocator_get_internal_block((hg_allocator_private_t *)data,
+									 i + 1, FALSE);
+
+				if (block == NULL) {
+					was_error = TRUE;
+					break;
+				}
+				if (!_hg_allocator_bitmap_is_marked(priv->slave_bitmap, i + 1)) {
+					used_size -= block->size;
+					if (block->lock_count > 0) {
+						was_error = !_hg_allocator_gc_mark(data, i + 1, NULL);
+						if (was_error)
+							break;
+					}
+				}
+				aligned_size = hg_mem_aligned_to(block->size, BLOCK_SIZE) / BLOCK_SIZE;
+				i += aligned_size - 1;
+			}
+		}
+	}
+
+#if defined (HG_DEBUG) && defined (HG_GC_DEBUG)
 	if (!was_error)
 		g_print("GC: %ld -> %ld (%ld bytes freed)\n",
 			data->used_size, priv->slave.used_size,
@@ -767,7 +801,7 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 
 	G_UNLOCK (allocator);
 
-	return TRUE;
+	return !was_error;
 }
 
 /*< public >*/

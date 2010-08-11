@@ -1,5 +1,8 @@
 2010-08-11  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgallocator.c (_hg_allocator_gc_finish): catch up
+	the locked objects too.
+
 	* hieroglyph/hgmem.c (_hg_mem_gc_finish): call the object finalizer.
 
 	* hieroglyph/hgallocator.c (_hg_allocator_bitmap_dump): new.

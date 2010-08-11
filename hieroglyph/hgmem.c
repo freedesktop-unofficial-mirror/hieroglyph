@@ -443,17 +443,18 @@ hg_mem_collect_garbage(hg_mem_t *mem)
 
 	retval = mem->data->used_size;
 
-	if (mem->gc_func &&
-	    mem->allocator->gc_init &&
+	if (mem->allocator->gc_init &&
 	    mem->allocator->gc_mark &&
 	    mem->allocator->gc_finish) {
 		if (mem->allocator->gc_init(mem->data)) {
-			gboolean ret;
+			gboolean ret = TRUE;
 
 			_hg_mem_gc_init(mem);
-			ret = mem->gc_func(mem, mem->gc_data);
+			if (mem->gc_func)
+				ret = mem->gc_func(mem, mem->gc_data);
 			_hg_mem_gc_finish(mem, !ret);
-			mem->allocator->gc_finish(mem->data, !ret);
+			if (!mem->allocator->gc_finish(mem->data, !ret))
+				return -1;
 		}
 	}
 

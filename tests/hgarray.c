@@ -98,6 +98,11 @@ TDEF (gc_mark)
 	hg_mem_set_garbage_collection(m, _gc_func, a);
 	size = hg_mem_collect_garbage(m);
 	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
+	hg_mem_set_garbage_collection(m, NULL, NULL);
+	size = hg_mem_collect_garbage(m);
+	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
+	size = hg_mem_collect_garbage(m);
+	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
 } TEND
 
 TDEF (hg_array_new)
