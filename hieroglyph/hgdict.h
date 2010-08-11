@@ -74,6 +74,10 @@ void                hg_dict_foreach               (hg_dict_t                *dic
 						   hg_dict_traverse_func_t   func,
 						   gpointer                  data,
 						   GError                  **error);
+gboolean            hg_dict_first_item            (hg_dict_t                *dict,
+						   hg_quark_t               *qkey,
+						   hg_quark_t               *qval,
+						   GError                  **error);
 
 
 G_END_DECLS

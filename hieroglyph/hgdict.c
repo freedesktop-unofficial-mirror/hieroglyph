@@ -34,6 +34,11 @@
 #define HG_DICT_NODE_SIZE	5
 
 
+typedef struct _hg_dict_item_t {
+	hg_quark_t qkey;
+	hg_quark_t qval;
+} hg_dict_item_t;
+
 G_INLINE_FUNC hg_quark_t _hg_dict_node_new                  (hg_mem_t                 *mem,
 							     gpointer                 *ret,
 							     gpointer                 *ret_key,
@@ -821,6 +826,21 @@ _hg_dict_node_foreach(hg_mem_t                 *mem,
 	}
 }
 
+static gboolean
+_hg_dict_traverse_first_item(hg_mem_t    *mem,
+			     hg_quark_t   qkey,
+			     hg_quark_t   qval,
+			     gpointer     data,
+			     GError     **error)
+{
+	hg_dict_item_t *x = data;
+
+	x->qkey = qkey;
+	x->qval = qval;
+
+	return FALSE;
+}
+
 /*< public >*/
 void
 _hg_dict_node_set_size(gsize size)
@@ -1137,4 +1157,50 @@ hg_dict_foreach(hg_dict_t                 *dict,
 		}
 		g_error_free(err);
 	}
+}
+
+/**
+ * hg_dict_first_item:
+ * @dict:
+ * @qkey:
+ * @qval:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_dict_first_item(hg_dict_t   *dict,
+		   hg_quark_t  *qkey,
+		   hg_quark_t  *qval,
+		   GError     **error)
+{
+	hg_dict_item_t x;
+	GError *err = NULL;
+
+	hg_return_val_with_gerror_if_fail (dict != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (dict->o.type == HG_TYPE_DICT, FALSE, error);
+
+	_hg_dict_node_foreach(dict->o.mem, dict->qroot, _hg_dict_traverse_first_item, &x, &err);
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+
+		return FALSE;
+	} else {
+		if (qkey)
+			*qkey = x.qkey;
+		if (qval)
+			*qval = x.qval;
+	}
+
+	return TRUE;
 }

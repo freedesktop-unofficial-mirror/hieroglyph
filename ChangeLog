@@ -1,5 +1,7 @@
 2010-08-11  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgdict.c (hg_dict_first_item): new.
+
 	* hieroglyph/hgallocator.c (_hg_allocator_realloc): ensure unlocking
 	the memory.
 
