@@ -1140,7 +1140,65 @@ VALIDATE_STACK_SIZE (__n != 0 ? 0 : 1, __n != 0 ? -__n : 2, 0);
 DEFUNC_OPER_END
 
 /* <int> <dict> <proc> %forall_dict_continue - */
-DEFUNC_UNIMPLEMENTED_OPER (protected_forall_dict_continue);
+DEFUNC_OPER (protected_forall_dict_continue)
+gint __n G_GNUC_UNUSED = 0;
+G_STMT_START {
+	hg_quark_t self, proc, val, n, q, qk, qv;
+	hg_dict_t *d;
+	gsize i;
+
+	self = hg_stack_index(estack, 0, error);
+	proc = hg_stack_index(estack, 1, error);
+	val = hg_stack_index(estack, 2, error);
+	n = hg_stack_index(estack, 3, error);
+
+	d = HG_VM_LOCK (vm, val, error);
+	if (d == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	i = HG_INT (n);
+	if (hg_dict_length(d) == 0) {
+		HG_VM_UNLOCK (vm, val);
+		hg_stack_roll(estack, 4, 1, error);
+		hg_stack_pop(estack, error);
+		hg_stack_pop(estack, error);
+		hg_stack_pop(estack, error);
+
+		retval = TRUE;
+		__n = 3;
+		break;
+	}
+	hg_stack_roll(estack, 4, -1, error);
+	hg_stack_pop(estack, error);
+	STACK_PUSH (estack, HG_QINT (i + 1));
+	hg_stack_roll(estack, 4, 1, error);
+
+	if (!hg_dict_first_item(d, &qk, &qv, error)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		HG_VM_UNLOCK (vm, val);
+
+		return FALSE;
+	}
+	hg_dict_remove(d, qk, error);
+	HG_VM_UNLOCK (vm, val);
+
+	q = hg_vm_quark_copy(vm, proc, NULL, error);
+	if (q == Qnil) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+
+	STACK_PUSH (ostack, qk);
+	STACK_PUSH (ostack, qv);
+	STACK_PUSH (estack, q);
+	/* dummy */
+	STACK_PUSH (estack, self);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (__n != 0 ? 0 : 2, __n != 0 ? -__n : 2, 0);
+DEFUNC_OPER_END
 
 /* <int> <string> <proc> %forall_string_continue - */
 DEFUNC_OPER (protected_forall_string_continue)
@@ -2459,6 +2517,20 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-4, 5, 0);
 DEFUNC_OPER_END
 
+static gboolean
+_hg_operator_dup_dict(hg_mem_t    *mem,
+		      hg_quark_t   qkey,
+		      hg_quark_t   qval,
+		      gpointer     data,
+		      GError     **error)
+{
+	hg_dict_t *dict = data;
+
+	hg_dict_add(dict, qkey, qval, error);
+
+	return TRUE;
+}
+
 /* <array> <proc> forall -
  * <packedarray> <proc> forall -
  * <dict> <proc> forall -
@@ -2466,8 +2538,8 @@ DEFUNC_OPER_END
  */
 DEFUNC_OPER (forall)
 G_STMT_START {
-	hg_quark_t arg0, arg1, q = Qnil;
-	hg_dict_t *dict;
+	hg_quark_t arg0, arg1, q = Qnil, qd;
+	hg_dict_t *dict, *new_dict;
 
 	CHECK_STACK (ostack, 2);
 
@@ -2497,7 +2569,18 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
+		qd = hg_dict_new(dict->o.mem, hg_dict_maxlength(dict), (gpointer *)&new_dict);
+		if (qd == Qnil) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			goto d_error;
+		}
+		hg_dict_foreach(dict, _hg_operator_dup_dict, new_dict, error);
+		HG_VM_UNLOCK (vm, qd);
+
+		arg0 = qd;
+
 		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%forall_dict_continue"), error);
+	  d_error:
 		HG_VM_UNLOCK (vm, vm->qsystemdict);
 	} else if (HG_IS_QSTRING (arg0)) {
 		dict = HG_VM_LOCK (vm, vm->qsystemdict, error);
@@ -2512,7 +2595,8 @@ G_STMT_START {
 		return FALSE;
 	}
 	if (q == Qnil) {
-		hg_vm_set_error(vm, qself, HG_VM_e_undefined);
+		if (!hg_vm_has_error(vm))
+			hg_vm_set_error(vm, qself, HG_VM_e_undefined);
 		return FALSE;
 	}
 
@@ -4474,27 +4558,14 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
-/* <array> xcheck <bool>
- * <packedarray> xcheck <false>
- * <dict> xcheck <bool>
- * <file> xcheck <bool>
- * <string> xcheck <bool>
- */
+/* <any> xcheck <bool> */
 DEFUNC_OPER (xcheck)
 G_STMT_START {
 	hg_quark_t arg0;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
-	if (!HG_IS_QARRAY (arg0) &&
-	    !HG_IS_QDICT (arg0) &&
-	    !HG_IS_QFILE (arg0) &&
-	    !HG_IS_QSTRING (arg0)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
-		return FALSE;
-	}
-	hg_stack_pop(ostack, error);
+	arg0 = hg_stack_pop(ostack, error);
 
 	STACK_PUSH (ostack, HG_QBOOL (hg_quark_is_executable(arg0)));
 

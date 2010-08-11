@@ -1,5 +1,9 @@
 2010-08-11  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (_hg_operator_real_protected_forall_dict_continue):
+	implemented.
+	(_hg_operator_real_xcheck): fix a typo.
+
 	* hieroglyph/hgdict.c (hg_dict_first_item): new.
 
 	* hieroglyph/hgallocator.c (_hg_allocator_realloc): ensure unlocking
