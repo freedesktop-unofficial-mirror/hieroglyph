@@ -104,9 +104,9 @@ HEXDIGITS	[0-9a-fA-F]
 
 			BEGIN(INITIAL);
 			scanner->result = hg_string_new_with_value(mem,
-								   NULL,
 								   string->str,
-								   string->len);
+								   string->len,
+								   NULL);
 			if (scanner->result == Qnil) {
 				g_set_error(error, HG_ERROR, ENOMEM,
 					    "Out of memory");
@@ -178,9 +178,9 @@ HEXDIGITS	[0-9a-fA-F]
 
 		BEGIN(INITIAL);
 		scanner->result = hg_string_new_with_value(mem,
-							   NULL,
 							   string->str,
-							   string->len);
+							   string->len,
+							   NULL);
 		if (scanner->result == Qnil) {
 			g_set_error(error, HG_ERROR, ENOMEM,
 				    "Out of memory");
@@ -255,9 +255,9 @@ HEXDIGITS	[0-9a-fA-F]
 
 		BEGIN(INITIAL);
 		scanner->result = hg_string_new_with_value(mem,
-							   NULL,
 							   string->str,
-							   string->len);
+							   string->len,
+							   NULL);
 		if (scanner->result == Qnil) {
 			g_set_error(error, HG_ERROR, ENOMEM,
 				    "Out of memory");

@@ -34,7 +34,7 @@ G_BEGIN_DECLS
 			    hg_object_string_get_vtable()))
 
 #define HG_QSTRING(_m_,_s_)					\
-	(hg_string_new_with_value((_m_), NULL, (_s_), strlen(_s_)))
+	(hg_string_new_with_value((_m_), (_s_), strlen(_s_), NULL))
 #define HG_IS_QSTRING(_v_)				\
 	(hg_quark_get_type(_v_) == HG_TYPE_STRING)
 
@@ -58,12 +58,12 @@ struct _hg_string_t {
 
 hg_object_vtable_t *hg_object_string_get_vtable (void) G_GNUC_CONST;
 hg_quark_t          hg_string_new               (hg_mem_t           *mem,
-                                                 gpointer           *ret,
-                                                 gsize               requisition_size);
+                                                 gsize               requisition_size,
+                                                 gpointer           *ret);
 hg_quark_t          hg_string_new_with_value    (hg_mem_t           *mem,
-                                                 gpointer           *ret,
                                                  const gchar        *string,
-                                                 gssize              length);
+                                                 gssize              length,
+                                                 gpointer           *ret);
 void                hg_string_free              (hg_string_t        *string,
 						 gboolean            free_segment);
 guint               hg_string_length            (const hg_string_t  *string);

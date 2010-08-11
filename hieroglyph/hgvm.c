@@ -1014,8 +1014,7 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 	hg_return_val_if_fail (vm != NULL, Qnil);
 
 	retval = hg_string_new(hg_vm_get_mem(vm),
-			       (gpointer *)&s,
-			       65535);
+			       65535, (gpointer *)&s);
 	if (retval == Qnil) {
 		g_set_error(&err, HG_ERROR, ENOMEM,
 			    "Out of memory.");
@@ -2138,9 +2137,8 @@ hg_vm_eval_from_cstring(hg_vm_t      *vm,
 
 	/* add \n at the end to avoid failing on scanner */
 	str = g_strdup_printf("%s\n", cstring);
-	qstring = hg_string_new_with_value(hg_vm_get_mem(vm),
-					   NULL,
-					   str, -1);
+	qstring = HG_QSTRING (hg_vm_get_mem(vm),
+			      str);
 	g_free(str);
 	if (qstring == Qnil) {
 		g_set_error(&err, HG_ERROR, ENOMEM,

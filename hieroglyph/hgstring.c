@@ -87,8 +87,7 @@ _hg_object_string_copy(hg_object_t              *object,
 
 	hg_return_val_if_fail (object->type == HG_TYPE_STRING, Qnil);
 
-	retval = hg_string_new_with_value(s->o.mem, NULL,
-					  cstr, -1);
+	retval = HG_QSTRING (s->o.mem, cstr);
 	g_free(cstr);
 	if (retval == Qnil) {
 		g_set_error(&err, HG_ERROR, ENOMEM,
@@ -202,8 +201,8 @@ _hg_string_maybe_expand(hg_string_t *string)
 /**
  * hg_string_new:
  * @mem:
- * @ret:
  * @requisition_size:
+ * @ret:
  *
  * FIXME
  *
@@ -211,8 +210,8 @@ _hg_string_maybe_expand(hg_string_t *string)
  */
 hg_quark_t
 hg_string_new(hg_mem_t *mem,
-	      gpointer *ret,
-	      gsize     requisition_size)
+	      gsize     requisition_size,
+	      gpointer *ret)
 {
 	hg_string_t *s = NULL;
 	hg_quark_t retval;
@@ -234,9 +233,9 @@ hg_string_new(hg_mem_t *mem,
 /**
  * hg_string_new_with_value:
  * @mem:
- * @ret:
  * @string:
  * @length:
+ * @ret:
  *
  * FIXME
  *
@@ -244,9 +243,9 @@ hg_string_new(hg_mem_t *mem,
  */
 hg_quark_t
 hg_string_new_with_value(hg_mem_t    *mem,
-			 gpointer    *ret,
 			 const gchar *string,
-			 gssize       length)
+			 gssize       length,
+			 gpointer    *ret)
 {
 	hg_string_t *s = NULL;
 	hg_quark_t retval;
@@ -891,7 +890,7 @@ hg_string_make_substring(hg_string_t  *string,
 	hg_return_val_with_gerror_if_fail (string != NULL, Qnil, error);
 	hg_return_val_with_gerror_if_fail (string->o.type == HG_TYPE_STRING, Qnil, error);
 
-	retval = hg_string_new(string->o.mem, (gpointer *)&s, 0);
+	retval = hg_string_new(string->o.mem, 0, (gpointer *)&s);
 	if (retval == Qnil) {
 		g_set_error(&err, HG_ERROR, ENOMEM,
 			    "Out of memory");

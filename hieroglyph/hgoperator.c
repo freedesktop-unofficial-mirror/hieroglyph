@@ -632,10 +632,8 @@ G_STMT_START {
 	g_free(cstr);
 
 	if (filename) {
-		q = hg_string_new_with_value(hg_vm_get_mem(vm),
-					     NULL,
-					     filename,
-					     -1);
+		q = HG_QSTRING (hg_vm_get_mem(vm),
+				filename);
 		g_free(filename);
 		if (q == Qnil) {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
@@ -781,10 +779,8 @@ DEFUNC_OPER (private_product)
 G_STMT_START {
 	hg_quark_t q;
 
-	q = hg_string_new_with_value(hg_vm_get_mem(vm),
-				     NULL,
-				     "Hieroglyph PostScript Interpreter",
-				     -1);
+	q = HG_QSTRING (hg_vm_get_mem(vm),
+			"Hieroglyph PostScript Interpreter");
 	if (q == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
@@ -3941,7 +3937,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 		return FALSE;
 	}
-	q = hg_string_new(hg_vm_get_mem(vm), NULL, len);
+	q = hg_string_new(hg_vm_get_mem(vm), len, NULL);
 	if (q == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;

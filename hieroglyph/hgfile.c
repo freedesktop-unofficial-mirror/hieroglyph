@@ -1067,8 +1067,8 @@ _hg_file_io_real_lineedit_open(hg_file_t  *file,
 		    return FALSE;
 	}
 	qs = hg_string_new_with_value(file->o.mem,
-				      (gpointer *)&s,
-				      buf, -1);
+				      buf, -1,
+				      (gpointer *)&s);
 	if (qs == Qnil) {
 		errno = ENOENT;
 		goto exception;

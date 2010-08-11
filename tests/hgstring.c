@@ -65,23 +65,56 @@ TDEF (get_capsulated_size)
 	fail_unless(size == sizeof (hg_string_t), "Obtaining the different size: expect: %" G_GSIZE_FORMAT " actual: %" G_GSIZE_FORMAT, sizeof (hg_string_t), size);
 } TEND
 
+static gboolean
+_gc_iter_func(hg_quark_t   qdata,
+	      gpointer     data,
+	      GError     **error)
+{
+	return TRUE;
+}
+
+static gboolean
+_gc_func(hg_mem_t *mem,
+	 gpointer  data)
+{
+	hg_string_t *s = data;
+
+	if (data == NULL)
+		return TRUE;
+
+	return hg_object_gc_mark((hg_object_t *)s, _gc_iter_func, NULL, NULL);
+}
+
+TDEF (gc_mark)
+{
+	hg_quark_t q;
+	hg_string_t *s;
+	gssize size = 0;
+	hg_mem_t *m = hg_mem_new(256);
+
+	q = hg_string_new_with_value(m, "abc", -1, (gpointer *)&s);
+	hg_mem_set_garbage_collection(m, _gc_func, s);
+	size = hg_mem_collect_garbage(m);
+	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
+} TEND
+
 TDEF (hg_string_new)
 {
 	hg_quark_t q;
 	hg_string_t *s = NULL;
 
-	q = hg_string_new(mem, (gpointer *)&s, 100);
+	q = hg_string_new(mem, 100, (gpointer *)&s);
 	fail_unless(q != Qnil, "Unable to create the string object.");
 	fail_unless(hg_quark_get_type(q) == HG_TYPE_STRING, "No type information in the quark");
 	fail_unless(s->allocated_size == 101, "Unexpected result of the allocated size: expect: %" G_GSIZE_FORMAT " actual: %" G_GSIZE_FORMAT, 100, s->allocated_size);
 	hg_mem_free(mem, q);
 
 /* it's valid now
-	q = hg_string_new(mem, NULL, 0);
+	q = hg_string_new(mem, 0, NULL);
 	fail_unless(q == Qnil, "Unexpected result to create the 0-sized string");
 	g_free(hieroglyph_test_pop_error());
 */
-	q = hg_string_new(mem, NULL, 65536);
+	q = hg_string_new(mem, 65536, NULL);
 	fail_unless(q == Qnil, "Unexpected result to create too long string");
 	g_free(hieroglyph_test_pop_error());
 } TEND
@@ -91,18 +124,18 @@ TDEF (hg_string_new_with_value)
 	hg_quark_t q;
 	hg_string_t *s = NULL;
 
-	q = hg_string_new_with_value(mem, NULL, NULL, 1);
+	q = hg_string_new_with_value(mem, NULL, 1, NULL);
 	fail_unless(q == Qnil, "Unexpected result to create the string object with NULL string");
 	g_free(hieroglyph_test_pop_error());
 /* it's valid now
-	q = hg_string_new_with_value(mem, NULL, "a", 0);
+	q = hg_string_new_with_value(mem, "a", 0, NULL);
 	fail_unless(q == Qnil, "Unexpected result to create the string object with 0-sized string");
 	g_free(hieroglyph_test_pop_error());
 */
-	q = hg_string_new_with_value(mem, NULL, "a", 65536);
+	q = hg_string_new_with_value(mem, "a", 65536, NULL);
 	fail_unless(q == Qnil, "Unexpected result to create the string object with too long string");
 	g_free(hieroglyph_test_pop_error());
-	q = hg_string_new_with_value(mem, (gpointer *)&s, "abc", 3);
+	q = hg_string_new_with_value(mem, "abc", 3, (gpointer *)&s);
 	fail_unless(q != Qnil, "Unable to create the string object.");
 	fail_unless(hg_quark_get_type(q) == HG_TYPE_STRING, "No type information in the quark");
 	fail_unless(hg_string_maxlength(s) == 3, "Unexpected result of the allocated size: expect: %" G_GSIZE_FORMAT " actual: %" G_GSIZE_FORMAT, 3, s->allocated_size);
@@ -126,7 +159,7 @@ TDEF (hg_string_clear)
 	hg_quark_t q;
 	hg_string_t *s;
 
-	q = hg_string_new_with_value(mem, (gpointer *)&s, "abc", 3);
+	q = hg_string_new_with_value(mem, "abc", 3, (gpointer *)&s);
 	fail_unless(q != Qnil, "Unable to create the string object.");
 	fail_unless(hg_string_clear(s), "Unable to clean up the string object.");
 	fail_unless(hg_string_length(s) == 0, "Unexpected result after clearing.");
@@ -138,7 +171,7 @@ TDEF (hg_string_append_c)
 	hg_quark_t q;
 	hg_string_t *s;
 
-	q = hg_string_new(mem, (gpointer *)&s, 3);
+	q = hg_string_new(mem, 3, (gpointer *)&s);
 	fail_unless(q != Qnil, "Unable to create the string object.");
 	fail_unless(hg_string_append_c(s, 'a', NULL), "Unable to add a character into the string object.");
 	fail_unless(hg_string_length(s) == 1, "Unexpected result after adding a character.");
@@ -163,7 +196,7 @@ TDEF (hg_string_append)
 	hg_quark_t q;
 	hg_string_t *s;
 
-	q = hg_string_new(mem, (gpointer *)&s, 3);
+	q = hg_string_new(mem, 3, (gpointer *)&s);
 	fail_unless(q != Qnil, "Unable to create the string object.");
 	fail_unless(hg_string_append(s, "ab", -1, NULL), "Unable to add a character into the string object.");
 	fail_unless(hg_string_length(s) == 2, "Unexpected result after adding a character.");
@@ -186,7 +219,7 @@ TDEF (hg_string_overwrite_c)
 	hg_quark_t q;
 	hg_string_t *s;
 
-	q = hg_string_new(mem, (gpointer *)&s, 3);
+	q = hg_string_new(mem, 3, (gpointer *)&s);
 	fail_unless(q != Qnil, "Unable to create the string object.");
 	fail_unless(hg_string_append_c(s, 'a'), "Unable to add a character into the string object.");
 	fail_unless(hg_string_length(s) == 1, "Unexpected result after adding a character.");
@@ -208,7 +241,7 @@ TDEF (hg_string_erase)
 	hg_quark_t q;
 	hg_string_t *s;
 
-	q = hg_string_new_with_value(mem, (gpointer *)&s, "abcdefg", 7);
+	q = hg_string_new_with_value(mem, "abcdefg", 7, (gpointer *)&s);
 	fail_unless(q != Qnil, "Unable to create the string object.");
 	fail_unless(hg_string_ncompare_with_cstr(s, "abcdefg", -1), "Unexpected result after creating the string object.");
 	fail_unless(hg_string_erase(s, 2, 2), "Unable to delete the characters");
@@ -226,8 +259,8 @@ TDEF (hg_string_concat)
 	hg_quark_t q1, q2;
 	hg_string_t *s1, *s2;
 
-	q1 = hg_string_new_with_value(mem, (gpointer *)&s1, "abcd", 4);
-	q2 = hg_string_new_with_value(mem, (gpointer *)&s2, "efgh", 4);
+	q1 = hg_string_new_with_value(mem, "abcd", 4, (gpointer *)&s1);
+	q2 = hg_string_new_with_value(mem, "efgh", 4, (gpointer *)&s2);
 	fail_unless(q1 != Qnil, "Unable to create the string object [1]");
 	fail_unless(q2 != Qnil, "Unable to create the string object [2]");
 	fail_unless(!hg_string_concat(s1, NULL), "Unexpected result on concatenating the string object with NULL. [1]");
@@ -245,7 +278,7 @@ TDEF (hg_string_index)
 	hg_string_t *s;
 	gchar c;
 
-	q = hg_string_new_with_value(mem, (gpointer *)&s, "abc", 3);
+	q = hg_string_new_with_value(mem, "abc", 3, (gpointer *)&s);
 	fail_unless(q != Qnil, "Unable to create the string object.");
 	c = hg_string_index(s, 0);
 	fail_unless(c == 'a', "Unexpected result to obtain the character at the index 0: expect: %c, actual: %c", 'a', c);
@@ -264,7 +297,7 @@ TDEF (hg_string_get_cstr)
 	hg_string_t *s;
 	gchar *p;
 
-	q = hg_string_new_with_value(mem, (gpointer *)&s, "abc", 3);
+	q = hg_string_new_with_value(mem, "abc", 3, (gpointer *)&s);
 	fail_unless(q != Qnil, "Unable to create the string object.");
 	p = hg_string_get_cstr(s);
 	fail_unless(strcmp(p, "abc") == 0, "Unexpected result of the obtained string");
@@ -280,14 +313,14 @@ TDEF (hg_string_compare)
 	hg_quark_t q1, q2;
 	hg_string_t *s1, *s2;
 
-	q1 = hg_string_new_with_value(mem, (gpointer *)&s1, "abc", 3);
-	q2 = hg_string_new_with_value(mem, (gpointer *)&s2, "abc", 3);
+	q1 = hg_string_new_with_value(mem, "abc", 3, (gpointer *)&s1);
+	q2 = hg_string_new_with_value(mem, "abc", 3, (gpointer *)&s2);
 	fail_unless(q1 != Qnil, "Unable to create the string object [1]");
 	fail_unless(q2 != Qnil, "Unable to create the string object [2]");
 	fail_unless(hg_string_compare(s1, s2), "Unexpected result on comparing the string objects");
-	q2 = hg_string_new_with_value(mem, (gpointer *)&s2, "ABC", 3);
+	q2 = hg_string_new_with_value(mem, "ABC", 3, (gpointer *)&s2);
 	fail_unless(!hg_string_compare(s1, s2), "Unexpected result on comparing the string objects [take 2]");
-	q2 = hg_string_new_with_value(mem, (gpointer *)&s2, "abcd", 4);
+	q2 = hg_string_new_with_value(mem, "abcd", 4, (gpointer *)&s2);
 	fail_unless(!hg_string_compare(s1, s2), "Unexpected result on comparing the string objects [take 3]");
 	fail_unless(hg_string_ncompare(s1, s2, 3), "Unexpected result on comparing the string objects [take 4]");
 } TEND
@@ -312,6 +345,7 @@ hieroglyph_suite(void)
 	tcase_add_checked_fixture(tc, setup, teardown);
 
 	T (get_capsulated_size);
+	T (gc_mark);
 	T (hg_string_new);
 	T (hg_string_new_with_value);
 	T (hg_string_length);
