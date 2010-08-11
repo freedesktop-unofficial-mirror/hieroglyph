@@ -3,6 +3,8 @@ AC_INIT([hieroglyph], 0.0.1, [https://bugs.freedesktop.org/enter_bug.cgi?product
 
 . ./requires
 
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+
 AM_INIT_AUTOMAKE($PACKAGE_NAME, $PACKAGE_VERSION)
 AM_MAINTAINER_MODE
 AM_CONFIG_HEADER([config.h])
