@@ -677,7 +677,7 @@ hg_string_index(hg_string_t *string,
 
 	retval = s[index];
 	hg_mem_unlock_object(string->o.mem, string->qstring);
-	
+
 	return retval;
 }
 

@@ -496,6 +496,7 @@ _hg_allocator_realloc(hg_allocator_data_t *data,
 	hg_allocator_block_t *block, *new_block;
 	gsize obj_size;
 	hg_quark_t index = Qnil, retval = Qnil;
+	gboolean retried = FALSE;
 
 	G_LOCK (allocator);
 
@@ -531,16 +532,19 @@ _hg_allocator_realloc(hg_allocator_data_t *data,
 			else
 				_hg_allocator_real_unlock_object(new_block);
 		} else {
-			if (data->resizable) {
+			if (data->resizable && !retried) {
 				gsize resize_size = MAX (size, DEFAULT_RESIZE_SIZE);
 
 				if (resize_size == size) {
 					/* We'll be here soon */
 					resize_size = MAX (resize_size, data->total_size);
 				}
-				if (_hg_allocator_resize_heap(data, data->total_size + resize_size))
+				if (_hg_allocator_resize_heap(data, data->total_size + resize_size)) {
+					retried = TRUE;
 					goto retry;
+				}
 			}
+			_hg_allocator_real_unlock_object(block);
 		}
 	} else {
 #if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)

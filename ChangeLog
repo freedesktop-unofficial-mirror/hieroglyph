@@ -1,5 +1,13 @@
 2010-08-11  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgallocator.c (_hg_allocator_realloc): ensure unlocking
+	the memory.
+
+	* hieroglyph/hgobject.c (hg_object_free): ensure unlocking the memory.
+
+	* hieroglyph/hgfile.c (_hg_file_io_real_file_open): ensure unlocking
+	the memory.
+
 	* hieroglyph/hgallocator.c (_hg_allocator_gc_finish): catch up
 	the locked objects too.
 

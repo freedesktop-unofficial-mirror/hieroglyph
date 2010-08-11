@@ -571,6 +571,7 @@ _hg_file_io_real_file_open(hg_file_t  *file,
 						error,
 						FALSE);
 	filename = hg_string_get_cstr(sfilename);
+	hg_mem_unlock_object(file->o.mem, file->qfilename);
 	errno = 0;
 	if (stat(filename, &st) == -1 && (file->mode & HG_FILE_IO_MODE_READ) != 0) {
 		goto exception;
@@ -578,7 +579,6 @@ _hg_file_io_real_file_open(hg_file_t  *file,
 	if ((fd = open(filename, modes[file->mode])) == -1) {
 		goto exception;
 	}
-	hg_mem_unlock_object(file->o.mem, file->qfilename);
 	g_free(filename);
 	data->fd = fd;
 	if ((buffer = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0)) != MAP_FAILED) {

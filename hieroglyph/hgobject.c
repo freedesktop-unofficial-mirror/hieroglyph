@@ -185,8 +185,10 @@ hg_object_free(hg_mem_t   *mem,
 	hg_return_if_fail (mem != NULL);
 	hg_return_if_fail (index != Qnil);
 	hg_return_if_lock_fail (object, mem, index);
-	hg_return_if_fail (object->type < HG_TYPE_END);
-	hg_return_if_fail (__hg_object_vtables[object->type] != NULL);
+	hg_return_after_eval_if_fail (object->type < HG_TYPE_END,
+				      hg_mem_unlock_object(mem, index));
+	hg_return_after_eval_if_fail (__hg_object_vtables[object->type] != NULL,
+				      hg_mem_unlock_object(mem, index));
 
 	v = __hg_object_vtables[object->type];
 	if (v->free) {
