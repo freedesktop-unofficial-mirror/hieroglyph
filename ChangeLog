@@ -1,5 +1,7 @@
 2010-08-11  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgmem.c (hg_mem_collect_garbage): new.
+
 	* hieroglyph/hgarray.c (_hg_object_array_gc_mark): do not set
 	a on_copying flag here. it doesn't work as expected actually.
 

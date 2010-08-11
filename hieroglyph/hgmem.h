@@ -59,6 +59,7 @@ void        hg_mem_unlock_object         (hg_mem_t                 *mem,
 void        hg_mem_set_garbage_collection(hg_mem_t                 *mem,
                                           hg_gc_func_t              func,
                                           gpointer                  user_data);
+gssize      hg_mem_collect_garbage       (hg_mem_t                 *mem);
 gboolean    hg_mem_gc_mark               (hg_mem_t                 *mem,
                                           hg_quark_t                qdata,
                                           GError                  **error);

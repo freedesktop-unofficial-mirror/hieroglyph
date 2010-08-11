@@ -252,23 +252,10 @@ hg_mem_alloc(hg_mem_t *mem,
 	if (retval != Qnil) {
 		hg_quark_set_mem_id(&retval, mem->id);
 	} else {
-		if (mem->gc_func &&
-		    mem->allocator->gc_init &&
-		    mem->allocator->gc_mark &&
-		    mem->allocator->gc_finish &&
-		    !retried) {
+		if (!retried &&
+		    hg_mem_collect_garbage(mem) > 0) {
 			retried = TRUE;
-			if (mem->allocator->gc_init(mem->data)) {
-				gboolean ret;
-
-				_hg_mem_gc_init(mem);
-				ret = mem->gc_func(mem, mem->gc_data);
-				_hg_mem_gc_finish(mem, !ret);
-				mem->allocator->gc_finish(mem->data, !ret);
-
-				if (ret)
-					goto retry;
-			}
+			goto retry;
 		}
 	}
 
@@ -313,23 +300,10 @@ hg_mem_realloc(hg_mem_t   *mem,
 	if (retval != Qnil) {
 		retval = _hg_quark_type_bit_shift(_hg_quark_type_bit_get(qdata)) | retval;
 	} else {
-		if (mem->gc_func &&
-		    mem->allocator->gc_init &&
-		    mem->allocator->gc_mark &&
-		    mem->allocator->gc_finish &&
-		    !retried) {
+		if (!retried &&
+		    hg_mem_collect_garbage(mem) > 0) {
 			retried = TRUE;
-			if (mem->allocator->gc_init(mem->data)) {
-				gboolean ret;
-
-				_hg_mem_gc_init(mem);
-				ret = mem->gc_func(mem, mem->gc_data);
-				_hg_mem_gc_finish(mem, !ret);
-				mem->allocator->gc_finish(mem->data, !ret);
-
-				if (ret)
-					goto retry;
-			}
+			goto retry;
 		}
 	}
 
@@ -430,6 +404,42 @@ hg_mem_set_garbage_collection(hg_mem_t     *mem,
 
 	mem->gc_func = func;
 	mem->gc_data = user_data;
+}
+
+/**
+ * hg_mem_collect_garbage:
+ * @mem:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gssize
+hg_mem_collect_garbage(hg_mem_t *mem)
+{
+	gssize retval;
+
+	hg_return_val_if_fail (mem != NULL, -1);
+	hg_return_val_if_fail (mem->allocator != NULL, -1);
+	hg_return_val_if_fail (mem->data != NULL, -1);
+
+	retval = mem->data->used_size;
+
+	if (mem->gc_func &&
+	    mem->allocator->gc_init &&
+	    mem->allocator->gc_mark &&
+	    mem->allocator->gc_finish) {
+		if (mem->allocator->gc_init(mem->data)) {
+			gboolean ret;
+
+			_hg_mem_gc_init(mem);
+			ret = mem->gc_func(mem, mem->gc_data);
+			_hg_mem_gc_finish(mem, !ret);
+			mem->allocator->gc_finish(mem->data, !ret);
+		}
+	}
+
+	return retval - mem->data->used_size;
 }
 
 /**
