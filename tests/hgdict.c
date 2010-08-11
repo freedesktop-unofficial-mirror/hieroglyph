@@ -112,6 +112,69 @@ _mark(hg_mem_t    *mem,
 }
 
 /** test cases **/
+TDEF (get_capsulated_size)
+{
+	gsize size;
+
+	size = vtable->get_capsulated_size();
+	fail_unless(size == sizeof (hg_dict_t), "Obtaining the different size: expect: %" G_GSIZE_FORMAT " actual: %" G_GSIZE_FORMAT, sizeof (hg_dict_t), size);
+	size = node_vtable->get_capsulated_size();
+	fail_unless(size == sizeof (hg_dict_node_t), "Obtaining the different size: expect: %" G_GSIZE_FORMAT " actual: %" G_GSIZE_FORMAT, sizeof (hg_dict_node_t), size);
+} TEND
+
+static gboolean
+_gc_iter_func(hg_quark_t   qdata,
+	      gpointer     data,
+	      GError     **error)
+{
+	hg_object_t *o = data;
+
+	if (hg_quark_get_type(qdata) == HG_TYPE_DICT_NODE) {
+		hg_object_t *dnode = hg_mem_lock_object(o->mem, qdata);
+		gboolean ret = hg_object_gc_mark(dnode, _gc_iter_func, o, NULL);
+
+		hg_mem_unlock_object(o->mem, qdata);
+
+		return ret;
+	}
+
+	return TRUE;
+}
+
+static gboolean
+_gc_func(hg_mem_t *mem,
+	 gpointer  data)
+{
+	hg_dict_t *d = data;
+
+	if (data == NULL)
+		return TRUE;
+
+	return hg_object_gc_mark((hg_object_t *)d, _gc_iter_func, d, NULL);
+}
+
+TDEF (gc_mark)
+{
+	hg_quark_t q;
+	hg_dict_t *d;
+	gssize size = 0;
+	hg_mem_t *m = hg_mem_new(65535);
+	gsize i;
+
+	q = hg_dict_new(m, 10, (gpointer *)&d);
+	hg_dict_add(d, 0, 0, NULL);
+	hg_mem_set_garbage_collection(m, _gc_func, d);
+	size = hg_mem_collect_garbage(m);
+	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
+	for (i = 1; i < 256; i++) {
+		hg_dict_add(d, i, i, NULL);
+	}
+	size = hg_mem_collect_garbage(m);
+	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
+	size = hg_mem_collect_garbage(m);
+	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
+} TEND
+
 TDEF (hg_dict_new)
 {
 	hg_quark_t q;
@@ -213,6 +276,8 @@ hieroglyph_suite(void)
 	tcase_add_checked_fixture(tc, setup, teardown);
 	tcase_set_timeout(tc, 60);
 
+	T (get_capsulated_size);
+	T (gc_mark);
 	T (hg_dict_new);
 	T (hg_dict_add);
 	T (hg_dict_remove);
