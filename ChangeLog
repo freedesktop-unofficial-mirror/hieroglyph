@@ -1,3 +1,7 @@
+2010-08-12  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgallocator.c (_hg_allocator_realloc): fix a typo.
+
 2010-08-11  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_protected_forall_dict_continue):

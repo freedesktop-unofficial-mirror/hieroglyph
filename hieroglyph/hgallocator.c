@@ -380,11 +380,11 @@ _hg_allocator_bitmap_dump(hg_allocator_bitmap_t *bitmap)
 	gsize i;
 
 	g_print("bitmap: %" G_GSIZE_FORMAT " blocks allocated\n", bitmap->size);
-	g_print("         1         2         3         4         5         6         7         8\n");
-	g_print("12345678901234567890123456789012345678901234567890123456789012345678901234567890");
+	g_print("        :         1         2         3         4         5         6         7\n");
+	g_print("        :12345678901234567890123456789012345678901234567890123456789012345678901234567890");
 	for (i = 0; i < bitmap->size; i++) {
-		if (i % 80 == 0)
-			g_print("\n");
+		if (i % 70 == 0)
+			g_print("\n%08lx:", i);
 		g_print("%d", _hg_allocator_bitmap_is_marked(bitmap, i + 1) ? 1 : 0);
 	}
 	g_print("\n");
@@ -548,7 +548,7 @@ _hg_allocator_realloc(hg_allocator_data_t *data,
 		}
 	} else {
 #if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
-		g_warning("%lx isn't the allocated object.\n", index);
+		g_warning("%lx isn't the allocated object.\n", qdata);
 #endif
 	}
 
