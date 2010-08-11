@@ -207,11 +207,6 @@ _hg_object_array_gc_mark(hg_object_t           *object,
 
 	hg_return_val_if_fail (object->type == HG_TYPE_ARRAY, FALSE);
 
-	if (object->on_copying != Qnil)
-		return TRUE;
-
-	object->on_copying = HG_QMARK;
-
 #if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
 	g_print("GC: (array) marking container\n");
 #endif
@@ -244,7 +239,6 @@ _hg_object_array_gc_mark(hg_object_t           *object,
 		g_error_free(err);
 		retval = FALSE;
 	}
-	object->on_copying = Qnil;
 
 	return retval;
 }

@@ -1,5 +1,8 @@
 2010-08-11  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgarray.c (_hg_object_array_gc_mark): do not set
+	a on_copying flag here. it doesn't work as expected actually.
+
 	* hieroglyph/hgobject.c (hg_object_gc_mark): set a flag to avoid
 	the circular references.
 
