@@ -1,5 +1,7 @@
 2010-08-11  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgmem.c (_hg_mem_gc_finish): call the object finalizer.
+
 	* hieroglyph/hgallocator.c (_hg_allocator_bitmap_dump): new.
 	(_hg_allocator_gc_init): fix a typo.
 

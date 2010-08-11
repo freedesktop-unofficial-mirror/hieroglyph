@@ -45,6 +45,21 @@ _hg_mem_gc_init(hg_mem_t *mem)
 	mem->slave_finalizer_table = g_hash_table_new(g_direct_hash, g_direct_equal);
 }
 
+static void
+_hg_mem_call_gc_finalizer(gpointer key,
+			  gpointer val,
+			  gpointer user_data)
+{
+	hg_quark_t qdata = HGPOINTER_TO_QUARK (key);
+	hg_mem_finalizer_func_t func = val;
+	hg_mem_t *mem = user_data;
+
+#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
+	g_print("GC: invoking finalizer for %lx\n", qdata);
+#endif
+	func(mem, qdata);
+}
+
 G_INLINE_FUNC void
 _hg_mem_gc_finish(hg_mem_t *mem,
 		  gboolean  was_error)
@@ -54,6 +69,9 @@ _hg_mem_gc_finish(hg_mem_t *mem,
 		return;
 	}
 	if (!was_error) {
+		g_hash_table_foreach(mem->finalizer_table,
+				     _hg_mem_call_gc_finalizer,
+				     mem);
 		g_hash_table_destroy(mem->finalizer_table);
 		mem->finalizer_table = mem->slave_finalizer_table;
 	} else {
@@ -204,7 +222,7 @@ hg_mem_add_gc_finalizer(hg_mem_t                *mem,
 	hg_return_if_fail (func != NULL);
 
 	g_hash_table_insert(mem->finalizer_table,
-			    HGQUARK_TO_POINTER (index),
+			    HGQUARK_TO_POINTER (hg_quark_get_hash(index)),
 			    func);
 }
 
@@ -220,7 +238,7 @@ hg_mem_remove_gc_finalizer(hg_mem_t   *mem,
 			   hg_quark_t  index)
 {
 	g_hash_table_remove(mem->finalizer_table,
-			    HGQUARK_TO_POINTER (index));
+			    HGQUARK_TO_POINTER (hg_quark_get_hash(index)));
 }
 
 /**
@@ -457,6 +475,8 @@ hg_mem_gc_mark(hg_mem_t    *mem,
 	       hg_quark_t   qdata,
 	       GError     **error)
 {
+	hg_mem_finalizer_func_t func;
+
 	hg_return_val_if_fail (mem != NULL, FALSE);
 	hg_return_val_if_fail (mem->allocator != NULL, FALSE);
 	hg_return_val_if_fail (mem->allocator->gc_mark != NULL, FALSE);
@@ -467,8 +487,18 @@ hg_mem_gc_mark(hg_mem_t    *mem,
 
 	hg_return_val_if_fail (hg_quark_has_same_mem_id(qdata, mem->id), FALSE);
 
+	if (mem->slave_finalizer_table &&
+	    (func = g_hash_table_lookup(mem->finalizer_table,
+					HGQUARK_TO_POINTER (hg_quark_get_hash(qdata))))) {
+		g_hash_table_insert(mem->slave_finalizer_table,
+				    HGQUARK_TO_POINTER (hg_quark_get_hash(qdata)),
+				    func);
+		g_hash_table_remove(mem->finalizer_table,
+				    HGQUARK_TO_POINTER (hg_quark_get_hash(qdata)));
+	}
+
 	return mem->allocator->gc_mark(mem->data,
-				       hg_quark_get_value (qdata),
+				       hg_quark_get_value(qdata),
 				       error);
 }
 
