@@ -95,10 +95,10 @@ TDEF (gc_mark)
 
 	q = hg_array_new(m, 10, (gpointer *)&a);
 	fail_unless(hg_array_set(a, HG_QINT (1), 9, NULL), "Unable to put a value into the array");
-	hg_mem_set_garbage_collection(m, _gc_func, a);
+	hg_mem_set_garbage_collector(m, _gc_func, a);
 	size = hg_mem_collect_garbage(m);
 	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
-	hg_mem_set_garbage_collection(m, NULL, NULL);
+	hg_mem_set_garbage_collector(m, NULL, NULL);
 	size = hg_mem_collect_garbage(m);
 	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
 	size = hg_mem_collect_garbage(m);

@@ -2,6 +2,33 @@
 
 	* hieroglyph/hgallocator.c (_hg_allocator_realloc): fix a typo.
 
+	* hieroglyph/hgvm.c (hg_vm_get_mem_from_quark): new.
+
+	* hieroglyph/hgstring.c (hg_string_free): remove the object from
+	the reserved spool.
+
+	* hieroglyph/hgstack.c (_hg_stack_push): remove the object from
+	the reserved spool.
+	(hg_stack_pop): add the object to the reserved spool.
+	(hg_stack_drop): new.
+
+	* hieroglyph/hgoperator.c: use hg_stack_drop for appropriate reserved
+	spool management.
+
+	* hieroglyph/hgobject.c (hg_object_free): remove the object from
+	the reserved spool.
+	(hg_object_gc_mark): don't reuse on_copying.
+
+	* hieroglyph/hgmem.c (hg_mem_collect_garbage): mark the object in
+	the reserved spool too.
+	(hg_mem_reserved_spool_add): new.
+	(hg_mem_reserved_spool_remove): new.
+	(hg_mem_reserved_spool_set_garbage_collector): new.
+
+	* hieroglyph/hgarray.c (_hg_object_array_to_cstr): don't reuse
+	on_copying here.
+	(hg_array_free): remove the object from the reserved spool.
+
 2010-08-11  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_protected_forall_dict_continue):

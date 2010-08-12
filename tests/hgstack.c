@@ -71,7 +71,7 @@ TDEF (hg_stack_new)
 {
 	hg_stack_t *s;
 
-	s = hg_stack_new(mem, 10);
+	s = hg_stack_new(mem, 10, NULL);
 	fail_unless(s != NULL, "Unable to create a stack object");
 } TEND
 
@@ -79,7 +79,7 @@ TDEF (hg_stack_set_validation)
 {
 	hg_stack_t *s;
 
-	s = hg_stack_new(mem, 1);
+	s = hg_stack_new(mem, 1, NULL);
 	fail_unless(s != NULL, "Unable to create a stack object");
 	fail_unless(hg_stack_push(s, Qnil), "Unexpected result to push a value into the stack");
 	fail_unless(hg_stack_depth(s) == 1, "Unexpected result to obtain the current depth on the stack");
@@ -103,7 +103,7 @@ TDEF (hg_stack_pop)
 {
 	hg_stack_t *s;
 
-	s = hg_stack_new(mem, 5);
+	s = hg_stack_new(mem, 5, NULL);
 	fail_unless(s != NULL, "Unable to create a stack object");
 	fail_unless(hg_stack_push(s, HG_QINT (5)), "Unexpected result to push a value into the stack");
 	fail_unless(hg_stack_depth(s) == 1, "Unexpected result to obtain the current depth on the stack");
@@ -146,7 +146,7 @@ TDEF (hg_stack_roll)
 	gsize i;
 	GString *str = g_string_new(NULL);
 
-	s = hg_stack_new(mem, 10);
+	s = hg_stack_new(mem, 10, NULL);
 	fail_unless(s != NULL, "Unable to create a stack object");
 	for (i = 1; i < 6; i++) {
 		fail_unless(hg_stack_push(s, HG_QINT (i)), "Unexpected result to push a value into the stack: %" G_GSIZE_FORMAT, i);

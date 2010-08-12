@@ -65,6 +65,9 @@ _hg_object_new(hg_mem_t     *mem,
 	object->type = type;
 	object->mem = mem;
 	object->self = hg_quark_new(type, retval);
+	object->on_copying = Qnil;
+	object->on_gc = FALSE;
+	object->on_to_cstr = FALSE;
 
 	if (ret)
 		*ret = object;
@@ -150,6 +153,10 @@ hg_object_new(hg_mem_t  *mem,
 	if (index == Qnil)
 		return Qnil;
 
+	/* XXX */
+	if (type < HG_TYPE_STACK)
+		hg_mem_reserved_spool_add(mem, index);
+
 	va_start(ap, preallocated_size);
 
 	if (!v->initialize(retval, ap)) {
@@ -198,6 +205,8 @@ hg_object_free(hg_mem_t   *mem,
 
 	hg_mem_unlock_object(mem, index);
 	hg_mem_free(mem, index);
+
+	hg_mem_reserved_spool_remove(mem, index);
 }
 
 /**
@@ -288,10 +297,10 @@ hg_object_gc_mark(hg_object_t           *object,
 	hg_return_val_with_gerror_if_fail (__hg_object_vtables[object->type] != NULL, FALSE, error);
 	hg_return_val_with_gerror_if_fail (func != NULL, FALSE, error);
 
-	if (object->on_copying != Qnil)
+	if (object->on_gc)
 		return TRUE;
 
-	object->on_copying = HG_QMARK;
+	object->on_gc = TRUE;
 
 	if (hg_mem_gc_mark(object->mem, object->self, error)) {
 		v = __hg_object_vtables[object->type];
@@ -299,7 +308,7 @@ hg_object_gc_mark(hg_object_t           *object,
 		retval = v->gc_mark(object, func, user_data, error);
 	}
 
-	object->on_copying = Qnil;
+	object->on_gc = FALSE;
 
 	return retval;
 }

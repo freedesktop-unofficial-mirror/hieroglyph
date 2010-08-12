@@ -284,6 +284,8 @@ hg_string_free(hg_string_t *string,
 
 	hg_return_if_fail (string->o.type == HG_TYPE_STRING);
 
+	hg_mem_reserved_spool_remove(string->o.mem, string->o.self);
+
 	if (free_segment)
 		hg_mem_free(string->o.mem, string->qstring);
 	hg_mem_free(string->o.mem, string->o.self);

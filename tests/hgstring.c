@@ -93,7 +93,7 @@ TDEF (gc_mark)
 	hg_mem_t *m = hg_mem_new(256);
 
 	q = hg_string_new_with_value(m, "abc", -1, (gpointer *)&s);
-	hg_mem_set_garbage_collection(m, _gc_func, s);
+	hg_mem_set_garbage_collector(m, _gc_func, s);
 	size = hg_mem_collect_garbage(m);
 	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
 } TEND

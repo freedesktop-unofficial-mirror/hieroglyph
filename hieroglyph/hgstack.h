@@ -39,7 +39,8 @@ typedef struct _hg_stack_t	hg_stack_t;
 
 hg_object_vtable_t *hg_object_stack_get_vtable(void) G_GNUC_CONST;
 hg_stack_t         *hg_stack_new              (hg_mem_t                  *mem,
-                                               gsize                      max_depth);
+                                               gsize                      max_depth,
+					       hg_vm_t                   *vm);
 void                hg_stack_free             (hg_stack_t                *stack);
 void                hg_stack_set_validation   (hg_stack_t                *stack,
                                                gboolean                   flag);
@@ -48,6 +49,8 @@ gboolean            hg_stack_push             (hg_stack_t                *stack,
                                                hg_quark_t                 quark);
 hg_quark_t          hg_stack_pop              (hg_stack_t                *stack,
                                                GError                   **error);
+void                hg_stack_drop             (hg_stack_t                *stack,
+					       GError                   **error);
 void                hg_stack_clear            (hg_stack_t                *stack);
 hg_quark_t          hg_stack_index            (hg_stack_t                *stack,
                                                gsize                      index,

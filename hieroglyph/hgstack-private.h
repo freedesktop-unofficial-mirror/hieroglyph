@@ -39,6 +39,7 @@ struct _hg_list_t {
 struct _hg_stack_t {
 	hg_object_t  o;
 	hg_quark_t   self;
+	hg_vm_t     *vm;
 	hg_list_t   *stack;
 	hg_list_t   *last_stack;
 	gsize        max_depth;

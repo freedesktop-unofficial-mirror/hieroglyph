@@ -559,30 +559,30 @@ G_STMT_START {
 		if (HG_IS_QOPER (q)) {
 			if (HG_OPER (q) == HG_enc_protected_for_yield_int_continue ||
 			    HG_OPER (q) == HG_enc_protected_for_yield_real_continue) {
-				hg_stack_pop(estack, error);
-				hg_stack_pop(estack, error);
-				hg_stack_pop(estack, error);
-				hg_stack_pop(estack, error);
+				hg_stack_drop(estack, error);
+				hg_stack_drop(estack, error);
+				hg_stack_drop(estack, error);
+				hg_stack_drop(estack, error);
 				__n = i + 4;
 			} else if (HG_OPER (q) == HG_enc_protected_loop_continue) {
-				hg_stack_pop(estack, error);
+				hg_stack_drop(estack, error);
 				__n = i + 1;
 			} else if (HG_OPER (q) == HG_enc_protected_repeat_continue) {
-				hg_stack_pop(estack, error);
-				hg_stack_pop(estack, error);
+				hg_stack_drop(estack, error);
+				hg_stack_drop(estack, error);
 				__n = i + 2;
 			} else if (HG_OPER (q) == HG_enc_protected_forall_array_continue ||
 				   HG_OPER (q) == HG_enc_protected_forall_dict_continue ||
 				   HG_OPER (q) == HG_enc_protected_forall_string_continue) {
-				hg_stack_pop(estack, error);
-				hg_stack_pop(estack, error);
-				hg_stack_pop(estack, error);
+				hg_stack_drop(estack, error);
+				hg_stack_drop(estack, error);
+				hg_stack_drop(estack, error);
 				__n = i + 3;
 			} else {
 				continue;
 			}
 			for (j = 0; j < i; j++)
-				hg_stack_pop(estack, error);
+				hg_stack_drop(estack, error);
 			break;
 		} else if (HG_IS_QFILE (q)) {
 			hg_vm_set_error(vm, qself, HG_VM_e_invalidexit);
@@ -642,7 +642,7 @@ G_STMT_START {
 		ret = TRUE;
 		__flag = TRUE;
 	}
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
 	if (q != Qnil)
 		STACK_PUSH (ostack, q);
 	STACK_PUSH (ostack, HG_QBOOL (ret));
@@ -722,9 +722,9 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 } G_STMT_END;
 VALIDATE_STACK_SIZE (-3, 0, 0);
 DEFUNC_OPER_END
@@ -808,7 +808,7 @@ G_STMT_START {
 	}
 	hg_vm_shutdown(vm, HG_INT (arg0));
 
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -844,7 +844,7 @@ G_STMT_START {
 	}
 	hg_vm_use_global_mem(vm, HG_BOOL (arg0));
 
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -865,7 +865,7 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, q);
 
@@ -901,8 +901,8 @@ G_STMT_START {
 
 	HG_VM_UNLOCK (vm, arg0);
 
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -948,8 +948,8 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -999,10 +999,10 @@ G_STMT_START {
 	if ((iinc > 0 && iinit > ilimit) ||
 	    (iinc < 0 && iinit < ilimit)) {
 		hg_stack_roll(estack, 5, 1, error);
-		hg_stack_pop(estack, error);
-		hg_stack_pop(estack, error);
-		hg_stack_pop(estack, error);
-		hg_stack_pop(estack, error);
+		hg_stack_drop(estack, error);
+		hg_stack_drop(estack, error);
+		hg_stack_drop(estack, error);
+		hg_stack_drop(estack, error);
 		__flag = TRUE;
 		retval = TRUE;
 
@@ -1016,7 +1016,7 @@ G_STMT_START {
 	}
 
 	hg_stack_roll(estack, 5, -1, error);
-	hg_stack_pop(estack, error);
+	hg_stack_drop(estack, error);
 
 	q = HG_QINT (iinit + iinc);
 	STACK_PUSH (estack, q);
@@ -1052,10 +1052,10 @@ G_STMT_START {
 	if ((dinc > 0.0 && dinit > dlimit) ||
 	    (dinc < 0.0 && dinit < dlimit)) {
 		hg_stack_roll(estack, 5, 1, error);
-		hg_stack_pop(estack, error);
-		hg_stack_pop(estack, error);
-		hg_stack_pop(estack, error);
-		hg_stack_pop(estack, error);
+		hg_stack_drop(estack, error);
+		hg_stack_drop(estack, error);
+		hg_stack_drop(estack, error);
+		hg_stack_drop(estack, error);
 		__flag = TRUE;
 		retval = TRUE;
 
@@ -1069,7 +1069,7 @@ G_STMT_START {
 	}
 
 	hg_stack_roll(estack, 5, -1, error);
-	hg_stack_pop(estack, error);
+	hg_stack_drop(estack, error);
 
 	q = HG_QREAL (dinit + dinc);
 	STACK_PUSH (estack, q);
@@ -1107,16 +1107,16 @@ G_STMT_START {
 	if (hg_array_length(a) <= i) {
 		HG_VM_UNLOCK (vm, val);
 		hg_stack_roll(estack, 4, 1, error);
-		hg_stack_pop(estack, error);
-		hg_stack_pop(estack, error);
-		hg_stack_pop(estack, error);
+		hg_stack_drop(estack, error);
+		hg_stack_drop(estack, error);
+		hg_stack_drop(estack, error);
 
 		retval = TRUE;
 		__n = 3;
 		break;
 	}
 	hg_stack_roll(estack, 4, -1, error);
-	hg_stack_pop(estack, error);
+	hg_stack_drop(estack, error);
 	STACK_PUSH (estack, HG_QINT (i + 1));
 	hg_stack_roll(estack, 4, 1, error);
 
@@ -1161,16 +1161,16 @@ G_STMT_START {
 	if (hg_dict_length(d) == 0) {
 		HG_VM_UNLOCK (vm, val);
 		hg_stack_roll(estack, 4, 1, error);
-		hg_stack_pop(estack, error);
-		hg_stack_pop(estack, error);
-		hg_stack_pop(estack, error);
+		hg_stack_drop(estack, error);
+		hg_stack_drop(estack, error);
+		hg_stack_drop(estack, error);
 
 		retval = TRUE;
 		__n = 3;
 		break;
 	}
 	hg_stack_roll(estack, 4, -1, error);
-	hg_stack_pop(estack, error);
+	hg_stack_drop(estack, error);
 	STACK_PUSH (estack, HG_QINT (i + 1));
 	hg_stack_roll(estack, 4, 1, error);
 
@@ -1222,15 +1222,15 @@ G_STMT_START {
 	if (hg_string_length(s) <= i) {
 		HG_VM_UNLOCK (vm, val);
 		hg_stack_roll(estack, 4, 1, error);
-		hg_stack_pop(estack, error);
-		hg_stack_pop(estack, error);
-		hg_stack_pop(estack, error);
+		hg_stack_drop(estack, error);
+		hg_stack_drop(estack, error);
+		hg_stack_drop(estack, error);
 
 		__flag = retval = TRUE;
 		break;
 	}
 	hg_stack_roll(estack, 4, -1, error);
-	hg_stack_pop(estack, error);
+	hg_stack_drop(estack, error);
 	STACK_PUSH (estack, HG_QINT (i + 1));
 	hg_stack_roll(estack, 4, 1, error);
 
@@ -1286,12 +1286,12 @@ G_STMT_START {
 	arg1 = hg_stack_index(estack, 1, error);
 	self = hg_stack_index(estack, 0, error);
 
-	hg_stack_pop(estack, error);
-	hg_stack_pop(estack, error);
-	hg_stack_pop(estack, error);
-
 	if (HG_INT (arg0) > 0) {
 		arg0 = HG_QINT (HG_INT (arg0) - 1);
+
+		hg_stack_pop(estack, error);
+		hg_stack_pop(estack, error);
+		hg_stack_pop(estack, error);
 
 		STACK_PUSH (estack, arg0);
 		STACK_PUSH (estack, arg1);
@@ -1304,6 +1304,10 @@ G_STMT_START {
 		}
 		STACK_PUSH (estack, q);
 		__flag = TRUE;
+	} else {
+		hg_stack_drop(estack, error);
+		hg_stack_drop(estack, error);
+		hg_stack_drop(estack, error);
 	}
 
 	/* dummy */
@@ -1381,8 +1385,8 @@ G_STMT_START {
 	} else {
 		q = HG_QREAL (d1 + d2);
 	}
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, q);
 
@@ -1469,7 +1473,7 @@ G_STMT_START {
 	}
 	HG_VM_UNLOCK (vm, q);
 
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, q);
 
@@ -1523,8 +1527,12 @@ G_STMT_START {
 		}
 		hg_array_set(a, q, i, error);
 	}
-	for (i = 0; i <= len; i++)
-		hg_stack_pop(ostack, error);
+	for (i = 0; i <= len; i++) {
+		if (i == 0)
+			hg_stack_pop(ostack, error);
+		else
+			hg_stack_drop(ostack, error);
+	}
 
 	STACK_PUSH (ostack, arg0);
 
@@ -1593,7 +1601,7 @@ G_STMT_START {
 			if (HG_IS_QARRAY (q)) {
 				STACK_PUSH (ostack, q);
 				_hg_operator_real_bind(vm, error);
-				hg_stack_pop(ostack, error);
+				hg_stack_drop(ostack, error);
 			} else if (HG_IS_QNAME (q)) {
 				hg_quark_t qop = hg_vm_dict_lookup(vm, q);
 
@@ -1633,7 +1641,7 @@ G_STMT_START {
 		q = hg_stack_index(ostack, i, error);
 		if (HG_IS_QMARK (q)) {
 			for (j = 0; j <= i; j++) {
-				hg_stack_pop(ostack, error);
+				hg_stack_drop(ostack, error);
 			}
 			retval = TRUE;
 			__n = i + 1;
@@ -1689,7 +1697,7 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 			return FALSE;
 		}
-		hg_stack_pop(ostack, error);
+		hg_stack_drop(ostack, error);
 		for (i = 0; i < n; i++) {
 			if (!hg_stack_push(ostack, hg_stack_index(ostack, n - 1, error))) {
 				hg_vm_set_error(vm, qself, HG_VM_e_stackoverflow);
@@ -1816,8 +1824,8 @@ G_STMT_START {
 		}
 
 		if (retval) {
-			hg_stack_pop(ostack, error);
-			hg_stack_pop(ostack, error);
+			hg_stack_drop(ostack, error);
+			hg_stack_drop(ostack, error);
 
 			STACK_PUSH (ostack, q);
 		}
@@ -1967,9 +1975,12 @@ G_STMT_START {
 	} else {
 		q = arg2;
 	}
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	if (q == arg2)
+		hg_stack_pop(ostack, error);
+	else
+		hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, q);
 
@@ -2042,8 +2053,8 @@ G_STMT_START {
 	}
 	retval = hg_dict_add(dict, arg0, arg1, error);
 
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
   error:
 	HG_VM_UNLOCK (vm, qd);
 } G_STMT_END;
@@ -2075,7 +2086,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, ret);
 
@@ -2114,7 +2125,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_dictstackunderflow);
 		return FALSE;
 	}
-	hg_stack_pop(dstack, error);
+	hg_stack_drop(dstack, error);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -2201,8 +2212,8 @@ G_STMT_START {
 			ret = HG_REAL_EQUAL (d1, d2);
 		}
 	}
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, HG_QBOOL (ret));
 
@@ -2250,7 +2261,7 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
-		hg_stack_pop(ostack, error);
+		hg_stack_drop(ostack, error);
 
 		STACK_PUSH (estack, q);
 
@@ -2278,24 +2289,24 @@ G_STMT_START {
 		if (HG_IS_QOPER (q)) {
 			if (HG_OPER (q) == HG_enc_protected_for_yield_int_continue ||
 			    HG_OPER (q) == HG_enc_protected_for_yield_real_continue) {
-				hg_stack_pop(estack, error);
-				hg_stack_pop(estack, error);
-				hg_stack_pop(estack, error);
-				hg_stack_pop(estack, error);
+				hg_stack_drop(estack, error);
+				hg_stack_drop(estack, error);
+				hg_stack_drop(estack, error);
+				hg_stack_drop(estack, error);
 				__n = i + 4;
 			} else if (HG_OPER (q) == HG_enc_protected_loop_continue) {
-				hg_stack_pop(estack, error);
+				hg_stack_drop(estack, error);
 				__n = i + 1;
 			} else if (HG_OPER (q) == HG_enc_protected_repeat_continue) {
-				hg_stack_pop(estack, error);
-				hg_stack_pop(estack, error);
+				hg_stack_drop(estack, error);
+				hg_stack_drop(estack, error);
 				__n = i + 2;
 			} else if (HG_OPER (q) == HG_enc_protected_forall_array_continue ||
 				   HG_OPER (q) == HG_enc_protected_forall_dict_continue ||
 				   HG_OPER (q) == HG_enc_protected_forall_string_continue) {
-				hg_stack_pop(estack, error);
-				hg_stack_pop(estack, error);
-				hg_stack_pop(estack, error);
+				hg_stack_drop(estack, error);
+				hg_stack_drop(estack, error);
+				hg_stack_drop(estack, error);
 				__n = i + 3;
 			} else if (HG_OPER (q) == HG_enc_protected_stopped_continue) {
 				hg_vm_set_error(vm, qself, HG_VM_e_invalidexit);
@@ -2304,7 +2315,7 @@ G_STMT_START {
 				continue;
 			}
 			for (j = 0; j < i; j++)
-				hg_stack_pop(estack, error);
+				hg_stack_drop(estack, error);
 			break;
 		} else if (HG_IS_QFILE (q)) {
 			hg_vm_set_error(vm, qself, HG_VM_e_invalidexit);
@@ -2403,8 +2414,8 @@ G_STMT_START {
 					 iomode & (HG_FILE_IO_MODE_WRITE|HG_FILE_IO_MODE_APPEND),
 					 FALSE);
 	}
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
@@ -2507,10 +2518,10 @@ G_STMT_START {
 
 	hg_stack_roll(estack, 6, -1, error);
 
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -2607,8 +2618,8 @@ G_STMT_START {
 
 	hg_stack_roll(estack, 5, -1, error);
 
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -2672,8 +2683,8 @@ G_STMT_START {
 		return FALSE;
 	}
 	if (q != Qnil) {
-		hg_stack_pop(ostack, error);
-		hg_stack_pop(ostack, error);
+		hg_stack_drop(ostack, error);
+		hg_stack_drop(ostack, error);
 
 		STACK_PUSH (ostack, q);
 		retval = TRUE;
@@ -2770,8 +2781,8 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, q);
 } G_STMT_END;
@@ -2841,9 +2852,9 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		goto error;
 	}
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, q);
 
@@ -2915,8 +2926,8 @@ G_STMT_START {
 		return FALSE;
 	}
 	if (q != Qnil) {
-		hg_stack_pop(ostack, error);
-		hg_stack_pop(ostack, error);
+		hg_stack_drop(ostack, error);
+		hg_stack_drop(ostack, error);
 
 		STACK_PUSH (ostack, q);
 		retval = TRUE;
@@ -2943,8 +2954,8 @@ G_STMT_START {
 	}
 	q = HG_QINT (HG_INT (arg0) / HG_INT (arg1));
 
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, q);
 
@@ -2988,8 +2999,8 @@ G_STMT_START {
 		hg_stack_roll(estack, 2, 1, error);
 		__flag = TRUE;
 	}
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -3040,9 +3051,9 @@ G_STMT_START {
 	STACK_PUSH (estack, q);
 	hg_stack_roll(estack, 2, 1, error);
 
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -3072,7 +3083,7 @@ G_STMT_START {
 		return FALSE;
 	}
 	q = hg_stack_index(ostack, n + 1, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, q);
 
@@ -3118,8 +3129,8 @@ G_STMT_START {
 
 	HG_VM_UNLOCK (vm, arg0);
 
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, HG_QBOOL (ret != Qnil));
 
@@ -3185,8 +3196,8 @@ G_STMT_START {
 		return FALSE;
 	}
 	if (q != Qnil) {
-		hg_stack_pop(ostack, error);
-		hg_stack_pop(ostack, error);
+		hg_stack_drop(ostack, error);
+		hg_stack_drop(ostack, error);
 
 		STACK_PUSH (ostack, q);
 		retval = TRUE;
@@ -3252,7 +3263,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, q);
 
@@ -3297,7 +3308,7 @@ G_STMT_START {
 	STACK_PUSH (estack, q);
 
 	hg_stack_roll(estack, 3, -1, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -3361,8 +3372,8 @@ G_STMT_START {
 		return FALSE;
 	}
 	if (q != Qnil) {
-		hg_stack_pop(ostack, error);
-		hg_stack_pop(ostack, error);
+		hg_stack_drop(ostack, error);
+		hg_stack_drop(ostack, error);
 
 		STACK_PUSH (ostack, q);
 		retval = TRUE;
@@ -3394,7 +3405,7 @@ G_STMT_START {
 	q = HG_QINT (hg_dict_maxlength(dict));
 	HG_VM_UNLOCK (vm, arg0);
 
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, q);
 
@@ -3423,8 +3434,8 @@ G_STMT_START {
 	}
 	q = HG_QINT (HG_INT (arg0) % HG_INT (arg1));
 
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, q);
 
@@ -3512,8 +3523,8 @@ G_STMT_START {
 			ret = !HG_REAL_EQUAL (d1, d2);
 		}
 	}
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, HG_QBOOL (ret));
 
@@ -3543,7 +3554,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, ret);
 
@@ -3574,8 +3585,8 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, q);
 
@@ -3591,7 +3602,7 @@ DEFUNC_OPER (pop)
 G_STMT_START {
 	CHECK_STACK (ostack, 1);
 
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -3640,7 +3651,7 @@ G_STMT_START {
 	if (error && *error) {
 		hg_vm_set_error_from_gerror(vm, qself, *error);
 	} else {
-		hg_stack_pop(ostack, error);
+		hg_stack_drop(ostack, error);
 
 		retval = TRUE;
 	}
@@ -3737,9 +3748,9 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 } G_STMT_END;
 VALIDATE_STACK_SIZE (-3, 0, 0);
 DEFUNC_OPER_END
@@ -3778,14 +3789,14 @@ G_STMT_START {
 	HG_VM_UNLOCK (vm, arg0);
 
 	if (eof) {
-		hg_stack_pop(ostack, error);
+		hg_stack_drop(ostack, error);
 
 		STACK_PUSH (ostack, HG_QBOOL (FALSE));
 		retval = TRUE;
 	} else if (*error && error) {
 		hg_vm_set_error_from_gerror(vm, qself, *error);
 	} else {
-		hg_stack_pop(ostack, error);
+		hg_stack_drop(ostack, error);
 
 		STACK_PUSH (ostack, HG_QINT ((guchar)c[0]));
 		STACK_PUSH (ostack, HG_QBOOL (TRUE));
@@ -3849,8 +3860,8 @@ G_STMT_START {
 
 	hg_stack_roll(estack, 4, -1, error);
 
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -3882,8 +3893,8 @@ G_STMT_START {
 	}
 	CHECK_STACK (ostack, HG_INT (arg0) + 2);
 
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	hg_stack_roll(ostack, HG_INT (arg0), HG_INT (arg1), error);
 
@@ -3951,7 +3962,7 @@ G_STMT_START {
 			return FALSE;
 		}
 		for (; i > 1; i--)
-			hg_stack_pop(estack, error);
+			hg_stack_drop(estack, error);
 	}
 	retval = TRUE;
 } G_STMT_END;
@@ -3991,9 +4002,9 @@ G_STMT_START {
 
 		hg_stack_roll(estack, 3, -1, error);
 
-		hg_stack_pop(ostack, error);
+		hg_stack_drop(ostack, error);
 	} else {
-		hg_stack_pop(ostack, error);
+		hg_stack_drop(ostack, error);
 
 		STACK_PUSH (ostack, HG_QBOOL (FALSE));
 	}
@@ -4027,7 +4038,7 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, q);
 
@@ -4075,8 +4086,8 @@ G_STMT_START {
 	} else {
 		q = HG_QREAL (d1 - d2);
 	}
-	hg_stack_pop(ostack, error);
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, q);
 
@@ -4101,7 +4112,7 @@ G_STMT_START {
 	q = HG_QNAME (vm->name, hg_quark_get_type_name(arg0));
 	hg_quark_set_executable(&q, TRUE); /* ??? */
 
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, q);
 
@@ -4151,7 +4162,7 @@ G_STMT_START {
 			break;
 	}
 
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	if (qq == Qnil) {
 		STACK_PUSH (ostack, HG_QBOOL (FALSE));
@@ -4206,8 +4217,8 @@ G_STMT_START {
 		hg_vm_set_error_from_gerror(vm, qself, *error);
 	} else {
 		retval = TRUE;
-		hg_stack_pop(ostack, error);
-		hg_stack_pop(ostack, error);
+		hg_stack_drop(ostack, error);
+		hg_stack_drop(ostack, error);
 	}
   error:
 	HG_VM_UNLOCK (vm, arg0);
@@ -4274,7 +4285,7 @@ G_STMT_START {
 	}
 	HG_VM_UNLOCK (vm, arg0);
 
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -4368,7 +4379,10 @@ G_STMT_START {
 	} else {
 		q = arg0;
 	}
-	hg_stack_pop(ostack, error);
+	if (q == arg0)
+		hg_stack_pop(ostack, error);
+	else
+		hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, q);
 
@@ -4425,7 +4439,10 @@ G_STMT_START {
 	} else {
 		q = arg0;
 	}
-	hg_stack_pop(ostack, error);
+	if (q == arg0)
+		hg_stack_pop(ostack, error);
+	else
+		hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, q);
 
@@ -4482,7 +4499,7 @@ G_STMT_START {
 	}
 	q = HG_QBOOL (hg_quark_is_readable(arg0));
 
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, q);
 
@@ -4549,7 +4566,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, HG_QBOOL (hg_quark_is_writable(arg0)));
 
@@ -4565,7 +4582,8 @@ G_STMT_START {
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_pop(ostack, error);
+	arg0 = hg_stack_index(ostack, 0, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, HG_QBOOL (hg_quark_is_executable(arg0)));
 
@@ -4607,7 +4625,7 @@ G_STMT_START {
 		ret = hg_quark_has_same_mem_id(arg0, vm->mem_id[HG_VM_MEM_GLOBAL]);
 	}
 
-	hg_stack_pop(ostack, error);
+	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, HG_QBOOL (ret));
 

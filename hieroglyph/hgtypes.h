@@ -45,6 +45,13 @@ typedef enum _hg_system_encoding_t	hg_system_encoding_t;
 
 typedef gboolean (* hg_gc_func_t)	(hg_mem_t *mem,
 					 gpointer  user_data);
+#define hg_rs_gc_func_t			hg_array_traverse_func_t
+
+/* hgarray.h */
+typedef gboolean (* hg_array_traverse_func_t) (hg_mem_t    *mem,
+					       hg_quark_t   q,
+					       gpointer     data,
+					       GError     **error);
 
 /* hgmem.h */
 struct _hg_mem_vtable_t {

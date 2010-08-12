@@ -94,6 +94,8 @@ struct _hg_object_t {
 	hg_quark_t  self;
 	hg_type_t   type;
 	hg_quark_t  on_copying;
+	gboolean    on_gc:1;
+	gboolean    on_to_cstr:1;
 };
 
 
