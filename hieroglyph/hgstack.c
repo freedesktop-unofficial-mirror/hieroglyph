@@ -30,6 +30,7 @@
 #include "hgmem.h"
 #include "hgstack-private.h"
 #include "hgstack.h"
+#include "hgvm.h"
 
 
 static hg_list_t *_hg_list_new  (hg_mem_t   *mem);
@@ -59,6 +60,7 @@ _hg_object_stack_initialize(hg_object_t *object,
 	stack->last_stack = NULL;
 	stack->depth = 0;
 	stack->validate_depth = TRUE;
+	stack->vm = va_arg(args, hg_vm_t *);
 
 	return TRUE;
 }
@@ -125,6 +127,7 @@ _hg_stack_push(hg_stack_t *stack,
 	       hg_quark_t  quark)
 {
 	hg_list_t *l = _hg_list_new(stack->o.mem);
+	hg_mem_t *m;
 
 	if (l == NULL)
 		return FALSE;
@@ -139,7 +142,40 @@ _hg_stack_push(hg_stack_t *stack,
 	}
 	stack->depth++;
 
+	if (stack->vm &&
+	    !hg_quark_is_simple_object(quark) &&
+	    hg_quark_get_type(quark) != HG_TYPE_OPER) {
+		m = hg_vm_get_mem_from_quark(stack->vm, quark);
+		hg_mem_reserved_spool_remove(m, quark);
+	}
+
 	return TRUE;
+}
+
+static hg_quark_t
+_hg_stack_pop(hg_stack_t  *stack,
+	      GError     **error)
+{
+	hg_list_t *l;
+	hg_quark_t retval;
+
+	if (stack->last_stack == NULL)
+		return Qnil;
+
+	l = stack->last_stack;
+	stack->last_stack = l->prev;
+	if (l->prev) {
+		l->prev->next = NULL;
+		l->prev = NULL;
+	}
+	if (stack->stack == l) {
+		stack->stack = NULL;
+	}
+	retval = l->data;
+	hg_mem_free(stack->o.mem, l->self);
+	stack->depth--;
+
+	return retval;
 }
 
 /*< public >*/
@@ -154,7 +190,8 @@ _hg_stack_push(hg_stack_t *stack,
  */
 hg_stack_t *
 hg_stack_new(hg_mem_t *mem,
-	     gsize     max_depth)
+	     gsize     max_depth,
+	     hg_vm_t  *vm)
 {
 	hg_stack_t *retval = NULL;
 	hg_quark_t self;
@@ -162,7 +199,7 @@ hg_stack_new(hg_mem_t *mem,
 	hg_return_val_if_fail (mem != NULL, Qnil);
 	hg_return_val_if_fail (max_depth > 0, Qnil);
 
-	self = hg_object_new(mem, (gpointer *)&retval, HG_TYPE_STACK, 0, max_depth);
+	self = hg_object_new(mem, (gpointer *)&retval, HG_TYPE_STACK, 0, max_depth, vm);
 	if (self != Qnil) {
 		retval->self = self;
 	}
@@ -252,28 +289,37 @@ hg_quark_t
 hg_stack_pop(hg_stack_t  *stack,
 	     GError     **error)
 {
-	hg_list_t *l;
 	hg_quark_t retval;
+	hg_mem_t *m;
 
 	hg_return_val_with_gerror_if_fail (stack != NULL, Qnil, error);
 
-	if (stack->last_stack == NULL)
-		return Qnil;
+	retval = _hg_stack_pop(stack, error);
 
-	l = stack->last_stack;
-	stack->last_stack = l->prev;
-	if (l->prev) {
-		l->prev->next = NULL;
-		l->prev = NULL;
+	if (stack->vm &&
+	    !hg_quark_is_simple_object(retval) &&
+	    hg_quark_get_type(retval) != HG_TYPE_OPER) {
+		m = hg_vm_get_mem_from_quark(stack->vm, retval);
+		hg_mem_reserved_spool_add(m, retval);
 	}
-	if (stack->stack == l) {
-		stack->stack = NULL;
-	}
-	retval = l->data;
-	hg_mem_free(stack->o.mem, l->self);
-	stack->depth--;
 
 	return retval;
+}
+
+/**
+ * hg_stack_drop:
+ * @stack:
+ * @error:
+ *
+ * FIXME
+ */
+void
+hg_stack_drop(hg_stack_t  *stack,
+	      GError     **error)
+{
+	hg_return_with_gerror_if_fail (stack != NULL, error);
+
+	_hg_stack_pop(stack, error);
 }
 
 /**

@@ -741,7 +741,6 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 			gboolean             was_error)
 {
 	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
-	gsize i, used_size;
 
 	if (!priv->slave_bitmap) {
 		g_warning("GC isn't yet started.");
@@ -751,7 +750,10 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 	G_LOCK (allocator);
 
 #define HG_GC_DEBUG
+#if 0
 	if (!was_error) {
+		gsize i, used_size;
+
 		used_size = data->used_size - priv->slave.used_size;
 
 #if defined (HG_DEBUG) && defined (HG_GC_DEBUG)
@@ -783,6 +785,7 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 			}
 		}
 	}
+#endif
 
 #if defined (HG_DEBUG) && defined (HG_GC_DEBUG)
 	if (!was_error)

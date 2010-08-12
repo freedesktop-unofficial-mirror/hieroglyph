@@ -270,7 +270,7 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 					    HG_VM_e_stackoverflow);
 			    return FALSE;
 		    }
-		    hg_stack_pop(estack, &err);
+		    hg_stack_drop(estack, &err);
 		    break;
 	    case HG_TYPE_FILE:
 		    if (!hg_quark_is_executable(qexecobj)) {
@@ -360,7 +360,7 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 							    goto finalize;
 					    }
 					    for (i = 0; i <= idx; i++) {
-						    hg_stack_pop(ostack, &err);
+						    hg_stack_drop(ostack, &err);
 						    if (err) {
 							    hg_vm_set_error(vm, qparent,
 									    HG_VM_e_stackunderflow);
@@ -407,7 +407,7 @@ hg_vm_step_in_exec_array(hg_vm_t    *vm,
 
 	old_ostack = vm->stacks[HG_VM_STACK_OSTACK];
 	vm->stacks[HG_VM_STACK_OSTACK] = hg_stack_new(hg_vm_get_mem(vm),
-						      65535);
+						      65535, vm);
 	if (vm->stacks[HG_VM_STACK_OSTACK] == NULL) {
 		/* unable to dup the correct stacks in this case */
 		vm->stacks[HG_VM_STACK_OSTACK] = old_ostack;
@@ -511,6 +511,36 @@ _hg_vm_quark_complex_compare(hg_quark_t q1,
 	    default:
 		    g_warn_if_reached();
 		    break;
+	}
+
+	return retval;
+}
+
+static gboolean
+_hg_vm_rs_gc(hg_mem_t    *mem,
+	     hg_quark_t   qdata,
+	     gpointer     data,
+	     GError     **error)
+{
+	hg_vm_t *vm = data;
+	GError *err = NULL;
+	gboolean retval;
+
+	retval = hg_vm_quark_gc_mark(vm, qdata, &err);
+	if (!retval && err == NULL) {
+		g_set_error(&err, HG_ERROR, ENOMEM,
+			    "GC failed");
+	}
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
 	}
 
 	return retval;
@@ -675,8 +705,10 @@ hg_vm_new(void)
 		goto error;
 	retval->mem_id[HG_VM_MEM_GLOBAL] = hg_mem_get_id(retval->mem[HG_VM_MEM_GLOBAL]);
 	retval->mem_id[HG_VM_MEM_LOCAL] = hg_mem_get_id(retval->mem[HG_VM_MEM_LOCAL]);
-	hg_mem_set_garbage_collection(retval->mem[HG_VM_MEM_GLOBAL], _hg_vm_run_gc, retval);
-	hg_mem_set_garbage_collection(retval->mem[HG_VM_MEM_LOCAL], _hg_vm_run_gc, retval);
+	hg_mem_set_garbage_collector(retval->mem[HG_VM_MEM_GLOBAL], _hg_vm_run_gc, retval);
+	hg_mem_set_garbage_collector(retval->mem[HG_VM_MEM_LOCAL], _hg_vm_run_gc, retval);
+	hg_mem_reserved_spool_set_garbage_collector(retval->mem[HG_VM_MEM_GLOBAL], _hg_vm_rs_gc, retval);
+	hg_mem_reserved_spool_set_garbage_collector(retval->mem[HG_VM_MEM_LOCAL], _hg_vm_rs_gc, retval);
 
 	/* XXX: we prefer not to use the global nor the local
 	 * memory spool to postpone thinking of how to deal
@@ -687,11 +719,11 @@ hg_vm_new(void)
 	if (retval->scanner == NULL)
 		goto error;
 	retval->stacks[HG_VM_STACK_OSTACK] = hg_stack_new(__hg_vm_mem,
-							  65535);
+							  65535, retval);
 	retval->stacks[HG_VM_STACK_ESTACK] = hg_stack_new(__hg_vm_mem,
-							  65535);
+							  65535, retval);
 	retval->stacks[HG_VM_STACK_DSTACK] = hg_stack_new(__hg_vm_mem,
-							  65535);
+							  65535, retval);
 	if (retval->stacks[HG_VM_STACK_OSTACK] == NULL ||
 	    retval->stacks[HG_VM_STACK_ESTACK] == NULL ||
 	    retval->stacks[HG_VM_STACK_DSTACK] == NULL)
@@ -1199,6 +1231,22 @@ hg_vm_get_mem(hg_vm_t *vm)
 	hg_return_val_if_fail (vm->current_mem_index < HG_VM_MEM_END, NULL);
 
 	return vm->mem[vm->current_mem_index];
+}
+
+/**
+ * hg_vm_get_mem_from_quark:
+ * @vm:
+ * @qdata:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_mem_t *
+hg_vm_get_mem_from_quark(hg_vm_t    *vm,
+			 hg_quark_t  qdata)
+{
+	return _hg_vm_get_mem(vm, qdata);
 }
 
 /**
@@ -1753,7 +1801,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 			    hg_vm_set_error(vm, qexecobj, HG_VM_e_stackoverflow);
 			    return TRUE;
 		    }
-		    hg_stack_pop(estack, &err);
+		    hg_stack_drop(estack, &err);
 		    *is_proceeded = TRUE;
 		    break;
 	    case HG_TYPE_EVAL_NAME:
@@ -1797,7 +1845,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 				    return TRUE;
 			    }
 			    hg_stack_roll(estack, 2, 1, &err);
-			    hg_stack_pop(estack, &err);
+			    hg_stack_drop(estack, &err);
 			    break;
 		    }
 		    goto push_stack;
@@ -1835,7 +1883,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 				    }
 				    hg_array_remove(a, 0);
 			    } else {
-				    hg_stack_pop(estack, &err);
+				    hg_stack_drop(estack, &err);
 			    }
 		      a_error:
 			    _HG_VM_UNLOCK (vm, qexecobj);
@@ -1858,7 +1906,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 							      NULL);
 			    hg_quark_set_executable(&qresult, TRUE);
 			    _HG_VM_UNLOCK (vm, qexecobj);
-			    hg_stack_pop(estack, &err);
+			    hg_stack_drop(estack, &err);
 			    if (!hg_stack_push(estack, qresult)) {
 				    hg_vm_set_error(vm, qexecobj,
 						    HG_VM_e_execstackoverflow);
@@ -1873,7 +1921,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 						vm,
 						&err);
 		    if (retval) {
-			    hg_stack_pop(estack, &err);
+			    hg_stack_drop(estack, &err);
 		    }
 		    *is_proceeded = TRUE;
 		    break;
@@ -1892,7 +1940,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 #if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
 					    g_print("I: EOF detected\n");
 #endif
-					    hg_stack_pop(estack, &err);
+					    hg_stack_drop(estack, &err);
 					    *is_proceeded = TRUE;
 					    break;
 				    }

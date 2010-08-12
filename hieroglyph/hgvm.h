@@ -156,6 +156,8 @@ void               hg_vm_quark_set_attributes  (hg_vm_t            *vm,
 void               hg_vm_set_default_attributes(hg_vm_t            *vm,
 						guint               qattributes);
 hg_mem_t          *hg_vm_get_mem               (hg_vm_t            *vm);
+hg_mem_t          *hg_vm_get_mem_from_quark    (hg_vm_t            *vm,
+						hg_quark_t          qdata);
 void               hg_vm_use_global_mem        (hg_vm_t            *vm,
 						gboolean            flag);
 gboolean           hg_vm_is_global_mem_used    (hg_vm_t            *vm);

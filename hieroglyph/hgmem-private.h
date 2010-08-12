@@ -36,6 +36,9 @@ struct _hg_mem_t {
 	gpointer             gc_data;
 	GHashTable          *finalizer_table;
 	GHashTable          *slave_finalizer_table;
+	GHashTable          *reserved_spool;
+	hg_rs_gc_func_t      rs_gc_func;
+	gpointer             rs_gc_data;
 };
 
 G_END_DECLS

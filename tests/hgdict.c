@@ -163,7 +163,7 @@ TDEF (gc_mark)
 
 	q = hg_dict_new(m, 10, (gpointer *)&d);
 	hg_dict_add(d, 0, 0, NULL);
-	hg_mem_set_garbage_collection(m, _gc_func, d);
+	hg_mem_set_garbage_collector(m, _gc_func, d);
 	size = hg_mem_collect_garbage(m);
 	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
 	for (i = 1; i < 256; i++) {

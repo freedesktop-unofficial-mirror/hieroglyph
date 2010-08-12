@@ -136,6 +136,7 @@ hg_mem_new_with_allocator(hg_mem_vtable_t *allocator,
 		retval->data->resizable = FALSE;
 		hg_mem_resize_heap(retval, size);
 		retval->finalizer_table = g_hash_table_new(g_direct_hash, g_direct_equal);
+		retval->reserved_spool = g_hash_table_new(g_direct_hash, g_direct_equal);
 	}
 
 	return retval;
@@ -163,6 +164,8 @@ hg_mem_destroy(gpointer data)
 	mem->allocator->finalize(mem->data);
 	if (mem->finalizer_table)
 		g_hash_table_destroy(mem->finalizer_table);
+	if (mem->reserved_spool)
+		g_hash_table_destroy(mem->reserved_spool);
 
 	g_free(mem);
 }
@@ -406,7 +409,7 @@ hg_mem_unlock_object(hg_mem_t   *mem,
 }
 
 /**
- * hg_mem_set_garbage_collection:
+ * hg_mem_set_garbage_collector:
  * @mem:
  * @func:
  * @data:
@@ -414,9 +417,9 @@ hg_mem_unlock_object(hg_mem_t   *mem,
  * FIXME
  */
 void
-hg_mem_set_garbage_collection(hg_mem_t     *mem,
-			      hg_gc_func_t  func,
-			      gpointer      user_data)
+hg_mem_set_garbage_collector(hg_mem_t     *mem,
+			     hg_gc_func_t  func,
+			     gpointer      user_data)
 {
 	hg_return_if_fail (mem != NULL);
 
@@ -448,10 +451,19 @@ hg_mem_collect_garbage(hg_mem_t *mem)
 	    mem->allocator->gc_finish) {
 		if (mem->allocator->gc_init(mem->data)) {
 			gboolean ret = TRUE;
+			GList *key_list, *l;
 
 			_hg_mem_gc_init(mem);
 			if (mem->gc_func)
 				ret = mem->gc_func(mem, mem->gc_data);
+			if (ret && mem->rs_gc_func) {
+				key_list = g_hash_table_get_keys(mem->reserved_spool);
+				for (l = key_list; l != NULL; l = g_list_next(l)) {
+					if (!(ret = mem->rs_gc_func(mem, HGPOINTER_TO_QUARK (l->data), mem->rs_gc_data, NULL)))
+						break;
+				}
+				g_list_free(key_list);
+			}
 			_hg_mem_gc_finish(mem, !ret);
 			if (!mem->allocator->gc_finish(mem->data, !ret))
 				return -1;
@@ -517,4 +529,62 @@ hg_mem_get_id(hg_mem_t *mem)
 	hg_return_val_if_fail (mem != NULL, -1);
 
 	return mem->id;
+}
+
+/**
+ * hg_mem_add_reserved_spool:
+ * @mem:
+ * @qdata:
+ *
+ * FIXME
+ */
+void
+hg_mem_reserved_spool_add(hg_mem_t     *mem,
+			  hg_quark_t    qdata)
+{
+	gpointer p;
+
+	hg_return_if_fail (mem != NULL);
+	hg_return_if_fail (qdata != Qnil);
+
+	p = HGQUARK_TO_POINTER (hg_quark_get_hash(qdata));
+	g_hash_table_insert(mem->reserved_spool, p, p);
+}
+
+/**
+ * hg_mem_remove_reserved_spool:
+ * @mem:
+ * @qdata:
+ *
+ * FIXME
+ */
+void
+hg_mem_reserved_spool_remove(hg_mem_t   *mem,
+			     hg_quark_t  qdata)
+{
+	hg_return_if_fail (mem != NULL);
+	hg_return_if_fail (qdata != Qnil);
+
+	g_hash_table_remove(mem->reserved_spool,
+			    HGQUARK_TO_POINTER (hg_quark_get_hash(qdata)));
+}
+
+/**
+ * hg_mem_reserved_spool_set_garbage_collector:
+ * @mem:
+ * @func:
+ * @user_data:
+ *
+ * FIXME
+ */
+void
+hg_mem_reserved_spool_set_garbage_collector(hg_mem_t        *mem,
+					    hg_rs_gc_func_t  func,
+					    gpointer         user_data)
+{
+	hg_return_if_fail (mem != NULL);
+	hg_return_if_fail (func != NULL);
+
+	mem->rs_gc_func = func;
+	mem->rs_gc_data = user_data;
 }

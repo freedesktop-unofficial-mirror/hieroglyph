@@ -86,7 +86,6 @@ _hg_object_array_copy(hg_object_t              *object,
 	GError *err = NULL;
 
 	hg_return_val_if_fail (object->type == HG_TYPE_ARRAY, Qnil);
-	hg_return_val_if_fail (object->on_copying == Qnil || HG_IS_QARRAY (object->on_copying), Qnil);
 
 	if (object->on_copying != Qnil)
 		return object->on_copying;
@@ -161,9 +160,9 @@ _hg_object_array_to_cstr(hg_object_t              *object,
 		return s;
 	}
 
-	if (object->on_copying != Qnil)
+	if (object->on_to_cstr)
 		return g_strdup("[...]");
-	object->on_copying = HG_QMARK;
+	object->on_to_cstr = TRUE;
 
 	g_string_append_c(retval, '[');
 	len = hg_array_length(array);
@@ -188,7 +187,7 @@ _hg_object_array_to_cstr(hg_object_t              *object,
 	}
 	g_string_append_c(retval, ']');
 
-	object->on_copying = Qnil;
+	object->on_to_cstr = FALSE;
 
 	return g_string_free(retval, FALSE);
 }
@@ -313,6 +312,8 @@ hg_array_free(hg_array_t *array)
 {
 	hg_return_if_fail (array != NULL);
 	hg_return_if_fail (array->o.type == HG_TYPE_ARRAY);
+
+	hg_mem_reserved_spool_remove(array->o.mem, array->o.self);
 
 	hg_mem_free(array->o.mem, array->qname);
 	hg_mem_free(array->o.mem, array->o.self);
