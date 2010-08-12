@@ -359,6 +359,8 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 						    if (err)
 							    goto finalize;
 					    }
+					    _HG_VM_UNLOCK (vm, qresult);
+
 					    for (i = 0; i <= idx; i++) {
 						    hg_stack_drop(ostack, &err);
 						    if (err) {
@@ -406,7 +408,7 @@ hg_vm_step_in_exec_array(hg_vm_t    *vm,
 	vm->n_nest_scan++;
 
 	old_ostack = vm->stacks[HG_VM_STACK_OSTACK];
-	vm->stacks[HG_VM_STACK_OSTACK] = hg_stack_new(hg_vm_get_mem(vm),
+	vm->stacks[HG_VM_STACK_OSTACK] = hg_stack_new(__hg_vm_mem,
 						      65535, vm);
 	if (vm->stacks[HG_VM_STACK_OSTACK] == NULL) {
 		/* unable to dup the correct stacks in this case */
@@ -546,6 +548,7 @@ _hg_vm_rs_gc(hg_mem_t    *mem,
 	return retval;
 }
 
+#if 0
 static gboolean
 _hg_vm_run_gc_in_stack(hg_mem_t    *mem,
 		       hg_quark_t   qdata,
@@ -563,6 +566,7 @@ _hg_vm_run_gc_in_stack(hg_mem_t    *mem,
 
 	return retval;
 }
+#endif
 
 static gboolean
 _hg_vm_run_gc(hg_mem_t *mem,
@@ -591,8 +595,9 @@ _hg_vm_run_gc(hg_mem_t *mem,
 	for (i = 0; i < HG_VM_STACK_END; i++) {
 		hg_stack_t *s = vm->stacks[i];
 
-		hg_stack_foreach(s, _hg_vm_run_gc_in_stack, vm, &err);
-		if (err)
+		if (!hg_object_gc_mark((hg_object_t *)s,
+				       _hg_vm_quark_iterate_gc_mark,
+				       vm, &err))
 			goto error;
 	}
 	/** marking miscellaneous **/

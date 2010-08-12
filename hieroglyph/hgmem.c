@@ -280,6 +280,10 @@ hg_mem_alloc(hg_mem_t *mem,
 		}
 	}
 
+	if (mem->id == 2 && hg_quark_get_value(retval) == 0x1a) {
+		G_BREAKPOINT();
+	}
+
 	return retval;
 }
 
