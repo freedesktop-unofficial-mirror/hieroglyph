@@ -1,3 +1,7 @@
+2010-08-13  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgstack.c (_hg_object_stack_gc_mark): implemented.
+
 2010-08-12  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgallocator.c (_hg_allocator_realloc): fix a typo.

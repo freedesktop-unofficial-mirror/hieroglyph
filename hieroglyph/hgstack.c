@@ -90,7 +90,22 @@ _hg_object_stack_gc_mark(hg_object_t           *object,
 			 gpointer               user_data,
 			 GError               **error)
 {
-	return FALSE;
+	hg_stack_t *stack = (hg_stack_t *)object;
+	hg_list_t *l;
+	gboolean retval = TRUE;
+
+	for (l = stack->stack; l != NULL; l = l->next) {
+		if (!hg_mem_gc_mark(object->mem, l->self, error)) {
+			retval = FALSE;
+			break;
+		}
+		if (!func(l->data, user_data, error)) {
+			retval = FALSE;
+			break;
+		}
+	}
+
+	return retval;
 }
 
 static hg_list_t *
