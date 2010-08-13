@@ -1,5 +1,8 @@
 2010-08-13  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgdict.c (_hg_dict_node_foreach): ensure unlocking
+	the node.
+
 	* hieroglyph/hgoperator.c (_hg_operator_real_forall): fix a typo.
 
 	* hieroglyph/hgvm.c (hg_vm_stepi_in_exec_array): unlock the object when 

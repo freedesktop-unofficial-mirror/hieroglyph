@@ -816,12 +816,13 @@ _hg_dict_node_foreach(hg_mem_t                 *mem,
 		for (i = 0; i < qnode_node->n_data; i++) {
 			_hg_dict_node_foreach(qnode_node->o.mem, qnode_nodes[i], func, data, error);
 			if (*error)
-				return;
+				goto error;
 			if (!func(qnode_node->o.mem, qnode_keys[i], qnode_vals[i], data, error))
-				return;
+				goto error;
 		}
 		_hg_dict_node_foreach(qnode_node->o.mem, qnode_nodes[qnode_node->n_data], func, data, error);
 
+	  error:
 		HG_DICT_NODE_UNLOCK (mem, qnode, qnode);
 	}
 }
