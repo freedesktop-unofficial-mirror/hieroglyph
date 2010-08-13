@@ -2,6 +2,9 @@
 
 	* hieroglyph/hgvm.c (hg_vm_stepi_in_exec_array): unlock the object when 
 	(hg_vm_step_in_exec_array): allocate the VM memory spool for stacks.
+	(hg_vm_mfree): call hg_object_free() if the quark is for
+	the complex object.
+	(hg_vm_eval_from_file): don't free the object.
 
 	* hieroglyph/hgstack.c (_hg_object_stack_gc_mark): implemented.
 

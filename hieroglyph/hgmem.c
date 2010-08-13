@@ -280,10 +280,6 @@ hg_mem_alloc(hg_mem_t *mem,
 		}
 	}
 
-	if (mem->id == 2 && hg_quark_get_value(retval) == 0x1a) {
-		G_BREAKPOINT();
-	}
-
 	return retval;
 }
 
@@ -457,6 +453,9 @@ hg_mem_collect_garbage(hg_mem_t *mem)
 			gboolean ret = TRUE;
 			GList *key_list, *l;
 
+#if defined (HG_DEBUG) && defined (HG_GC_DEBUG)
+			g_print("GC: starting [mem_id: %d]\n", mem->id);
+#endif
 			_hg_mem_gc_init(mem);
 			if (mem->gc_func)
 				ret = mem->gc_func(mem, mem->gc_data);

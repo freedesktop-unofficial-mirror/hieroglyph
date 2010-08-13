@@ -864,7 +864,13 @@ hg_vm_mfree(hg_vm_t    *vm,
 	if (qdata == Qnil)
 		return;
 
-	hg_mem_free(_hg_vm_get_mem(vm, qdata), qdata);
+	if (!hg_quark_is_simple_object(qdata) &&
+	    !HG_IS_QOPER (qdata)) {
+		hg_object_free(_hg_vm_get_mem(vm, qdata),
+			       qdata);
+	} else {
+		hg_mem_free(_hg_vm_get_mem(vm, qdata), qdata);
+	}
 }
 
 /**
@@ -2258,7 +2264,9 @@ hg_vm_eval_from_file(hg_vm_t      *vm,
 		hg_quark_set_executable(&qfile, TRUE);
 		hg_vm_quark_set_attributes(vm, &qfile);
 		retval = hg_vm_eval(vm, qfile, ostack, estack, dstack, &err);
-		hg_vm_mfree(vm, qfile);
+		/* may better relying on GC
+		 * hg_vm_mfree(vm, qfile);
+		 */
 	  error:
 		if (err) {
 			if (error) {

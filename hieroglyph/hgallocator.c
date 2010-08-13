@@ -749,8 +749,7 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 
 	G_LOCK (allocator);
 
-#define HG_GC_DEBUG
-#if 0
+	/* XXX: this has to be dropped in the future */
 	if (!was_error) {
 		gsize i, used_size;
 
@@ -775,6 +774,8 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 				if (!_hg_allocator_bitmap_is_marked(priv->slave_bitmap, i + 1)) {
 					used_size -= block->size;
 					if (block->lock_count > 0) {
+						g_warning("[BUG] non-Unlocked index 0x%lx [size: %ld, count: %d]\n",
+							  i + 1, block->size, block->lock_count);
 						was_error = !_hg_allocator_gc_mark(data, i + 1, NULL);
 						if (was_error)
 							break;
@@ -785,7 +786,6 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 			}
 		}
 	}
-#endif
 
 #if defined (HG_DEBUG) && defined (HG_GC_DEBUG)
 	if (!was_error)
