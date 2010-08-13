@@ -1,5 +1,9 @@
 2010-08-13  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgfile.c (_hg_object_file_initialize): initialize
+	the members before starting any allocation to avoid possible
+	segfault on GC.
+
 	* hieroglyph/hgdict.c (_hg_dict_node_foreach): ensure unlocking
 	the node.
 

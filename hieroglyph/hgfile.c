@@ -217,6 +217,10 @@ _hg_object_file_initialize(hg_object_t *object,
 	if (vtable == NULL || vtable->open == NULL)
 		return FALSE;
 
+	/* initialize the members first to avoid
+	 * segfault on GC
+	 */
+	memset(G_STRUCT_MEMBER_P (file, sizeof (hg_object_t)), 0, sizeof (hg_file_t) - sizeof (hg_object_t));
 	file->qfilename = HG_QSTRING (file->o.mem, name);
 	file->io_type   = hg_file_get_io_type(name);
 	file->mode      = mode;
