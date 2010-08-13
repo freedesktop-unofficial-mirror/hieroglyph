@@ -776,7 +776,7 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 				if (!_hg_allocator_bitmap_is_marked(priv->slave_bitmap, i + 1)) {
 					used_size -= block->size;
 					if (block->lock_count > 0) {
-						g_warning("[BUG] non-Unlocked index 0x%lx [size: %ld, count: %d]\n",
+						g_warning("[BUG] locked block without references 0x%lx [size: %ld, count: %d]\n",
 							  i + 1, block->size, block->lock_count);
 #if defined (HG_DEBUG) && defined (HG_GC_DEBUG)
 						abort();
