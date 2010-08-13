@@ -1,5 +1,7 @@
 2010-08-13  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (_hg_operator_real_forall): fix a typo.
+
 	* hieroglyph/hgvm.c (hg_vm_stepi_in_exec_array): unlock the object when 
 	(hg_vm_step_in_exec_array): allocate the VM memory spool for stacks.
 	(hg_vm_mfree): call hg_object_free() if the quark is for

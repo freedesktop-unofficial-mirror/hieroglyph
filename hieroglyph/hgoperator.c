@@ -2575,7 +2575,7 @@ G_STMT_START {
 		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%forall_array_continue"), error);
 		HG_VM_UNLOCK (vm, vm->qsystemdict);
 	} else if (HG_IS_QDICT (arg0)) {
-		dict = HG_VM_LOCK (vm, vm->qsystemdict, error);
+		dict = HG_VM_LOCK (vm, arg0, error);
 		if (dict == NULL) {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
@@ -2586,10 +2586,12 @@ G_STMT_START {
 			goto d_error;
 		}
 		hg_dict_foreach(dict, _hg_operator_dup_dict, new_dict, error);
+		HG_VM_UNLOCK (vm, arg0);
 		HG_VM_UNLOCK (vm, qd);
 
 		arg0 = qd;
 
+		dict = HG_VM_LOCK (vm, vm->qsystemdict, error);
 		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%forall_dict_continue"), error);
 	  d_error:
 		HG_VM_UNLOCK (vm, vm->qsystemdict);
