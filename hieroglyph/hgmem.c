@@ -69,9 +69,24 @@ _hg_mem_gc_finish(hg_mem_t *mem,
 		return;
 	}
 	if (!was_error) {
-		g_hash_table_foreach(mem->finalizer_table,
-				     _hg_mem_call_gc_finalizer,
-				     mem);
+		GList *lk, *lv, *llk, *llv;
+
+		/* NOTE: do not use g_hash_foreach().
+		 * each finalizers possibly may breaks the condition
+		 * of the hash table.
+		 */
+		lk = g_hash_table_get_keys(mem->finalizer_table);
+		lv = g_hash_table_get_values(mem->finalizer_table);
+		for (llk = lk, llv = lv;
+		     llk != NULL && llv != NULL;
+		     llk = g_list_next(llk), llv = g_list_next(llv)) {
+			_hg_mem_call_gc_finalizer(llk->data,
+						  llv->data,
+						  mem);
+		}
+		g_list_free(lk);
+		g_list_free(lv);
+
 		g_hash_table_destroy(mem->finalizer_table);
 		mem->finalizer_table = mem->slave_finalizer_table;
 	} else {

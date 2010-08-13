@@ -1,5 +1,8 @@
 2010-08-13  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgmem.c (_hg_mem_gc_finish): fix incomplete
+	finalizer invocation.
+
 	* hieroglyph/hgfile.c (_hg_object_file_initialize): initialize
 	the members before starting any allocation to avoid possible
 	segfault on GC.
