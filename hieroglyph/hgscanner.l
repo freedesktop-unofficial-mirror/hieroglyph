@@ -492,6 +492,8 @@ hg_scanner_attach_file(hg_scanner_t *scanner,
 			hg_mem_unlock_object(scanner->infile->o.mem,
 					     scanner->infile->o.self);
 
+		hg_mem_lock_object(file->o.mem,
+				   file->o.self);
 		scanner->infile = file;
 
 		if (YY_CURRENT_BUFFER) {
@@ -544,5 +546,23 @@ hg_scanner_scan(hg_scanner_t  *scanner,
 hg_quark_t
 hg_scanner_get_token(hg_scanner_t *scanner)
 {
+	hg_return_val_if_fail (scanner != NULL, Qnil);
+
 	return scanner->result;
+}
+
+/**
+ * hg_scanner_get_infile:
+ * @scanner:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_file_t *
+hg_scanner_get_infile(hg_scanner_t *scanner)
+{
+	hg_return_val_if_fail (scanner != NULL, NULL);
+
+	return scanner->infile;
 }

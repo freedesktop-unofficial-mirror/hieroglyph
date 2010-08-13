@@ -1,5 +1,13 @@
 2010-08-13  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgvm.c (hg_vm_stepi_in_exec_array): unlock the object
+	after the file attached into the scanner.
+	(_hg_vm_run_gc): mark the file in the scanner too.
+	(hg_vm_stepi): ensure unlocking the object.
+
+	* hieroglyph/hgscanner.l (hg_scanner_attach_file): lock the object.
+	(hg_scanner_get_infile): new.
+
 	* hieroglyph/hgmem.c (_hg_mem_gc_finish): fix incomplete
 	finalizer invocation.
 

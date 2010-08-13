@@ -280,6 +280,8 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 			    if (file == NULL)
 				    break;
 			    hg_scanner_attach_file(vm->scanner, file);
+			    _HG_VM_UNLOCK (vm, qexecobj);
+
 			    if (!hg_scanner_scan(vm->scanner,
 						 hg_vm_get_mem(vm),
 						 &err)) {
@@ -573,6 +575,7 @@ _hg_vm_run_gc(hg_mem_t *mem,
 	      gpointer  user_data)
 {
 	hg_vm_t *vm = user_data;
+	hg_file_t *f;
 	gsize i;
 	GError *err = NULL;
 
@@ -588,6 +591,13 @@ _hg_vm_run_gc(hg_mem_t *mem,
 		if (!hg_vm_quark_gc_mark(vm, vm->qio[i], &err))
 			goto error;
 	}
+	/* marking I/O in scanner */
+	f = hg_scanner_get_infile(vm->scanner);
+	if (!hg_object_gc_mark((hg_object_t *)f,
+			       _hg_vm_quark_iterate_gc_mark,
+			       vm, &err))
+		goto error;
+
 	/** marking in stacks **/
 #if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
 	g_print("GC: marking objects in stacks\n");
@@ -1947,7 +1957,10 @@ hg_vm_stepi(hg_vm_t  *vm,
 			    if (!hg_scanner_scan(vm->scanner,
 						 hg_vm_get_mem(vm),
 						 &err)) {
-				    if (!err && hg_file_is_eof(file)) {
+				    gboolean is_eof = hg_file_is_eof(file);
+
+				    _HG_VM_UNLOCK (vm, qexecobj);
+				    if (!err && is_eof) {
 #if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
 					    g_print("I: EOF detected\n");
 #endif
@@ -1961,6 +1974,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 
 				    return TRUE;
 			    }
+			    _HG_VM_UNLOCK (vm, qexecobj);
 			    qresult = hg_scanner_get_token(vm->scanner);
 			    hg_vm_quark_set_attributes(vm, &qresult);
 #if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
