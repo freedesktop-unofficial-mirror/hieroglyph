@@ -199,7 +199,7 @@ _hg_vm_stack_real_dump(hg_mem_t    *mem,
 	hg_string_t *s = NULL;
 	gchar *cstr = NULL;
 
-	q = hg_vm_quark_to_string(ddata->vm, qdata, (gpointer *)&s, error);
+	q = hg_vm_quark_to_string(ddata->vm, qdata, TRUE, (gpointer *)&s, error);
 	if (q != Qnil)
 		cstr = hg_string_get_cstr(s);
 
@@ -465,7 +465,7 @@ _hg_vm_quark_iterate_to_cstr(hg_quark_t   qdata,
 	hg_quark_t q;
 	gchar *cstr = NULL;
 
-	q = hg_vm_quark_to_string(vm, qdata, (gpointer *)&s, error);
+	q = hg_vm_quark_to_string(vm, qdata, TRUE, (gpointer *)&s, error);
 	if (s) {
 		cstr = hg_string_get_cstr(s);
 	}
@@ -1028,6 +1028,7 @@ hg_vm_quark_copy(hg_vm_t     *vm,
  * hg_vm_quark_to_string:
  * @vm:
  * @qdata:
+ * @ps_like_syntax:
  * @ret:
  * @error:
  *
@@ -1038,6 +1039,7 @@ hg_vm_quark_copy(hg_vm_t     *vm,
 hg_quark_t
 hg_vm_quark_to_string(hg_vm_t     *vm,
 		      hg_quark_t   qdata,
+		      gboolean     ps_like_syntax,
 		      gpointer    *ret,
 		      GError     **error)
 {
@@ -1087,13 +1089,20 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 			    hg_string_append_printf(s, "%f", HG_REAL (qdata));
 			    break;
 		    case HG_TYPE_EVAL_NAME:
-			    hg_string_append_printf(s, "//%s", HG_NAME (vm->name, qdata));
+			    if (ps_like_syntax)
+				    hg_string_append_printf(s, "//%s", HG_NAME (vm->name, qdata));
+			    else
+				    hg_string_append(s, HG_NAME (vm->name, qdata), -1, &err);
 			    break;
 		    case HG_TYPE_NAME:
-			    if (hg_quark_is_executable(qdata))
-				    hg_string_append_printf(s, "%s", HG_NAME (vm->name, qdata));
-			    else
-				    hg_string_append_printf(s, "/%s", HG_NAME (vm->name, qdata));
+			    if (ps_like_syntax) {
+				    if (hg_quark_is_executable(qdata))
+					    hg_string_append_printf(s, "%s", HG_NAME (vm->name, qdata));
+				    else
+					    hg_string_append_printf(s, "/%s", HG_NAME (vm->name, qdata));
+			    } else {
+				    hg_string_append(s, HG_NAME (vm->name, qdata), -1, &err);
+			    }
 			    break;
 		    case HG_TYPE_BOOL:
 			    hg_string_append(s, HG_BOOL (qdata) ? "true" : "false", -1, &err);
@@ -1114,6 +1123,18 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 		} else {
 			switch (hg_quark_get_type(qdata)) {
 			    case HG_TYPE_STRING:
+				    if (!ps_like_syntax) {
+					    hg_string_t *ss = _HG_VM_LOCK (vm, qdata, &err);
+
+					    if (ss) {
+						    cstr = hg_string_get_cstr(ss);
+						    _HG_VM_UNLOCK (vm, qdata);
+
+						    hg_string_append(s, cstr, -1, &err);
+						    g_free(cstr);
+						    break;
+					    }
+				    }
 			    case HG_TYPE_DICT:
 			    case HG_TYPE_ARRAY:
 			    case HG_TYPE_FILE:
@@ -1129,6 +1150,7 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 						    }
 					    }
 					    hg_string_append(s, cstr, -1, &err);
+					    g_free(cstr);
 
 					    _HG_VM_UNLOCK (vm, qdata);
 				    }
@@ -2537,6 +2559,7 @@ hg_vm_set_error(hg_vm_t       *vm,
 
 			q = hg_vm_quark_to_string(vm,
 						  qresult_cmd,
+						  TRUE,
 						  (gpointer *)&s,
 						  &err);
 			if (q == Qnil)
@@ -2551,6 +2574,7 @@ hg_vm_set_error(hg_vm_t       *vm,
 		}
 		qwhere = hg_vm_quark_to_string(vm,
 					       qdata,
+					       TRUE,
 					       (gpointer *)&where,
 					       &err);
 		if (qwhere == Qnil)

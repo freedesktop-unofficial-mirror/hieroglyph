@@ -146,6 +146,7 @@ hg_quark_t         hg_vm_quark_copy            (hg_vm_t            *vm,
 						GError            **error);
 hg_quark_t         hg_vm_quark_to_string       (hg_vm_t            *vm,
 						hg_quark_t          qdata,
+						gboolean            ps_like_syntax,
 						gpointer           *ret,
 						GError            **error);
 gboolean           hg_vm_quark_compare         (hg_vm_t            *vm,

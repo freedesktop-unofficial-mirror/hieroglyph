@@ -859,7 +859,7 @@ G_STMT_START {
 	CHECK_STACK (ostack, 1);
 
 	arg0 = hg_stack_index(ostack, 0, error);
-	q = hg_vm_quark_to_string(vm, arg0, NULL, error);
+	q = hg_vm_quark_to_string(vm, arg0, FALSE, NULL, error);
 	if (q == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
@@ -925,7 +925,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-	q = hg_vm_quark_to_string(vm, arg1, (gpointer *)&s, error);
+	q = hg_vm_quark_to_string(vm, arg1, TRUE, (gpointer *)&s, error);
 	if (q == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;

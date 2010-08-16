@@ -1,3 +1,9 @@
+2010-08-16  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgvm.c (hg_vm_quark_to_string): add a option to behaves
+	generating the PS-like syntax or just a string.
+	(hg_vm_quark_to_string): fix a memory leak.
+
 2010-08-13  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgvm.c (hg_vm_stepi_in_exec_array): unlock the object
