@@ -112,8 +112,8 @@ _hg_mem_gc_finish(hg_mem_t *mem,
 hg_mem_t *
 hg_mem_get(gint id)
 {
-	hg_return_val_if_fail (id < __hg_mem_id);
-	hg_return_val_if_fail (id < HG_MAX_MEM);
+	hg_return_val_if_fail (id < __hg_mem_id, NULL);
+	hg_return_val_if_fail (id < HG_MAX_MEM, NULL);
 
 	return __hg_mem_spool[id];
 }

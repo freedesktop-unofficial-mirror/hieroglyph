@@ -30,6 +30,7 @@
 G_BEGIN_DECLS
 
 
+hg_mem_t   *hg_mem_get                                 (gint                      id);
 hg_mem_t   *hg_mem_new                                 (gsize                     size);
 hg_mem_t   *hg_mem_new_with_allocator                  (hg_mem_vtable_t          *allocator,
                                                         gsize                     size);
