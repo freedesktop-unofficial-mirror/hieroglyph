@@ -508,6 +508,14 @@ hg_scanner_attach_file(hg_scanner_t *scanner,
 	hg_return_val_if_fail (file != NULL, FALSE);
 
 	yyg = (struct yyguts_t *)scanner->yyscanner;
+	yystate = hg_file_get_yybuffer(file);
+	if (yystate == NULL) {
+		yystate = yy_create_buffer(NULL, YY_BUF_SIZE, scanner->yyscanner);
+		hg_file_set_yybuffer(file,
+				     yystate,
+				     (hg_file_yybuffer_finalizer_func_t)yy_delete_buffer,
+				     scanner->yyscanner);
+	}
 	if (scanner->infile != file) {
 		if (scanner->infile != NULL)
 			hg_mem_unlock_object(scanner->infile->o.mem,
@@ -517,11 +525,7 @@ hg_scanner_attach_file(hg_scanner_t *scanner,
 				   file->o.self);
 		scanner->infile = file;
 
-		if (YY_CURRENT_BUFFER) {
-			yypop_buffer_state(scanner->yyscanner);
-		}
-		yystate = yy_create_buffer(NULL, YY_BUF_SIZE, scanner->yyscanner);
-		yypush_buffer_state(yystate, scanner->yyscanner);
+		yy_switch_to_buffer(yystate, scanner->yyscanner);
 		yyset_lineno(hg_file_get_lineno(file), scanner->yyscanner);
 	}
 

@@ -1,5 +1,11 @@
 2010-08-17  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgscanner.l (hg_scanner_attach_file): switch
+	the appropriate YY_BUFFER_STATE.
+
+	* hieroglyph/hgfile.c (hg_file_set_yybuffer): new.
+	(hg_file_get_yybuffer): new.
+
 	* hieroglyph/hgscanner.l: fix several warnings related to the trailing
 	context.
 

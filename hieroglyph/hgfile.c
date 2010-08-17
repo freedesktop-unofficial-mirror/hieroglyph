@@ -264,6 +264,8 @@ _hg_object_file_free(hg_object_t *object)
 			g_error_free(err);
 		}
 	}
+	if (file->yybuffer && file->yyfree)
+		file->yyfree(file->yybuffer, file->yydata);
 	hg_mem_free(file->o.mem, file->qfilename);
 	if (file->user_data) {
 		hg_mem_free(file->o.mem, file->user_data->self);
@@ -1594,4 +1596,47 @@ hg_file_get_position(hg_file_t *file)
 	hg_return_val_if_fail (file->o.type == HG_TYPE_FILE, -1);
 
 	return file->position;
+}
+
+/**
+ * hg_file_set_yybuffer:
+ * @file:
+ * @yybuffer:
+ * @finalizer:
+ *
+ * FIXME
+ */
+void
+hg_file_set_yybuffer(hg_file_t                        *file,
+		     gpointer                          yybuffer,
+		     hg_file_yybuffer_finalizer_func_t func,
+		     gpointer                          user_data)
+{
+	hg_return_if_fail (file != NULL);
+
+	if (file->yybuffer &&
+	    file->yybuffer != yybuffer) {
+		if (file->yyfree) {
+			file->yyfree(file->yybuffer, file->yydata);
+		}
+	}
+	file->yybuffer = yybuffer;
+	file->yyfree = func;
+	file->yydata = user_data;
+}
+
+/**
+ * hg_file_get_yybuffer:
+ * @file:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gpointer
+hg_file_get_yybuffer(hg_file_t *file)
+{
+	hg_return_val_if_fail (file != NULL, NULL);
+
+	return file->yybuffer;
 }
