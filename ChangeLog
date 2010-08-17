@@ -1,5 +1,8 @@
 2010-08-17  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgscanner.l: fix several warnings related to the trailing
+	context.
+
 	* hieroglyph/hgmem.c (hg_mem_reserved_spool_remove): ignore the quark
 	if it's not in the reserved spool.
 

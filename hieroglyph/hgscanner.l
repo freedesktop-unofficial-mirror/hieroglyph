@@ -81,6 +81,7 @@ void yyset_column(int column_no, yyscan_t yyscanner);
 
 CONTROL		[\x04%\(\)/<>\[\]\{\}]
 SPACE		[\t\f\r\n\0 ]
+CTRL_OR_SPACE	[\x04%\(\)/<>\[\]\{\}\t\f\r\n\0 ]
 HEXDIGITS	[0-9a-fA-F]
 %%
 	gint string_count = 0;
@@ -267,7 +268,23 @@ HEXDIGITS	[0-9a-fA-F]
 		g_string_free(string, TRUE);
 		return retval;
 	}
-	{HEXDIGITS}{1,2}/{HEXDIGITS}|{SPACE}|>	{
+	{HEXDIGITS}{2}/[0-9a-fA-F\t\f\r\n\0> ]	{
+		gint i;
+		gchar *p;
+		gsize index;
+		gint32 result = 0;
+
+		for (i = 0; i < yyleng; i++) {
+			p = strchr(radix_index, tolower(yytext[i]));
+			index = p - radix_index;
+			result *= 16;
+			result += index;
+		}
+		if (i == 1)
+			result *= 16;
+		g_string_append_c(string, result);
+	}
+	{HEXDIGITS}{1}/[\t\f\r\n\0> ]	{
 		gint i;
 		gchar *p;
 		gsize index;
@@ -303,12 +320,12 @@ HEXDIGITS	[0-9a-fA-F]
 		BEGIN(HEXSTRING);
 		string = g_string_new(NULL);
 	}
-\/\/[^\x04%\(\)/<>\[\]\{\}\t\f\r\n ]+/{CONTROL}|{SPACE}	{
+\/\/[^\x04%\(\)/<>\[\]\{\}\t\f\r\n ]+/{CTRL_OR_SPACE}	{
 		scanner->result = HG_QEVALNAME (scanner->name, &yytext[2]);
 		hg_quark_set_executable(&scanner->result, TRUE);
 		return TRUE;
 	}
-\/[^\x04%\(\)/<>\[\]\{\}\t\f\r\n ]+/{CONTROL}|{SPACE}	{
+\/[^\x04%\(\)\/<>\[\]\{\}\t\f\r\n ]+/{CTRL_OR_SPACE}	{
 		scanner->result = HG_QNAME (scanner->name, &yytext[1]);
 		return TRUE;
 	}
@@ -328,7 +345,7 @@ HEXDIGITS	[0-9a-fA-F]
 [\t\f ]+		{
 		/* ignore */
 	}
-[+-]?[0-9]+\.[0-9]+|[+-]?[0-9]+(\.[0-9]+)?e[+-][0-9]+/{CONTROL}|{SPACE}	{
+[+-]?[0-9]+\.[0-9]+|[+-]?[0-9]+(\.[0-9]+)?e[+-][0-9]+/{CTRL_OR_SPACE}	{
 		gdouble result = 0.0L;
 
 		sscanf(yytext, "%lf", &result);
@@ -336,7 +353,7 @@ HEXDIGITS	[0-9a-fA-F]
 
 		return TRUE;
 	}
-[0-9]+#[0-9a-zA-Z]+/{CONTROL}|{SPACE}	{
+[0-9]+#[0-9a-zA-Z]+/{CTRL_OR_SPACE}	{
 		gdouble fradix = 0.0L;
 		gint32 result = 0;
 		gsize radix, len, i, index;
@@ -374,7 +391,7 @@ HEXDIGITS	[0-9a-fA-F]
 		scanner->result = HG_QINT (result);
 		return TRUE;
 	}
-[+-]?[0-9]+/{CONTROL}|{SPACE}	{
+[+-]?[0-9]+/{CTRL_OR_SPACE}	{
 		gsize i, pos = 0;
 		gdouble result = 0.0L, f;
 		gint sign = 0;
@@ -404,8 +421,12 @@ HEXDIGITS	[0-9a-fA-F]
 		}
 		return TRUE;
 	}
-\<\<|\>\>|\[|\]|\{|\}					|
-[^\x04%\(\)/\<\>\[\]\{\}\t\f\r\n ]+/{CONTROL}|{SPACE}	{
+\<\<|\>\>|\[|\]|\{|\}	{
+		scanner->result = HG_QNAME (scanner->name, yytext);
+		hg_quark_set_executable(&scanner->result, TRUE);
+		return TRUE;
+	}
+[^\x04%\(\)/\<\>\[\]\{\}\t\f\r\n ]+/{CTRL_OR_SPACE}	{
 		scanner->result = HG_QNAME (scanner->name, yytext);
 		hg_quark_set_executable(&scanner->result, TRUE);
 		return TRUE;
