@@ -46,6 +46,7 @@ typedef enum _hg_system_encoding_t	hg_system_encoding_t;
 typedef gboolean (* hg_gc_func_t)	(hg_mem_t *mem,
 					 gpointer  user_data);
 #define hg_rs_gc_func_t			hg_dict_traverse_func_t
+typedef struct _hg_mem_snapshot_data_t	hg_mem_snapshot_data_t;
 
 /* hgarray.h */
 typedef gboolean (* hg_array_traverse_func_t) (hg_mem_t    *mem,
@@ -55,34 +56,44 @@ typedef gboolean (* hg_array_traverse_func_t) (hg_mem_t    *mem,
 
 /* hgmem.h */
 struct _hg_mem_vtable_t {
-	gpointer   (* initialize)      (void);
-	void       (* finalize)        (hg_allocator_data_t  *data);
-	gboolean   (* resize_heap)     (hg_allocator_data_t  *data,
-					gsize                 size);
-	hg_quark_t (* alloc)           (hg_allocator_data_t  *data,
-					gsize                 size,
-					gpointer             *ret);
-	hg_quark_t (* realloc)         (hg_allocator_data_t  *data,
-					hg_quark_t            quark,
-					gsize                 size,
-					gpointer             *ret);
-	void       (* free)            (hg_allocator_data_t  *data,
-					hg_quark_t            quark);
-	gpointer   (* lock_object)     (hg_allocator_data_t  *data,
-					hg_quark_t            quark);
-	void       (* unlock_object)   (hg_allocator_data_t  *data,
-					hg_quark_t            quark);
-	gboolean   (* gc_init)         (hg_allocator_data_t  *data);
-	gboolean   (* gc_mark)         (hg_allocator_data_t  *data,
-					hg_quark_t            quark,
-					GError              **error);
-	gboolean   (* gc_finish)       (hg_allocator_data_t  *data,
-					gboolean              was_error);
+	gpointer                 (* initialize)       (void);
+	void                     (* finalize)         (hg_allocator_data_t     *data);
+	gboolean                 (* resize_heap)      (hg_allocator_data_t     *data,
+						       gsize                    size);
+	hg_quark_t               (* alloc)            (hg_allocator_data_t     *data,
+						       gsize                    size,
+						       gpointer                *ret);
+	hg_quark_t               (* realloc)          (hg_allocator_data_t     *data,
+						       hg_quark_t               quark,
+						       gsize                    size,
+						       gpointer                *ret);
+	void                     (* free)             (hg_allocator_data_t     *data,
+						       hg_quark_t               quark);
+	gpointer                 (* lock_object)      (hg_allocator_data_t     *data,
+						       hg_quark_t               quark);
+	void                     (* unlock_object)    (hg_allocator_data_t     *data,
+						       hg_quark_t               quark);
+	gboolean                 (* gc_init)          (hg_allocator_data_t     *data);
+	gboolean                 (* gc_mark)          (hg_allocator_data_t     *data,
+						       hg_quark_t               quark,
+						       GError                 **error);
+	gboolean                 (* gc_finish)        (hg_allocator_data_t     *data,
+						       gboolean                 was_error);
+	hg_mem_snapshot_data_t * (* save_snapshot)    (hg_allocator_data_t     *data);
+	gboolean                 (* restore_snapshot) (hg_allocator_data_t     *data,
+						       hg_mem_snapshot_data_t  *snapshot);
+	void                     (* destroy_snapshot) (hg_allocator_data_t     *data,
+						       hg_mem_snapshot_data_t  *snapshot);
 };
 struct _hg_allocator_data_t {
 	gsize    total_size;
 	gsize    used_size;
 	gboolean resizable;
+};
+struct _hg_mem_snapshot_data_t {
+	gsize total_size;
+	gsize used_size;
+	gint  serial;
 };
 
 /* hgdict.h */

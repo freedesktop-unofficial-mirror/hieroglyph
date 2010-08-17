@@ -548,7 +548,7 @@ _hg_vm_quark_complex_compare(hg_quark_t q1,
 	    case HG_TYPE_DICT:
 	    case HG_TYPE_ARRAY:
 	    case HG_TYPE_FILE:
-	    case HG_TYPE_SAVE:
+	    case HG_TYPE_SNAPSHOT:
 	    case HG_TYPE_STACK:
 		    retval = (q1 == q2);
 		    break;
@@ -1159,7 +1159,7 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 			    case HG_TYPE_DICT:
 			    case HG_TYPE_ARRAY:
 			    case HG_TYPE_FILE:
-			    case HG_TYPE_SAVE:
+			    case HG_TYPE_SNAPSHOT:
 			    case HG_TYPE_STACK:
 				    o = _HG_VM_LOCK (vm, qdata, &err);
 				    if (o) {

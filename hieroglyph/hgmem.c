@@ -554,6 +554,88 @@ hg_mem_gc_mark(hg_mem_t    *mem,
 }
 
 /**
+ * hg_mem_save_snapshot:
+ * @mem:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_mem_snapshot_data_t *
+hg_mem_save_snapshot(hg_mem_t *mem)
+{
+	hg_mem_snapshot_data_t *retval;
+
+	hg_return_val_if_fail (mem != NULL, NULL);
+	hg_return_val_if_fail (mem->allocator != NULL, NULL);
+	hg_return_val_if_fail (mem->allocator->save_snapshot != NULL, NULL);
+	hg_return_val_if_fail (mem->data != NULL, NULL);
+
+	/* clean up to obtain the certain information to be restored */
+	if (hg_mem_collect_garbage(mem) < 0)
+		return NULL;
+
+	retval = mem->allocator->save_snapshot(mem->data);
+	if (retval) {
+		retval->total_size = mem->data->total_size;
+		retval->used_size = mem->data->used_size;
+		retval->serial = mem->snapshot_serial++;
+	}
+
+	return retval;
+}
+
+/**
+ * hg_mem_restore_snapshot:
+ * @mem:
+ * @snapshot:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_mem_restore_snapshot(hg_mem_t               *mem,
+			hg_mem_snapshot_data_t *snapshot)
+{
+	gboolean retval;
+	gint serial;
+
+	hg_return_val_if_fail (mem != NULL, FALSE);
+	hg_return_val_if_fail (mem->allocator != NULL, FALSE);
+	hg_return_val_if_fail (mem->allocator->restore_snapshot != NULL, FALSE);
+	hg_return_val_if_fail (mem->data != NULL, FALSE);
+	hg_return_val_if_fail (mem->snapshot_serial > snapshot->serial, FALSE);
+
+	serial = snapshot->serial;
+	retval = mem->allocator->restore_snapshot(mem->data,
+						  snapshot);
+	if (retval)
+		mem->snapshot_serial = serial;
+
+	return retval;
+}
+
+/**
+ * hg_mem_snapshot_free:
+ * @mem:
+ * @snapshot:
+ *
+ * FIXME
+ */
+void
+hg_mem_snapshot_free(hg_mem_t               *mem,
+		     hg_mem_snapshot_data_t *snapshot)
+{
+	hg_return_if_fail (mem != NULL);
+	hg_return_if_fail (mem->allocator != NULL);
+	hg_return_if_fail (mem->allocator->destroy_snapshot != NULL);
+	hg_return_if_fail (mem->data != NULL);
+
+	mem->allocator->destroy_snapshot(mem->data, snapshot);
+}
+
+/**
  * hg_mem_get_id:
  * @mem:
  *

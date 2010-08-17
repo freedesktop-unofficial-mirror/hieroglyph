@@ -53,6 +53,11 @@ struct _hg_allocator_private_t {
 	hg_allocator_bitmap_t *slave_bitmap;
 	gpointer               heap;
 };
+struct _hg_allocator_snapshot_private_t {
+	hg_mem_snapshot_data_t  parent;
+	hg_allocator_bitmap_t  *bitmap;
+	gpointer                heap;
+};
 
 G_END_DECLS
 

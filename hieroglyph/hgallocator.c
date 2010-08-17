@@ -90,17 +90,20 @@ static gboolean                      _hg_allocator_gc_finish         (hg_allocat
 
 
 static hg_mem_vtable_t __hg_allocator_vtable = {
-	.initialize    = _hg_allocator_initialize,
-	.finalize      = _hg_allocator_finalize,
-	.resize_heap   = _hg_allocator_resize_heap,
-	.alloc         = _hg_allocator_alloc,
-	.realloc       = _hg_allocator_realloc,
-	.free          = _hg_allocator_free,
-	.lock_object   = _hg_allocator_lock_object,
-	.unlock_object = _hg_allocator_unlock_object,
-	.gc_init       = _hg_allocator_gc_init,
-	.gc_mark       = _hg_allocator_gc_mark,
-	.gc_finish     = _hg_allocator_gc_finish,
+	.initialize       = _hg_allocator_initialize,
+	.finalize         = _hg_allocator_finalize,
+	.resize_heap      = _hg_allocator_resize_heap,
+	.alloc            = _hg_allocator_alloc,
+	.realloc          = _hg_allocator_realloc,
+	.free             = _hg_allocator_free,
+	.lock_object      = _hg_allocator_lock_object,
+	.unlock_object    = _hg_allocator_unlock_object,
+	.gc_init          = _hg_allocator_gc_init,
+	.gc_mark          = _hg_allocator_gc_mark,
+	.gc_finish        = _hg_allocator_gc_finish,
+	.save_snapshot    = _hg_allocator_save_snapshot,
+	.restore_snapshot = _hg_allocator_restore_snapshot,
+	.destroy_snapshot = _hg_allocator_destroy_snapshot,
 };
 G_LOCK_DEFINE_STATIC (bitmap);
 G_LOCK_DEFINE_STATIC (allocator);
@@ -820,6 +823,25 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 	G_UNLOCK (allocator);
 
 	return !was_error;
+}
+
+static hg_mem_snapshot_data_t *
+_hg_allocator_save_snapshot(hg_allocator_data_t *data)
+{
+	return NULL;
+}
+
+static gboolean
+_hg_allocator_restore_snapshot(hg_allocator_data_t    *data,
+			       hg_mem_snapshot_data_t *snapshot)
+{
+	return FALSE;
+}
+
+static void
+_hg_allocator_destroy_snapshot(hg_allocator_data_t    *data,
+			       hg_mem_snapshot_data_t *snapshot)
+{
 }
 
 /*< public >*/

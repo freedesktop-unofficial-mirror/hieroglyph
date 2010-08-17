@@ -43,6 +43,7 @@ hg_public_headers =						\
 	hgoperator.h						\
 	hgquark.h						\
 	hgreal.h						\
+	hgsnapshot.h						\
 	hgstack.h						\
 	hgstring.h						\
 	hgtypes.h						\
@@ -80,6 +81,7 @@ hg_sources =							\
 	hgobject.c						\
 	hgoperator.c						\
 	hgscanner.l						\
+	hgsnapshot.c						\
 	hgstack.c						\
 	hgstring.c						\
 	hgvm.c							\
