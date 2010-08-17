@@ -1336,7 +1336,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	qn = HG_QNAME (vm->name, ".isstop");
+	qn = HG_QNAME (vm->name, ".stopped");
 	q = hg_dict_lookup(dict, qn, error);
 
 	if (q != Qnil &&
@@ -3965,7 +3965,7 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
-		if (!hg_dict_add(dict_error, HG_QNAME (vm->name, ".isstop"), HG_QBOOL (TRUE), error)) {
+		if (!hg_dict_add(dict_error, HG_QNAME (vm->name, ".stopped"), HG_QBOOL (TRUE), error)) {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}

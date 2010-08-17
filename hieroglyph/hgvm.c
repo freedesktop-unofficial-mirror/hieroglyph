@@ -1532,7 +1532,7 @@ hg_vm_setup(hg_vm_t           *vm,
 			 &err))
 		goto error;
 	if (!hg_dict_add(dict_error,
-			 HG_QNAME (vm->name, ".isstop"),
+			 HG_QNAME (vm->name, ".stopped"),
 			 HG_QBOOL (FALSE),
 			 &err))
 		goto error;
@@ -2524,7 +2524,7 @@ hg_vm_clear_error(hg_vm_t *vm)
 			 NULL))
 		goto error;
 	if (!hg_dict_add(dict_error,
-			 HG_QNAME (vm->name, ".isstop"),
+			 HG_QNAME (vm->name, ".stopped"),
 			 HG_QBOOL (FALSE),
 			 NULL))
 		goto error;
