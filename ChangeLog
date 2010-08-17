@@ -1,3 +1,11 @@
+2010-08-18  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgallocator.c (_hg_allocator_bitmap_copy): new.
+	(_hg_allocator_bitmap_validate_restore): new.
+	(_hg_allocator_save_snapshot): implemented.
+	(_hg_allocator_restore_snapshot): implemented.
+	(_hg_allocator_destroy_snapshot): implemented.
+
 2010-08-17  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgsnapshot.[ch]: new.
