@@ -186,6 +186,7 @@ G_INLINE_FUNC void         hg_quark_set_access_bits (hg_quark_t              *qu
                                                      gboolean                 executable);
 G_INLINE_FUNC gboolean     hg_quark_has_same_mem_id (hg_quark_t               quark,
                                                      guint                    id);
+G_INLINE_FUNC gint         hg_quark_get_mem_id      (hg_quark_t               quark);
 G_INLINE_FUNC void         hg_quark_set_mem_id      (hg_quark_t              *quark,
                                                      guint                    id);
 G_INLINE_FUNC hg_quark_t   hg_quark_get_hash        (hg_quark_t               quark);
@@ -431,6 +432,22 @@ hg_quark_has_same_mem_id(hg_quark_t quark,
 	return _hg_quark_type_bit_get_bits(quark,
 					   HG_QUARK_TYPE_BIT_MEM_ID,
 					   HG_QUARK_TYPE_BIT_MEM_ID_END) == id;
+}
+
+/**
+ * hg_quark_get_mem_id:
+ * @quark:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+G_INLINE_FUNC gint
+hg_quark_get_mem_id(hg_quark_t quark)
+{
+	return _hg_quark_type_bit_get_bits(quark,
+					   HG_QUARK_TYPE_BIT_MEM_ID,
+					   HG_QUARK_TYPE_BIT_MEM_ID_END);
 }
 
 /**
