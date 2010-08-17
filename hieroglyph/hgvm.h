@@ -226,6 +226,9 @@ gboolean           hg_vm_set_error_from_gerror (hg_vm_t            *vm,
 void               hg_vm_stack_dump            (hg_vm_t            *vm,
 						hg_stack_t         *stack,
 						hg_file_t          *output);
+void               hg_vm_reserved_spool_dump   (hg_vm_t            *vm,
+						hg_mem_t           *mem,
+						hg_file_t          *ofile);
 
 G_END_DECLS
 

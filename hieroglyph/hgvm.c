@@ -63,6 +63,11 @@ typedef struct _hg_vm_stack_dump_data_t {
 	hg_stack_t *stack;
 	hg_file_t  *ofile;
 } hg_vm_stack_dump_data_t;
+typedef struct _hg_vm_rs_dump_data_t {
+	hg_vm_t   *vm;
+	hg_mem_t  *mem;
+	hg_file_t *ofile;
+} hg_vm_rs_dump_data_t;
 
 
 static hg_quark_t hg_vm_step_in_exec_array(hg_vm_t    *vm,
@@ -209,6 +214,41 @@ _hg_vm_stack_real_dump(hg_mem_t    *mem,
 			      (hg_quark_is_readable(qdata) ? 'r' : '-'),
 			      (hg_quark_is_writable(qdata) ? 'w' : '-'),
 			      (hg_quark_is_executable(qdata) ? 'x' : '-'),
+			      q == Qnil ? "..." : cstr);
+
+	g_free(cstr);
+	/* this is an instant object.
+	 * surely no reference to the container.
+	 * so it can be safely destroyed.
+	 */
+	hg_string_free(s, TRUE);
+
+	return TRUE;
+}
+
+static gboolean
+_hg_vm_rs_real_dump(hg_mem_t    *mem,
+		    hg_quark_t   qkey,
+		    hg_quark_t   qval,
+		    gpointer     data,
+		    GError     **error)
+{
+	hg_vm_rs_dump_data_t *ddata = data;
+	hg_quark_t q;
+	hg_string_t *s = NULL;
+	gchar *cstr = NULL;
+
+	q = hg_vm_quark_to_string(ddata->vm, qkey, TRUE, (gpointer *)&s, error);
+	if (q != Qnil)
+		cstr = hg_string_get_cstr(s);
+
+	hg_file_append_printf(ddata->ofile, "0x%016lx|%-12s|%6d| %c%c%c|%s\n",
+			      qkey,
+			      hg_quark_get_type_name(qkey),
+			      GPOINTER_TO_INT (HGQUARK_TO_POINTER (qval)),
+			      (hg_quark_is_readable(qkey) ? 'r' : '-'),
+			      (hg_quark_is_writable(qkey) ? 'w' : '-'),
+			      (hg_quark_is_executable(qkey) ? 'x' : '-'),
 			      q == Qnil ? "..." : cstr);
 
 	g_free(cstr);
@@ -2684,7 +2724,7 @@ hg_vm_set_error_from_gerror(hg_vm_t    *vm,
 /**
  * hg_vm_stack_dump:
  * @stack:
- * @file:
+ * @ofile:
  *
  * FIXME
  */
@@ -2694,13 +2734,18 @@ hg_vm_stack_dump(hg_vm_t    *vm,
 		 hg_file_t  *output)
 {
 	hg_vm_stack_dump_data_t data;
+	hg_mem_t *m;
 
 	hg_return_if_fail (vm != NULL);
 	hg_return_if_fail (stack != NULL);
 	hg_return_if_fail (output != NULL);
 
+	m = hg_vm_get_mem(vm);
 	/* to avoid unusable result when OOM */
-	hg_mem_set_resizable(hg_vm_get_mem(vm), TRUE);
+	hg_mem_set_resizable(m, TRUE);
+	/* XXX: to avoid crashes after resizing heap with keeping a pointer */
+	hg_mem_resize_heap(hg_vm_get_mem(vm),
+			   hg_mem_get_total_size(m) * 2);
 
 	data.vm = vm;
 	data.stack = stack;
@@ -2709,4 +2754,35 @@ hg_vm_stack_dump(hg_vm_t    *vm,
 	hg_file_append_printf(output, "       value      |    type    |attr|content\n");
 	hg_file_append_printf(output, "----------========+------------+----+---------------------------------\n");
 	hg_stack_foreach(stack, _hg_vm_stack_real_dump, &data, NULL);
+}
+
+/**
+ * hg_vm_reserved_spool_dump:
+ * @vm:
+ * @mem:
+ * @ofile:
+ *
+ * FIXME
+ */
+void
+hg_vm_reserved_spool_dump(hg_vm_t   *vm,
+			  hg_mem_t  *mem,
+			  hg_file_t *ofile)
+{
+	hg_vm_rs_dump_data_t data;
+
+	hg_return_if_fail (vm != NULL);
+	hg_return_if_fail (mem != NULL);
+	hg_return_if_fail (ofile != NULL);
+
+	/* to avoid unusable result when OOM */
+	hg_mem_set_resizable(hg_vm_get_mem(vm), TRUE);
+
+	data.vm = vm;
+	data.mem = mem;
+	data.ofile = ofile;
+
+	hg_file_append_printf(ofile, "       value      |    type    |refcnt|attr|content\n");
+	hg_file_append_printf(ofile, "----------========+------------+------+----+---------------------------------\n");
+	hg_mem_reserved_spool_foreach(mem, _hg_vm_rs_real_dump, &data, NULL);
 }

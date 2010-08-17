@@ -527,6 +527,12 @@ G_STMT_START {
 		hg_vm_stack_dump(vm, vm->stacks[HG_VM_STACK_ESTACK], file);
 		hg_file_append_printf(file, "\n* Dict stack(%d):\n", hg_stack_depth(vm->stacks[HG_VM_STACK_DSTACK]));
 		hg_vm_stack_dump(vm, vm->stacks[HG_VM_STACK_DSTACK], file);
+
+		hg_file_append_printf(file, "\n* Reserved spool in global memory:\n");
+		hg_vm_reserved_spool_dump(vm, vm->mem[HG_VM_MEM_GLOBAL], file);
+		hg_file_append_printf(file, "\n* Reserved spool in local memory:\n");
+		hg_vm_reserved_spool_dump(vm, vm->mem[HG_VM_MEM_LOCAL], file);
+
 		HG_VM_UNLOCK (vm, q);
 	}
 	abort();
