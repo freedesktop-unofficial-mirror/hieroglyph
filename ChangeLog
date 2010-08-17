@@ -6,6 +6,7 @@
 	(hg_mem_reserved_spool_foreach): new.
 	(hg_mem_get_total_size): new.
 	(hg_mem_get_used_size): new.
+	(hg_mem_reserved_spool_add): warn if the ref count is being overflowed.
 
 2010-08-16  Akira TAGOH  <akira@tagoh.org>
 

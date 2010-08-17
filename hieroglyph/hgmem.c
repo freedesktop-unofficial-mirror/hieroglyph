@@ -622,6 +622,9 @@ hg_mem_reserved_spool_add(hg_mem_t     *mem,
 
 	p = HGQUARK_TO_POINTER (hg_quark_get_hash(qdata));
 	count = GPOINTER_TO_INT (g_hash_table_lookup(mem->reserved_spool, p));
+	if ((count + 1) < 0)
+		g_warning("[BUG] the reference count of %lx on the reserved_spool being overflowed",
+			  qdata);
 	g_hash_table_replace(mem->reserved_spool, p, GINT_TO_POINTER (count + 1));
 }
 
