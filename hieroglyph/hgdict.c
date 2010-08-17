@@ -904,6 +904,7 @@ hg_dict_add(hg_dict_t   *dict,
 	hg_quark_t new_node = Qnil, qnode, *qnode_keys = NULL, *qnode_vals = NULL, *qnode_nodes = NULL;
 	hg_quark_t qmasked;
 	GError *err = NULL;
+	hg_mem_t *m;
 
 	hg_return_val_if_fail (dict != NULL, FALSE);
 	hg_return_val_if_fail (dict->o.type == HG_TYPE_DICT, FALSE);
@@ -935,6 +936,10 @@ hg_dict_add(hg_dict_t   *dict,
 
 		HG_DICT_NODE_UNLOCK_NO_LABEL (dict->o.mem, qnode, qnode);
 	}
+	m = hg_mem_get(hg_quark_get_mem_id(qkey));
+	hg_mem_reserved_spool_remove(m, qkey);
+	m = hg_mem_get(hg_quark_get_mem_id(qval));
+	hg_mem_reserved_spool_remove(m, qval);
   finalize:
 	if (err) {
 		if (error) {

@@ -1,5 +1,15 @@
 2010-08-17  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgmem.c (hg_mem_reserved_spool_remove): ignore the quark
+	if it's not in the reserved spool.
+
+	* hieroglyph/hgdict.c (hg_dict_add): remove a reference in
+	the reserved spool.
+
+	* hieroglyph/hgarray.c (hg_array_set): remove a reference in
+	the reserved spool.
+	(hg_array_insert): likewise.
+
 	* hieroglyph/hgint.h (HG_QINT): fix affecting to the flag bits
 	when creating a quark with a negative.
 

@@ -364,6 +364,9 @@ hg_array_set(hg_array_t  *array,
 	container[array->offset + index] = quark;
 
 	hg_mem_unlock_object(array->o.mem, array->qcontainer);
+
+	hg_mem_reserved_spool_remove(hg_mem_get(hg_quark_get_mem_id(quark)),
+				     quark);
   finalize:
 	if (err) {
 		if (error) {
@@ -464,6 +467,9 @@ hg_array_insert(hg_array_t  *array,
 		container[pos] = quark;
 
 		hg_mem_unlock_object(array->o.mem, array->qcontainer);
+
+		hg_mem_reserved_spool_remove(hg_mem_get(hg_quark_get_mem_id(quark)),
+					     quark);
 	} else {
 		return hg_array_set(array, quark, pos, error);
 	}

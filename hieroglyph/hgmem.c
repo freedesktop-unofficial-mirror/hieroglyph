@@ -647,10 +647,12 @@ hg_mem_reserved_spool_remove(hg_mem_t   *mem,
 
 	p = HGQUARK_TO_POINTER (hg_quark_get_hash(qdata));
 	count = GPOINTER_TO_INT (g_hash_table_lookup(mem->reserved_spool, p));
-	if (count == 1) {
-		g_hash_table_remove(mem->reserved_spool, p);
-	} else {
-		g_hash_table_replace(mem->reserved_spool, p, GINT_TO_POINTER (count - 1));
+	if (count > 0) {
+		if (count == 1) {
+			g_hash_table_remove(mem->reserved_spool, p);
+		} else {
+			g_hash_table_replace(mem->reserved_spool, p, GINT_TO_POINTER (count - 1));
+		}
 	}
 }
 
