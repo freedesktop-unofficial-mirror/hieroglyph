@@ -87,6 +87,11 @@ static gboolean                      _hg_allocator_gc_mark           (hg_allocat
                                                                       GError                 **error);
 static gboolean                      _hg_allocator_gc_finish         (hg_allocator_data_t     *data,
                                                                       gboolean                 was_error);
+static hg_mem_snapshot_data_t       *_hg_allocator_save_snapshot     (hg_allocator_data_t     *data);
+static gboolean                      _hg_allocator_restore_snapshot  (hg_allocator_data_t     *data,
+                                                                      hg_mem_snapshot_data_t  *snapshot);
+static void                          _hg_allocator_destroy_snapshot  (hg_allocator_data_t     *data,
+                                                                      hg_mem_snapshot_data_t  *snapshot);
 
 
 static hg_mem_vtable_t __hg_allocator_vtable = {
