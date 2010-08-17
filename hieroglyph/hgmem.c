@@ -570,7 +570,41 @@ hg_mem_get_id(hg_mem_t *mem)
 }
 
 /**
- * hg_mem_add_reserved_spool:
+ * hg_mem_get_total_size:
+ * @mem:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gsize
+hg_mem_get_total_size(hg_mem_t *mem)
+{
+	hg_return_val_if_fail (mem != NULL, 0);
+	hg_return_val_if_fail (mem->data != NULL, 0);
+
+	return mem->data->total_size;
+}
+
+/**
+ * hg_mem_get_used_size:
+ * @mem:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gsize
+hg_mem_get_used_size(hg_mem_t *mem)
+{
+	hg_return_val_if_fail (mem != NULL, 0);
+	hg_return_val_if_fail (mem->data != NULL, 0);
+
+	return mem->data->used_size;
+}
+
+/**
+ * hg_mem_reserved_spool_add:
  * @mem:
  * @qdata:
  *
@@ -592,7 +626,7 @@ hg_mem_reserved_spool_add(hg_mem_t     *mem,
 }
 
 /**
- * hg_mem_remove_reserved_spool:
+ * hg_mem_reserved_spool_remove:
  * @mem:
  * @qdata:
  *

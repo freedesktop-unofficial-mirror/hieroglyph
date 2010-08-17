@@ -65,6 +65,8 @@ gboolean    hg_mem_gc_mark                             (hg_mem_t                
                                                         hg_quark_t                qdata,
                                                         GError                  **error);
 gint        hg_mem_get_id                              (hg_mem_t                 *mem);
+gsize       hg_mem_get_total_size                      (hg_mem_t                 *mem);
+gsize       hg_mem_get_used_size                       (hg_mem_t                 *mem);
 void        hg_mem_reserved_spool_add                  (hg_mem_t                 *mem,
                                                         hg_quark_t                qdata);
 void        hg_mem_reserved_spool_remove               (hg_mem_t                 *mem,
