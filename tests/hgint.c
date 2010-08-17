@@ -53,6 +53,8 @@ TDEF (new)
 
 	q = HG_QINT(32767);
 	fail_unless(q == 0x100007fff, "Unexpected result to create a quark for integer: expected: %lx, actual: %lx", 0x100007fff, q);
+	q = HG_QINT(-1);
+	fail_unless(q == 0x1ffffffff, "Unexpected result to create a quark with a negative integer: expected: %lx, actual %lx", 0xffffffff, q);
 } TEND
 
 /****/

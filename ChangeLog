@@ -1,5 +1,8 @@
 2010-08-17  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgint.h (HG_QINT): fix affecting to the flag bits
+	when creating a quark with a negative.
+
 	* hieroglyph/hgquark.h (hg_quark_get_mem_id): new.
 
 	* hieroglyph/hgvm.c (hg_vm_stack_dump): workaround to avoid a crash
