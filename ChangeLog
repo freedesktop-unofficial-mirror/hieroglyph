@@ -1,5 +1,7 @@
 2010-08-17  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgsnapshot.[ch]: new.
+
 	* hieroglyph/hgmem.c (hg_mem_save_snapshot): new.
 	(hg_mem_restore_snapshot): new.
 	(hg_mem_snapshot_free): new.

@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * version.h
+ * hgsnapshot.h
  * Copyright (C) 2005-2010 Akira TAGOH
  * 
  * Authors:
@@ -21,22 +21,26 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifndef __HIEROGLYPH__VERSION_H__
-#define __HIEROGLYPH__VERSION_H__
+#ifndef __HIEROGLYPH_HGSNAPSHOT_H__
+#define __HIEROGLYPH_HGSNAPSHOT_H__
 
-#include <glib/gmacros.h>
-
+#include <hieroglyph/hgobject.h>
 
 G_BEGIN_DECLS
 
-#define HIEROGLYPH_VERSION		"@VERSION@"
-#define HIEROGLYPH_MAJOR_VERSION	@HIEROGLYPH_MAJOR_VERSION@
-#define HIEROGLYPH_MINOR_VERSION	@HIEROGLYPH_MINOR_VERSION@
-#define HIEROGLYPH_RELEASE_VERSION	@HIEROGLYPH_RELEASE_VERSION@
-#define HIEROGLYPH_UUID			"81e2f531-61ee-40a7-b239-eb7516f4b306"
+#define HG_SNAPSHOT_INIT					\
+	(hg_object_register(HG_TYPE_SNAPSHOT,			\
+			    hg_object_snapshot_get_vtable()))
 
-const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
+
+typedef struct _hg_snapshot_t		hg_snapshot_t;
+
+hg_object_vtable_t *hg_object_snapshot_get_vtable(void) G_GNUC_CONST;
+hg_quark_t          hg_snapshot_new              (hg_mem_t      *mem,
+						  gpointer      *ret);
+gboolean            hg_snapshot_restore          (hg_snapshot_t *snapshot);
+
 
 G_END_DECLS
 
-#endif /* __HIEROGLYPH__VERSION_H__ */
+#endif /* __HIEROGLYPH_HGSNAPSHOT_H__ */
