@@ -184,6 +184,7 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 	g_print("ALLOC: %" G_GSIZE_FORMAT " blocks required\n", aligned_size);
 	_hg_allocator_bitmap_dump(bitmap);
 #endif
+#if 0
 	if (aligned_size >= bitmap->last_allocated_size) {
 		/* that may be less likely to get a space
 		 * prior to the place where allocated last time
@@ -193,6 +194,10 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 		bitmap->last_allocated_size = 0;
 		bitmap->last_index = 0;
 	}
+#else
+	/* XXX: it seems working fine more than above */
+	idx = bitmap->last_index;
+#endif
   find_free_bitmap:
 	for (i = idx; i < bitmap->size; i++) {
 		j = i + 1;
