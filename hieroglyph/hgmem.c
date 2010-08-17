@@ -32,7 +32,10 @@
 #include "hgmem.h"
 #include "hgmem-private.h"
 
+#define HG_MAX_MEM	256
+
 static gint __hg_mem_id = 0;
+static hg_mem_t *__hg_mem_spool[HG_MAX_MEM];
 
 /*< private >*/
 G_INLINE_FUNC void
@@ -99,6 +102,23 @@ _hg_mem_gc_finish(hg_mem_t *mem,
 
 /* memory management */
 /**
+ * hg_mem_get:
+ * @id:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_mem_t *
+hg_mem_get(gint id)
+{
+	hg_return_val_if_fail (id < __hg_mem_id);
+	hg_return_val_if_fail (id < HG_MAX_MEM);
+
+	return __hg_mem_spool[id];
+}
+
+/**
  * hg_mem_new:
  * @size:
  *
@@ -126,15 +146,17 @@ hg_mem_new_with_allocator(hg_mem_vtable_t *allocator,
 			  gsize            size)
 {
 	hg_mem_t *retval;
+	gint id;
 
 	hg_return_val_if_fail (allocator != NULL, NULL);
 	hg_return_val_if_fail (allocator->initialize != NULL, NULL);
 	hg_return_val_if_fail (size > 0, NULL);
 	hg_return_val_if_fail (__hg_mem_id >= 0, NULL);
+	hg_return_val_if_fail (__hg_mem_id < HG_MAX_MEM, NULL);
 
 	retval = g_new0(hg_mem_t, 1);
 	retval->allocator = allocator;
-	retval->id = __hg_mem_id++;
+	id = retval->id = __hg_mem_id++;
 	if (_hg_quark_type_bit_validate_bits(retval->id,
 					     HG_QUARK_TYPE_BIT_MEM_ID,
 					     HG_QUARK_TYPE_BIT_MEM_ID_END) != retval->id) {
@@ -153,6 +175,7 @@ hg_mem_new_with_allocator(hg_mem_vtable_t *allocator,
 		retval->finalizer_table = g_hash_table_new(g_direct_hash, g_direct_equal);
 		retval->reserved_spool = g_hash_table_new(g_direct_hash, g_direct_equal);
 	}
+	__hg_mem_spool[id] = retval;
 
 	return retval;
 }
@@ -176,6 +199,7 @@ hg_mem_destroy(gpointer data)
 	hg_return_if_fail (mem->allocator != NULL);
 	hg_return_if_fail (mem->allocator->finalize != NULL);
 
+	__hg_mem_spool[mem->id] = NULL;
 	mem->allocator->finalize(mem->data);
 	if (mem->finalizer_table)
 		g_hash_table_destroy(mem->finalizer_table);
