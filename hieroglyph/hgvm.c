@@ -522,7 +522,8 @@ _hg_vm_quark_complex_compare(hg_quark_t q1,
 
 static gboolean
 _hg_vm_rs_gc(hg_mem_t    *mem,
-	     hg_quark_t   qdata,
+	     hg_quark_t   qkey,
+	     hg_quark_t   qval,
 	     gpointer     data,
 	     GError     **error)
 {
@@ -530,7 +531,7 @@ _hg_vm_rs_gc(hg_mem_t    *mem,
 	GError *err = NULL;
 	gboolean retval;
 
-	retval = hg_vm_quark_gc_mark(vm, qdata, &err);
+	retval = hg_vm_quark_gc_mark(vm, qkey, &err);
 	if (!retval && err == NULL) {
 		g_set_error(&err, HG_ERROR, ENOMEM,
 			    "GC failed");

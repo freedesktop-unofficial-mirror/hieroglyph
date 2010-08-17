@@ -72,6 +72,10 @@ void        hg_mem_reserved_spool_remove               (hg_mem_t                
 void        hg_mem_reserved_spool_set_garbage_collector(hg_mem_t                 *mem,
                                                         hg_rs_gc_func_t           func,
                                                         gpointer                  user_data);
+gboolean    hg_mem_reserved_spool_foreach              (hg_mem_t                 *mem,
+							hg_rs_gc_func_t           func,
+							gpointer                  user_data,
+							GError                  **error);
 
 G_INLINE_FUNC gpointer hg_mem_lock_object_with_gerror(hg_mem_t     *mem,
 						      hg_quark_t    quark,

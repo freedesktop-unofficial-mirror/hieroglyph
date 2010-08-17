@@ -490,7 +490,6 @@ hg_mem_collect_garbage(hg_mem_t *mem)
 	    mem->allocator->gc_finish) {
 		if (mem->allocator->gc_init(mem->data)) {
 			gboolean ret = TRUE;
-			GList *key_list, *l;
 
 #if defined (HG_DEBUG) && defined (HG_GC_DEBUG)
 			g_print("GC: starting [mem_id: %d]\n", mem->id);
@@ -498,14 +497,11 @@ hg_mem_collect_garbage(hg_mem_t *mem)
 			_hg_mem_gc_init(mem);
 			if (mem->gc_func)
 				ret = mem->gc_func(mem, mem->gc_data);
-			if (ret && mem->rs_gc_func) {
-				key_list = g_hash_table_get_keys(mem->reserved_spool);
-				for (l = key_list; l != NULL; l = g_list_next(l)) {
-					if (!(ret = mem->rs_gc_func(mem, HGPOINTER_TO_QUARK (l->data), mem->rs_gc_data, NULL)))
-						break;
-				}
-				g_list_free(key_list);
-			}
+			if (ret && mem->rs_gc_func)
+				ret = hg_mem_reserved_spool_foreach(mem,
+								    mem->rs_gc_func,
+								    mem->rs_gc_data,
+								    NULL);
 			_hg_mem_gc_finish(mem, !ret);
 			if (!mem->allocator->gc_finish(mem->data, !ret))
 				return -1;
@@ -585,12 +581,14 @@ hg_mem_reserved_spool_add(hg_mem_t     *mem,
 			  hg_quark_t    qdata)
 {
 	gpointer p;
+	gint count;
 
 	hg_return_if_fail (mem != NULL);
 	hg_return_if_fail (qdata != Qnil);
 
 	p = HGQUARK_TO_POINTER (hg_quark_get_hash(qdata));
-	g_hash_table_insert(mem->reserved_spool, p, p);
+	count = GPOINTER_TO_INT (g_hash_table_lookup(mem->reserved_spool, p));
+	g_hash_table_replace(mem->reserved_spool, p, GINT_TO_POINTER (count + 1));
 }
 
 /**
@@ -604,11 +602,19 @@ void
 hg_mem_reserved_spool_remove(hg_mem_t   *mem,
 			     hg_quark_t  qdata)
 {
+	gpointer p;
+	gint count;
+
 	hg_return_if_fail (mem != NULL);
 	hg_return_if_fail (qdata != Qnil);
 
-	g_hash_table_remove(mem->reserved_spool,
-			    HGQUARK_TO_POINTER (hg_quark_get_hash(qdata)));
+	p = HGQUARK_TO_POINTER (hg_quark_get_hash(qdata));
+	count = GPOINTER_TO_INT (g_hash_table_lookup(mem->reserved_spool, p));
+	if (count == 1) {
+		g_hash_table_remove(mem->reserved_spool, p);
+	} else {
+		g_hash_table_replace(mem->reserved_spool, p, GINT_TO_POINTER (count - 1));
+	}
 }
 
 /**
@@ -629,4 +635,47 @@ hg_mem_reserved_spool_set_garbage_collector(hg_mem_t        *mem,
 
 	mem->rs_gc_func = func;
 	mem->rs_gc_data = user_data;
+}
+
+/**
+ * hg_mem_reserved_spool_foreach:
+ * @mem:
+ * @func:
+ * @user_data:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_mem_reserved_spool_foreach(hg_mem_t         *mem,
+			      hg_rs_gc_func_t   func,
+			      gpointer          user_data,
+			      GError          **error)
+{
+	GList *lk, *lv, *llk, *llv;
+	gboolean retval = TRUE;
+
+	hg_return_val_if_fail (mem != NULL, FALSE);
+
+	lk = g_hash_table_get_keys(mem->reserved_spool);
+	lv = g_hash_table_get_values(mem->reserved_spool);
+
+	for (llk = lk, llv = lv;
+	     llk != NULL && llv != NULL;
+	     llk = g_list_next(llk), llv = g_list_next(llv)) {
+		if (!func(mem,
+			  HGPOINTER_TO_QUARK (llk->data),
+			  HGPOINTER_TO_QUARK (llv->data),
+			  user_data,
+			  error)) {
+			retval = FALSE;
+			break;
+		}
+	}
+
+	g_list_free(lk);
+	g_list_free(lv);
+
+	return retval;
 }
