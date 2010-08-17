@@ -161,7 +161,11 @@ TDEF (realloc)
 	g_free(hieroglyph_test_pop_error());
 	vtable->unlock_object(retval, t);
 	t2 = vtable->realloc(retval, t, 64, &p2);
-	fail_unless(t2 != Qnil && t2 != t, "Unable to re-allocate the memory after unlocking the indirect locked memory.");
+	/* comaring t and t2 depends on the behaviour on the allocation.
+	 * after changing to follow the rule finding the space from the place
+	 * where found at last time, t2 would be same to t2.
+	 */
+	fail_unless(t2 != Qnil, "Unable to re-allocate the memory after unlocking the indirect locked memory.");
 	vtable->unlock_object(retval, t2);
 	t = vtable->realloc(retval, t2, 8, NULL);
 	fail_unless(t == t2, "Unable to resize the memory less than current size");
