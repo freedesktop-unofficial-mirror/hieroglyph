@@ -551,26 +551,6 @@ _hg_vm_rs_gc(hg_mem_t    *mem,
 	return retval;
 }
 
-#if 0
-static gboolean
-_hg_vm_run_gc_in_stack(hg_mem_t    *mem,
-		       hg_quark_t   qdata,
-		       gpointer     data,
-		       GError     **error)
-{
-	hg_vm_t *vm = data;
-	gboolean retval;
-
-	retval = hg_vm_quark_gc_mark(vm, qdata, error);
-	if (!retval && error && *error == NULL) {
-		g_set_error(error, HG_ERROR, ENOMEM,
-			    "GC failed");
-	}
-
-	return retval;
-}
-#endif
-
 static gboolean
 _hg_vm_run_gc(hg_mem_t *mem,
 	      gpointer  user_data)
