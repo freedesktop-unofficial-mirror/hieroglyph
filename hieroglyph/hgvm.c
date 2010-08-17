@@ -337,7 +337,7 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 				    hg_quark_t qs;
 				    hg_string_t *s;
 
-				    qs = hg_vm_quark_to_string(vm, qresult, (gpointer *)&s, &err);
+				    qs = hg_vm_quark_to_string(vm, qresult, TRUE, (gpointer *)&s, &err);
 				    if (qs == Qnil) {
 					    if (err) {
 						    g_print("WW: Unable to look up the scanned object: %lx: %s\n", qresult, err->message);
@@ -1831,7 +1831,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 		hg_quark_t qs;
 		hg_string_t *s;
 
-		qs = hg_vm_quark_to_string(vm, qexecobj, (gpointer *)&s, &err);
+		qs = hg_vm_quark_to_string(vm, qexecobj, TRUE, (gpointer *)&s, &err);
 		if (qs == Qnil) {
 			if (err) {
 				g_print("W: Unable to look up the object being executed: %lx: %s\n", qexecobj, err->message);
@@ -2025,7 +2025,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 				    hg_quark_t qs;
 				    hg_string_t *s;
 
-				    qs = hg_vm_quark_to_string(vm, qresult, (gpointer *)&s, &err);
+				    qs = hg_vm_quark_to_string(vm, qresult, TRUE, (gpointer *)&s, &err);
 				    if (qs == Qnil) {
 					    if (err) {
 						    g_print("W: Unable to look up the scanned object: %lx: %s\n", qresult, err->message);
