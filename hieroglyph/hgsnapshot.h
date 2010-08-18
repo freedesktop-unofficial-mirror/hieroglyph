@@ -31,6 +31,8 @@ G_BEGIN_DECLS
 #define HG_SNAPSHOT_INIT					\
 	(hg_object_register(HG_TYPE_SNAPSHOT,			\
 			    hg_object_snapshot_get_vtable()))
+#define HG_IS_QSNAPSHOT(_v_)				\
+	(hg_quark_get_type(_v_) == HG_TYPE_SNAPSHOT)
 
 
 typedef struct _hg_snapshot_t		hg_snapshot_t;
