@@ -36,6 +36,7 @@
 #include "hgoperator.h"
 #include "hgreal.h"
 #include "hgscanner.h"
+#include "hgsnapshot.h"
 #include "hgvm.h"
 
 #define HG_VM_MEM_SIZE		128000
@@ -679,6 +680,7 @@ hg_vm_init(void)
 		HG_ARRAY_INIT;
 		HG_DICT_INIT;
 		HG_FILE_INIT;
+		HG_SNAPSHOT_INIT;
 		HG_STACK_INIT;
 		HG_STRING_INIT;
 		if (!hg_encoding_init())
