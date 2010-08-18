@@ -35,6 +35,7 @@
 #include "hgnull.h"
 #include "hgquark.h"
 #include "hgreal.h"
+#include "hgsnapshot.h"
 #include "hgversion.h"
 #include "hgvm.h"
 #include "hgoperator.h"
@@ -3876,7 +3877,35 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-2, 3, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (restore);
+DEFUNC_OPER (restore)
+G_STMT_START {
+	hg_quark_t arg0;
+	hg_snapshot_t *sn;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QSNAPSHOT (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	sn = HG_VM_LOCK (vm, arg0, error);
+	if (sn == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	if (!hg_snapshot_restore(sn)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidrestore);
+		goto error;
+	}
+	retval = TRUE;
+	hg_stack_drop(ostack, error);
+  error:
+	HG_VM_UNLOCK (vm, arg0);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (rlineto);
 DEFUNC_UNIMPLEMENTED_OPER (rmoveto);
 
@@ -3913,7 +3942,31 @@ DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (rotate);
 DEFUNC_UNIMPLEMENTED_OPER (round);
-DEFUNC_UNIMPLEMENTED_OPER (save);
+
+DEFUNC_OPER (save)
+G_STMT_START {
+	hg_quark_t q;
+	hg_snapshot_t *sn;
+	gboolean is_global;
+
+	is_global = hg_vm_is_global_mem_used(vm);
+	hg_vm_use_global_mem(vm, FALSE);
+	q = hg_snapshot_new(hg_vm_get_mem(vm),
+			    (gpointer *)&sn);
+	if (q == Qnil) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	HG_VM_UNLOCK (vm, q);
+	hg_vm_use_global_mem(vm, is_global);
+
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (1, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (scale);
 DEFUNC_UNIMPLEMENTED_OPER (scalefont);
 DEFUNC_UNIMPLEMENTED_OPER (search);

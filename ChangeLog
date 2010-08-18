@@ -1,5 +1,8 @@
 2010-08-19  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (_hg_operator_real_restore): implemented.
+	(_hg_operator_real_save): implemented.
+
 	* hieroglyph/hgmem.c (hg_mem_restore_snapshot): run GC before restoring.
 
 	* hieroglyph/hgsnapshot.h (HG_IS_QSNAPSHOT): new.
