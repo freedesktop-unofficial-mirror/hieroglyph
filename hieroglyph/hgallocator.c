@@ -913,10 +913,15 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t    *data,
 
 	G_LOCK (allocator);
 
+	/* do not free the original heap.
+	 * this might causes a segfault
+	 * when referring the locked object.
+	 * which means still keeping the real pointer.
+	 */
+	memcpy(priv->heap, spriv->heap, priv->bitmap->size * BLOCK_SIZE);
 	_hg_allocator_bitmap_destroy(priv->bitmap);
-	g_free(priv->heap);
 	priv->bitmap = spriv->bitmap;
-	priv->heap = spriv->heap;
+	g_free(spriv->heap);
 	data->total_size = snapshot->total_size;
 	data->used_size = snapshot->used_size;
 	g_free(snapshot);
