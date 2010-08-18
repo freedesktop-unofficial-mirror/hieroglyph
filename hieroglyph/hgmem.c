@@ -607,6 +607,10 @@ hg_mem_restore_snapshot(hg_mem_t               *mem,
 	hg_return_val_if_fail (mem->data != NULL, FALSE);
 	hg_return_val_if_fail (mem->snapshot_serial > snapshot->serial, FALSE);
 
+	/* clean up to obtain the certain information to be restored */
+	if (hg_mem_collect_garbage(mem) < 0)
+		return FALSE;
+
 	serial = snapshot->serial;
 	retval = mem->allocator->restore_snapshot(mem->data,
 						  snapshot);
