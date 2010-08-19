@@ -544,7 +544,7 @@ DEFUNC_OPER_END
 /* - .clearerror - */
 DEFUNC_OPER (private_clearerror)
 G_STMT_START {
-	hg_vm_clear_error(vm);
+	hg_vm_reset_error(vm);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -1344,6 +1344,7 @@ G_STMT_START {
 	    HG_IS_QBOOL (q) &&
 	    HG_BOOL (q)) {
 		hg_dict_add(dict, qn, HG_QBOOL (FALSE), error);
+		hg_vm_clear_error(vm);
 		ret = TRUE;
 	}
 

@@ -2506,6 +2506,20 @@ hg_vm_has_error(hg_vm_t *vm)
 void
 hg_vm_clear_error(hg_vm_t *vm)
 {
+	hg_return_if_fail (vm != NULL);
+
+	vm->has_error = FALSE;
+}
+
+/**
+ * hg_vm_reset_error:
+ * @vm:
+ *
+ * FIXME
+ */
+void
+hg_vm_reset_error(hg_vm_t *vm)
+{
 	hg_dict_t *dict_error;
 
 	hg_return_if_fail (vm != NULL);
@@ -2531,7 +2545,7 @@ hg_vm_clear_error(hg_vm_t *vm)
 			 NULL))
 		goto error;
 
-	vm->has_error = FALSE;
+	hg_vm_clear_error(vm);
 
 	return;
   error:

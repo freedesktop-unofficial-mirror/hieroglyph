@@ -1,5 +1,11 @@
 2010-08-19  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (_hg_operator_real_protected_stopped_continue):
+	turn off the error flag in VM to continue working for error recovery.
+
+	* hieroglyph/hgvm.c (hg_vm_reset_error): renamed from hg_vm_clear_error().
+	(hg_vm_clear_error): reimplement to turn off only a flag.
+
 	* hieroglyph/hgstring.c (_hg_object_string_get_allocation_flags): new.
 	(_hg_string_maybe_expand): mark the internal string as unrestorable.
 

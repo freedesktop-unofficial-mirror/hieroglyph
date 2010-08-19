@@ -217,6 +217,7 @@ void               hg_vm_shutdown              (hg_vm_t            *vm,
 						gint                error_code);
 gboolean           hg_vm_has_error             (hg_vm_t            *vm);
 void               hg_vm_clear_error           (hg_vm_t            *vm);
+void               hg_vm_reset_error           (hg_vm_t            *vm);
 gboolean           hg_vm_set_error             (hg_vm_t            *vm,
 						hg_quark_t          qdata,
 						hg_vm_error_t       error);
