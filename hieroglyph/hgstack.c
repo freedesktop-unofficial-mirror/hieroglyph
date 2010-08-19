@@ -49,6 +49,12 @@ _hg_object_stack_get_capsulated_size(void)
 	return hg_mem_aligned_size (sizeof (hg_stack_t));
 }
 
+static guint
+_hg_object_stack_get_allocation_flags(void)
+{
+	return HG_MEM_FLAGS_DEFAULT;
+}
+
 static gboolean
 _hg_object_stack_initialize(hg_object_t *object,
 			    va_list      args)

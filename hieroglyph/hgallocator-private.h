@@ -44,6 +44,7 @@ struct _hg_allocator_bitmap_t {
 };
 struct _hg_allocator_block_t {
 	gsize          size;
+	guint          flags;
 	volatile guint lock_count;
 };
 struct _hg_allocator_private_t {

@@ -37,6 +37,7 @@ typedef gint64				hg_quark_t;
 typedef struct _hg_mem_t		hg_mem_t;
 typedef struct _hg_mem_vtable_t		hg_mem_vtable_t;
 typedef struct _hg_allocator_data_t	hg_allocator_data_t;
+typedef enum _hg_mem_flags_t		hg_mem_flags_t;
 typedef void (* hg_mem_finalizer_func_t) (hg_mem_t    *mem,
 					  hg_quark_t  index);
 
@@ -62,6 +63,7 @@ struct _hg_mem_vtable_t {
 						       gsize                    size);
 	hg_quark_t               (* alloc)            (hg_allocator_data_t     *data,
 						       gsize                    size,
+						       guint                    flags,
 						       gpointer                *ret);
 	hg_quark_t               (* realloc)          (hg_allocator_data_t     *data,
 						       hg_quark_t               quark,
@@ -94,6 +96,9 @@ struct _hg_mem_snapshot_data_t {
 	gsize total_size;
 	gsize used_size;
 	gint  serial;
+};
+enum _hg_mem_flags_t {
+	HG_MEM_RESTORABLE = 1 << 0,
 };
 
 /* hgdict.h */

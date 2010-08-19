@@ -298,6 +298,28 @@ hg_mem_alloc(hg_mem_t *mem,
 	     gsize     size,
 	     gpointer *ret)
 {
+	return hg_mem_alloc_with_flags(mem, size,
+				       HG_MEM_FLAGS_DEFAULT,
+				       ret);
+}
+
+/**
+ * hg_mem_alloc_with_flags:
+ * @mem:
+ * @size:
+ * @flags:
+ * @ret:
+ *
+ * FIXME:
+ *
+ * Returns:
+ */
+hg_quark_t
+hg_mem_alloc_with_flags(hg_mem_t *mem,
+			gsize     size,
+			guint     flags,
+			gpointer *ret)
+{
 	hg_quark_t retval;
 	gboolean retried = FALSE;
 
@@ -308,7 +330,7 @@ hg_mem_alloc(hg_mem_t *mem,
 	hg_return_val_if_fail (size > 0, Qnil);
 
   retry:
-	retval = mem->allocator->alloc(mem->data, size, ret);
+	retval = mem->allocator->alloc(mem->data, size, flags, ret);
 	if (retval != Qnil) {
 		hg_quark_set_mem_id(&retval, mem->id);
 	} else {

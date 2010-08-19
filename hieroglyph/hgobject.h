@@ -30,34 +30,36 @@
 G_BEGIN_DECLS
 
 #define HG_DEFINE_VTABLE(_name_)					\
-	static void       _hg_object_ ## _name_ ## _free               (hg_object_t              *object); \
+	static void       _hg_object_ ## _name_ ## _free                (hg_object_t              *object); \
 	HG_DEFINE_VTABLE_WITH_FREE(_name_, _hg_object_ ## _name_ ## _free)
 
 #define HG_DEFINE_VTABLE_WITH_FREE(_name_, _free_)			\
-	static gsize      _hg_object_ ## _name_ ## _get_capsulated_size(void); \
-	static gboolean   _hg_object_ ## _name_ ## _initialize         (hg_object_t              *object, \
-									va_list                   args); \
-	static hg_quark_t _hg_object_ ## _name_ ## _copy               (hg_object_t              *object, \
-									hg_quark_iterate_func_t   func, \
-									gpointer                  user_data, \
-									gpointer                 *ret, \
-									GError                  **error); \
-	static gchar    * _hg_object_ ## _name_ ## _to_cstr            (hg_object_t              *object, \
-									hg_quark_iterate_func_t   func, \
-									gpointer                  user_data, \
-									GError                  **error); \
-	static gboolean   _hg_object_ ## _name_ ## _gc_mark            (hg_object_t              *object, \
-									hg_gc_iterate_func_t      func, \
-									gpointer                  user_data, \
-									GError                  **error); \
+	static gsize      _hg_object_ ## _name_ ## _get_capsulated_size (void); \
+	static guint      _hg_object_ ## _name_ ## _get_allocation_flags(void);	\
+	static gboolean   _hg_object_ ## _name_ ## _initialize          (hg_object_t              *object, \
+									 va_list                   args); \
+	static hg_quark_t _hg_object_ ## _name_ ## _copy                (hg_object_t              *object, \
+									 hg_quark_iterate_func_t   func, \
+									 gpointer                  user_data, \
+									 gpointer                 *ret, \
+									 GError                  **error); \
+	static gchar    * _hg_object_ ## _name_ ## _to_cstr             (hg_object_t              *object, \
+									 hg_quark_iterate_func_t   func, \
+									 gpointer                  user_data, \
+									 GError                  **error); \
+	static gboolean   _hg_object_ ## _name_ ## _gc_mark             (hg_object_t              *object, \
+									 hg_gc_iterate_func_t      func, \
+									 gpointer                  user_data, \
+									 GError                  **error); \
 									\
 	static hg_object_vtable_t __hg_object_ ## _name_ ## _vtable = {	\
-		.get_capsulated_size = _hg_object_ ## _name_ ## _get_capsulated_size, \
-		.initialize          = _hg_object_ ## _name_ ## _initialize, \
-		.free                = _free_,				\
-		.copy                = _hg_object_ ## _name_ ## _copy,	\
-		.to_cstr             = _hg_object_ ## _name_ ## _to_cstr, \
-		.gc_mark             = _hg_object_ ## _name_ ## _gc_mark,	\
+		.get_capsulated_size  = _hg_object_ ## _name_ ## _get_capsulated_size, \
+		.get_allocation_flags = _hg_object_ ## _name_ ## _get_allocation_flags,	\
+		.initialize           = _hg_object_ ## _name_ ## _initialize, \
+		.free                 = _free_,				\
+		.copy                 = _hg_object_ ## _name_ ## _copy,	\
+		.to_cstr              = _hg_object_ ## _name_ ## _to_cstr, \
+		.gc_mark              = _hg_object_ ## _name_ ## _gc_mark, \
 	};								\
 									\
 	hg_object_vtable_t *						\
@@ -71,23 +73,24 @@ typedef struct _hg_object_t			hg_object_t;
 
 
 struct _hg_object_vtable_t {
-	gsize      (* get_capsulated_size) (void);
-	gboolean   (* initialize)          (hg_object_t              *object,
-					    va_list                   args);
-	void       (* free)                (hg_object_t              *object);
-	hg_quark_t (* copy)                (hg_object_t              *object,
-					    hg_quark_iterate_func_t   func,
-					    gpointer                  user_data,
-					    gpointer                 *ret,
-					    GError                  **error);
-	gchar    * (* to_cstr)             (hg_object_t              *object,
-					    hg_quark_iterate_func_t   func,
-					    gpointer                  user_data,
-					    GError                  **error);
-	gboolean   (* gc_mark)             (hg_object_t              *object,
-					    hg_gc_iterate_func_t      func,
-					    gpointer                  user_data,
-					    GError                  **error);
+	gsize      (* get_capsulated_size)  (void);
+	guint      (* get_allocation_flags) (void);
+	gboolean   (* initialize)           (hg_object_t              *object,
+					     va_list                   args);
+	void       (* free)                 (hg_object_t              *object);
+	hg_quark_t (* copy)                 (hg_object_t              *object,
+					     hg_quark_iterate_func_t   func,
+					     gpointer                  user_data,
+					     gpointer                 *ret,
+					     GError                  **error);
+	gchar    * (* to_cstr)              (hg_object_t              *object,
+					     hg_quark_iterate_func_t   func,
+					     gpointer                  user_data,
+					     GError                  **error);
+	gboolean   (* gc_mark)              (hg_object_t              *object,
+					     hg_gc_iterate_func_t      func,
+					     gpointer                  user_data,
+					     GError                  **error);
 };
 struct _hg_object_t {
 	hg_mem_t   *mem;

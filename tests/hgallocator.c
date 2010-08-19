@@ -105,15 +105,15 @@ TDEF (alloc)
 	fail_unless(retval != NULL, "Unable to initialize the allocator.");
 	fail_unless(vtable->resize_heap(retval, 256), "Unable to initialize the heap.");
 
-	t = vtable->alloc(retval, 128, NULL);
+	t = vtable->alloc(retval, 128, 0, NULL);
 	fail_unless(t != Qnil, "Unable to allocate the memory.");
-	t2 = vtable->alloc(retval, 64, NULL);
+	t2 = vtable->alloc(retval, 64, 0, NULL);
 	fail_unless(t2 != Qnil, "Unable to allocate the memory.");
-	t3 = vtable->alloc(retval, 128, NULL);
+	t3 = vtable->alloc(retval, 128, 0, NULL);
 	fail_unless(t3 == Qnil, "Should be no free spaces available.");
 
 	vtable->free(retval, t);
-	t3 = vtable->alloc(retval, 128, NULL);
+	t3 = vtable->alloc(retval, 128, 0, NULL);
 	fail_unless(t3 != Qnil, "Unable to allocate the memory.");
 
 	vtable->finalize(retval);
@@ -129,7 +129,7 @@ TDEF (realloc)
 	fail_unless(retval != NULL, "Unable to initialize the allocator.");
 	fail_unless(vtable->resize_heap(retval, 384), "Unable to initialize the heap.");
 
-	t = vtable->alloc(retval, 32, NULL);
+	t = vtable->alloc(retval, 32, 0, NULL);
 	fail_unless(t != Qnil, "Unable to allocate the memory.");
 	p = vtable->lock_object(retval, t);
 	vtable->unlock_object(retval, t);
@@ -139,7 +139,7 @@ TDEF (realloc)
 	p2 = vtable->lock_object(retval, t2);
 	vtable->unlock_object(retval, t2);
 	fail_unless(p == p2, "Unexpected result to grow the space.");
-	t3 = vtable->alloc(retval, 8, NULL);
+	t3 = vtable->alloc(retval, 8, 0, NULL);
 	fail_unless(t3 != Qnil, "Unable to allocate the memory.");
 	t2 = vtable->realloc(retval, t, 90, NULL);
 	fail_unless(t2 != Qnil, "Unable to re-allocate the memory.");
@@ -150,12 +150,12 @@ TDEF (realloc)
 	t2 = vtable->realloc(retval, t, 512, NULL);
 	fail_unless(t2 == Qnil, "Should be no free spaces available.");
 	vtable->free(retval, t);
-	t = vtable->alloc(retval, 8, NULL);
+	t = vtable->alloc(retval, 8, 0, NULL);
 	p = vtable->lock_object(retval, t);
 	t2 = vtable->realloc(retval, t, 16, NULL);
 	fail_unless(t2 == Qnil, "Unexpected result to re-allocate the locked memory.");
 	g_free(hieroglyph_test_pop_error());
-	t = vtable->alloc(retval, 32, &p);
+	t = vtable->alloc(retval, 32, 0, &p);
 	t2 = vtable->realloc(retval, t, 64, &p2);
 	fail_unless(t2 == Qnil, "Unexpected result to re-allocate the indirect locked memory.");
 	g_free(hieroglyph_test_pop_error());
@@ -169,7 +169,7 @@ TDEF (realloc)
 	vtable->unlock_object(retval, t2);
 	t = vtable->realloc(retval, t2, 8, NULL);
 	fail_unless(t == t2, "Unable to resize the memory less than current size");
-	t = vtable->alloc(retval, 8, NULL);
+	t = vtable->alloc(retval, 8, 0, NULL);
 
 	vtable->finalize(retval);
 } TEND
@@ -190,7 +190,7 @@ TDEF (lock_object)
 	fail_unless(retval != NULL, "Unable to initialize the allocator.");
 	fail_unless(vtable->resize_heap(retval, 256), "Unable to initialize the heap.");
 
-	t = vtable->alloc(retval, 128, &p2);
+	t = vtable->alloc(retval, 128, 0, &p2);
 	fail_unless(t != Qnil, "Unable to allocate the memory.");
 	b = hg_get_allocator_block (p2);
 	fail_unless(b->lock_count == 1, "Detected inconsistency in the lock count");

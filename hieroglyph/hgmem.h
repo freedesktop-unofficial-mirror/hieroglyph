@@ -29,6 +29,9 @@
 
 G_BEGIN_DECLS
 
+#define HG_MEM_FLAGS_DEFAULT			HG_MEM_RESTORABLE
+#define HG_MEM_FLAGS_DEFAULT_WITHOUT_RESTORABLE	(HG_MEM_FLAGS_DEFAULT & ~HG_MEM_RESTORABLE)
+
 
 hg_mem_t               *hg_mem_get                                 (gint                     id);
 hg_mem_t               *hg_mem_new                                 (gsize                    size);
@@ -47,6 +50,10 @@ void                    hg_mem_remove_gc_finalizer                 (hg_mem_t    
 hg_quark_t              hg_mem_alloc                               (hg_mem_t                *mem,
                                                                     gsize                    size,
                                                                     gpointer                *ret);
+hg_quark_t              hg_mem_alloc_with_flags                    (hg_mem_t                *mem,
+								    gsize                    size,
+								    guint                    flags,
+								    gpointer                *ret);
 hg_quark_t              hg_mem_realloc                             (hg_mem_t                *mem,
                                                                     hg_quark_t               qdata,
                                                                     gsize                    size,

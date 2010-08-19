@@ -45,6 +45,12 @@ _hg_object_string_get_capsulated_size(void)
 	return hg_mem_aligned_size (sizeof (hg_string_t));
 }
 
+static guint
+_hg_object_string_get_allocation_flags(void)
+{
+	return HG_MEM_FLAGS_DEFAULT;
+}
+
 static gboolean
 _hg_object_string_initialize(hg_object_t *object,
 			     va_list      args)
@@ -181,9 +187,10 @@ _hg_string_maybe_expand(hg_string_t *string)
 	hg_return_val_if_fail (string->length < string->allocated_size, FALSE);
 
 	if (string->qstring == Qnil) {
-		string->qstring = hg_mem_alloc(string->o.mem,
-					       string->length + 1,
-					       NULL);
+		string->qstring = hg_mem_alloc_with_flags(string->o.mem,
+							  string->length + 1,
+							  HG_MEM_FLAGS_DEFAULT_WITHOUT_RESTORABLE,
+							  NULL);
 	} else {
 		hg_quark_t q = hg_mem_realloc(string->o.mem,
 					      string->qstring,

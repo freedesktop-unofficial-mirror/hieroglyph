@@ -124,6 +124,12 @@ _hg_object_dict_get_capsulated_size(void)
 	return hg_mem_aligned_size (sizeof (hg_dict_t));
 }
 
+static guint
+_hg_object_dict_get_allocation_flags(void)
+{
+	return HG_MEM_FLAGS_DEFAULT;
+}
+
 static gboolean
 _hg_object_dict_initialize(hg_object_t *object,
 			   va_list      args)
@@ -182,6 +188,12 @@ static gsize
 _hg_object_dict_node_get_capsulated_size(void)
 {
 	return hg_mem_aligned_size (sizeof (hg_dict_node_t));
+}
+
+static guint
+_hg_object_dict_node_get_allocation_flags(void)
+{
+	return HG_MEM_FLAGS_DEFAULT;
 }
 
 static gboolean

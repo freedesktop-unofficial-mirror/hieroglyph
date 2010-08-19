@@ -1,6 +1,27 @@
 2010-08-19  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgstring.c (_hg_object_string_get_allocation_flags): new.
+	(_hg_string_maybe_expand): mark the internal string as unrestorable.
+
+	* hieroglyph/hgstack.c (_hg_object_stack_get_allocation_flags): new.
+
+	* hieroglyph/hgsnapshot.c (_hg_object_snapshot_get_allocation_flags): new.
+
+	* hieroglyph/hgobject.c (_hg_object_new): allocate the object with
+	the memory flags according to get_allocation_flags().
+
+	* hieroglyph/hgmem.c (hg_mem_alloc_with_flags): new.
+
+	* hieroglyph/hgfile.c (_hg_object_file_get_allocation_flags): new.
+
+	* hieroglyph/hgdict.c (_hg_object_dict_get_allocation_flags): new.
+	(_hg_object_dict_node_get_allocation_flags): new.
+
+	* hieroglyph/hgarray.c (_hg_object_array_get_allocation_flags): new.
+
 	* hieroglyph/hgallocator.c (_hg_allocator_restore_snapshot): fix a crash.
+	(_hg_allocator_restore_snapshot): restore only the blocks marked as
+	restorable.
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_restore): implemented.
 	(_hg_operator_real_save): implemented.

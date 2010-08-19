@@ -43,6 +43,12 @@ _hg_object_snapshot_get_capsulated_size(void)
 	return hg_mem_aligned_size (sizeof (hg_snapshot_t));
 }
 
+static guint
+_hg_object_snapshot_get_allocation_flags(void)
+{
+	return HG_MEM_FLAGS_DEFAULT_WITHOUT_RESTORABLE;
+}
+
 static gboolean
 _hg_object_snapshot_initialize(hg_object_t *object,
 			       va_list      args)

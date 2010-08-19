@@ -67,6 +67,7 @@ static gboolean                      _hg_allocator_resize_heap            (hg_al
                                                                            gsize                   size);
 static hg_quark_t                    _hg_allocator_alloc                  (hg_allocator_data_t    *data,
                                                                            gsize                   size,
+									   guint                   flags,
                                                                            gpointer               *ret);
 static hg_quark_t                    _hg_allocator_realloc                (hg_allocator_data_t    *data,
                                                                            hg_quark_t              quark,
@@ -507,6 +508,7 @@ _hg_allocator_resize_heap(hg_allocator_data_t *data,
 static hg_quark_t
 _hg_allocator_alloc(hg_allocator_data_t *data,
 		    gsize                size,
+		    guint                flags,
 		    gpointer            *ret)
 {
 	hg_allocator_private_t *priv;
@@ -525,6 +527,7 @@ _hg_allocator_alloc(hg_allocator_data_t *data,
 
 		block = _hg_allocator_get_internal_block(priv, index, TRUE);
 		block->size = obj_size;
+		block->flags = flags;
 		retval = index;
 		/* NOTE: No unlock yet here.
 		 *       any objects are supposed to be unlocked
@@ -907,6 +910,8 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t    *data,
 {
 	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
 	hg_allocator_snapshot_private_t *spriv = (hg_allocator_snapshot_private_t *)snapshot;
+	gsize i;
+	gboolean retval = FALSE;
 
 	if (!_hg_allocator_bitmap_validate_restore(spriv->bitmap, priv->bitmap))
 		return FALSE;
@@ -918,17 +923,35 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t    *data,
 	 * when referring the locked object.
 	 * which means still keeping the real pointer.
 	 */
-	memcpy(priv->heap, spriv->heap, priv->bitmap->size * BLOCK_SIZE);
+	for (i = 0; i < spriv->bitmap->size; i++) {
+		if (_hg_allocator_bitmap_is_marked(spriv->bitmap, i + 1)) {
+			hg_allocator_block_t *block;
+			gsize aligned_size;
+
+			block = _hg_allocator_get_internal_block(priv, i + 1, FALSE);
+			if (block == NULL)
+				goto error;
+			if ((block->flags & HG_MEM_RESTORABLE)) {
+				memcpy((((gchar *)priv->heap) + i * BLOCK_SIZE),
+				       (((gchar *)spriv->heap) + i * BLOCK_SIZE),
+				       block->size);
+			}
+			aligned_size = hg_mem_aligned_to(block->size, BLOCK_SIZE) / BLOCK_SIZE;
+			i += aligned_size - 1;
+		}
+	}
 	_hg_allocator_bitmap_destroy(priv->bitmap);
 	priv->bitmap = spriv->bitmap;
 	g_free(spriv->heap);
 	data->total_size = snapshot->total_size;
 	data->used_size = snapshot->used_size;
 	g_free(snapshot);
+	retval = TRUE;
 
+  error:
 	G_UNLOCK (allocator);
 
-	return TRUE;
+	return retval;
 }
 
 static void

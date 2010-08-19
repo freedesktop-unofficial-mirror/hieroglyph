@@ -50,6 +50,8 @@ _hg_object_new(hg_mem_t     *mem,
 {
 	hg_quark_t retval;
 	hg_object_t *object;
+	hg_object_vtable_t *v;
+	guint flags;
 
 	hg_return_val_if_fail (mem != NULL, Qnil);
 	hg_return_val_if_fail (size > 0, Qnil);
@@ -57,7 +59,12 @@ _hg_object_new(hg_mem_t     *mem,
 	if (hg_type_is_simple(type))
 		return Qnil;
 
-	retval = hg_mem_alloc(mem, sizeof (hg_object_t) > size ? sizeof (hg_object_t) : size, (gpointer *)&object);
+	v = __hg_object_vtables[type];
+	flags = v->get_allocation_flags();
+	retval = hg_mem_alloc_with_flags(mem,
+					 sizeof (hg_object_t) > size ? sizeof (hg_object_t) : size,
+					 flags,
+					 (gpointer *)&object);
 	if (retval == Qnil)
 		return retval;
 
