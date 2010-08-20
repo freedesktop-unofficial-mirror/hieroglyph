@@ -164,6 +164,9 @@ HEXDIGITS	[0-9a-fA-F]
 [^\r\n\(\)\<\>]	{
 		g_string_append_len(string, yytext, yyleng);
 	}
+"<<"|">>"	{
+		g_string_append_len(string, yytext, yyleng);
+	}
 <<EOF>>		{
 		yyterminate();
 	}

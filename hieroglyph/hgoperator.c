@@ -5114,6 +5114,8 @@ static gboolean
 _hg_operator_level2_register(hg_dict_t *dict,
 			     hg_name_t *name)
 {
+	REG_VALUE (dict, name, <<, HG_QMARK);
+
 	REG_OPER (dict, name, arct);
 	REG_OPER (dict, name, colorimage);
 	REG_OPER (dict, name, currentcmykcolor);
