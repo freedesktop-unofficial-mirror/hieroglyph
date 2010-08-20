@@ -601,7 +601,6 @@ hg_mem_save_snapshot(hg_mem_t *mem)
 	if (retval) {
 		retval->total_size = mem->data->total_size;
 		retval->used_size = mem->data->used_size;
-		retval->serial = mem->snapshot_serial++;
 	}
 
 	return retval;
@@ -620,26 +619,17 @@ gboolean
 hg_mem_restore_snapshot(hg_mem_t               *mem,
 			hg_mem_snapshot_data_t *snapshot)
 {
-	gboolean retval;
-	gint serial;
-
 	hg_return_val_if_fail (mem != NULL, FALSE);
 	hg_return_val_if_fail (mem->allocator != NULL, FALSE);
 	hg_return_val_if_fail (mem->allocator->restore_snapshot != NULL, FALSE);
 	hg_return_val_if_fail (mem->data != NULL, FALSE);
-	hg_return_val_if_fail (mem->snapshot_serial > snapshot->serial, FALSE);
 
 	/* clean up to obtain the certain information to be restored */
 	if (hg_mem_collect_garbage(mem) < 0)
 		return FALSE;
 
-	serial = snapshot->serial;
-	retval = mem->allocator->restore_snapshot(mem->data,
-						  snapshot);
-	if (retval)
-		mem->snapshot_serial = serial;
-
-	return retval;
+	return mem->allocator->restore_snapshot(mem->data,
+						snapshot);
 }
 
 /**

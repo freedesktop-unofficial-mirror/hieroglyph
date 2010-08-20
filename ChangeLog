@@ -1,5 +1,8 @@
 2010-08-20  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgallocator.c (_hg_allocator_save_snapshot): fix a typo.
+	(_hg_allocator_restore_snapshot): check the block more strictly.
+
 	* hieroglyph/hgfile.c (_hg_object_file_initialize): drop
 	the unnecessary reference.
 	(_hg_file_io_real_lineedit_open): likewise.

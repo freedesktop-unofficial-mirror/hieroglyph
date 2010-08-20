@@ -39,7 +39,6 @@ struct _hg_mem_t {
 	GHashTable          *reserved_spool;
 	hg_rs_gc_func_t      rs_gc_func;
 	gpointer             rs_gc_data;
-	gint                 snapshot_serial;
 };
 
 G_END_DECLS

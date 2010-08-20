@@ -95,7 +95,6 @@ struct _hg_allocator_data_t {
 struct _hg_mem_snapshot_data_t {
 	gsize total_size;
 	gsize used_size;
-	gint  serial;
 };
 enum _hg_mem_flags_t {
 	HG_MEM_RESTORABLE = 1 << 0,

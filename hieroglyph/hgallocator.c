@@ -58,8 +58,6 @@ G_INLINE_FUNC gboolean               _hg_allocator_bitmap_range_mark      (hg_al
                                                                            gint32                 *index,
                                                                            gsize                   size);
 G_INLINE_FUNC hg_allocator_bitmap_t *_hg_allocator_bitmap_copy            (hg_allocator_bitmap_t  *bitmap);
-G_INLINE_FUNC gboolean               _hg_allocator_bitmap_validate_restore(hg_allocator_bitmap_t  *b1,
-                                                                           hg_allocator_bitmap_t  *b2);
 G_INLINE_FUNC void                   _hg_allocator_bitmap_dump            (hg_allocator_bitmap_t  *bitmap);
 static gpointer                      _hg_allocator_initialize             (void);
 static void                          _hg_allocator_finalize               (hg_allocator_data_t    *data);
@@ -408,38 +406,6 @@ _hg_allocator_bitmap_copy(hg_allocator_bitmap_t *bitmap)
 	return retval;
 }
 
-G_INLINE_FUNC gboolean
-_hg_allocator_bitmap_validate_restore(hg_allocator_bitmap_t *b1,
-				      hg_allocator_bitmap_t *b2)
-{
-	gsize x, y;
-	gint32 i1, i2;
-
-	G_LOCK (bitmap);
-
-	for (x = 0; x < b2->size; x += sizeof (gint32)) {
-		i1 = x > b1->size ? 0 : b1->bitmaps[x / sizeof (gint32)];
-		i2 = b2->bitmaps[x / sizeof (gint32)];
-		if (i1 != i2) {
-			for (y = 0; y < sizeof (gint32); y++) {
-				if ((i1 & (1 << (y % sizeof (gint32)))) == 0 &&
-				    (i2 & (1 << (y % sizeof (gint32)))) != 0) {
-					/* this would means that the block
-					 * was allocated after the snapshot.
-					 */
-					G_UNLOCK (bitmap);
-
-					return FALSE;
-				}
-			}
-		}
-	}
-
-	G_UNLOCK (bitmap);
-
-	return TRUE;
-}
-
 G_INLINE_FUNC void
 _hg_allocator_bitmap_dump(hg_allocator_bitmap_t *bitmap)
 {
@@ -527,7 +493,8 @@ _hg_allocator_alloc(hg_allocator_data_t *data,
 
 		block = _hg_allocator_get_internal_block(priv, index, TRUE);
 		block->size = obj_size;
-		block->flags = flags;
+		block->age = priv->snapshot_age;
+		block->is_restorable = flags & HG_MEM_RESTORABLE ? TRUE : FALSE;
 		retval = index;
 		/* NOTE: No unlock yet here.
 		 *       any objects are supposed to be unlocked
@@ -893,10 +860,11 @@ _hg_allocator_save_snapshot(hg_allocator_data_t *data)
 	G_LOCK (allocator);
 
 	snapshot = g_new0(hg_allocator_snapshot_private_t, 1);
-	if (priv) {
+	if (snapshot) {
 		snapshot->bitmap = _hg_allocator_bitmap_copy(priv->bitmap);
 		snapshot->heap = g_malloc(sizeof (gchar) * priv->bitmap->size * BLOCK_SIZE);
 		memcpy(snapshot->heap, priv->heap, priv->bitmap->size * BLOCK_SIZE);
+		snapshot->age = priv->snapshot_age++;
 	}
 
 	G_UNLOCK (allocator);
@@ -913,10 +881,56 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t    *data,
 	gsize i;
 	gboolean retval = FALSE;
 
-	if (!_hg_allocator_bitmap_validate_restore(spriv->bitmap, priv->bitmap))
+	if (spriv->age >= priv->snapshot_age)
 		return FALSE;
 
 	G_LOCK (allocator);
+
+	for (i = 0; i < priv->bitmap->size; i++) {
+		gboolean f1, f2;
+		gsize aligned_size;
+
+		f1 = _hg_allocator_bitmap_is_marked(priv->bitmap, i + 1);
+		f2 = i >= spriv->bitmap->size ? FALSE : _hg_allocator_bitmap_is_marked(spriv->bitmap, i + 1);
+		if (f1 && f2) {
+			hg_allocator_block_t *b1, *b2;
+			gsize idx = i * BLOCK_SIZE;
+
+			b1 = _hg_allocator_get_internal_block(priv, i + 1, FALSE);
+			b2 = (hg_allocator_block_t *)((gulong)spriv->heap + idx);
+			if (b1->size != b2->size ||
+			    b1->age != b2->age) {
+#if defined (HG_DEBUG) && defined (HG_SNAPSHOT_DEBUG)
+				g_print("SN: detected the block has different size or different age at the index: %" G_GSIZE_FORMAT ": [%ld:%d] [%ld:%d]\n", i + 1, b1->size, b1->age, b2->size, b2->age);
+#endif
+				goto error;
+			}
+			aligned_size = hg_mem_aligned_to(b1->size, BLOCK_SIZE) / BLOCK_SIZE;
+			i += aligned_size - 1;
+		} else if (f1 && !f2) {
+#if defined (HG_DEBUG) && defined (HG_SNAPSHOT_DEBUG)
+			g_print("SN: detected newly allocated block at the index: %" G_GSIZE_FORMAT "\n", i + 1);
+#endif
+			goto error;
+		} else if (!f1 && f2) {
+			hg_allocator_block_t *b2;
+			gsize j, check_size;
+			gsize idx = i * BLOCK_SIZE;
+
+			b2 = (hg_allocator_block_t *)((gulong)spriv->heap + idx);
+			check_size = aligned_size = hg_mem_aligned_to(b2->size, BLOCK_SIZE) / BLOCK_SIZE;
+			for (j = i + 1; check_size > 0 && j < priv->bitmap->size; j++) {
+				if (_hg_allocator_bitmap_is_marked(priv->bitmap, j + 1)) {
+#if defined (HG_DEBUG) && defined (HG_SNAPSHOT_DEBUG)
+					g_print("SN: detected newly allocated block at the index: %" G_GSIZE_FORMAT "\n", j + 1);
+#endif
+					goto error;
+				}
+				check_size--;
+			}
+			i += aligned_size - 1;
+		}
+	}
 
 	/* do not free the original heap.
 	 * this might causes a segfault
@@ -931,7 +945,7 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t    *data,
 			block = _hg_allocator_get_internal_block(priv, i + 1, FALSE);
 			if (block == NULL)
 				goto error;
-			if ((block->flags & HG_MEM_RESTORABLE)) {
+			if (block->is_restorable) {
 				memcpy((((gchar *)priv->heap) + i * BLOCK_SIZE),
 				       (((gchar *)spriv->heap) + i * BLOCK_SIZE),
 				       block->size);
@@ -945,6 +959,7 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t    *data,
 	g_free(spriv->heap);
 	data->total_size = snapshot->total_size;
 	data->used_size = snapshot->used_size;
+	priv->snapshot_age = spriv->age;
 	g_free(snapshot);
 	retval = TRUE;
 

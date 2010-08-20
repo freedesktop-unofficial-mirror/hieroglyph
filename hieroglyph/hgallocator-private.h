@@ -44,8 +44,9 @@ struct _hg_allocator_bitmap_t {
 };
 struct _hg_allocator_block_t {
 	gsize          size;
-	guint          flags;
 	volatile guint lock_count;
+	gint           age;
+	gboolean       is_restorable:1;
 };
 struct _hg_allocator_private_t {
 	hg_allocator_data_t    parent;
@@ -53,11 +54,13 @@ struct _hg_allocator_private_t {
 	hg_allocator_bitmap_t *bitmap;
 	hg_allocator_bitmap_t *slave_bitmap;
 	gpointer               heap;
+	gint                   snapshot_age;
 };
 struct _hg_allocator_snapshot_private_t {
 	hg_mem_snapshot_data_t  parent;
 	hg_allocator_bitmap_t  *bitmap;
 	gpointer                heap;
+	gint                    age;
 };
 
 G_END_DECLS
