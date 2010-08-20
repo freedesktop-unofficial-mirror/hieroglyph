@@ -237,6 +237,8 @@ _hg_object_file_initialize(hg_object_t *object,
 	file->is_closed = TRUE;
 	file->user_data = user_data;
 
+	hg_mem_reserved_spool_remove(file->o.mem, file->qfilename);
+
 	retval = vtable->open(file, file->user_data, &err);
 	if (err) {
 		if (error) {
@@ -1089,6 +1091,7 @@ _hg_file_io_real_lineedit_open(hg_file_t  *file,
 			  sizeof (hg_file_io_buffered_data_t),
 			  (gpointer *)&bd);
 	if (q == Qnil) {
+		hg_string_free(s, TRUE);
 		errno = ENOMEM;
 		goto exception;
 	}
@@ -1101,6 +1104,8 @@ _hg_file_io_real_lineedit_open(hg_file_t  *file,
 	file->user_data = (hg_file_io_data_t *)bd;
 	file->size = hg_string_length(bd->in);
 	file->is_closed = FALSE;
+
+	hg_mem_reserved_spool_remove(s->o.mem, qs);
 
 	return TRUE;
   exception:
@@ -1298,10 +1303,14 @@ hg_file_new_with_string(hg_mem_t        *mem,
 			       name, mode, &__hg_file_io_buffered_vtable,
 			       x, error);
 	if (retval != Qnil) {
-		if (x->in)
+		if (x->in) {
 			hg_mem_lock_object(x->in->o.mem, x->in->o.self);
-		if (x->out)
+			hg_mem_reserved_spool_remove(x->in->o.mem, x->in->o.self);
+		}
+		if (x->out) {
 			hg_mem_lock_object(x->out->o.mem, x->out->o.self);
+			hg_mem_reserved_spool_remove(x->out->o.mem, x->out->o.self);
+		}
 	}
 
 	if (ret)
