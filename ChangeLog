@@ -2,6 +2,8 @@
 
 	* hieroglyph/hgallocator.c (_hg_allocator_save_snapshot): fix a typo.
 	(_hg_allocator_restore_snapshot): check the block more strictly.
+	(_hg_allocator_restore_snapshot): fix the unwilling invalidrestore
+	error.
 
 	* hieroglyph/hgfile.c (_hg_object_file_initialize): drop
 	the unnecessary reference.

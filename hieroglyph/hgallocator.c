@@ -919,10 +919,11 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t    *data,
 
 			b2 = (hg_allocator_block_t *)((gulong)spriv->heap + idx);
 			check_size = aligned_size = hg_mem_aligned_to(b2->size, BLOCK_SIZE) / BLOCK_SIZE;
+			check_size--;
 			for (j = i + 1; check_size > 0 && j < priv->bitmap->size; j++) {
 				if (_hg_allocator_bitmap_is_marked(priv->bitmap, j + 1)) {
 #if defined (HG_DEBUG) && defined (HG_SNAPSHOT_DEBUG)
-					g_print("SN: detected newly allocated block at the index: %" G_GSIZE_FORMAT "\n", j + 1);
+					g_print("SN: detected newly allocated block at the index: %" G_GSIZE_FORMAT "[size: %" G_GSIZE_FORMAT "]\n", j + 1, b2->size);
 #endif
 					goto error;
 				}
