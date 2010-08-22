@@ -38,24 +38,41 @@
 #include "hieroglyph/hgvm.h"
 
 
-static gboolean _libedit_init    (void);
-static gboolean _libedit_finalize(void);
-static gboolean _libedit_load    (hg_plugin_t  *plugin,
-                                  gpointer      vm_,
-                                  GError      **error);
-static gboolean _libedit_unload  (hg_plugin_t  *plugin,
-                                  gpointer      vm_,
-                                  GError      **error);
-hg_plugin_t     *plugin_new      (hg_mem_t     *mem,
-				  GError      **error);
+static gchar    *_libedit_get_line    (hg_lineedit_t  *lineedit,
+                                       const gchar    *prompt,
+                                       gpointer        user_data);
+static void      _libedit_add_history (hg_lineedit_t  *lineedit,
+                                       const gchar    *history,
+                                       gpointer        user_data);
+static gboolean  _libedit_load_history(hg_lineedit_t  *lineedit,
+                                       const gchar    *historyfile,
+                                       gpointer        user_data);
+static gboolean  _libedit_save_history(hg_lineedit_t  *lineedit,
+                                       const gchar    *historyfile,
+                                       gpointer        user_data);
+static gboolean  _libedit_init        (void);
+static gboolean  _libedit_finalize    (void);
+static gboolean  _libedit_load        (hg_plugin_t    *plugin,
+                                       gpointer        vm_,
+                                       GError        **error);
+static gboolean  _libedit_unload      (hg_plugin_t    *plugin,
+                                       gpointer        vm_,
+                                       GError        **error);
+hg_plugin_t     *plugin_new           (hg_mem_t       *mem,
+                                       GError        **error);
 
 
 typedef enum {
 	HG_libedit_enc_loadhistory = 0,
-	HG_libedit_enc_statementedit,
 	HG_libedit_enc_savehistory,
 	HG_libedit_enc_END
 } hg_libedit_encoding_t;
+static hg_lineedit_vtable_t _libedit_lineedit_vtable_t G_GNUC_UNUSED = {
+	.get_line = _libedit_get_line,
+	.add_history = _libedit_add_history,
+	.load_history = _libedit_load_history,
+	.save_history = _libedit_save_history,
+};
 static hg_plugin_vtable_t __libedit_plugin_vtable = {
 	.init     = _libedit_init,
 	.finalize = _libedit_finalize,
@@ -69,26 +86,117 @@ static hg_plugin_info_t __libedit_plugin_info = {
 static hg_quark_t __libedit_enc_list[HG_libedit_enc_END];
 
 /*< private >*/
+static gchar *
+_libedit_get_line(hg_lineedit_t *lineedit,
+		  const gchar   *prompt,
+		  gpointer       user_data)
+{
+	return NULL;
+}
+
+static void
+_libedit_add_history(hg_lineedit_t *lineedit,
+		     const gchar   *history,
+		     gpointer       user_data)
+{
+}
+
+static gboolean
+_libedit_load_history(hg_lineedit_t *lineedit,
+		      const gchar   *historyfile,
+		      gpointer       user_data)
+{
+	return FALSE;
+}
+
+static gboolean
+_libedit_save_history(hg_lineedit_t *lineedit,
+		      const gchar   *historyfile,
+		      gpointer       user_data)
+{
+	return FALSE;
+}
+
+/* -filename- .loadhistory - */
 DEFUNC_OPER (private_loadhistory)
 G_STMT_START {
-	retval = TRUE;
+	hg_quark_t arg0;
+	hg_string_t *s;
+	gchar *cstr, *filename, *histfile;
+	const gchar *env;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QSTRING (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	s = HG_VM_LOCK (vm, arg0, error);
+	if (s == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	cstr = hg_string_get_cstr(s);
+	HG_VM_UNLOCK (vm, arg0);
+
+	filename = g_path_get_basename(cstr);
+	env = g_getenv("HOME");
+	if (env != NULL) {
+		histfile = g_build_filename(env, filename, NULL);
+	} else {
+		histfile = g_strdup(filename);
+	}
+	retval = hg_lineedit_load_history(vm->lineedit, histfile);
+
+	g_free(histfile);
+	g_free(filename);
+	g_free(cstr);
+
+	hg_stack_drop(ostack, error);
 } G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
+VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_OPER (private_statementedit)
-G_STMT_START {
-	g_print("fooo\n");
-	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
-
+/* -filename- .savehistory - */
 DEFUNC_OPER (private_savehistory)
 G_STMT_START {
-	retval = TRUE;
+	hg_quark_t arg0;
+	hg_string_t *s;
+	gchar *cstr, *filename, *histfile;
+	const gchar *env;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QSTRING (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	s = HG_VM_LOCK (vm, arg0, error);
+	if (s == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	cstr = hg_string_get_cstr(s);
+	HG_VM_UNLOCK (vm, arg0);
+
+	filename = g_path_get_basename(cstr);
+	env = g_getenv("HOME");
+	if (env != NULL) {
+		histfile = g_build_filename(env, filename, NULL);
+	} else {
+		histfile = g_strdup(filename);
+	}
+	retval = hg_lineedit_save_history(vm->lineedit, histfile);
+
+	g_free(histfile);
+	g_free(filename);
+	g_free(cstr);
+
+	hg_stack_drop(ostack, error);
 } G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
+VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
 static gboolean
@@ -118,7 +226,6 @@ _libedit_load(hg_plugin_t  *plugin,
 	hg_dict_t *dict;
 	gboolean is_global;
 	gint i;
-	hg_stack_t *estack;
 
 	is_global = hg_vm_is_global_mem_used(vm);
 	dict = HG_VM_LOCK (vm, vm->qsystemdict, error);
@@ -127,7 +234,6 @@ _libedit_load(hg_plugin_t  *plugin,
 	hg_vm_use_global_mem(vm, TRUE);
 
 	__libedit_enc_list[HG_libedit_enc_loadhistory] = REG_ENC (vm->name, .loadhistory, private_loadhistory);
-	__libedit_enc_list[HG_libedit_enc_statementedit] = REG_ENC (vm->name, .statementedit, private_statementedit);
 	__libedit_enc_list[HG_libedit_enc_savehistory] = REG_ENC (vm->name, .savehistory, private_savehistory);
 
 	for (i = 0; i < HG_libedit_enc_END; i++) {
@@ -136,10 +242,6 @@ _libedit_load(hg_plugin_t  *plugin,
 		REG_OPER (dict, __libedit_enc_list[i]);
 	}
 
-	estack = hg_vm_stack_new(vm, 256);
-	hg_vm_eval_from_cstring(vm, "/.libedit.old..statementedit /..statementedit load def /..statementedit {.promptmsg //null exch .statementedit exch pop} bind def",
-				NULL, estack, NULL, error);
-	hg_stack_free(estack);
 	hg_vm_use_global_mem(vm, is_global);
 
 	return TRUE;
@@ -150,12 +252,7 @@ _libedit_unload(hg_plugin_t  *plugin,
 		gpointer      vm_,
 		GError      **error)
 {
-	hg_vm_t *vm = vm_;
-	hg_stack_t *estack = hg_vm_stack_new(vm, 256);
-
-	hg_vm_eval_from_cstring(vm, "/..statementedit /.libedit.old..statementedit load def",
-				NULL, estack, NULL, error);
-	hg_stack_free(estack);
+	hg_vm_t *vm G_GNUC_UNUSED = vm_;
 
 	return TRUE;
 }

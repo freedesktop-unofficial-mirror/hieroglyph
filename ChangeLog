@@ -1,6 +1,8 @@
 2010-08-23  Akira TAGOH  <akira@tagoh.org>
 
 	* plugins/libedit/libedit-main.c: new.
+	(_plugin_private_loadhistory): implemented.
+	(_plugin_private_savehistory): implemented.
 
 	* hieroglyph/hgvm.c (hg_vm_stack_new): new.
 
