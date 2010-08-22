@@ -1,5 +1,7 @@
 2010-08-22  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgscanner.l: allow empty name object.
+
 	* hieroglyph/hgscanner.l: ignore the line-feeds if escaped by
 	the backslash.
 

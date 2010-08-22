@@ -323,12 +323,12 @@ HEXDIGITS	[0-9a-fA-F]
 		BEGIN(HEXSTRING);
 		string = g_string_new(NULL);
 	}
-\/\/[^\x04%\(\)/<>\[\]\{\}\t\f\r\n ]+/{CTRL_OR_SPACE}	{
+\/\/[^\x04%\(\)/<>\[\]\{\}\t\f\r\n ]*/{CTRL_OR_SPACE}	{
 		scanner->result = HG_QEVALNAME (scanner->name, &yytext[2]);
 		hg_quark_set_executable(&scanner->result, TRUE);
 		return TRUE;
 	}
-\/[^\x04%\(\)\/<>\[\]\{\}\t\f\r\n ]+/{CTRL_OR_SPACE}	{
+\/[^\x04%\(\)\/<>\[\]\{\}\t\f\r\n ]*/{CTRL_OR_SPACE}	{
 		scanner->result = HG_QNAME (scanner->name, &yytext[1]);
 		return TRUE;
 	}
