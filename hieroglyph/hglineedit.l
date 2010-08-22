@@ -113,6 +113,9 @@ HEXDIGITS	[0-9a-fA-F]
 			BEGIN(INITIAL);
 		}
 	}
+	\\.	{
+		g_string_append_len(string, yytext, yyleng);
+	}
 	.|\r\n|\r|\n	{
 		g_string_append_len(string, yytext, yyleng);
 	}

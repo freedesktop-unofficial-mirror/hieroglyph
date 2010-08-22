@@ -155,7 +155,10 @@ HEXDIGITS	[0-9a-fA-F]
 	"\\f"		{
 		g_string_append_c(string, '\f');
 	}
-	\\(.|\n)	{
+	\\(\n|\r|\r\n)	{
+		/* ignore */
+	}
+	\\.	{
 		g_string_append_c(string, yytext[1]);
 	}
 	.|\r\n|\r|\n	{

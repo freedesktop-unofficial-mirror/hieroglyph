@@ -1,3 +1,11 @@
+2010-08-22  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgscanner.l: ignore the line-feeds if escaped by
+	the backslash.
+
+	* hieroglyph/hglineedit.l: do not count the nest of the string
+	if escaped by the backslash.
+
 2010-08-20  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgallocator.c (_hg_allocator_save_snapshot): fix a typo.
