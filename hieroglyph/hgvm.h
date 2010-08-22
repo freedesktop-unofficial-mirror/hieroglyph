@@ -115,6 +115,8 @@ struct _hg_vm_t {
 	gint               error_code;
 	guint              qattributes;
 	guint              n_nest_scan;
+	GHashTable        *plugin_table;
+	GList             *plugin_list;
 };
 
 
@@ -230,6 +232,14 @@ void               hg_vm_stack_dump            (hg_vm_t            *vm,
 void               hg_vm_reserved_spool_dump   (hg_vm_t            *vm,
 						hg_mem_t           *mem,
 						hg_file_t          *ofile);
+gboolean           hg_vm_add_plugin            (hg_vm_t            *vm,
+						const gchar        *name,
+						GError            **error);
+void               hg_vm_load_plugins          (hg_vm_t            *vm);
+gboolean           hg_vm_remove_plugin         (hg_vm_t            *vm,
+						const gchar        *name,
+						GError            **error);
+void               hg_vm_unload_plugins        (hg_vm_t            *vm);
 
 G_END_DECLS
 

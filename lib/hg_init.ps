@@ -42,12 +42,14 @@ systemdict /serverdict known not {
     systemdict /serverdict 10 dict .forceput
 } if
 
-/FontDirectory
+%% XXX
+%/FontDirectory
 
 true .setglobal
 
 %% On global memory
-/GlobalFontDirectory
+%% XXX
+%/GlobalFontDirectory
 
 %%
 %% Define procedures
@@ -506,7 +508,11 @@ end
 %%
 %% Initialize the plugins
 %%
-%.initplugins
+/.initplugins dup where {
+    pop cvx exec
+} {
+    pop
+} ifelse
 
 %%
 %% Set the default value for system parapeters

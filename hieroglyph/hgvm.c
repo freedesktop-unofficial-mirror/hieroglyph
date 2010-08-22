@@ -34,6 +34,7 @@
 #include "hgname.h"
 #include "hgnull.h"
 #include "hgoperator.h"
+#include "hgplugin.h"
 #include "hgreal.h"
 #include "hgscanner.h"
 #include "hgsnapshot.h"
@@ -735,6 +736,8 @@ hg_vm_new(void)
 	memset(retval, 0, sizeof (hg_vm_t));
 	retval->self = q;
 	retval->name = hg_name_init();
+	retval->plugin_table = g_hash_table_new_full(g_str_hash, g_str_equal,
+						     g_free, NULL);
 	retval->current_mem_index = HG_VM_MEM_GLOBAL;
 	retval->mem[HG_VM_MEM_GLOBAL] = hg_mem_new(HG_VM_GLOBAL_MEM_SIZE);
 	retval->mem[HG_VM_MEM_LOCAL] = hg_mem_new(HG_VM_LOCAL_MEM_SIZE);
@@ -834,6 +837,10 @@ hg_vm_destroy(hg_vm_t *vm)
 	for (i = 0; i < HG_VM_MEM_END; i++) {
 		hg_mem_destroy(vm->mem[i]);
 	}
+	if (vm->plugin_table)
+		g_hash_table_destroy(vm->plugin_table);
+	if (vm->plugin_list)
+		g_list_free(vm->plugin_list);
 	if (vm->name)
 		hg_name_tini(vm->name);
 	hg_mem_free(__hg_vm_mem, vm->self);
@@ -2801,4 +2808,125 @@ hg_vm_reserved_spool_dump(hg_vm_t   *vm,
 	hg_file_append_printf(ofile, "       value      |    type    |refcnt|attr|content\n");
 	hg_file_append_printf(ofile, "----------========+------------+------+----+---------------------------------\n");
 	hg_mem_reserved_spool_foreach(mem, _hg_vm_rs_real_dump, &data, NULL);
+}
+
+/**
+ * hg_vm_add_plugin:
+ * @vm:
+ * @name:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_vm_add_plugin(hg_vm_t      *vm,
+		 const gchar  *name,
+		 GError      **error)
+{
+	hg_plugin_t *plugin;
+
+	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (name != NULL, FALSE, error);
+
+	if (g_hash_table_lookup(vm->plugin_table, name) != NULL) {
+		g_warning("%s plugin is already loaded", name);
+		return TRUE;
+	}
+	plugin = hg_plugin_open(vm->mem[HG_VM_MEM_LOCAL],
+				name,
+				HG_PLUGIN_EXTENSION,
+				error);
+	if (plugin) {
+		GList *l = g_list_alloc();
+
+		l->data = plugin;
+		g_hash_table_insert(vm->plugin_table,
+				    g_strdup(name), l);
+		vm->plugin_list = g_list_concat(vm->plugin_list, l);
+	}
+
+	return plugin != NULL;
+}
+
+/**
+ * hg_vm_load_plugins:
+ * @vm:
+ *
+ * FIXME
+ */
+void
+hg_vm_load_plugins(hg_vm_t *vm)
+{
+	GList *l;
+
+	hg_return_if_fail (vm != NULL);
+
+	for (l = vm->plugin_list; l != NULL; l = g_list_next(l)) {
+		hg_plugin_t *p = l->data;
+		GError *err = NULL;
+
+		if (!hg_plugin_load(p, vm, &err)) {
+			g_warning("%s (code: %d)",
+				  err->message,
+				  err->code);
+			g_clear_error(&err);
+		}
+	}
+}
+
+/**
+ * hg_vm_remove_plugin:
+ * @vm:
+ * @name:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_vm_remove_plugin(hg_vm_t      *vm,
+		    const gchar  *name,
+		    GError      **error)
+{
+	GList *l;
+	gboolean retval;
+
+	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (name != NULL, FALSE, error);
+
+	if ((l = g_hash_table_lookup(vm->plugin_table, name)) == NULL) {
+		g_warning("No such plugins loaded: %s", name);
+		return FALSE;
+	}
+
+	retval = hg_plugin_unload(l->data, vm, error);
+	if (retval) {
+		g_hash_table_remove(vm->plugin_table, name);
+		vm->plugin_list = g_list_delete_link(vm->plugin_list, l);
+	}
+
+	return retval;
+}
+
+/**
+ * hg_vm_unload_plugins:
+ * @vm:
+ *
+ * FIXME
+ */
+void
+hg_vm_unload_plugins(hg_vm_t *vm)
+{
+	GList *lk, *llk;
+
+	hg_return_if_fail (vm != NULL);
+
+	lk = g_hash_table_get_keys(vm->plugin_table);
+	for (llk = lk; llk != NULL; llk = g_list_next(llk)) {
+		hg_vm_remove_plugin(vm, llk->data, NULL);
+	}
+	g_list_free(lk);
 }

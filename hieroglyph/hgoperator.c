@@ -130,6 +130,7 @@ PROTO_OPER (private_exit);
 PROTO_OPER (private_findlibfile);
 PROTO_OPER (private_forceput);
 PROTO_OPER (private_hgrevision);
+PROTO_OPER (private_initplugins);
 PROTO_OPER (private_odef);
 PROTO_OPER (private_product);
 PROTO_OPER (private_quit);
@@ -748,6 +749,15 @@ G_STMT_START {
 	retval = TRUE;
 } G_STMT_END;
 VALIDATE_STACK_SIZE (1, 0, 0);
+DEFUNC_OPER_END
+
+/* - .initplugins - */
+DEFUNC_OPER (private_initplugins)
+G_STMT_START {
+	hg_vm_load_plugins(vm);
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
 /* <key> <proc> .odef - */
@@ -4807,6 +4817,7 @@ _hg_operator_level1_register(hg_dict_t *dict,
 	REG_PRIV_OPER (dict, name, .findlibfile, private_findlibfile);
 	REG_PRIV_OPER (dict, name, .forceput, private_forceput);
 	REG_PRIV_OPER (dict, name, .hgrevision, private_hgrevision);
+	REG_PRIV_OPER (dict, name, .initplugins, private_initplugins);
 	REG_PRIV_OPER (dict, name, .odef, private_odef);
 	REG_PRIV_OPER (dict, name, .product, private_product);
 	REG_PRIV_OPER (dict, name, .quit, private_quit);
@@ -5271,6 +5282,7 @@ hg_operator_init(void)
 	DECL_PRIV_OPER (.findlibfile, private_findlibfile);
 	DECL_PRIV_OPER (.forceput, private_forceput);
 	DECL_PRIV_OPER (.hgrevision, private_hgrevision);
+	DECL_PRIV_OPER (.initplugins, private_initplugins);
 	DECL_PRIV_OPER (.odef, private_odef);
 	DECL_PRIV_OPER (.product, private_product);
 	DECL_PRIV_OPER (.quit, private_quit);
@@ -5682,6 +5694,7 @@ hg_operator_tini(void)
 	UNDECL_OPER (private_findlibfile);
 	UNDECL_OPER (private_forceput);
 	UNDECL_OPER (private_hgrevision);
+	UNDECL_OPER (private_initplugins);
 	UNDECL_OPER (private_odef);
 	UNDECL_OPER (private_product);
 	UNDECL_OPER (private_quit);

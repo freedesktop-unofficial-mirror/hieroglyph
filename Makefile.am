@@ -2,6 +2,10 @@ NULL =
 AUTOMAKE_OPTIONS = dist-bzip2
 SUBDIRS = hieroglyph src lib tests
 
+if ENABLE_PLUGINS
+SUBDIRS += plugins
+endif
+
 ACLOCAL_AMFLAGS =		\
 	-I m4macros		\
 	$(NULL)

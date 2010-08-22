@@ -3,12 +3,15 @@
 NULL =
 INCLUDES =							\
 	$(GLIB_CFLAGS)						\
+	$(GMODULE_CFLAGS)					\
 	-I$(top_srcdir)						\
 	-DHIEROGLYPH_LIBDIR="\"$(HIEROGLYPH_LIBDIR)\""		\
+	-DHIEROGLYPH_PLUGINDIR="\"$(HIEROGLYPH_PLUGINDIR)\""	\
 	$(NULL)
 LIBS =								\
 	@LDFLAGS@						\
 	$(GLIB_LIBS)						\
+	$(GMODULE_LIBS)						\
 	-lm							\
 	$(NULL)
 EXTRA_DIST =							\
@@ -41,6 +44,7 @@ hg_public_headers =						\
 	hgnull.h						\
 	hgobject.h						\
 	hgoperator.h						\
+	hgplugin.h						\
 	hgquark.h						\
 	hgreal.h						\
 	hgsnapshot.h						\
@@ -80,6 +84,7 @@ hg_sources =							\
 	hgname.c						\
 	hgobject.c						\
 	hgoperator.c						\
+	hgplugin.c						\
 	hgscanner.l						\
 	hgsnapshot.c						\
 	hgstack.c						\

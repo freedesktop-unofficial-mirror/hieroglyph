@@ -119,13 +119,19 @@ AM_GLIB_GNU_GETTEXT
 dnl ======================================================================
 dnl check pkg-config stuff
 dnl ======================================================================
+PKG_CHECK_MODULES(GMODULE, gmodule-2.0,
+	[use_plugins="yes"],
+	[use_plugins="no"])
 PKG_CHECK_MODULES(CHECK, check >= $CHECK_REQUIRED,
 	[use_check="yes"],
 	[use_check="no"])
 
+AC_SUBST(GMOUDLE_CFLAGS)
+AC_SUBST(GMODULE_LIBS)
 AC_SUBST(CHECK_CFLAGS)
 AC_SUBST(CHECK_LIBS)
 
+AM_CONDITIONAL(ENABLE_PLUGINS, test x$use_plugins != xno)
 AM_CONDITIONAL(ENABLE_UNIT_TEST, test x$use_check != xno)
 
 dnl ======================================================================
@@ -168,6 +174,7 @@ AC_CONFIG_FILES([
 	hieroglyph.pc
 	hieroglyph-uninstalled.pc
 	lib/Makefile
+	plugins/Makefile
 	po/Makefile.in
 	src/Makefile
 	src/hgs/Makefile
@@ -186,4 +193,5 @@ echo ""
 echo " Enable the debugging build:	$enable_debug"
 echo " Enable the profile:		$enable_profile"
 echo " Unit testing:			$use_check"
+echo " Enable plugins:			$use_plugins"
 echo ""

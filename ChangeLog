@@ -1,5 +1,14 @@
 2010-08-22  Akira TAGOH  <akira@tagoh.org>
 
+	Add plugin support.
+
+	* hieroglyph/hgvm.c (hg_vm_add_plugin): new.
+	(hg_vm_load_plugins): new.
+	(hg_vm_remove_plugin): new.
+	(hg_vm_unload_plugins): new.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_private_initplugins): new.
+
 	* hieroglyph/hgscanner.l: allow empty name object.
 
 	* hieroglyph/hgscanner.l: ignore the line-feeds if escaped by

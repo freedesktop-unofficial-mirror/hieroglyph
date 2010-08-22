@@ -48,6 +48,22 @@ _hgs_arg_define_cb(const gchar  *option_name,
 	return retval;
 }
 
+static gboolean
+_hgs_arg_load_plugin_cb(const gchar  *option_name,
+			const gchar  *value,
+			gpointer      data,
+			GError      **error)
+{
+	gboolean retval = FALSE;
+	hg_vm_t *vm = data;
+
+	if (value && *value) {
+		retval = hg_vm_add_plugin(vm, value, error);
+	}
+
+	return retval;
+}
+
 /*< public >*/
 int
 main(int    argc,
@@ -62,7 +78,8 @@ main(int    argc,
 	GOptionGroup *group;
 	GOptionEntry entries[] = {
 		{"define", 'd', 0, G_OPTION_ARG_CALLBACK, _hgs_arg_define_cb, "Define a variable in systemdict.", "SYMBOL"},
-		{"langlevel", 'l', 0, G_OPTION_ARG_INT, &arg_langlevel, "Specify a language level supported on VM", "INT"},
+		{"langlevel", 0, 0, G_OPTION_ARG_INT, &arg_langlevel, "Specify a language level supported on VM", "INT"},
+		{"load-plugin", 'l', 0, G_OPTION_ARG_CALLBACK, _hgs_arg_load_plugin_cb, "Load a plugin", "NAME"},
 		{NULL}
 	};
 
