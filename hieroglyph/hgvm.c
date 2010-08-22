@@ -601,6 +601,7 @@ _hg_vm_run_gc(hg_mem_t *mem,
 	hg_file_t *f;
 	gsize i;
 	GError *err = NULL;
+	GList *l;
 
 	hg_return_val_if_fail (mem != NULL, FALSE);
 	hg_return_val_if_fail (vm != NULL, FALSE);
@@ -631,6 +632,13 @@ _hg_vm_run_gc(hg_mem_t *mem,
 		if (!hg_object_gc_mark((hg_object_t *)s,
 				       _hg_vm_quark_iterate_gc_mark,
 				       vm, &err))
+			goto error;
+	}
+	/** marking plugins **/
+	for (l = vm->plugin_list; l != NULL; l = g_list_next(l)) {
+		hg_plugin_t *p = l->data;
+
+		if (!hg_mem_gc_mark(p->mem, p->self, &err))
 			goto error;
 	}
 	/** marking miscellaneous **/
@@ -2929,4 +2937,6 @@ hg_vm_unload_plugins(hg_vm_t *vm)
 		hg_vm_remove_plugin(vm, llk->data, NULL);
 	}
 	g_list_free(lk);
+	g_list_free(vm->plguin_list);
+	vm->plugin_list = NULL;
 }
