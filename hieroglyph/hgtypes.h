@@ -666,7 +666,9 @@ enum _hg_system_encoding_t {
 	HG_enc_protected_repeat_continue,
 	HG_enc_protected_stopped_continue,
 
-	HG_enc_END
+	HG_enc_builtin_HIEROGLYPH_END,
+
+	HG_enc_END = 65535
 };
 
 

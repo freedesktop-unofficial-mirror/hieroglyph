@@ -125,14 +125,27 @@ PKG_CHECK_MODULES(GMODULE, gmodule-2.0,
 PKG_CHECK_MODULES(CHECK, check >= $CHECK_REQUIRED,
 	[use_check="yes"],
 	[use_check="no"])
+PKG_CHECK_MODULES(LIBEDIT, libedit,
+	[use_libedit="yes"],
+	AC_CHECK_LIB(edit, readline, [
+	LIBEDIT_LIBS="-ledit"
+	use_libedit="yes"],
+	[use_libedit="no"]))
 
 AC_SUBST(GMOUDLE_CFLAGS)
 AC_SUBST(GMODULE_LIBS)
 AC_SUBST(CHECK_CFLAGS)
 AC_SUBST(CHECK_LIBS)
+AC_SUBST(LIBEDIT_CFLAGS)
+AC_SUBST(LIBEDIT_LIBS)
 
 AM_CONDITIONAL(ENABLE_PLUGINS, test x$use_plugins != xno)
 AM_CONDITIONAL(ENABLE_UNIT_TEST, test x$use_check != xno)
+AM_CONDITIONAL(ENABLE_LIBEDIT, test x$use_libedit != xno)
+
+if test x$use_libedit != xno; then
+	AC_DEFINE(USE_LIBEDIT,,[enable libedit])
+fi
 
 dnl ======================================================================
 dnl check another libraries
@@ -175,6 +188,7 @@ AC_CONFIG_FILES([
 	hieroglyph-uninstalled.pc
 	lib/Makefile
 	plugins/Makefile
+	plugins/libedit/Makefile
 	po/Makefile.in
 	src/Makefile
 	src/hgs/Makefile

@@ -226,6 +226,8 @@ gboolean           hg_vm_set_error             (hg_vm_t            *vm,
 gboolean           hg_vm_set_error_from_gerror (hg_vm_t            *vm,
 						hg_quark_t          qdata,
 						GError             *error);
+hg_stack_t        *hg_vm_stack_new             (hg_vm_t            *vm,
+						gsize               size);
 void               hg_vm_stack_dump            (hg_vm_t            *vm,
 						hg_stack_t         *stack,
 						hg_file_t          *output);

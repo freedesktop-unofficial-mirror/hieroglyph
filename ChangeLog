@@ -1,5 +1,12 @@
 2010-08-23  Akira TAGOH  <akira@tagoh.org>
 
+	* plugins/libedit/libedit-main.c: new.
+
+	* hieroglyph/hgvm.c (hg_vm_stack_new): new.
+
+	* hieroglyph/hgoperator.c (hg_operator_add_dynamic): new.
+	(hg_operator_remove_dynamic): new.
+
 	* hieroglyph/hgvm.c (hg_vm_unload_plugins): fix a typo.
 
 2010-08-22  Akira TAGOH  <akira@tagoh.org>

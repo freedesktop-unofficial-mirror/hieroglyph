@@ -452,8 +452,7 @@ hg_vm_step_in_exec_array(hg_vm_t    *vm,
 	vm->n_nest_scan++;
 
 	old_ostack = vm->stacks[HG_VM_STACK_OSTACK];
-	vm->stacks[HG_VM_STACK_OSTACK] = hg_stack_new(__hg_vm_mem,
-						      65535, vm);
+	vm->stacks[HG_VM_STACK_OSTACK] = hg_vm_stack_new(vm, 65535);
 	if (vm->stacks[HG_VM_STACK_OSTACK] == NULL) {
 		/* unable to dup the correct stacks in this case */
 		vm->stacks[HG_VM_STACK_OSTACK] = old_ostack;
@@ -767,12 +766,9 @@ hg_vm_new(void)
 					 retval->name);
 	if (retval->scanner == NULL)
 		goto error;
-	retval->stacks[HG_VM_STACK_OSTACK] = hg_stack_new(__hg_vm_mem,
-							  65535, retval);
-	retval->stacks[HG_VM_STACK_ESTACK] = hg_stack_new(__hg_vm_mem,
-							  65535, retval);
-	retval->stacks[HG_VM_STACK_DSTACK] = hg_stack_new(__hg_vm_mem,
-							  65535, retval);
+	retval->stacks[HG_VM_STACK_OSTACK] = hg_vm_stack_new(retval, 65535);
+	retval->stacks[HG_VM_STACK_ESTACK] = hg_vm_stack_new(retval, 65535);
+	retval->stacks[HG_VM_STACK_DSTACK] = hg_vm_stack_new(retval, 65535);
 	if (retval->stacks[HG_VM_STACK_OSTACK] == NULL ||
 	    retval->stacks[HG_VM_STACK_ESTACK] == NULL ||
 	    retval->stacks[HG_VM_STACK_DSTACK] == NULL)
@@ -2750,6 +2746,22 @@ hg_vm_set_error_from_gerror(hg_vm_t    *vm,
 	}
 
 	return TRUE;
+}
+
+/**
+ * hg_vm_stack_new:
+ * @vm:
+ * @size:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_stack_t *
+hg_vm_stack_new(hg_vm_t *vm,
+		gsize    size)
+{
+	return hg_stack_new(__hg_vm_mem, size, vm);
 }
 
 /**
