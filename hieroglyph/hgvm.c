@@ -2937,6 +2937,6 @@ hg_vm_unload_plugins(hg_vm_t *vm)
 		hg_vm_remove_plugin(vm, llk->data, NULL);
 	}
 	g_list_free(lk);
-	g_list_free(vm->plguin_list);
+	g_list_free(vm->plugin_list);
 	vm->plugin_list = NULL;
 }

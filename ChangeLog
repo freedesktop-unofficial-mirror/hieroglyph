@@ -1,3 +1,7 @@
+2010-08-23  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgvm.c (hg_vm_unload_plugins): fix a typo.
+
 2010-08-22  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgvm.c (_hg_vm_run_gc): mark the plugins for GC.
