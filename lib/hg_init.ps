@@ -96,7 +96,7 @@ systemdict /.odef .undef
 	.findlibfile {
 	    run
 	} {
-	    errordict /undefinedfilename get exec
+	    errordict /undefinedfilename get /runlibfile exch exec
 	} ifelse
 } bind def
 % <file> any write=only -

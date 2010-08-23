@@ -2784,11 +2784,12 @@ hg_vm_stack_dump(hg_vm_t    *vm,
 	hg_return_if_fail (output != NULL);
 
 	m = hg_vm_get_mem(vm);
+#if 0
 	/* to avoid unusable result when OOM */
 	hg_mem_set_resizable(m, TRUE);
 	/* XXX: to avoid crashes after resizing heap with keeping a pointer */
-	hg_mem_resize_heap(hg_vm_get_mem(vm),
-			   hg_mem_get_total_size(m) * 2);
+	hg_mem_resize_heap(m, hg_mem_get_total_size(m) * 2);
+#endif
 
 	data.vm = vm;
 	data.stack = stack;
@@ -2819,7 +2820,9 @@ hg_vm_reserved_spool_dump(hg_vm_t   *vm,
 	hg_return_if_fail (ofile != NULL);
 
 	/* to avoid unusable result when OOM */
+#if 0
 	hg_mem_set_resizable(hg_vm_get_mem(vm), TRUE);
+#endif
 
 	data.vm = vm;
 	data.mem = mem;
