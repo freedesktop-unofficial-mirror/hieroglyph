@@ -189,6 +189,7 @@ AC_CONFIG_FILES([
 	lib/Makefile
 	plugins/Makefile
 	plugins/libedit/Makefile
+	plugins/unittest/Makefile
 	po/Makefile.in
 	src/Makefile
 	src/hgs/Makefile

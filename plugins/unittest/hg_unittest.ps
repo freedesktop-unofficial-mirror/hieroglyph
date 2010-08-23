@@ -1,0 +1,269 @@
+%!PS-Adobe-2.0
+% hg_unittest.ps
+% Copyright (C) 2006-2010 Akira TAGOH
+%
+% Authors:
+%   Akira TAGOH  <akira@tagoh.org>
+%
+% This library is free software; you can redistribute it and/or
+% modify it under the terms of the GNU Lesser General Public
+% License as published by the Free Software Foundation; either
+% version 2 of the License, or (at your option) any later version.
+%
+% This library is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+% Lesser General Public License for more details.
+%
+% You should have received a copy of the GNU Lesser General Public
+% License along with this library; if not, write to the
+% Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+% Boston, MA 02111-1307, USA.
+<<
+    /nunit 0
+    /nsuccess 0
+    /nfailure 0
+    /.ostack null
+    /expectederror null
+    /expectedostack null
+    /actualerror null
+    /actualostack null
+    /verbose true
+    /expression null
+    /operator null
+    /arguments null
+    /testargs null
+    /testargssymbol null
+    /typecheckresult false
+    /expectedtypecheckresult false
+    /anytypes [/booleantype /integertype /realtype /nametype /arraytype /stringtype /dicttype /nulltype /operatortype /marktype /filetype /savetype /proctype] readonly
+    /attributes <<
+	/readable 1
+	/writable 2
+	/executable 4
+	/executeonly 8
+	/accessible 16
+    >> readonly
+    /attrsmask 0
+>> /.unittestdict exch def
+
+% - .initunittest -
+/.initunittest {
+    .unittestdict begin
+	/nunit 0 def
+	/nsuccess 0 def
+	/nfailure 0 def
+    end
+    .promptmsg length 2 add dup string 1 1 4 -1 roll 2 sub {1 index exch 32 put} for
+    dup 0 13 put
+    dup dup length 1 sub 13 put =only
+} bind odef
+
+% -array- -name -bool- .initunittestdict -
+/.initunittestdict {
+    .unittestdict begin
+	/verbose exch def
+	/expectederror exch def
+	/expectedostack exch def
+	/attrsmask 0 def
+    end
+} bind odef
+
+% -name- ... n .setunittestmask -integer-
+/.setunittestmask {
+    .unittestdict begin
+	/attrsmask 0 def
+	{
+	    attributes exch get
+	    attrsmask or /attrsmask exch def
+	} repeat
+    end
+} bind odef
+
+/.updateunittestprogress {
+    [(|) (/) (-) (\\)]
+    .unittestdict /nunit get 4 mod
+    get (\r) .concatstring =only flush
+} bind odef
+
+% -proc- .unittest -bool-
+/.unittest {
+    .dounittest
+    .unittestdict .validatetestresult
+    .unittestdict begin
+	/nunit nunit 1 add def
+	{
+	    /nsuccess nsuccess 1 add def
+	} {
+	    /nfailure nfailure 1 add def
+	} ifelse
+    end
+} bind odef
+
+% -proc- .dounittest -
+/.dounittest {
+    .updateunittestprogress
+    % back up the ostack into dict
+    count copy pop count 1 sub 2 idiv array astore .unittestdict /.ostack 3 -1 roll put
+    dup .unittestdict /expression 3 -1 roll put
+    {exec} stopped {
+	$error /newerror get {
+	    $error /errorname get .unittestdict /actualerror 3 -1 roll put
+	} {
+	    .unittestdict /actualerror /stop put
+	} ifelse
+    } {
+	.unittestdict /actualerror null put
+    } ifelse
+    count .unittestdict /.ostack get length sub copy
+    count .unittestdict /.ostack get length sub 2 idiv array astore
+    .unittestdict /actualostack 3 -1 roll put
+    % recover
+    clear .clearerror
+    .unittestdict /.ostack get aload pop
+} bind odef
+
+% -bool- -name- [[type ...] ...] .typecheck -
+/.typecheck {
+    .unittestdict begin
+	/arguments exch def
+	/operator exch def
+	/testargs arguments length array def
+	/testargssymbol arguments length array def
+	dup /expectedtypecheckresult exch def
+	/typecheckresult exch def
+	arguments length 1 sub .dotypecheck
+	expectedtypecheckresult typecheckresult ne {
+	    1 .quit
+	} if
+    end
+} bind def
+
+% -num- .dotypecheck -
+/.dotypecheck {
+    arguments 1 index get {
+	dup /booleantype eq {
+	    testargs 2 index true put
+	    testargssymbol 2 index 3 -1 roll put
+	} {
+	    dup /integertype eq {
+		testargs 2 index 0 put
+		testargssymbol 2 index 3 -1 roll put
+	    } {
+		dup /realtype eq {
+		    testargs 2 index 0.1 put
+		    testargssymbol 2 index 3 -1 roll put
+		} {
+		    dup /nametype eq {
+			testargs 2 index /foo put
+			testargssymbol 2 index 3 -1 roll put
+		    } {
+			dup /arraytype eq {
+			    testargs 2 index [] put
+			    testargssymbol 2 index 3 -1 roll put
+			} {
+			    dup /stringtype eq {
+				testargs 2 index (foo) put
+				testargssymbol 2 index 3 -1 roll put
+			    } {
+				dup /dicttype eq {
+				    testargs 2 index 1 dict put
+				    testargssymbol 2 index 3 -1 roll put
+				} {
+				    dup /nulltype eq {
+					testargs 2 index null put
+					testargssymbol 2 index 3 -1 roll put
+				    } {
+					dup /operatortype eq {
+					    testargs 2 index /add load put
+					    testargssymbol 2 index 3 -1 roll put
+					} {
+					    dup /marktype eq {
+						testargs 2 index mark put
+						testargssymbol 2 index 3 -1 roll put
+					    } {
+						dup /filetype eq {
+						    testargs 2 index (.) (r) file put
+						    testargssymbol 2 index 3 -1 roll put
+						} {
+						    dup /savetype eq {
+							testargs 2 index save put
+							testargssymbol 2 index 3 -1 roll put
+						    } {
+							% this is not correct type.
+							dup /proctype eq {
+							    testargs 2 index {} put
+							    testargssymbol 2 index 3 -1 roll put
+							} {
+							    % error
+							    (Unknown type ) ==only
+							    == 1 .quit
+							} ifelse
+						    } ifelse
+						} ifelse
+					    } ifelse
+					} ifelse
+				    } ifelse
+				} ifelse
+			    } ifelse
+			} ifelse
+		    } ifelse
+		} ifelse
+	    } ifelse
+	} ifelse
+	dup 0 eq {
+	    [testargs /aload load /pop load operator cvx] cvx .dounittest
+	    .unittestdict begin
+		/nunit nunit 1 add def
+		actualerror dup /stackunderflow eq
+		exch dup /typecheck eq
+		exch dup /limitcheck eq
+		exch pop
+		or or {
+		    expectedtypecheckresult {
+			(ERROR: ) =only
+			actualerror ==only
+			( in ) =only
+			operator cvx ==only
+			( with ) =only
+			testargssymbol ==
+			/typecheckresult false def
+			/nfailure nfailure 1 add def
+		    } {
+			/nsuccess nsuccess 1 add def
+		    } ifelse
+		} {
+		    expectedtypecheckresult not {
+			(ERROR: no errors or no expected errors happened in ) =only
+			operator cvx ==only
+			( with ) =only
+			testargssymbol ==only
+			( actualerror was ) =only
+			actualerror ==
+			/typecheckresult true def
+			/nfailure nfailure 1 add def
+		    } {
+			/nsuccess nsuccess 1 add def
+		    } ifelse
+		} ifelse
+	    end
+	} {
+	    dup 1 sub .dotypecheck
+	} ifelse
+    } forall
+    pop
+} bind def
+
+% - .unittestresult -
+/.unittestresult {
+    .unittestdict begin
+	nunit 128 string cvs ( Unit(s) / )
+	nsuccess 128 string cvs ( Success(es) / )
+	nfailure 128 string cvs ( Failure(s))
+	.concatstring .concatstring .concatstring .concatstring .concatstring
+	=
+	nfailure 0 gt {
+	    1 .quit
+	} if
+    end
+} bind odef

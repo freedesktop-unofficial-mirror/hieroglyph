@@ -1,5 +1,7 @@
 2010-08-23  Akira TAGOH  <akira@tagoh.org>
 
+	* plugins/unittest: add a unittest plugin.
+
 	* lib/hg_init.ps (runlibfile): fix /stackunderflow.
 
 	* hieroglyph/hgvm.c (hg_vm_stack_dump): disable growing heaps so far.

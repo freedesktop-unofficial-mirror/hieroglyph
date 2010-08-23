@@ -21,9 +21,9 @@
 # Boston, MA 02111-1307, USA.
 
 if [ "x$HIEROGLYPH_LIB_PATH" != "x" ]; then
-    export HIEROGLYPH_LIB_PATH=$HIEROGLYPH_LIB_PATH:`dirname $0`/../lib:.
+    export HIEROGLYPH_LIB_PATH=$HIEROGLYPH_LIB_PATH:`dirname $0`/../lib:`dirname $0`/../plugins/unittest:.
 else
-    export HIEROGLYPH_LIB_PATH=`dirname $0`/../lib:.
+    export HIEROGLYPH_LIB_PATH=`dirname $0`/../lib:`dirname $0`/../plugins/unittest:.
 fi
 for i in $(dirname $0)/../plugins/*; do
     if test -d $i && test -d $i/.libs; then

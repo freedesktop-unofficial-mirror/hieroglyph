@@ -1,7 +1,7 @@
 ##
 # Global definitions
 NULL =
-SUBDIRS =
+SUBDIRS = unittest
 
 if ENABLE_LIBEDIT
 SUBDIRS += libedit
