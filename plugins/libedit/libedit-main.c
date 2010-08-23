@@ -50,17 +50,8 @@ static gboolean  _libedit_load_history(hg_lineedit_t  *lineedit,
 static gboolean  _libedit_save_history(hg_lineedit_t  *lineedit,
                                        const gchar    *historyfile,
                                        gpointer        user_data);
-static gboolean  _libedit_init        (void);
-static gboolean  _libedit_finalize    (void);
-static gboolean  _libedit_load        (hg_plugin_t    *plugin,
-                                       gpointer        vm_,
-                                       GError        **error);
-static gboolean  _libedit_unload      (hg_plugin_t    *plugin,
-                                       gpointer        vm_,
-                                       GError        **error);
-hg_plugin_t     *plugin_new           (hg_mem_t       *mem,
-                                       GError        **error);
 
+PROTO_PLUGIN (libedit);
 
 typedef enum {
 	HG_libedit_enc_loadhistory = 0,
@@ -72,16 +63,6 @@ static hg_lineedit_vtable_t __libedit_lineedit_vtable = {
 	.add_history = _libedit_add_history,
 	.load_history = _libedit_load_history,
 	.save_history = _libedit_save_history,
-};
-static hg_plugin_vtable_t __libedit_plugin_vtable = {
-	.init     = _libedit_init,
-	.finalize = _libedit_finalize,
-	.load     = _libedit_load,
-	.unload   = _libedit_unload,
-};
-static hg_plugin_info_t __libedit_plugin_info = {
-	.version = HG_PLUGIN_VERSION,
-	.vtable  = &__libedit_plugin_vtable,
 };
 static hg_quark_t __libedit_enc_list[HG_libedit_enc_END];
 

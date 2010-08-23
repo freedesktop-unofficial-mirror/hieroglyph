@@ -1,5 +1,7 @@
 2010-08-23  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.h (PROTO_PLUGIN): new.
+
 	* hieroglyph/hgdict.c (_hg_object_dict_node_get_allocation_flags): add
 	a flag to drop the block on restore.
 	(_hg_object_dict_node_initialize): likewise.

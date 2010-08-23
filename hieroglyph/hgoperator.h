@@ -126,6 +126,28 @@ typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
 				 NULL))				\
 			return FALSE;				\
 	} G_STMT_END
+#define PROTO_PLUGIN(_n_)						\
+	static gboolean  _ ## _n_ ## _init    (void);			\
+	static gboolean  _ ## _n_ ## _finalize(void);			\
+	static gboolean  _ ## _n_ ## _load    (hg_plugin_t *plugin,	\
+					       gpointer     vm_,	\
+					       GError      **error);	\
+	static gboolean  _ ## _n_ ## _unload  (hg_plugin_t *plugin,	\
+					       gpointer     vm_,	\
+					       GError      **error);	\
+	hg_plugin_t     *plugin_new        (hg_mem_t    *mem,		\
+					    GError      **error);	\
+									\
+	static hg_plugin_vtable_t __ ## _n_ ## _plugin_vtable = {	\
+		.init     = _ ## _n_ ## _init,				\
+		.finalize = _ ## _n_ ## _finalize,			\
+		.load     = _ ## _n_ ## _load,				\
+		.unload   = _ ## _n_ ## _unload,			\
+	};								\
+	static hg_plugin_info_t __ ## _n_ ## _plugin_info = {		\
+		.version = HG_PLUGIN_VERSION,				\
+		.vtable  = &__ ## _n_ ## _plugin_vtable,		\
+	}
 #endif
 
 #define DEFUNC_OPER_END					\
