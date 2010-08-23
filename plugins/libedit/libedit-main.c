@@ -31,11 +31,11 @@
 
 #include <readline.h>
 #define PLUGIN
-#include "hieroglyph/hgdict.h"
-#include "hieroglyph/hgplugin.h"
-#include "hieroglyph/hgoperator.h"
-#include "hieroglyph/hgstack.h"
-#include "hieroglyph/hgvm.h"
+#include "hgdict.h"
+#include "hgplugin.h"
+#include "hgoperator.h"
+#include "hgstack.h"
+#include "hgvm.h"
 
 
 static gchar    *_libedit_get_line    (hg_lineedit_t  *lineedit,

@@ -5,6 +5,7 @@ INCLUDES =							\
 	$(GLIB_CFLAGS)						\
 	$(LIBEDIT_CFLAGS)					\
 	-I$(top_srcdir)						\
+	-I$(top_srcdir)/hieroglyph				\
 	$(NULL)
 LIBS =								\
 	@LDFLAGS@						\
