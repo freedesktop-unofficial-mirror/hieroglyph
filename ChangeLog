@@ -1,5 +1,9 @@
 2010-08-23  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (_hg_operator_real_protected_dicttomark):
+	implemented.
+	(_hg_operator_real_readonly): implemented.
+
 	* hieroglyph/hgoperator.h (PROTO_PLUGIN): new.
 
 	* hieroglyph/hgdict.c (_hg_object_dict_node_get_allocation_flags): add

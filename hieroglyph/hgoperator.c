@@ -62,6 +62,7 @@ PROTO_OPER (private_stringcvs);
 PROTO_OPER (private_undef);
 PROTO_OPER (private_write_eqeq_only);
 PROTO_OPER (protected_arraytomark);
+PROTO_OPER (protected_dicttomark);
 PROTO_OPER (protected_for_yield_int_continue);
 PROTO_OPER (protected_for_yield_real_continue);
 PROTO_OPER (protected_forall_array_continue);
@@ -916,6 +917,52 @@ G_STMT_START {
  * if the result in all above is ok, everything would be fine then.
  */
 /* VALIDATE_STACK_SIZE (0, 0, 0); */
+DEFUNC_OPER_END
+
+/* <mark> ... %dicttomark <dict> */
+DEFUNC_OPER (protected_dicttomark)
+gint __n G_GNUC_UNUSED = 0;
+G_STMT_START {
+	hg_quark_t qk, qv, qd, arg0;
+	gsize i;
+	hg_dict_t *dict;
+
+	/* %dicttomark is the same to {counttomark dup 2 mod 0 ne {pop errordict /rangecheck get />> exch exec} if 2 idiv dup dict begin {def} repeat pop currentdict end} */
+	if (!hg_operator_invoke(HG_QOPER (HG_enc_counttomark), vm, error))
+		return FALSE;
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QINT (arg0)) {
+		hg_stack_drop(ostack, error);
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	__n = HG_INT (arg0);
+	if ((__n % 2) != 0) {
+		hg_stack_drop(ostack, error);
+		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		return FALSE;
+	}
+	qd = hg_dict_new(hg_vm_get_mem(vm), __n / 2, (gpointer *)&dict);
+	if (qd == Qnil) {
+		hg_stack_drop(ostack, error);
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	for (i = __n; i > 0; i -= 2) {
+		qk = hg_stack_index(ostack, i, error);
+		qv = hg_stack_index(ostack, i - 1, error);
+		hg_dict_add(dict, qk, qv, error);
+	}
+	for (i = 0; i <= (__n + 1); i++)
+		hg_stack_drop(ostack, error);
+
+	HG_VM_UNLOCK (vm, qd);
+
+	STACK_PUSH (ostack, qd);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-__n, 0, 0);
 DEFUNC_OPER_END
 
 /* <initial> <increment> <limit> <proc> %for_yield_int_continue - */
@@ -4502,7 +4549,36 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (readonly);
+/* -array- readonly -array-
+ * -packedarray- readonly -packedarray-
+ * -dict- readonly -dict-
+ * -file- readonly -file-
+ * -string- readonly -string-
+ */
+DEFUNC_OPER (readonly)
+G_STMT_START {
+	hg_quark_t arg0;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QARRAY (arg0) &&
+	    !HG_IS_QDICT (arg0) &&
+	    !HG_IS_QFILE (arg0) &&
+	    !HG_IS_QSTRING (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	hg_quark_set_writable(&arg0, FALSE);
+	hg_stack_pop(ostack, error);
+
+	STACK_PUSH (ostack, arg0);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (realtime);
 DEFUNC_UNIMPLEMENTED_OPER (renamefile);
 DEFUNC_UNIMPLEMENTED_OPER (renderbands);
@@ -5048,6 +5124,9 @@ _hg_operator_level2_register(hg_dict_t *dict,
 			     hg_name_t *name)
 {
 	REG_VALUE (dict, name, <<, HG_QMARK);
+	REG_VALUE (dict, name, >>, HG_QEVALNAME (name, "%dicttomark"));
+
+	REG_PRIV_OPER (dict, name, %dicttomark, protected_dicttomark);
 
 	REG_OPER (dict, name, arct);
 	REG_OPER (dict, name, colorimage);
@@ -5215,6 +5294,7 @@ hg_operator_init(void)
 	DECL_PRIV_OPER (.write==only, private_write_eqeq_only);
 
 	DECL_PRIV_OPER (%arraytomark, protected_arraytomark);
+	DECL_PRIV_OPER (%dicttomark, protected_dicttomark);
 	DECL_PRIV_OPER (%for_yield_int_continue, protected_for_yield_int_continue);
 	DECL_PRIV_OPER (%for_yield_real_continue, protected_for_yield_real_continue);
 	DECL_PRIV_OPER (%forall_array_continue, protected_forall_array_continue);
@@ -5626,6 +5706,7 @@ hg_operator_tini(void)
 	UNDECL_OPER (private_undef);
 	UNDECL_OPER (private_write_eqeq_only);
 	UNDECL_OPER (protected_arraytomark);
+	UNDECL_OPER (protected_dicttomark);
 	UNDECL_OPER (protected_for_yield_int_continue);
 	UNDECL_OPER (protected_for_yield_real_continue);
 	UNDECL_OPER (protected_forall_array_continue);
