@@ -47,6 +47,7 @@ struct _hg_allocator_block_t {
 	volatile guint lock_count;
 	gint           age;
 	gboolean       is_restorable:1;
+	gboolean       drop_on_restore:1;
 };
 struct _hg_allocator_private_t {
 	hg_allocator_data_t    parent;

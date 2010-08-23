@@ -193,7 +193,7 @@ _hg_object_dict_node_get_capsulated_size(void)
 static guint
 _hg_object_dict_node_get_allocation_flags(void)
 {
-	return HG_MEM_FLAGS_DEFAULT;
+	return HG_MEM_FLAGS_DEFAULT | HG_MEM_DROP_ON_RESTORE;
 }
 
 static gboolean
@@ -208,15 +208,18 @@ _hg_object_dict_node_initialize(hg_object_t *object,
 	ret_val = va_arg(args, gpointer *);
 	ret_nodes = va_arg(args, gpointer *);
 
-	dnode->qkey = hg_mem_alloc(object->mem,
-				   sizeof (hg_quark_t) * __hg_dict_node_size * 2,
-				   (gpointer *)&keys);
-	dnode->qval = hg_mem_alloc(object->mem,
-				   sizeof (hg_quark_t) * __hg_dict_node_size * 2,
-				   (gpointer *)&vals);
-	dnode->qnodes = hg_mem_alloc(object->mem,
-				     sizeof (hg_quark_t) * __hg_dict_node_size * 2 + 1,
-				     (gpointer *)&nodes);
+	dnode->qkey = hg_mem_alloc_with_flags(object->mem,
+					      sizeof (hg_quark_t) * __hg_dict_node_size * 2,
+					      HG_MEM_FLAGS_DEFAULT | HG_MEM_DROP_ON_RESTORE,
+					      (gpointer *)&keys);
+	dnode->qval = hg_mem_alloc_with_flags(object->mem,
+					      sizeof (hg_quark_t) * __hg_dict_node_size * 2,
+					      HG_MEM_FLAGS_DEFAULT | HG_MEM_DROP_ON_RESTORE,
+					      (gpointer *)&vals);
+	dnode->qnodes = hg_mem_alloc_with_flags(object->mem,
+						sizeof (hg_quark_t) * __hg_dict_node_size * 2 + 1,
+						HG_MEM_FLAGS_DEFAULT | HG_MEM_DROP_ON_RESTORE,
+						(gpointer *)&nodes);
 	dnode->n_data = 0;
 	hg_return_val_after_eval_if_fail (dnode->qkey != Qnil &&
 					  dnode->qval != Qnil &&

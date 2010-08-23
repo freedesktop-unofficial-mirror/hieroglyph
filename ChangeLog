@@ -1,5 +1,12 @@
 2010-08-23  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgdict.c (_hg_object_dict_node_get_allocation_flags): add
+	a flag to drop the block on restore.
+	(_hg_object_dict_node_initialize): likewise.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_restore_snapshot): ignore
+	the block if it's marked as safely dropped.
+
 	* plugins/libedit/libedit-main.c (_libedit_get_line): implemented.
 	(_libedit_add_history): likewise.
 	(_libedit_load_history): likewise.

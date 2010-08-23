@@ -495,6 +495,7 @@ _hg_allocator_alloc(hg_allocator_data_t *data,
 		block->size = obj_size;
 		block->age = priv->snapshot_age;
 		block->is_restorable = flags & HG_MEM_RESTORABLE ? TRUE : FALSE;
+		block->drop_on_restore = flags & HG_MEM_DROP_ON_RESTORE ? TRUE: FALSE;
 		retval = index;
 		/* NOTE: No unlock yet here.
 		 *       any objects are supposed to be unlocked
@@ -908,10 +909,18 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t    *data,
 			aligned_size = hg_mem_aligned_to(b1->size, BLOCK_SIZE) / BLOCK_SIZE;
 			i += aligned_size - 1;
 		} else if (f1 && !f2) {
+			hg_allocator_block_t *b1;
+
+			b1 = _hg_allocator_get_internal_block(priv, i + 1, FALSE);
+			if (b1->drop_on_restore) {
+				aligned_size = hg_mem_aligned_to(b1->size, BLOCK_SIZE) / BLOCK_SIZE;
+				i += aligned_size - 1;
+			} else {
 #if defined (HG_DEBUG) && defined (HG_SNAPSHOT_DEBUG)
-			g_print("SN: detected newly allocated block at the index: %" G_GSIZE_FORMAT "\n", i + 1);
+				g_print("SN: detected newly allocated block at the index: %" G_GSIZE_FORMAT "\n", i + 1);
 #endif
-			goto error;
+				goto error;
+			}
 		} else if (!f1 && f2) {
 			hg_allocator_block_t *b2;
 			gsize j, check_size;
