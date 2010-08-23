@@ -267,7 +267,7 @@ _libedit_unload(hg_plugin_t  *plugin,
 		gpointer      vm_,
 		GError      **error)
 {
-	hg_vm_t *vm G_GNUC_UNUSED = vm_;
+	hg_vm_t *vm = vm_;
 
 	if (plugin->user_data == NULL) {
 		g_warning("plugin not loaded.");
