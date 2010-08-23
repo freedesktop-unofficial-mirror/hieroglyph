@@ -1,5 +1,8 @@
 2010-08-23  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgvm.c (hg_vm_stepi): do not copy an array if it doesn't
+	have an exec bit turned on.
+
 	* plugins/unittest/unittest-main.c (_plugin_real_private_validatetestresult):
 	implemented.
 

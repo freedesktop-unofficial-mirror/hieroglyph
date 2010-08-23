@@ -1956,11 +1956,15 @@ hg_vm_stepi(hg_vm_t  *vm,
 
 				    return TRUE;
 			    }
-			    q = hg_vm_quark_copy(vm, qresult, NULL, &err);
-			    if (err) {
-				    hg_vm_set_error(vm, qexecobj,
-						    HG_VM_e_VMerror);
-				    return TRUE;
+			    if (hg_quark_is_executable(qresult)) {
+				    q = hg_vm_quark_copy(vm, qresult, NULL, &err);
+				    if (err) {
+					    hg_vm_set_error(vm, qexecobj,
+							    HG_VM_e_VMerror);
+					    return TRUE;
+				    }
+			    } else {
+				    q = qresult;
 			    }
 			    if (!hg_stack_push(estack, q)) {
 				    hg_vm_set_error(vm, qexecobj,
