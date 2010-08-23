@@ -54,6 +54,7 @@ struct _hg_plugin_t {
 	hg_plugin_vtable_t *vtable;
 	GModule            *module;
 	gboolean            is_loaded;
+	gpointer            user_data;
 };
 struct _hg_plugin_info_t {
 	guint               version;

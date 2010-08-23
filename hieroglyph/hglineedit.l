@@ -35,15 +35,7 @@
 #define yyterminate()		{BEGIN(INITIAL);g_string_free(string, TRUE);return NULL;}
 #define YY_NO_INPUT
 #define YY_INPUT(_buf_,_result_,_max_size_)			\
-	G_STMT_START {						\
-		hg_lineedit_t *_scanner_ = yyextra;		\
-								\
-		_result_ = hg_file_read(_scanner_->infile,	\
-					(_buf_),		\
-					1,			\
-					1,			\
-					NULL);			\
-	} G_STMT_END
+	g_assert_not_reached()
 #define YY_EXTRA_TYPE		hg_lineedit_t *
 #define YY_USER_INIT		yyextra = scanner;
 #define ECHO			do { if (fwrite(yytext, yyleng, 1, yyout)){}; fflush(yyout); g_assert_not_reached();} while (0)
@@ -184,6 +176,9 @@ _hg_lineedit_real_get_line(hg_lineedit_t *lineedit,
 	gchar c;
 	GError *err = NULL;
 
+	hg_return_val_if_fail (lineedit->infile != NULL, NULL);
+	hg_return_val_if_fail (lineedit->outfile != NULL, NULL);
+
 	if (prompt) {
 		hg_file_write(lineedit->outfile, (gchar *)prompt,
 			      sizeof (gchar), strlen(prompt), &err);
@@ -281,8 +276,6 @@ hg_lineedit_new(hg_mem_t                   *mem,
 
 	hg_return_val_if_fail (mem != NULL, NULL);
 	hg_return_val_if_fail (vtable != NULL, NULL);
-	hg_return_val_if_fail (infile != NULL, NULL);
-	hg_return_val_if_fail (outfile != NULL, NULL);
 
 	q = hg_mem_alloc(mem, sizeof (hg_lineedit_t), (gpointer *)&retval);
 	if (q == Qnil)
@@ -376,9 +369,37 @@ hg_lineedit_get_statement(hg_lineedit_t *lineedit,
 			  const gchar   *prompt,
 			  gboolean       enable_history)
 {
-	gchar *retval;
+	GString *string = g_string_new(NULL);
+	gchar *ret, *retval;
+	YY_BUFFER_STATE yystate;
+	struct yyguts_t *yyg;
 
-	retval = _hg_lineedit_yylex(lineedit, lineedit->yyscanner);
+	while (1) {
+		ret = hg_lineedit_get_line(lineedit, prompt, FALSE);
+		if (ret == NULL)
+			return NULL;
+		g_string_append_printf(string, "%s\n", ret);
+		g_free(ret);
+		yyg = (struct yyguts_t *)lineedit->yyscanner;
+		if (YY_CURRENT_BUFFER) {
+			yy_delete_buffer(YY_CURRENT_BUFFER, lineedit->yyscanner);
+		}
+		yystate = yy_scan_bytes(string->str, string->len, lineedit->yyscanner);
+		yy_switch_to_buffer(yystate, lineedit->yyscanner);
+		retval = _hg_lineedit_yylex(lineedit, lineedit->yyscanner);
+		if (retval == NULL) {
+			/* obtaining more lines until no /syntaxerror raised */
+			continue;
+		} else {
+			if (enable_history) {
+				if (lineedit->vtable->add_history)
+					lineedit->vtable->add_history(lineedit,
+								      retval,
+								      lineedit->user_data);
+			}
+			break;
+		}
+	}
 
 	return retval;
 }

@@ -1,5 +1,16 @@
 2010-08-23  Akira TAGOH  <akira@tagoh.org>
 
+	* plugins/libedit/libedit-main.c (_libedit_get_line): implemented.
+	(_libedit_add_history): likewise.
+	(_libedit_load_history): likewise.
+	(_libedit_save_history): likewise.
+	(_libedit_load): likewise.
+	(_libedit_unload): likewise.
+
+	* hieroglyph/hglineedit.l (hg_lineedit_get_statement): read a line
+	through get_line instead of accessing infile and outfile directly.
+	this allows you to change the behaviour with the plugin easily.
+
 	* plugins/libedit/libedit-main.c: new.
 	(_plugin_private_loadhistory): implemented.
 	(_plugin_private_savehistory): implemented.

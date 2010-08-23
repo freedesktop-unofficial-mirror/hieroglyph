@@ -67,7 +67,7 @@ typedef enum {
 	HG_libedit_enc_savehistory,
 	HG_libedit_enc_END
 } hg_libedit_encoding_t;
-static hg_lineedit_vtable_t _libedit_lineedit_vtable_t G_GNUC_UNUSED = {
+static hg_lineedit_vtable_t __libedit_lineedit_vtable = {
 	.get_line = _libedit_get_line,
 	.add_history = _libedit_add_history,
 	.load_history = _libedit_load_history,
@@ -91,7 +91,14 @@ _libedit_get_line(hg_lineedit_t *lineedit,
 		  const gchar   *prompt,
 		  gpointer       user_data)
 {
-	return NULL;
+	gchar *retval;
+
+	if (prompt == NULL)
+		retval = readline("");
+	else
+		retval = readline(prompt);
+
+	return retval;
 }
 
 static void
@@ -99,6 +106,15 @@ _libedit_add_history(hg_lineedit_t *lineedit,
 		     const gchar   *history,
 		     gpointer       user_data)
 {
+	hg_return_if_fail (history != NULL);
+
+	if (history[0] == 0 ||
+	    history[0] == '\n' ||
+	    history[0] == '\r' ||
+	    (history[0] == '\r' && history[1] == '\n'))
+		return;
+
+	add_history(history);
 }
 
 static gboolean
@@ -106,7 +122,11 @@ _libedit_load_history(hg_lineedit_t *lineedit,
 		      const gchar   *historyfile,
 		      gpointer       user_data)
 {
-	return FALSE;
+	hg_return_val_if_fail (historyfile != NULL, FALSE);
+
+	read_history(historyfile);
+
+	return TRUE;
 }
 
 static gboolean
@@ -114,7 +134,11 @@ _libedit_save_history(hg_lineedit_t *lineedit,
 		      const gchar   *historyfile,
 		      gpointer       user_data)
 {
-	return FALSE;
+	hg_return_val_if_fail (historyfile != NULL, FALSE);
+
+	write_history(historyfile);
+
+	return TRUE;
 }
 
 /* -filename- .loadhistory - */
@@ -227,11 +251,21 @@ _libedit_load(hg_plugin_t  *plugin,
 	gboolean is_global;
 	gint i;
 
+	if (plugin->user_data != NULL) {
+		g_warning("plugin is already loaded.");
+		return TRUE;
+	}
+	plugin->user_data = vm->lineedit;
+
 	is_global = hg_vm_is_global_mem_used(vm);
 	dict = HG_VM_LOCK (vm, vm->qsystemdict, error);
 	if (dict == NULL)
 		return FALSE;
 	hg_vm_use_global_mem(vm, TRUE);
+
+	vm->lineedit = hg_lineedit_new(hg_vm_get_mem(vm),
+				       &__libedit_lineedit_vtable,
+				       NULL, NULL);
 
 	__libedit_enc_list[HG_libedit_enc_loadhistory] = REG_ENC (vm->name, .loadhistory, private_loadhistory);
 	__libedit_enc_list[HG_libedit_enc_savehistory] = REG_ENC (vm->name, .savehistory, private_savehistory);
@@ -253,6 +287,14 @@ _libedit_unload(hg_plugin_t  *plugin,
 		GError      **error)
 {
 	hg_vm_t *vm G_GNUC_UNUSED = vm_;
+
+	if (plugin->user_data == NULL) {
+		g_warning("plugin not loaded.");
+		return FALSE;
+	}
+	hg_lineedit_destroy(vm->lineedit);
+	vm->lineedit = plugin->user_data;
+	plugin->user_data = NULL;
 
 	return TRUE;
 }
