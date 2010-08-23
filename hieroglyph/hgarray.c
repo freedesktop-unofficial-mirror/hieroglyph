@@ -361,6 +361,7 @@ hg_array_free(hg_array_t *array)
  * @array:
  * @quark:
  * @index:
+ * @error:
  *
  * FIXME
  *
