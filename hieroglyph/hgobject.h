@@ -34,23 +34,27 @@ G_BEGIN_DECLS
 	HG_DEFINE_VTABLE_WITH_FREE(_name_, _hg_object_ ## _name_ ## _free)
 
 #define HG_DEFINE_VTABLE_WITH_FREE(_name_, _free_)			\
-	static gsize      _hg_object_ ## _name_ ## _get_capsulated_size (void); \
-	static guint      _hg_object_ ## _name_ ## _get_allocation_flags(void);	\
-	static gboolean   _hg_object_ ## _name_ ## _initialize          (hg_object_t              *object, \
-									 va_list                   args); \
-	static hg_quark_t _hg_object_ ## _name_ ## _copy                (hg_object_t              *object, \
-									 hg_quark_iterate_func_t   func, \
-									 gpointer                  user_data, \
-									 gpointer                 *ret, \
-									 GError                  **error); \
-	static gchar    * _hg_object_ ## _name_ ## _to_cstr             (hg_object_t              *object, \
-									 hg_quark_iterate_func_t   func, \
-									 gpointer                  user_data, \
-									 GError                  **error); \
-	static gboolean   _hg_object_ ## _name_ ## _gc_mark             (hg_object_t              *object, \
-									 hg_gc_iterate_func_t      func, \
-									 gpointer                  user_data, \
-									 GError                  **error); \
+	static gsize       _hg_object_ ## _name_ ## _get_capsulated_size (void); \
+	static guint       _hg_object_ ## _name_ ## _get_allocation_flags(void);	\
+	static gboolean    _hg_object_ ## _name_ ## _initialize          (hg_object_t              *object, \
+									  va_list                   args); \
+	static hg_quark_t  _hg_object_ ## _name_ ## _copy                (hg_object_t              *object, \
+									  hg_quark_iterate_func_t   func, \
+									  gpointer                  user_data, \
+									  gpointer                 *ret, \
+									  GError                  **error); \
+	static gchar      *_hg_object_ ## _name_ ## _to_cstr             (hg_object_t              *object, \
+									  hg_quark_iterate_func_t   func, \
+									  gpointer                  user_data, \
+									  GError                  **error); \
+	static gboolean    _hg_object_ ## _name_ ## _gc_mark             (hg_object_t              *object, \
+									  hg_gc_iterate_func_t      func, \
+									  gpointer                  user_data, \
+									  GError                  **error); \
+	static gboolean    _hg_object_ ## _name_ ## _compare             (hg_object_t              *o1,	\
+									  hg_object_t              *o2, \
+									  hg_quark_compare_func_t   func, \
+									  gpointer                  user_data); \
 									\
 	static hg_object_vtable_t __hg_object_ ## _name_ ## _vtable = {	\
 		.get_capsulated_size  = _hg_object_ ## _name_ ## _get_capsulated_size, \
@@ -60,6 +64,7 @@ G_BEGIN_DECLS
 		.copy                 = _hg_object_ ## _name_ ## _copy,	\
 		.to_cstr              = _hg_object_ ## _name_ ## _to_cstr, \
 		.gc_mark              = _hg_object_ ## _name_ ## _gc_mark, \
+		.compare              = _hg_object_ ## _name_ ## _compare, \
 	};								\
 									\
 	hg_object_vtable_t *						\
@@ -91,6 +96,10 @@ struct _hg_object_vtable_t {
 					     hg_gc_iterate_func_t      func,
 					     gpointer                  user_data,
 					     GError                  **error);
+	gboolean   (* compare)              (hg_object_t              *o1,
+					     hg_object_t              *o2,
+					     hg_quark_compare_func_t   func,
+					     gpointer                  user_data);
 };
 struct _hg_object_t {
 	hg_mem_t   *mem;
@@ -99,6 +108,7 @@ struct _hg_object_t {
 	hg_quark_t  on_copying;
 	gboolean    on_gc:1;
 	gboolean    on_to_cstr:1;
+	gboolean    on_compare:1;
 };
 
 
@@ -126,6 +136,10 @@ gboolean    hg_object_gc_mark (hg_object_t              *object,
 			       hg_gc_iterate_func_t      func,
 			       gpointer                  user_data,
 			       GError                  **error);
+gboolean    hg_object_compare (hg_object_t              *o1,
+			       hg_object_t              *o2,
+			       hg_quark_compare_func_t   func,
+			       gpointer                  user_data);
 
 G_END_DECLS
 

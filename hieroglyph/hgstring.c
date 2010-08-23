@@ -178,6 +178,15 @@ _hg_object_string_gc_mark(hg_object_t           *object,
 }
 
 static gboolean
+_hg_object_string_compare(hg_object_t             *o1,
+			  hg_object_t             *o2,
+			  hg_quark_compare_func_t  func,
+			  gpointer                 user_data)
+{
+	return hg_string_compare((hg_string_t *)o1, (hg_string_t *)o2);
+}
+
+static gboolean
 _hg_string_maybe_expand(hg_string_t *string)
 {
 	if (string->is_fixed_size ||

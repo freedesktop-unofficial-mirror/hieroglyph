@@ -154,6 +154,9 @@ hg_quark_t         hg_vm_quark_to_string       (hg_vm_t            *vm,
 gboolean           hg_vm_quark_compare         (hg_vm_t            *vm,
 						hg_quark_t          qdata1,
 						hg_quark_t          qdata2);
+gboolean           hg_vm_quark_compare_content (hg_vm_t            *vm,
+						hg_quark_t          qdata1,
+						hg_quark_t          qdata2);
 void               hg_vm_quark_set_attributes  (hg_vm_t            *vm,
 						hg_quark_t         *qdata);
 void               hg_vm_set_default_attributes(hg_vm_t            *vm,

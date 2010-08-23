@@ -319,3 +319,53 @@ hg_object_gc_mark(hg_object_t           *object,
 
 	return retval;
 }
+
+/**
+ * hg_object_compare:
+ * @o1:
+ * @o2:
+ * @func:
+ * @user_data:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_object_compare(hg_object_t             *o1,
+		  hg_object_t             *o2,
+		  hg_quark_compare_func_t  func,
+		  gpointer                 user_data)
+{
+	hg_object_vtable_t *v;
+	gboolean retval = FALSE;
+
+	hg_return_val_if_fail (__hg_object_is_initialized, FALSE);
+	hg_return_val_if_fail (o1 != NULL, FALSE);
+	hg_return_val_if_fail (o1->type < HG_TYPE_END, FALSE);
+	hg_return_val_if_fail (o2 != NULL, FALSE);
+	hg_return_val_if_fail (o2->type < HG_TYPE_END, FALSE);
+	hg_return_val_if_fail (__hg_object_vtables[o1->type] != NULL, FALSE);
+	hg_return_val_if_fail (func != NULL, FALSE);
+
+	if (o1->type != o2->type)
+		return FALSE;
+
+	if (o1->on_compare != o2->on_compare)
+		return FALSE;
+
+	if (o1->on_compare)
+		return TRUE;
+
+	o1->on_compare = TRUE;
+	o2->on_compare = TRUE;
+
+	v = __hg_object_vtables[o1->type];
+
+	retval = v->compare(o1, o2, func, user_data);
+
+	o1->on_compare = FALSE;
+	o2->on_compare = FALSE;
+
+	return retval;
+}

@@ -352,6 +352,15 @@ _hg_object_file_gc_mark(hg_object_t           *object,
 }
 
 static gboolean
+_hg_object_file_compare(hg_object_t             *o1,
+			hg_object_t             *o2,
+			hg_quark_compare_func_t  func,
+			gpointer                 user_data)
+{
+	return o1->self == o2->self;
+}
+
+static gboolean
 _hg_file_io_data_gc_mark(hg_quark_t   qdata,
 			 gpointer     user_data,
 			 GError     **error)

@@ -114,6 +114,15 @@ _hg_object_stack_gc_mark(hg_object_t           *object,
 	return retval;
 }
 
+static gboolean
+_hg_object_stack_compare(hg_object_t             *o1,
+			 hg_object_t             *o2,
+			 hg_quark_compare_func_t  func,
+			 gpointer                 user_data)
+{
+	return o1->self == o2->self;
+}
+
 static hg_list_t *
 _hg_list_new(hg_mem_t *mem)
 {

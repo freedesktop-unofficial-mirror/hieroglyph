@@ -38,6 +38,12 @@ typedef struct _hg_dict_item_t {
 	hg_quark_t qkey;
 	hg_quark_t qval;
 } hg_dict_item_t;
+typedef struct _hg_dict_compare_data_t {
+	hg_dict_t               *opposite_dict;
+	hg_quark_compare_func_t  func;
+	gpointer                 user_data;
+	gboolean                 result;
+} hg_dict_compare_data_t;
 
 G_INLINE_FUNC hg_quark_t _hg_dict_node_new                  (hg_mem_t                 *mem,
 							     gpointer                 *ret,
@@ -182,6 +188,54 @@ _hg_object_dict_gc_mark(hg_object_t           *object,
 	retval = func(dict->qroot, user_data, error);
 
 	return retval;
+}
+
+static gboolean
+_hg_dict_traverse_compare(hg_mem_t    *mem,
+			  hg_quark_t   qkey,
+			  hg_quark_t   qval,
+			  gpointer     data,
+			  GError     **error)
+{
+	hg_dict_compare_data_t *cdata = data;
+	hg_quark_t q;
+
+	if ((q = hg_dict_lookup(cdata->opposite_dict, qkey, NULL)) == Qnil) {
+		cdata->result = FALSE;
+
+		return FALSE;
+	}
+	if (!cdata->func(qval, q, cdata->user_data)) {
+		cdata->result = FALSE;
+
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
+_hg_object_dict_compare(hg_object_t             *o1,
+			hg_object_t             *o2,
+			hg_quark_compare_func_t  func,
+			gpointer                 user_data)
+{
+	hg_dict_compare_data_t data;
+
+	hg_return_val_if_fail (o1->type == HG_TYPE_DICT, FALSE);
+	hg_return_val_if_fail (o2->type == HG_TYPE_DICT, FALSE);
+
+	if (hg_dict_length((hg_dict_t *)o1) != hg_dict_length((hg_dict_t *)o2))
+		return FALSE;
+
+	data.opposite_dict = (hg_dict_t *)o2;
+	data.func = func;
+	data.user_data = user_data;
+	data.result = TRUE;
+
+	hg_dict_foreach((hg_dict_t *)o1, _hg_dict_traverse_compare, &data, NULL);
+
+	return data.result;
 }
 
 static gsize
@@ -353,6 +407,16 @@ _hg_object_dict_node_gc_mark(hg_object_t           *object,
 	}
 
 	return retval;
+}
+
+static gboolean
+_hg_object_dict_node_compare(hg_object_t             *o1,
+			     hg_object_t             *o2,
+			     hg_quark_compare_func_t  func,
+			     gpointer                 user_data)
+{
+	/* shouldn't be reached */
+	return FALSE;
 }
 
 G_INLINE_FUNC hg_quark_t

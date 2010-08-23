@@ -520,6 +520,15 @@ _hg_vm_quark_iterate_to_cstr(hg_quark_t   qdata,
 }
 
 static gboolean
+_hg_vm_quark_iterate_compare(hg_quark_t q1,
+			     hg_quark_t q2,
+			     gpointer   user_data)
+{
+	return hg_vm_quark_compare_content((hg_vm_t *)user_data,
+					   q1, q2);
+}
+
+static gboolean
 _hg_vm_quark_complex_compare(hg_quark_t q1,
 			     hg_quark_t q2,
 			     gpointer   user_data)
@@ -557,6 +566,26 @@ _hg_vm_quark_complex_compare(hg_quark_t q1,
 		    g_warn_if_reached();
 		    break;
 	}
+
+	return retval;
+}
+
+static gboolean
+_hg_vm_quark_complex_compare_content(hg_quark_t q1,
+				     hg_quark_t q2,
+				     gpointer   user_data)
+{
+	hg_vm_t *vm = (hg_vm_t *)user_data;
+	gboolean retval;
+	hg_object_t *o1, *o2;
+
+	o1 = _HG_VM_LOCK (vm, q1, NULL);
+	o2 = _HG_VM_LOCK (vm, q2, NULL);
+
+	retval = hg_object_compare(o1, o2, _hg_vm_quark_iterate_compare, vm);
+
+	_HG_VM_UNLOCK (vm, q1);
+	_HG_VM_UNLOCK (vm, q2);
 
 	return retval;
 }
@@ -1239,6 +1268,24 @@ hg_vm_quark_compare(hg_vm_t    *vm,
 		    hg_quark_t  qdata2)
 {
 	return hg_quark_compare(qdata1, qdata2, _hg_vm_quark_complex_compare, vm);
+}
+
+/**
+ * hg_vm_quark_compare_content:
+ * @vm:
+ * @qdata1:
+ * @qdata2:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_vm_quark_compare_content(hg_vm_t    *vm,
+			    hg_quark_t  qdata1,
+			    hg_quark_t  qdata2)
+{
+	return hg_quark_compare(qdata1, qdata2, _hg_vm_quark_complex_compare_content, vm);
 }
 
 /**

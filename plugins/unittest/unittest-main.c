@@ -26,7 +26,9 @@
 #endif
 
 #define PLUGIN
+#include "hgbool.h"
 #include "hgdict.h"
+#include "hgint.h"
 #include "hgplugin.h"
 #include "hgoperator.h"
 #include "hgvm.h"
@@ -43,6 +45,135 @@ static hg_quark_t __unittest_enc_list[HG_unittest_enc_END];
 /*< private >*/
 DEFUNC_OPER (private_validatetestresult)
 G_STMT_START {
+	hg_quark_t arg0, qverbose, qattrs, qexp, qaerror, qeerror, q;
+	hg_quark_t qastack, qestack;
+	hg_string_t *sexp;
+	hg_dict_t *d;
+	gboolean verbose = FALSE, result = TRUE;
+	gint32 attrs = 0;
+	gchar *cexp;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QDICT (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!hg_quark_is_readable(arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+	d = HG_VM_LOCK (vm, arg0, error);
+	if (d == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	qverbose = hg_dict_lookup(d, HG_QNAME (vm->name, "verbose"), error);
+	if (qverbose != Qnil && HG_IS_QBOOL (qverbose)) {
+		verbose = HG_BOOL (qverbose);
+	}
+	qattrs = hg_dict_lookup(d, HG_QNAME (vm->name, "attrsmask"), error);
+	if (qattrs != Qnil && HG_IS_QINT (qattrs)) {
+		attrs = HG_INT (qattrs);
+	}
+
+	qexp = hg_dict_lookup(d, HG_QNAME (vm->name, "expression"), error);
+	q = hg_vm_quark_to_string(vm, qexp, TRUE, (gpointer *)&sexp, error);
+	if (q == Qnil) {
+		cexp = g_strdup("--%unknown--");
+	} else {
+		cexp = hg_string_get_cstr(sexp);
+	}
+	hg_string_free(sexp, TRUE);
+
+	qaerror = hg_dict_lookup(d, HG_QNAME (vm->name, "actualerror"), error);
+	qeerror = hg_dict_lookup(d, HG_QNAME (vm->name, "expectederror"), error);
+	if (qaerror == Qnil || qeerror == Qnil) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		goto error;
+	} else if (!hg_vm_quark_compare(vm, qaerror, qeerror)) {
+		if (verbose) {
+			hg_quark_t qa, qe, qf;
+			hg_string_t *sa, *se;
+			hg_file_t *f;
+			gchar *csa, *cse;
+
+			qa = hg_vm_quark_to_string(vm, qaerror, TRUE, (gpointer *)&sa, error);
+			if (qa == Qnil) {
+				csa = g_strdup("--%unknown--");
+			} else {
+				csa = hg_string_get_cstr(sa);
+			}
+			hg_string_free(sa, TRUE);
+			qe = hg_vm_quark_to_string(vm, qeerror, TRUE, (gpointer *)&se, error);
+			if (qe == Qnil) {
+				cse = g_strdup("--%unknown--");
+			} else {
+				cse = hg_string_get_cstr(se);
+			}
+			hg_string_free(se, TRUE);
+
+			qf = hg_vm_get_io(vm, HG_FILE_IO_STDERR);
+			f = HG_VM_LOCK (vm, qf, error);
+			hg_file_append_printf(f, "Expression: %s - expected error is %s, but actual error was %s\n",
+					      cexp, cse, csa);
+			HG_VM_UNLOCK (vm, qf);
+			g_free(csa);
+			g_free(cse);
+		}
+		result = FALSE;
+	}
+
+	qastack = hg_dict_lookup(d, HG_QNAME (vm->name, "actualostack"), error);
+	qestack = hg_dict_lookup(d, HG_QNAME (vm->name, "expectedostack"), error);
+	if (qastack == Qnil || qestack == Qnil ||
+	    !HG_IS_QARRAY (qastack) ||
+	    !HG_IS_QARRAY (qestack)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		goto error;
+	} else {
+		hg_string_t *sa, *se;
+		hg_quark_t qa, qe, qf;
+		gchar *csa, *cse;
+		hg_file_t *f;
+
+		qa = hg_vm_quark_to_string(vm, qastack, TRUE, (gpointer *)&sa, error);
+		if (qa == Qnil) {
+			csa = g_strdup("--%unknown--");
+		} else {
+			csa = hg_string_get_cstr(sa);
+		}
+		hg_string_free(sa, TRUE);
+		qe = hg_vm_quark_to_string(vm, qestack, TRUE, (gpointer *)&se, error);
+		if (qe == Qnil) {
+			cse = g_strdup("--%unknown--");
+		} else {
+			cse = hg_string_get_cstr(se);
+		}
+		hg_string_free(se, TRUE);
+
+		if (!hg_vm_quark_compare_content(vm, qastack, qestack)) {
+			if (verbose) {
+				qf = hg_vm_get_io(vm, HG_FILE_IO_STDERR);
+				f = HG_VM_LOCK (vm, qf, error);
+				hg_file_append_printf(f, "Expression: %s - expected ostack is %s, but actual ostack was %s\n",
+						      cexp, cse, csa);
+			}
+			result = FALSE;
+		}
+		retval = TRUE;
+
+		g_free(cse);
+		g_free(csa);
+	}
+
+  error:
+	g_free(cexp);
+	HG_VM_UNLOCK (vm, arg0);
+
+	hg_stack_drop(ostack, error);
+	STACK_PUSH (ostack, HG_QBOOL (result && retval));
 } G_STMT_END;
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
@@ -96,12 +227,12 @@ _unittest_load(hg_plugin_t  *plugin,
 		REG_OPER (dict, __unittest_enc_list[i]);
 	}
 
+	hg_vm_use_global_mem(vm, is_global);
+
 	estack = hg_vm_stack_new(vm, 256);
 	retval = hg_vm_eval_from_cstring(vm, "{(hg_unittest.ps) runlibfile} stopped {(** Unable to initialize the unittest extension plugin\n) =} if",
 					 NULL, estack, NULL, error);
 	hg_stack_free(estack);
-
-	hg_vm_use_global_mem(vm, is_global);
 
 	return retval;
 }

@@ -1,5 +1,24 @@
 2010-08-23  Akira TAGOH  <akira@tagoh.org>
 
+	* plugins/unittest/unittest-main.c (_plugin_real_private_validatetestresult):
+	implemented.
+
+	* hieroglyph/hgvm.c (hg_vm_quark_compare_content): new.
+
+	* hieroglyph/hgstring.c (_hg_object_string_compare): new.
+
+	* hieroglyph/hgstack.c (_hg_object_stack_compare): new.
+
+	* hieroglyph/hgsnapshot.c (_hg_object_snapshot_compare): new.
+
+	* hieroglyph/hgobject.c (hg_object_compare): new.
+
+	* hieroglyph/hgfile.c (_hg_object_file_compare): new.
+
+	* hieroglyph/hgdict.c (_hg_object_dict_compare): new.
+
+	* hieroglyph/hgarray.c (_hg_object_array_compare): new.
+
 	* plugins/unittest: add a unittest plugin.
 
 	* lib/hg_init.ps (runlibfile): fix /stackunderflow.

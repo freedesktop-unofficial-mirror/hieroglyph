@@ -249,6 +249,37 @@ _hg_object_array_gc_mark(hg_object_t           *object,
 }
 
 static gboolean
+_hg_object_array_compare(hg_object_t             *o1,
+			 hg_object_t             *o2,
+			 hg_quark_compare_func_t  func,
+			 gpointer                 user_data)
+{
+	gsize i;
+	gboolean retval = TRUE;
+	gsize len;
+	hg_array_t *a1 = (hg_array_t *)o1, *a2 = (hg_array_t *)o2;
+
+	hg_return_val_if_fail (o1 != NULL, FALSE);
+	hg_return_val_if_fail (o2 != NULL, FALSE);
+	hg_return_val_if_fail (func != NULL, FALSE);
+
+	len = hg_array_length(a1);
+	if (len != hg_array_length(a2))
+		return FALSE;
+
+	for (i = 0; i < len; i++) {
+		hg_quark_t q1, q2;
+
+		q1 = hg_array_get(a1, i, NULL);
+		q2 = hg_array_get(a2, i, NULL);
+		if ((retval = func(q1, q2, user_data)) == FALSE)
+			break;
+	}
+
+	return retval;
+}
+
+static gboolean
 _hg_array_maybe_expand(hg_array_t *array)
 {
 	if (array->is_fixed_size ||
@@ -392,6 +423,7 @@ hg_array_set(hg_array_t  *array,
  * hg_array_get:
  * @array:
  * @index:
+ * @error:
  *
  * FIXME
  *

@@ -102,6 +102,18 @@ _hg_object_snapshot_gc_mark(hg_object_t           *object,
 	return TRUE;
 }
 
+static gboolean
+_hg_object_snapshot_compare(hg_object_t             *o1,
+			    hg_object_t             *o2,
+			    hg_quark_compare_func_t  func,
+			    gpointer                 user_data)
+{
+	hg_return_val_if_fail (o1->type == HG_TYPE_SNAPSHOT, FALSE);
+	hg_return_val_if_fail (o2->type == HG_TYPE_SNAPSHOT, FALSE);
+
+	return o1->self == o2->self;
+}
+
 /*< public >*/
 /**
  * hg_snapshot_new:
