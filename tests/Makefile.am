@@ -1,6 +1,8 @@
 ##
 # Global definitions
 NULL =
+SUBDIRS = ps
+
 INCLUDES =						\
 	$(GLIB_CFLAGS)					\
 	$(CHECK_CFLAGS)					\

@@ -1,5 +1,7 @@
 2010-08-23  Akira TAGOH  <akira@tagoh.org>
 
+	* tests/ps/test-0base.ps: add a testcase.
+
 	* hieroglyph/hgvm.c (hg_vm_stepi): do not copy an array if it doesn't
 	have an exec bit turned on.
 

@@ -194,6 +194,7 @@ AC_CONFIG_FILES([
 	src/Makefile
 	src/hgs/Makefile
 	tests/Makefile
+	tests/ps/Makefile
 ])
 AC_OUTPUT
 
