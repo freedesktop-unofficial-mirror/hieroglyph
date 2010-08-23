@@ -1,5 +1,11 @@
 2010-08-23  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgscanner.l: use the clean exp10 array if the numeric
+	is certainly in the range of the integer.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_add): check the overflow
+	and the underflow and convert to the real if it does.
+
 	* tests/ps/test-0base.ps: add a testcase.
 
 	* hieroglyph/hgvm.c (hg_vm_stepi): do not copy an array if it doesn't

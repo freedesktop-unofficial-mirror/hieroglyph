@@ -398,6 +398,18 @@ HEXDIGITS	[0-9a-fA-F]
 		gsize i, pos = 0;
 		gdouble result = 0.0L, f;
 		gint sign = 0;
+		gdouble exp10i[] = {
+			1L,
+			10L,
+			100L,
+			1000L,
+			10000L,
+			100000L,
+			1000000L,
+			10000000L,
+			100000000L,
+			1000000000L
+		};
 
 		if (yytext[0] == '+' ||
 		    yytext[0] == '-') {
@@ -405,8 +417,12 @@ HEXDIGITS	[0-9a-fA-F]
 			pos++;
 		}
 		for (i = pos; i < yyleng; i++) {
-			f = yytext[i] - '0';
-			result += f * exp10((gdouble)(yyleng - i - 1));
+			f = (gdouble)(long)(yytext[i] - '0');
+			if ((yyleng - i - 1) < 10) {
+				result += f * exp10i[(yyleng - i - 1)];
+			} else {
+				result += f * exp10((gdouble)(yyleng - i - 1));
+			}
 		}
 		if (sign < 0)
 			result = -result;
@@ -416,8 +432,8 @@ HEXDIGITS	[0-9a-fA-F]
 				    "digit isn't a valid or too big.");
 			yyterminate();
 		}
-		if (result <= G_MAXINT32 &&
-		    result >= G_MININT32) {
+		if ((HG_REAL_EQUAL (result, G_MAXINT32) || result < G_MAXINT32) &&
+		    (HG_REAL_EQUAL (result, G_MININT32) || result > G_MININT32)) {
 			scanner->result = HG_QINT ((gint32)result);
 		} else {
 			scanner->result = HG_QREAL ((gfloat)result);

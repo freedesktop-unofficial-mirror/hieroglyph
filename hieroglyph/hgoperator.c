@@ -1341,7 +1341,7 @@ DEFUNC_UNIMPLEMENTED_OPER (abs);
 DEFUNC_OPER (add)
 G_STMT_START {
 	hg_quark_t arg0, arg1, q;
-	gdouble d1, d2;
+	gdouble d1, d2, dr;
 	gboolean is_int = TRUE;
 
 	CHECK_STACK (ostack, 2);
@@ -1367,10 +1367,13 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	if (is_int) {
-		q = HG_QINT ((gint32)(d1 + d2));
+	dr = d1 + d2;
+	if (is_int &&
+	    (HG_REAL_EQUAL (dr, G_MAXINT32) || dr < G_MAXINT32) &&
+	    (HG_REAL_EQUAL (dr, G_MININT32) || dr > G_MININT32)) {
+		q = HG_QINT ((gint32)dr);
 	} else {
-		q = HG_QREAL (d1 + d2);
+		q = HG_QREAL (dr);
 	}
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
