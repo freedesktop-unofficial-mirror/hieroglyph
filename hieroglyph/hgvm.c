@@ -2328,7 +2328,13 @@ hg_vm_eval_from_cstring(hg_vm_t      *vm,
 	hg_quark_set_executable(&qstring, TRUE);
 	retval = hg_vm_eval(vm, qstring, ostack, estack, dstack, &err);
 
-	hg_vm_mfree(vm, qstring);
+	/* Don't free the string here.
+	 * this causes a segfault in the file object
+	 * since the file object requires running the finalizer
+	 * for closing a file and it still keeps this reference.
+	 *
+	 * hg_vm_mfree(vm, qstring);
+	 */
   error:
 	if (err) {
 		if (error) {
