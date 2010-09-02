@@ -1369,8 +1369,8 @@ G_STMT_START {
 
 	dr = d1 + d2;
 	if (is_int &&
-	    (HG_REAL_EQUAL (dr, G_MAXINT32) || dr < G_MAXINT32) &&
-	    (HG_REAL_EQUAL (dr, G_MININT32) || dr > G_MININT32)) {
+	    HG_REAL_LE (dr, G_MAXINT32) &&
+	    HG_REAL_GE (dr, G_MININT32)) {
 		q = HG_QINT ((gint32)dr);
 	} else {
 		q = HG_QREAL (dr);
@@ -2642,7 +2642,7 @@ G_STMT_START {
 		else
 			d2 = HG_INT (arg1);
 
-		q = HG_QBOOL (HG_REAL_EQUAL (d1, d2) || d1 > d2);
+		q = HG_QBOOL (HG_REAL_GE (d1, d2));
 	} else if (HG_IS_QSTRING (arg0) &&
 		   HG_IS_QSTRING (arg1)) {
 		hg_string_t *s1, *s2;
@@ -3155,7 +3155,7 @@ G_STMT_START {
 		else
 			d2 = HG_INT (arg1);
 
-		q = HG_QBOOL (HG_REAL_EQUAL (d1, d2) || d1 < d2);
+		q = HG_QBOOL (HG_REAL_LE (d1, d2));
 	} else if (HG_IS_QSTRING (arg0) &&
 		   HG_IS_QSTRING (arg1)) {
 		hg_string_t *s1, *s2;

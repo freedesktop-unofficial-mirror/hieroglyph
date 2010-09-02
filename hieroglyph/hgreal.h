@@ -49,6 +49,10 @@ struct _hg_bs_real_t {
 	(fabsf((_f1_) - (_f2_)) <= FLT_EPSILON)
 #define HG_REAL_IS_ZERO(_f_)			\
 	(fabsf((_f_)) <= FLT_EPSILON)
+#define HG_REAL_GE(_f1_,_f2_)				\
+	(HG_REAL_EQUAL (_f1_,_f2_) || _f1_ > _f2_)
+#define HG_REAL_LE(_f1_,_f2_)				\
+	(HG_REAL_EQUAL (_f1_,_f2_) || _f1_ < _f2_)
 
 G_INLINE_FUNC hg_quark_t hg_real_convert_from_native(gfloat     vfloat);
 G_INLINE_FUNC gfloat     hg_real_convert_to_native  (hg_quark_t qreal);

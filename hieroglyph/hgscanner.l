@@ -432,8 +432,8 @@ HEXDIGITS	[0-9a-fA-F]
 				    "digit isn't a valid or too big.");
 			yyterminate();
 		}
-		if ((HG_REAL_EQUAL (result, G_MAXINT32) || result < G_MAXINT32) &&
-		    (HG_REAL_EQUAL (result, G_MININT32) || result > G_MININT32)) {
+		if (HG_REAL_LE (result, G_MAXINT32) &&
+		    HG_REAL_GE (result, G_MININT32)) {
 			scanner->result = HG_QINT ((gint32)result);
 		} else {
 			scanner->result = HG_QREAL ((gfloat)result);

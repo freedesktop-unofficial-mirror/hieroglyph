@@ -1,3 +1,8 @@
+2010-09-02  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgreal.h (HG_REAL_GE): new.
+	(HG_REAL_LE): new
+
 2010-08-29  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgvm.c (hg_vm_eval_from_cstring): don't free the string
