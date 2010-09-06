@@ -1335,7 +1335,28 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (1, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (abs);
+/* <num1> abs <num2> */
+DEFUNC_OPER (abs)
+G_STMT_START {
+	hg_quark_t arg0, q;
+
+	CHECK_STACK (ostack, 1);
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (HG_IS_QINT (arg0)) {
+		q = HG_QINT (abs(HG_INT (arg0)));
+	} else if (HG_IS_QREAL (arg0)) {
+		q = HG_QREAL (fabs(HG_REAL (arg0)));
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	hg_stack_drop(ostack, error);
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
 
 /* <num1> <num2> add <sum> */
 DEFUNC_OPER (add)
