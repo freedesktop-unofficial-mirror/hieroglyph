@@ -82,6 +82,7 @@ PROTO_OPER (arcto);
 PROTO_OPER (array);
 PROTO_OPER (ashow);
 PROTO_OPER (astore);
+PROTO_OPER (atan);
 PROTO_OPER (awidthshow);
 PROTO_OPER (begin);
 PROTO_OPER (bind);
@@ -278,7 +279,6 @@ PROTO_OPER (ISOLatin1Encoding);
 PROTO_OPER (StandardEncoding);
 PROTO_OPER (sym_left_square_bracket);
 PROTO_OPER (sym_right_square_bracket);
-PROTO_OPER (atan);
 PROTO_OPER (banddevice);
 PROTO_OPER (bytesavailable);
 PROTO_OPER (cachestatus);
@@ -1583,6 +1583,50 @@ G_STMT_START {
 	HG_VM_UNLOCK (vm, arg0);
 } G_STMT_END;
 VALIDATE_STACK_SIZE (-__n, 0, 0);
+DEFUNC_OPER_END
+
+/* <num> <den> atan <angle> */
+DEFUNC_OPER (atan)
+G_STMT_START {
+	hg_quark_t arg0, arg1, q;
+	double num, den, angle;
+
+	CHECK_STACK (ostack, 2);
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+	if (HG_IS_QINT (arg0)) {
+		num = HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg0)) {
+		num = HG_REAL (arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (HG_IS_QINT (arg1)) {
+		den = HG_INT (arg1);
+	} else if (HG_IS_QREAL (arg1)) {
+		den = HG_REAL (arg1);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (HG_REAL_IS_ZERO (num) && HG_REAL_IS_ZERO (den)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_undefinedresult);
+		return FALSE;
+	}
+	angle = atan2(num, den) / (2 * M_PI / 360);
+	if (angle < 0)
+		angle = 360.0 + angle;
+	q = HG_QREAL (angle);
+
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (awidthshow);
@@ -4349,7 +4393,6 @@ DEFUNC_UNIMPLEMENTED_OPER (ISOLatin1Encoding);
 DEFUNC_UNIMPLEMENTED_OPER (StandardEncoding);
 DEFUNC_UNIMPLEMENTED_OPER (sym_left_square_bracket);
 DEFUNC_UNIMPLEMENTED_OPER (sym_right_square_bracket);
-DEFUNC_UNIMPLEMENTED_OPER (atan);
 DEFUNC_UNIMPLEMENTED_OPER (banddevice);
 DEFUNC_UNIMPLEMENTED_OPER (bytesavailable);
 DEFUNC_UNIMPLEMENTED_OPER (cachestatus);
