@@ -1449,7 +1449,38 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (__n, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (and);
+/* <bool1> <bool2> and <bool3>
+ * <int1> <int2> and <int3>
+ */
+DEFUNC_OPER (and)
+G_STMT_START {
+	hg_quark_t arg0, arg1, q;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+	if (HG_IS_QBOOL (arg0) &&
+	    HG_IS_QBOOL (arg1)) {
+		q = HG_QBOOL (HG_BOOL (arg0) & HG_BOOL (arg1));
+	} else if (HG_IS_QINT (arg0) &&
+		   HG_IS_QINT (arg1)) {
+		q = HG_QINT (HG_INT (arg0) & HG_INT (arg1));
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (arc);
 DEFUNC_UNIMPLEMENTED_OPER (arcn);
 DEFUNC_UNIMPLEMENTED_OPER (arct);

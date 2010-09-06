@@ -1,6 +1,7 @@
 2010-09-07  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_abs): implemented.
+	(_hg_operator_real_and): implemented.
 
 2010-09-02  Akira TAGOH  <akira@tagoh.org>
 
