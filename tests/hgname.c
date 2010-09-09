@@ -71,7 +71,7 @@ TDEF (hg_name_new_with_encoding)
 
 #define TT(_n_)								\
 	q = hg_name_new_with_encoding(name, HG_enc_ ## _n_);		\
-	fail_unless(q == (0x300000000 | HG_enc_ ## _n_), "Unexpected result to create a quark for a name: expect: %" G_GSIZE_FORMAT ", actual: %" G_GSIZE_FORMAT, (0x300000000 | HG_enc_ ## _n_), q); \
+	fail_unless(q == (0x2300000000 | HG_enc_ ## _n_), "Unexpected result to create a quark for a name: expect: %" G_GSIZE_FORMAT ", actual: %" G_GSIZE_FORMAT, (0x300000000 | HG_enc_ ## _n_), q); \
 	p = hg_name_lookup(name, q);					\
 	fail_unless(strcmp(p, #_n_) == 0, "Unexpected result to look up the name for %s", #_n_);
 
@@ -588,7 +588,7 @@ TDEF (hg_name_new_with_string)
 
 #define TT(_n_)								\
 	q = hg_name_new_with_string(name, # _n_, -1);			\
-	fail_unless(q == (0x300000000 | HG_enc_ ## _n_), "Unexpected result to create a quark for the string %s: expect: %" G_GSIZE_FORMAT ", actual: %" G_GSIZE_FORMAT, #_n_, (0x300000000 | HG_enc_ ## _n_), q); \
+	fail_unless(q == (0x2300000000 | HG_enc_ ## _n_), "Unexpected result to create a quark for the string %s: expect: %" G_GSIZE_FORMAT ", actual: %" G_GSIZE_FORMAT, #_n_, (0x2300000000 | HG_enc_ ## _n_), q); \
 	p = hg_name_lookup(name, q);					\
 	fail_unless(strcmp(p, #_n_) == 0, "Unexpected result to look up the name for %s", #_n_);
 

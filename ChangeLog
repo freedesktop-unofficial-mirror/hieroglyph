@@ -1,3 +1,23 @@
+2010-09-10  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgvm.c (hg_vm_get_io): set correct permissions.
+	(hg_vm_setup): likewise.
+
+	* hieroglyph/hgquark.h (hg_quark_new): set permissions.
+	(hg_quark_set_executable): ignore Qnil
+	(hg_quark_set_readable): likewise.
+	(hg_quark_set_writable): likewise.
+	(hg_quark_set_access_bits): likewise.
+	(hg_quark_set_mem_id): likewise.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_private_forceput):
+	do not check the writable permission.
+	(_hg_operator_real_bind): make the procedure in Array a read-only.
+	(_hg_operator_real_copy): copy the permissions too.
+	(_hg_operator_real_getinterval): likewise.
+	(_hg_operator_real_dictstack): likewise.
+	(_hg_operator_real_execstack): likewise.
+
 2010-09-07  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_abs): implemented.

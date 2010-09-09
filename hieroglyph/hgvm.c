@@ -350,9 +350,12 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 				    } else {
 					    gchar *cstr = hg_string_get_cstr(s);
 
-					    g_print("I(%d): scanning... %s [%s]\n",
+					    g_print("I(%d): scanning... %s [%s:%c%c%c]\n",
 						    vm->n_nest_scan, cstr,
-						    hg_quark_get_type_name(qresult));
+						    hg_quark_get_type_name(qresult),
+						    hg_quark_is_readable(qresult) ? 'r' : '-',
+						    hg_quark_is_writable(qresult) ? 'w' : '-',
+						    hg_quark_is_executable(qresult) ? 'x' : '-');
 					    g_free(cstr);
 					    /* this is an instant object.
 					     * surely no reference to the container.
@@ -369,6 +372,37 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 					    qresult = hg_vm_step_in_exec_array(vm, qparent);
 					    if (qresult == Qnil)
 						    return FALSE;
+#if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
+					    G_STMT_START {
+						    hg_quark_t qs;
+						    hg_string_t *s;
+
+						    qs = hg_vm_quark_to_string(vm, qresult, TRUE, (gpointer *)&s, &err);
+						    if (qs == Qnil) {
+							    if (err) {
+								    g_print("WW: Unable to look up the scanned object: %lx: %s\n", qresult, err->message);
+								    g_clear_error(&err);
+							    } else {
+								    g_print("WW: Unable to look up the scanned object: %lx\n", qresult);
+							    }
+						    } else {
+							    gchar *cstr = hg_string_get_cstr(s);
+
+							    g_print("I(%d): scanned result %s [%s:%c%c%c]\n",
+								    vm->n_nest_scan, cstr,
+								    hg_quark_get_type_name(qresult),
+								    hg_quark_is_readable(qresult) ? 'r' : '-',
+								    hg_quark_is_writable(qresult) ? 'w' : '-',
+								    hg_quark_is_executable(qresult) ? 'x' : '-');
+							    g_free(cstr);
+							    /* this is an instant object.
+							     * surely no reference to the container.
+							     * so it can be safely destroyed.
+							     */
+							    hg_string_free(s, TRUE);
+						    }
+					    } G_STMT_END;
+#endif
 				    } else if (!strcmp(name, "}")) {
 					    gssize i, idx = 0;
 					    hg_quark_t q;
@@ -430,7 +464,8 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 
   finalize:
 	if (err) {
-		g_warning("%s (code: %d)",
+		g_warning("%s: %s (code: %d)",
+			  __PRETTY_FUNCTION__,
 			  err->message,
 			  err->code);
 		if (!hg_vm_has_error(vm))
@@ -1022,7 +1057,8 @@ hg_vm_quark_gc_mark(hg_vm_t     *vm,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s (code: %d)",
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
 				  err->message,
 				  err->code);
 		}
@@ -1072,7 +1108,8 @@ hg_vm_quark_copy(hg_vm_t     *vm,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s (code: %d)",
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
 				  err->message,
 				  err->code);
 		}
@@ -1241,7 +1278,8 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s (code: %d)",
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
 				  err->message,
 				  err->code);
 		}
@@ -1421,28 +1459,34 @@ hg_quark_t
 hg_vm_get_io(hg_vm_t      *vm,
 	     hg_file_io_t  type)
 {
+	hg_quark_t ret;
+
 	hg_return_val_if_fail (vm != NULL, Qnil);
 	hg_return_val_if_fail (type < HG_FILE_IO_END, Qnil);
 
 	if (type == HG_FILE_IO_LINEEDIT) {
-		return hg_file_new_with_vtable(hg_vm_get_mem(vm),
-					       "%lineedit",
-					       HG_FILE_IO_MODE_READ,
-					       hg_file_get_lineedit_vtable(),
-					       vm->lineedit,
-					       NULL,
-					       NULL);
+		ret = hg_file_new_with_vtable(hg_vm_get_mem(vm),
+					      "%lineedit",
+					      HG_FILE_IO_MODE_READ,
+					      hg_file_get_lineedit_vtable(),
+					      vm->lineedit,
+					      NULL,
+					      NULL);
+		hg_quark_set_access_bits(&ret, TRUE, FALSE, FALSE);
 	} else if (type == HG_FILE_IO_STATEMENTEDIT) {
-		return hg_file_new_with_vtable(hg_vm_get_mem(vm),
-					       "%statementedit",
-					       HG_FILE_IO_MODE_READ,
-					       hg_file_get_lineedit_vtable(),
-					       vm->lineedit,
-					       NULL,
-					       NULL);
+		ret = hg_file_new_with_vtable(hg_vm_get_mem(vm),
+					      "%statementedit",
+					      HG_FILE_IO_MODE_READ,
+					      hg_file_get_lineedit_vtable(),
+					      vm->lineedit,
+					      NULL,
+					      NULL);
+		hg_quark_set_access_bits(&ret, TRUE, FALSE, FALSE);
+	} else {
+		ret = vm->qio[type];
 	}
 
-	return vm->qio[type];
+	return ret;
 }
 
 /**
@@ -1508,6 +1552,7 @@ hg_vm_setup(hg_vm_t           *vm,
 				 HG_FILE_IO_MODE_READ,
 				 NULL,
 				 (gpointer *)&fstdin);
+		hg_quark_set_access_bits(&qf, TRUE, FALSE, FALSE);
 	} else {
 		qf = stdin;
 	}
@@ -1519,6 +1564,7 @@ hg_vm_setup(hg_vm_t           *vm,
 				  HG_FILE_IO_MODE_WRITE,
 				  NULL,
 				  (gpointer *)&fstdout);
+		hg_quark_set_access_bits(&qf, FALSE, TRUE, FALSE);
 	} else {
 		qf = stdout;
 	}
@@ -1530,6 +1576,7 @@ hg_vm_setup(hg_vm_t           *vm,
 				 HG_FILE_IO_MODE_WRITE,
 				 NULL,
 				 NULL);
+		hg_quark_set_access_bits(&qf, FALSE, TRUE, FALSE);
 	} else {
 		qf = stderr;
 	}
@@ -1631,7 +1678,8 @@ hg_vm_setup(hg_vm_t           *vm,
 	if (dict)
 		_HG_VM_UNLOCK (vm, vm->qsystemdict);
 	if (err) {
-		g_warning("%s (code: %d)",
+		g_warning("%s: %s (code: %d)",
+			  __PRETTY_FUNCTION__,
 			  err->message,
 			  err->code);
 		g_error_free(err);
@@ -1902,8 +1950,11 @@ hg_vm_stepi(hg_vm_t  *vm,
 		} else {
 			gchar *cstr = hg_string_get_cstr(s);
 
-			g_print("I: executing... %s [%s]\n",
-				cstr, hg_quark_get_type_name(qexecobj));
+			g_print("I: executing... %s [%s:%c%c%c]\n",
+				cstr, hg_quark_get_type_name(qexecobj),
+				hg_quark_is_readable(qexecobj) ? 'r' : '-',
+				hg_quark_is_writable(qexecobj) ? 'w' : '-',
+				hg_quark_is_executable(qexecobj) ? 'x' : '-');
 			g_free(cstr);
 			/* this is an instant object.
 			 * surely no reference to the container.
@@ -2100,8 +2151,11 @@ hg_vm_stepi(hg_vm_t  *vm,
 				    } else {
 					    gchar *cstr = hg_string_get_cstr(s);
 
-					    g_print("I: scanning... %s [%s]\n",
-						    cstr, hg_quark_get_type_name(qresult));
+					    g_print("I: scanning... %s [%s:%c%c%c]\n",
+						    cstr, hg_quark_get_type_name(qresult),
+						    hg_quark_is_readable(qresult) ? 'r' : '-',
+						    hg_quark_is_writable(qresult) ? 'w' : '-',
+						    hg_quark_is_executable(qresult) ? 'x' : '-');
 					    g_free(cstr);
 					    /* this is an instant object.
 					     * surely no reference to the container.
@@ -2118,6 +2172,37 @@ hg_vm_stepi(hg_vm_t  *vm,
 					    qresult = hg_vm_step_in_exec_array(vm, qexecobj);
 					    if (qresult == Qnil)
 						    break;
+#if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
+					    G_STMT_START {
+						    hg_quark_t qs;
+						    hg_string_t *s;
+
+						    qs = hg_vm_quark_to_string(vm, qresult, TRUE, (gpointer *)&s, &err);
+						    if (qs == Qnil) {
+							    if (err) {
+								    g_print("W: Unable to look up the scanned object: %lx: %s\n", qresult, err->message);
+								    g_clear_error(&err);
+							    } else {
+								    g_print("W: Unable to look up the scanned object: %lx\n", qresult);
+							    }
+						    } else {
+							    gchar *cstr = hg_string_get_cstr(s);
+
+							    g_print("I: scanned result %s [%s:%c%c%c]\n",
+								    cstr,
+								    hg_quark_get_type_name(qresult),
+								    hg_quark_is_readable(qresult) ? 'r' : '-',
+								    hg_quark_is_writable(qresult) ? 'w' : '-',
+								    hg_quark_is_executable(qresult) ? 'x' : '-');
+							    g_free(cstr);
+							    /* this is an instant object.
+							     * surely no reference to the container.
+							     * so it can be safely destroyed.
+							     */
+							    hg_string_free(s, TRUE);
+						    }
+					    } G_STMT_END;
+#endif
 					    if (!hg_stack_push(ostack, qresult)) {
 						    hg_vm_set_error(vm, qexecobj,
 								    HG_VM_e_stackoverflow);
@@ -2140,7 +2225,10 @@ hg_vm_stepi(hg_vm_t  *vm,
 		if (!hg_vm_has_error(vm))
 			hg_vm_set_error(vm, qexecobj, HG_VM_e_VMerror);
 		/* XXX */
-		g_warning("%s (code: %d)", err->message, err->code);
+		g_warning("%s: %s (code: %d)",
+			  __PRETTY_FUNCTION__,
+			  err->message,
+			  err->code);
 		g_error_free(err);
 		retval = FALSE;
 	}
@@ -2340,8 +2428,10 @@ hg_vm_eval_from_cstring(hg_vm_t      *vm,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s (code: %d)",
-				  err->message, err->code);
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
+				  err->message,
+				  err->code);
 		}
 		g_error_free(err);
 	}
@@ -2399,7 +2489,8 @@ hg_vm_eval_from_file(hg_vm_t      *vm,
 			if (error) {
 				*error = g_error_copy(err);
 			} else {
-				g_warning("%s (code: %d)",
+				g_warning("%s: %s (code: %d)",
+					  __PRETTY_FUNCTION__,
 					  err->message,
 					  err->code);
 			}
@@ -2948,7 +3039,8 @@ hg_vm_load_plugins(hg_vm_t *vm)
 		GError *err = NULL;
 
 		if (!hg_plugin_load(p, vm, &err)) {
-			g_warning("%s (code: %d)",
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
 				  err->message,
 				  err->code);
 			g_clear_error(&err);

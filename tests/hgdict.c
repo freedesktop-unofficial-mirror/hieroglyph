@@ -253,7 +253,22 @@ TDEF (hg_dict_remove)
 
 TDEF (hg_dict_lookup)
 {
-	/* should be done the above */
+	hg_dict_t *dict;
+	hg_quark_t q, t, t2;
+
+	q = hg_dict_new(mem, 2, (gpointer *)&dict);
+	fail_unless(q != Qnil, "Unable to create a dict object.");
+	t = hg_quark_new(HG_TYPE_BOOL, TRUE);
+	hg_quark_set_access_bits(&t, TRUE, TRUE, TRUE);
+	fail_unless(hg_quark_is_readable(t), "Failed for prechecking read permission");
+	fail_unless(hg_quark_is_writable(t), "Failed for prechecking write permission");
+	fail_unless(hg_quark_is_executable(t), "Failed for prechecking execute permission");
+	hg_dict_add(dict, t, t, NULL);
+	t2 = hg_dict_lookup(dict, t, NULL);
+	fail_unless(t == t2, "Unexpected result in lookup: expected: %lx, actual: %lx", t, t2);
+	fail_unless(hg_quark_is_readable(t2), "Failed for post-checking read permission");
+	fail_unless(hg_quark_is_writable(t2), "Failed for post-checking write permission");
+	fail_unless(hg_quark_is_executable(t2), "Failed for post-checking execute permission");
 } TEND
 
 TDEF (hg_dict_foreach)

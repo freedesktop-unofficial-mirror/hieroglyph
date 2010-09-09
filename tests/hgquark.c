@@ -71,17 +71,17 @@ TDEF (bits)
 TDEF (hg_quark_new)
 {
 	hg_quark_t q = hg_quark_new(HG_TYPE_INT, 0);
-	fail_unless(q == 0x100000000, "Unexpected result for integer quark");
+	fail_unless(q == 0x2100000000, "Unexpected result for integer quark: %lx", q);
 	q = hg_quark_new(HG_TYPE_INT, (guint32)-1);
-	fail_unless(q == 0x1ffffffff, "Unexpected result for integer quark: expect: -1, actual: %lx", q);
+	fail_unless(q == 0x21ffffffff, "Unexpected result for integer quark: expect: -1, actual: %lx", q);
 	fail_unless(hg_quark_get_type(q) == 1, "Unexpected result to obtain the type for integer quark");
 	fail_unless(hg_quark_is_simple_object(q), "Unexpected result to check if a integer quark is a simple object");
 	q = hg_quark_new(HG_TYPE_STRING, 0xdeadbeaf);
-	fail_unless(q == 0x5deadbeaf, "Unexpected result for string quark: 0x5deadbeaf, actual: %lx", q);
+	fail_unless(q == 0x65deadbeaf, "Unexpected result for string quark: 0x5deadbeaf, actual: %lx", q);
 	fail_unless(hg_quark_get_type(q) == HG_TYPE_STRING, "Unexpected result ot obtain the type for string quark");
 	fail_unless(!hg_quark_is_simple_object(q), "Unexpected result to check if a string quark is a complex object");
 	q = hg_quark_new(HG_TYPE_NAME, 0);
-	fail_unless(q == 0x300000000, "Unexpected result for name quark: 0x300000000, actual: %lx", q);
+	fail_unless(q == 0x2300000000, "Unexpected result for name quark: 0x300000000, actual: %lx", q);
 } TEND
 
 TDEF (hg_quark_get_type)
@@ -105,12 +105,12 @@ TDEF (hg_quark_is_executable)
 	hg_quark_t q;
 
 	q = hg_quark_new(HG_TYPE_INT, 10);
-	fail_unless(q == 0x10000000aLL, "Unexpected result for integer quark");
+	fail_unless(q == 0x210000000aLL, "Unexpected result for integer quark");
 	hg_quark_set_executable(&q, TRUE);
-	fail_unless(q == 0x110000000aLL, "Unexpected result to set a exec bit");
+	fail_unless(q == 0x310000000aLL, "Unexpected result to set a exec bit");
 	fail_unless(hg_quark_is_executable(q), "Unexpected result to check if one is executable");
 	hg_quark_set_executable(&q, FALSE);
-	fail_unless(q == 0x10000000aLL, "Unexpected result to unset a exec bit");
+	fail_unless(q == 0x210000000aLL, "Unexpected result to unset a exec bit");
 	fail_unless(!hg_quark_is_executable(q), "Unexpected result to check if one isn't executable");
 	hg_quark_set_readable(&q, TRUE);
 	hg_quark_set_writable(&q, TRUE);
@@ -131,7 +131,7 @@ TDEF (hg_quark_is_readable)
 	hg_quark_t q;
 
 	q = hg_quark_new(HG_TYPE_INT, 10);
-	fail_unless(q == 0x10000000aLL, "Unexpected result for integer quark");
+	fail_unless(q == 0x210000000aLL, "Unexpected result for integer quark");
 	hg_quark_set_readable(&q, TRUE);
 	fail_unless(q == 0x210000000aLL, "Unexpected result to set a read bit");
 	fail_unless(hg_quark_is_readable(q), "Unexpected result to check if one is readable");
@@ -157,12 +157,12 @@ TDEF (hg_quark_is_writable)
 	hg_quark_t q;
 
 	q = hg_quark_new(HG_TYPE_INT, 10);
-	fail_unless(q == 0x10000000aLL, "Unexpected result for integer quark");
+	fail_unless(q == 0x210000000aLL, "Unexpected result for integer quark");
 	hg_quark_set_writable(&q, TRUE);
-	fail_unless(q == 0x410000000aLL, "Unexpected result to set a write bit");
+	fail_unless(q == 0x610000000aLL, "Unexpected result to set a write bit");
 	fail_unless(hg_quark_is_writable(q), "Unexpected result to check if one is writable");
 	hg_quark_set_writable(&q, FALSE);
-	fail_unless(q == 0x10000000aLL, "Unexpected result to unset a write bit");
+	fail_unless(q == 0x210000000aLL, "Unexpected result to unset a write bit");
 	fail_unless(!hg_quark_is_writable(q), "Unexpected result to check if one isn't writable");
 	hg_quark_set_readable(&q, TRUE);
 	hg_quark_set_writable(&q, TRUE);

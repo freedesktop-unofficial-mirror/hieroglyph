@@ -595,10 +595,13 @@ G_STMT_START {
 	arg0 = hg_stack_index(ostack, 2, error);
 	arg1 = hg_stack_index(ostack, 1, error);
 	arg2 = hg_stack_index(ostack, 0, error);
-	if (!hg_quark_is_writable(arg0)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
-		return FALSE;
-	}
+
+	/* Do not check the permission here.
+	 * this operator is likely to put the value into
+	 * read-only array. which is copied from the object
+	 * in execstack. and this operator is a special
+	 * operator to deal with them.
+	 */
 	if (HG_IS_QARRAY (arg0)) {
 		gsize index;
 		hg_array_t *a;
@@ -1687,6 +1690,8 @@ G_STMT_START {
 			if (HG_IS_QARRAY (q)) {
 				STACK_PUSH (ostack, q);
 				_hg_operator_real_bind(vm, error);
+				hg_quark_set_writable(&q, FALSE);
+				hg_array_set(a, q, i, error);
 				hg_stack_drop(ostack, error);
 			} else if (HG_IS_QNAME (q)) {
 				hg_quark_t qop = hg_vm_dict_lookup(vm, q);
@@ -1831,6 +1836,10 @@ G_STMT_START {
 					hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 					goto a_error;
 				}
+				hg_quark_set_access_bits(&q,
+							 hg_quark_is_readable(arg1),
+							 hg_quark_is_writable(arg1),
+							 hg_quark_is_executable(arg1));
 			} else {
 				q = arg1;
 			}
@@ -1895,6 +1904,10 @@ G_STMT_START {
 					hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 					goto s_error;
 				}
+				hg_quark_set_access_bits(&q,
+							 hg_quark_is_readable(arg1),
+							 hg_quark_is_writable(arg1),
+							 hg_quark_is_executable(arg1));
 			} else {
 				q = arg1;
 			}
@@ -2058,6 +2071,10 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			goto error;
 		}
+		hg_quark_set_access_bits(&q,
+					 hg_quark_is_readable(arg2),
+					 hg_quark_is_writable(arg2),
+					 hg_quark_is_executable(arg2));
 	} else {
 		q = arg2;
 	}
@@ -2940,6 +2957,11 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		goto error;
 	}
+	hg_quark_set_access_bits(&q,
+				 hg_quark_is_readable(arg0),
+				 hg_quark_is_writable(arg0),
+				 hg_quark_is_executable(arg0));
+
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
@@ -4515,6 +4537,10 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			goto error;
 		}
+		hg_quark_set_access_bits(&q,
+					 hg_quark_is_readable(arg0),
+					 hg_quark_is_writable(arg0),
+					 hg_quark_is_executable(arg0));
 	} else {
 		q = arg0;
 	}
@@ -4575,6 +4601,10 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			goto error;
 		}
+		hg_quark_set_access_bits(&q,
+					 hg_quark_is_readable(arg0),
+					 hg_quark_is_writable(arg0),
+					 hg_quark_is_executable(arg0));
 	} else {
 		q = arg0;
 	}

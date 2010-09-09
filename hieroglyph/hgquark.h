@@ -235,8 +235,11 @@ hg_quark_new(hg_type_t  type,
 				    HG_QUARK_TYPE_BIT_TYPE,
 				    HG_QUARK_TYPE_BIT_TYPE_END,
 				    type);
-	if (type == HG_TYPE_EVAL_NAME)
-		hg_quark_set_executable(&retval, TRUE);
+	hg_quark_set_access_bits(&retval,
+				 TRUE,
+				 (hg_type_is_simple(type) ||
+				  type == HG_TYPE_OPER) ? FALSE : TRUE,
+				 type == HG_TYPE_EVAL_NAME);
 
 	return retval;
 }
@@ -300,10 +303,12 @@ hg_quark_set_executable(hg_quark_t *quark,
 {
 	hg_return_if_fail (quark != NULL);
 
-	_hg_quark_type_bit_set_bits(quark,
-				    HG_QUARK_TYPE_BIT_EXECUTABLE,
-				    HG_QUARK_TYPE_BIT_EXECUTABLE,
-				    (flag == TRUE));
+	if (*quark != Qnil) {
+		_hg_quark_type_bit_set_bits(quark,
+					    HG_QUARK_TYPE_BIT_EXECUTABLE,
+					    HG_QUARK_TYPE_BIT_EXECUTABLE,
+					    (flag == TRUE));
+	}
 }
 
 /**
@@ -335,10 +340,12 @@ hg_quark_set_readable(hg_quark_t *quark,
 {
 	hg_return_if_fail (quark != NULL);
 
-	_hg_quark_type_bit_set_bits(quark,
-				    HG_QUARK_TYPE_BIT_READABLE,
-				    HG_QUARK_TYPE_BIT_READABLE,
-				    (flag == TRUE));
+	if (*quark != Qnil) {
+		_hg_quark_type_bit_set_bits(quark,
+					    HG_QUARK_TYPE_BIT_READABLE,
+					    HG_QUARK_TYPE_BIT_READABLE,
+					    (flag == TRUE));
+	}
 }
 
 /**
@@ -370,10 +377,12 @@ hg_quark_set_writable(hg_quark_t *quark,
 {
 	hg_return_if_fail (quark != NULL);
 
-	_hg_quark_type_bit_set_bits(quark,
-				    HG_QUARK_TYPE_BIT_WRITABLE,
-				    HG_QUARK_TYPE_BIT_WRITABLE,
-				    (flag == TRUE));
+	if (*quark != Qnil) {
+		_hg_quark_type_bit_set_bits(quark,
+					    HG_QUARK_TYPE_BIT_WRITABLE,
+					    HG_QUARK_TYPE_BIT_WRITABLE,
+					    (flag == TRUE));
+	}
 }
 
 /**
@@ -409,12 +418,14 @@ hg_quark_set_access_bits(hg_quark_t *quark,
 {
 	hg_return_if_fail (quark != NULL);
 
-	_hg_quark_type_bit_set_bits(quark,
-				    HG_QUARK_TYPE_BIT_ACCESS,
-				    HG_QUARK_TYPE_BIT_ACCESS_END,
-				    ((readable << HG_QUARK_TYPE_BIT_READABLE) |
-				     (writable << HG_QUARK_TYPE_BIT_WRITABLE) |
-				     (executable << HG_QUARK_TYPE_BIT_EXECUTABLE)) >> HG_QUARK_TYPE_BIT_ACCESS);
+	if (*quark != Qnil) {
+		_hg_quark_type_bit_set_bits(quark,
+					    HG_QUARK_TYPE_BIT_ACCESS,
+					    HG_QUARK_TYPE_BIT_ACCESS_END,
+					    ((readable << HG_QUARK_TYPE_BIT_READABLE) |
+					     (writable << HG_QUARK_TYPE_BIT_WRITABLE) |
+					     (executable << HG_QUARK_TYPE_BIT_EXECUTABLE)) >> HG_QUARK_TYPE_BIT_ACCESS);
+	}
 }
 
 /**
@@ -461,10 +472,12 @@ G_INLINE_FUNC void
 hg_quark_set_mem_id(hg_quark_t *quark,
 		    guint       id)
 {
-	_hg_quark_type_bit_set_bits(quark,
-				    HG_QUARK_TYPE_BIT_MEM_ID,
-				    HG_QUARK_TYPE_BIT_MEM_ID_END,
-				    id);
+	if (*quark != Qnil) {
+		_hg_quark_type_bit_set_bits(quark,
+					    HG_QUARK_TYPE_BIT_MEM_ID,
+					    HG_QUARK_TYPE_BIT_MEM_ID_END,
+					    id);
+	}
 }
 
 /**

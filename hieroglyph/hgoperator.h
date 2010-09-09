@@ -161,7 +161,7 @@ typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
 			return FALSE;					\
 		}							\
 	} G_STMT_END
-#define STACK_PUSH_AS_IS(_s_,_q_)					\
+#define STACK_PUSH(_s_,_q_)						\
 	G_STMT_START {							\
 		if (!hg_stack_push((_s_), (_q_))) {			\
 			if ((_s_) == ostack) {				\
@@ -173,12 +173,6 @@ typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
 			}						\
 			return FALSE;					\
 		}							\
-	} G_STMT_END
-#define STACK_PUSH(_s_,_q_)						\
-	G_STMT_START {							\
-		hg_quark_t _qq_ = (_q_);				\
-		hg_vm_quark_set_attributes(vm, &_qq_);			\
-		STACK_PUSH_AS_IS ((_s_), _qq_);				\
 	} G_STMT_END
 
 
