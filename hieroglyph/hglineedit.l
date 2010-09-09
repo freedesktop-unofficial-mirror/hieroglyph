@@ -198,7 +198,8 @@ _hg_lineedit_real_get_line(hg_lineedit_t *lineedit,
 
 				return NULL;
 			}
-			g_warning("%s (code: %d)",
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
 				  err->message,
 				  err->code);
 			g_error_free(err);

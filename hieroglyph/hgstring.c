@@ -103,7 +103,8 @@ _hg_object_string_copy(hg_object_t              *object,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s (code: %d)",
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
 				  err->message,
 				  err->code);
 		}
@@ -434,7 +435,8 @@ hg_string_append_c(hg_string_t  *string,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s (code: %d)",
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
 				  err->message,
 				  err->code);
 		}
@@ -518,7 +520,8 @@ hg_string_append(hg_string_t  *string,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s (code: %d)",
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
 				  err->message,
 				  err->code);
 		}
@@ -579,7 +582,8 @@ hg_string_overwrite_c(hg_string_t  *string,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s (code: %d)",
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
 				  err->message,
 				  err->code);
 		}
@@ -934,7 +938,8 @@ hg_string_make_substring(hg_string_t  *string,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s (code: %d)",
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
 				  err->message,
 				  err->code);
 		}

@@ -244,8 +244,10 @@ _hg_object_file_initialize(hg_object_t *object,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s (code: %d)",
-				  err->message, err->code);
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
+				  err->message,
+				  err->code);
 		}
 		g_error_free(err);
 	}
@@ -1562,7 +1564,8 @@ hg_file_append_vprintf(hg_file_t   *file,
 	retval = hg_file_write(file, buffer, sizeof (gchar), strlen(buffer), &err);
 	g_free(buffer);
 	if (err) {
-		g_warning("%s (code: %d)",
+		g_warning("%s: %s (code: %d)",
+			  __PRETTY_FUNCTION__,
 			  err->message,
 			  err->code);
 		g_error_free(err);
