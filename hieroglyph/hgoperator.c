@@ -1707,7 +1707,35 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (bitshift);
+/* <int1> <shiftt> bitshift <int2> */
+DEFUNC_OPER (bitshift)
+G_STMT_START {
+	hg_quark_t arg0, arg1, q;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QINT (arg0) ||
+	    !HG_IS_QINT (arg1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (HG_INT (arg1) < 0) {
+		q = HG_QINT (HG_INT (arg0) >> -HG_INT (arg1));
+	} else {
+		q = HG_QINT (HG_INT (arg0) << HG_INT (arg1));
+	}
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (ceiling);
 DEFUNC_UNIMPLEMENTED_OPER (charpath);
 
