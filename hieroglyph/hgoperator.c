@@ -87,6 +87,7 @@ PROTO_OPER (awidthshow);
 PROTO_OPER (begin);
 PROTO_OPER (bind);
 PROTO_OPER (bitshift);
+PROTO_OPER (bytesavailable);
 PROTO_OPER (ceiling);
 PROTO_OPER (charpath);
 PROTO_OPER (clear);
@@ -280,7 +281,6 @@ PROTO_OPER (StandardEncoding);
 PROTO_OPER (sym_left_square_bracket);
 PROTO_OPER (sym_right_square_bracket);
 PROTO_OPER (banddevice);
-PROTO_OPER (bytesavailable);
 PROTO_OPER (cachestatus);
 PROTO_OPER (closefile);
 PROTO_OPER (colorimage);
@@ -1734,6 +1734,41 @@ G_STMT_START {
 	retval = TRUE;
 } G_STMT_END;
 VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
+
+/* <file> bytesavailable <int> */
+DEFUNC_OPER (bytesavailable)
+G_STMT_START {
+	hg_quark_t arg0, q;
+	hg_file_t *f;
+	gssize cur_pos;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QFILE (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!hg_quark_is_readable(arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+	f = HG_VM_LOCK (vm, arg0, error);
+
+	cur_pos = hg_file_seek(f, 0, HG_FILE_POS_CURRENT, error);
+	q = HG_QINT (hg_file_seek(f, 0, HG_FILE_POS_END, error));
+	hg_file_seek(f, cur_pos, HG_FILE_POS_BEGIN, error);
+
+	HG_VM_UNLOCK (vm, arg0);
+
+	hg_stack_drop(ostack, error);
+
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (ceiling);
@@ -4444,7 +4479,6 @@ DEFUNC_UNIMPLEMENTED_OPER (StandardEncoding);
 DEFUNC_UNIMPLEMENTED_OPER (sym_left_square_bracket);
 DEFUNC_UNIMPLEMENTED_OPER (sym_right_square_bracket);
 DEFUNC_UNIMPLEMENTED_OPER (banddevice);
-DEFUNC_UNIMPLEMENTED_OPER (bytesavailable);
 DEFUNC_UNIMPLEMENTED_OPER (cachestatus);
 
 /* <file> closefile - */
