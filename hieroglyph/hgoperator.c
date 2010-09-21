@@ -31,6 +31,7 @@
 #include "hgdict.h"
 #include "hgint.h"
 #include "hgmark.h"
+#include "hgmem.h"
 #include "hgname.h"
 #include "hgnull.h"
 #include "hgquark.h"
@@ -111,6 +112,7 @@ PROTO_OPER (currentdash);
 PROTO_OPER (currentdict);
 PROTO_OPER (currentfile);
 PROTO_OPER (currentfont);
+PROTO_OPER (currentglobal);
 PROTO_OPER (currentgray);
 PROTO_OPER (currentgstate);
 PROTO_OPER (currenthsbcolor);
@@ -270,7 +272,6 @@ PROTO_OPER (SharedFontDirectory);
 PROTO_OPER (execuserobject);
 PROTO_OPER (currentcolor);
 PROTO_OPER (currentcolorspace);
-PROTO_OPER (currentglobal);
 PROTO_OPER (execform);
 PROTO_OPER (filter);
 PROTO_OPER (findresource);
@@ -2255,6 +2256,7 @@ VALIDATE_STACK_SIZE (1, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (currentfont);
+DEFUNC_UNIMPLEMENTED_OPER (currentglobal);
 DEFUNC_UNIMPLEMENTED_OPER (currentgray);
 DEFUNC_UNIMPLEMENTED_OPER (currentgstate);
 DEFUNC_UNIMPLEMENTED_OPER (currenthsbcolor);
@@ -2266,7 +2268,80 @@ DEFUNC_UNIMPLEMENTED_OPER (currentpoint);
 DEFUNC_UNIMPLEMENTED_OPER (currentrgbcolor);
 DEFUNC_UNIMPLEMENTED_OPER (currentshared);
 DEFUNC_UNIMPLEMENTED_OPER (curveto);
-DEFUNC_UNIMPLEMENTED_OPER (cvi);
+
+/* <num> cvi <int>
+ * <string> cvi <int>
+ */
+DEFUNC_OPER (cvi)
+G_STMT_START {
+	hg_quark_t arg0, q;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (HG_IS_QINT (arg0)) {
+		/* nothing to do */
+		retval = TRUE;
+	} else if (HG_IS_QREAL (arg0)) {
+		gdouble d = HG_REAL (arg0);
+
+		if (d > G_MAXINT32 || d < G_MININT32) {
+			hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+			return FALSE;
+		}
+		q = HG_QINT (d);
+		hg_stack_drop(ostack, error);
+
+		STACK_PUSH (ostack, q);
+		retval = TRUE;
+	} else if (HG_IS_QSTRING (arg0)) {
+		hg_string_t *s;
+
+		if (!hg_quark_is_readable(arg0)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+			return FALSE;
+		}
+		s = HG_VM_LOCK (vm, arg0, error);
+		q = hg_file_new_with_string(hg_vm_get_mem(vm),
+					    "--%cvi--",
+					    HG_FILE_IO_MODE_READ,
+					    s,
+					    NULL,
+					    error,
+					    NULL);
+		HG_VM_UNLOCK (vm, arg0);
+		STACK_PUSH (ostack, q);
+		retval = _hg_operator_real_token(vm, error);
+		if (retval == TRUE) {
+			hg_quark_t qq;
+
+			qq = hg_stack_pop(ostack, error);
+			if (!HG_IS_QBOOL (qq)) {
+				hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+				return FALSE;
+			} else {
+				if (!HG_BOOL (qq)) {
+					hg_mem_reserved_spool_remove(hg_vm_get_mem_from_quark(vm, qq),
+								     qq);
+					hg_vm_set_error(vm, qself, HG_VM_e_syntaxerror);
+					return FALSE;
+				}
+			}
+			hg_stack_roll(ostack, 2, 1, error);
+			hg_stack_drop(ostack, error);
+
+			retval = TRUE;
+		} else {
+			hg_stack_drop(ostack, error);
+		}
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (cvlit);
 DEFUNC_UNIMPLEMENTED_OPER (cvn);
 DEFUNC_UNIMPLEMENTED_OPER (cvr);
@@ -4667,7 +4742,6 @@ DEFUNC_UNIMPLEMENTED_OPER (SharedFontDirectory);
 DEFUNC_UNIMPLEMENTED_OPER (execuserobject);
 DEFUNC_UNIMPLEMENTED_OPER (currentcolor);
 DEFUNC_UNIMPLEMENTED_OPER (currentcolorspace);
-DEFUNC_UNIMPLEMENTED_OPER (currentglobal);
 DEFUNC_UNIMPLEMENTED_OPER (execform);
 DEFUNC_UNIMPLEMENTED_OPER (filter);
 DEFUNC_UNIMPLEMENTED_OPER (findresource);
