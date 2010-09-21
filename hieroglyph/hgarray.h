@@ -90,6 +90,12 @@ gboolean            hg_array_copy_as_subarray (hg_array_t                *src,
 					       gsize                      start_index,
 					       gsize                      end_index,
 					       GError                   **error);
+hg_quark_t          hg_array_matrix_new       (hg_mem_t                  *mem,
+					       gpointer                  *ret);
+gboolean            hg_array_is_matrix        (hg_array_t                *array);
+gboolean            hg_array_matrix_multiply  (hg_array_t                *matrix1,
+					       hg_array_t                *matrix2,
+					       hg_array_t                *ret);
 
 
 G_END_DECLS

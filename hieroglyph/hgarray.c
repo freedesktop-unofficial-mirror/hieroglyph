@@ -28,8 +28,10 @@
 #include <string.h>
 #include "hgerror.h"
 #include "hgmem.h"
+#include "hgint.h"
 #include "hgmark.h"
 #include "hgnull.h"
+#include "hgreal.h"
 #include "hgarray.h"
 
 #define HG_ARRAY_ALLOC_SIZE	65535
@@ -746,6 +748,130 @@ hg_array_copy_as_subarray(hg_array_t  *src,
 	dest->offset = start_index;
 	dest->is_fixed_size = TRUE;
 	dest->is_subarray = TRUE;
+
+	return TRUE;
+}
+
+/**
+ * hg_array_matrix_new:
+ * @mem:
+ * @ret:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_quark_t
+hg_array_matrix_new(hg_mem_t *mem,
+		    gpointer *ret)
+{
+	hg_quark_t retval;
+	hg_array_t *a = NULL;
+	gsize i;
+
+	retval = hg_array_new(mem, 6, (gpointer *)&a);
+	if (retval != Qnil) {
+		for (i = 0; i < 6; i++) {
+			hg_array_set(a, i, HG_QREAL ((i == 0 || i == 3) ? 1.0L : 0.0L), NULL);
+		}
+
+		if (ret) {
+			*ret = a;
+		} else {
+			hg_mem_unlock_object(mem, retval);
+		}
+	}
+
+	return retval;
+}
+
+/**
+ * hg_array_is_matrix:
+ * @array:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_array_is_matrix(hg_array_t *array)
+{
+	gsize i;
+	hg_quark_t q;
+
+	hg_return_val_if_fail (array != NULL, FALSE);
+
+	if (hg_array_length(array) != 6)
+		return FALSE;
+
+	for (i = 0; i < 6; i++) {
+		q = hg_array_get(array, i, NULL);
+		if (!HG_IS_QINT (q) &&
+		    !HG_IS_QREAL (q))
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+/**
+ * hg_array_matrix_multiply:
+ * @matrix1:
+ * @matrix2:
+ * @ret:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_array_matrix_multiply(hg_array_t *matrix1,
+			 hg_array_t *matrix2,
+			 hg_array_t *ret)
+{
+	union _hg_matrix {
+		struct {
+			gdouble xx;
+			gdouble yx;
+			gdouble xy;
+			gdouble yy;
+			gdouble x0;
+			gdouble y0;
+		} mtx;
+		gdouble d[6];
+	} m1, m2, m3;
+	hg_quark_t q;
+	gsize i;
+
+	hg_return_val_if_fail (hg_array_is_matrix(matrix1), FALSE);
+	hg_return_val_if_fail (hg_array_is_matrix(matrix2), FALSE);
+	hg_return_val_if_fail (hg_array_is_matrix(ret), FALSE);
+
+	for (i = 0; i < 6; i++) {
+		q = hg_array_get(matrix1, i, NULL);
+		if (HG_IS_QINT (q)) {
+			m1.d[i] = (gdouble)HG_INT (q);
+		} else {
+			m1.d[i] = HG_REAL (q);
+		}
+		q = hg_array_get(matrix2, i, NULL);
+		if (HG_IS_QINT (q)) {
+			m2.d[i] = (gdouble)HG_INT (q);
+		} else {
+			m2.d[i] = HG_REAL (q);
+		}
+	}
+
+	m3.mtx.xx = m1.mtx.xx * m2.mtx.xx + m1.mtx.yx * m2.mtx.xy;
+	m3.mtx.yx = m1.mtx.xx * m2.mtx.yx + m1.mtx.yx * m2.mtx.yy;
+	m3.mtx.xy = m1.mtx.xy * m2.mtx.xx + m1.mtx.yy * m2.mtx.xy;
+	m3.mtx.yy = m1.mtx.xy * m2.mtx.yx + m1.mtx.yy * m2.mtx.yy;
+	m3.mtx.x0 = m1.mtx.x0 * m2.mtx.xx + m1.mtx.y0 * m2.mtx.xy + m2.mtx.x0;
+	m3.mtx.y0 = m1.mtx.x0 * m2.mtx.yx + m1.mtx.y0 * m2.mtx.yy + m2.mtx.y0;
+
+	for (i = 0; i < 6; i++) {
+		hg_array_set(ret, HG_QREAL (m3.d[i]), i, NULL);
+	}
 
 	return TRUE;
 }

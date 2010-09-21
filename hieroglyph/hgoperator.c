@@ -95,6 +95,7 @@ PROTO_OPER (cleardictstack);
 PROTO_OPER (cleartomark);
 PROTO_OPER (clip);
 PROTO_OPER (clippath);
+PROTO_OPER (closefile);
 PROTO_OPER (closepath);
 PROTO_OPER (concat);
 PROTO_OPER (concatmatrix);
@@ -283,7 +284,6 @@ PROTO_OPER (sym_left_square_bracket);
 PROTO_OPER (sym_right_square_bracket);
 PROTO_OPER (banddevice);
 PROTO_OPER (cachestatus);
-PROTO_OPER (closefile);
 PROTO_OPER (colorimage);
 PROTO_OPER (condition);
 PROTO_OPER (copypage);
@@ -1852,9 +1852,95 @@ DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (clip);
 DEFUNC_UNIMPLEMENTED_OPER (clippath);
+
+/* <file> closefile - */
+DEFUNC_OPER (closefile)
+G_STMT_START {
+	hg_quark_t arg0;
+	hg_file_t *f;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QFILE (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	f = HG_VM_LOCK (vm, arg0, error);
+	if (f == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	hg_file_close(f, error);
+	if (error && *error) {
+		hg_vm_set_error_from_gerror(vm, qself, *error);
+		HG_VM_UNLOCK (vm, arg0);
+
+		return FALSE;
+	}
+	HG_VM_UNLOCK (vm, arg0);
+
+	hg_stack_drop(ostack, error);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (closepath);
 DEFUNC_UNIMPLEMENTED_OPER (concat);
-DEFUNC_UNIMPLEMENTED_OPER (concatmatrix);
+
+/* <matrix1> <matrix2> <matrix3> concatmatrix <matrix3> */
+DEFUNC_OPER (concatmatrix)
+G_STMT_START {
+	hg_quark_t arg0, arg1, arg2;
+	hg_array_t *a1, *a2, *a3;
+
+	CHECK_STACK (ostack, 3);
+
+	arg0 = hg_stack_index(ostack, 2, error);
+	arg1 = hg_stack_index(ostack, 1, error);
+	arg2 = hg_stack_index(ostack, 0, error);
+
+	if (!hg_quark_is_readable(arg0) ||
+	    !hg_quark_is_readable(arg1) ||
+	    !hg_quark_is_writable(arg2)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+
+	a1 = HG_VM_LOCK (vm, arg0, error);
+	a2 = HG_VM_LOCK (vm, arg1, error);
+	a3 = HG_VM_LOCK (vm, arg2, error);
+
+	if (hg_array_length(a1) != 6 ||
+	    hg_array_length(a2) != 6 ||
+	    hg_array_length(a3) != 6) {
+		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		goto error;
+	}
+	if (!hg_array_is_matrix(a1) ||
+	    !hg_array_is_matrix(a2) ||
+	    !hg_array_is_matrix(a3)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		goto error;
+	}
+	if (!hg_array_matrix_multiply(a1, a2, a3)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		goto error;
+	}
+	hg_stack_roll(ostack, 3, 1, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+
+	retval = TRUE;
+  error:
+	HG_VM_UNLOCK (vm, arg2);
+	HG_VM_UNLOCK (vm, arg1);
+	HG_VM_UNLOCK (vm, arg0);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-2, 0, 0);
+DEFUNC_OPER_END
 
 static gboolean
 _hg_operator_copy_real_traverse_dict(hg_mem_t    *mem,
@@ -4522,41 +4608,6 @@ DEFUNC_UNIMPLEMENTED_OPER (sym_left_square_bracket);
 DEFUNC_UNIMPLEMENTED_OPER (sym_right_square_bracket);
 DEFUNC_UNIMPLEMENTED_OPER (banddevice);
 DEFUNC_UNIMPLEMENTED_OPER (cachestatus);
-
-/* <file> closefile - */
-DEFUNC_OPER (closefile)
-G_STMT_START {
-	hg_quark_t arg0;
-	hg_file_t *f;
-
-	CHECK_STACK (ostack, 1);
-
-	arg0 = hg_stack_index(ostack, 0, error);
-	if (!HG_IS_QFILE (arg0)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
-		return FALSE;
-	}
-	f = HG_VM_LOCK (vm, arg0, error);
-	if (f == NULL) {
-		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
-		return FALSE;
-	}
-	hg_file_close(f, error);
-	if (error && *error) {
-		hg_vm_set_error_from_gerror(vm, qself, *error);
-		HG_VM_UNLOCK (vm, arg0);
-
-		return FALSE;
-	}
-	HG_VM_UNLOCK (vm, arg0);
-
-	hg_stack_drop(ostack, error);
-
-	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
-
 DEFUNC_UNIMPLEMENTED_OPER (colorimage);
 DEFUNC_UNIMPLEMENTED_OPER (condition);
 DEFUNC_UNIMPLEMENTED_OPER (copypage);
