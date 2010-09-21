@@ -2225,7 +2225,35 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (1, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (currentfile);
+/* - currentfile <file> */
+DEFUNC_OPER (currentfile)
+G_STMT_START {
+	hg_quark_t q = Qnil;
+	gsize i, edepth = hg_stack_depth(estack);
+
+	for (i = 0; i < edepth; i++) {
+		q = hg_stack_index(estack, i, error);
+		if (HG_IS_QFILE (q))
+			break;
+		q = Qnil;
+	}
+	if (q == Qnil) {
+		hg_file_t *f;
+
+		q = hg_file_new_with_string(hg_vm_get_mem(vm), "%nofile",
+					    HG_FILE_IO_MODE_READ,
+					    NULL, NULL,
+					    error,
+					    (gpointer *)&f);
+		hg_file_close(f, error);
+		HG_VM_UNLOCK (vm, q);
+	}
+	STACK_PUSH (ostack, q);
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (1, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (currentfont);
 DEFUNC_UNIMPLEMENTED_OPER (currentgray);
 DEFUNC_UNIMPLEMENTED_OPER (currentgstate);
