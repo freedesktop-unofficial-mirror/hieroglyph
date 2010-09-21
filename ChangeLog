@@ -4,6 +4,7 @@
 	(_hg_operator_real_cos): implemented.
 	(_hg_operator_real_currentfile): implemented.
 	(_hg_operator_real_cvi): implemented.
+	(_hg_operator_real_cvlit): implemented.
 
 	* hieroglyph/hgarray.c (hg_array_matrix_new): new.
 	(hg_array_is_matrix): new.

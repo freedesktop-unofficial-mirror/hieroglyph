@@ -2342,7 +2342,22 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (cvlit);
+/* <any> cvlit <any> */
+DEFUNC_OPER (cvlit)
+G_STMT_START {
+	hg_quark_t arg0;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_pop(ostack, error);
+	hg_quark_set_executable(&arg0, FALSE);
+	STACK_PUSH (ostack, arg0);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (cvn);
 DEFUNC_UNIMPLEMENTED_OPER (cvr);
 
