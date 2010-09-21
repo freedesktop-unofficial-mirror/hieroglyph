@@ -1,6 +1,7 @@
 2010-09-21  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_concatmatrix): implemented.
+	(_hg_operator_real_cos): implemented.
 
 	* hieroglyph/hgarray.c (hg_array_matrix_new): new.
 	(hg_array_is_matrix): new.

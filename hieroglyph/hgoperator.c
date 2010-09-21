@@ -100,7 +100,11 @@ PROTO_OPER (closepath);
 PROTO_OPER (concat);
 PROTO_OPER (concatmatrix);
 PROTO_OPER (copy);
+PROTO_OPER (copypage);
+PROTO_OPER (cos);
 PROTO_OPER (count);
+PROTO_OPER (countdictstack);
+PROTO_OPER (countexecstack);
 PROTO_OPER (counttomark);
 PROTO_OPER (currentcmykcolor);
 PROTO_OPER (currentdash);
@@ -286,10 +290,6 @@ PROTO_OPER (banddevice);
 PROTO_OPER (cachestatus);
 PROTO_OPER (colorimage);
 PROTO_OPER (condition);
-PROTO_OPER (copypage);
-PROTO_OPER (cos);
-PROTO_OPER (countdictstack);
-PROTO_OPER (countexecstack);
 PROTO_OPER (cshow);
 PROTO_OPER (currentblackgeneration);
 PROTO_OPER (currentcacheparams);
@@ -2124,10 +2124,59 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (__n != 0 ? __n - 1 : -1, 0, 0);
 DEFUNC_OPER_END
 
+DEFUNC_UNIMPLEMENTED_OPER (copypage);
+
+/* <angle> cos <real> */
+DEFUNC_OPER (cos)
+G_STMT_START {
+	hg_quark_t arg0, q;
+	gdouble angle;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (HG_IS_QINT (arg0)) {
+		angle = (gdouble)HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg0)) {
+		angle = HG_REAL (arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	q = HG_QREAL (cos(angle / 180 * M_PI));
+	hg_stack_drop(ostack, error);
+
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 /* - count <int> */
 DEFUNC_OPER (count)
 G_STMT_START {
 	STACK_PUSH (ostack, HG_QINT (hg_stack_depth(ostack)));
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (1, 0, 0);
+DEFUNC_OPER_END
+
+/* - countdictstack <int> */
+DEFUNC_OPER (countdictstack)
+G_STMT_START {
+	STACK_PUSH (ostack, HG_QINT (hg_stack_depth(dstack)));
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (1, 0, 0);
+DEFUNC_OPER_END
+
+/* - countexecstack <int> */
+DEFUNC_OPER (countexecstack)
+G_STMT_START {
+	STACK_PUSH (ostack, HG_QINT (hg_stack_depth(estack)));
 
 	retval = TRUE;
 } G_STMT_END;
@@ -4610,29 +4659,6 @@ DEFUNC_UNIMPLEMENTED_OPER (banddevice);
 DEFUNC_UNIMPLEMENTED_OPER (cachestatus);
 DEFUNC_UNIMPLEMENTED_OPER (colorimage);
 DEFUNC_UNIMPLEMENTED_OPER (condition);
-DEFUNC_UNIMPLEMENTED_OPER (copypage);
-DEFUNC_UNIMPLEMENTED_OPER (cos);
-
-/* - countdictstack <int> */
-DEFUNC_OPER (countdictstack)
-G_STMT_START {
-	STACK_PUSH (ostack, HG_QINT (hg_stack_depth(dstack)));
-
-	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
-
-/* - countexecstack <int> */
-DEFUNC_OPER (countexecstack)
-G_STMT_START {
-	STACK_PUSH (ostack, HG_QINT (hg_stack_depth(estack)));
-
-	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
-
 DEFUNC_UNIMPLEMENTED_OPER (cshow);
 DEFUNC_UNIMPLEMENTED_OPER (currentblackgeneration);
 DEFUNC_UNIMPLEMENTED_OPER (currentcacheparams);
