@@ -91,6 +91,7 @@ PROTO_OPER (bytesavailable);
 PROTO_OPER (ceiling);
 PROTO_OPER (charpath);
 PROTO_OPER (clear);
+PROTO_OPER (cleardictstack);
 PROTO_OPER (cleartomark);
 PROTO_OPER (clip);
 PROTO_OPER (clippath);
@@ -380,7 +381,6 @@ PROTO_OPER (yield);
 PROTO_OPER (defineuserobject);
 PROTO_OPER (undefineuserobject);
 PROTO_OPER (UserObjects);
-PROTO_OPER (cleardictstack);
 PROTO_OPER (setvmthreshold);
 PROTO_OPER (sym_begin_dict_mark);
 PROTO_OPER (sym_end_dict_mark);
@@ -1804,6 +1804,26 @@ G_STMT_START {
 	retval = TRUE;
 } G_STMT_END;
 VALIDATE_STACK_SIZE (-__hg_stack_odepth, 0, 0);
+DEFUNC_OPER_END
+
+DEFUNC_OPER (cleardictstack)
+gssize __n G_GNUC_UNUSED = 0;
+G_STMT_START {
+	gsize ddepth = hg_stack_depth(dstack);
+	gint i;
+
+	if (hg_vm_get_language_level(vm) == HG_LANG_LEVEL_1) {
+		__n = ddepth - 2;
+	} else {
+		__n = ddepth - 3;
+	}
+	for (i = 0; i < __n; i++) {
+		hg_stack_drop(dstack, error);
+	}
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, -__n);
 DEFUNC_OPER_END
 
 /* <mark> ... cleartomark - */
@@ -4878,7 +4898,6 @@ DEFUNC_UNIMPLEMENTED_OPER (yield);
 DEFUNC_UNIMPLEMENTED_OPER (defineuserobject);
 DEFUNC_UNIMPLEMENTED_OPER (undefineuserobject);
 DEFUNC_UNIMPLEMENTED_OPER (UserObjects);
-DEFUNC_UNIMPLEMENTED_OPER (cleardictstack);
 DEFUNC_UNIMPLEMENTED_OPER (setvmthreshold);
 DEFUNC_UNIMPLEMENTED_OPER (sym_begin_dict_mark);
 DEFUNC_UNIMPLEMENTED_OPER (sym_end_dict_mark);

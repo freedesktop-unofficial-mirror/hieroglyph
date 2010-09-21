@@ -1,3 +1,7 @@
+2010-09-21  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_cleardictstack): implemented.
+
 2010-09-20  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_ceiling): implemented.
