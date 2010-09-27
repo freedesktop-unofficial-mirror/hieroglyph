@@ -1,3 +1,8 @@
+2010-09-27  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_bind): unlock the object
+	exactly.
+
 2010-09-21  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_concatmatrix): implemented.

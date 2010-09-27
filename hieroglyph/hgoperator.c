@@ -1682,7 +1682,7 @@ G_STMT_START {
 	a = HG_VM_LOCK (vm, arg0, error);
 	if (a == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
-		return FALSE;
+		goto error;
 	}
 	len = hg_array_length(a);
 	for (i = 0; i < len; i++) {
@@ -1704,6 +1704,8 @@ G_STMT_START {
 		}
 	}
 	retval = TRUE;
+  error:
+	HG_VM_UNLOCK (vm, arg0);
 } G_STMT_END;
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
