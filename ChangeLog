@@ -1,5 +1,9 @@
 2010-09-28  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgvm.c (_hg_vm_run_gc): mark a lineedit object as well.
+
+	* hieroglyph/hglineedit.l (hg_lineedit_gc_mark): new.
+
 	* hieroglyph/hgarray.c (_hg_object_array_copy): fix possibly
 	a memory leak.
 

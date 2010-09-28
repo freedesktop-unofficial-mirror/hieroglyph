@@ -496,3 +496,21 @@ hg_lineedit_set_outfile(hg_lineedit_t *lineedit,
 
 	lineedit->outfile = outfile;
 }
+
+/**
+ * hg_lineedit_gc_mark:
+ * @lineedit:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_lineedit_gc_mark(hg_lineedit_t  *lineedit,
+		    GError        **error)
+{
+	hg_return_val_if_fail (lineedit != NULL, FALSE);
+
+	return hg_mem_gc_mark(lineedit->mem, lineedit->qself, error);
+}

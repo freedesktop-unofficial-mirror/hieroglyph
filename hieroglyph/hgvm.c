@@ -678,6 +678,9 @@ _hg_vm_run_gc(hg_mem_t *mem,
 		if (!hg_vm_quark_gc_mark(vm, vm->qio[i], &err))
 			goto error;
 	}
+	if (vm->lineedit &&
+	    !hg_lineedit_gc_mark(vm->lineedit, &err))
+		goto error;
 	/* marking I/O in scanner */
 	f = hg_scanner_get_infile(vm->scanner);
 	if (!hg_object_gc_mark((hg_object_t *)f,
