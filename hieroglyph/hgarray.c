@@ -136,6 +136,7 @@ _hg_object_array_copy(hg_object_t              *object,
 				  err->code);
 		}
 		g_error_free(err);
+		hg_object_free(a->o.mem, retval);
 
 		retval = Qnil;
 	}

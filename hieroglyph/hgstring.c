@@ -305,7 +305,7 @@ hg_string_free(hg_string_t *string,
 
 	if (free_segment)
 		hg_mem_free(string->o.mem, string->qstring);
-	hg_mem_free(string->o.mem, string->o.self);
+	hg_object_free(string->o.mem, string->o.self);
 }
 
 /**
@@ -925,7 +925,7 @@ hg_string_make_substring(hg_string_t  *string,
 						 start_index,
 						 end_index,
 						 &err)) {
-			hg_mem_free(string->o.mem, retval);
+			hg_object_free(string->o.mem, retval);
 			retval = Qnil;
 		}
 		if (ret)
