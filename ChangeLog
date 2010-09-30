@@ -1,3 +1,10 @@
+2010-10-01  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgvm.c (hg_vm_stepi_in_exec_array): no need to find out
+	a mark to build a procedure because the operand stack is saved before
+	starting to have a look.
+	(hg_vm_step_in_exec_array): get rid of pushing the unnecessary marker.
+
 2010-09-28  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgvm.c (_hg_vm_run_gc): mark a lineedit object as well.

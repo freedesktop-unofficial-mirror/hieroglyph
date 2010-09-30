@@ -408,17 +408,7 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 					    hg_quark_t q;
 					    hg_array_t *a;
 
-					    while (1) {
-						    q = hg_stack_index(ostack, idx, &err);
-						    if (err) {
-							    hg_vm_set_error(vm, qparent,
-									    HG_VM_e_unmatchedmark);
-							    goto finalize;
-						    }
-						    if (HG_IS_QMARK (q))
-							    break;
-						    idx++;
-					    }
+					    idx = hg_stack_depth(ostack);
 					    qresult = hg_array_new(hg_vm_get_mem(vm),
 								   idx,
 								   (gpointer *)&a);
@@ -495,9 +485,6 @@ hg_vm_step_in_exec_array(hg_vm_t    *vm,
 
 		return FALSE;
 	}
-
-	hg_stack_push(vm->stacks[HG_VM_STACK_OSTACK],
-		      HG_QMARK);
 
 	while (hg_vm_stepi_in_exec_array(vm, qparent));
 	if (!hg_vm_has_error(vm)) {
