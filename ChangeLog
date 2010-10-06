@@ -1,5 +1,8 @@
 2010-10-06  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgstring.c (hg_string_get_cstr): allow copying a null
+	character.
+
 	* hieroglyph/hgoperator.c (_hg_operator_real_dict): check the range.
 
 	* hieroglyph/hgquark.h (hg_quark_compare): compare the real values

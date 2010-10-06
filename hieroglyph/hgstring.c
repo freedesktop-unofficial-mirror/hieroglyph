@@ -727,7 +727,9 @@ hg_string_get_cstr(hg_string_t *string)
 				    string->qstring,
 				    NULL);
 
-	retval = g_strndup(&cstr[string->offset], string->length);
+	retval = g_new0(gchar, string->length - string->offset + 1);
+	memcpy(retval, &cstr[string->offset], string->length);
+	retval[string->length - string->offset] = 0;
 
 	hg_mem_unlock_object(string->o.mem, string->qstring);
 
