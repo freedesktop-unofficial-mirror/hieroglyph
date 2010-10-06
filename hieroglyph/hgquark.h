@@ -532,6 +532,9 @@ hg_quark_get_type_name(hg_quark_t  qdata)
 	return types[hg_quark_get_type(qdata)];
 }
 
+/* bits of a hack to shut up the compiler warnings */
+#include <hieroglyph/hgreal.h>
+
 /**
  * hg_quark_compare:
  * @qdata1:
@@ -554,9 +557,12 @@ hg_quark_compare(hg_quark_t              qdata1,
 	if (hg_quark_get_type(qdata1) != hg_quark_get_type(qdata2))
 		return FALSE;
 
-	if (hg_quark_is_simple_object(qdata1) ||
+	if ((hg_quark_is_simple_object(qdata1) &&
+	     hg_quark_get_type(qdata1) != HG_TYPE_REAL) ||
 	    hg_quark_get_type(qdata1) == HG_TYPE_OPER)
 		return qdata1 == qdata2;
+	else if (hg_quark_get_type(qdata1) == HG_TYPE_REAL)
+		return HG_REAL_EQUAL (HG_REAL (qdata1), HG_REAL (qdata2));
 
 	return func(qdata1, qdata2, user_data);
 }

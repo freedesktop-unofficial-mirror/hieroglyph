@@ -1,5 +1,8 @@
 2010-10-06  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgquark.h (hg_quark_compare): compare the real values
+	properly.
+
 	* hieroglyph/hgoperator.c (_hg_operator_real_concatmatrix):
 	check the object type.
 

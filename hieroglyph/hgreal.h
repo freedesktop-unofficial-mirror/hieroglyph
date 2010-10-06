@@ -21,12 +21,13 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#include <hieroglyph/hgquark.h>
+
 #ifndef __HIEROGLYPH_HGREAL_H__
 #define __HIEROGLYPH_HGREAL_H__
 
 #include <math.h>
 #include <string.h>
-#include <hieroglyph/hgquark.h>
 
 G_BEGIN_DECLS
 
