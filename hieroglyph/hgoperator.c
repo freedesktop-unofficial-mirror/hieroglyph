@@ -2544,6 +2544,10 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
+	if (HG_INT (arg0) < 0) {
+		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		return FALSE;
+	}
 	if (HG_INT (arg0) > G_MAXUSHORT) {
 		hg_vm_set_error(vm, qself, HG_VM_e_limitcheck);
 		return FALSE;
