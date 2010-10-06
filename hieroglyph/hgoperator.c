@@ -1905,6 +1905,12 @@ G_STMT_START {
 	arg1 = hg_stack_index(ostack, 1, error);
 	arg2 = hg_stack_index(ostack, 0, error);
 
+	if (!HG_IS_QARRAY (arg0) ||
+	    !HG_IS_QARRAY (arg1) ||
+	    !HG_IS_QARRAY (arg2)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
 	if (!hg_quark_is_readable(arg0) ||
 	    !hg_quark_is_readable(arg1) ||
 	    !hg_quark_is_writable(arg2)) {

@@ -1,3 +1,8 @@
+2010-10-06  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_concatmatrix):
+	check the object type.
+
 2010-10-01  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgvm.c (hg_vm_stepi_in_exec_array): no need to find out
