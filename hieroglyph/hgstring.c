@@ -93,7 +93,7 @@ _hg_object_string_copy(hg_object_t              *object,
 
 	hg_return_val_if_fail (object->type == HG_TYPE_STRING, Qnil);
 
-	retval = HG_QSTRING (s->o.mem, cstr);
+	retval = HG_QSTRING_LEN (s->o.mem, cstr, hg_string_length(s));
 	g_free(cstr);
 	if (retval == Qnil) {
 		g_set_error(&err, HG_ERROR, ENOMEM,

@@ -1,3 +1,13 @@
+2010-10-07  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgvm.c (hg_vm_eval_from_cstring): allow containing a null
+	character in eval cstring.
+
+	* hieroglyph/hgstring.h (HG_QSTRING_LEN): new.
+
+	* hieroglyph/hgstring.c (_hg_object_string_copy): copy a null
+	character too.
+
 2010-10-06  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgstring.c (hg_string_get_cstr): allow copying a null

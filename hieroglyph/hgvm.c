@@ -2368,6 +2368,7 @@ hg_vm_eval(hg_vm_t     *vm,
  * hg_vm_eval_from_cstring:
  * @vm:
  * @cstring:
+ * @clen:
  * @ostack:
  * @estack:
  * @dstack:
@@ -2380,6 +2381,7 @@ hg_vm_eval(hg_vm_t     *vm,
 gboolean
 hg_vm_eval_from_cstring(hg_vm_t      *vm,
 			const gchar  *cstring,
+			gssize        clen,
 			hg_stack_t   *ostack,
 			hg_stack_t   *estack,
 			hg_stack_t   *dstack,
@@ -2393,10 +2395,16 @@ hg_vm_eval_from_cstring(hg_vm_t      *vm,
 	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error);
 	hg_return_val_with_gerror_if_fail (cstring != NULL, FALSE, error);
 
+	if (clen < 0)
+		clen = strlen(cstring);
+
 	/* add \n at the end to avoid failing on scanner */
-	str = g_strdup_printf("%s\n", cstring);
-	qstring = HG_QSTRING (hg_vm_get_mem(vm),
-			      str);
+	str = g_new0(gchar, clen + 2);
+	memcpy(str, cstring, clen);
+	str[clen] = '\n';
+	str[clen + 1] = 0;
+	qstring = HG_QSTRING_LEN (hg_vm_get_mem(vm),
+				  str, clen + 1);
 	g_free(str);
 	if (qstring == Qnil) {
 		g_set_error(&err, HG_ERROR, ENOMEM,
@@ -2587,14 +2595,14 @@ hg_vm_startjob(hg_vm_t           *vm,
 	} else if (initializer) {
 		gchar *s = g_strdup_printf("{(%s)(r)file dup type/filetype eq{cvx exec}if}stopped{$error/newerror get{errordict/handleerror get exec 1 .quit}if}if", initializer);
 
-		retval = hg_vm_eval_from_cstring(vm, s, NULL, NULL, NULL, NULL);
+		retval = hg_vm_eval_from_cstring(vm, s, -1, NULL, NULL, NULL, NULL);
 
 		g_free(s);
 
 		return retval;
 	}
 
-	return (retval ? hg_vm_eval_from_cstring(vm, "systemdict/.loadhistory known{(.hghistory).loadhistory}if start systemdict/.savehistory known{(.hghistory).savehistory}if", NULL, NULL, NULL, NULL) : FALSE);
+	return (retval ? hg_vm_eval_from_cstring(vm, "systemdict/.loadhistory known{(.hghistory).loadhistory}if start systemdict/.savehistory known{(.hghistory).savehistory}if", -1, NULL, NULL, NULL, NULL) : FALSE);
 }
 
 /**

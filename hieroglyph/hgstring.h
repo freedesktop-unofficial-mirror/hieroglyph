@@ -33,8 +33,10 @@ G_BEGIN_DECLS
 	(hg_object_register(HG_TYPE_STRING,			\
 			    hg_object_string_get_vtable()))
 
-#define HG_QSTRING(_m_,_s_)					\
-	(hg_string_new_with_value((_m_), (_s_), strlen(_s_), NULL))
+#define HG_QSTRING(_m_,_s_)			\
+	HG_QSTRING_LEN (_m_,_s_,strlen(_s_))
+#define HG_QSTRING_LEN(_m_,_s_,_l_)					\
+	(hg_string_new_with_value((_m_), (_s_), (_l_), NULL))
 #define HG_IS_QSTRING(_v_)				\
 	(hg_quark_get_type(_v_) == HG_TYPE_STRING)
 

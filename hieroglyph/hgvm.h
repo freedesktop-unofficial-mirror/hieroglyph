@@ -201,6 +201,7 @@ gboolean           hg_vm_eval                  (hg_vm_t            *vm,
 						GError            **error);
 gboolean           hg_vm_eval_from_cstring     (hg_vm_t            *vm,
 						const gchar        *cstring,
+						gssize              clen,
 						hg_stack_t         *ostack,
 						hg_stack_t         *estack,
 						hg_stack_t         *dstack,
