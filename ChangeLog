@@ -1,5 +1,8 @@
 2010-10-07  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgscanner.l (YY_INPUT): a hack to avoid reaching ECHO
+	macro when EOF detected.
+
 	* hieroglyph/hgvm.c (hg_vm_eval_from_cstring): allow containing a null
 	character in eval cstring.
 

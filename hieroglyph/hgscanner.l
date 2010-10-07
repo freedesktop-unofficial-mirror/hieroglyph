@@ -44,11 +44,20 @@
 	G_STMT_START {						\
 		hg_scanner_t *_scanner_ = yyextra;		\
 								\
-		_result_ = hg_file_read(_scanner_->infile,	\
-					(_buf_),		\
-					1,			\
-					1,			\
-					NULL);			\
+		if (!hg_file_is_eof(_scanner_->infile)) {		\
+			_result_ = hg_file_read(_scanner_->infile,	\
+						(_buf_),		\
+						1,			\
+						1,			\
+						NULL);			\
+			if (hg_file_is_eof(_scanner_->infile)) {	\
+				_result_ = 1;				\
+				(_buf_)[0] = ' ';			\
+				(_buf_)[1] = 0;				\
+			}						\
+		} else {						\
+			_result_ = 0;					\
+		}							\
 	} G_STMT_END
 #define YY_EXTRA_TYPE		hg_scanner_t *
 #define YY_USER_INIT		yyextra = scanner;
