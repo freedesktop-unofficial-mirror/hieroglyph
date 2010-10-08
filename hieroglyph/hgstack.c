@@ -40,7 +40,7 @@ static gboolean   _hg_stack_push(hg_stack_t *stack,
                                  hg_quark_t  quark);
 
 
-HG_DEFINE_VTABLE_WITH_FREE (stack, NULL)
+HG_DEFINE_VTABLE_WITH (stack, NULL, NULL, NULL);
 
 /*< private >*/
 static gsize

@@ -117,9 +117,11 @@ G_INLINE_FUNC void       _hg_dict_node_foreach              (hg_mem_t           
 							     gpointer                  data,
 							     GError                  **error);
 
-
-HG_DEFINE_VTABLE_WITH_FREE (dict, NULL);
-HG_DEFINE_VTABLE_WITH_FREE (dict_node, NULL);
+HG_PROTO_VTABLE_ATTRIBUTES (dict);
+HG_DEFINE_VTABLE_WITH (dict, NULL,
+		       _hg_object_dict_set_attributes,
+		       _hg_object_dict_get_attributes);
+HG_DEFINE_VTABLE_WITH (dict_node, NULL, NULL, NULL);
 
 static gsize __hg_dict_node_size = HG_DICT_NODE_SIZE;
 
@@ -236,6 +238,38 @@ _hg_object_dict_compare(hg_object_t             *o1,
 	hg_dict_foreach((hg_dict_t *)o1, _hg_dict_traverse_compare, &data, NULL);
 
 	return data.result;
+}
+
+static void
+_hg_object_dict_set_attributes(hg_object_t *object,
+			       gint         readable,
+			       gint         writable,
+			       gint         executable)
+{
+	if (readable != 0) {
+		if (readable > 0)
+			object->attributes |= HG_ACCESS_READABLE;
+		else
+			object->attributes &= ~HG_ACCESS_READABLE;
+	}
+	if (writable != 0) {
+		if (writable > 0)
+			object->attributes |= HG_ACCESS_WRITABLE;
+		else
+			object->attributes &= ~HG_ACCESS_WRITABLE;
+	}
+	if (executable != 0) {
+		if (executable > 0)
+			object->attributes |= HG_ACCESS_EXECUTABLE;
+		else
+			object->attributes &= ~HG_ACCESS_EXECUTABLE;
+	}
+}
+
+static gint
+_hg_object_dict_get_attributes(hg_object_t *object)
+{
+	return object->attributes;
 }
 
 static gsize

@@ -1,3 +1,30 @@
+2010-10-08  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgvm.c (hg_vm_quark_set_default_attributes): renamed
+	from hg_vm_quark_set_attributes.
+	(hg_vm_quark_set_attributes): newly implemented.
+	(hg_vm_quark_set_readable): new.
+	(hg_vm_quark_is_readable): new.
+	(hg_vm_quark_set_writable): new.
+	(hg_vm_quark_is_writable): new.
+	(hg_vm_quark_set_executable): new.
+	(hg_vm_quark_is_executable): new.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_dict): set default
+	attributes to the dict object.
+	(_hg_operator_real_forall): inherits the object attributes when cloning.
+	(_hg_operator_real_noaccess): implemented.
+
+	* hieroglyph/hgobject.h (HG_PROTO_VTABLE_ATTRIBUTES): new macro.
+	(HG_DEFINE_VTABLE_WITH): renamed from HG_DEFINE_VTABLE_WITH_FREE.
+
+	* hieroglyph/hgobject.c (hg_object_set_attributes): new.
+	(hg_object_get_attributes): new.
+
+	* hieroglyph/hgdict.c (_hg_object_dict_set_attributes): have attributes
+	per object but not per quark.
+	(_hg_object_dict_get_attributes): likewise.
+
 2010-10-07  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgscanner.l (YY_INPUT): a hack to avoid reaching ECHO

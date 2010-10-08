@@ -185,7 +185,7 @@ static hg_file_vtable_t __hg_file_io_lineedit_vtable = {
 	.clear_eof = _hg_file_io_real_buffered_clear_eof,
 };
 
-HG_DEFINE_VTABLE (file)
+HG_DEFINE_VTABLE (file);
 
 /*< private >*/
 static gsize

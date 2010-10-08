@@ -38,7 +38,7 @@
 #define HG_ARRAY_MAX_SIZE	65535 /* defined as PostScript spec */
 
 
-HG_DEFINE_VTABLE_WITH_FREE (array, NULL)
+HG_DEFINE_VTABLE_WITH (array, NULL, NULL, NULL);
 
 /*< private >*/
 static gsize

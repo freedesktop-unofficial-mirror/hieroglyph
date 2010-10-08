@@ -369,3 +369,58 @@ hg_object_compare(hg_object_t             *o1,
 
 	return retval;
 }
+
+/**
+ * hg_object_set_attributes:
+ * @object:
+ * @readable:
+ * @writable:
+ * @executable:
+ *
+ * FIXME
+ */
+void
+hg_object_set_attributes(hg_object_t *object,
+			 gint         readable,
+			 gint         writable,
+			 gint         executable)
+{
+	hg_object_vtable_t *v;
+
+	hg_return_if_fail (__hg_object_is_initialized);
+	hg_return_if_fail (object != NULL);
+	hg_return_if_fail (object->type < HG_TYPE_END);
+	hg_return_if_fail (__hg_object_vtables[object->type] != NULL);
+
+	v = __hg_object_vtables[object->type];
+
+	if (v->set_attributes)
+		v->set_attributes(object, readable, writable, executable);
+}
+
+/**
+ * hg_object_get_attributes:
+ * @object:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gint
+hg_object_get_attributes(hg_object_t *object)
+{
+	hg_object_vtable_t *v;
+	gint retval = -1;
+
+	hg_return_val_if_fail (__hg_object_is_initialized, -1);
+	hg_return_val_if_fail (object != NULL, -1);
+	hg_return_val_if_fail (object->type < HG_TYPE_END, -1);
+	hg_return_val_if_fail (__hg_object_vtables[object->type] != NULL, -1);
+
+	v = __hg_object_vtables[object->type];
+
+	if (v->get_attributes)
+		retval = v->get_attributes(object);
+
+	return retval;
+}

@@ -60,7 +60,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-	if (!hg_quark_is_readable(arg0)) {
+	if (!hg_vm_quark_is_readable(vm, &arg0)) {
 		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
 		return FALSE;
 	}

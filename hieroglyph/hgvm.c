@@ -285,7 +285,7 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 
 	switch (hg_quark_get_type(qexecobj)) {
 	    case HG_TYPE_EVAL_NAME:
-		    if (hg_quark_is_executable(qexecobj)) {
+		    if (hg_vm_quark_is_executable(vm, &qexecobj)) {
 			    qresult = hg_vm_dict_lookup(vm, qexecobj);
 			    if (qresult == Qnil) {
 				    hg_vm_set_error(vm, qparent,
@@ -315,7 +315,7 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 		    hg_stack_drop(estack, &err);
 		    break;
 	    case HG_TYPE_FILE:
-		    if (!hg_quark_is_executable(qexecobj)) {
+		    if (!hg_vm_quark_is_executable(vm, &qexecobj)) {
 			    goto push_stack;
 		    } else {
 			    file = _HG_VM_LOCK (vm, qexecobj, &err);
@@ -333,7 +333,7 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 				    break;
 			    }
 			    qresult = hg_scanner_get_token(vm->scanner);
-			    hg_vm_quark_set_attributes(vm, &qresult);
+			    hg_vm_quark_set_default_attributes(vm, &qresult);
 #if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
 			    G_STMT_START {
 				    hg_quark_t qs;
@@ -417,8 +417,8 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 								    HG_VM_e_VMerror);
 						    return FALSE;
 					    }
-					    hg_vm_quark_set_attributes(vm, &qresult);
-					    hg_quark_set_executable(&qresult, TRUE);
+					    hg_vm_quark_set_default_attributes(vm, &qresult);
+					    hg_vm_quark_set_executable(vm, &qresult, TRUE);
 					    for (i = idx - 1; i >= 0; i--) {
 						    q = hg_stack_index(ostack, i, &err);
 						    if (err)
@@ -1105,10 +1105,10 @@ hg_vm_quark_copy(hg_vm_t     *vm,
 		}
 		g_error_free(err);
 	} else {
-		hg_quark_set_access_bits(&retval,
-					 hg_quark_is_readable(qdata),
-					 hg_quark_is_writable(qdata),
-					 hg_quark_is_executable(qdata));
+		hg_vm_quark_set_attributes(vm, &retval,
+					   hg_vm_quark_is_readable(vm, &qdata),
+					   hg_vm_quark_is_writable(vm, &qdata),
+					   hg_vm_quark_is_executable(vm, &qdata));
 	}
 
 	return retval;
@@ -1186,7 +1186,7 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 			    break;
 		    case HG_TYPE_NAME:
 			    if (ps_like_syntax) {
-				    if (hg_quark_is_executable(qdata))
+				    if (hg_vm_quark_is_executable(vm, &qdata))
 					    hg_string_append_printf(s, "%s", HG_NAME (vm->name, qdata));
 				    else
 					    hg_string_append_printf(s, "/%s", HG_NAME (vm->name, qdata));
@@ -1208,7 +1208,7 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 			    goto error;
 		}
 	} else {
-		if (!hg_quark_is_readable(qdata)) {
+		if (!hg_vm_quark_is_readable(vm, &qdata)) {
 			hg_string_append(s, types[hg_quark_get_type(qdata)], -1, &err);
 		} else {
 			switch (hg_quark_get_type(qdata)) {
@@ -1233,7 +1233,7 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 				    o = _HG_VM_LOCK (vm, qdata, &err);
 				    if (o) {
 					    cstr = hg_object_to_cstr(o, _hg_vm_quark_iterate_to_cstr, vm, &err);
-					    if (cstr && HG_IS_QARRAY (qdata) && hg_quark_is_executable(qdata)) {
+					    if (cstr && HG_IS_QARRAY (qdata) && hg_vm_quark_is_executable(vm, &qdata)) {
 						    if (cstr[0] == '[') {
 							    cstr[0] = '{';
 							    cstr[strlen(cstr)-1] = '}';
@@ -1317,7 +1317,7 @@ hg_vm_quark_compare_content(hg_vm_t    *vm,
 }
 
 /**
- * hg_vm_quark_set_attributes:
+ * hg_vm_quark_set_default_attributes:
  * @vm:
  *
  * FIXME
@@ -1325,8 +1325,8 @@ hg_vm_quark_compare_content(hg_vm_t    *vm,
  * Returns:
  */
 void
-hg_vm_quark_set_attributes(hg_vm_t    *vm,
-			   hg_quark_t *qdata)
+hg_vm_quark_set_default_attributes(hg_vm_t    *vm,
+				   hg_quark_t *qdata)
 {
 	hg_return_if_fail (vm != NULL);
 	hg_return_if_fail (qdata != NULL);
@@ -1336,7 +1336,7 @@ hg_vm_quark_set_attributes(hg_vm_t    *vm,
 	/* do not reset an exec bit here */
 	if (hg_quark_is_simple_object(*qdata)) {
 		hg_quark_set_access_bits(qdata,
-					 (vm->qattributes & HG_VM_ATTRIBUTE1 (HG_VM_ACCESS_READABLE)),
+					 (vm->qattributes & HG_VM_ATTRIBUTE1 (HG_VM_ACCESS_READABLE)) ? TRUE : FALSE,
 					 FALSE,
 					 hg_quark_is_executable(*qdata));
 	} else if (HG_IS_QOPER (*qdata)) {
@@ -1345,11 +1345,273 @@ hg_vm_quark_set_attributes(hg_vm_t    *vm,
 					 FALSE,
 					 hg_quark_is_executable(*qdata));
 	} else {
-		_hg_quark_type_bit_set_bits(qdata,
-					    HG_QUARK_TYPE_BIT_ACCESS1,
-					    HG_QUARK_TYPE_BIT_ACCESS_END,
-					    vm->qattributes);
+		hg_vm_quark_set_attributes(vm, qdata,
+					   (vm->qattributes & HG_VM_ATTRIBUTE1 (HG_VM_ACCESS_READABLE)) ? TRUE : FALSE,
+					   (vm->qattributes & HG_VM_ATTRIBUTE1 (HG_VM_ACCESS_WRITABLE)) ? TRUE : FALSE,
+					   FALSE);
 	}
+}
+
+/**
+ * hg_vm_quark_set_attributes:
+ * @vm:
+ * @qdata:
+ * @readable:
+ * @writable:
+ * @executable:
+ *
+ * FIXME
+ */
+void
+hg_vm_quark_set_attributes(hg_vm_t *vm,
+			   hg_quark_t *qdata,
+			   gboolean    readable,
+			   gboolean    writable,
+			   gboolean    executable)
+{
+	GError *err = NULL;
+
+	hg_quark_set_access_bits(qdata,
+				 readable ? TRUE : FALSE,
+				 writable ? TRUE : FALSE,
+				 executable ? TRUE : FALSE);
+	if (!hg_quark_is_simple_object(*qdata) &&
+	    !HG_IS_QOPER (*qdata)) {
+		hg_object_t *o = _HG_VM_LOCK (vm, *qdata, &err);
+
+		if (o) {
+			hg_object_set_attributes(o,
+						 readable ? 1 : -1,
+						 writable ? 1 : -1,
+						 executable ? 1 : -1);
+			_HG_VM_UNLOCK (vm, *qdata);
+		}
+		if (err) {
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
+				  err->message,
+				  err->code);
+		}
+	}
+}
+
+/**
+ * hg_vm_quark_set_readable:
+ * @vm:
+ * @qdata:
+ * @flag:
+ *
+ * FIXME
+ */
+void
+hg_vm_quark_set_readable(hg_vm_t    *vm,
+			 hg_quark_t *qdata,
+			 gboolean    flag)
+{
+	GError *err = NULL;
+
+	hg_quark_set_readable(qdata, flag);
+	if (!hg_quark_is_simple_object(*qdata) &&
+	    !HG_IS_QOPER (*qdata)) {
+		hg_object_t *o = _HG_VM_LOCK (vm, *qdata, &err);
+
+		if (o) {
+			hg_object_set_attributes(o, flag ? 1 : -1, 0, 0);
+
+			_HG_VM_UNLOCK (vm, *qdata);
+		}
+		if (err) {
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
+				  err->message,
+				  err->code);
+			g_error_free(err);
+		}
+	}
+}
+
+/**
+ * hg_vm_quark_is_readable:
+ * @vm:
+ * @qdata:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_vm_quark_is_readable(hg_vm_t    *vm,
+			hg_quark_t *qdata)
+{
+	GError *err = NULL;
+
+	if (!hg_quark_is_simple_object(*qdata) &&
+	    !HG_IS_QOPER (*qdata)) {
+		hg_object_t *o = _HG_VM_LOCK (vm, *qdata, &err);
+		gint attrs = hg_object_get_attributes(o);
+
+		if (attrs != -1) {
+			hg_quark_set_access_bits(qdata,
+						 attrs & HG_VM_ACCESS_READABLE ? TRUE : FALSE,
+						 attrs & HG_VM_ACCESS_WRITABLE ? TRUE : FALSE,
+						 attrs & HG_VM_ACCESS_EXECUTABLE ? TRUE : FALSE);
+			if (err) {
+				g_warning("%s: %s (code: %d)",
+					  __PRETTY_FUNCTION__,
+					  err->message,
+					  err->code);
+				g_error_free(err);
+			}
+		}
+	}
+
+	return hg_quark_is_readable(*qdata);
+}
+
+/**
+ * hg_vm_quark_set_writable:
+ * @vm:
+ * @qdata:
+ * @flag:
+ *
+ * FIXME
+ */
+void
+hg_vm_quark_set_writable(hg_vm_t    *vm,
+			 hg_quark_t *qdata,
+			 gboolean    flag)
+{
+	GError *err = NULL;
+
+	hg_quark_set_writable(qdata, flag);
+	if (!hg_quark_is_simple_object(*qdata) &&
+	    !HG_IS_QOPER (*qdata)) {
+		hg_object_t *o = _HG_VM_LOCK (vm, *qdata, &err);
+
+		if (o) {
+			hg_object_set_attributes(o, 0, flag ? 1 : -1, 0);
+
+			_HG_VM_UNLOCK (vm, *qdata);
+		}
+		if (err) {
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
+				  err->message,
+				  err->code);
+			g_error_free(err);
+		}
+	}
+}
+
+/**
+ * hg_vm_quark_is_writable:
+ * @vm:
+ * @qdata:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_vm_quark_is_writable(hg_vm_t    *vm,
+			hg_quark_t *qdata)
+{
+	GError *err = NULL;
+
+	if (!hg_quark_is_simple_object(*qdata) &&
+	    !HG_IS_QOPER (*qdata)) {
+		hg_object_t *o = _HG_VM_LOCK (vm, *qdata, &err);
+		gint attrs = hg_object_get_attributes(o);
+
+		if (attrs != -1) {
+			hg_quark_set_access_bits(qdata,
+						 attrs & HG_VM_ACCESS_READABLE ? TRUE : FALSE,
+						 attrs & HG_VM_ACCESS_WRITABLE ? TRUE : FALSE,
+						 attrs & HG_VM_ACCESS_EXECUTABLE ? TRUE : FALSE);
+			if (err) {
+				g_warning("%s: %s (code: %d)",
+					  __PRETTY_FUNCTION__,
+					  err->message,
+					  err->code);
+				g_error_free(err);
+			}
+		}
+	}
+
+	return hg_quark_is_writable(*qdata);
+}
+
+/**
+ * hg_vm_quark_set_executable:
+ * @vm:
+ * @qdata:
+ * @flag:
+ *
+ * FIXME
+ */
+void
+hg_vm_quark_set_executable(hg_vm_t    *vm,
+			   hg_quark_t *qdata,
+			   gboolean    flag)
+{
+	GError *err = NULL;
+
+	hg_quark_set_executable(qdata, flag);
+	if (!hg_quark_is_simple_object(*qdata) &&
+	    !HG_IS_QOPER (*qdata)) {
+		hg_object_t *o = _HG_VM_LOCK (vm, *qdata, &err);
+
+		if (o) {
+			hg_object_set_attributes(o, 0, 0, flag ? 1 : -1);
+
+			_HG_VM_UNLOCK (vm, *qdata);
+		}
+		if (err) {
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
+				  err->message,
+				  err->code);
+			g_error_free(err);
+		}
+	}
+}
+
+/**
+ * hg_vm_quark_is_executable:
+ * @vm:
+ * @qdata:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_vm_quark_is_executable(hg_vm_t    *vm,
+			  hg_quark_t *qdata)
+{
+	GError *err = NULL;
+
+	if (!hg_quark_is_simple_object(*qdata) &&
+	    !HG_IS_QOPER (*qdata)) {
+		hg_object_t *o = _HG_VM_LOCK (vm, *qdata, &err);
+		gint attrs = hg_object_get_attributes(o);
+
+		if (attrs != -1) {
+			hg_quark_set_access_bits(qdata,
+						 attrs & HG_VM_ACCESS_READABLE ? TRUE : FALSE,
+						 attrs & HG_VM_ACCESS_WRITABLE ? TRUE : FALSE,
+						 attrs & HG_VM_ACCESS_EXECUTABLE ? TRUE : FALSE);
+			if (err) {
+				g_warning("%s: %s (code: %d)",
+					  __PRETTY_FUNCTION__,
+					  err->message,
+					  err->code);
+				g_error_free(err);
+			}
+		}
+	}
+
+	return hg_quark_is_executable(*qdata);
 }
 
 /**
@@ -1462,7 +1724,7 @@ hg_vm_get_io(hg_vm_t      *vm,
 					      vm->lineedit,
 					      NULL,
 					      NULL);
-		hg_quark_set_access_bits(&ret, TRUE, FALSE, FALSE);
+		hg_vm_quark_set_attributes(vm, &ret, TRUE, FALSE, FALSE);
 	} else if (type == HG_FILE_IO_STATEMENTEDIT) {
 		ret = hg_file_new_with_vtable(hg_vm_get_mem(vm),
 					      "%statementedit",
@@ -1471,7 +1733,7 @@ hg_vm_get_io(hg_vm_t      *vm,
 					      vm->lineedit,
 					      NULL,
 					      NULL);
-		hg_quark_set_access_bits(&ret, TRUE, FALSE, FALSE);
+		hg_vm_quark_set_attributes(vm, &ret, TRUE, FALSE, FALSE);
 	} else {
 		ret = vm->qio[type];
 	}
@@ -1542,11 +1804,10 @@ hg_vm_setup(hg_vm_t           *vm,
 				 HG_FILE_IO_MODE_READ,
 				 NULL,
 				 (gpointer *)&fstdin);
-		hg_quark_set_access_bits(&qf, TRUE, FALSE, FALSE);
 	} else {
 		qf = stdin;
 	}
-	hg_quark_set_access_bits(&qf, TRUE, FALSE, FALSE);
+	hg_vm_quark_set_attributes(vm, &qf, TRUE, FALSE, FALSE);
 	vm->qio[HG_FILE_IO_STDIN] = qf;
 	if (stdout == Qnil) {
 		qf  = hg_file_new(hg_vm_get_mem(vm),
@@ -1554,11 +1815,10 @@ hg_vm_setup(hg_vm_t           *vm,
 				  HG_FILE_IO_MODE_WRITE,
 				  NULL,
 				  (gpointer *)&fstdout);
-		hg_quark_set_access_bits(&qf, FALSE, TRUE, FALSE);
 	} else {
 		qf = stdout;
 	}
-	hg_quark_set_access_bits(&qf, FALSE, TRUE, FALSE);
+	hg_vm_quark_set_attributes(vm, &qf, FALSE, TRUE, FALSE);
 	vm->qio[HG_FILE_IO_STDOUT] = qf;
 	if (stderr == Qnil) {
 		qf = hg_file_new(hg_vm_get_mem(vm),
@@ -1566,11 +1826,10 @@ hg_vm_setup(hg_vm_t           *vm,
 				 HG_FILE_IO_MODE_WRITE,
 				 NULL,
 				 NULL);
-		hg_quark_set_access_bits(&qf, FALSE, TRUE, FALSE);
 	} else {
 		qf = stderr;
 	}
-	hg_quark_set_access_bits(&qf, FALSE, TRUE, FALSE);
+	hg_vm_quark_set_attributes(vm, &qf, FALSE, TRUE, FALSE);
 	vm->qio[HG_FILE_IO_STDERR] = qf;
 
 	if (vm->qio[HG_FILE_IO_STDIN] == Qnil ||
@@ -1606,9 +1865,9 @@ hg_vm_setup(hg_vm_t           *vm,
 	    vm->qerror == Qnil)
 		goto error;
 
-	hg_quark_set_access_bits(&vm->qsystemdict, TRUE, TRUE, FALSE);
-	hg_quark_set_access_bits(&vm->qglobaldict, TRUE, TRUE, FALSE);
-	hg_quark_set_access_bits(&vm->qerror, TRUE, TRUE, FALSE);
+	hg_vm_quark_set_attributes(vm, &vm->qsystemdict, TRUE, TRUE, FALSE);
+	hg_vm_quark_set_attributes(vm, &vm->qglobaldict, TRUE, TRUE, FALSE);
+	hg_vm_quark_set_attributes(vm, &vm->qerror, TRUE, TRUE, FALSE);
 
 	hg_stack_push(vm->stacks[HG_VM_STACK_DSTACK], vm->qsystemdict);
 	if (lang_level >= HG_LANG_LEVEL_2) {
@@ -1656,7 +1915,7 @@ hg_vm_setup(hg_vm_t           *vm,
 		goto error;
 
 	/* initialize build-in operators */
-	if (!hg_operator_register(dict, vm->name, lang_level))
+	if (!hg_operator_register(vm, dict, vm->name, lang_level))
 		goto error;
 
 	_HG_VM_UNLOCK (vm, vm->qsystemdict);
@@ -1970,7 +2229,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 		    *is_proceeded = TRUE;
 		    break;
 	    case HG_TYPE_EVAL_NAME:
-		    if (hg_quark_is_executable(qexecobj)) {
+		    if (hg_vm_quark_is_executable(vm, &qexecobj)) {
 			    qresult = hg_vm_dict_lookup(vm, qexecobj);
 			    if (qresult == Qnil) {
 				    hg_vm_set_error(vm, qexecobj,
@@ -1987,7 +2246,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 		    /* /foo  ... nope
 		     * foo   ... exec bit
 		     */
-		    if (hg_quark_is_executable(qexecobj)) {
+		    if (hg_vm_quark_is_executable(vm, &qexecobj)) {
 			    hg_quark_t q;
 
 			    qresult = hg_vm_dict_lookup(vm, qexecobj);
@@ -1997,7 +2256,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 
 				    return TRUE;
 			    }
-			    if (hg_quark_is_executable(qresult)) {
+			    if (hg_vm_quark_is_executable(vm, &qresult)) {
 				    q = hg_vm_quark_copy(vm, qresult, NULL, &err);
 				    if (err) {
 					    hg_vm_set_error(vm, qexecobj,
@@ -2022,7 +2281,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 		    /* [ ... ] ... nope
 		     * { ... } ... exec bit
 		     */
-		    if (hg_quark_is_executable(qexecobj)) {
+		    if (hg_vm_quark_is_executable(vm, &qexecobj)) {
 			    hg_array_t *a = _HG_VM_LOCK (vm, qexecobj, &err);
 
 			    if (a == NULL) {
@@ -2035,7 +2294,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 					    hg_vm_set_error(vm, qexecobj, HG_VM_e_VMerror);
 					    goto a_error;
 				    }
-				    if (hg_quark_is_executable(qresult) &&
+				    if (hg_vm_quark_is_executable(vm, &qresult) &&
 					(HG_IS_QNAME (qresult) ||
 					 HG_IS_QOPER (qresult))) {
 					    if (!hg_stack_push(estack, qresult)) {
@@ -2060,7 +2319,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 		    }
 		    goto push_stack;
 	    case HG_TYPE_STRING:
-		    if (hg_quark_is_executable(qexecobj)) {
+		    if (hg_vm_quark_is_executable(vm, &qexecobj)) {
 			    hg_string_t *s;
 
 			    s = _HG_VM_LOCK (vm, qexecobj, &err);
@@ -2073,7 +2332,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 							      NULL,
 							      &err,
 							      NULL);
-			    hg_quark_set_executable(&qresult, TRUE);
+			    hg_vm_quark_set_executable(vm, &qresult, TRUE);
 			    _HG_VM_UNLOCK (vm, qexecobj);
 			    hg_stack_drop(estack, &err);
 			    if (!hg_stack_push(estack, qresult)) {
@@ -2095,7 +2354,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 		    *is_proceeded = TRUE;
 		    break;
 	    case HG_TYPE_FILE:
-		    if (!hg_quark_is_executable(qexecobj)) {
+		    if (!hg_vm_quark_is_executable(vm, &qexecobj)) {
 			    goto push_stack;
 		    } else {
 			    file = _HG_VM_LOCK (vm, qexecobj, &err);
@@ -2124,7 +2383,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 			    }
 			    _HG_VM_UNLOCK (vm, qexecobj);
 			    qresult = hg_scanner_get_token(vm->scanner);
-			    hg_vm_quark_set_attributes(vm, &qresult);
+			    hg_vm_quark_set_default_attributes(vm, &qresult);
 #if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
 			    G_STMT_START {
 				    hg_quark_t qs;
@@ -2330,7 +2589,7 @@ hg_vm_eval(hg_vm_t     *vm,
 	switch(hg_quark_get_type(qeval)) {
 	    case HG_TYPE_STRING:
 	    case HG_TYPE_FILE:
-		    if (!hg_quark_is_executable(qeval)) {
+		    if (!hg_vm_quark_is_executable(vm, &qeval)) {
 			    /* XXX */
 			    return FALSE;
 		    }
@@ -2411,7 +2670,7 @@ hg_vm_eval_from_cstring(hg_vm_t      *vm,
 			    "Out of memory");
 		goto error;
 	}
-	hg_quark_set_executable(&qstring, TRUE);
+	hg_vm_quark_set_executable(vm, &qstring, TRUE);
 	retval = hg_vm_eval(vm, qstring, ostack, estack, dstack, &err);
 
 	/* Don't free the string here.
@@ -2476,8 +2735,8 @@ hg_vm_eval_from_file(hg_vm_t      *vm,
 				    NULL);
 		if (qfile == Qnil)
 			goto error;
-		hg_quark_set_executable(&qfile, TRUE);
-		hg_vm_quark_set_attributes(vm, &qfile);
+		hg_vm_quark_set_default_attributes(vm, &qfile);
+		hg_vm_quark_set_executable(vm, &qfile, TRUE);
 		retval = hg_vm_eval(vm, qfile, ostack, estack, dstack, &err);
 		/* may better relying on GC
 		 * hg_vm_mfree(vm, qfile);
@@ -2581,7 +2840,7 @@ hg_vm_startjob(hg_vm_t           *vm,
 		g_warning("Unable to obtain systemdict");
 		return FALSE;
 	}
-	hg_quark_set_writable(&vm->qsystemdict, FALSE);
+	hg_vm_quark_set_writable(vm, &vm->qsystemdict, FALSE);
 	if (!hg_dict_add(dict, HG_QNAME (vm->name, "systemdict"),
 			 vm->qsystemdict,
 			 NULL)) {
@@ -2621,22 +2880,6 @@ hg_vm_shutdown(hg_vm_t *vm,
 	vm->error_code = error_code;
 	vm->shutdown = TRUE;
 }
-
-/**
- * hg_vm_get_systemdict:
- * @vm:
- *
- * FIXME
- *
- * Returns:
- */
-#if 0
-hg_dict_t *
-hg_vm_get_systemdict(hg_vm_t *vm)
-{
-	return __hg_vm_systemdict;
-}
-#endif
 
 /**
  * hg_vm_has_error:

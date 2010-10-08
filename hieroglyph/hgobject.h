@@ -30,10 +30,17 @@
 G_BEGIN_DECLS
 
 #define HG_DEFINE_VTABLE(_name_)					\
-	static void       _hg_object_ ## _name_ ## _free                (hg_object_t              *object); \
-	HG_DEFINE_VTABLE_WITH_FREE(_name_, _hg_object_ ## _name_ ## _free)
+	static void        _hg_object_ ## _name_ ## _free                (hg_object_t              *object); \
+	HG_DEFINE_VTABLE_WITH(_name_, _hg_object_ ## _name_ ## _free, NULL, NULL)
 
-#define HG_DEFINE_VTABLE_WITH_FREE(_name_, _free_)			\
+#define HG_PROTO_VTABLE_ATTRIBUTES(_name_)				\
+	static void        _hg_object_ ## _name_ ## _set_attributes      (hg_object_t              *object, \
+									  gint                      readable, \
+									  gint                      writable, \
+									  gint                      executable); \
+	static gint        _hg_object_ ## _name_ ## _get_attributes      (hg_object_t              *object)
+
+#define HG_DEFINE_VTABLE_WITH(_name_, _free_, _set_attr_, _get_attr_)		\
 	static gsize       _hg_object_ ## _name_ ## _get_capsulated_size (void); \
 	static guint       _hg_object_ ## _name_ ## _get_allocation_flags(void);	\
 	static gboolean    _hg_object_ ## _name_ ## _initialize          (hg_object_t              *object, \
@@ -65,6 +72,8 @@ G_BEGIN_DECLS
 		.to_cstr              = _hg_object_ ## _name_ ## _to_cstr, \
 		.gc_mark              = _hg_object_ ## _name_ ## _gc_mark, \
 		.compare              = _hg_object_ ## _name_ ## _compare, \
+		.set_attributes       = _set_attr_,			\
+		.get_attributes       =	_get_attr_,			\
 	};								\
 									\
 	hg_object_vtable_t *						\
@@ -73,9 +82,17 @@ G_BEGIN_DECLS
 		return &__hg_object_ ## _name_ ## _vtable;		\
 	}
 
+typedef enum _hg_object_access_t		hg_object_access_t;
 typedef struct _hg_object_vtable_t		hg_object_vtable_t;
 typedef struct _hg_object_t			hg_object_t;
 
+
+enum _hg_object_access_t {
+	HG_ACCESS_EXECUTABLE = 1 << 0,
+	HG_ACCESS_READABLE   = 1 << 1,
+	HG_ACCESS_WRITABLE   = 1 << 2,
+	HG_ACCESS_END
+};
 
 struct _hg_object_vtable_t {
 	gsize      (* get_capsulated_size)  (void);
@@ -100,6 +117,11 @@ struct _hg_object_vtable_t {
 					     hg_object_t              *o2,
 					     hg_quark_compare_func_t   func,
 					     gpointer                  user_data);
+	void       (* set_attributes)       (hg_object_t              *object,
+					     gint                      readable,
+					     gint                      writable,
+					     gint                      executable);
+	gint       (* get_attributes)       (hg_object_t              *object);
 };
 struct _hg_object_t {
 	hg_mem_t   *mem;
@@ -109,37 +131,43 @@ struct _hg_object_t {
 	gboolean    on_gc:1;
 	gboolean    on_to_cstr:1;
 	gboolean    on_compare:1;
+	guint       attributes;
 };
 
 
-void        hg_object_init    (void);
-void        hg_object_tini    (void);
-gboolean    hg_object_register(hg_type_t                 type,
-			       hg_object_vtable_t       *vtable);
-hg_quark_t  hg_object_new     (hg_mem_t                 *mem,
-			       gpointer                 *ret,
-			       hg_type_t                 type,
-			       gsize                     preallocated_size,
-			       ...);
-void        hg_object_free    (hg_mem_t                 *mem,
-			       hg_quark_t                index);
-hg_quark_t  hg_object_copy    (hg_object_t              *object,
-			       hg_quark_iterate_func_t   func,
-			       gpointer                  user_data,
-			       gpointer                 *ret,
-			       GError                  **error);
-gchar      *hg_object_to_cstr (hg_object_t              *object,
-			       hg_quark_iterate_func_t   func,
-			       gpointer                  user_data,
-			       GError                  **error);
-gboolean    hg_object_gc_mark (hg_object_t              *object,
-			       hg_gc_iterate_func_t      func,
-			       gpointer                  user_data,
-			       GError                  **error);
-gboolean    hg_object_compare (hg_object_t              *o1,
-			       hg_object_t              *o2,
-			       hg_quark_compare_func_t   func,
-			       gpointer                  user_data);
+void        hg_object_init          (void);
+void        hg_object_tini          (void);
+gboolean    hg_object_register      (hg_type_t                 type,
+				     hg_object_vtable_t       *vtable);
+hg_quark_t  hg_object_new           (hg_mem_t                 *mem,
+				     gpointer                 *ret,
+				     hg_type_t                 type,
+				     gsize                     preallocated_size,
+				     ...);
+void        hg_object_free          (hg_mem_t                 *mem,
+                                     hg_quark_t                index);
+hg_quark_t  hg_object_copy          (hg_object_t              *object,
+                                     hg_quark_iterate_func_t   func,
+                                     gpointer                  user_data,
+                                     gpointer                 *ret,
+                                     GError                  **error);
+gchar      *hg_object_to_cstr       (hg_object_t              *object,
+                                     hg_quark_iterate_func_t   func,
+                                     gpointer                  user_data,
+                                     GError                  **error);
+gboolean    hg_object_gc_mark       (hg_object_t              *object,
+                                     hg_gc_iterate_func_t      func,
+                                     gpointer                  user_data,
+                                     GError                  **error);
+gboolean    hg_object_compare       (hg_object_t              *o1,
+                                     hg_object_t              *o2,
+                                     hg_quark_compare_func_t   func,
+                                     gpointer                  user_data);
+void        hg_object_set_attributes(hg_object_t              *object,
+                                     gint                      readable,
+                                     gint                      writable,
+                                     gint                      executable);
+gint        hg_object_get_attributes(hg_object_t              *object);
 
 G_END_DECLS
 

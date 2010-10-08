@@ -186,7 +186,8 @@ gboolean     hg_operator_invoke        (hg_quark_t           qoper,
                                         hg_vm_t             *vm,
                                         GError             **error);
 const gchar *hg_operator_get_name      (hg_quark_t           qoper);
-gboolean     hg_operator_register      (hg_dict_t           *dict,
+gboolean     hg_operator_register      (hg_vm_t             *vm,
+					hg_dict_t           *dict,
                                         hg_name_t           *name,
                                         hg_vm_langlevel_t    lang_level);
 
