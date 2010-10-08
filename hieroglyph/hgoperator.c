@@ -1930,8 +1930,7 @@ G_STMT_START {
 		goto error;
 	}
 	if (!hg_array_is_matrix(a1) ||
-	    !hg_array_is_matrix(a2) ||
-	    !hg_array_is_matrix(a3)) {
+	    !hg_array_is_matrix(a2)) {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		goto error;
 	}

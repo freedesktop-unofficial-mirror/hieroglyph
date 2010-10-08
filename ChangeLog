@@ -1,5 +1,12 @@
 2010-10-08  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgarray.c (hg_array_matrix_multiply): only check
+	the array size for result.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_concatmatrix): do not
+	check the integrity of the matrix for the 3rd argument, which would
+	store the result.
+
 	* hieroglyph/hgscanner.l: allow a kind of .5 for parsing a float.
 
 	* hieroglyph/hgvm.c (hg_vm_quark_set_editable): new.

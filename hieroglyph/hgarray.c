@@ -846,7 +846,7 @@ hg_array_matrix_multiply(hg_array_t *matrix1,
 
 	hg_return_val_if_fail (hg_array_is_matrix(matrix1), FALSE);
 	hg_return_val_if_fail (hg_array_is_matrix(matrix2), FALSE);
-	hg_return_val_if_fail (hg_array_is_matrix(ret), FALSE);
+	hg_return_val_if_fail (hg_array_length(ret) == 6, FALSE);
 
 	for (i = 0; i < 6; i++) {
 		q = hg_array_get(matrix1, i, NULL);
