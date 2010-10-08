@@ -54,14 +54,16 @@ enum _hg_quark_type_bit_t {
 	HG_QUARK_TYPE_BIT_ACCESS0 = HG_QUARK_TYPE_BIT_ACCESS + 0,	/* 4 */
 	HG_QUARK_TYPE_BIT_ACCESS1 = HG_QUARK_TYPE_BIT_ACCESS0 + 1,	/* 5 */
 	HG_QUARK_TYPE_BIT_ACCESS2 = HG_QUARK_TYPE_BIT_ACCESS0 + 2,	/* 6 */
-	HG_QUARK_TYPE_BIT_ACCESS_END = HG_QUARK_TYPE_BIT_ACCESS2,	/* 6 */
+	HG_QUARK_TYPE_BIT_ACCESS3 = HG_QUARK_TYPE_BIT_ACCESS0 + 3,	/* 7 */
+	HG_QUARK_TYPE_BIT_ACCESS_END = HG_QUARK_TYPE_BIT_ACCESS3,	/* 7 */
 	HG_QUARK_TYPE_BIT_EXECUTABLE = HG_QUARK_TYPE_BIT_ACCESS0,	/* 4 */
 	HG_QUARK_TYPE_BIT_READABLE = HG_QUARK_TYPE_BIT_ACCESS1,		/* 5 */
 	HG_QUARK_TYPE_BIT_WRITABLE = HG_QUARK_TYPE_BIT_ACCESS2,		/* 6 */
-	HG_QUARK_TYPE_BIT_MEM_ID = HG_QUARK_TYPE_BIT_ACCESS_END + 1,	/* 7 */
-	HG_QUARK_TYPE_BIT_MEM_ID0 = HG_QUARK_TYPE_BIT_MEM_ID + 0,	/* 7 */
-	HG_QUARK_TYPE_BIT_MEM_ID1 = HG_QUARK_TYPE_BIT_MEM_ID + 1,	/* 8 */
-	HG_QUARK_TYPE_BIT_MEM_ID_END = HG_QUARK_TYPE_BIT_MEM_ID1,	/* 8 */
+	HG_QUARK_TYPE_BIT_EDITABLE = HG_QUARK_TYPE_BIT_ACCESS3,		/* 7 */
+	HG_QUARK_TYPE_BIT_MEM_ID = HG_QUARK_TYPE_BIT_ACCESS_END + 1,	/* 8 */
+	HG_QUARK_TYPE_BIT_MEM_ID0 = HG_QUARK_TYPE_BIT_MEM_ID + 0,	/* 8 */
+	HG_QUARK_TYPE_BIT_MEM_ID1 = HG_QUARK_TYPE_BIT_MEM_ID + 1,	/* 9 */
+	HG_QUARK_TYPE_BIT_MEM_ID_END = HG_QUARK_TYPE_BIT_MEM_ID1,	/* 9 */
 };
 enum _hg_type_t {
 	HG_TYPE_NULL      = 0,
@@ -180,10 +182,14 @@ G_INLINE_FUNC gboolean     hg_quark_is_readable     (hg_quark_t               qu
 G_INLINE_FUNC void         hg_quark_set_writable    (hg_quark_t              *quark,
                                                      gboolean                 flag);
 G_INLINE_FUNC gboolean     hg_quark_is_writable     (hg_quark_t               quark);
+G_INLINE_FUNC void         hg_quark_set_editable    (hg_quark_t              *quark,
+						     gboolean                 flag);
+G_INLINE_FUNC gboolean     hg_quark_is_editable     (hg_quark_t               quark);
 G_INLINE_FUNC void         hg_quark_set_access_bits (hg_quark_t              *quark,
                                                      gboolean                 readable,
                                                      gboolean                 writable,
-                                                     gboolean                 executable);
+                                                     gboolean                 executable,
+						     gboolean                 editable);
 G_INLINE_FUNC gboolean     hg_quark_has_same_mem_id (hg_quark_t               quark,
                                                      guint                    id);
 G_INLINE_FUNC gint         hg_quark_get_mem_id      (hg_quark_t               quark);
@@ -239,7 +245,8 @@ hg_quark_new(hg_type_t  type,
 				 TRUE,
 				 (hg_type_is_simple(type) ||
 				  type == HG_TYPE_OPER) ? FALSE : TRUE,
-				 type == HG_TYPE_EVAL_NAME);
+				 type == HG_TYPE_EVAL_NAME,
+				 TRUE);
 
 	return retval;
 }
@@ -304,10 +311,17 @@ hg_quark_set_executable(hg_quark_t *quark,
 	hg_return_if_fail (quark != NULL);
 
 	if (*quark != Qnil) {
-		_hg_quark_type_bit_set_bits(quark,
-					    HG_QUARK_TYPE_BIT_EXECUTABLE,
-					    HG_QUARK_TYPE_BIT_EXECUTABLE,
-					    (flag == TRUE));
+		if (hg_quark_is_editable(*quark)) {
+			_hg_quark_type_bit_set_bits(quark,
+						    HG_QUARK_TYPE_BIT_EXECUTABLE,
+						    HG_QUARK_TYPE_BIT_EXECUTABLE,
+						    (flag == TRUE));
+		} else {
+#ifdef HG_DEBUG
+			g_warning("%s: Access disallowed for modification",
+				  __PRETTY_FUNCTION__);
+#endif
+		}
 	}
 }
 
@@ -341,10 +355,17 @@ hg_quark_set_readable(hg_quark_t *quark,
 	hg_return_if_fail (quark != NULL);
 
 	if (*quark != Qnil) {
-		_hg_quark_type_bit_set_bits(quark,
-					    HG_QUARK_TYPE_BIT_READABLE,
-					    HG_QUARK_TYPE_BIT_READABLE,
-					    (flag == TRUE));
+		if (hg_quark_is_editable(*quark)) {
+			_hg_quark_type_bit_set_bits(quark,
+						    HG_QUARK_TYPE_BIT_READABLE,
+						    HG_QUARK_TYPE_BIT_READABLE,
+						    (flag == TRUE));
+		} else {
+#ifdef HG_DEBUG
+			g_warning("%s: Access disallowed for modification",
+				  __PRETTY_FUNCTION__);
+#endif
+		}
 	}
 }
 
@@ -378,10 +399,17 @@ hg_quark_set_writable(hg_quark_t *quark,
 	hg_return_if_fail (quark != NULL);
 
 	if (*quark != Qnil) {
-		_hg_quark_type_bit_set_bits(quark,
-					    HG_QUARK_TYPE_BIT_WRITABLE,
-					    HG_QUARK_TYPE_BIT_WRITABLE,
-					    (flag == TRUE));
+		if (hg_quark_is_editable(*quark)) {
+			_hg_quark_type_bit_set_bits(quark,
+						    HG_QUARK_TYPE_BIT_WRITABLE,
+						    HG_QUARK_TYPE_BIT_WRITABLE,
+						    (flag == TRUE));
+		} else {
+#ifdef HG_DEBUG
+			g_warning("%s: Access disallowed for modification",
+				  __PRETTY_FUNCTION__);
+#endif
+		}
 	}
 }
 
@@ -398,7 +426,45 @@ hg_quark_is_writable(hg_quark_t quark)
 {
 	return _hg_quark_type_bit_get_bits(quark,
 					   HG_QUARK_TYPE_BIT_WRITABLE,
-					   HG_QUARK_TYPE_BIT_WRITABLE) != 0;
+					   HG_QUARK_TYPE_BIT_WRITABLE) != 0 &&
+		hg_quark_is_editable(quark);
+}
+
+/**
+ * hg_quark_set_editable:
+ * @quark:
+ * @flag:
+ *
+ * FIXME
+ */
+G_INLINE_FUNC void
+hg_quark_set_editable(hg_quark_t *quark,
+		      gboolean    flag)
+{
+	hg_return_if_fail (quark != NULL);
+
+	if (*quark != Qnil) {
+		_hg_quark_type_bit_set_bits(quark,
+					    HG_QUARK_TYPE_BIT_EDITABLE,
+					    HG_QUARK_TYPE_BIT_EDITABLE,
+					    (flag == TRUE));
+	}
+}
+
+/**
+ * hg_quark_is_editable:
+ * @quark:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+G_INLINE_FUNC gboolean
+hg_quark_is_editable(hg_quark_t quark)
+{
+	return _hg_quark_type_bit_get_bits(quark,
+					   HG_QUARK_TYPE_BIT_EDITABLE,
+					   HG_QUARK_TYPE_BIT_EDITABLE) != 0;
 }
 
 /**
@@ -407,6 +473,7 @@ hg_quark_is_writable(hg_quark_t quark)
  * @readable:
  * @writable:
  * @executable:
+ * @editable:
  *
  * FIXME
  */
@@ -414,7 +481,8 @@ G_INLINE_FUNC void
 hg_quark_set_access_bits(hg_quark_t *quark,
 			 gboolean    readable,
 			 gboolean    writable,
-			 gboolean    executable)
+			 gboolean    executable,
+			 gboolean    editable)
 {
 	hg_return_if_fail (quark != NULL);
 
@@ -424,7 +492,8 @@ hg_quark_set_access_bits(hg_quark_t *quark,
 					    HG_QUARK_TYPE_BIT_ACCESS_END,
 					    ((readable << HG_QUARK_TYPE_BIT_READABLE) |
 					     (writable << HG_QUARK_TYPE_BIT_WRITABLE) |
-					     (executable << HG_QUARK_TYPE_BIT_EXECUTABLE)) >> HG_QUARK_TYPE_BIT_ACCESS);
+					     (executable << HG_QUARK_TYPE_BIT_EXECUTABLE) |
+					     (editable << HG_QUARK_TYPE_BIT_EDITABLE)) >> HG_QUARK_TYPE_BIT_ACCESS);
 	}
 }
 

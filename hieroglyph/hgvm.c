@@ -1108,7 +1108,8 @@ hg_vm_quark_copy(hg_vm_t     *vm,
 		hg_vm_quark_set_attributes(vm, &retval,
 					   hg_vm_quark_is_readable(vm, &qdata),
 					   hg_vm_quark_is_writable(vm, &qdata),
-					   hg_vm_quark_is_executable(vm, &qdata));
+					   hg_vm_quark_is_executable(vm, &qdata),
+					   hg_vm_quark_is_editable(vm, &qdata));
 	}
 
 	return retval;
@@ -1338,17 +1339,15 @@ hg_vm_quark_set_default_attributes(hg_vm_t    *vm,
 		hg_quark_set_access_bits(qdata,
 					 (vm->qattributes & HG_VM_ATTRIBUTE1 (HG_VM_ACCESS_READABLE)) ? TRUE : FALSE,
 					 FALSE,
-					 hg_quark_is_executable(*qdata));
+					 hg_quark_is_executable(*qdata),
+					 TRUE);
 	} else if (HG_IS_QOPER (*qdata)) {
-		hg_quark_set_access_bits(qdata,
-					 FALSE,
-					 FALSE,
-					 hg_quark_is_executable(*qdata));
+		hg_quark_set_access_bits(qdata, FALSE, FALSE, TRUE, TRUE);
 	} else {
 		hg_vm_quark_set_attributes(vm, qdata,
 					   (vm->qattributes & HG_VM_ATTRIBUTE1 (HG_VM_ACCESS_READABLE)) ? TRUE : FALSE,
 					   (vm->qattributes & HG_VM_ATTRIBUTE1 (HG_VM_ACCESS_WRITABLE)) ? TRUE : FALSE,
-					   FALSE);
+					   FALSE, TRUE);
 	}
 }
 
@@ -1359,6 +1358,7 @@ hg_vm_quark_set_default_attributes(hg_vm_t    *vm,
  * @readable:
  * @writable:
  * @executable:
+ * @editable:
  *
  * FIXME
  */
@@ -1367,14 +1367,16 @@ hg_vm_quark_set_attributes(hg_vm_t *vm,
 			   hg_quark_t *qdata,
 			   gboolean    readable,
 			   gboolean    writable,
-			   gboolean    executable)
+			   gboolean    executable,
+			   gboolean    editable)
 {
 	GError *err = NULL;
 
 	hg_quark_set_access_bits(qdata,
 				 readable ? TRUE : FALSE,
 				 writable ? TRUE : FALSE,
-				 executable ? TRUE : FALSE);
+				 executable ? TRUE : FALSE,
+				 editable ? TRUE : FALSE);
 	if (!hg_quark_is_simple_object(*qdata) &&
 	    !HG_IS_QOPER (*qdata)) {
 		hg_object_t *o = _HG_VM_LOCK (vm, *qdata, &err);
@@ -1383,7 +1385,8 @@ hg_vm_quark_set_attributes(hg_vm_t *vm,
 			hg_object_set_attributes(o,
 						 readable ? 1 : -1,
 						 writable ? 1 : -1,
-						 executable ? 1 : -1);
+						 executable ? 1 : -1,
+						 editable ? 1 : -1);
 			_HG_VM_UNLOCK (vm, *qdata);
 		}
 		if (err) {
@@ -1416,7 +1419,7 @@ hg_vm_quark_set_readable(hg_vm_t    *vm,
 		hg_object_t *o = _HG_VM_LOCK (vm, *qdata, &err);
 
 		if (o) {
-			hg_object_set_attributes(o, flag ? 1 : -1, 0, 0);
+			hg_object_set_attributes(o, flag ? 1 : -1, 0, 0, 0);
 
 			_HG_VM_UNLOCK (vm, *qdata);
 		}
@@ -1454,7 +1457,8 @@ hg_vm_quark_is_readable(hg_vm_t    *vm,
 			hg_quark_set_access_bits(qdata,
 						 attrs & HG_VM_ACCESS_READABLE ? TRUE : FALSE,
 						 attrs & HG_VM_ACCESS_WRITABLE ? TRUE : FALSE,
-						 attrs & HG_VM_ACCESS_EXECUTABLE ? TRUE : FALSE);
+						 attrs & HG_VM_ACCESS_EXECUTABLE ? TRUE : FALSE,
+						 attrs & HG_VM_ACCESS_EDITABLE ? TRUE : FALSE);
 			if (err) {
 				g_warning("%s: %s (code: %d)",
 					  __PRETTY_FUNCTION__,
@@ -1491,7 +1495,7 @@ hg_vm_quark_set_writable(hg_vm_t    *vm,
 		hg_object_t *o = _HG_VM_LOCK (vm, *qdata, &err);
 
 		if (o) {
-			hg_object_set_attributes(o, 0, flag ? 1 : -1, 0);
+			hg_object_set_attributes(o, 0, flag ? 1 : -1, 0, 0);
 
 			_HG_VM_UNLOCK (vm, *qdata);
 		}
@@ -1529,7 +1533,8 @@ hg_vm_quark_is_writable(hg_vm_t    *vm,
 			hg_quark_set_access_bits(qdata,
 						 attrs & HG_VM_ACCESS_READABLE ? TRUE : FALSE,
 						 attrs & HG_VM_ACCESS_WRITABLE ? TRUE : FALSE,
-						 attrs & HG_VM_ACCESS_EXECUTABLE ? TRUE : FALSE);
+						 attrs & HG_VM_ACCESS_EXECUTABLE ? TRUE : FALSE,
+						 attrs & HG_VM_ACCESS_EDITABLE ? TRUE : FALSE);
 			if (err) {
 				g_warning("%s: %s (code: %d)",
 					  __PRETTY_FUNCTION__,
@@ -1566,7 +1571,7 @@ hg_vm_quark_set_executable(hg_vm_t    *vm,
 		hg_object_t *o = _HG_VM_LOCK (vm, *qdata, &err);
 
 		if (o) {
-			hg_object_set_attributes(o, 0, 0, flag ? 1 : -1);
+			hg_object_set_attributes(o, 0, 0, flag ? 1 : -1, 0);
 
 			_HG_VM_UNLOCK (vm, *qdata);
 		}
@@ -1604,7 +1609,8 @@ hg_vm_quark_is_executable(hg_vm_t    *vm,
 			hg_quark_set_access_bits(qdata,
 						 attrs & HG_VM_ACCESS_READABLE ? TRUE : FALSE,
 						 attrs & HG_VM_ACCESS_WRITABLE ? TRUE : FALSE,
-						 attrs & HG_VM_ACCESS_EXECUTABLE ? TRUE : FALSE);
+						 attrs & HG_VM_ACCESS_EXECUTABLE ? TRUE : FALSE,
+						 attrs & HG_VM_ACCESS_EDITABLE ? TRUE : FALSE);
 			if (err) {
 				g_warning("%s: %s (code: %d)",
 					  __PRETTY_FUNCTION__,
@@ -1618,6 +1624,82 @@ hg_vm_quark_is_executable(hg_vm_t    *vm,
 	}
 
 	return hg_quark_is_executable(*qdata);
+}
+
+/**
+ * hg_vm_quark_set_editable:
+ * @vm:
+ * @qdata:
+ * @flag:
+ *
+ * FIXME
+ */
+void
+hg_vm_quark_set_editable(hg_vm_t    *vm,
+			 hg_quark_t *qdata,
+			 gboolean    flag)
+{
+	GError *err = NULL;
+
+	hg_quark_set_editable(qdata, flag);
+	if (!hg_quark_is_simple_object(*qdata) &&
+	    !HG_IS_QOPER (*qdata)) {
+		hg_object_t *o = _HG_VM_LOCK (vm, *qdata, &err);
+
+		if (o) {
+			hg_object_set_attributes(o, 0, 0, 0, flag ? 1 : -1);
+
+			_HG_VM_UNLOCK (vm, *qdata);
+		}
+		if (err) {
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
+				  err->message,
+				  err->code);
+			g_error_free(err);
+		}
+	}
+}
+
+/**
+ * hg_vm_quark_is_editable:
+ * @vm:
+ * @qdata:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_vm_quark_is_editable(hg_vm_t    *vm,
+			hg_quark_t *qdata)
+{
+	GError *err = NULL;
+
+	if (!hg_quark_is_simple_object(*qdata) &&
+	    !HG_IS_QOPER (*qdata)) {
+		hg_object_t *o = _HG_VM_LOCK (vm, *qdata, &err);
+		gint attrs = hg_object_get_attributes(o);
+
+		if (attrs != -1) {
+			hg_quark_set_access_bits(qdata,
+						 attrs & HG_VM_ACCESS_READABLE ? TRUE : FALSE,
+						 attrs & HG_VM_ACCESS_WRITABLE ? TRUE : FALSE,
+						 attrs & HG_VM_ACCESS_EXECUTABLE ? TRUE : FALSE,
+						 attrs & HG_VM_ACCESS_EDITABLE ? TRUE : FALSE);
+			if (err) {
+				g_warning("%s: %s (code: %d)",
+					  __PRETTY_FUNCTION__,
+					  err->message,
+					  err->code);
+				g_error_free(err);
+			}
+		}
+
+		_HG_VM_UNLOCK (vm, *qdata);
+	}
+
+	return hg_quark_is_editable(*qdata);
 }
 
 /**
@@ -1730,7 +1812,7 @@ hg_vm_get_io(hg_vm_t      *vm,
 					      vm->lineedit,
 					      NULL,
 					      NULL);
-		hg_vm_quark_set_attributes(vm, &ret, TRUE, FALSE, FALSE);
+		hg_vm_quark_set_attributes(vm, &ret, TRUE, FALSE, FALSE, TRUE);
 	} else if (type == HG_FILE_IO_STATEMENTEDIT) {
 		ret = hg_file_new_with_vtable(hg_vm_get_mem(vm),
 					      "%statementedit",
@@ -1739,7 +1821,7 @@ hg_vm_get_io(hg_vm_t      *vm,
 					      vm->lineedit,
 					      NULL,
 					      NULL);
-		hg_vm_quark_set_attributes(vm, &ret, TRUE, FALSE, FALSE);
+		hg_vm_quark_set_attributes(vm, &ret, TRUE, FALSE, FALSE, TRUE);
 	} else {
 		ret = vm->qio[type];
 	}
@@ -1813,7 +1895,7 @@ hg_vm_setup(hg_vm_t           *vm,
 	} else {
 		qf = stdin;
 	}
-	hg_vm_quark_set_attributes(vm, &qf, TRUE, FALSE, FALSE);
+	hg_vm_quark_set_attributes(vm, &qf, TRUE, FALSE, FALSE, TRUE);
 	vm->qio[HG_FILE_IO_STDIN] = qf;
 	if (stdout == Qnil) {
 		qf  = hg_file_new(hg_vm_get_mem(vm),
@@ -1824,7 +1906,7 @@ hg_vm_setup(hg_vm_t           *vm,
 	} else {
 		qf = stdout;
 	}
-	hg_vm_quark_set_attributes(vm, &qf, FALSE, TRUE, FALSE);
+	hg_vm_quark_set_attributes(vm, &qf, FALSE, TRUE, FALSE, TRUE);
 	vm->qio[HG_FILE_IO_STDOUT] = qf;
 	if (stderr == Qnil) {
 		qf = hg_file_new(hg_vm_get_mem(vm),
@@ -1835,7 +1917,7 @@ hg_vm_setup(hg_vm_t           *vm,
 	} else {
 		qf = stderr;
 	}
-	hg_vm_quark_set_attributes(vm, &qf, FALSE, TRUE, FALSE);
+	hg_vm_quark_set_attributes(vm, &qf, FALSE, TRUE, FALSE, TRUE);
 	vm->qio[HG_FILE_IO_STDERR] = qf;
 
 	if (vm->qio[HG_FILE_IO_STDIN] == Qnil ||
@@ -1871,9 +1953,9 @@ hg_vm_setup(hg_vm_t           *vm,
 	    vm->qerror == Qnil)
 		goto error;
 
-	hg_vm_quark_set_attributes(vm, &vm->qsystemdict, TRUE, TRUE, FALSE);
-	hg_vm_quark_set_attributes(vm, &vm->qglobaldict, TRUE, TRUE, FALSE);
-	hg_vm_quark_set_attributes(vm, &vm->qerror, TRUE, TRUE, FALSE);
+	hg_vm_quark_set_attributes(vm, &vm->qsystemdict, TRUE, TRUE, FALSE, TRUE);
+	hg_vm_quark_set_attributes(vm, &vm->qglobaldict, TRUE, TRUE, FALSE, TRUE);
+	hg_vm_quark_set_attributes(vm, &vm->qerror, TRUE, TRUE, FALSE, TRUE);
 
 	hg_stack_push(vm->stacks[HG_VM_STACK_DSTACK], vm->qsystemdict);
 	if (lang_level >= HG_LANG_LEVEL_2) {
@@ -2535,8 +2617,10 @@ hg_vm_main_loop(hg_vm_t *vm)
 			break;
 
 		if (!hg_vm_step(vm)) {
-			g_print("bah\n");
-			/* XXX */
+			if (!hg_vm_has_error(vm)) {
+				g_print("[BUG] detected an infinite loop in the exec stack.\n");
+				hg_operator_invoke(HG_QOPER (HG_enc_private_abort), vm, NULL);
+			}
 		}
 	}
 

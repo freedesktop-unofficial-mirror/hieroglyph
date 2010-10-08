@@ -37,7 +37,8 @@ G_BEGIN_DECLS
 	static void        _hg_object_ ## _name_ ## _set_attributes      (hg_object_t              *object, \
 									  gint                      readable, \
 									  gint                      writable, \
-									  gint                      executable); \
+									  gint                      executable,	\
+									  gint                      editable); \
 	static gint        _hg_object_ ## _name_ ## _get_attributes      (hg_object_t              *object)
 
 #define HG_DEFINE_VTABLE_WITH(_name_, _free_, _set_attr_, _get_attr_)		\
@@ -91,6 +92,7 @@ enum _hg_object_access_t {
 	HG_ACCESS_EXECUTABLE = 1 << 0,
 	HG_ACCESS_READABLE   = 1 << 1,
 	HG_ACCESS_WRITABLE   = 1 << 2,
+	HG_ACCESS_EDITABLE   = 1 << 3,
 	HG_ACCESS_END
 };
 
@@ -120,7 +122,8 @@ struct _hg_object_vtable_t {
 	void       (* set_attributes)       (hg_object_t              *object,
 					     gint                      readable,
 					     gint                      writable,
-					     gint                      executable);
+					     gint                      executable,
+					     gint                      editable);
 	gint       (* get_attributes)       (hg_object_t              *object);
 };
 struct _hg_object_t {
@@ -166,7 +169,8 @@ gboolean    hg_object_compare       (hg_object_t              *o1,
 void        hg_object_set_attributes(hg_object_t              *object,
                                      gint                      readable,
                                      gint                      writable,
-                                     gint                      executable);
+                                     gint                      executable,
+				     gint                      editable);
 gint        hg_object_get_attributes(hg_object_t              *object);
 
 G_END_DECLS

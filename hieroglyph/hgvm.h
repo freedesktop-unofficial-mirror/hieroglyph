@@ -50,6 +50,7 @@ enum _hg_vm_access_t {
 	HG_VM_ACCESS_EXECUTABLE = HG_ACCESS_EXECUTABLE,
 	HG_VM_ACCESS_READABLE   = HG_ACCESS_READABLE,
 	HG_VM_ACCESS_WRITABLE   = HG_ACCESS_WRITABLE,
+	HG_VM_ACCESS_EDITABLE   = HG_ACCESS_EDITABLE,
 	HG_VM_ACCESS_END
 };
 enum _hg_vm_mem_type_t {
@@ -163,7 +164,8 @@ void               hg_vm_quark_set_attributes        (hg_vm_t                 *v
 						      hg_quark_t              *qdata,
 						      gboolean                 readable,
 						      gboolean                 writable,
-						      gboolean                 executable);
+						      gboolean                 executable,
+						      gboolean                 editable);
 void               hg_vm_quark_set_readable          (hg_vm_t                 *vm,
                                                       hg_quark_t              *qdata,
                                                       gboolean                 flag);
@@ -178,6 +180,11 @@ void               hg_vm_quark_set_executable        (hg_vm_t                 *v
                                                       hg_quark_t              *qdata,
                                                       gboolean                 flag);
 gboolean           hg_vm_quark_is_executable         (hg_vm_t                 *vm,
+                                                      hg_quark_t              *qdata);
+void               hg_vm_quark_set_editable          (hg_vm_t                 *vm,
+                                                      hg_quark_t              *qdata,
+                                                      gboolean                 flag);
+gboolean           hg_vm_quark_is_editable           (hg_vm_t                 *vm,
                                                       hg_quark_t              *qdata);
 void               hg_vm_set_default_attributes      (hg_vm_t                 *vm,
                                                       guint                    qattributes);

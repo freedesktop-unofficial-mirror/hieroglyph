@@ -708,7 +708,7 @@ G_STMT_START {
 		hg_array_set_name(a, name);
 		HG_VM_UNLOCK (vm, arg1);
 
-		hg_vm_quark_set_attributes(vm, &arg1, FALSE, FALSE, TRUE);
+		hg_vm_quark_set_attributes(vm, &arg1, FALSE, FALSE, TRUE, TRUE);
 	}
 	hg_stack_pop(ostack, error);
 
@@ -729,7 +729,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	hg_vm_quark_set_attributes(vm, &q, TRUE, FALSE, FALSE);
+	hg_vm_quark_set_attributes(vm, &q, TRUE, FALSE, FALSE, TRUE);
 
 	STACK_PUSH (ostack, q);
 
@@ -2040,7 +2040,8 @@ G_STMT_START {
 				hg_vm_quark_set_attributes(vm, &q,
 							   hg_vm_quark_is_readable(vm, &arg1),
 							   hg_vm_quark_is_writable(vm, &arg1),
-							   hg_vm_quark_is_executable(vm, &arg1));
+							   hg_vm_quark_is_executable(vm, &arg1),
+							   hg_vm_quark_is_editable(vm, &arg1));
 			} else {
 				q = arg1;
 			}
@@ -2108,7 +2109,8 @@ G_STMT_START {
 				hg_vm_quark_set_attributes(vm, &q,
 							   hg_vm_quark_is_readable(vm, &arg1),
 							   hg_vm_quark_is_writable(vm, &arg1),
-							   hg_vm_quark_is_executable(vm, &arg1));
+							   hg_vm_quark_is_executable(vm, &arg1),
+							   hg_vm_quark_is_editable(vm, &arg1));
 			} else {
 				q = arg1;
 			}
@@ -2441,7 +2443,8 @@ G_STMT_START {
 		hg_vm_quark_set_attributes(vm, &q,
 					   hg_vm_quark_is_readable(vm, &arg2),
 					   hg_vm_quark_is_writable(vm, &arg2),
-					   hg_vm_quark_is_executable(vm, &arg2));
+					   hg_vm_quark_is_executable(vm, &arg2),
+					   hg_vm_quark_is_editable(vm, &arg2));
 	} else {
 		q = arg2;
 	}
@@ -2887,7 +2890,7 @@ G_STMT_START {
 		hg_vm_quark_set_attributes(vm, &q,
 					   iomode & (HG_FILE_IO_MODE_READ|HG_FILE_IO_MODE_APPEND) ? TRUE : FALSE,
 					   iomode & (HG_FILE_IO_MODE_WRITE|HG_FILE_IO_MODE_APPEND) ? TRUE : FALSE,
-					   FALSE);
+					   FALSE, TRUE);
 	}
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
@@ -3063,7 +3066,8 @@ G_STMT_START {
 		hg_vm_quark_set_attributes(vm, &qd,
 					   hg_vm_quark_is_readable(vm, &arg0),
 					   hg_vm_quark_is_writable(vm, &arg0),
-					   hg_vm_quark_is_executable(vm, &arg0));
+					   hg_vm_quark_is_executable(vm, &arg0),
+					   hg_vm_quark_is_editable(vm, &arg0));
 		hg_dict_foreach(dict, _hg_operator_dup_dict, new_dict, error);
 		HG_VM_UNLOCK (vm, arg0);
 		HG_VM_UNLOCK (vm, qd);
@@ -3336,7 +3340,8 @@ G_STMT_START {
 	hg_vm_quark_set_attributes(vm, &q,
 				   hg_vm_quark_is_readable(vm, &arg0),
 				   hg_vm_quark_is_writable(vm, &arg0),
-				   hg_vm_quark_is_executable(vm, &arg0));
+				   hg_vm_quark_is_executable(vm, &arg0),
+				   hg_vm_quark_is_editable(vm, &arg0));
 
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
@@ -4856,7 +4861,8 @@ G_STMT_START {
 		hg_vm_quark_set_attributes(vm, &q,
 					   hg_vm_quark_is_readable(vm, &arg0),
 					   hg_vm_quark_is_writable(vm, &arg0),
-					   hg_vm_quark_is_executable(vm, &arg0));
+					   hg_vm_quark_is_executable(vm, &arg0),
+					   hg_vm_quark_is_editable(vm, &arg0));
 	} else {
 		q = arg0;
 	}
@@ -4920,7 +4926,8 @@ G_STMT_START {
 		hg_vm_quark_set_attributes(vm, &q,
 					   hg_vm_quark_is_readable(vm, &arg0),
 					   hg_vm_quark_is_writable(vm, &arg0),
-					   hg_vm_quark_is_executable(vm, &arg0));
+					   hg_vm_quark_is_executable(vm, &arg0),
+					   hg_vm_quark_is_editable(vm, &arg0));
 	} else {
 		q = arg0;
 	}
@@ -4938,7 +4945,41 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (executeonly);
+/* <array> executeonly <array>
+ * <packedarray> executeonly <packedarray>
+ * <file> executeonly <file>
+ * <string> executeonly <string>
+ */
+DEFUNC_OPER (executeonly)
+G_STMT_START {
+	hg_quark_t arg0;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (HG_IS_QARRAY (arg0) ||
+	    HG_IS_QFILE (arg0) ||
+	    HG_IS_QSTRING (arg0)) {
+		if (!hg_vm_quark_is_editable(vm, &arg0)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+			return FALSE;
+		}
+		hg_vm_quark_set_readable(vm, &arg0, FALSE);
+		hg_vm_quark_set_writable(vm, &arg0, FALSE);
+		hg_vm_quark_set_editable(vm, &arg0, TRUE);
+
+		hg_stack_pop(ostack, error);
+		STACK_PUSH (ostack, arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (exp);
 DEFUNC_UNIMPLEMENTED_OPER (filenameforall);
 DEFUNC_UNIMPLEMENTED_OPER (fileposition);
@@ -4975,7 +5016,7 @@ G_STMT_START {
 	    HG_IS_QSTRING (arg0) ||
 	    HG_IS_QDICT (arg0)) {
 		hg_vm_quark_set_attributes(vm, &arg0,
-					   FALSE, FALSE, FALSE);
+					   FALSE, FALSE, FALSE, FALSE);
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;

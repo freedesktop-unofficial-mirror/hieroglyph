@@ -244,7 +244,8 @@ static void
 _hg_object_dict_set_attributes(hg_object_t *object,
 			       gint         readable,
 			       gint         writable,
-			       gint         executable)
+			       gint         executable,
+			       gint         editable)
 {
 	if (readable != 0) {
 		if (readable > 0)
@@ -263,6 +264,12 @@ _hg_object_dict_set_attributes(hg_object_t *object,
 			object->attributes |= HG_ACCESS_EXECUTABLE;
 		else
 			object->attributes &= ~HG_ACCESS_EXECUTABLE;
+	}
+	if (editable != 0) {
+		if (editable > 0)
+			object->attributes |= HG_ACCESS_EDITABLE;
+		else
+			object->attributes &= ~HG_ACCESS_EDITABLE;
 	}
 }
 

@@ -376,6 +376,7 @@ hg_object_compare(hg_object_t             *o1,
  * @readable:
  * @writable:
  * @executable:
+ * @editable:
  *
  * FIXME
  */
@@ -383,7 +384,8 @@ void
 hg_object_set_attributes(hg_object_t *object,
 			 gint         readable,
 			 gint         writable,
-			 gint         executable)
+			 gint         executable,
+			 gint         editable)
 {
 	hg_object_vtable_t *v;
 
@@ -395,7 +397,7 @@ hg_object_set_attributes(hg_object_t *object,
 	v = __hg_object_vtables[object->type];
 
 	if (v->set_attributes)
-		v->set_attributes(object, readable, writable, executable);
+		v->set_attributes(object, readable, writable, executable, editable);
 }
 
 /**

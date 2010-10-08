@@ -1,5 +1,14 @@
 2010-10-08  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgvm.c (hg_vm_quark_set_editable): new.
+	(hg_vm_quark_is_editable): new.
+	(hg_vm_main_loop): abort if the loop detected in the exec stack.
+
+	* hieroglyph/hgquark.h (hg_quark_set_editable): new.
+	(hg_quark_is_editable): new.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_executeonly): implemented.
+
 	* hieroglyph/hgvm.c (hg_vm_quark_set_default_attributes): renamed
 	from hg_vm_quark_set_attributes.
 	(hg_vm_quark_set_attributes): newly implemented.
