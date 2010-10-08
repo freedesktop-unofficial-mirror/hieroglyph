@@ -1463,6 +1463,8 @@ hg_vm_quark_is_readable(hg_vm_t    *vm,
 				g_error_free(err);
 			}
 		}
+
+		_HG_VM_UNLOCK (vm, *qdata);
 	}
 
 	return hg_quark_is_readable(*qdata);
@@ -1536,6 +1538,8 @@ hg_vm_quark_is_writable(hg_vm_t    *vm,
 				g_error_free(err);
 			}
 		}
+
+		_HG_VM_UNLOCK (vm, *qdata);
 	}
 
 	return hg_quark_is_writable(*qdata);
@@ -1609,6 +1613,8 @@ hg_vm_quark_is_executable(hg_vm_t    *vm,
 				g_error_free(err);
 			}
 		}
+
+		_HG_VM_UNLOCK (vm, *qdata);
 	}
 
 	return hg_quark_is_executable(*qdata);
