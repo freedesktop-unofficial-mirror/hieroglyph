@@ -1,5 +1,12 @@
 2010-10-08  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (_hg_operator_real_cvrs): initialize the value.
+	check the write access of the string object.
+	fix wrong result.
+
+	* hieroglyph/hgstring.c (hg_string_ncompare): check if strings contains
+	nil prior to raise an exception by locking.
+
 	* hieroglyph/hgarray.c (hg_array_matrix_multiply): only check
 	the array size for result.
 

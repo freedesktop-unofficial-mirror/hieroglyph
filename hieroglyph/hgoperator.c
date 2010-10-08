@@ -2378,7 +2378,7 @@ G_STMT_START {
 	gdouble d1;
 	gint radix;
 	hg_string_t *s;
-	gboolean is_real;
+	gboolean is_real = FALSE;
 	gchar *cstr = NULL;
 
 	CHECK_STACK (ostack, 3);
@@ -2405,6 +2405,10 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 		return FALSE;
 	}
+	if (!hg_vm_quark_is_writable(vm, &arg2)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
 	if (radix == 10) {
 		if (is_real) {
 			cstr = g_strdup_printf("%f", d1);
@@ -2413,15 +2417,21 @@ G_STMT_START {
 		}
 	} else {
 		const gchar __radix_to_c[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-		GString *str = g_string_new(NULL);
+		GString *str = g_string_new(NULL), *rstr;
 		guint x = (guint)d1;
+		gsize i;
 
 		do {
 			g_string_append_c(str, __radix_to_c[x % radix]);
 			x /= radix;
 		} while (x != 0);
 
-		cstr = g_string_free(str, FALSE);
+		rstr = g_string_new(NULL);
+		for (i = 0; i < str->len; i++) {
+			g_string_append_c(rstr, str->str[str->len - i - 1]);
+		}
+		g_string_free(str, TRUE);
+		cstr = g_string_free(rstr, FALSE);
 	}
 	s = HG_VM_LOCK (vm, arg2, error);
 	if (s == NULL) {

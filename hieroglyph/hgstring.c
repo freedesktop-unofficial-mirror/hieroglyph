@@ -804,6 +804,11 @@ hg_string_ncompare(const hg_string_t *a,
 	hg_return_val_if_fail (a->o.type == HG_TYPE_STRING, FALSE);
 	hg_return_val_if_fail (b != NULL, FALSE);
 	hg_return_val_if_fail (b->o.type == HG_TYPE_STRING, FALSE);
+
+	if (a->qstring == Qnil && b->qstring == Qnil &&
+	    a->length == length)
+		return TRUE;
+
 	hg_return_val_if_lock_fail (sb,
 				    b->o.mem,
 				    b->qstring,
