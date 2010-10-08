@@ -1,5 +1,7 @@
 2010-10-08  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgscanner.l: allow a kind of .5 for parsing a float.
+
 	* hieroglyph/hgvm.c (hg_vm_quark_set_editable): new.
 	(hg_vm_quark_is_editable): new.
 	(hg_vm_main_loop): abort if the loop detected in the exec stack.
