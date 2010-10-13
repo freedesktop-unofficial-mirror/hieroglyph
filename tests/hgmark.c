@@ -52,7 +52,7 @@ TDEF (new)
 	hg_quark_t q;
 
 	q = HG_QMARK;
-	fail_unless(q == 0x2a00000000, "Unexpected result to create a quark for mark: expected %lx, actual:%lx", 0xa00000000, q);
+	fail_unless(q == 0xaa00000000, "Unexpected result to create a quark for mark: expected %lx, actual:%lx", 0xaa00000000, q);
 } TEND
 
 /****/

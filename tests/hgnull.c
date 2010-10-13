@@ -52,7 +52,7 @@ TDEF (new)
 	hg_quark_t q;
 
 	q = HG_QNULL;
-	fail_unless(q == 0x20ffffffff, "Unexpected result to create a quark for null");
+	fail_unless(q == 0xa0ffffffff, "Unexpected result to create a quark for null");
 } TEND
 
 /****/
