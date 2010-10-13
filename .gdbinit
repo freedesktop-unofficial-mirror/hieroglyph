@@ -26,14 +26,16 @@ set $_hg_q_bit_type3  = 3
 set $_hg_q_bit_exec   = 4
 set $_hg_q_bit_read   = 5
 set $_hg_q_bit_write  = 6
-set $_hg_q_bit_memid0 = 7
-set $_hg_q_bit_memid1 = 8
+set $_hg_q_bit_access = 7
+set $_hg_q_bit_memid0 = 8
+set $_hg_q_bit_memid1 = 9
 
 define hgquarkinfo
   set $_memid = ($arg0 >> 32 & (((1 << ($_hg_q_bit_memid1-$_hg_q_bit_memid0+1)) - 1) << $_hg_q_bit_memid0)) >> $_hg_q_bit_memid0
   set $_read  = ($arg0 >> 32 & (((1 << ($_hg_q_bit_read-$_hg_q_bit_read+1)) - 1) << $_hg_q_bit_read)) >> $_hg_q_bit_read
   set $_write  = ($arg0 >> 32 & (((1 << ($_hg_q_bit_write-$_hg_q_bit_write+1)) - 1) << $_hg_q_bit_write)) >> $_hg_q_bit_write
   set $_exec  = ($arg0 >> 32 & (((1 << ($_hg_q_bit_exec-$_hg_q_bit_exec+1)) - 1) << $_hg_q_bit_exec)) >> $_hg_q_bit_exec
+  set $_access = ($arg0 >> 32 & (((1 << ($_hg_q_bit_access-$_hg_q_bit_access+1)) - 1) << $_hg_q_bit_access)) >> $_hg_q_bit_access
   set $_typeid = ($arg0 >> 32 & (((1 << ($_hg_q_bit_type3-$_hg_q_bit_type0+1)) - 1) << $_hg_q_bit_type0)) >> $_hg_q_bit_type0
   set $_value = ($arg0 & ((1LL << 32) - 1))
 
@@ -57,6 +59,11 @@ define hgquarkinfo
       printf "-"
     else
       printf "x"
+    end
+    if ($_access == 0)
+      printf "-"
+    else
+      printf "a"
     end
     printf "\n"
     printf "  [type]: "
