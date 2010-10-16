@@ -4476,7 +4476,54 @@ VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (moveto);
-DEFUNC_UNIMPLEMENTED_OPER (mul);
+
+/* <num1> <num2> mul <product> */
+DEFUNC_OPER (mul)
+G_STMT_START {
+	hg_quark_t arg0, arg1, ret;
+	gdouble d1, d2, dr;
+	gboolean is_int = TRUE;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+	if (HG_IS_QINT (arg0)) {
+		d1 = HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg0)) {
+		d1 = HG_REAL (arg0);
+		is_int = FALSE;
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (HG_IS_QINT (arg1)) {
+		d2 = HG_INT (arg1);
+	} else if (HG_IS_QREAL (arg1)) {
+		d2 = HG_REAL (arg1);
+		is_int = FALSE;
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+
+	dr = d1 * d2;
+	if (is_int &&
+	    HG_REAL_LE (dr, G_MAXINT32) &&
+	    HG_REAL_GE (dr, G_MININT32)) {
+		ret = HG_QINT ((gint32)dr);
+	} else {
+		ret = HG_QREAL (dr);
+	}
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+
+	STACK_PUSH (ostack, ret);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
 
 /* <any1> <any2> ne <bool> */
 DEFUNC_OPER (ne)
