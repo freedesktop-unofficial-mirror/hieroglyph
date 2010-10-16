@@ -138,13 +138,18 @@ PROTO_OPER (dictstack);
 PROTO_OPER (div);
 PROTO_OPER (dtransform);
 PROTO_OPER (dup);
+PROTO_OPER (echo);
+PROTO_OPER (eexec);
 PROTO_OPER (end);
 PROTO_OPER (eoclip);
 PROTO_OPER (eofill);
 PROTO_OPER (eoviewclip);
 PROTO_OPER (eq);
+PROTO_OPER (erasepage);
 PROTO_OPER (exch);
 PROTO_OPER (exec);
+PROTO_OPER (execstack);
+PROTO_OPER (executeonly);
 PROTO_OPER (exit);
 PROTO_OPER (file);
 PROTO_OPER (fill);
@@ -312,10 +317,6 @@ PROTO_OPER (currentundercolorremoval);
 PROTO_OPER (defaultmatrix);
 PROTO_OPER (detach);
 PROTO_OPER (deviceinfo);
-PROTO_OPER (echo);
-PROTO_OPER (erasepage);
-PROTO_OPER (execstack);
-PROTO_OPER (executeonly);
 PROTO_OPER (exp);
 PROTO_OPER (filenameforall);
 PROTO_OPER (fileposition);
@@ -2815,6 +2816,9 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (1, 0, 0);
 DEFUNC_OPER_END
 
+DEFUNC_UNIMPLEMENTED_OPER (echo);
+DEFUNC_UNIMPLEMENTED_OPER (eexec);
+
 /* - end - */
 DEFUNC_OPER (end)
 G_STMT_START {
@@ -2923,6 +2927,8 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
+DEFUNC_UNIMPLEMENTED_OPER (erasepage);
+
 /* <any1> <any2> exch <any2> <any1> */
 DEFUNC_OPER (exch)
 G_STMT_START {
@@ -2973,6 +2979,103 @@ G_STMT_START {
 	retval = TRUE;
 } G_STMT_END;
 VALIDATE_STACK_SIZE (__flag ? -1 : 0, __flag ? 1 : 0, 0);
+DEFUNC_OPER_END
+
+/* <array> execstack <subarray> */
+DEFUNC_OPER (execstack)
+G_STMT_START {
+	hg_quark_t arg0, q;
+	hg_array_t *a;
+	gssize i, len, edepth;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QARRAY (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!hg_vm_quark_is_writable(vm, &arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+	a = HG_VM_LOCK (vm, arg0, error);
+	if (a == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	edepth = hg_stack_depth(estack);
+	len = hg_array_length(a);
+	if (edepth > len) {
+		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		goto error;
+	}
+	/* do not include the last node */
+	for (i = 0; i < edepth - 1; i++) {
+		q = hg_stack_index(estack, edepth - i - 1, error);
+		hg_array_set(a, q, i, error);
+	}
+	if (edepth != (len + 1)) {
+		q = hg_array_make_subarray(a, 0, edepth - 2, NULL, error);
+		if (q == Qnil) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			goto error;
+		}
+		hg_vm_quark_set_attributes(vm, &q,
+					   hg_vm_quark_is_readable(vm, &arg0),
+					   hg_vm_quark_is_writable(vm, &arg0),
+					   hg_vm_quark_is_executable(vm, &arg0),
+					   hg_vm_quark_is_editable(vm, &arg0));
+	} else {
+		q = arg0;
+	}
+	if (q == arg0)
+		hg_stack_pop(ostack, error);
+	else
+		hg_stack_drop(ostack, error);
+
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+  error:
+	HG_VM_UNLOCK (vm, arg0);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
+/* <array> executeonly <array>
+ * <packedarray> executeonly <packedarray>
+ * <file> executeonly <file>
+ * <string> executeonly <string>
+ */
+DEFUNC_OPER (executeonly)
+G_STMT_START {
+	hg_quark_t arg0;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (HG_IS_QARRAY (arg0) ||
+	    HG_IS_QFILE (arg0) ||
+	    HG_IS_QSTRING (arg0)) {
+		if (!hg_vm_quark_is_editable(vm, &arg0)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+			return FALSE;
+		}
+		hg_vm_quark_set_readable(vm, &arg0, FALSE);
+		hg_vm_quark_set_writable(vm, &arg0, FALSE);
+		hg_vm_quark_set_editable(vm, &arg0, TRUE);
+
+		hg_stack_pop(ostack, error);
+		STACK_PUSH (ostack, arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
 /* - exit - */
@@ -5041,106 +5144,6 @@ DEFUNC_UNIMPLEMENTED_OPER (currentundercolorremoval);
 DEFUNC_UNIMPLEMENTED_OPER (defaultmatrix);
 DEFUNC_UNIMPLEMENTED_OPER (detach);
 DEFUNC_UNIMPLEMENTED_OPER (deviceinfo);
-DEFUNC_UNIMPLEMENTED_OPER (echo);
-DEFUNC_UNIMPLEMENTED_OPER (erasepage);
-
-/* <array> execstack <subarray> */
-DEFUNC_OPER (execstack)
-G_STMT_START {
-	hg_quark_t arg0, q;
-	hg_array_t *a;
-	gssize i, len, edepth;
-
-	CHECK_STACK (ostack, 1);
-
-	arg0 = hg_stack_index(ostack, 0, error);
-	if (!HG_IS_QARRAY (arg0)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
-		return FALSE;
-	}
-	if (!hg_vm_quark_is_writable(vm, &arg0)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
-		return FALSE;
-	}
-	a = HG_VM_LOCK (vm, arg0, error);
-	if (a == NULL) {
-		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
-		return FALSE;
-	}
-	edepth = hg_stack_depth(estack);
-	len = hg_array_length(a);
-	if (edepth > len) {
-		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
-		goto error;
-	}
-	/* do not include the last node */
-	for (i = 0; i < edepth - 1; i++) {
-		q = hg_stack_index(estack, edepth - i - 1, error);
-		hg_array_set(a, q, i, error);
-	}
-	if (edepth != (len + 1)) {
-		q = hg_array_make_subarray(a, 0, edepth - 2, NULL, error);
-		if (q == Qnil) {
-			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
-			goto error;
-		}
-		hg_vm_quark_set_attributes(vm, &q,
-					   hg_vm_quark_is_readable(vm, &arg0),
-					   hg_vm_quark_is_writable(vm, &arg0),
-					   hg_vm_quark_is_executable(vm, &arg0),
-					   hg_vm_quark_is_editable(vm, &arg0));
-	} else {
-		q = arg0;
-	}
-	if (q == arg0)
-		hg_stack_pop(ostack, error);
-	else
-		hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, q);
-
-	retval = TRUE;
-  error:
-	HG_VM_UNLOCK (vm, arg0);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
-
-/* <array> executeonly <array>
- * <packedarray> executeonly <packedarray>
- * <file> executeonly <file>
- * <string> executeonly <string>
- */
-DEFUNC_OPER (executeonly)
-G_STMT_START {
-	hg_quark_t arg0;
-
-	CHECK_STACK (ostack, 1);
-
-	arg0 = hg_stack_index(ostack, 0, error);
-	if (HG_IS_QARRAY (arg0) ||
-	    HG_IS_QFILE (arg0) ||
-	    HG_IS_QSTRING (arg0)) {
-		if (!hg_vm_quark_is_editable(vm, &arg0)) {
-			hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
-			return FALSE;
-		}
-		hg_vm_quark_set_readable(vm, &arg0, FALSE);
-		hg_vm_quark_set_writable(vm, &arg0, FALSE);
-		hg_vm_quark_set_editable(vm, &arg0, TRUE);
-
-		hg_stack_pop(ostack, error);
-		STACK_PUSH (ostack, arg0);
-	} else {
-		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
-		return FALSE;
-	}
-
-	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
-
 DEFUNC_UNIMPLEMENTED_OPER (exp);
 DEFUNC_UNIMPLEMENTED_OPER (filenameforall);
 DEFUNC_UNIMPLEMENTED_OPER (fileposition);
@@ -5703,6 +5706,7 @@ _hg_operator_level1_register(hg_vm_t   *vm,
 //	REG_OPER (dict, name, deviceinfo); /* ??? */
 	REG_OPER (dict, name, dictstack);
 	REG_OPER (dict, name, echo);
+	REG_OPER (dict, name, eexec);
 	REG_OPER (dict, name, erasepage);
 	REG_OPER (dict, name, execstack);
 	REG_OPER (dict, name, executeonly);
@@ -6223,6 +6227,7 @@ hg_operator_init(void)
 	DECL_OPER (deviceinfo);
 	DECL_OPER (dictstack);
 	DECL_OPER (echo);
+	DECL_OPER (eexec);
 	DECL_OPER (erasepage);
 	DECL_OPER (execstack);
 	DECL_OPER (executeonly);
@@ -6637,6 +6642,7 @@ hg_operator_tini(void)
 	UNDECL_OPER (deviceinfo);
 	UNDECL_OPER (dictstack);
 	UNDECL_OPER (echo);
+	UNDECL_OPER (eexec);
 	UNDECL_OPER (erasepage);
 	UNDECL_OPER (execstack);
 	UNDECL_OPER (executeonly);

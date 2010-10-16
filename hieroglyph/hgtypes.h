@@ -641,6 +641,8 @@ enum _hg_system_encoding_t {
 
 	HG_enc_POSTSCRIPT_RESERVED_END,
 
+	HG_enc_eexec,
+
 	HG_enc_private_abort,
 	HG_enc_private_exit,
 	HG_enc_private_clearerror,
