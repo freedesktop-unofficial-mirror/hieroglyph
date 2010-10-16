@@ -4868,6 +4868,39 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-3, 0, 0);
 DEFUNC_OPER_END
 
+DEFUNC_UNIMPLEMENTED_OPER (rand);
+
+/* <array> rcheck <bool>
+ * <packedarray> rcheck <bool>
+ * <dict> rcheck <bool>
+ * <file> rcheck <bool>
+ * <string> rcheck <bool>
+ */
+DEFUNC_OPER (rcheck)
+G_STMT_START {
+	hg_quark_t arg0, q;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QARRAY (arg0) &&
+	    !HG_IS_QDICT (arg0) &&
+	    !HG_IS_QFILE (arg0) &&
+	    !HG_IS_QSTRING (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	q = HG_QBOOL (hg_vm_quark_is_readable(vm, &arg0));
+
+	hg_stack_drop(ostack, error);
+
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (rcurveto);
 
 /* <file> read <int> <true>
@@ -5487,38 +5520,6 @@ DEFUNC_OPER_END
 DEFUNC_UNIMPLEMENTED_OPER (notify);
 DEFUNC_UNIMPLEMENTED_OPER (nulldevice);
 DEFUNC_UNIMPLEMENTED_OPER (packedarray);
-DEFUNC_UNIMPLEMENTED_OPER (rand);
-
-/* <array> rcheck <bool>
- * <packedarray> rcheck <bool>
- * <dict> rcheck <bool>
- * <file> rcheck <bool>
- * <string> rcheck <bool>
- */
-DEFUNC_OPER (rcheck)
-G_STMT_START {
-	hg_quark_t arg0, q;
-
-	CHECK_STACK (ostack, 1);
-
-	arg0 = hg_stack_index(ostack, 0, error);
-	if (!HG_IS_QARRAY (arg0) &&
-	    !HG_IS_QDICT (arg0) &&
-	    !HG_IS_QFILE (arg0) &&
-	    !HG_IS_QSTRING (arg0)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
-		return FALSE;
-	}
-	q = HG_QBOOL (hg_vm_quark_is_readable(vm, &arg0));
-
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, q);
-
-	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
 
 /* -array- readonly -array-
  * -packedarray- readonly -packedarray-
