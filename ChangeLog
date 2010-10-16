@@ -1,6 +1,7 @@
 2010-10-16  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_cvn): implemented.
+	(_hg_operator_real_cvr): implemented.
 
 2010-10-08  Akira TAGOH  <akira@tagoh.org>
 

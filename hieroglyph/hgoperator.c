@@ -2411,7 +2411,68 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (cvr);
+/* <num> cvr <real>
+ * <string> cvr <real>
+ */
+DEFUNC_OPER (cvr)
+G_STMT_START {
+	hg_quark_t arg0, q;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (HG_IS_QINT (arg0)) {
+		hg_stack_drop(ostack, error);
+		STACK_PUSH (ostack, HG_QREAL (HG_INT (arg0)));
+	} else if (HG_IS_QSTRING (arg0)) {
+		hg_string_t *s;
+
+		if (!hg_vm_quark_is_readable(vm, &arg0)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+			return FALSE;
+		}
+		s = HG_VM_LOCK (vm, arg0, error);
+		q = hg_file_new_with_string(hg_vm_get_mem(vm),
+					    "--%cvr--",
+					    HG_FILE_IO_MODE_READ,
+					    s,
+					    NULL,
+					    error,
+					    NULL);
+		HG_VM_UNLOCK (vm, arg0);
+		STACK_PUSH (ostack, q);
+		retval = _hg_operator_real_token(vm, error);
+		if (retval == TRUE) {
+			hg_quark_t qq;
+
+			qq = hg_stack_pop(ostack, error);
+			if (!HG_IS_QBOOL (qq)) {
+				hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+				return FALSE;
+			} else {
+				if (!HG_BOOL (qq)) {
+					hg_mem_reserved_spool_remove(hg_vm_get_mem_from_quark(vm, qq),
+								     qq);
+					hg_vm_set_error(vm, qself, HG_VM_e_syntaxerror);
+					return FALSE;
+				}
+			}
+			hg_stack_roll(ostack, 2, 1, error);
+			hg_stack_drop(ostack, error);
+
+			retval = TRUE;
+		} else {
+			hg_stack_drop(ostack, error);
+		}
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
 
 /* <num> <radix> <string> cvrs <substring> */
 DEFUNC_OPER (cvrs)
