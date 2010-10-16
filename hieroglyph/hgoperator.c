@@ -4611,7 +4611,42 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (neg);
+/* <num1> neg <num2> */
+DEFUNC_OPER (neg)
+G_STMT_START {
+	hg_quark_t arg0, ret;
+	gdouble d;
+	gboolean is_int = TRUE;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (HG_IS_QINT (arg0)) {
+		d = -HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg0)) {
+		d = -HG_REAL (arg0);
+		is_int = FALSE;
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+
+	if (is_int &&
+	    HG_REAL_LE (d, G_MAXINT32) &&
+	    HG_REAL_GE (d, G_MININT32)) {
+		ret = HG_QINT ((gint32)d);
+	} else {
+		ret = HG_QREAL (d);
+	}
+	hg_stack_drop(ostack, error);
+
+	STACK_PUSH (ostack, ret);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (newpath);
 
 /* <bool> not <bool>
