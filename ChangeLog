@@ -1,5 +1,9 @@
 2010-10-16  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (_hg_operator_real_invertmatrix): implemented.
+
+	* hieroglyph/hgarray.c (hg_array_matrix_invert): new.
+
 	* lib/hg_init.ps (initgraphics): defined.
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_flushfile): implemented.

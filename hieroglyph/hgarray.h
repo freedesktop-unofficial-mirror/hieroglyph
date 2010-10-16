@@ -96,6 +96,8 @@ gboolean            hg_array_is_matrix        (hg_array_t                *array)
 gboolean            hg_array_matrix_multiply  (hg_array_t                *matrix1,
 					       hg_array_t                *matrix2,
 					       hg_array_t                *ret);
+gboolean            hg_array_matrix_invert    (hg_array_t                *matrix,
+					       hg_array_t                *ret);
 
 
 G_END_DECLS

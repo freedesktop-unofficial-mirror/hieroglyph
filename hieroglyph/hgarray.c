@@ -38,6 +38,20 @@
 #define HG_ARRAY_MAX_SIZE	65535 /* defined as PostScript spec */
 
 
+typedef union _hg_matrix_t	hg_matrix_t;
+
+union _hg_matrix_t {
+	struct {
+		gdouble xx;
+		gdouble yx;
+		gdouble xy;
+		gdouble yy;
+		gdouble x0;
+		gdouble y0;
+	} mtx;
+	gdouble d[6];
+};
+
 HG_DEFINE_VTABLE_WITH (array, NULL, NULL, NULL);
 
 /*< private >*/
@@ -310,6 +324,34 @@ _hg_array_maybe_expand(hg_array_t *array)
 	array->length++;
 
 	return TRUE;
+}
+
+static void
+_hg_array_convert_to_matrix(hg_array_t  *array,
+			    hg_matrix_t *matrix)
+{
+	hg_quark_t q;
+	gsize i;
+
+	for (i = 0; i < 6; i++) {
+		q = hg_array_get(array, i, NULL);
+		if (HG_IS_QINT (q)) {
+			matrix->d[i] = (gdouble)HG_INT (q);
+		} else {
+			matrix->d[i] = HG_REAL (q);
+		}
+	}
+}
+
+static void
+_hg_array_convert_from_matrix(hg_array_t  *array,
+			      hg_matrix_t *matrix)
+{
+	gsize i;
+
+	for (i = 0; i < 6; i++) {
+		hg_array_set(array, HG_QREAL (matrix->d[i]), i, NULL);
+	}
 }
 
 /*< public >*/
@@ -830,38 +872,14 @@ hg_array_matrix_multiply(hg_array_t *matrix1,
 			 hg_array_t *matrix2,
 			 hg_array_t *ret)
 {
-	union _hg_matrix {
-		struct {
-			gdouble xx;
-			gdouble yx;
-			gdouble xy;
-			gdouble yy;
-			gdouble x0;
-			gdouble y0;
-		} mtx;
-		gdouble d[6];
-	} m1, m2, m3;
-	hg_quark_t q;
-	gsize i;
+	hg_matrix_t m1, m2, m3;
 
 	hg_return_val_if_fail (hg_array_is_matrix(matrix1), FALSE);
 	hg_return_val_if_fail (hg_array_is_matrix(matrix2), FALSE);
 	hg_return_val_if_fail (hg_array_length(ret) == 6, FALSE);
 
-	for (i = 0; i < 6; i++) {
-		q = hg_array_get(matrix1, i, NULL);
-		if (HG_IS_QINT (q)) {
-			m1.d[i] = (gdouble)HG_INT (q);
-		} else {
-			m1.d[i] = HG_REAL (q);
-		}
-		q = hg_array_get(matrix2, i, NULL);
-		if (HG_IS_QINT (q)) {
-			m2.d[i] = (gdouble)HG_INT (q);
-		} else {
-			m2.d[i] = HG_REAL (q);
-		}
-	}
+	_hg_array_convert_to_matrix(matrix1, &m1);
+	_hg_array_convert_to_matrix(matrix2, &m2);
 
 	m3.mtx.xx = m1.mtx.xx * m2.mtx.xx + m1.mtx.yx * m2.mtx.xy;
 	m3.mtx.yx = m1.mtx.xx * m2.mtx.yx + m1.mtx.yx * m2.mtx.yy;
@@ -870,9 +888,59 @@ hg_array_matrix_multiply(hg_array_t *matrix1,
 	m3.mtx.x0 = m1.mtx.x0 * m2.mtx.xx + m1.mtx.y0 * m2.mtx.xy + m2.mtx.x0;
 	m3.mtx.y0 = m1.mtx.x0 * m2.mtx.yx + m1.mtx.y0 * m2.mtx.yy + m2.mtx.y0;
 
-	for (i = 0; i < 6; i++) {
-		hg_array_set(ret, HG_QREAL (m3.d[i]), i, NULL);
-	}
+	_hg_array_convert_from_matrix(ret, &m3);
+
+	return TRUE;
+}
+
+/**
+ * hg_array_matrix_invert:
+ * @matrix:
+ * @ret:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_array_matrix_invert(hg_array_t *matrix,
+		       hg_array_t *ret)
+{
+	hg_matrix_t m1, m2;
+	gdouble det;
+
+	hg_return_val_if_fail (hg_array_is_matrix(matrix), FALSE);
+	hg_return_val_if_fail (hg_array_length(ret) == 6, FALSE);
+
+	_hg_array_convert_to_matrix(matrix, &m1);
+
+	/*
+	 * detA = a11a22a33 + a21a32a13 + a31a12a23
+	 *      - a11a32a23 - a31a22a13 - a21a12a33
+	 *
+	 *      xx xy 0
+	 * A = {yx yy 0}
+	 *      x0 y0 1
+	 * detA = xx * yy * 1 + yx * y0 * 0 + x0 * xy * 0 - xx * y0 * 0 - x0 * yy * 0 - yx * xy * 1
+	 * detA = xx * yy - yx * xy
+	 */
+	det = m1.mtx.xx * m1.mtx.yy - m1.mtx.yx * m1.mtx.xy;
+	if (det == 0)
+		return FALSE;
+
+	/*
+	 *                    d      -b   0
+	 * A-1 = 1/detA {    -c       a   0}
+	 *               -dx0+by0 cx0-ay0 1
+	 */
+	m2.mtx.xx =  m1.mtx.yy / det;
+	m2.mtx.xy = -m1.mtx.xy / det;
+	m2.mtx.yx = -m1.mtx.yx / det;
+	m2.mtx.yy =  m1.mtx.xx / det;
+	m2.mtx.x0 = (-m1.mtx.yy * m1.mtx.x0 + m1.mtx.xy * m1.mtx.y0) / det;
+	m2.mtx.y0 = ( m1.mtx.yx * m1.mtx.x0 - m1.mtx.xx * m1.mtx.y0) / det;
+
+	_hg_array_convert_from_matrix(ret, &m2);
 
 	return TRUE;
 }

@@ -325,7 +325,6 @@ PROTO_OPER (fileposition);
 PROTO_OPER (fork);
 PROTO_OPER (framedevice);
 PROTO_OPER (initclip);
-PROTO_OPER (initgraphics);
 PROTO_OPER (initmatrix);
 PROTO_OPER (instroke);
 PROTO_OPER (inustroke);
@@ -4011,7 +4010,59 @@ DEFUNC_UNIMPLEMENTED_OPER (infill);
 DEFUNC_UNIMPLEMENTED_OPER (initviewclip);
 DEFUNC_UNIMPLEMENTED_OPER (inueofill);
 DEFUNC_UNIMPLEMENTED_OPER (inufill);
-DEFUNC_UNIMPLEMENTED_OPER (invertmatrix);
+
+/* <matrix1> <matrix2> invertmatrix <matrix3> */
+DEFUNC_OPER (invertmatrix)
+G_STMT_START {
+	hg_quark_t arg0, arg1;
+	hg_array_t *a1 = NULL, *a2 = NULL;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+
+	if (!HG_IS_QARRAY (arg0) ||
+	    !HG_IS_QARRAY (arg1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+
+	a1 = HG_VM_LOCK (vm, arg0, error);
+	a2 = HG_VM_LOCK (vm, arg1, error);
+	if (!a1 || !a2) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		goto error;
+	}
+
+	if (!hg_array_is_matrix(a1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		goto error;
+	}
+	if (hg_array_length(a2) != 6) {
+		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		goto error;
+	}
+
+	if (!hg_array_matrix_invert(a1, a2)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_undefinedresult);
+		goto error;
+	}
+
+	hg_stack_roll(ostack, 2, 1, error);
+	hg_stack_drop(ostack, error);
+
+	retval = TRUE;
+
+  error:
+	if (a1)
+		HG_VM_UNLOCK (vm, arg0);
+	if (a2)
+		HG_VM_UNLOCK (vm, arg1);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (itransform);
 
 /* <dict> <key> known <bool> */
