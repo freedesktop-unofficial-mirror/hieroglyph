@@ -2,6 +2,9 @@
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_cvn): implemented.
 	(_hg_operator_real_cvr): implemented.
+	(_hg_operator_real_private_stringcvs): push (--nostringval--)
+	if the given object isn't either of numeric, boolean, string, a name
+	nor a operator.
 
 2010-10-08  Akira TAGOH  <akira@tagoh.org>
 

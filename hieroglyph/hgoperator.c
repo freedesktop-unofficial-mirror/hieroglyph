@@ -803,7 +803,16 @@ G_STMT_START {
 	CHECK_STACK (ostack, 1);
 
 	arg0 = hg_stack_index(ostack, 0, error);
-	q = hg_vm_quark_to_string(vm, arg0, FALSE, NULL, error);
+	if (HG_IS_QINT (arg0) ||
+	    HG_IS_QREAL (arg0) ||
+	    HG_IS_QBOOL (arg0) ||
+	    HG_IS_QSTRING (arg0) ||
+	    HG_IS_QNAME (arg0) ||
+	    HG_IS_QOPER (arg0)) {
+		q = hg_vm_quark_to_string(vm, arg0, FALSE, NULL, error);
+	} else {
+		q = HG_QSTRING (hg_vm_get_mem(vm), "--nostringval--");
+	}
 	if (q == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
