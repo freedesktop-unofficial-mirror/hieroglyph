@@ -1,6 +1,7 @@
 2010-10-16  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_invertmatrix): implemented.
+	(_hg_operator_real_ln): implemented.
 
 	* hieroglyph/hgarray.c (hg_array_matrix_invert): new.
 

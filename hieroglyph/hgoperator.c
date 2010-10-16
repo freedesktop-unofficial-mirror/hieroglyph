@@ -187,6 +187,7 @@ PROTO_OPER (known);
 PROTO_OPER (le);
 PROTO_OPER (length);
 PROTO_OPER (lineto);
+PROTO_OPER (ln);
 PROTO_OPER (loop);
 PROTO_OPER (lt);
 PROTO_OPER (makefont);
@@ -330,7 +331,6 @@ PROTO_OPER (instroke);
 PROTO_OPER (inustroke);
 PROTO_OPER (join);
 PROTO_OPER (kshow);
-PROTO_OPER (ln);
 PROTO_OPER (lock);
 PROTO_OPER (log);
 PROTO_OPER (monitor);
@@ -4239,6 +4239,39 @@ DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (lineto);
 
+/* <num> ln <real> */
+DEFUNC_OPER (ln)
+G_STMT_START {
+	hg_quark_t arg0, ret;
+	gdouble d;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (HG_IS_QINT (arg0)) {
+		d = HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg0)) {
+		d = HG_REAL (arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+
+	if (HG_REAL_LE (d, 0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		return FALSE;
+	}
+	ret = HG_QREAL (log(d));
+
+	hg_stack_drop(ostack, error);
+
+	STACK_PUSH (ostack, ret);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 /* <proc> loop - */
 DEFUNC_OPER (loop)
 G_STMT_START {
@@ -5302,7 +5335,6 @@ DEFUNC_UNIMPLEMENTED_OPER (instroke);
 DEFUNC_UNIMPLEMENTED_OPER (inustroke);
 DEFUNC_UNIMPLEMENTED_OPER (join);
 DEFUNC_UNIMPLEMENTED_OPER (kshow);
-DEFUNC_UNIMPLEMENTED_OPER (ln);
 DEFUNC_UNIMPLEMENTED_OPER (lock);
 DEFUNC_UNIMPLEMENTED_OPER (log);
 DEFUNC_UNIMPLEMENTED_OPER (monitor);
