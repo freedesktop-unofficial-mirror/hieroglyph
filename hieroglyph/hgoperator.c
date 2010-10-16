@@ -3302,7 +3302,34 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (flushfile);
+/* <file> flushfile - */
+DEFUNC_OPER (flushfile)
+G_STMT_START {
+	hg_quark_t arg0;
+	hg_file_t *f;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+
+	if (!HG_IS_QFILE (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	f = HG_VM_LOCK (vm, arg0, error);
+
+	if (!hg_file_flush(f, error)) {
+		hg_vm_set_error_from_gerror(vm, qself, *error);
+		goto error;
+	}
+	retval = TRUE;
+
+	hg_stack_drop(ostack, error);
+  error:
+	HG_VM_UNLOCK (vm, arg0);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
 
 /* <initial> <increment> <limit> <proc> for - */
 DEFUNC_OPER (for)

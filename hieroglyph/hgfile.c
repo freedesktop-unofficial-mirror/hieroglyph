@@ -730,14 +730,16 @@ _hg_file_io_real_file_flush(hg_file_t  *file,
 {
 	hg_file_io_data_t *data = user_data;
 
-	if ((file->mode & HG_FILE_IO_MODE_WRITE) == 0) {
-		errno = EBADF;
-		goto exception;
+	if ((file->mode & HG_FILE_IO_MODE_READ)) {
+		if (hg_file_seek(file, 0, HG_FILE_POS_END, error) == -1)
+			return FALSE;
 	}
-	errno = 0;
-	fsync(data->fd);
-	if (errno)
-		goto exception;
+	if ((file->mode & HG_FILE_IO_MODE_WRITE)) {
+		errno = 0;
+		fsync(data->fd);
+		if (errno)
+			goto exception;
+	}
 
 	return TRUE;
   exception:
@@ -976,6 +978,11 @@ _hg_file_io_real_buffered_flush(hg_file_t  *file,
 				gpointer    user_data,
 				GError    **error)
 {
+	if ((file->mode & HG_FILE_IO_MODE_READ)) {
+		if (hg_file_seek(file, 0, HG_FILE_POS_END, error) == -1)
+			return FALSE;
+	}
+
 	return TRUE;
 }
 

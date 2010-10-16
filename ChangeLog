@@ -1,5 +1,11 @@
 2010-10-16  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (_hg_operator_real_flushfile): implemented.
+
+	* hieroglyph/hgfile.c (_hg_file_io_real_file_flush): skip data till
+	EOF detected if the file is open as readable.
+	(_hg_file_io_real_buffered_flush): likewise.
+
 	* hieroglyph/hgoperator.c (_hg_operator_real_cvn): implemented.
 	(_hg_operator_real_cvr): implemented.
 	(_hg_operator_real_private_stringcvs): push (--nostringval--)
