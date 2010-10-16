@@ -151,6 +151,7 @@ PROTO_OPER (exec);
 PROTO_OPER (execstack);
 PROTO_OPER (executeonly);
 PROTO_OPER (exit);
+PROTO_OPER (exp);
 PROTO_OPER (file);
 PROTO_OPER (fill);
 PROTO_OPER (flattenpath);
@@ -317,7 +318,6 @@ PROTO_OPER (currentundercolorremoval);
 PROTO_OPER (defaultmatrix);
 PROTO_OPER (detach);
 PROTO_OPER (deviceinfo);
-PROTO_OPER (exp);
 PROTO_OPER (filenameforall);
 PROTO_OPER (fileposition);
 PROTO_OPER (fork);
@@ -3135,6 +3135,50 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (0, -__n, 0);
 DEFUNC_OPER_END
 
+/* <base> <exponent> exp <real> */
+DEFUNC_OPER (exp)
+G_STMT_START {
+	hg_quark_t arg0, arg1, ret;
+	gdouble base, exponent;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+
+	if (HG_IS_QINT (arg0)) {
+		base = HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg0)) {
+		base = HG_REAL (arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (HG_IS_QINT (arg1)) {
+		exponent = HG_INT (arg1);
+	} else if (HG_IS_QREAL (arg1)) {
+		exponent = HG_REAL (arg1);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (HG_REAL_IS_ZERO (base) &&
+	    HG_REAL_IS_ZERO (exponent)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_undefinedresult);
+		return FALSE;
+	}
+	ret = HG_QREAL (pow(base, exponent));
+
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+
+	STACK_PUSH (ostack, ret);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
+
 /* <filename> <access> file -file- */
 DEFUNC_OPER (file)
 G_STMT_START {
@@ -5144,7 +5188,6 @@ DEFUNC_UNIMPLEMENTED_OPER (currentundercolorremoval);
 DEFUNC_UNIMPLEMENTED_OPER (defaultmatrix);
 DEFUNC_UNIMPLEMENTED_OPER (detach);
 DEFUNC_UNIMPLEMENTED_OPER (deviceinfo);
-DEFUNC_UNIMPLEMENTED_OPER (exp);
 DEFUNC_UNIMPLEMENTED_OPER (filenameforall);
 DEFUNC_UNIMPLEMENTED_OPER (fileposition);
 DEFUNC_UNIMPLEMENTED_OPER (fork);

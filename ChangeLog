@@ -6,6 +6,7 @@
 	if the given object isn't either of numeric, boolean, string, a name
 	nor a operator.
 	(_hg_operator_real_div): implemented.
+	(_hg_operator_real_exp): implemented.
 
 2010-10-08  Akira TAGOH  <akira@tagoh.org>
 
