@@ -2,6 +2,7 @@
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_invertmatrix): implemented.
 	(_hg_operator_real_ln): implemented.
+	(_hg_operator_real_log): implemented.
 
 	* hieroglyph/hgarray.c (hg_array_matrix_invert): new.
 
