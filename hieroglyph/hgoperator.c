@@ -5514,6 +5514,7 @@ _hg_operator_level1_register(hg_vm_t   *vm,
 	REG_PRIV_OPER (dict, name, %loop_continue, protected_loop_continue);
 	REG_PRIV_OPER (dict, name, %repeat_continue, protected_repeat_continue);
 	REG_PRIV_OPER (dict, name, %stopped_continue, protected_stopped_continue);
+	REG_PRIV_OPER (dict, name, eexec, eexec);
 
 	REG_OPER (dict, name, abs);
 	REG_OPER (dict, name, add);
@@ -5706,7 +5707,6 @@ _hg_operator_level1_register(hg_vm_t   *vm,
 //	REG_OPER (dict, name, deviceinfo); /* ??? */
 	REG_OPER (dict, name, dictstack);
 	REG_OPER (dict, name, echo);
-	REG_OPER (dict, name, eexec);
 	REG_OPER (dict, name, erasepage);
 	REG_OPER (dict, name, execstack);
 	REG_OPER (dict, name, executeonly);
