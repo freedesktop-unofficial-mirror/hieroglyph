@@ -2368,7 +2368,49 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (cvn);
+/* <string> cvn <name> */
+DEFUNC_OPER (cvn)
+G_STMT_START {
+	hg_quark_t arg0, ret;
+	hg_string_t *s;
+	gchar *cstr;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QSTRING (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!hg_vm_quark_is_readable(vm, &arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+
+	s = HG_VM_LOCK (vm, arg0, error);
+	if (!s) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	if (hg_string_length(s) > 127) {
+		hg_vm_set_error(vm, qself, HG_VM_e_limitcheck);
+		return FALSE;
+	}
+	cstr = hg_string_get_cstr(s);
+	HG_VM_UNLOCK (vm, arg0);
+
+	ret = HG_QNAME (vm->name, cstr);
+	g_free(cstr);
+
+	hg_stack_drop(ostack, error);
+
+	STACK_PUSH (ostack, ret);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (cvr);
 
 /* <num> <radix> <string> cvrs <substring> */
