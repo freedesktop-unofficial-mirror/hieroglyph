@@ -225,6 +225,18 @@ systemdict /.statementedit known {
     } if
     exch type /realtype eq {cvr} if
 } bind odef
+% - initgraphics -
+/initgraphics {
+    initmatrix
+    newpath
+    initclip
+    0 setgray
+    1 setlinewidth
+    0 setlinecap
+    0 setlinejoin
+    10 setmiterlimit
+    [] 0 setdash
+} bind odef
 % -key- load -value-
 /load {
     dup where {

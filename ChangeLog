@@ -1,5 +1,7 @@
 2010-10-16  Akira TAGOH  <akira@tagoh.org>
 
+	* lib/hg_init.ps (initgraphics): defined.
+
 	* hieroglyph/hgoperator.c (_hg_operator_real_flushfile): implemented.
 
 	* hieroglyph/hgfile.c (_hg_file_io_real_file_flush): skip data till

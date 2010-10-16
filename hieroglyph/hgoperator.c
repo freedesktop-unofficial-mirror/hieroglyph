@@ -159,10 +159,12 @@ PROTO_OPER (flush);
 PROTO_OPER (flushfile);
 PROTO_OPER (for);
 PROTO_OPER (forall);
+PROTO_OPER (gcheck);
 PROTO_OPER (ge);
 PROTO_OPER (get);
 PROTO_OPER (getinterval);
 PROTO_OPER (grestore);
+PROTO_OPER (grestoreall);
 PROTO_OPER (gsave);
 PROTO_OPER (gstate);
 PROTO_OPER (gt);
@@ -322,7 +324,6 @@ PROTO_OPER (filenameforall);
 PROTO_OPER (fileposition);
 PROTO_OPER (fork);
 PROTO_OPER (framedevice);
-PROTO_OPER (grestoreall);
 PROTO_OPER (initclip);
 PROTO_OPER (initgraphics);
 PROTO_OPER (initmatrix);
@@ -394,7 +395,6 @@ PROTO_OPER (currentsystemparams);
 PROTO_OPER (currentuserparams);
 PROTO_OPER (defineresource);
 PROTO_OPER (findencoding);
-PROTO_OPER (gcheck);
 PROTO_OPER (glyphshow);
 PROTO_OPER (languagelevel);
 PROTO_OPER (product);
@@ -3508,6 +3508,31 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-2, 4, 0);
 DEFUNC_OPER_END
 
+/* <any> gcheck <bool> */
+DEFUNC_OPER (gcheck)
+G_STMT_START {
+	hg_quark_t arg0;
+	gboolean ret;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (hg_quark_is_simple_object(arg0) ||
+	    HG_IS_QOPER (arg0)) {
+		ret = TRUE;
+	} else {
+		ret = hg_quark_has_same_mem_id(arg0, vm->mem_id[HG_VM_MEM_GLOBAL]);
+	}
+
+	hg_stack_drop(ostack, error);
+
+	STACK_PUSH (ostack, HG_QBOOL (ret));
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 /* <num1> <num2> ge <bool>
  * <string1> <string2> ge <bool>
  */
@@ -3754,6 +3779,7 @@ VALIDATE_STACK_SIZE (-2, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (grestore);
+DEFUNC_UNIMPLEMENTED_OPER (grestoreall);
 DEFUNC_UNIMPLEMENTED_OPER (gsave);
 DEFUNC_UNIMPLEMENTED_OPER (gstate);
 
@@ -5219,9 +5245,7 @@ DEFUNC_UNIMPLEMENTED_OPER (filenameforall);
 DEFUNC_UNIMPLEMENTED_OPER (fileposition);
 DEFUNC_UNIMPLEMENTED_OPER (fork);
 DEFUNC_UNIMPLEMENTED_OPER (framedevice);
-DEFUNC_UNIMPLEMENTED_OPER (grestoreall);
 DEFUNC_UNIMPLEMENTED_OPER (initclip);
-DEFUNC_UNIMPLEMENTED_OPER (initgraphics);
 DEFUNC_UNIMPLEMENTED_OPER (initmatrix);
 DEFUNC_UNIMPLEMENTED_OPER (instroke);
 DEFUNC_UNIMPLEMENTED_OPER (inustroke);
@@ -5427,32 +5451,6 @@ DEFUNC_UNIMPLEMENTED_OPER (currentsystemparams);
 DEFUNC_UNIMPLEMENTED_OPER (currentuserparams);
 DEFUNC_UNIMPLEMENTED_OPER (defineresource);
 DEFUNC_UNIMPLEMENTED_OPER (findencoding);
-
-/* <any> gcheck <bool> */
-DEFUNC_OPER (gcheck)
-G_STMT_START {
-	hg_quark_t arg0;
-	gboolean ret;
-
-	CHECK_STACK (ostack, 1);
-
-	arg0 = hg_stack_index(ostack, 0, error);
-	if (hg_quark_is_simple_object(arg0) ||
-	    HG_IS_QOPER (arg0)) {
-		ret = TRUE;
-	} else {
-		ret = hg_quark_has_same_mem_id(arg0, vm->mem_id[HG_VM_MEM_GLOBAL]);
-	}
-
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, HG_QBOOL (ret));
-
-	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
-
 DEFUNC_UNIMPLEMENTED_OPER (glyphshow);
 
 /* - languagelevel <int> */
@@ -5786,7 +5784,6 @@ _hg_operator_level1_register(hg_vm_t   *vm,
 //	REG_OPER (dict, name, framedevice); /* ??? */
 	REG_OPER (dict, name, grestoreall);
 	REG_OPER (dict, name, initclip);
-	REG_OPER (dict, name, initgraphics);
 
 	REG_OPER (dict, name, initmatrix);
 //	REG_OPER (dict, name, join); /* ??? */
@@ -6308,7 +6305,6 @@ hg_operator_init(void)
 	DECL_OPER (framedevice);
 	DECL_OPER (grestoreall);
 	DECL_OPER (initclip);
-	DECL_OPER (initgraphics);
 	DECL_OPER (initmatrix);
 	DECL_OPER (instroke);
 	DECL_OPER (inustroke);
@@ -6723,7 +6719,6 @@ hg_operator_tini(void)
 	UNDECL_OPER (framedevice);
 	UNDECL_OPER (grestoreall);
 	UNDECL_OPER (initclip);
-	UNDECL_OPER (initgraphics);
 	UNDECL_OPER (initmatrix);
 	UNDECL_OPER (instroke);
 	UNDECL_OPER (inustroke);
