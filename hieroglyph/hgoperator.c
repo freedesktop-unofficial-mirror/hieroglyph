@@ -2409,6 +2409,8 @@ G_STMT_START {
 	HG_VM_UNLOCK (vm, arg0);
 
 	ret = HG_QNAME (vm->name, cstr);
+	hg_vm_quark_set_executable(vm, &ret,
+				   hg_vm_quark_is_executable(vm, &arg0));
 	g_free(cstr);
 
 	hg_stack_drop(ostack, error);

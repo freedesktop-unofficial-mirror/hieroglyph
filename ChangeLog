@@ -1,5 +1,7 @@
 2010-10-19  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (_hg_operator_real_cvn): inherit an exec bit too.
+
 	* lib/hg_init_l2.ps (setglobal): defined as an alias of .setglobal.
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_cvr): just ignore the real
