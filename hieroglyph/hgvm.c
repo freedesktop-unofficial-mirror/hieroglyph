@@ -797,6 +797,11 @@ hg_vm_new(void)
 	memset(retval, 0, sizeof (hg_vm_t));
 	retval->self = q;
 	retval->name = hg_name_init();
+
+	retval->rand_ = g_rand_new();
+	retval->rand_seed = g_rand_int(retval->rand_);
+	g_rand_set_seed(retval->rand_, retval->rand_seed);
+
 	retval->plugin_table = g_hash_table_new_full(g_str_hash, g_str_equal,
 						     g_free, NULL);
 	retval->current_mem_index = HG_VM_MEM_GLOBAL;
@@ -901,6 +906,8 @@ hg_vm_destroy(hg_vm_t *vm)
 		g_list_free(vm->plugin_list);
 	if (vm->name)
 		hg_name_tini(vm->name);
+	if (vm->rand_)
+		g_rand_free(vm->rand_);
 	hg_mem_free(__hg_vm_mem, vm->self);
 }
 
@@ -2969,6 +2976,55 @@ hg_vm_shutdown(hg_vm_t *vm,
 
 	vm->error_code = error_code;
 	vm->shutdown = TRUE;
+}
+
+/**
+ * hg_vm_set_rand_seed:
+ * @vm:
+ * @seed:
+ *
+ * FIXME
+ */
+void
+hg_vm_set_rand_seed(hg_vm_t *vm,
+		    guint32  seed)
+{
+	hg_return_if_fail (vm != NULL);
+
+	vm->rand_seed = seed;
+	g_rand_set_seed(vm->rand_, seed);
+}
+
+/**
+ * hg_vm_get_rand_seed:
+ * @vm:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+guint32
+hg_vm_get_rand_seed(hg_vm_t *vm)
+{
+	hg_return_val_if_fail (vm != NULL, 0);
+
+	return vm->rand_seed;
+}
+
+/**
+ * hg_vm_rand_int:
+ * @vm:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+guint32
+hg_vm_rand_int(hg_vm_t *vm)
+{
+	hg_return_val_if_fail (vm != NULL, 0);
+
+	return g_rand_int(vm->rand_);
 }
 
 /**

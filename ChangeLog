@@ -1,3 +1,13 @@
+2010-10-20  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_rand): implemented.
+	(_hg_operator_real_srand): implemented.
+	(_hg_operator_real_rrand): implemented.
+
+	* hieroglyph/hgvm.c (hg_vm_set_rand_seed): new.
+	(hg_vm_get_rand_seed): new.
+	(hg_vm_rand_int): new.
+
 2010-10-19  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_cvn): inherit an exec bit too.

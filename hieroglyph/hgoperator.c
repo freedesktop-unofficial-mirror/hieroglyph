@@ -4871,7 +4871,19 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-3, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (rand);
+/* - rand <int> */
+DEFUNC_OPER (rand)
+G_STMT_START {
+	hg_quark_t ret;
+
+	ret = HG_QINT (hg_vm_rand_int(vm));
+
+	STACK_PUSH (ostack, ret);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (1, 0, 0);
+DEFUNC_OPER_END
 
 /* <array> rcheck <bool>
  * <packedarray> rcheck <bool>
@@ -5560,7 +5572,17 @@ DEFUNC_UNIMPLEMENTED_OPER (renderbands);
 DEFUNC_UNIMPLEMENTED_OPER (resetfile);
 DEFUNC_UNIMPLEMENTED_OPER (reversepath);
 DEFUNC_UNIMPLEMENTED_OPER (rootfont);
-DEFUNC_UNIMPLEMENTED_OPER (rrand);
+
+/* - rrand <int> */
+DEFUNC_OPER (rrand)
+G_STMT_START {
+	STACK_PUSH (ostack, HG_QINT (hg_vm_get_rand_seed(vm)));
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (1, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (scheck);
 DEFUNC_UNIMPLEMENTED_OPER (setblackgeneration);
 DEFUNC_UNIMPLEMENTED_OPER (setcachelimit);
@@ -5581,7 +5603,30 @@ DEFUNC_UNIMPLEMENTED_OPER (setucacheparams);
 DEFUNC_UNIMPLEMENTED_OPER (setundercolorremoval);
 DEFUNC_UNIMPLEMENTED_OPER (sin);
 DEFUNC_UNIMPLEMENTED_OPER (sqrt);
-DEFUNC_UNIMPLEMENTED_OPER (srand);
+
+/* <int> srand - */
+DEFUNC_OPER (srand)
+G_STMT_START {
+	hg_quark_t arg0;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+
+	if (!HG_IS_QINT (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+
+	hg_vm_set_rand_seed(vm, HG_INT (arg0));
+
+	hg_stack_drop(ostack, error);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (status);
 DEFUNC_UNIMPLEMENTED_OPER (statusdict);
 DEFUNC_UNIMPLEMENTED_OPER (ucachestatus);
