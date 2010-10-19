@@ -1,0 +1,44 @@
+%!PS-Adobe-2.0
+% test-def.ps
+% Copyright (C) 2006-2010 Akira TAGOH
+%
+% Authors:
+%   Akira TAGOH  <akira@tagoh.org>
+%
+% This library is free software; you can redistribute it and/or
+% modify it under the terms of the GNU Lesser General Public
+% License as published by the Free Software Foundation; either
+% version 2 of the License, or (at your option) any later version.
+%
+% This library is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+% Lesser General Public License for more details.
+%
+% You should have received a copy of the GNU Lesser General Public
+% License along with this library; if not, write to the
+% Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+% Boston, MA 02111-1307, USA.
+.initunittest
+
+false .setglobal
+
+% XXX: how does /typecheck happen?
+% XXX: how does /limitcheck happen?
+
+[] /stackunderflow true .initunittestdict {def} .unittest
+[/foo] /stackunderflow true .initunittestdict {/foo def} .unittest
+1 dict readonly begin
+[/foo 1] /invalidaccess true .initunittestdict {/foo 1 def} .unittest
+end /setglobal where {
+    true setglobal 1 dict begin false setglobal
+    [/foo (foo)] /invalidaccess true .initunittestdict {/foo (foo) def} .unittest
+    end
+} {
+    0 dict begin
+    [/foo 1] /dictfull true .initunittestdict {/foo 1 def} .unittest
+    end
+} ifelse
+[1] null true .initunittestdict {/foo 1 def foo} .unittest
+
+.unittestresult
