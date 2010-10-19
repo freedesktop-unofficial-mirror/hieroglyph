@@ -2433,6 +2433,7 @@ G_STMT_START {
 	if (HG_IS_QINT (arg0)) {
 		hg_stack_drop(ostack, error);
 		STACK_PUSH (ostack, HG_QREAL (HG_INT (arg0)));
+	} else if (HG_IS_QREAL (arg0)) {
 	} else if (HG_IS_QSTRING (arg0)) {
 		hg_string_t *s;
 

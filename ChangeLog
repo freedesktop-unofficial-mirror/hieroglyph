@@ -1,3 +1,8 @@
+2010-10-19  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_cvr): just ignore the real
+	number on the stack if given as parameter.
+
 2010-10-16  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_invertmatrix): implemented.
