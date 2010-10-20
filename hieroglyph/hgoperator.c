@@ -72,9 +72,41 @@ PROTO_OPER (protected_forall_string_continue);
 PROTO_OPER (protected_loop_continue);
 PROTO_OPER (protected_repeat_continue);
 PROTO_OPER (protected_stopped_continue);
+PROTO_OPER (ASCII85Decode);
+PROTO_OPER (ASCII85Encode);
+PROTO_OPER (ASCIIHexDecode);
+PROTO_OPER (ASCIIHexEncode);
+PROTO_OPER (CCITTFaxDecode);
+PROTO_OPER (CCITTFaxEncode);
+PROTO_OPER (CIEBasedA);
+PROTO_OPER (CIEBasedABC);
+PROTO_OPER (CIEBasedDEF);
+PROTO_OPER (CIEBasedDEFG);
+PROTO_OPER (DCTDecode);
+PROTO_OPER (DCTEncode);
+PROTO_OPER (DeviceCMYK);
+PROTO_OPER (DeviceGray);
+PROTO_OPER (DeviceN);
+PROTO_OPER (DeviceRGB);
+PROTO_OPER (FontDirectory);
+PROTO_OPER (GlobalFontDirectory);
+PROTO_OPER (ISOLatin1Encoding);
+PROTO_OPER (Indexed);
+PROTO_OPER (LZWDecode);
+PROTO_OPER (LZWEncode);
+PROTO_OPER (NullEncode);
+PROTO_OPER (Pattern);
+PROTO_OPER (RunLengthDecode);
+PROTO_OPER (RunLengthEncode);
+PROTO_OPER (Separation);
+PROTO_OPER (SharedFontDirectory);
+/* StandardEncoding is implemented in PostScript */
+PROTO_OPER (SubFileDecode);
+PROTO_OPER (UserObjects);
 PROTO_OPER (abs);
 PROTO_OPER (add);
 PROTO_OPER (aload);
+/* anchorsearch is implemented in PostScript */
 PROTO_OPER (and);
 PROTO_OPER (arc);
 PROTO_OPER (arcn);
@@ -85,10 +117,12 @@ PROTO_OPER (ashow);
 PROTO_OPER (astore);
 PROTO_OPER (atan);
 PROTO_OPER (awidthshow);
+PROTO_OPER (banddevice);
 PROTO_OPER (begin);
 PROTO_OPER (bind);
 PROTO_OPER (bitshift);
 PROTO_OPER (bytesavailable);
+PROTO_OPER (cachestatus);
 PROTO_OPER (ceiling);
 PROTO_OPER (charpath);
 PROTO_OPER (clear);
@@ -98,8 +132,10 @@ PROTO_OPER (clip);
 PROTO_OPER (clippath);
 PROTO_OPER (closefile);
 PROTO_OPER (closepath);
+PROTO_OPER (colorimage);
 PROTO_OPER (concat);
 PROTO_OPER (concatmatrix);
+PROTO_OPER (condition);
 PROTO_OPER (copy);
 PROTO_OPER (copypage);
 PROTO_OPER (cos);
@@ -107,32 +143,63 @@ PROTO_OPER (count);
 PROTO_OPER (countdictstack);
 PROTO_OPER (countexecstack);
 PROTO_OPER (counttomark);
+PROTO_OPER (cshow);
+PROTO_OPER (currentblackgeneration);
+PROTO_OPER (currentcacheparams);
 PROTO_OPER (currentcmykcolor);
+PROTO_OPER (currentcolor);
+PROTO_OPER (currentcolorrendering);
+PROTO_OPER (currentcolorscreen);
+PROTO_OPER (currentcolorspace);
+PROTO_OPER (currentcolortransfer);
+PROTO_OPER (currentcontext);
 PROTO_OPER (currentdash);
+PROTO_OPER (currentdevparams);
 PROTO_OPER (currentdict);
 PROTO_OPER (currentfile);
+PROTO_OPER (currentflat);
 PROTO_OPER (currentfont);
 PROTO_OPER (currentglobal);
 PROTO_OPER (currentgray);
 PROTO_OPER (currentgstate);
+PROTO_OPER (currenthalftone);
+PROTO_OPER (currenthalftonephase);
 PROTO_OPER (currenthsbcolor);
 PROTO_OPER (currentlinecap);
 PROTO_OPER (currentlinejoin);
 PROTO_OPER (currentlinewidth);
 PROTO_OPER (currentmatrix);
+PROTO_OPER (currentmiterlimit);
+PROTO_OPER (currentobjectformat);
+PROTO_OPER (currentoverprint);
+PROTO_OPER (currentpacking);
+PROTO_OPER (currentpagedevice);
 PROTO_OPER (currentpoint);
 PROTO_OPER (currentrgbcolor);
+PROTO_OPER (currentscreen);
 PROTO_OPER (currentshared);
+PROTO_OPER (currentstrokeadjust);
+PROTO_OPER (currentsystemparams);
+PROTO_OPER (currenttransfer);
+PROTO_OPER (currentundercolorremoval);
+PROTO_OPER (currentuserparams);
 PROTO_OPER (curveto);
 PROTO_OPER (cvi);
 PROTO_OPER (cvlit);
 PROTO_OPER (cvn);
 PROTO_OPER (cvr);
 PROTO_OPER (cvrs);
+/* cvs is implemented in PostScript */
 PROTO_OPER (cvx);
 PROTO_OPER (def);
+PROTO_OPER (defaultmatrix);
+/* definefont is implemented in PostScript */
+PROTO_OPER (defineresource);
 PROTO_OPER (defineusername);
+PROTO_OPER (defineuserobject);
 PROTO_OPER (deletefile);
+PROTO_OPER (detach);
+PROTO_OPER (deviceinfo);
 PROTO_OPER (dict);
 PROTO_OPER (dictstack);
 PROTO_OPER (div);
@@ -148,21 +215,34 @@ PROTO_OPER (eq);
 PROTO_OPER (erasepage);
 PROTO_OPER (exch);
 PROTO_OPER (exec);
+PROTO_OPER (execform);
 PROTO_OPER (execstack);
+PROTO_OPER (execuserobject);
 PROTO_OPER (executeonly);
+/* executive is implemented in PostScript */
 PROTO_OPER (exit);
 PROTO_OPER (exp);
 PROTO_OPER (file);
+PROTO_OPER (filenameforall);
+PROTO_OPER (fileposition);
 PROTO_OPER (fill);
+PROTO_OPER (filter);
+PROTO_OPER (findencoding);
+/* findfont is implemented in PostScript */
+PROTO_OPER (findresource);
 PROTO_OPER (flattenpath);
+/* floor is implemented in PostScript */
 PROTO_OPER (flush);
 PROTO_OPER (flushfile);
 PROTO_OPER (for);
 PROTO_OPER (forall);
+PROTO_OPER (fork);
+PROTO_OPER (framedevice);
 PROTO_OPER (gcheck);
 PROTO_OPER (ge);
 PROTO_OPER (get);
 PROTO_OPER (getinterval);
+PROTO_OPER (glyphshow);
 PROTO_OPER (grestore);
 PROTO_OPER (grestoreall);
 PROTO_OPER (gsave);
@@ -178,77 +258,152 @@ PROTO_OPER (imagemask);
 PROTO_OPER (index);
 PROTO_OPER (ineofill);
 PROTO_OPER (infill);
+PROTO_OPER (initclip);
+/* initgraphics is implemented in PostScript */
+PROTO_OPER (initmatrix);
 PROTO_OPER (initviewclip);
+PROTO_OPER (instroke);
 PROTO_OPER (inueofill);
 PROTO_OPER (inufill);
+PROTO_OPER (inustroke);
 PROTO_OPER (invertmatrix);
 PROTO_OPER (itransform);
+PROTO_OPER (join);
 PROTO_OPER (known);
+PROTO_OPER (kshow);
+PROTO_OPER (languagelevel);
 PROTO_OPER (le);
 PROTO_OPER (length);
 PROTO_OPER (lineto);
 PROTO_OPER (ln);
+/* load is implemented in PostScript */
+PROTO_OPER (lock);
 PROTO_OPER (log);
 PROTO_OPER (loop);
 PROTO_OPER (lt);
 PROTO_OPER (makefont);
+PROTO_OPER (makepattern);
+/* matrix is implemented in PostScript */
 PROTO_OPER (maxlength);
 PROTO_OPER (mod);
+PROTO_OPER (monitor);
 PROTO_OPER (moveto);
 PROTO_OPER (mul);
 PROTO_OPER (ne);
 PROTO_OPER (neg);
 PROTO_OPER (newpath);
+PROTO_OPER (noaccess);
 PROTO_OPER (not);
+PROTO_OPER (notify);
+PROTO_OPER (nulldevice);
 PROTO_OPER (or);
+PROTO_OPER (packedarray);
 PROTO_OPER (pathbbox);
 PROTO_OPER (pathforall);
 PROTO_OPER (pop);
 PROTO_OPER (print);
 PROTO_OPER (printobject);
+PROTO_OPER (product);
+/* prompt is implemented in PostScript */
+/* pstack is implemented in PostScript */
 PROTO_OPER (put);
+/* putinterval is implemented in PostScript */
+/* quit is implemented in PostScript */
+PROTO_OPER (rand);
+PROTO_OPER (rcheck);
 PROTO_OPER (rcurveto);
 PROTO_OPER (read);
 PROTO_OPER (readhexstring);
 PROTO_OPER (readline);
+PROTO_OPER (readonly);
 PROTO_OPER (readstring);
+PROTO_OPER (realtime);
 PROTO_OPER (rectclip);
 PROTO_OPER (rectfill);
 PROTO_OPER (rectstroke);
 PROTO_OPER (rectviewclip);
+PROTO_OPER (renamefile);
+PROTO_OPER (renderbands);
 PROTO_OPER (repeat);
+PROTO_OPER (resetfile);
+PROTO_OPER (resourceforall);
+PROTO_OPER (resourcestatus);
 PROTO_OPER (restore);
+PROTO_OPER (reversepath);
+PROTO_OPER (revision);
 PROTO_OPER (rlineto);
 PROTO_OPER (rmoveto);
 PROTO_OPER (roll);
+PROTO_OPER (rootfont);
 PROTO_OPER (rotate);
 PROTO_OPER (round);
+PROTO_OPER (rrand);
+/* run is implemented in PostScript */
 PROTO_OPER (save);
 PROTO_OPER (scale);
 PROTO_OPER (scalefont);
+PROTO_OPER (scheck);
 PROTO_OPER (search);
 PROTO_OPER (selectfont);
+PROTO_OPER (serialnumber);
 PROTO_OPER (setbbox);
+PROTO_OPER (setblackgeneration);
 PROTO_OPER (setcachedevice);
 PROTO_OPER (setcachedevice2);
+PROTO_OPER (setcachelimit);
+PROTO_OPER (setcacheparams);
 PROTO_OPER (setcharwidth);
 PROTO_OPER (setcmykcolor);
+PROTO_OPER (setcolor);
+PROTO_OPER (setcolorrendering);
+PROTO_OPER (setcolorscreen);
+PROTO_OPER (setcolorspace);
+PROTO_OPER (setcolortransfer);
 PROTO_OPER (setdash);
+PROTO_OPER (setdevparams);
+PROTO_OPER (setfileposition);
+PROTO_OPER (setflat);
 PROTO_OPER (setfont);
+/* setglobal is implemented in PostScript */
 PROTO_OPER (setgray);
 PROTO_OPER (setgstate);
+PROTO_OPER (sethalftone);
+PROTO_OPER (sethalftonephase);
 PROTO_OPER (sethsbcolor);
 PROTO_OPER (setlinecap);
 PROTO_OPER (setlinejoin);
 PROTO_OPER (setlinewidth);
 PROTO_OPER (setmatrix);
+PROTO_OPER (setmiterlimit);
+PROTO_OPER (setobjectformat);
+PROTO_OPER (setoverprint);
+PROTO_OPER (setpacking);
+PROTO_OPER (setpagedevice);
+PROTO_OPER (setpattern);
 PROTO_OPER (setrgbcolor);
+PROTO_OPER (setscreen);
 PROTO_OPER (setshared);
+PROTO_OPER (setstrokeadjust);
+PROTO_OPER (setsystemparams);
+PROTO_OPER (settransfer);
+PROTO_OPER (setucacheparams);
+PROTO_OPER (setundercolorremoval);
+PROTO_OPER (setuserparams);
+PROTO_OPER (setvmthreshold);
 PROTO_OPER (shareddict);
 PROTO_OPER (show);
 PROTO_OPER (showpage);
+PROTO_OPER (sin);
+PROTO_OPER (sqrt);
+PROTO_OPER (srand);
+/* stack is implemented in PostScript */
+/* start is implemented in PostScript */
+PROTO_OPER (startjob);
+PROTO_OPER (status);
+/* statusdict is implemented in PostScript */
 PROTO_OPER (stop);
 PROTO_OPER (stopped);
+/* store is implemented in PostScript */
 PROTO_OPER (string);
 PROTO_OPER (stringwidth);
 PROTO_OPER (stroke);
@@ -261,13 +416,24 @@ PROTO_OPER (truncate);
 PROTO_OPER (type);
 PROTO_OPER (uappend);
 PROTO_OPER (ucache);
+PROTO_OPER (ucachestatus);
 PROTO_OPER (ueofill);
 PROTO_OPER (ufill);
 PROTO_OPER (undef);
+/* undefinefont is implemented in PostScript */
+PROTO_OPER (undefineresource);
+PROTO_OPER (undefineuserobject);
 PROTO_OPER (upath);
+PROTO_OPER (usertime);
 PROTO_OPER (ustroke);
+PROTO_OPER (ustrokepath);
+/* version is implemented in PostScript */
 PROTO_OPER (viewclip);
 PROTO_OPER (viewclippath);
+PROTO_OPER (vmreclaim);
+PROTO_OPER (vmstatus);
+PROTO_OPER (wait);
+PROTO_OPER (wcheck);
 PROTO_OPER (where);
 PROTO_OPER (widthshow);
 PROTO_OPER (write);
@@ -275,165 +441,18 @@ PROTO_OPER (writehexstring);
 PROTO_OPER (writeobject);
 PROTO_OPER (writestring);
 PROTO_OPER (wtranslation);
+PROTO_OPER (xcheck);
 PROTO_OPER (xor);
 PROTO_OPER (xshow);
 PROTO_OPER (xyshow);
-PROTO_OPER (yshow);
-PROTO_OPER (FontDirectory);
-PROTO_OPER (SharedFontDirectory);
-PROTO_OPER (execuserobject);
-PROTO_OPER (currentcolor);
-PROTO_OPER (currentcolorspace);
-PROTO_OPER (execform);
-PROTO_OPER (filter);
-PROTO_OPER (findresource);
-PROTO_OPER (makepattern);
-PROTO_OPER (setcolor);
-PROTO_OPER (setcolorspace);
-PROTO_OPER (setglobal);
-PROTO_OPER (setpagedevice);
-PROTO_OPER (setpattern);
-PROTO_OPER (sym_eq);
-PROTO_OPER (sym_eqeq);
-PROTO_OPER (ISOLatin1Encoding);
-PROTO_OPER (StandardEncoding);
-PROTO_OPER (sym_left_square_bracket);
-PROTO_OPER (sym_right_square_bracket);
-PROTO_OPER (banddevice);
-PROTO_OPER (cachestatus);
-PROTO_OPER (colorimage);
-PROTO_OPER (condition);
-PROTO_OPER (cshow);
-PROTO_OPER (currentblackgeneration);
-PROTO_OPER (currentcacheparams);
-PROTO_OPER (currentcolorscreen);
-PROTO_OPER (currentcolortransfer);
-PROTO_OPER (currentcontext);
-PROTO_OPER (currentflat);
-PROTO_OPER (currenthalftone);
-PROTO_OPER (currenthalftonephase);
-PROTO_OPER (currentmiterlimit);
-PROTO_OPER (currentobjectformat);
-PROTO_OPER (currentpacking);
-PROTO_OPER (currentscreen);
-PROTO_OPER (currentstrokeadjust);
-PROTO_OPER (currenttransfer);
-PROTO_OPER (currentundercolorremoval);
-PROTO_OPER (defaultmatrix);
-PROTO_OPER (detach);
-PROTO_OPER (deviceinfo);
-PROTO_OPER (filenameforall);
-PROTO_OPER (fileposition);
-PROTO_OPER (fork);
-PROTO_OPER (framedevice);
-PROTO_OPER (initclip);
-PROTO_OPER (initmatrix);
-PROTO_OPER (instroke);
-PROTO_OPER (inustroke);
-PROTO_OPER (join);
-PROTO_OPER (kshow);
-PROTO_OPER (lock);
-PROTO_OPER (monitor);
-PROTO_OPER (noaccess);
-PROTO_OPER (notify);
-PROTO_OPER (nulldevice);
-PROTO_OPER (packedarray);
-PROTO_OPER (rand);
-PROTO_OPER (rcheck);
-PROTO_OPER (readonly);
-PROTO_OPER (realtime);
-PROTO_OPER (renamefile);
-PROTO_OPER (renderbands);
-PROTO_OPER (resetfile);
-PROTO_OPER (reversepath);
-PROTO_OPER (rootfont);
-PROTO_OPER (rrand);
-PROTO_OPER (scheck);
-PROTO_OPER (setblackgeneration);
-PROTO_OPER (setcachelimit);
-PROTO_OPER (setcacheparams);
-PROTO_OPER (setcolorscreen);
-PROTO_OPER (setcolortransfer);
-PROTO_OPER (setfileposition);
-PROTO_OPER (setflat);
-PROTO_OPER (sethalftone);
-PROTO_OPER (sethalftonephase);
-PROTO_OPER (setmiterlimit);
-PROTO_OPER (setobjectformat);
-PROTO_OPER (setpacking);
-PROTO_OPER (setscreen);
-PROTO_OPER (setstrokeadjust);
-PROTO_OPER (settransfer);
-PROTO_OPER (setucacheparams);
-PROTO_OPER (setundercolorremoval);
-PROTO_OPER (sin);
-PROTO_OPER (sqrt);
-PROTO_OPER (srand);
-PROTO_OPER (status);
-PROTO_OPER (statusdict);
-PROTO_OPER (ucachestatus);
-PROTO_OPER (usertime);
-PROTO_OPER (ustrokepath);
-PROTO_OPER (vmreclaim);
-PROTO_OPER (vmstatus);
-PROTO_OPER (wait);
-PROTO_OPER (wcheck);
-PROTO_OPER (xcheck);
 PROTO_OPER (yield);
-PROTO_OPER (defineuserobject);
-PROTO_OPER (undefineuserobject);
-PROTO_OPER (UserObjects);
-PROTO_OPER (setvmthreshold);
-PROTO_OPER (sym_begin_dict_mark);
-PROTO_OPER (sym_end_dict_mark);
-PROTO_OPER (currentcolorrendering);
-PROTO_OPER (currentdevparams);
-PROTO_OPER (currentoverprint);
-PROTO_OPER (currentpagedevice);
-PROTO_OPER (currentsystemparams);
-PROTO_OPER (currentuserparams);
-PROTO_OPER (defineresource);
-PROTO_OPER (findencoding);
-PROTO_OPER (glyphshow);
-PROTO_OPER (languagelevel);
-PROTO_OPER (product);
-PROTO_OPER (resourceforall);
-PROTO_OPER (resourcestatus);
-PROTO_OPER (revision);
-PROTO_OPER (serialnumber);
-PROTO_OPER (setcolorrendering);
-PROTO_OPER (setdevparams);
-PROTO_OPER (setoverprint);
-PROTO_OPER (setsystemparams);
-PROTO_OPER (setuserparams);
-PROTO_OPER (startjob);
-PROTO_OPER (undefineresource);
-PROTO_OPER (GlobalFontDirectory);
-PROTO_OPER (ASCII85Decode);
-PROTO_OPER (ASCII85Encode);
-PROTO_OPER (ASCIIHexDecode);
-PROTO_OPER (ASCIIHexEncode);
-PROTO_OPER (CCITTFaxDecode);
-PROTO_OPER (CCITTFaxEncode);
-PROTO_OPER (DCTDecode);
-PROTO_OPER (DCTEncode);
-PROTO_OPER (LZWDecode);
-PROTO_OPER (LZWEncode);
-PROTO_OPER (NullEncode);
-PROTO_OPER (RunLengthDecode);
-PROTO_OPER (RunLengthEncode);
-PROTO_OPER (SubFileDecode);
-PROTO_OPER (CIEBasedA);
-PROTO_OPER (CIEBasedABC);
-PROTO_OPER (DeviceCMYK);
-PROTO_OPER (DeviceGray);
-PROTO_OPER (DeviceRGB);
-PROTO_OPER (Indexed);
-PROTO_OPER (Pattern);
-PROTO_OPER (Separation);
-PROTO_OPER (CIEBasedDEF);
-PROTO_OPER (CIEBasedDEFG);
-PROTO_OPER (DeviceN);
+PROTO_OPER (yshow);
+/* << (sym_begin_dict_mark) is implemented as value */
+/* >> (sym_end_dict_mark) is implemented as value */
+/* = (sym_eq) is implemented in PostScript */
+/* == (sym_eqeq) is implemented in PostScript */
+/* [ (sym_left_square_bracket) is implemented as value */
+/* ] (sym_right_square_bracket) is implemented as value */
 
 
 /* - .abort - */
@@ -1349,6 +1368,37 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (1, 0, 0);
 DEFUNC_OPER_END
 
+DEFUNC_UNIMPLEMENTED_OPER (ASCII85Decode);
+DEFUNC_UNIMPLEMENTED_OPER (ASCII85Encode);
+DEFUNC_UNIMPLEMENTED_OPER (ASCIIHexDecode);
+DEFUNC_UNIMPLEMENTED_OPER (ASCIIHexEncode);
+DEFUNC_UNIMPLEMENTED_OPER (CCITTFaxDecode);
+DEFUNC_UNIMPLEMENTED_OPER (CCITTFaxEncode);
+DEFUNC_UNIMPLEMENTED_OPER (CIEBasedA);
+DEFUNC_UNIMPLEMENTED_OPER (CIEBasedABC);
+DEFUNC_UNIMPLEMENTED_OPER (CIEBasedDEF);
+DEFUNC_UNIMPLEMENTED_OPER (CIEBasedDEFG);
+DEFUNC_UNIMPLEMENTED_OPER (DCTDecode);
+DEFUNC_UNIMPLEMENTED_OPER (DCTEncode);
+DEFUNC_UNIMPLEMENTED_OPER (DeviceCMYK);
+DEFUNC_UNIMPLEMENTED_OPER (DeviceGray);
+DEFUNC_UNIMPLEMENTED_OPER (DeviceN);
+DEFUNC_UNIMPLEMENTED_OPER (DeviceRGB);
+DEFUNC_UNIMPLEMENTED_OPER (FontDirectory);
+DEFUNC_UNIMPLEMENTED_OPER (GlobalFontDirectory);
+DEFUNC_UNIMPLEMENTED_OPER (ISOLatin1Encoding);
+DEFUNC_UNIMPLEMENTED_OPER (Indexed);
+DEFUNC_UNIMPLEMENTED_OPER (LZWDecode);
+DEFUNC_UNIMPLEMENTED_OPER (LZWEncode);
+DEFUNC_UNIMPLEMENTED_OPER (NullEncode);
+DEFUNC_UNIMPLEMENTED_OPER (Pattern);
+DEFUNC_UNIMPLEMENTED_OPER (RunLengthDecode);
+DEFUNC_UNIMPLEMENTED_OPER (RunLengthEncode);
+DEFUNC_UNIMPLEMENTED_OPER (Separation);
+DEFUNC_UNIMPLEMENTED_OPER (SharedFontDirectory);
+DEFUNC_UNIMPLEMENTED_OPER (SubFileDecode);
+DEFUNC_UNIMPLEMENTED_OPER (UserObjects);
+
 /* <num1> abs <num2> */
 DEFUNC_OPER (abs)
 G_STMT_START {
@@ -1644,6 +1694,7 @@ VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (awidthshow);
+DEFUNC_UNIMPLEMENTED_OPER (banddevice);
 
 /* <dict> begin - */
 DEFUNC_OPER (begin)
@@ -1784,6 +1835,8 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
+DEFUNC_UNIMPLEMENTED_OPER (cachestatus);
+
 DEFUNC_OPER (ceiling)
 G_STMT_START {
 	hg_quark_t arg0;
@@ -1901,6 +1954,7 @@ VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (closepath);
+DEFUNC_UNIMPLEMENTED_OPER (colorimage);
 DEFUNC_UNIMPLEMENTED_OPER (concat);
 
 /* <matrix1> <matrix2> <matrix3> concatmatrix <matrix3> */
@@ -1959,6 +2013,8 @@ G_STMT_START {
 } G_STMT_END;
 VALIDATE_STACK_SIZE (-2, 0, 0);
 DEFUNC_OPER_END
+
+DEFUNC_UNIMPLEMENTED_OPER (condition);
 
 static gboolean
 _hg_operator_copy_real_traverse_dict(hg_mem_t    *mem,
@@ -2229,8 +2285,17 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (1, 0, 0);
 DEFUNC_OPER_END
 
+DEFUNC_UNIMPLEMENTED_OPER (cshow);
+DEFUNC_UNIMPLEMENTED_OPER (currentblackgeneration);
+DEFUNC_UNIMPLEMENTED_OPER (currentcacheparams);
 DEFUNC_UNIMPLEMENTED_OPER (currentcmykcolor);
+DEFUNC_UNIMPLEMENTED_OPER (currentcolor);
+DEFUNC_UNIMPLEMENTED_OPER (currentcolorrendering);
+DEFUNC_UNIMPLEMENTED_OPER (currentcolorscreen);
+DEFUNC_UNIMPLEMENTED_OPER (currentcolortransfer);
+DEFUNC_UNIMPLEMENTED_OPER (currentcontext);
 DEFUNC_UNIMPLEMENTED_OPER (currentdash);
+DEFUNC_UNIMPLEMENTED_OPER (currentdevparams);
 
 /* - currentdict <dict> */
 DEFUNC_OPER (currentdict)
@@ -2274,18 +2339,33 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (1, 0, 0);
 DEFUNC_OPER_END
 
+DEFUNC_UNIMPLEMENTED_OPER (currentflat);
 DEFUNC_UNIMPLEMENTED_OPER (currentfont);
 DEFUNC_UNIMPLEMENTED_OPER (currentglobal);
 DEFUNC_UNIMPLEMENTED_OPER (currentgray);
 DEFUNC_UNIMPLEMENTED_OPER (currentgstate);
+DEFUNC_UNIMPLEMENTED_OPER (currenthalftone);
+DEFUNC_UNIMPLEMENTED_OPER (currenthalftonephase);
 DEFUNC_UNIMPLEMENTED_OPER (currenthsbcolor);
 DEFUNC_UNIMPLEMENTED_OPER (currentlinecap);
 DEFUNC_UNIMPLEMENTED_OPER (currentlinejoin);
 DEFUNC_UNIMPLEMENTED_OPER (currentlinewidth);
 DEFUNC_UNIMPLEMENTED_OPER (currentmatrix);
+DEFUNC_UNIMPLEMENTED_OPER (currentmiterlimit);
+DEFUNC_UNIMPLEMENTED_OPER (currentobjectformat);
+DEFUNC_UNIMPLEMENTED_OPER (currentoverprint);
+DEFUNC_UNIMPLEMENTED_OPER (currentpacking);
+DEFUNC_UNIMPLEMENTED_OPER (currentpagedevice);
 DEFUNC_UNIMPLEMENTED_OPER (currentpoint);
 DEFUNC_UNIMPLEMENTED_OPER (currentrgbcolor);
+DEFUNC_UNIMPLEMENTED_OPER (currentscreen);
+DEFUNC_UNIMPLEMENTED_OPER (currentcolorspace);
 DEFUNC_UNIMPLEMENTED_OPER (currentshared);
+DEFUNC_UNIMPLEMENTED_OPER (currentstrokeadjust);
+DEFUNC_UNIMPLEMENTED_OPER (currentsystemparams);
+DEFUNC_UNIMPLEMENTED_OPER (currenttransfer);
+DEFUNC_UNIMPLEMENTED_OPER (currentundercolorremoval);
+DEFUNC_UNIMPLEMENTED_OPER (currentuserparams);
 DEFUNC_UNIMPLEMENTED_OPER (curveto);
 
 /* <num> cvi <int>
@@ -2658,8 +2738,13 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-2, 0, 0);
 DEFUNC_OPER_END
 
+DEFUNC_UNIMPLEMENTED_OPER (defaultmatrix);
+DEFUNC_UNIMPLEMENTED_OPER (defineresource);
 DEFUNC_UNIMPLEMENTED_OPER (defineusername);
+DEFUNC_UNIMPLEMENTED_OPER (defineuserobject);
 DEFUNC_UNIMPLEMENTED_OPER (deletefile);
+DEFUNC_UNIMPLEMENTED_OPER (detach);
+DEFUNC_UNIMPLEMENTED_OPER (deviceinfo);
 
 /* <int> dict <dict> */
 DEFUNC_OPER (dict)
@@ -2983,6 +3068,8 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (__flag ? -1 : 0, __flag ? 1 : 0, 0);
 DEFUNC_OPER_END
 
+DEFUNC_UNIMPLEMENTED_OPER (execform);
+
 /* <array> execstack <subarray> */
 DEFUNC_OPER (execstack)
 G_STMT_START {
@@ -3044,6 +3131,8 @@ G_STMT_START {
 } G_STMT_END;
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
+
+DEFUNC_UNIMPLEMENTED_OPER (execuserobject);
 
 /* <array> executeonly <array>
  * <packedarray> executeonly <packedarray>
@@ -3276,7 +3365,12 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
+DEFUNC_UNIMPLEMENTED_OPER (filenameforall);
+DEFUNC_UNIMPLEMENTED_OPER (fileposition);
 DEFUNC_UNIMPLEMENTED_OPER (fill);
+DEFUNC_UNIMPLEMENTED_OPER (filter);
+DEFUNC_UNIMPLEMENTED_OPER (findencoding);
+DEFUNC_UNIMPLEMENTED_OPER (findresource);
 DEFUNC_UNIMPLEMENTED_OPER (flattenpath);
 
 /* - flush - */
@@ -3509,6 +3603,9 @@ G_STMT_START {
 } G_STMT_END;
 VALIDATE_STACK_SIZE (-2, 4, 0);
 DEFUNC_OPER_END
+
+DEFUNC_UNIMPLEMENTED_OPER (fork);
+DEFUNC_UNIMPLEMENTED_OPER (framedevice);
 
 /* <any> gcheck <bool> */
 DEFUNC_OPER (gcheck)
@@ -3780,6 +3877,7 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-2, 0, 0);
 DEFUNC_OPER_END
 
+DEFUNC_UNIMPLEMENTED_OPER (glyphshow);
 DEFUNC_UNIMPLEMENTED_OPER (grestore);
 DEFUNC_UNIMPLEMENTED_OPER (grestoreall);
 DEFUNC_UNIMPLEMENTED_OPER (gsave);
@@ -4010,9 +4108,13 @@ DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (ineofill);
 DEFUNC_UNIMPLEMENTED_OPER (infill);
+DEFUNC_UNIMPLEMENTED_OPER (initclip);
+DEFUNC_UNIMPLEMENTED_OPER (initmatrix);
 DEFUNC_UNIMPLEMENTED_OPER (initviewclip);
+DEFUNC_UNIMPLEMENTED_OPER (instroke);
 DEFUNC_UNIMPLEMENTED_OPER (inueofill);
 DEFUNC_UNIMPLEMENTED_OPER (inufill);
+DEFUNC_UNIMPLEMENTED_OPER (inustroke);
 
 /* <matrix1> <matrix2> invertmatrix <matrix3> */
 DEFUNC_OPER (invertmatrix)
@@ -4067,6 +4169,7 @@ VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (itransform);
+DEFUNC_UNIMPLEMENTED_OPER (join);
 
 /* <dict> <key> known <bool> */
 DEFUNC_OPER (known)
@@ -4105,6 +4208,18 @@ G_STMT_START {
 	retval = TRUE;
 } G_STMT_END;
 VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
+
+DEFUNC_UNIMPLEMENTED_OPER (kshow);
+
+/* - languagelevel <int> */
+DEFUNC_OPER (languagelevel)
+G_STMT_START {
+	STACK_PUSH (ostack, HG_QINT (hg_vm_get_language_level(vm) + 1));
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (1, 0, 0);
 DEFUNC_OPER_END
 
 /* <num1> <num2> le <bool>
@@ -4275,6 +4390,8 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
+DEFUNC_UNIMPLEMENTED_OPER (lock);
+
 /* <num> log <real> */
 DEFUNC_OPER (log)
 G_STMT_START {
@@ -4417,6 +4534,7 @@ VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (makefont);
+DEFUNC_UNIMPLEMENTED_OPER (makepattern);
 
 /* <dict> maxlength <int> */
 DEFUNC_OPER (maxlength)
@@ -4478,6 +4596,7 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
+DEFUNC_UNIMPLEMENTED_OPER (monitor);
 DEFUNC_UNIMPLEMENTED_OPER (moveto);
 
 /* <num1> <num2> mul <product> */
@@ -4652,6 +4771,37 @@ DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (newpath);
 
+/* <array> noaccess <array>
+ * <packedarray> noaccess <packedarray>
+ * <dict> noaccess <dict>
+ * <file> noaccess <file>
+ * <string> noaccess <string>
+ */
+DEFUNC_OPER (noaccess)
+G_STMT_START {
+	hg_quark_t arg0;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (HG_IS_QARRAY (arg0) ||
+	    HG_IS_QFILE (arg0) ||
+	    HG_IS_QSTRING (arg0) ||
+	    HG_IS_QDICT (arg0)) {
+		hg_vm_quark_set_attributes(vm, &arg0,
+					   FALSE, FALSE, FALSE, FALSE);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	hg_stack_pop(ostack, error);
+	STACK_PUSH (ostack, arg0);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 /* <bool> not <bool>
  * <int> not <int>
  */
@@ -4678,6 +4828,9 @@ G_STMT_START {
 } G_STMT_END;
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
+
+DEFUNC_UNIMPLEMENTED_OPER (notify);
+DEFUNC_UNIMPLEMENTED_OPER (nulldevice);
 
 /* <bool1> <bool2> or <bool3>
  * <int1> <int2> or <int3>
@@ -4711,6 +4864,7 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
+DEFUNC_UNIMPLEMENTED_OPER (packedarray);
 DEFUNC_UNIMPLEMENTED_OPER (pathbbox);
 DEFUNC_UNIMPLEMENTED_OPER (pathforall);
 
@@ -4778,6 +4932,7 @@ VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (printobject);
+DEFUNC_UNIMPLEMENTED_OPER (product);
 
 /* <array> <index> <any> put -
  * <dict> <key> <value> put -
@@ -4970,11 +5125,45 @@ DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (readhexstring);
 DEFUNC_UNIMPLEMENTED_OPER (readline);
+
+/* -array- readonly -array-
+ * -packedarray- readonly -packedarray-
+ * -dict- readonly -dict-
+ * -file- readonly -file-
+ * -string- readonly -string-
+ */
+DEFUNC_OPER (readonly)
+G_STMT_START {
+	hg_quark_t arg0;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QARRAY (arg0) &&
+	    !HG_IS_QDICT (arg0) &&
+	    !HG_IS_QFILE (arg0) &&
+	    !HG_IS_QSTRING (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	hg_vm_quark_set_writable(vm, &arg0, FALSE);
+	hg_stack_pop(ostack, error);
+
+	STACK_PUSH (ostack, arg0);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (readstring);
+DEFUNC_UNIMPLEMENTED_OPER (realtime);
 DEFUNC_UNIMPLEMENTED_OPER (rectclip);
 DEFUNC_UNIMPLEMENTED_OPER (rectfill);
 DEFUNC_UNIMPLEMENTED_OPER (rectstroke);
 DEFUNC_UNIMPLEMENTED_OPER (rectviewclip);
+DEFUNC_UNIMPLEMENTED_OPER (renamefile);
+DEFUNC_UNIMPLEMENTED_OPER (renderbands);
 
 /* <int> <proc> repeat - */
 DEFUNC_OPER (repeat)
@@ -5029,6 +5218,10 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-2, 3, 0);
 DEFUNC_OPER_END
 
+DEFUNC_UNIMPLEMENTED_OPER (resetfile);
+DEFUNC_UNIMPLEMENTED_OPER (resourceforall);
+DEFUNC_UNIMPLEMENTED_OPER (resourcestatus);
+
 DEFUNC_OPER (restore)
 G_STMT_START {
 	hg_quark_t arg0;
@@ -5058,6 +5251,8 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
+DEFUNC_UNIMPLEMENTED_OPER (reversepath);
+DEFUNC_UNIMPLEMENTED_OPER (revision);
 DEFUNC_UNIMPLEMENTED_OPER (rlineto);
 DEFUNC_UNIMPLEMENTED_OPER (rmoveto);
 
@@ -5092,9 +5287,21 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-2, 0, 0);
 DEFUNC_OPER_END
 
+DEFUNC_UNIMPLEMENTED_OPER (rootfont);
 DEFUNC_UNIMPLEMENTED_OPER (rotate);
 DEFUNC_UNIMPLEMENTED_OPER (round);
 
+/* - rrand <int> */
+DEFUNC_OPER (rrand)
+G_STMT_START {
+	STACK_PUSH (ostack, HG_QINT (hg_vm_get_rand_seed(vm)));
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (1, 0, 0);
+DEFUNC_OPER_END
+
+/* - save <save> */
 DEFUNC_OPER (save)
 G_STMT_START {
 	hg_quark_t q;
@@ -5121,27 +5328,85 @@ DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (scale);
 DEFUNC_UNIMPLEMENTED_OPER (scalefont);
+DEFUNC_UNIMPLEMENTED_OPER (scheck);
 DEFUNC_UNIMPLEMENTED_OPER (search);
 DEFUNC_UNIMPLEMENTED_OPER (selectfont);
+DEFUNC_UNIMPLEMENTED_OPER (serialnumber);
 DEFUNC_UNIMPLEMENTED_OPER (setbbox);
+DEFUNC_UNIMPLEMENTED_OPER (setblackgeneration);
 DEFUNC_UNIMPLEMENTED_OPER (setcachedevice);
 DEFUNC_UNIMPLEMENTED_OPER (setcachedevice2);
+DEFUNC_UNIMPLEMENTED_OPER (setcachelimit);
+DEFUNC_UNIMPLEMENTED_OPER (setcacheparams);
 DEFUNC_UNIMPLEMENTED_OPER (setcharwidth);
 DEFUNC_UNIMPLEMENTED_OPER (setcmykcolor);
+DEFUNC_UNIMPLEMENTED_OPER (setcolor);
+DEFUNC_UNIMPLEMENTED_OPER (setcolorrendering);
+DEFUNC_UNIMPLEMENTED_OPER (setcolorscreen);
+DEFUNC_UNIMPLEMENTED_OPER (setcolorspace);
+DEFUNC_UNIMPLEMENTED_OPER (setcolortransfer);
 DEFUNC_UNIMPLEMENTED_OPER (setdash);
+DEFUNC_UNIMPLEMENTED_OPER (setdevparams);
+DEFUNC_UNIMPLEMENTED_OPER (setfileposition);
+DEFUNC_UNIMPLEMENTED_OPER (setflat);
 DEFUNC_UNIMPLEMENTED_OPER (setfont);
 DEFUNC_UNIMPLEMENTED_OPER (setgray);
 DEFUNC_UNIMPLEMENTED_OPER (setgstate);
+DEFUNC_UNIMPLEMENTED_OPER (sethalftone);
+DEFUNC_UNIMPLEMENTED_OPER (sethalftonephase);
 DEFUNC_UNIMPLEMENTED_OPER (sethsbcolor);
 DEFUNC_UNIMPLEMENTED_OPER (setlinecap);
 DEFUNC_UNIMPLEMENTED_OPER (setlinejoin);
 DEFUNC_UNIMPLEMENTED_OPER (setlinewidth);
 DEFUNC_UNIMPLEMENTED_OPER (setmatrix);
+DEFUNC_UNIMPLEMENTED_OPER (setmiterlimit);
+DEFUNC_UNIMPLEMENTED_OPER (setobjectformat);
+DEFUNC_UNIMPLEMENTED_OPER (setoverprint);
+DEFUNC_UNIMPLEMENTED_OPER (setpacking);
+DEFUNC_UNIMPLEMENTED_OPER (setpagedevice);
+DEFUNC_UNIMPLEMENTED_OPER (setpattern);
 DEFUNC_UNIMPLEMENTED_OPER (setrgbcolor);
+DEFUNC_UNIMPLEMENTED_OPER (setscreen);
 DEFUNC_UNIMPLEMENTED_OPER (setshared);
+DEFUNC_UNIMPLEMENTED_OPER (setstrokeadjust);
+DEFUNC_UNIMPLEMENTED_OPER (setsystemparams);
+DEFUNC_UNIMPLEMENTED_OPER (settransfer);
+DEFUNC_UNIMPLEMENTED_OPER (setucacheparams);
+DEFUNC_UNIMPLEMENTED_OPER (setundercolorremoval);
+DEFUNC_UNIMPLEMENTED_OPER (setuserparams);
+DEFUNC_UNIMPLEMENTED_OPER (setvmthreshold);
 DEFUNC_UNIMPLEMENTED_OPER (shareddict);
 DEFUNC_UNIMPLEMENTED_OPER (show);
 DEFUNC_UNIMPLEMENTED_OPER (showpage);
+
+DEFUNC_UNIMPLEMENTED_OPER (sin);
+DEFUNC_UNIMPLEMENTED_OPER (sqrt);
+
+/* <int> srand - */
+DEFUNC_OPER (srand)
+G_STMT_START {
+	hg_quark_t arg0;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+
+	if (!HG_IS_QINT (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+
+	hg_vm_set_rand_seed(vm, HG_INT (arg0));
+
+	hg_stack_drop(ostack, error);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
+
+DEFUNC_UNIMPLEMENTED_OPER (startjob);
+DEFUNC_UNIMPLEMENTED_OPER (status);
 
 /* - stop - */
 DEFUNC_OPER (stop)
@@ -5336,13 +5601,50 @@ DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (uappend);
 DEFUNC_UNIMPLEMENTED_OPER (ucache);
+DEFUNC_UNIMPLEMENTED_OPER (ucachestatus);
 DEFUNC_UNIMPLEMENTED_OPER (ueofill);
 DEFUNC_UNIMPLEMENTED_OPER (ufill);
 DEFUNC_UNIMPLEMENTED_OPER (undef);
+DEFUNC_UNIMPLEMENTED_OPER (undefineresource);
+DEFUNC_UNIMPLEMENTED_OPER (undefineuserobject);
 DEFUNC_UNIMPLEMENTED_OPER (upath);
+DEFUNC_UNIMPLEMENTED_OPER (usertime);
 DEFUNC_UNIMPLEMENTED_OPER (ustroke);
+DEFUNC_UNIMPLEMENTED_OPER (ustrokepath);
 DEFUNC_UNIMPLEMENTED_OPER (viewclip);
 DEFUNC_UNIMPLEMENTED_OPER (viewclippath);
+DEFUNC_UNIMPLEMENTED_OPER (vmreclaim);
+DEFUNC_UNIMPLEMENTED_OPER (vmstatus);
+DEFUNC_UNIMPLEMENTED_OPER (wait);
+
+/* <array> wcheck <bool>
+ * <packedarray> wcheck <false>
+ * <dict> wcheck <bool>
+ * <file> wcheck <bool>
+ * <string> wcheck <bool>
+ */
+DEFUNC_OPER (wcheck)
+G_STMT_START {
+	hg_quark_t arg0;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QARRAY (arg0) &&
+	    !HG_IS_QDICT (arg0) &&
+	    !HG_IS_QFILE (arg0) &&
+	    !HG_IS_QSTRING (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	hg_stack_drop(ostack, error);
+
+	STACK_PUSH (ostack, HG_QBOOL (hg_vm_quark_is_writable(vm, &arg0)));
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
 
 /* <key> where <dict> <true>
  * <key> where <false>
@@ -5441,229 +5743,6 @@ VALIDATE_STACK_SIZE (-2, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (wtranslation);
-DEFUNC_UNIMPLEMENTED_OPER (xor);
-DEFUNC_UNIMPLEMENTED_OPER (xshow);
-DEFUNC_UNIMPLEMENTED_OPER (xyshow);
-DEFUNC_UNIMPLEMENTED_OPER (yshow);
-DEFUNC_UNIMPLEMENTED_OPER (FontDirectory);
-DEFUNC_UNIMPLEMENTED_OPER (SharedFontDirectory);
-DEFUNC_UNIMPLEMENTED_OPER (execuserobject);
-DEFUNC_UNIMPLEMENTED_OPER (currentcolor);
-DEFUNC_UNIMPLEMENTED_OPER (currentcolorspace);
-DEFUNC_UNIMPLEMENTED_OPER (execform);
-DEFUNC_UNIMPLEMENTED_OPER (filter);
-DEFUNC_UNIMPLEMENTED_OPER (findresource);
-DEFUNC_UNIMPLEMENTED_OPER (makepattern);
-DEFUNC_UNIMPLEMENTED_OPER (setcolor);
-DEFUNC_UNIMPLEMENTED_OPER (setcolorspace);
-DEFUNC_UNIMPLEMENTED_OPER (setglobal);
-DEFUNC_UNIMPLEMENTED_OPER (setpagedevice);
-DEFUNC_UNIMPLEMENTED_OPER (setpattern);
-DEFUNC_UNIMPLEMENTED_OPER (sym_eq);
-DEFUNC_UNIMPLEMENTED_OPER (sym_eqeq);
-DEFUNC_UNIMPLEMENTED_OPER (ISOLatin1Encoding);
-DEFUNC_UNIMPLEMENTED_OPER (StandardEncoding);
-DEFUNC_UNIMPLEMENTED_OPER (sym_left_square_bracket);
-DEFUNC_UNIMPLEMENTED_OPER (sym_right_square_bracket);
-DEFUNC_UNIMPLEMENTED_OPER (banddevice);
-DEFUNC_UNIMPLEMENTED_OPER (cachestatus);
-DEFUNC_UNIMPLEMENTED_OPER (colorimage);
-DEFUNC_UNIMPLEMENTED_OPER (condition);
-DEFUNC_UNIMPLEMENTED_OPER (cshow);
-DEFUNC_UNIMPLEMENTED_OPER (currentblackgeneration);
-DEFUNC_UNIMPLEMENTED_OPER (currentcacheparams);
-DEFUNC_UNIMPLEMENTED_OPER (currentcolorscreen);
-DEFUNC_UNIMPLEMENTED_OPER (currentcolortransfer);
-DEFUNC_UNIMPLEMENTED_OPER (currentcontext);
-DEFUNC_UNIMPLEMENTED_OPER (currentflat);
-DEFUNC_UNIMPLEMENTED_OPER (currenthalftone);
-DEFUNC_UNIMPLEMENTED_OPER (currenthalftonephase);
-DEFUNC_UNIMPLEMENTED_OPER (currentmiterlimit);
-DEFUNC_UNIMPLEMENTED_OPER (currentobjectformat);
-DEFUNC_UNIMPLEMENTED_OPER (currentpacking);
-DEFUNC_UNIMPLEMENTED_OPER (currentscreen);
-DEFUNC_UNIMPLEMENTED_OPER (currentstrokeadjust);
-DEFUNC_UNIMPLEMENTED_OPER (currenttransfer);
-DEFUNC_UNIMPLEMENTED_OPER (currentundercolorremoval);
-DEFUNC_UNIMPLEMENTED_OPER (defaultmatrix);
-DEFUNC_UNIMPLEMENTED_OPER (detach);
-DEFUNC_UNIMPLEMENTED_OPER (deviceinfo);
-DEFUNC_UNIMPLEMENTED_OPER (filenameforall);
-DEFUNC_UNIMPLEMENTED_OPER (fileposition);
-DEFUNC_UNIMPLEMENTED_OPER (fork);
-DEFUNC_UNIMPLEMENTED_OPER (framedevice);
-DEFUNC_UNIMPLEMENTED_OPER (initclip);
-DEFUNC_UNIMPLEMENTED_OPER (initmatrix);
-DEFUNC_UNIMPLEMENTED_OPER (instroke);
-DEFUNC_UNIMPLEMENTED_OPER (inustroke);
-DEFUNC_UNIMPLEMENTED_OPER (join);
-DEFUNC_UNIMPLEMENTED_OPER (kshow);
-DEFUNC_UNIMPLEMENTED_OPER (lock);
-DEFUNC_UNIMPLEMENTED_OPER (monitor);
-
-/* <array> noaccess <array>
- * <packedarray> noaccess <packedarray>
- * <dict> noaccess <dict>
- * <file> noaccess <file>
- * <string> noaccess <string>
- */
-DEFUNC_OPER (noaccess)
-G_STMT_START {
-	hg_quark_t arg0;
-
-	CHECK_STACK (ostack, 1);
-
-	arg0 = hg_stack_index(ostack, 0, error);
-	if (HG_IS_QARRAY (arg0) ||
-	    HG_IS_QFILE (arg0) ||
-	    HG_IS_QSTRING (arg0) ||
-	    HG_IS_QDICT (arg0)) {
-		hg_vm_quark_set_attributes(vm, &arg0,
-					   FALSE, FALSE, FALSE, FALSE);
-	} else {
-		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
-		return FALSE;
-	}
-	hg_stack_pop(ostack, error);
-	STACK_PUSH (ostack, arg0);
-
-	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
-
-DEFUNC_UNIMPLEMENTED_OPER (notify);
-DEFUNC_UNIMPLEMENTED_OPER (nulldevice);
-DEFUNC_UNIMPLEMENTED_OPER (packedarray);
-
-/* -array- readonly -array-
- * -packedarray- readonly -packedarray-
- * -dict- readonly -dict-
- * -file- readonly -file-
- * -string- readonly -string-
- */
-DEFUNC_OPER (readonly)
-G_STMT_START {
-	hg_quark_t arg0;
-
-	CHECK_STACK (ostack, 1);
-
-	arg0 = hg_stack_index(ostack, 0, error);
-	if (!HG_IS_QARRAY (arg0) &&
-	    !HG_IS_QDICT (arg0) &&
-	    !HG_IS_QFILE (arg0) &&
-	    !HG_IS_QSTRING (arg0)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
-		return FALSE;
-	}
-	hg_vm_quark_set_writable(vm, &arg0, FALSE);
-	hg_stack_pop(ostack, error);
-
-	STACK_PUSH (ostack, arg0);
-
-	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
-
-DEFUNC_UNIMPLEMENTED_OPER (realtime);
-DEFUNC_UNIMPLEMENTED_OPER (renamefile);
-DEFUNC_UNIMPLEMENTED_OPER (renderbands);
-DEFUNC_UNIMPLEMENTED_OPER (resetfile);
-DEFUNC_UNIMPLEMENTED_OPER (reversepath);
-DEFUNC_UNIMPLEMENTED_OPER (rootfont);
-
-/* - rrand <int> */
-DEFUNC_OPER (rrand)
-G_STMT_START {
-	STACK_PUSH (ostack, HG_QINT (hg_vm_get_rand_seed(vm)));
-
-	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
-
-DEFUNC_UNIMPLEMENTED_OPER (scheck);
-DEFUNC_UNIMPLEMENTED_OPER (setblackgeneration);
-DEFUNC_UNIMPLEMENTED_OPER (setcachelimit);
-DEFUNC_UNIMPLEMENTED_OPER (setcacheparams);
-DEFUNC_UNIMPLEMENTED_OPER (setcolorscreen);
-DEFUNC_UNIMPLEMENTED_OPER (setcolortransfer);
-DEFUNC_UNIMPLEMENTED_OPER (setfileposition);
-DEFUNC_UNIMPLEMENTED_OPER (setflat);
-DEFUNC_UNIMPLEMENTED_OPER (sethalftone);
-DEFUNC_UNIMPLEMENTED_OPER (sethalftonephase);
-DEFUNC_UNIMPLEMENTED_OPER (setmiterlimit);
-DEFUNC_UNIMPLEMENTED_OPER (setobjectformat);
-DEFUNC_UNIMPLEMENTED_OPER (setpacking);
-DEFUNC_UNIMPLEMENTED_OPER (setscreen);
-DEFUNC_UNIMPLEMENTED_OPER (setstrokeadjust);
-DEFUNC_UNIMPLEMENTED_OPER (settransfer);
-DEFUNC_UNIMPLEMENTED_OPER (setucacheparams);
-DEFUNC_UNIMPLEMENTED_OPER (setundercolorremoval);
-DEFUNC_UNIMPLEMENTED_OPER (sin);
-DEFUNC_UNIMPLEMENTED_OPER (sqrt);
-
-/* <int> srand - */
-DEFUNC_OPER (srand)
-G_STMT_START {
-	hg_quark_t arg0;
-
-	CHECK_STACK (ostack, 1);
-
-	arg0 = hg_stack_index(ostack, 0, error);
-
-	if (!HG_IS_QINT (arg0)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
-		return FALSE;
-	}
-
-	hg_vm_set_rand_seed(vm, HG_INT (arg0));
-
-	hg_stack_drop(ostack, error);
-
-	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
-
-DEFUNC_UNIMPLEMENTED_OPER (status);
-DEFUNC_UNIMPLEMENTED_OPER (statusdict);
-DEFUNC_UNIMPLEMENTED_OPER (ucachestatus);
-DEFUNC_UNIMPLEMENTED_OPER (usertime);
-DEFUNC_UNIMPLEMENTED_OPER (ustrokepath);
-DEFUNC_UNIMPLEMENTED_OPER (vmreclaim);
-DEFUNC_UNIMPLEMENTED_OPER (vmstatus);
-DEFUNC_UNIMPLEMENTED_OPER (wait);
-
-/* <array> wcheck <bool>
- * <packedarray> wcheck <false>
- * <dict> wcheck <bool>
- * <file> wcheck <bool>
- * <string> wcheck <bool>
- */
-DEFUNC_OPER (wcheck)
-G_STMT_START {
-	hg_quark_t arg0;
-
-	CHECK_STACK (ostack, 1);
-
-	arg0 = hg_stack_index(ostack, 0, error);
-	if (!HG_IS_QARRAY (arg0) &&
-	    !HG_IS_QDICT (arg0) &&
-	    !HG_IS_QFILE (arg0) &&
-	    !HG_IS_QSTRING (arg0)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
-		return FALSE;
-	}
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, HG_QBOOL (hg_vm_quark_is_writable(vm, &arg0)));
-
-	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
 
 /* <any> xcheck <bool> */
 DEFUNC_OPER (xcheck)
@@ -5682,71 +5761,11 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
+DEFUNC_UNIMPLEMENTED_OPER (xor);
+DEFUNC_UNIMPLEMENTED_OPER (xshow);
+DEFUNC_UNIMPLEMENTED_OPER (xyshow);
 DEFUNC_UNIMPLEMENTED_OPER (yield);
-DEFUNC_UNIMPLEMENTED_OPER (defineuserobject);
-DEFUNC_UNIMPLEMENTED_OPER (undefineuserobject);
-DEFUNC_UNIMPLEMENTED_OPER (UserObjects);
-DEFUNC_UNIMPLEMENTED_OPER (setvmthreshold);
-DEFUNC_UNIMPLEMENTED_OPER (sym_begin_dict_mark);
-DEFUNC_UNIMPLEMENTED_OPER (sym_end_dict_mark);
-DEFUNC_UNIMPLEMENTED_OPER (currentcolorrendering);
-DEFUNC_UNIMPLEMENTED_OPER (currentdevparams);
-DEFUNC_UNIMPLEMENTED_OPER (currentoverprint);
-DEFUNC_UNIMPLEMENTED_OPER (currentpagedevice);
-DEFUNC_UNIMPLEMENTED_OPER (currentsystemparams);
-DEFUNC_UNIMPLEMENTED_OPER (currentuserparams);
-DEFUNC_UNIMPLEMENTED_OPER (defineresource);
-DEFUNC_UNIMPLEMENTED_OPER (findencoding);
-DEFUNC_UNIMPLEMENTED_OPER (glyphshow);
-
-/* - languagelevel <int> */
-DEFUNC_OPER (languagelevel)
-G_STMT_START {
-	STACK_PUSH (ostack, HG_QINT (hg_vm_get_language_level(vm) + 1));
-
-	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
-
-DEFUNC_UNIMPLEMENTED_OPER (product);
-DEFUNC_UNIMPLEMENTED_OPER (resourceforall);
-DEFUNC_UNIMPLEMENTED_OPER (resourcestatus);
-DEFUNC_UNIMPLEMENTED_OPER (revision);
-DEFUNC_UNIMPLEMENTED_OPER (serialnumber);
-DEFUNC_UNIMPLEMENTED_OPER (setcolorrendering);
-DEFUNC_UNIMPLEMENTED_OPER (setdevparams);
-DEFUNC_UNIMPLEMENTED_OPER (setoverprint);
-DEFUNC_UNIMPLEMENTED_OPER (setsystemparams);
-DEFUNC_UNIMPLEMENTED_OPER (setuserparams);
-DEFUNC_UNIMPLEMENTED_OPER (startjob);
-DEFUNC_UNIMPLEMENTED_OPER (undefineresource);
-DEFUNC_UNIMPLEMENTED_OPER (GlobalFontDirectory);
-DEFUNC_UNIMPLEMENTED_OPER (ASCII85Decode);
-DEFUNC_UNIMPLEMENTED_OPER (ASCII85Encode);
-DEFUNC_UNIMPLEMENTED_OPER (ASCIIHexDecode);
-DEFUNC_UNIMPLEMENTED_OPER (ASCIIHexEncode);
-DEFUNC_UNIMPLEMENTED_OPER (CCITTFaxDecode);
-DEFUNC_UNIMPLEMENTED_OPER (CCITTFaxEncode);
-DEFUNC_UNIMPLEMENTED_OPER (DCTDecode);
-DEFUNC_UNIMPLEMENTED_OPER (DCTEncode);
-DEFUNC_UNIMPLEMENTED_OPER (LZWDecode);
-DEFUNC_UNIMPLEMENTED_OPER (LZWEncode);
-DEFUNC_UNIMPLEMENTED_OPER (NullEncode);
-DEFUNC_UNIMPLEMENTED_OPER (RunLengthDecode);
-DEFUNC_UNIMPLEMENTED_OPER (RunLengthEncode);
-DEFUNC_UNIMPLEMENTED_OPER (SubFileDecode);
-DEFUNC_UNIMPLEMENTED_OPER (CIEBasedA);
-DEFUNC_UNIMPLEMENTED_OPER (CIEBasedABC);
-DEFUNC_UNIMPLEMENTED_OPER (DeviceCMYK);
-DEFUNC_UNIMPLEMENTED_OPER (DeviceGray);
-DEFUNC_UNIMPLEMENTED_OPER (DeviceRGB);
-DEFUNC_UNIMPLEMENTED_OPER (Indexed);
-DEFUNC_UNIMPLEMENTED_OPER (Pattern);
-DEFUNC_UNIMPLEMENTED_OPER (Separation);
-DEFUNC_UNIMPLEMENTED_OPER (CIEBasedDEF);
-DEFUNC_UNIMPLEMENTED_OPER (CIEBasedDEFG);
-DEFUNC_UNIMPLEMENTED_OPER (DeviceN);
+DEFUNC_UNIMPLEMENTED_OPER (yshow);
 
 #undef PROTO_OPER
 #undef DEFUNC_OPER
@@ -6498,15 +6517,9 @@ hg_operator_init(void)
 	DECL_OPER (makepattern);
 	DECL_OPER (setcolor);
 	DECL_OPER (setcolorspace);
-	DECL_OPER (setglobal);
 	DECL_OPER (setpagedevice);
 	DECL_OPER (setpattern);
-	DECL_OPER (sym_eq);
-	DECL_OPER (sym_eqeq);
 	DECL_OPER (ISOLatin1Encoding);
-	DECL_OPER (StandardEncoding);
-	DECL_OPER (sym_left_square_bracket);
-	DECL_OPER (sym_right_square_bracket);
 	DECL_OPER (atan);
 	DECL_OPER (banddevice);
 	DECL_OPER (bytesavailable);
@@ -6596,7 +6609,6 @@ hg_operator_init(void)
 	DECL_OPER (sqrt);
 	DECL_OPER (srand);
 	DECL_OPER (status);
-	DECL_OPER (statusdict);
 	DECL_OPER (ucachestatus);
 	DECL_OPER (usertime);
 	DECL_OPER (ustrokepath);
@@ -6611,8 +6623,6 @@ hg_operator_init(void)
 	DECL_OPER (UserObjects);
 	DECL_OPER (cleardictstack);
 	DECL_OPER (setvmthreshold);
-	DECL_OPER (sym_begin_dict_mark);
-	DECL_OPER (sym_end_dict_mark);
 	DECL_OPER (currentcolorrendering);
 	DECL_OPER (currentdevparams);
 	DECL_OPER (currentoverprint);
