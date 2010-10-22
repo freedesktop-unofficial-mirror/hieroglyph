@@ -99,7 +99,7 @@ LEX_OUTPUT_ROOT=lex.$(basename $<)
 
 ##
 # Local Rules
-$(libhieroglyph_la_OBJECTS): $(hg_built_headers)
+###$(libhieroglyph_la_OBJECTS): $(hg_built_headers)
 hgversion.h.in: hgversion.h.in.in $(top_srcdir)/update-version
 	$(top_srcdir)/update-version
 
