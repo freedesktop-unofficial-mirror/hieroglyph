@@ -1,5 +1,8 @@
 2010-10-22  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (_hg_operator_real_copy):
+	check /typecheck prior to raising /invalidaccess.
+
 	* hieroglyph/Makefile.am: drop a rule to full-rebuild the code
 	by changing made in the built headers. this is unnecessary so far.
 

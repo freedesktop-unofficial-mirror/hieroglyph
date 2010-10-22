@@ -2067,15 +2067,16 @@ G_STMT_START {
 
 		arg1 = arg0;
 		arg0 = hg_stack_index(ostack, 1, error);
-		if (!hg_vm_quark_is_readable(vm, &arg0) ||
-		    !hg_vm_quark_is_writable(vm, &arg1)) {
-			hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
-			return FALSE;
-		}
 		if (HG_IS_QARRAY (arg0) &&
 		    HG_IS_QARRAY (arg1)) {
 			hg_array_t *a1, *a2;
 			gsize len1, len2;
+
+			if (!hg_vm_quark_is_readable(vm, &arg0) ||
+			    !hg_vm_quark_is_writable(vm, &arg1)) {
+				hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+				return FALSE;
+			}
 
 			a1 = HG_VM_LOCK (vm, arg0, error);
 			a2 = HG_VM_LOCK (vm, arg1, error);
@@ -2119,6 +2120,12 @@ G_STMT_START {
 			   HG_IS_QDICT (arg1)) {
 			hg_dict_t *d1, *d2;
 
+			if (!hg_vm_quark_is_readable(vm, &arg0) ||
+			    !hg_vm_quark_is_writable(vm, &arg1)) {
+				hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+				return FALSE;
+			}
+
 			d1 = HG_VM_LOCK (vm, arg0, error);
 			d2 = HG_VM_LOCK (vm, arg1, error);
 			if (d1 == NULL || d2 == NULL) {
@@ -2145,6 +2152,12 @@ G_STMT_START {
 			   HG_IS_QSTRING (arg1)) {
 			hg_string_t *s1, *s2;
 			gsize len1, mlen1, mlen2;
+
+			if (!hg_vm_quark_is_readable(vm, &arg0) ||
+			    !hg_vm_quark_is_writable(vm, &arg1)) {
+				hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+				return FALSE;
+			}
 
 			s1 = HG_VM_LOCK (vm, arg0, error);
 			s2 = HG_VM_LOCK (vm, arg1, error);
