@@ -1,3 +1,7 @@
+2010-10-27  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgdevice.[ch]: added.
+
 2010-10-20  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_rand): implemented.
