@@ -53,7 +53,6 @@ PROTO_OPER (private_exit);
 PROTO_OPER (private_findlibfile);
 PROTO_OPER (private_forceput);
 PROTO_OPER (private_hgrevision);
-PROTO_OPER (private_initplugins);
 PROTO_OPER (private_odef);
 PROTO_OPER (private_product);
 PROTO_OPER (private_quit);
@@ -477,6 +476,7 @@ G_STMT_START {
 		hg_vm_reserved_spool_dump(vm, vm->mem[HG_VM_MEM_GLOBAL], file);
 		hg_file_append_printf(file, "\n* Reserved spool in local memory:\n");
 		hg_vm_reserved_spool_dump(vm, vm->mem[HG_VM_MEM_LOCAL], file);
+		hg_file_append_printf(file, "\nCurrent allocation mode is %s\n", hg_vm_is_global_mem_used(vm) ? "global" : "local");
 
 		HG_VM_UNLOCK (vm, q);
 	}
@@ -695,15 +695,6 @@ G_STMT_START {
 	retval = TRUE;
 } G_STMT_END;
 VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
-
-/* - .initplugins - */
-DEFUNC_OPER (private_initplugins)
-G_STMT_START {
-	hg_vm_load_plugins(vm);
-	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
 /* <key> <proc> .odef - */
@@ -2951,11 +2942,7 @@ G_STMT_START {
 
 	arg0 = hg_stack_index(ostack, 1, error);
 	arg1 = hg_stack_index(ostack, 0, error);
-	if (!hg_vm_quark_is_readable(vm, &arg0) ||
-	    !hg_vm_quark_is_readable(vm, &arg1)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
-		return FALSE;
-	}
+
 	ret = hg_vm_quark_compare(vm, arg0, arg1);
 	if (!ret) {
 		if ((HG_IS_QNAME (arg0) ||
@@ -2972,6 +2959,11 @@ G_STMT_START {
 			} else {
 				hg_string_t *s;
 
+				if (!hg_vm_quark_is_readable(vm, &arg0)) {
+					hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+					return FALSE;
+				}
+
 				s = HG_VM_LOCK (vm, arg0, error);
 				if (s == NULL) {
 					hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
@@ -2985,6 +2977,11 @@ G_STMT_START {
 				s2 = g_strdup(HG_NAME (vm->name, arg1));
 			} else {
 				hg_string_t *s;
+
+				if (!hg_vm_quark_is_readable(vm, &arg1)) {
+					hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+					return FALSE;
+				}
 
 				s = HG_VM_LOCK (vm, arg1, error);
 				if (s == NULL) {
@@ -5841,7 +5838,6 @@ _hg_operator_level1_register(hg_vm_t   *vm,
 	REG_PRIV_OPER (dict, name, .findlibfile, private_findlibfile);
 	REG_PRIV_OPER (dict, name, .forceput, private_forceput);
 	REG_PRIV_OPER (dict, name, .hgrevision, private_hgrevision);
-	REG_PRIV_OPER (dict, name, .initplugins, private_initplugins);
 	REG_PRIV_OPER (dict, name, .odef, private_odef);
 	REG_PRIV_OPER (dict, name, .product, private_product);
 	REG_PRIV_OPER (dict, name, .quit, private_quit);
@@ -6304,7 +6300,6 @@ hg_operator_init(void)
 	DECL_PRIV_OPER (.findlibfile, private_findlibfile);
 	DECL_PRIV_OPER (.forceput, private_forceput);
 	DECL_PRIV_OPER (.hgrevision, private_hgrevision);
-	DECL_PRIV_OPER (.initplugins, private_initplugins);
 	DECL_PRIV_OPER (.odef, private_odef);
 	DECL_PRIV_OPER (.product, private_product);
 	DECL_PRIV_OPER (.quit, private_quit);
@@ -6708,7 +6703,6 @@ hg_operator_tini(void)
 	UNDECL_OPER (private_findlibfile);
 	UNDECL_OPER (private_forceput);
 	UNDECL_OPER (private_hgrevision);
-	UNDECL_OPER (private_initplugins);
 	UNDECL_OPER (private_odef);
 	UNDECL_OPER (private_product);
 	UNDECL_OPER (private_quit);

@@ -37,7 +37,7 @@ void          hg_scanner_destroy    (hg_scanner_t  *scanner);
 gboolean      hg_scanner_attach_file(hg_scanner_t  *scanner,
 				     hg_file_t     *file);
 gboolean      hg_scanner_scan       (hg_scanner_t  *scanner,
-				     hg_mem_t      *mem,
+				     hg_vm_t       *vm,
 			 	     GError       **error);
 hg_quark_t    hg_scanner_get_token  (hg_scanner_t  *scanner);
 hg_file_t    *hg_scanner_get_infile (hg_scanner_t  *scanner);

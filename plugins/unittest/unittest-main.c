@@ -231,7 +231,7 @@ _unittest_load(hg_plugin_t  *plugin,
 
 	estack = hg_vm_stack_new(vm, 256);
 	retval = hg_vm_eval_from_cstring(vm, "{(hg_unittest.ps) runlibfile} stopped {(** Unable to initialize the unittest extension plugin\n) =} if", -1,
-					 NULL, estack, NULL, error);
+					 NULL, estack, NULL, TRUE, error);
 	hg_stack_free(estack);
 
 	return retval;

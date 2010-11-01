@@ -73,7 +73,7 @@ main(int    argc,
 	const gchar *psfile = NULL;
 	gint errcode = 0;
 	hg_vm_t *vm = NULL;
-	guint arg_langlevel = HG_LANG_LEVEL_3;
+	guint arg_langlevel = HG_LANG_LEVEL_END;
 	GOptionContext *ctxt = g_option_context_new("<PostScript file>");
 	GOptionGroup *group;
 	GOptionEntry entries[] = {
@@ -102,14 +102,33 @@ main(int    argc,
 		}
 		goto finalize;
 	}
-	if (arg_langlevel >= HG_LANG_LEVEL_END) {
-		g_printerr("Unknown language level: %d\n",
-			   arg_langlevel);
-		goto finalize;
-	}
 
-	if (argc > 1)
+	if (argc > 1) {
+		FILE *fp;
+		gchar buffer[256], token[] = "%!PS-Adobe-";
+		gsize len = strlen(token);
+
 		psfile = argv[1];
+		if ((fp = fopen(psfile, "r")) == NULL) {
+			g_printerr("Unable to open a file: %s\n", psfile);
+			goto finalize;
+		}
+		if (fgets(buffer, 255, fp)) {
+			if (strncmp(buffer, token, len) == 0) {
+				gchar *p = &buffer[len];
+				gdouble d;
+
+				sscanf(p, "%lf", &d);
+				arg_langlevel = (guint)d;
+				hg_vm_hold_language_level(vm, TRUE);
+			}
+		}
+		fclose(fp);
+	}
+	if (arg_langlevel == HG_LANG_LEVEL_END)
+		arg_langlevel = HG_LANG_LEVEL_END - 1;
+	else
+		arg_langlevel--;
 
 	if (!hg_vm_startjob(vm, arg_langlevel, psfile, TRUE)) {
 		g_printerr("Unable to start PostScript VM.");
