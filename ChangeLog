@@ -1,3 +1,9 @@
+2010-11-02  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgpath.[ch]: new.
+
+	* hieroglyph/hggstate.[ch]: new.
+
 2010-11-01  Akira TAGOH  <akira@tagoh.org>
 
 	* src/hgs/hgs.c (main): look at the shebang to determine

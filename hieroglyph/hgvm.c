@@ -28,12 +28,14 @@
 #include <stdlib.h>
 #include "hgbool.h"
 #include "hgdict.h"
+#include "hggstate.h"
 #include "hgint.h"
 #include "hgmark.h"
 #include "hgmem.h"
 #include "hgname.h"
 #include "hgnull.h"
 #include "hgoperator.h"
+#include "hgpath.h"
 #include "hgplugin.h"
 #include "hgreal.h"
 #include "hgscanner.h"
@@ -769,6 +771,8 @@ hg_vm_init(void)
 		HG_SNAPSHOT_INIT;
 		HG_STACK_INIT;
 		HG_STRING_INIT;
+		HG_PATH_INIT;
+		HG_GSTATE_INIT;
 		if (!hg_encoding_init())
 			goto error;
 		if (!hg_operator_init())

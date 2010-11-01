@@ -7,6 +7,7 @@ INCLUDES =							\
 	-I$(top_srcdir)						\
 	-DHIEROGLYPH_LIBDIR="\"$(HIEROGLYPH_LIBDIR)\""		\
 	-DHIEROGLYPH_PLUGINDIR="\"$(HIEROGLYPH_PLUGINDIR)\""	\
+	-DHIEROGLYPH_DEVICEDIR="\"$(HIEROGLYPH_DEVICEDIR)\""	\
 	$(NULL)
 LIBS =								\
 	@LDFLAGS@						\
@@ -31,10 +32,12 @@ hg_public_headers =						\
 	hgallocator.h						\
 	hgarray.h						\
 	hgbool.h						\
+	hgdevice.h						\
 	hgdict.h						\
 	hgencoding.h						\
 	hgerror.h						\
 	hgfile.h						\
+	hggstate.h						\
 	hgint.h							\
 	hglineedit.h						\
 	hgmacros.h						\
@@ -42,6 +45,7 @@ hg_public_headers =						\
 	hgmem.h							\
 	hgname.h						\
 	hgnull.h						\
+	hgpath.h						\
 	hgobject.h						\
 	hgoperator.h						\
 	hgplugin.h						\
@@ -75,13 +79,16 @@ hg_sources =							\
 	$(hg_built_sources)					\
 	hgallocator.c						\
 	hgarray.c						\
+	hgdevice.c						\
 	hgdict.c						\
 	hgencoding.c						\
 	hgerror.c						\
 	hgfile.c						\
+	hggstate.c						\
 	hglineedit.l						\
 	hgmem.c							\
 	hgname.c						\
+	hgpath.c						\
 	hgobject.c						\
 	hgoperator.c						\
 	hgplugin.c						\
