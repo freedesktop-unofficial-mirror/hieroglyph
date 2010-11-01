@@ -108,6 +108,7 @@ struct _hg_vm_t {
 	hg_quark_t         qsystemdict;
 	hg_quark_t         qglobaldict;
 	hg_quark_t         qinternaldict;
+	hg_quark_t         qgstate;
 	hg_scanner_t      *scanner;
 	hg_lineedit_t     *lineedit;
 	hg_vm_langlevel_t  language_level;

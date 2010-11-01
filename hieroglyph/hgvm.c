@@ -711,6 +711,16 @@ _hg_vm_run_gc(hg_mem_t *mem,
 #endif
 	if (!hg_vm_quark_gc_mark(vm, vm->qglobaldict, &err))
 		goto error;
+#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
+	g_print("GC: marking objects in internaldict\n");
+#endif
+	if (!hg_vm_quark_gc_mark(vm, vm->qinternaldict, &err))
+		goto error;
+#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
+	g_print("GC: marking objects in gstate\n");
+#endif
+	if (!hg_vm_quark_gc_mark(vm, vm->qgstate, &err))
+		goto error;
 	/** XXX: marking scanner */
 
 	/* sweeping objects */
@@ -1966,6 +1976,10 @@ hg_vm_setup(hg_vm_t           *vm,
 		if (vm->lineedit == NULL)
 			goto error;
 
+		vm->qgstate = hg_gstate_new(hg_vm_get_mem(vm), NULL);
+		if (vm->qgstate == Qnil)
+			goto error;
+
 		/* initialize stacks */
 		hg_stack_clear(vm->stacks[HG_VM_STACK_OSTACK]);
 		hg_stack_clear(vm->stacks[HG_VM_STACK_ESTACK]);
@@ -2089,6 +2103,14 @@ hg_vm_finish(hg_vm_t *vm)
 	if (vm->qglobaldict != Qnil) {
 		hg_vm_mfree(vm, vm->qglobaldict);
 		vm->qglobaldict = Qnil;
+	}
+	if (vm->qinternaldict != Qnil) {
+		hg_vm_mfree(vm, vm->qinternaldict);
+		vm->qinternaldict = Qnil;
+	}
+	if (vm->qgstate != Qnil) {
+		hg_vm_mfree(vm, vm->qgstate);
+		vm->qgstate = Qnil;
 	}
 	for (i = 0; i < HG_VM_STACK_END; i++) {
 		if (vm->stacks[i])
