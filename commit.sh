@@ -1,8 +1,7 @@
 #! /bin/sh
 DO=""
 TOPDIR=`dirname $0`
-VERSIONIN=$TOPDIR/hieroglyph/hgversion.h.in.in
-VERSION_H=`echo $VERSIONIN | sed -e 's/.in.in$/.in/'`
+VERSION_H=$TOPDIR/hieroglyph/hgversion.h.in
 
 function DO() {
 	_cmd="$1"
@@ -50,7 +49,7 @@ while [ $# -ne 0 ]; do
     shift
 done
 if [ "x$FILES" != "x" ]; then
-    FILES="$FILES ChangeLog $VERSION_H"
+    FILES="$FILES ChangeLog"
 else
     GIT_OPTS="-a"
 fi
@@ -70,10 +69,6 @@ if [ "x$LOG" = "x" ]; then
 	    echo "Answer must be y or n."
 	fi
     done
-fi
-
-if [ "x$DO" = "x" ]; then
-    $TOPDIR/update-version
 fi
 
 LANG=C DO git commit $GIT_OPTS -m "$LOG" $FILES
