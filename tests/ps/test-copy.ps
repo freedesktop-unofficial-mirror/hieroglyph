@@ -1,0 +1,54 @@
+%!PS-Adobe-1.0
+% test-copy.ps
+% Copyright (C) 2006-2010 Akira TAGOH
+%
+% Authors:
+%   Akira TAGOH  <akira@tagoh.org>
+%
+% This library is free software; you can redistribute it and/or
+% modify it under the terms of the GNU Lesser General Public
+% License as published by the Free Software Foundation; either
+% version 2 of the License, or (at your option) any later version.
+%
+% This library is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+% Lesser General Public License for more details.
+%
+% You should have received a copy of the GNU Lesser General Public
+% License along with this library; if not, write to the
+% Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+% Boston, MA 02111-1307, USA.
+.initunittest
+
+true /copy [.unittestdict /anytypes get [/integertype]] .typecheck
+true /copy [[/arraytype /proctype] dup] .typecheck
+true /copy [[/dicttype] dup] .typecheck
+true /copy [[/stringtype] dup] .typecheck
+% FIXME: packedarray
+% FIXME: gstate
+false /copy [.unittestdict /anytypes get [/booleantype /realtype /nametype /nulltype /operatortype /marktype /filetype /savetype]] .typecheck
+
+[] /stackunderflow true .initunittestdict {copy} .unittest
+[[]] /stackunderflow true .initunittestdict {[] copy} .unittest
+[1 dict] /stackunderflow true .initunittestdict {1 dict copy} .unittest
+[()] /stackunderflow true .initunittestdict {() copy} .unittest
+[[][]] /invalidaccess true .initunittestdict {[] noaccess [] copy} .unittest
+[[][]] /invalidaccess true .initunittestdict {[] [] noaccess copy} .unittest
+[[][]] /invalidaccess true .initunittestdict {[] executeonly [] copy} .unittest
+[[][]] /invalidaccess true .initunittestdict {[] [] executeonly copy} .unittest
+[[][]] /invalidaccess true .initunittestdict {[] [] readonly copy} .unittest
+[1 dict 1 dict] /invalidaccess true .initunittestdict {1 dict noaccess 1 dict copy} .unittest
+[1 dict 1 dict] /invalidaccess true .initunittestdict {1 dict 1 dict noaccess copy} .unittest
+[1 dict 1 dict] /invalidaccess true .initunittestdict {1 dict 1 dict readonly copy} .unittest
+[() ()] /invalidaccess true .initunittestdict {() noaccess () copy} .unittest
+[() ()] /invalidaccess true .initunittestdict {() () noaccess copy} .unittest
+[() ()] /invalidaccess true .initunittestdict {() executeonly () copy} .unittest
+[() ()] /invalidaccess true .initunittestdict {() () executeonly copy} .unittest
+[() ()] /invalidaccess true .initunittestdict {() () readonly copy} .unittest
+[1] /rangecheck true .initunittestdict {1 copy} .unittest
+[[1] []] /rangecheck true .initunittestdict {[1] [] copy} .unittest
+[2 dict 1 dict] /rangecheck true .initunittestdict {2 dict 1 dict copy} .unittest
+[(a) ()] /rangecheck true .initunittestdict {(a) () copy} .unittest
+
+.unittestresult
