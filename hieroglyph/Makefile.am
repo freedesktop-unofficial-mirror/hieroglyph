@@ -17,7 +17,6 @@ LIBS =								\
 	$(NULL)
 EXTRA_DIST =							\
 	hgversion.h.in						\
-	hgversion.h.in.in					\
 	$(NULL)
 MAINTAINERCLEANFILES =						\
 	$(NULL)
@@ -106,9 +105,6 @@ LEX_OUTPUT_ROOT=lex.$(basename $<)
 
 ##
 # Local Rules
-###$(libhieroglyph_la_OBJECTS): $(hg_built_headers)
-hgversion.h.in: hgversion.h.in.in $(top_srcdir)/update-version
-	$(top_srcdir)/update-version
 
 ##
 # Target platform
