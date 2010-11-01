@@ -107,10 +107,12 @@ struct _hg_vm_t {
 	hg_quark_t         qerror;
 	hg_quark_t         qsystemdict;
 	hg_quark_t         qglobaldict;
+	hg_quark_t         qinternaldict;
 	hg_scanner_t      *scanner;
 	hg_lineedit_t     *lineedit;
 	hg_vm_langlevel_t  language_level;
 	gboolean           is_initialized:1;
+	gboolean           hold_lang_level:1;
 	gboolean           shutdown:1;
 	gboolean           has_error:1;
 	gint               error_code;
@@ -210,6 +212,8 @@ void               hg_vm_finish                      (hg_vm_t                 *v
 hg_vm_langlevel_t  hg_vm_get_language_level          (hg_vm_t                 *vm);
 gboolean           hg_vm_set_language_level          (hg_vm_t                 *vm,
                                                       hg_vm_langlevel_t        level);
+void               hg_vm_hold_language_level         (hg_vm_t                 *vm,
+						      gboolean                 flag);
 hg_quark_t         hg_vm_dict_lookup                 (hg_vm_t                 *vm,
                                                       hg_quark_t               qname);
 gboolean           hg_vm_dict_remove                 (hg_vm_t                 *vm,
@@ -227,6 +231,7 @@ gboolean           hg_vm_eval                        (hg_vm_t                 *v
                                                       hg_stack_t              *ostack,
                                                       hg_stack_t              *estack,
                                                       hg_stack_t              *dstack,
+						      gboolean                 protect_systemdict,
                                                       GError                 **error);
 gboolean           hg_vm_eval_from_cstring           (hg_vm_t                 *vm,
                                                       const gchar             *cstring,
@@ -234,12 +239,14 @@ gboolean           hg_vm_eval_from_cstring           (hg_vm_t                 *v
                                                       hg_stack_t              *ostack,
                                                       hg_stack_t              *estack,
                                                       hg_stack_t              *dstack,
+						      gboolean                 protect_systemdict,
                                                       GError                 **error);
 gboolean           hg_vm_eval_from_file              (hg_vm_t                 *vm,
                                                       const gchar             *initfile,
                                                       hg_stack_t              *ostack,
                                                       hg_stack_t              *estack,
                                                       hg_stack_t              *dstack,
+						      gboolean                 protect_systemdict,
                                                       GError                 **error);
 gint               hg_vm_get_error_code              (hg_vm_t                 *vm);
 void               hg_vm_set_error_code              (hg_vm_t                 *vm,

@@ -47,6 +47,7 @@
 	(_hg_vm_real_lock_object((_v_),(_q_),__PRETTY_FUNCTION__,(_e_)))
 #define _HG_VM_UNLOCK(_v_,_q_)				\
 	(_hg_vm_real_unlock_object((_v_),(_q_)))
+#undef HG_VM_DEBUG
 
 
 typedef struct _hg_vm_dict_lookup_data_t {
@@ -324,9 +325,7 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 			    hg_scanner_attach_file(vm->scanner, file);
 			    _HG_VM_UNLOCK (vm, qexecobj);
 
-			    if (!hg_scanner_scan(vm->scanner,
-						 hg_vm_get_mem(vm),
-						 &err)) {
+			    if (!hg_scanner_scan(vm->scanner, vm, &err)) {
 				    hg_vm_set_error(vm, qparent,
 						    HG_VM_e_syntaxerror);
 				    retval = FALSE;
@@ -670,9 +669,9 @@ _hg_vm_run_gc(hg_mem_t *mem,
 		goto error;
 	/* marking I/O in scanner */
 	f = hg_scanner_get_infile(vm->scanner);
-	if (!hg_object_gc_mark((hg_object_t *)f,
-			       _hg_vm_quark_iterate_gc_mark,
-			       vm, &err))
+	if (f && !hg_object_gc_mark((hg_object_t *)f,
+				    _hg_vm_quark_iterate_gc_mark,
+				    vm, &err))
 		goto error;
 
 	/** marking in stacks **/
@@ -717,6 +716,31 @@ _hg_vm_run_gc(hg_mem_t *mem,
 	return TRUE;
   error:
 	return FALSE;
+}
+
+static gboolean
+_hg_vm_dup_dict(hg_mem_t    *mem,
+		hg_quark_t   qkey,
+		hg_quark_t   qval,
+		gpointer     data,
+		GError     **error)
+{
+	hg_dict_t *dict = data;
+
+	hg_dict_add(dict, qkey, qval, error);
+
+	return TRUE;
+}
+
+static gboolean
+_hg_vm_dup_stack(hg_mem_t    *mem,
+		 hg_quark_t   qdata,
+		 gpointer     data,
+		 GError     **error)
+{
+	hg_stack_t *s = data;
+
+	return hg_stack_push(s, qdata);
 }
 
 /*< public >*/
@@ -1883,84 +1907,90 @@ hg_vm_setup(hg_vm_t           *vm,
 	hg_return_val_if_fail (vm != NULL, FALSE);
 	hg_return_val_if_fail (lang_level < HG_LANG_LEVEL_END, FALSE);
 
-	if (vm->is_initialized)
-		return TRUE;
+	if (!vm->is_initialized) {
+		vm->is_initialized = TRUE;
 
-	vm->is_initialized = TRUE;
+		hg_vm_use_global_mem(vm, TRUE);
 
-	hg_vm_use_global_mem(vm, TRUE);
+		vm->n_nest_scan = 0;
 
-	vm->n_nest_scan = 0;
+		/* initialize I/O */
+		if (stdin == Qnil) {
+			qf = hg_file_new(hg_vm_get_mem(vm),
+					 "%stdin",
+					 HG_FILE_IO_MODE_READ,
+					 NULL,
+					 (gpointer *)&fstdin);
+		} else {
+			qf = stdin;
+		}
+		hg_vm_quark_set_attributes(vm, &qf, TRUE, FALSE, FALSE, TRUE);
+		vm->qio[HG_FILE_IO_STDIN] = qf;
+		if (stdout == Qnil) {
+			qf  = hg_file_new(hg_vm_get_mem(vm),
+					  "%stdout",
+					  HG_FILE_IO_MODE_WRITE,
+					  NULL,
+					  (gpointer *)&fstdout);
+		} else {
+			qf = stdout;
+		}
+		hg_vm_quark_set_attributes(vm, &qf, FALSE, TRUE, FALSE, TRUE);
+		vm->qio[HG_FILE_IO_STDOUT] = qf;
+		if (stderr == Qnil) {
+			qf = hg_file_new(hg_vm_get_mem(vm),
+					 "%stderr",
+					 HG_FILE_IO_MODE_WRITE,
+					 NULL,
+					 NULL);
+		} else {
+			qf = stderr;
+		}
+		hg_vm_quark_set_attributes(vm, &qf, FALSE, TRUE, FALSE, TRUE);
+		vm->qio[HG_FILE_IO_STDERR] = qf;
 
-	/* initialize I/O */
-	if (stdin == Qnil) {
-		qf = hg_file_new(hg_vm_get_mem(vm),
-				 "%stdin",
-				 HG_FILE_IO_MODE_READ,
-				 NULL,
-				 (gpointer *)&fstdin);
+		if (vm->qio[HG_FILE_IO_STDIN] == Qnil ||
+		    vm->qio[HG_FILE_IO_STDOUT] == Qnil ||
+		    vm->qio[HG_FILE_IO_STDERR] == Qnil) {
+			goto error;
+		}
+
+		vm->lineedit = hg_lineedit_new(hg_vm_get_mem(vm),
+					       hg_lineedit_get_default_vtable(),
+					       fstdin,
+					       fstdout);
+		if (vm->lineedit == NULL)
+			goto error;
+
+		/* initialize stacks */
+		hg_stack_clear(vm->stacks[HG_VM_STACK_OSTACK]);
+		hg_stack_clear(vm->stacks[HG_VM_STACK_ESTACK]);
+		hg_stack_clear(vm->stacks[HG_VM_STACK_DSTACK]);
+
+		/* initialize dictionaries */
+		vm->qsystemdict = hg_dict_new(vm->mem[HG_VM_MEM_GLOBAL],
+					      65535,
+					      NULL);
+		vm->qinternaldict = hg_dict_new(vm->mem[HG_VM_MEM_GLOBAL],
+						65535,
+						NULL);
+		vm->qglobaldict = hg_dict_new(vm->mem[HG_VM_MEM_GLOBAL],
+					      65535,
+					      NULL);
+		vm->qerror = hg_dict_new(vm->mem[HG_VM_MEM_LOCAL],
+					 65535,
+					 (gpointer *)&dict_error);
+		if (vm->qsystemdict == Qnil ||
+		    vm->qinternaldict == Qnil ||
+		    vm->qglobaldict == Qnil ||
+		    vm->qerror == Qnil)
+			goto error;
 	} else {
-		qf = stdin;
+		dict_error = _HG_VM_LOCK (vm, vm->qerror, &err);
 	}
-	hg_vm_quark_set_attributes(vm, &qf, TRUE, FALSE, FALSE, TRUE);
-	vm->qio[HG_FILE_IO_STDIN] = qf;
-	if (stdout == Qnil) {
-		qf  = hg_file_new(hg_vm_get_mem(vm),
-				  "%stdout",
-				  HG_FILE_IO_MODE_WRITE,
-				  NULL,
-				  (gpointer *)&fstdout);
-	} else {
-		qf = stdout;
-	}
-	hg_vm_quark_set_attributes(vm, &qf, FALSE, TRUE, FALSE, TRUE);
-	vm->qio[HG_FILE_IO_STDOUT] = qf;
-	if (stderr == Qnil) {
-		qf = hg_file_new(hg_vm_get_mem(vm),
-				 "%stderr",
-				 HG_FILE_IO_MODE_WRITE,
-				 NULL,
-				 NULL);
-	} else {
-		qf = stderr;
-	}
-	hg_vm_quark_set_attributes(vm, &qf, FALSE, TRUE, FALSE, TRUE);
-	vm->qio[HG_FILE_IO_STDERR] = qf;
-
-	if (vm->qio[HG_FILE_IO_STDIN] == Qnil ||
-	    vm->qio[HG_FILE_IO_STDOUT] == Qnil ||
-	    vm->qio[HG_FILE_IO_STDERR] == Qnil) {
-		goto error;
-	}
-
-	vm->lineedit = hg_lineedit_new(hg_vm_get_mem(vm),
-				       hg_lineedit_get_default_vtable(),
-				       fstdin,
-				       fstdout);
-	if (vm->lineedit == NULL)
-		goto error;
-
-	/* initialize stacks */
-	hg_stack_clear(vm->stacks[HG_VM_STACK_OSTACK]);
-	hg_stack_clear(vm->stacks[HG_VM_STACK_ESTACK]);
-	hg_stack_clear(vm->stacks[HG_VM_STACK_DSTACK]);
-
-	/* initialize dictionaries */
-	vm->qsystemdict = hg_dict_new(vm->mem[HG_VM_MEM_GLOBAL],
-				      65535,
-				      NULL);
-	vm->qglobaldict = hg_dict_new(vm->mem[HG_VM_MEM_GLOBAL],
-				      65535,
-				      NULL);
-	vm->qerror = hg_dict_new(vm->mem[HG_VM_MEM_LOCAL],
-				 65535,
-				 (gpointer *)&dict_error);
-	if (vm->qsystemdict == Qnil ||
-	    vm->qglobaldict == Qnil ||
-	    vm->qerror == Qnil)
-		goto error;
 
 	hg_vm_quark_set_attributes(vm, &vm->qsystemdict, TRUE, TRUE, FALSE, TRUE);
+	hg_vm_quark_set_attributes(vm, &vm->qinternaldict, TRUE, TRUE, FALSE, TRUE);
 	hg_vm_quark_set_attributes(vm, &vm->qglobaldict, TRUE, TRUE, FALSE, TRUE);
 	hg_vm_quark_set_attributes(vm, &vm->qerror, TRUE, TRUE, FALSE, TRUE);
 
@@ -2067,6 +2097,7 @@ hg_vm_finish(hg_vm_t *vm)
 		vm->lineedit = NULL;
 	}
 
+	vm->hold_lang_level = FALSE;
 	vm->is_initialized = FALSE;
 }
 
@@ -2102,11 +2133,31 @@ hg_vm_set_language_level(hg_vm_t           *vm,
 	hg_return_val_if_fail (vm != NULL, FALSE);
 	hg_return_val_if_fail (level < HG_LANG_LEVEL_END, FALSE);
 
-	/* re-initialize operators */
-	if (vm->is_initialized)
-		hg_vm_finish(vm);
+	if (vm->is_initialized && !vm->hold_lang_level) {
+		if (hg_vm_get_language_level(vm) >= level)
+			return FALSE;
 
-	return hg_vm_setup(vm, level, Qnil, Qnil, Qnil);
+		/* re-initialize operators */
+		return hg_vm_startjob(vm, level, "", FALSE);
+	}
+
+	return FALSE;
+}
+
+/**
+ * hg_vm_hold_language_level:
+ * @vm:
+ * @flag:
+ *
+ * FIXME
+ */
+void
+hg_vm_hold_language_level(hg_vm_t  *vm,
+			  gboolean  flag)
+{
+	hg_return_if_fail (vm != NULL);
+
+	vm->hold_lang_level = (flag == TRUE);
 }
 
 /**
@@ -2456,9 +2507,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 			    if (file == NULL)
 				    break;
 			    hg_scanner_attach_file(vm->scanner, file);
-			    if (!hg_scanner_scan(vm->scanner,
-						 hg_vm_get_mem(vm),
-						 &err)) {
+			    if (!hg_scanner_scan(vm->scanner, vm, &err)) {
 				    gboolean is_eof = hg_file_is_eof(file);
 
 				    _HG_VM_UNLOCK (vm, qexecobj);
@@ -2660,6 +2709,7 @@ hg_vm_find_libfile(hg_vm_t     *vm G_GNUC_UNUSED,
  * @ostack:
  * @estack:
  * @dstack:
+ * @protect_systemdict:
  * @error:
  *
  * FIXME
@@ -2672,16 +2722,67 @@ hg_vm_eval(hg_vm_t     *vm,
 	   hg_stack_t  *ostack,
 	   hg_stack_t  *estack,
 	   hg_stack_t  *dstack,
+	   gboolean     protect_systemdict,
 	   GError     **error)
 {
-	hg_stack_t *old_ostack = NULL, *old_estack = NULL, *old_dstack = NULL;
-	gboolean retval;
+	hg_stack_t *old_ostack = NULL, *old_estack = NULL, *old_dstack = NULL, *ps_dstack = NULL;
+	hg_quark_t old_systemdict = Qnil;
+	gboolean retval = FALSE, old_state_hold_langlevel = FALSE;
+	hg_vm_langlevel_t lang = 0;
 
 	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error);
 
 	if (hg_quark_is_simple_object(qeval)) {
 		/* XXX */
 		return FALSE;
+	}
+	if (protect_systemdict) {
+		hg_dict_t *d, *o;
+		gboolean flag = TRUE;
+
+		old_systemdict = vm->qsystemdict;
+		old_state_hold_langlevel = vm->hold_lang_level;
+		lang = hg_vm_get_language_level(vm);
+		o = _HG_VM_LOCK (vm, old_systemdict, error);
+		if (o == NULL) {
+			g_warning("Unable to protect systemdict.");
+			return FALSE;
+		}
+		vm->qsystemdict = hg_dict_new(o->o.mem,
+					      hg_dict_maxlength(o),
+					      (gpointer *)&d);
+		if (vm->qsystemdict == Qnil) {
+			g_warning("Unable to duplicate systemdict.");
+			flag = FALSE;
+			goto fini_systemdict;
+		}
+		hg_vm_quark_set_attributes(vm, &vm->qsystemdict,
+					   hg_vm_quark_is_readable(vm, &old_systemdict),
+					   hg_vm_quark_is_writable(vm, &old_systemdict),
+					   hg_vm_quark_is_executable(vm, &old_systemdict),
+					   hg_vm_quark_is_editable(vm, &old_systemdict));
+		hg_dict_foreach(o, _hg_vm_dup_dict, d, error);
+		hg_vm_hold_language_level(vm, FALSE);
+		if (!hg_dict_add(d,
+				 HG_QNAME (vm->name, "systemdict"),
+				 vm->qsystemdict,
+				 error)) {
+			g_warning("Unable to reregister systemdict");
+			flag = FALSE;
+			goto fini_systemdict;
+		}
+
+		if (!dstack) {
+			ps_dstack = dstack = hg_vm_stack_new(vm, 65535);
+			hg_stack_foreach(vm->stacks[HG_VM_STACK_DSTACK], _hg_vm_dup_stack, ps_dstack, error);
+		}
+
+	  fini_systemdict:
+		_HG_VM_UNLOCK (vm, old_systemdict);
+		_HG_VM_UNLOCK (vm, vm->qsystemdict);
+
+		if (!flag)
+			goto finalize;
 	}
 	switch(hg_quark_get_type(qeval)) {
 	    case HG_TYPE_STRING:
@@ -2716,6 +2817,16 @@ hg_vm_eval(hg_vm_t     *vm,
 		vm->stacks[HG_VM_STACK_ESTACK] = old_estack;
 	if (old_dstack)
 		vm->stacks[HG_VM_STACK_DSTACK] = old_dstack;
+  finalize:
+	if (protect_systemdict) {
+		vm->qsystemdict = old_systemdict;
+		if (hg_vm_get_language_level(vm) != lang) {
+			hg_vm_startjob(vm, lang, "", FALSE);
+		}
+		hg_vm_hold_language_level(vm, old_state_hold_langlevel);
+		if (ps_dstack)
+			hg_stack_free(ps_dstack);
+	}
 
 	return retval;
 }
@@ -2728,6 +2839,7 @@ hg_vm_eval(hg_vm_t     *vm,
  * @ostack:
  * @estack:
  * @dstack:
+ * @protect_systemdict:
  * @error:
  *
  * FIXME
@@ -2741,6 +2853,7 @@ hg_vm_eval_from_cstring(hg_vm_t      *vm,
 			hg_stack_t   *ostack,
 			hg_stack_t   *estack,
 			hg_stack_t   *dstack,
+			gboolean      protect_systemdict,
 			GError      **error)
 {
 	hg_quark_t qstring;
@@ -2768,7 +2881,7 @@ hg_vm_eval_from_cstring(hg_vm_t      *vm,
 		goto error;
 	}
 	hg_vm_quark_set_executable(vm, &qstring, TRUE);
-	retval = hg_vm_eval(vm, qstring, ostack, estack, dstack, &err);
+	retval = hg_vm_eval(vm, qstring, ostack, estack, dstack, protect_systemdict, &err);
 
 	/* Don't free the string here.
 	 * this causes a segfault in the file object
@@ -2800,6 +2913,7 @@ hg_vm_eval_from_cstring(hg_vm_t      *vm,
  * @ostack:
  * @estack:
  * @dstack:
+ * @protect_systemdict:
  * @error:
  *
  * FIXME
@@ -2812,6 +2926,7 @@ hg_vm_eval_from_file(hg_vm_t      *vm,
 		     hg_stack_t   *ostack,
 		     hg_stack_t   *estack,
 		     hg_stack_t   *dstack,
+		     gboolean      protect_systemdict,
 		     GError      **error)
 {
 	gchar *filename;
@@ -2834,7 +2949,7 @@ hg_vm_eval_from_file(hg_vm_t      *vm,
 			goto error;
 		hg_vm_quark_set_default_attributes(vm, &qfile);
 		hg_vm_quark_set_executable(vm, &qfile, TRUE);
-		retval = hg_vm_eval(vm, qfile, ostack, estack, dstack, &err);
+		retval = hg_vm_eval(vm, qfile, ostack, estack, dstack, protect_systemdict, &err);
 		/* may better relying on GC
 		 * hg_vm_mfree(vm, qfile);
 		 */
@@ -2893,6 +3008,7 @@ hg_vm_set_error_code(hg_vm_t *vm,
 /**
  * hg_vm_startjob:
  * @vm:
+ * @lang_level:
  * @initializer:
  * @encapsulated:
  *
@@ -2913,23 +3029,29 @@ hg_vm_startjob(hg_vm_t           *vm,
 	hg_return_val_if_fail (vm != NULL, FALSE);
 
 	/* initialize VM */
-	if (!hg_vm_set_language_level(vm, lang_level)) {
+	if (!hg_vm_setup(vm, lang_level, Qnil, Qnil, Qnil)) {
 		g_warning("Unable to initialize PostScript VM");
 		return FALSE;
 	}
 
-	/* XXX: GC */
+	/* clean up garbages */
+	hg_mem_collect_garbage(vm->mem[HG_VM_MEM_GLOBAL]);
+	hg_mem_collect_garbage(vm->mem[HG_VM_MEM_LOCAL]);
 
 	/* XXX: restore memory */
 
 	if (encapsulated) {
+		hg_mem_snapshot_data_t *gsnap = hg_mem_save_snapshot(vm->mem[HG_VM_MEM_GLOBAL]);
+		hg_mem_snapshot_data_t *lsnap = hg_mem_save_snapshot(vm->mem[HG_VM_MEM_LOCAL]);
+
+		gsnap = lsnap;
 		/* XXX: save memory */
 	}
 
 	/* change the default memory */
 	hg_vm_use_global_mem(vm, FALSE);
 
-	retval = hg_vm_eval_from_file(vm, "hg_init.ps", NULL, NULL, NULL, &err);
+	retval = hg_vm_eval_from_file(vm, "hg_init.ps", NULL, NULL, NULL, FALSE, &err);
 
 	/* make systemdict read-only */
 	dict = _HG_VM_LOCK (vm, vm->qsystemdict, &err);
@@ -2938,6 +3060,7 @@ hg_vm_startjob(hg_vm_t           *vm,
 		return FALSE;
 	}
 	hg_vm_quark_set_writable(vm, &vm->qsystemdict, FALSE);
+	hg_vm_quark_set_writable(vm, &vm->qinternaldict, FALSE);
 	if (!hg_dict_add(dict, HG_QNAME (vm->name, "systemdict"),
 			 vm->qsystemdict,
 			 NULL)) {
@@ -2948,17 +3071,21 @@ hg_vm_startjob(hg_vm_t           *vm,
 
 	if (initializer && initializer[0] == 0) {
 		return TRUE;
-	} else if (initializer) {
-		gchar *s = g_strdup_printf("{(%s)(r)file dup type/filetype eq{cvx exec}if}stopped{$error/newerror get{errordict/handleerror get exec 1 .quit}if}if", initializer);
+	} else {
+		hg_vm_load_plugins(vm);
 
-		retval = hg_vm_eval_from_cstring(vm, s, -1, NULL, NULL, NULL, NULL);
+		if (initializer) {
+			gchar *s = g_strdup_printf("{(%s)(r)file dup type/filetype eq{cvx exec}if}stopped{$error/newerror get{errordict/handleerror get exec 1 .quit}if}if", initializer);
 
-		g_free(s);
+			retval = hg_vm_eval_from_cstring(vm, s, -1, NULL, NULL, NULL, FALSE, NULL);
 
-		return retval;
+			g_free(s);
+
+			return retval;
+		}
 	}
 
-	return (retval ? hg_vm_eval_from_cstring(vm, "systemdict/.loadhistory known{(.hghistory).loadhistory}if start systemdict/.savehistory known{(.hghistory).savehistory}if", -1, NULL, NULL, NULL, NULL) : FALSE);
+	return (retval ? hg_vm_eval_from_cstring(vm, "systemdict/.loadhistory known{(.hghistory).loadhistory}if start systemdict/.savehistory known{(.hghistory).savehistory}if", -1, NULL, NULL, NULL, FALSE, NULL) : FALSE);
 }
 
 /**

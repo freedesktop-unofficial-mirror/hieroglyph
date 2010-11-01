@@ -30,7 +30,7 @@
 false .setglobal
 %% On local memory
 systemdict /errordict known not {
-    systemdict /errordict 10 dict .forceput
+    systemdict /errordict 48 dict .forceput
 } if
 systemdict /userdict known not {
     systemdict /userdict 200 dict .forceput
@@ -516,15 +516,6 @@ end
 serverdict begin
     /exitserver { } def
 end
-
-%%
-%% Initialize the plugins
-%%
-/.initplugins dup where {
-    pop cvx exec
-} {
-    pop
-} ifelse
 
 %%
 %% Set the default value for system parapeters

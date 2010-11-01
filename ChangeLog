@@ -1,6 +1,43 @@
+2010-11-01  Akira TAGOH  <akira@tagoh.org>
+
+	* src/hgs/hgs.c (main): look at the shebang to determine
+	the lang level.
+
+	* lib/hg_init.ps: allocate more spaces for errordict to avoid /dictfull
+	on PS-1.0.
+	get rid of the initialization code for plugins.
+
+	* hieroglyph/hgvm.c (_hg_vm_run_gc): check the null to avoid
+	the unnecessary assertion when running GC prior to set the file
+	to be parsed.
+	(hg_vm_setup): allow to run this function twice with the necessary
+	minimum initialization only.
+	(hg_vm_set_language_level): re-initialize for extra operators has
+	been added in the later language level version.
+	(hg_vm_hold_language_level): new.
+	(hg_vm_startjob): initialize plugins here after loading hg_init.ps
+	to avoid initializing plugins twice when re-initializing operators.
+
+	* hieroglyph/hgscanner.l: add a parser and partially support DSC.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_private_abort):
+	display the current allocation mode too.
+	(_hg_operator_real_private_initplugins): removed.
+	(_hg_operator_real_eq): only raise /invalidaccess after /typecheck
+	finished.
+
 2010-10-27  Akira TAGOH  <akira@tagoh.org>
 
 	* hieroglyph/hgdevice.[ch]: added.
+
+2010-10-22  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_copy):
+	check /typecheck prior to raising /invalidaccess.
+
+	* hieroglyph/Makefile.am: drop a rule to full-rebuild the code
+	by changing made in the built headers. this is unnecessary so far.
+>>>>>>> ab7c0d62864c6469580a640918aa140cc9589001
 
 2010-10-20  Akira TAGOH  <akira@tagoh.org>
 

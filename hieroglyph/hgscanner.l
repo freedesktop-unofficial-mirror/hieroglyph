@@ -33,11 +33,12 @@
 #include "hgmem.h"
 #include "hgint.h"
 #include "hgreal.h"
+#include "hgvm.h"
 #include "hgscanner.h"
 
 
 #define HG_SCANNER_MEM_SIZE	100000
-#define YY_DECL			static gboolean _hg_scanner_yylex(hg_scanner_t *scanner, yyscan_t yyscanner, hg_mem_t *mem, GError **error)
+#define YY_DECL			static gboolean _hg_scanner_yylex(hg_scanner_t *scanner, yyscan_t yyscanner, hg_vm_t *vm, GError **error)
 #define yyterminate()		{BEGIN(INITIAL);return FALSE;}
 #define YY_NO_INPUT
 #define YY_INPUT(_buf_,_result_,_max_size_)			\
@@ -75,7 +76,7 @@ struct _hg_scanner_t {
 
 static gboolean _hg_scanner_yylex(hg_scanner_t  *scanner,
 				  yyscan_t       yyscanner,
-				  hg_mem_t      *mem,
+				  hg_vm_t       *vm,
 				  GError       **error);
 #ifndef yyget_column
 int yyget_column(yyscan_t yyscanner);
@@ -86,7 +87,7 @@ void yyset_column(int column_no, yyscan_t yyscanner);
 %}
 %option nounput noyywrap warn nounistd reentrant
 %option prefix="hgscanner"
-%x STRING HEXSTRING ASCII85
+%x STRING HEXSTRING ASCII85 DSC
 
 CONTROL		[\x04%\(\)/<>\[\]\{\}]
 SPACE		[\t\f\r\n\0 ]
@@ -99,8 +100,40 @@ HEXDIGITS	[0-9a-fA-F]
 	gchar buf_ascii85[8];
 	gint ascii85_counter;
 
-\%.*	{
-	/* XXX: ignoring all of comments so far */
+<DSC>{
+	"!PS-Adobe-"[0-9.]+.*	{
+		if (yyget_lineno(scanner->yyscanner) == 1) {
+			gint i;
+			gdouble v = 0.0;
+			hg_vm_langlevel_t l;
+			GString *s = g_string_new(NULL);
+
+			for (i = 10; i < yyleng; i++) {
+				if ((yytext[i] < '0' || yytext[i] > '9') &&
+				    yytext[i] != '.')
+					break;
+				g_string_append_c(s, yytext[i]);
+			}
+
+			sscanf((gchar *)s->str, "%lf", &v);
+			l = (guint)v - 1;
+			if (l < HG_LANG_LEVEL_1)
+				l = HG_LANG_LEVEL_1;
+			if (l >= HG_LANG_LEVEL_END)
+				l = HG_LANG_LEVEL_3;
+			hg_vm_set_language_level(vm, l);
+		}
+		BEGIN(INITIAL);
+	}
+	.*|\r\n|\r|\n	{
+		BEGIN(INITIAL);
+	}
+	<<EOF>>	{
+		yyterminate();
+	}
+}
+\%	{
+	BEGIN(DSC);
 }
 <STRING>{
 	"("	{
@@ -113,7 +146,7 @@ HEXDIGITS	[0-9a-fA-F]
 			gboolean retval = TRUE;
 
 			BEGIN(INITIAL);
-			scanner->result = hg_string_new_with_value(mem,
+			scanner->result = hg_string_new_with_value(hg_vm_get_mem(vm),
 								   string->str,
 								   string->len,
 								   NULL);
@@ -190,7 +223,7 @@ HEXDIGITS	[0-9a-fA-F]
 		gboolean retval = TRUE;
 
 		BEGIN(INITIAL);
-		scanner->result = hg_string_new_with_value(mem,
+		scanner->result = hg_string_new_with_value(hg_vm_get_mem(vm),
 							   string->str,
 							   string->len,
 							   NULL);
@@ -267,7 +300,7 @@ HEXDIGITS	[0-9a-fA-F]
 		gboolean retval = TRUE;
 
 		BEGIN(INITIAL);
-		scanner->result = hg_string_new_with_value(mem,
+		scanner->result = hg_string_new_with_value(hg_vm_get_mem(vm),
 							   string->str,
 							   string->len,
 							   NULL);
@@ -571,18 +604,18 @@ hg_scanner_attach_file(hg_scanner_t *scanner,
  */
 gboolean
 hg_scanner_scan(hg_scanner_t  *scanner,
-		hg_mem_t      *mem,
+		hg_vm_t       *vm,
 		GError       **error)
 {
 	gboolean retval;
 
 	hg_return_val_with_gerror_if_fail (scanner != NULL, FALSE, error);
-	hg_return_val_with_gerror_if_fail (mem != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error);
 	hg_return_val_if_fail (error != NULL, FALSE);
 
 	scanner->result = Qnil;
 
-	retval = _hg_scanner_yylex(scanner, scanner->yyscanner, mem, error);
+	retval = _hg_scanner_yylex(scanner, scanner->yyscanner, vm, error);
 	hg_file_set_lineno(scanner->infile, yyget_lineno(scanner->yyscanner));
 
 	return retval;
