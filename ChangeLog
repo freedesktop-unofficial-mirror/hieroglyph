@@ -2,6 +2,11 @@
 
 	* hieroglyph/hgoperator.c (_hg_operator_real_put): don't drop
 	the objects from the stack when any error happened.
+	(_hg_operator_real_lineto): implemented.
+	(_hg_operator_real_moveto): implemented.
+	(_hg_operator_real_newpath): implemented.
+	(_hg_operator_real_rlineto): implemented.
+	(_hg_operator_real_rmoveto): implemented.
 
 	* plugins/unittest/unittest-main.c (_unittest_load): show the error name.
 

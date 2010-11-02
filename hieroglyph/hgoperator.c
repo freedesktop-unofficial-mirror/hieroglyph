@@ -29,11 +29,13 @@
 #include "hgerror.h"
 #include "hgbool.h"
 #include "hgdict.h"
+#include "hggstate.h"
 #include "hgint.h"
 #include "hgmark.h"
 #include "hgmem.h"
 #include "hgname.h"
 #include "hgnull.h"
+#include "hgpath.h"
 #include "hgquark.h"
 #include "hgreal.h"
 #include "hgsnapshot.h"
@@ -4365,7 +4367,62 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (lineto);
+/* <x> <y> lineto - */
+DEFUNC_OPER (lineto)
+G_STMT_START {
+	hg_quark_t arg0, arg1, q;
+	gdouble dx, dy;
+	hg_gstate_t *gstate;
+	hg_path_t *path;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+
+	if (HG_IS_QINT (arg0)) {
+		dx = HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg0)) {
+		dx = HG_REAL (arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (HG_IS_QINT (arg1)) {
+		dy = HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg1)) {
+		dy = HG_REAL (arg1);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+
+	gstate = HG_VM_LOCK (vm, vm->qgstate, error);
+	if (gstate == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	q = hg_gstate_get_path(gstate);
+	path = HG_VM_LOCK (vm, q, error);
+	if (path == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		goto error;
+	}
+	if (!hg_path_get_current_point(path, NULL, NULL)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_nocurrentpoint);
+		goto error2;
+	}
+	retval = hg_path_lineto(path, dx, dy);
+
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+  error2:
+	HG_VM_UNLOCK (vm, q);
+  error:
+	HG_VM_UNLOCK (vm, vm->qgstate);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-2, 0, 0);
+DEFUNC_OPER_END
 
 /* <num> ln <real> */
 DEFUNC_OPER (ln)
@@ -4607,7 +4664,64 @@ VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (monitor);
-DEFUNC_UNIMPLEMENTED_OPER (moveto);
+
+/* <x> <y> moveto - */
+DEFUNC_OPER (moveto)
+G_STMT_START {
+	hg_quark_t arg0, arg1, q;
+	gdouble dx, dy;
+	hg_gstate_t *gstate;
+	hg_path_t *path;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+
+	if (HG_IS_QINT (arg0)) {
+		dx = HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg0)) {
+		dx = HG_REAL (arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (HG_IS_QINT (arg1)) {
+		dy = HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg1)) {
+		dy = HG_REAL (arg1);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+
+	gstate = HG_VM_LOCK (vm, vm->qgstate, error);
+	if (gstate == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	q = hg_gstate_get_path(gstate);
+	if (q == Qnil) {
+		path = NULL;
+		q = hg_path_new(hg_vm_get_mem(vm), (gpointer *)&path);
+	} else {
+		path = HG_VM_LOCK (vm, q, error);
+	}
+	if (path == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		goto error;
+	}
+	retval = hg_path_moveto(path, dx, dy);
+
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+
+	HG_VM_UNLOCK (vm, q);
+  error:
+	HG_VM_UNLOCK (vm, vm->qgstate);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-2, 0, 0);
+DEFUNC_OPER_END
 
 /* <num1> <num2> mul <product> */
 DEFUNC_OPER (mul)
@@ -4779,7 +4893,30 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (newpath);
+/* - newpath - */
+DEFUNC_OPER (newpath)
+G_STMT_START {
+	hg_quark_t q;
+	hg_gstate_t *gstate;
+
+	q = hg_path_new(hg_vm_get_mem(vm), NULL);
+	if (q == Qnil) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	gstate = HG_VM_LOCK (vm, vm->qgstate, error);
+	if (gstate == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	hg_gstate_set_path(gstate, q);
+
+	HG_VM_UNLOCK (vm, vm->qgstate);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
 
 /* <array> noaccess <array>
  * <packedarray> noaccess <packedarray>
@@ -5265,8 +5402,120 @@ DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (reversepath);
 DEFUNC_UNIMPLEMENTED_OPER (revision);
-DEFUNC_UNIMPLEMENTED_OPER (rlineto);
-DEFUNC_UNIMPLEMENTED_OPER (rmoveto);
+
+/* <dx> <dy> rlineto - */
+DEFUNC_OPER (rlineto)
+G_STMT_START {
+	hg_quark_t arg0, arg1, q;
+	gdouble dx, dy;
+	hg_gstate_t *gstate;
+	hg_path_t *path;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+
+	if (HG_IS_QINT (arg0)) {
+		dx = HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg0)) {
+		dx = HG_REAL (arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (HG_IS_QINT (arg1)) {
+		dy = HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg1)) {
+		dy = HG_REAL (arg1);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+
+	gstate = HG_VM_LOCK (vm, vm->qgstate, error);
+	if (gstate == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	q = hg_gstate_get_path(gstate);
+	path = HG_VM_LOCK (vm, q, error);
+	if (path == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		goto error;
+	}
+	if (!hg_path_get_current_point(path, NULL, NULL)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_nocurrentpoint);
+		goto error2;
+	}
+	retval = hg_path_rlineto(path, dx, dy);
+
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+  error2:
+	HG_VM_UNLOCK (vm, q);
+  error:
+	HG_VM_UNLOCK (vm, vm->qgstate);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-2, 0, 0);
+DEFUNC_OPER_END
+
+/* <dx> <dy> rmoveto - */
+DEFUNC_OPER (rmoveto)
+G_STMT_START {
+	hg_quark_t arg0, arg1, q;
+	gdouble dx, dy;
+	hg_gstate_t *gstate;
+	hg_path_t *path;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+
+	if (HG_IS_QINT (arg0)) {
+		dx = HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg0)) {
+		dx = HG_REAL (arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (HG_IS_QINT (arg1)) {
+		dy = HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg1)) {
+		dy = HG_REAL (arg1);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+
+	gstate = HG_VM_LOCK (vm, vm->qgstate, error);
+	if (gstate == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	q = hg_gstate_get_path(gstate);
+	path = HG_VM_LOCK (vm, q, error);
+	if (path == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		goto error;
+	}
+	if (!hg_path_get_current_point(path, NULL, NULL)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_nocurrentpoint);
+		goto error2;
+	}
+	retval = hg_path_rmoveto(path, dx, dy);
+
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+  error2:
+	HG_VM_UNLOCK (vm, q);
+  error:
+	HG_VM_UNLOCK (vm, vm->qgstate);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-2, 0, 0);
+DEFUNC_OPER_END
 
 /* <any> ... <n> <j> roll <any> ... */
 DEFUNC_OPER (roll)
