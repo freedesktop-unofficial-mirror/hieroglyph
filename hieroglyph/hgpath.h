@@ -126,7 +126,7 @@ gboolean            hg_path_arcto            (hg_path_t      *path,
 					      gdouble         x2,
 					      gdouble         y2,
 					      gdouble         r,
-					      gdouble        *tp[4]);
+					      gdouble         tp[4]);
 
 G_END_DECLS
 

@@ -171,7 +171,7 @@ hg_path_add(hg_path_t      *path,
 	    gdouble         x,
 	    gdouble         y)
 {
-	hg_path_node_t **node;
+	hg_path_node_t *node;
 
 	hg_return_val_if_fail (path != NULL, FALSE);
 	hg_return_val_if_fail (type < HG_PATH_END, FALSE);
@@ -182,9 +182,9 @@ hg_path_add(hg_path_t      *path,
 				    path->qnode,
 				    FALSE);
 
-	node[path->length]->type = type;
-	node[path->length]->x = x;
-	node[path->length]->y = y;
+	node[path->length].type = type;
+	node[path->length].x = x;
+	node[path->length].y = y;
 
 	path->length++;
 
@@ -221,7 +221,7 @@ hg_path_get_current_point(hg_path_t *path,
 			  gdouble   *y)
 {
 	gboolean retval = FALSE;
-	hg_path_node_t **node;
+	hg_path_node_t *node;
 	gsize i;
 
 	hg_return_val_if_fail (path != NULL, FALSE);
@@ -241,42 +241,42 @@ hg_path_get_current_point(hg_path_t *path,
 				    FALSE);
 
 	for (i = path->estimated_point; i < path->length; i++) {
-		switch (node[i]->type) {
+		switch (node[i].type) {
 		    case HG_PATH_SETBBOX:
 			    break;
 		    case HG_PATH_CURVETO:
 			    if ((i + 2) >= path->length ||
-				node[i+1]->type != node[i]->type ||
-				node[i+2]->type != node[i]->type)
+				node[i+1].type != node[i].type ||
+				node[i+2].type != node[i].type)
 				    goto fail;
 			    i += 2;
 		    case HG_PATH_LINETO:
 			    if (!retval)
 				    goto fail;
 		    case HG_PATH_MOVETO:
-			    path->x = node[i]->x;
-			    path->y = node[i]->y;
+			    path->x = node[i].x;
+			    path->y = node[i].y;
 			    retval = TRUE;
 			    break;
 		    case HG_PATH_RCURVETO:
 			    if ((i + 2) >= path->length ||
-				node[i+1]->type != node[i]->type ||
-				node[i+2]->type != node[i]->type)
+				node[i+1].type != node[i].type ||
+				node[i+2].type != node[i].type)
 				    goto fail;
 			    i += 2;
 		    case HG_PATH_RMOVETO:
 		    case HG_PATH_RLINETO:
 			    if (!retval)
 				    goto fail;
-			    path->x += node[i]->x;
-			    path->y += node[i]->y;
+			    path->x += node[i].x;
+			    path->y += node[i].y;
 			    retval = TRUE;
 			    break;
 		    case HG_PATH_CLOSEPATH:
 		    case HG_PATH_UCACHE:
 			    break;
 		    default:
-			    g_warning("Unknown path type to estimate the current point: %d", node[i]->type);
+			    g_warning("Unknown path type to estimate the current point: %d", node[i].type);
 			    break;
 		}
 	}
@@ -576,7 +576,7 @@ hg_path_arcto(hg_path_t *path,
 	      gdouble    x2,
 	      gdouble    y2,
 	      gdouble    r,
-	      gdouble   *tp[4])
+	      gdouble    tp[4])
 {
 	gdouble x0 = 0.0, y0 = 0.0;
 	gboolean retval = !hg_path_get_current_point(path, &x0, &y0);
@@ -595,16 +595,16 @@ hg_path_arcto(hg_path_t *path,
 		gdouble _t2b_ = common * _ab_ / (_bc_ * a_x_c);
 		gdouble ca = fabs(_t1b_ / _bc_);
 		gdouble cc = fabs(_t2b_ / _ab_);
-		gdouble t1x = d_ab_x * ca + x2;
-		gdouble t1y = d_ab_y * ca + y2;
-		gdouble t2x = d_bc_x * cc + x2;
-		gdouble t2y = d_bc_y * cc + y2;
+		gdouble t1x = d_ab_x * ca + x1;
+		gdouble t1y = d_ab_y * ca + y1;
+		gdouble t2x = d_bc_x * cc + x1;
+		gdouble t2y = d_bc_y * cc + y1;
 
 		if (tp) {
-			*tp[0] = t1x;
-			*tp[1] = t1y;
-			*tp[2] = t2x;
-			*tp[3] = t2y;
+			tp[0] = t1x;
+			tp[1] = t1y;
+			tp[2] = t2x;
+			tp[3] = t2y;
 		}
 
 		if (HG_REAL_IS_ZERO (t1y * x0 - y0 * t1x)) {
