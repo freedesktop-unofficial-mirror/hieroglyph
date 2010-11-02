@@ -5029,9 +5029,11 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	hg_stack_drop(ostack, error);
-	hg_stack_drop(ostack, error);
-	hg_stack_drop(ostack, error);
+	if (retval) {
+		hg_stack_drop(ostack, error);
+		hg_stack_drop(ostack, error);
+		hg_stack_drop(ostack, error);
+	}
 } G_STMT_END;
 VALIDATE_STACK_SIZE (-3, 0, 0);
 DEFUNC_OPER_END

@@ -1,5 +1,8 @@
 2010-11-02  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgoperator.c (_hg_operator_real_put): don't drop
+	the objects from the stack when any error happened.
+
 	* plugins/unittest/unittest-main.c (_unittest_load): show the error name.
 
 	* hieroglyph/hgvm.c (_hg_vm_stack_real_dump): display the allocation
