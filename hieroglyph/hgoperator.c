@@ -5981,7 +5981,106 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (readline);
+/* <file> <string> readline <substring> <bool> */
+DEFUNC_OPER (readline)
+G_STMT_START {
+	hg_quark_t arg0, arg1, q, qs;
+	hg_file_t *f = NULL;
+	hg_string_t *s = NULL;
+	gchar c[2];
+	gboolean eol = FALSE;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+
+	if (!HG_IS_QFILE (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!HG_IS_QSTRING (arg1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!hg_vm_quark_is_readable(vm, &arg0) ||
+	    !hg_vm_quark_is_writable(vm, &arg1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+
+	f = HG_VM_LOCK (vm, arg0, error);
+	if (f == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	s = HG_VM_LOCK (vm, arg1, error);
+	if (s == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		goto finalize;
+	}
+
+	hg_string_clear(s);
+
+	while (!hg_file_is_eof(f)) {
+		if (hg_string_length(s) >= hg_string_maxlength(s)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+			goto finalize;
+		}
+	  retry:
+		hg_file_read(f, c, sizeof (gchar), 1, error);
+		if (c[0] == '\r') {
+			if (eol)
+				goto rollback;
+			eol = TRUE;
+			goto retry;
+		} else if (c[0] == '\n') {
+			break;
+		}
+		if (eol) {
+		  rollback:
+			hg_file_seek(f, -1, HG_FILE_POS_CURRENT, error);
+			break;
+		}
+		hg_string_append_c(s, c[0], error);
+	}
+	if (hg_file_is_eof(f)) {
+		q = HG_QBOOL (FALSE);
+	} else {
+		q = HG_QBOOL (TRUE);
+	}
+	if (hg_string_maxlength(s) > hg_string_length(s)) {
+		qs = hg_string_make_substring(s, 0, hg_string_length(s) - 1, NULL, error);
+		if (qs == Qnil) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			goto finalize;
+		}
+		hg_vm_quark_set_attributes(vm, &qs,
+					   hg_vm_quark_is_readable(vm, &arg1),
+					   hg_vm_quark_is_writable(vm, &arg1),
+					   hg_vm_quark_is_executable(vm, &arg1),
+					   hg_vm_quark_is_editable(vm, &arg1));
+	} else {
+		qs = arg1;
+	}
+	if (qs == arg1)
+		hg_stack_pop(ostack, error);
+	else
+		hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+
+	STACK_PUSH (ostack, qs);
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+  finalize:
+	if (f)
+		HG_VM_UNLOCK (vm, arg0);
+	if (s)
+		HG_VM_UNLOCK (vm, arg1);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
 
 /* -array- readonly -array-
  * -packedarray- readonly -packedarray-
