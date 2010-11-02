@@ -52,9 +52,9 @@ TDEF (new)
 	hg_quark_t q;
 
 	q = HG_QBOOL(TRUE);
-	fail_unless(q == 0xa400000001, "Unexpected result to create a quark for boolean: %lx", q);
+	fail_unless(q == 0x14400000001, "Unexpected result to create a quark for boolean: %lx", q);
 	q = HG_QBOOL(FALSE);
-	fail_unless(q == 0xa400000000, "Unexpected result to create a quark for boolean");
+	fail_unless(q == 0x14400000000, "Unexpected result to create a quark for boolean");
 } TEND
 
 /****/
