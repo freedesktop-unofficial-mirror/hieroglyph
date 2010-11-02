@@ -62,6 +62,7 @@ void                hg_stack_roll             (hg_stack_t                *stack,
 void                hg_stack_foreach          (hg_stack_t                *stack,
                                                hg_array_traverse_func_t   func,
                                                gpointer                   data,
+					       gboolean                   is_forwarded,
                                                GError                   **error);
 
 G_END_DECLS

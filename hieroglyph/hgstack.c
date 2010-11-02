@@ -454,6 +454,7 @@ hg_stack_roll(hg_stack_t  *stack,
  * @stack:
  * @func:
  * @data:
+ * @is_forwarded:
  * @error:
  *
  * FIXME
@@ -462,6 +463,7 @@ void
 hg_stack_foreach(hg_stack_t                *stack,
 		 hg_array_traverse_func_t   func,
 		 gpointer                   data,
+		 gboolean                   is_forwarded,
 		 GError                   **error)
 {
 	hg_list_t *l;
@@ -469,8 +471,16 @@ hg_stack_foreach(hg_stack_t                *stack,
 	hg_return_if_fail (stack != NULL);
 	hg_return_if_fail (func != NULL);
 
-	for (l = stack->last_stack; l != NULL; l = l->prev) {
+	if (is_forwarded)
+		l = stack->stack;
+	else
+		l = stack->last_stack;
+	while (l != NULL) {
 		if (!func(stack->o.mem, l->data, data, error))
 			break;
+		if (is_forwarded)
+			l = l->next;
+		else
+			l = l->prev;
 	}
 }

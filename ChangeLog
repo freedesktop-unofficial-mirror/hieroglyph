@@ -1,5 +1,12 @@
 2010-11-02  Akira TAGOH  <akira@tagoh.org>
 
+	* hieroglyph/hgvm.c (_hg_vm_stack_real_dump): display the allocation
+	type.
+	(_hg_vm_rs_real_dump): likewise.
+
+	* hieroglyph/hgstack.c (hg_stack_foreach): support the forwarding
+	traverse.
+
 	* hieroglyph/hgpath.[ch]: new.
 
 	* hieroglyph/hggstate.[ch]: new.

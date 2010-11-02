@@ -208,14 +208,25 @@ _hg_vm_stack_real_dump(hg_mem_t    *mem,
 	hg_quark_t q;
 	hg_string_t *s = NULL;
 	gchar *cstr = NULL;
+	gchar mc;
 
 	q = hg_vm_quark_to_string(ddata->vm, qdata, TRUE, (gpointer *)&s, error);
 	if (q != Qnil)
 		cstr = hg_string_get_cstr(s);
 
-	hg_file_append_printf(ddata->ofile, "0x%016lx|%-12s| %c%c%c|%s\n",
+	if (hg_quark_is_simple_object(qdata) ||
+	    HG_IS_QOPER (qdata)) {
+		mc = '-';
+	} else {
+		guint id;
+
+		id = hg_mem_get_id(hg_vm_get_mem_from_quark(ddata->vm, qdata));
+		mc = (id == ddata->vm->mem_id[HG_VM_MEM_GLOBAL] ? 'G' : id == ddata->vm->mem_id[HG_VM_MEM_LOCAL] ? 'L' : '?');
+	}
+	hg_file_append_printf(ddata->ofile, "0x%016lx|%-12s|%c| %c%c%c|%s\n",
 			      qdata,
 			      hg_quark_get_type_name(qdata),
+			      mc,
 			      (hg_quark_is_readable(qdata) ? 'r' : '-'),
 			      (hg_quark_is_writable(qdata) ? 'w' : '-'),
 			      (hg_quark_is_executable(qdata) ? 'x' : '-'),
@@ -242,15 +253,26 @@ _hg_vm_rs_real_dump(hg_mem_t    *mem,
 	hg_quark_t q;
 	hg_string_t *s = NULL;
 	gchar *cstr = NULL;
+	gchar mc;
 
 	q = hg_vm_quark_to_string(ddata->vm, qkey, TRUE, (gpointer *)&s, error);
 	if (q != Qnil)
 		cstr = hg_string_get_cstr(s);
 
-	hg_file_append_printf(ddata->ofile, "0x%016lx|%-12s|%6d| %c%c%c|%s\n",
+	if (hg_quark_is_simple_object(qkey) ||
+	    HG_IS_QOPER (qkey)) {
+		mc = '-';
+	} else {
+		guint id;
+
+		id = hg_mem_get_id(hg_vm_get_mem_from_quark(ddata->vm, qkey));
+		mc = (id == ddata->vm->mem_id[HG_VM_MEM_GLOBAL] ? 'G' : id == ddata->vm->mem_id[HG_VM_MEM_LOCAL] ? 'L' : '?');
+	}
+	hg_file_append_printf(ddata->ofile, "0x%016lx|%-12s|%6d|%c| %c%c%c|%s\n",
 			      qkey,
 			      hg_quark_get_type_name(qkey),
 			      GPOINTER_TO_INT (HGQUARK_TO_POINTER (qval)),
+			      mc,
 			      (hg_quark_is_readable(qkey) ? 'r' : '-'),
 			      (hg_quark_is_writable(qkey) ? 'w' : '-'),
 			      (hg_quark_is_executable(qkey) ? 'x' : '-'),
@@ -2227,7 +2249,7 @@ hg_vm_dict_lookup(hg_vm_t    *vm,
 	ldata.vm = vm;
 	ldata.result = Qnil;
 	ldata.qname = quark;
-	hg_stack_foreach(dstack, _hg_vm_real_dict_lookup, &ldata, &err);
+	hg_stack_foreach(dstack, _hg_vm_real_dict_lookup, &ldata, FALSE, &err);
 	retval = ldata.result;
   error:
 	if (err) {
@@ -2283,7 +2305,7 @@ hg_vm_dict_remove(hg_vm_t    *vm,
 	ldata.result = FALSE;
 	ldata.qname = qname;
 	ldata.remove_all = remove_all;
-	hg_stack_foreach(dstack, _hg_vm_real_dict_remove, &ldata, &err);
+	hg_stack_foreach(dstack, _hg_vm_real_dict_remove, &ldata, FALSE, &err);
 
   error:
 	if (err) {
@@ -2800,7 +2822,7 @@ hg_vm_eval(hg_vm_t     *vm,
 
 		if (!dstack) {
 			ps_dstack = dstack = hg_vm_stack_new(vm, 65535);
-			hg_stack_foreach(vm->stacks[HG_VM_STACK_DSTACK], _hg_vm_dup_stack, ps_dstack, error);
+			hg_stack_foreach(vm->stacks[HG_VM_STACK_DSTACK], _hg_vm_dup_stack, ps_dstack, TRUE, error);
 		}
 
 	  fini_systemdict:
@@ -3483,9 +3505,9 @@ hg_vm_stack_dump(hg_vm_t    *vm,
 	data.stack = stack;
 	data.ofile = output;
 
-	hg_file_append_printf(output, "       value      |    type    |attr|content\n");
-	hg_file_append_printf(output, "----------========+------------+----+---------------------------------\n");
-	hg_stack_foreach(stack, _hg_vm_stack_real_dump, &data, NULL);
+	hg_file_append_printf(output, "       value      |    type    |M|attr|content\n");
+	hg_file_append_printf(output, "----------========+------------+-+----+---------------------------------\n");
+	hg_stack_foreach(stack, _hg_vm_stack_real_dump, &data, FALSE, NULL);
 }
 
 /**
@@ -3516,8 +3538,8 @@ hg_vm_reserved_spool_dump(hg_vm_t   *vm,
 	data.mem = mem;
 	data.ofile = ofile;
 
-	hg_file_append_printf(ofile, "       value      |    type    |refcnt|attr|content\n");
-	hg_file_append_printf(ofile, "----------========+------------+------+----+---------------------------------\n");
+	hg_file_append_printf(ofile, "       value      |    type    |refcnt|M|attr|content\n");
+	hg_file_append_printf(ofile, "----------========+------------+------+-+----+---------------------------------\n");
 	hg_mem_reserved_spool_foreach(mem, _hg_vm_rs_real_dump, &data, NULL);
 }
 
