@@ -121,7 +121,8 @@ HEXDIGITS	[0-9a-fA-F]
 				l = HG_LANG_LEVEL_1;
 			if (l >= HG_LANG_LEVEL_END)
 				l = HG_LANG_LEVEL_3;
-			hg_vm_set_language_level(vm, l);
+			if (hg_vm_get_language_level(vm) != l)
+				hg_vm_set_language_level(vm, l);
 		}
 		BEGIN(INITIAL);
 	}
