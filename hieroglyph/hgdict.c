@@ -1057,10 +1057,16 @@ hg_dict_add(hg_dict_t   *dict,
 
 		HG_DICT_NODE_UNLOCK_NO_LABEL (dict->o.mem, qnode, qnode);
 	}
-	m = hg_mem_get(hg_quark_get_mem_id(qkey));
-	hg_mem_reserved_spool_remove(m, qkey);
-	m = hg_mem_get(hg_quark_get_mem_id(qval));
-	hg_mem_reserved_spool_remove(m, qval);
+	if (!hg_quark_is_simple_object(qkey) &&
+	    hg_quark_get_type(qkey) != HG_TYPE_OPER) {
+		m = hg_mem_get(hg_quark_get_mem_id(qkey));
+		hg_mem_reserved_spool_remove(m, qkey);
+	}
+	if (!hg_quark_is_simple_object(qval) &&
+	    hg_quark_get_type(qval) != HG_TYPE_OPER) {
+		m = hg_mem_get(hg_quark_get_mem_id(qval));
+		hg_mem_reserved_spool_remove(m, qval);
+	}
   finalize:
 	if (err) {
 		if (error) {
