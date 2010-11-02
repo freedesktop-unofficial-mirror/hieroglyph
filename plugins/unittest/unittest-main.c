@@ -230,7 +230,7 @@ _unittest_load(hg_plugin_t  *plugin,
 	hg_vm_use_global_mem(vm, is_global);
 
 	estack = hg_vm_stack_new(vm, 256);
-	retval = hg_vm_eval_from_cstring(vm, "{(hg_unittest.ps) runlibfile} stopped {(** Unable to initialize the unittest extension plugin\n) =} if", -1,
+	retval = hg_vm_eval_from_cstring(vm, "{(hg_unittest.ps) runlibfile} stopped {(** Unable to initialize the unittest extension plugin: reason: /) $error /errorname get 256 string cvs .concatstring = (\n) = } if", -1,
 					 NULL, estack, NULL, TRUE, error);
 	hg_stack_free(estack);
 
