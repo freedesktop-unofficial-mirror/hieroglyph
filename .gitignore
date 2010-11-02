@@ -1,4 +1,6 @@
 *\.autogen_bak
+*\.bz2
+*\.gz
 *\.la
 *\.lo
 *\.o

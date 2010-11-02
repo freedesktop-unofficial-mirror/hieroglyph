@@ -1,0 +1,1659 @@
+2010-11-02  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_put): don't drop
+	the objects from the stack when any error happened.
+	(_hg_operator_real_lineto): implemented.
+	(_hg_operator_real_moveto): implemented.
+	(_hg_operator_real_newpath): implemented.
+	(_hg_operator_real_rlineto): implemented.
+	(_hg_operator_real_rmoveto): implemented.
+
+	* plugins/unittest/unittest-main.c (_unittest_load): show the error name.
+
+	* hieroglyph/hgvm.c (_hg_vm_stack_real_dump): display the allocation
+	type.
+	(_hg_vm_rs_real_dump): likewise.
+
+	* hieroglyph/hgstack.c (hg_stack_foreach): support the forwarding
+	traverse.
+
+	* hieroglyph/hgpath.[ch]: new.
+
+	* hieroglyph/hggstate.[ch]: new.
+
+2010-11-01  Akira TAGOH  <akira@tagoh.org>
+
+	* src/hgs/hgs.c (main): look at the shebang to determine
+	the lang level.
+
+	* lib/hg_init.ps: allocate more spaces for errordict to avoid /dictfull
+	on PS-1.0.
+	get rid of the initialization code for plugins.
+
+	* hieroglyph/hgvm.c (_hg_vm_run_gc): check the null to avoid
+	the unnecessary assertion when running GC prior to set the file
+	to be parsed.
+	(hg_vm_setup): allow to run this function twice with the necessary
+	minimum initialization only.
+	(hg_vm_set_language_level): re-initialize for extra operators has
+	been added in the later language level version.
+	(hg_vm_hold_language_level): new.
+	(hg_vm_startjob): initialize plugins here after loading hg_init.ps
+	to avoid initializing plugins twice when re-initializing operators.
+
+	* hieroglyph/hgscanner.l: add a parser and partially support DSC.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_private_abort):
+	display the current allocation mode too.
+	(_hg_operator_real_private_initplugins): removed.
+	(_hg_operator_real_eq): only raise /invalidaccess after /typecheck
+	finished.
+
+2010-10-27  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgdevice.[ch]: added.
+
+2010-10-22  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_copy):
+	check /typecheck prior to raising /invalidaccess.
+
+	* hieroglyph/Makefile.am: drop a rule to full-rebuild the code
+	by changing made in the built headers. this is unnecessary so far.
+>>>>>>> ab7c0d62864c6469580a640918aa140cc9589001
+
+2010-10-20  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_rand): implemented.
+	(_hg_operator_real_srand): implemented.
+	(_hg_operator_real_rrand): implemented.
+
+	* hieroglyph/hgvm.c (hg_vm_set_rand_seed): new.
+	(hg_vm_get_rand_seed): new.
+	(hg_vm_rand_int): new.
+
+2010-10-19  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_cvn): inherit an exec bit too.
+
+	* lib/hg_init_l2.ps (setglobal): defined as an alias of .setglobal.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_cvr): just ignore the real
+	number on the stack if given as parameter.
+
+2010-10-16  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_invertmatrix): implemented.
+	(_hg_operator_real_ln): implemented.
+	(_hg_operator_real_log): implemented.
+	(_hg_operator_real_mul): implemented.
+	(_hg_operator_real_neg): implemented.
+
+	* hieroglyph/hgarray.c (hg_array_matrix_invert): new.
+
+	* lib/hg_init.ps (initgraphics): defined.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_flushfile): implemented.
+
+	* hieroglyph/hgfile.c (_hg_file_io_real_file_flush): skip data till
+	EOF detected if the file is open as readable.
+	(_hg_file_io_real_buffered_flush): likewise.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_cvn): implemented.
+	(_hg_operator_real_cvr): implemented.
+	(_hg_operator_real_private_stringcvs): push (--nostringval--)
+	if the given object isn't either of numeric, boolean, string, a name
+	nor a operator.
+	(_hg_operator_real_div): implemented.
+	(_hg_operator_real_exp): implemented.
+
+2010-10-08  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_cvrs): initialize the value.
+	check the write access of the string object.
+	fix wrong result.
+
+	* hieroglyph/hgstring.c (hg_string_ncompare): check if strings contains
+	nil prior to raise an exception by locking.
+
+	* hieroglyph/hgarray.c (hg_array_matrix_multiply): only check
+	the array size for result.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_concatmatrix): do not
+	check the integrity of the matrix for the 3rd argument, which would
+	store the result.
+
+	* hieroglyph/hgscanner.l: allow a kind of .5 for parsing a float.
+
+	* hieroglyph/hgvm.c (hg_vm_quark_set_editable): new.
+	(hg_vm_quark_is_editable): new.
+	(hg_vm_main_loop): abort if the loop detected in the exec stack.
+
+	* hieroglyph/hgquark.h (hg_quark_set_editable): new.
+	(hg_quark_is_editable): new.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_executeonly): implemented.
+
+	* hieroglyph/hgvm.c (hg_vm_quark_set_default_attributes): renamed
+	from hg_vm_quark_set_attributes.
+	(hg_vm_quark_set_attributes): newly implemented.
+	(hg_vm_quark_set_readable): new.
+	(hg_vm_quark_is_readable): new.
+	(hg_vm_quark_set_writable): new.
+	(hg_vm_quark_is_writable): new.
+	(hg_vm_quark_set_executable): new.
+	(hg_vm_quark_is_executable): new.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_dict): set default
+	attributes to the dict object.
+	(_hg_operator_real_forall): inherits the object attributes when cloning.
+	(_hg_operator_real_noaccess): implemented.
+
+	* hieroglyph/hgobject.h (HG_PROTO_VTABLE_ATTRIBUTES): new macro.
+	(HG_DEFINE_VTABLE_WITH): renamed from HG_DEFINE_VTABLE_WITH_FREE.
+
+	* hieroglyph/hgobject.c (hg_object_set_attributes): new.
+	(hg_object_get_attributes): new.
+
+	* hieroglyph/hgdict.c (_hg_object_dict_set_attributes): have attributes
+	per object but not per quark.
+	(_hg_object_dict_get_attributes): likewise.
+
+2010-10-07  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgscanner.l (YY_INPUT): a hack to avoid reaching ECHO
+	macro when EOF detected.
+
+	* hieroglyph/hgvm.c (hg_vm_eval_from_cstring): allow containing a null
+	character in eval cstring.
+
+	* hieroglyph/hgstring.h (HG_QSTRING_LEN): new.
+
+	* hieroglyph/hgstring.c (_hg_object_string_copy): copy a null
+	character too.
+
+2010-10-06  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgstring.c (hg_string_get_cstr): allow copying a null
+	character.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_dict): check the range.
+
+	* hieroglyph/hgquark.h (hg_quark_compare): compare the real values
+	properly.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_concatmatrix):
+	check the object type.
+
+2010-10-01  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgvm.c (hg_vm_stepi_in_exec_array): no need to find out
+	a mark to build a procedure because the operand stack is saved before
+	starting to have a look.
+	(hg_vm_step_in_exec_array): get rid of pushing the unnecessary marker.
+
+2010-09-28  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgvm.c (_hg_vm_run_gc): mark a lineedit object as well.
+
+	* hieroglyph/hglineedit.l (hg_lineedit_gc_mark): new.
+
+	* hieroglyph/hgarray.c (_hg_object_array_copy): fix possibly
+	a memory leak.
+
+	* hieroglyph/hgstring.c (hg_string_free): likewise.
+	(hg_string_make_substring): likewise.
+
+2010-09-27  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_bind): unlock the object
+	exactly.
+
+2010-09-21  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_concatmatrix): implemented.
+	(_hg_operator_real_cos): implemented.
+	(_hg_operator_real_currentfile): implemented.
+	(_hg_operator_real_cvi): implemented.
+	(_hg_operator_real_cvlit): implemented.
+
+	* hieroglyph/hgarray.c (hg_array_matrix_new): new.
+	(hg_array_is_matrix): new.
+	(hg_array_matrix_multiply): new.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_cleardictstack): implemented.
+
+2010-09-20  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_ceiling): implemented.
+
+2010-09-19  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_bytesavailable): implemented.
+
+2010-09-11  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_bitshift): implemented.
+
+2010-09-10  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgvm.c (hg_vm_get_io): set correct permissions.
+	(hg_vm_setup): likewise.
+
+	* hieroglyph/hgquark.h (hg_quark_new): set permissions.
+	(hg_quark_set_executable): ignore Qnil
+	(hg_quark_set_readable): likewise.
+	(hg_quark_set_writable): likewise.
+	(hg_quark_set_access_bits): likewise.
+	(hg_quark_set_mem_id): likewise.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_private_forceput):
+	do not check the writable permission.
+	(_hg_operator_real_bind): make the procedure in Array a read-only.
+	(_hg_operator_real_copy): copy the permissions too.
+	(_hg_operator_real_getinterval): likewise.
+	(_hg_operator_real_dictstack): likewise.
+	(_hg_operator_real_execstack): likewise.
+
+2010-09-07  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_abs): implemented.
+	(_hg_operator_real_and): implemented.
+	(_hg_operator_real_atan): implemented.
+
+2010-09-02  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgreal.h (HG_REAL_GE): new.
+	(HG_REAL_LE): new
+
+2010-08-29  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgvm.c (hg_vm_eval_from_cstring): don't free the string
+	to avoid a crash.
+
+2010-08-23  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgscanner.l: use the clean exp10 array if the numeric
+	is certainly in the range of the integer.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_add): check the overflow
+	and the underflow and convert to the real if it does.
+
+	* tests/ps/test-0base.ps: add a testcase.
+
+	* hieroglyph/hgvm.c (hg_vm_stepi): do not copy an array if it doesn't
+	have an exec bit turned on.
+
+	* plugins/unittest/unittest-main.c (_plugin_real_private_validatetestresult):
+	implemented.
+
+	* hieroglyph/hgvm.c (hg_vm_quark_compare_content): new.
+
+	* hieroglyph/hgstring.c (_hg_object_string_compare): new.
+
+	* hieroglyph/hgstack.c (_hg_object_stack_compare): new.
+
+	* hieroglyph/hgsnapshot.c (_hg_object_snapshot_compare): new.
+
+	* hieroglyph/hgobject.c (hg_object_compare): new.
+
+	* hieroglyph/hgfile.c (_hg_object_file_compare): new.
+
+	* hieroglyph/hgdict.c (_hg_object_dict_compare): new.
+
+	* hieroglyph/hgarray.c (_hg_object_array_compare): new.
+
+	* plugins/unittest: add a unittest plugin.
+
+	* lib/hg_init.ps (runlibfile): fix /stackunderflow.
+
+	* hieroglyph/hgvm.c (hg_vm_stack_dump): disable growing heaps so far.
+	(hg_vm_reserved_spool_dump): likewise.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_protected_dicttomark):
+	implemented.
+	(_hg_operator_real_readonly): implemented.
+
+	* hieroglyph/hgoperator.h (PROTO_PLUGIN): new.
+
+	* hieroglyph/hgdict.c (_hg_object_dict_node_get_allocation_flags): add
+	a flag to drop the block on restore.
+	(_hg_object_dict_node_initialize): likewise.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_restore_snapshot): ignore
+	the block if it's marked as safely dropped.
+
+	* plugins/libedit/libedit-main.c (_libedit_get_line): implemented.
+	(_libedit_add_history): likewise.
+	(_libedit_load_history): likewise.
+	(_libedit_save_history): likewise.
+	(_libedit_load): likewise.
+	(_libedit_unload): likewise.
+
+	* hieroglyph/hglineedit.l (hg_lineedit_get_statement): read a line
+	through get_line instead of accessing infile and outfile directly.
+	this allows you to change the behaviour with the plugin easily.
+
+	* plugins/libedit/libedit-main.c: new.
+	(_plugin_private_loadhistory): implemented.
+	(_plugin_private_savehistory): implemented.
+
+	* hieroglyph/hgvm.c (hg_vm_stack_new): new.
+
+	* hieroglyph/hgoperator.c (hg_operator_add_dynamic): new.
+	(hg_operator_remove_dynamic): new.
+
+	* hieroglyph/hgvm.c (hg_vm_unload_plugins): fix a typo.
+
+2010-08-22  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgvm.c (_hg_vm_run_gc): mark the plugins for GC.
+
+	Add plugin support.
+
+	* hieroglyph/hgvm.c (hg_vm_add_plugin): new.
+	(hg_vm_load_plugins): new.
+	(hg_vm_remove_plugin): new.
+	(hg_vm_unload_plugins): new.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_private_initplugins): new.
+
+	* hieroglyph/hgscanner.l: allow empty name object.
+
+	* hieroglyph/hgscanner.l: ignore the line-feeds if escaped by
+	the backslash.
+
+	* hieroglyph/hglineedit.l: do not count the nest of the string
+	if escaped by the backslash.
+
+2010-08-20  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgallocator.c (_hg_allocator_save_snapshot): fix a typo.
+	(_hg_allocator_restore_snapshot): check the block more strictly.
+	(_hg_allocator_restore_snapshot): fix the unwilling invalidrestore
+	error.
+
+	* hieroglyph/hgfile.c (_hg_object_file_initialize): drop
+	the unnecessary reference.
+	(_hg_file_io_real_lineedit_open): likewise.
+	(hg_file_new_with_string): likewise.
+
+	* hieroglyph/hgoperator.c (_hg_operator_level2_register): add <<.
+
+	* hieroglyph/hglineedit.l: add missing rule.
+
+2010-08-19  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_protected_stopped_continue):
+	turn off the error flag in VM to continue working for error recovery.
+
+	* hieroglyph/hgvm.c (hg_vm_reset_error): renamed from hg_vm_clear_error().
+	(hg_vm_clear_error): reimplement to turn off only a flag.
+
+	* hieroglyph/hgstring.c (_hg_object_string_get_allocation_flags): new.
+	(_hg_string_maybe_expand): mark the internal string as unrestorable.
+
+	* hieroglyph/hgstack.c (_hg_object_stack_get_allocation_flags): new.
+
+	* hieroglyph/hgsnapshot.c (_hg_object_snapshot_get_allocation_flags): new.
+
+	* hieroglyph/hgobject.c (_hg_object_new): allocate the object with
+	the memory flags according to get_allocation_flags().
+
+	* hieroglyph/hgmem.c (hg_mem_alloc_with_flags): new.
+
+	* hieroglyph/hgfile.c (_hg_object_file_get_allocation_flags): new.
+
+	* hieroglyph/hgdict.c (_hg_object_dict_get_allocation_flags): new.
+	(_hg_object_dict_node_get_allocation_flags): new.
+
+	* hieroglyph/hgarray.c (_hg_object_array_get_allocation_flags): new.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_restore_snapshot): fix a crash.
+	(_hg_allocator_restore_snapshot): restore only the blocks marked as
+	restorable.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_restore): implemented.
+	(_hg_operator_real_save): implemented.
+
+	* hieroglyph/hgmem.c (hg_mem_restore_snapshot): run GC before restoring.
+
+	* hieroglyph/hgsnapshot.h (HG_IS_QSNAPSHOT): new.
+
+	* hieroglyph/hgvm.c (hg_vm_init): initialize the snapshot object.
+
+2010-08-18  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgallocator.c (_hg_allocator_bitmap_copy): new.
+	(_hg_allocator_bitmap_validate_restore): new.
+	(_hg_allocator_save_snapshot): implemented.
+	(_hg_allocator_restore_snapshot): implemented.
+	(_hg_allocator_destroy_snapshot): implemented.
+
+2010-08-17  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgsnapshot.[ch]: new.
+
+	* hieroglyph/hgmem.c (hg_mem_save_snapshot): new.
+	(hg_mem_restore_snapshot): new.
+	(hg_mem_snapshot_free): new.
+
+	* hieroglyph/hgscanner.l (hg_scanner_attach_file): switch
+	the appropriate YY_BUFFER_STATE.
+
+	* hieroglyph/hgfile.c (hg_file_set_yybuffer): new.
+	(hg_file_get_yybuffer): new.
+
+	* hieroglyph/hgscanner.l: fix several warnings related to the trailing
+	context.
+
+	* hieroglyph/hgmem.c (hg_mem_reserved_spool_remove): ignore the quark
+	if it's not in the reserved spool.
+
+	* hieroglyph/hgdict.c (hg_dict_add): remove a reference in
+	the reserved spool.
+
+	* hieroglyph/hgarray.c (hg_array_set): remove a reference in
+	the reserved spool.
+	(hg_array_insert): likewise.
+
+	* hieroglyph/hgint.h (HG_QINT): fix affecting to the flag bits
+	when creating a quark with a negative.
+
+	* hieroglyph/hgquark.h (hg_quark_get_mem_id): new.
+
+	* hieroglyph/hgvm.c (hg_vm_stack_dump): workaround to avoid a crash
+	on resizing.
+	(hg_vm_reserved_spool_dump): new.
+
+	* hieroglyph/hgoperator.c (_hg_operator_private_abort): dump
+	the reserved spool too.
+
+	* hieroglyph/hgmem.c (hg_mem_get): new.
+	(hg_mem_reserved_spool_add): count the reference.
+	(hg_mem_reserved_spool_remove): likewise.
+	(hg_mem_reserved_spool_foreach): new.
+	(hg_mem_get_total_size): new.
+	(hg_mem_get_used_size): new.
+	(hg_mem_reserved_spool_add): warn if the ref count is being overflowed.
+
+2010-08-16  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgvm.c (hg_vm_quark_to_string): add a option to behaves
+	generating the PS-like syntax or just a string.
+	(hg_vm_quark_to_string): fix a memory leak.
+
+2010-08-13  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgvm.c (hg_vm_stepi_in_exec_array): unlock the object
+	after the file attached into the scanner.
+	(_hg_vm_run_gc): mark the file in the scanner too.
+	(hg_vm_stepi): ensure unlocking the object.
+
+	* hieroglyph/hgscanner.l (hg_scanner_attach_file): lock the object.
+	(hg_scanner_get_infile): new.
+
+	* hieroglyph/hgmem.c (_hg_mem_gc_finish): fix incomplete
+	finalizer invocation.
+
+	* hieroglyph/hgfile.c (_hg_object_file_initialize): initialize
+	the members before starting any allocation to avoid possible
+	segfault on GC.
+
+	* hieroglyph/hgdict.c (_hg_dict_node_foreach): ensure unlocking
+	the node.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_forall): fix a typo.
+
+	* hieroglyph/hgvm.c (hg_vm_stepi_in_exec_array): unlock the object when 
+	(hg_vm_step_in_exec_array): allocate the VM memory spool for stacks.
+	(hg_vm_mfree): call hg_object_free() if the quark is for
+	the complex object.
+	(hg_vm_eval_from_file): don't free the object.
+
+	* hieroglyph/hgstack.c (_hg_object_stack_gc_mark): implemented.
+
+2010-08-12  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgallocator.c (_hg_allocator_realloc): fix a typo.
+
+	* hieroglyph/hgvm.c (hg_vm_get_mem_from_quark): new.
+
+	* hieroglyph/hgstring.c (hg_string_free): remove the object from
+	the reserved spool.
+
+	* hieroglyph/hgstack.c (_hg_stack_push): remove the object from
+	the reserved spool.
+	(hg_stack_pop): add the object to the reserved spool.
+	(hg_stack_drop): new.
+
+	* hieroglyph/hgoperator.c: use hg_stack_drop for appropriate reserved
+	spool management.
+
+	* hieroglyph/hgobject.c (hg_object_free): remove the object from
+	the reserved spool.
+	(hg_object_gc_mark): don't reuse on_copying.
+
+	* hieroglyph/hgmem.c (hg_mem_collect_garbage): mark the object in
+	the reserved spool too.
+	(hg_mem_reserved_spool_add): new.
+	(hg_mem_reserved_spool_remove): new.
+	(hg_mem_reserved_spool_set_garbage_collector): new.
+
+	* hieroglyph/hgarray.c (_hg_object_array_to_cstr): don't reuse
+	on_copying here.
+	(hg_array_free): remove the object from the reserved spool.
+
+2010-08-11  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_protected_forall_dict_continue):
+	implemented.
+	(_hg_operator_real_xcheck): fix a typo.
+
+	* hieroglyph/hgdict.c (hg_dict_first_item): new.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_realloc): ensure unlocking
+	the memory.
+
+	* hieroglyph/hgobject.c (hg_object_free): ensure unlocking the memory.
+
+	* hieroglyph/hgfile.c (_hg_file_io_real_file_open): ensure unlocking
+	the memory.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_gc_finish): catch up
+	the locked objects too.
+
+	* hieroglyph/hgmem.c (_hg_mem_gc_finish): call the object finalizer.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_bitmap_dump): new.
+	(_hg_allocator_gc_init): fix a typo.
+
+	* hieroglyph/hgmem.c (hg_mem_collect_garbage): new.
+
+	* hieroglyph/hgarray.c (_hg_object_array_gc_mark): do not set
+	a on_copying flag here. it doesn't work as expected actually.
+
+	* hieroglyph/hgobject.c (hg_object_gc_mark): set a flag to avoid
+	the circular references.
+
+	* hieroglyph/hgfile.c (_hg_object_file_gc_mark): implemented.
+
+	* hieroglyph/hgdict.c (_hg_object_dict_gc_mark): do not set
+	a on_copying flag here. it doesn't work as expected actually.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_gc_mark): fix the block size
+	to re-mark the bitmap.
+	(_hg_allocator_gc_mark): do not set an error even if marking the range
+	fails.
+
+2010-08-10  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgdict.c (_hg_object_dict_gc_mark): implemented.
+	(_hg_object_dict_node_gc_mark): implemented.
+
+	* hieroglyph/hgarray.c (_hg_object_array_gc_mark): avoid the circular
+	reference on GC.
+
+	* hieroglyph/hgstring.c (_hg_object_string_free): removed.
+
+	* hieroglyph/hgstack.c (_hg_object_stack_free): removed.
+
+	* hieroglyph/hgobject.c (hg_object_new): add a finalizer if free
+	function is available.
+	(hg_object_free): remove a finalizer after freeing.
+
+	* hieroglyph/hgmem.c (_hg_mem_gc_init): new.
+	(_hg_mem_gc_finish): new.
+	(hg_mem_add_gc_finalizer): new.
+	(hg_mem_remove_gc_finalizer): new.
+
+	* hieroglyph/hgdict.c (_hg_object_dict_free): removed.
+	(_hg_object_dict_node_free): removed.
+	(hg_dict_add): fix a typo.
+	(hg_dict_remove): fix a typo.
+	(hg_dict_lookup): fix a typo.
+
+	* hieroglyph/hgarray.c (hg_array_free): new.
+	(_hg_object_array_free): removed.
+
+	* hieroglyph/hgdict.[ch]: integrated hgbtree.c[h].
+
+2010-08-09  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgallocator.c (_hg_allocator_alloc): Update the used_size.
+	(_hg_allocator_realloc): likewise.
+	(_hg_allocator_free): likewise.
+
+2010-08-08  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgstring.c (_hg_object_string_gc_mark): implemented.
+
+	* hieroglyph/hgobject.c (hg_object_gc_mark): marking self.
+
+	* hieroglyph/hgarray.c (_hg_object_array_gc_mark): implemented.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_gc_mark): ignore
+	if no slave_bitmap available.
+
+	* hieroglyph/hgarray.c (_hg_object_array_copy): fix a circular
+	reference issue.
+	(_hg_object_array_to_cstr): likewise.
+
+	* hieroglyph/hgmem.c (hg_mem_alloc): try to clean up spool
+	when the allocation failed if possible.
+	(hg_mem_realloc): likewise.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_bitmap_range_mark): new.
+	(_hg_allocator_gc_init): new.
+	(_hg_allocator_gc_mark): new.
+	(_hg_allocator_gc_finish): new.
+
+2010-08-07  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgmem.c (hg_mem_alloc): try the GC if the allocation failed.
+	(hg_mem_realloc): likewise.
+	(hg_mem_set_garbage_collection): new.
+
+2010-08-06  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_currentdict): implemented.
+	(_hg_operator_real_or): implemented.
+	(_hg_operator_real_rcheck): implemented.
+	(_hg_operator_real_xcheck): implemented.
+	(REG_VALUE): set a read bit.
+
+2010-08-05  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_protected_for_yield_int_continue):
+	implemented.
+	(_hg_operator_real_protected_for_yield_real_continue): implemented.
+	(_hg_operator_real_for): implemented.
+
+	* lib/hg_init.ps (.seterror): do not scan and record the operand stack
+	that stated with the objects where running the internal.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_read): cast the value to set the field correctly.
+
+2010-08-04  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgfile.c (_hg_object_file_free): check the type.
+	(_hg_object_file_copy): likewise.
+	(_hg_object_file_to_cstr): likewise.
+	(_hg_object_file_gc_mark): likewise.
+	(hg_file_close): likewise.
+	(hg_file_read): likewise.
+	(hg_file_write): likewise.
+	(hg_file_flush): likewise.
+	(hg_file_seek): likewise.
+	(hg_file_is_eof): likewise.
+	(hg_file_clear_eof): likewise.
+	(hg_file_append_vprintf): likewise.
+	(hg_file_set_lineno): likewise.
+	(hg_file_get_position): likewise.
+
+	* hieroglyph/hgdict.c (_hg_object_dict_free): check the type.
+	(_hg_object_dict_copy): likewise.
+	(_hg_object_dict_to_cstr): likewise.
+	(_hg_object_dict_gc_mark): likewise.
+	(hg_dict_add): likewise.
+	(hg_dict_remove): likewise.
+	(hg_dict_lookup): likewise.
+	(hg_dict_length): likewise.
+	(hg_dict_maxlength): likewise.
+	(hg_dict_foreach): likewise.
+
+	* hieroglyph/hgarray.c (_hg_object_array_free): check the type.
+	(_hg_object_array_copy): likewise.
+	(_hg_object_array_to_cstr): likewise.
+	(_hg_object_array_gc_mark): lkewise.
+	(hg_array_set): likewise.
+	(hg_array_get): likewise.
+	(hg_array_insert): likewise.
+	(hg_array_remove): likewise.
+	(hg_array_length): likewise.
+	(hg_array_maxlength): likewise.
+	(hg_array_foreach): likewise.
+	(hg_array_set_name): likewise.
+	(hg_array_make_subarray): likewise.
+	(hg_array_copy_as_subarray): likewise.
+
+	* hieroglyph/hgstring.c (_hg_object_string_to_cstr): check the type.
+	(_hg_object_string_gc_mark): likewise.
+
+2010-08-03  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgvm.c (hg_vm_quark_to_string): fix the size.
+	(hg_vm_startjob): do not show the prompt if the file is specified.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_exit): implemented.
+	(_hg_operator_real_closefile): implemented.
+
+	* hieroglyph/hgfile.c (hg_file_close): new.
+	(hg_file_read): check if the file is closed.
+	(hg_file_write): likewise.
+	(hg_file_flush): likewise.
+	(hg_file_seek): likewise.
+	(hg_file_is_eof): likewise.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_get_internal_block):
+	validate index.
+
+	* lib/hg_init.ps (..statementedit): revert the change of
+	064ff153d206bf7e3c4f59f4a9539d5768fe70ed.
+
+	* hieroglyph/hgstring.c (_hg_object_string_copy): check the type.
+	(hg_string_free): likewise.
+	(hg_string_length): likewise.
+	(hg_string_maxlength): likewise.
+	(hg_string_clear): likewise.
+	(hg_string_append_c): likewise.
+	(hg_string_append): likewise.
+	(hg_string_overwrite_c): likewise.
+	(hg_string_erase): likewise.
+	(hg_string_concat): likewise.
+	(hg_string_index): likewise.
+	(hg_string_get_cstr): likewise.
+	(hg_string_fix_string_size): likewise.
+	(hg_string_ncompare): likewise.
+	(hg_string_ncompare_with_cstr): likewise.
+	(hg_string_append_printf): likewise.
+	(hg_string_make_substring): likewise.
+	(hg_string_copy_as_substring): likewise.
+	(hg_string_overwrite_c): drop the unnecessary recalculation of
+	the size which causes a segfault.
+
+	* hieroglyph/hgmem.c (hg_mem_realloc): copy all of bits.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_le): implemented.
+	(_hg_operator_real_read): implemented.
+
+	* lib/hg_init.ps (..statementedit): set a exec bit to the file object.
+
+	* hieroglyph/hgvm.c (hg_vm_stepi_in_exec_array): only execute a file
+	object when has a exec bit.
+	(hg_vm_setup): do not set a exec bit.
+	(hg_vm_stepi): only execute a file object when has a exec bit.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_cvrs): implemented.
+	(_hg_operator_real_private_quit): implemented.
+	(_hg_operator_real_file): do not set a exec bit.
+
+	* hieroglyph/hgstring.c (hg_string_get_cstr): renamed from _static_cstr.
+	(_hg_object_string_to_cstr): just put \000 for lazy allocating.
+
+	* hieroglyph/hgvm.c (hg_vm_stack_dump): turn on the resizable mode
+	to get more useful stack dump when OOM happens.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_alloc): resize the heap
+	when the allocation fails and resizable is true.
+	(_hg_allocator_realloc): likewise.
+
+2010-08-02  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgarray.c (_hg_object_array_copy): copy the name too.
+
+	* hieroglyph/hgstring.c (hg_string_append_c): set a quark. it may be
+	likely to get a different quark by reallocating.
+	(hg_string_append): likewise.
+	(hg_string_fix_string_size): likewise.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_bitmap_alloc): improve
+	the performance to find out a free space.
+	(_hg_allocator_bitmap_realloc): do not allocate difference place
+	when the size is reducing.
+	(_hg_allocator_alloc): return an index instead of the serial number.
+	(_hg_allocator_realloc): likewise.
+
+	* configure.ac: add --enable-profile option.
+
+	* hieroglyph/Makefile.am (CLEANFILES): clean up generated source code.
+
+2010-07-31  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_exec): copy the object.
+	(_hg_operator_real_private_exit): implemented.
+
+	* hieroglyph/hgfile.c (_hg_object_file_copy): implemented.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_private_clearerror):
+	implemented.
+	(_hg_operator_real_protected_forall_array_continue): fix stack
+	validation.
+	(_hg_operator_real_protected_stop_continue): fix not ignoring entire
+	exception.
+	(_hg_operator_real_maxlength): implemented.
+	(_hg_operator_real_wcheck): implemented.
+	(_hg_operator_real_gcheck): implemented.
+
+	* hieroglyph/hgmem.c (hg_mem_set_resizable): new.
+
+	* hieroglyph/hgstring.c (hg_string_append): assert if str is null.
+
+	* hieroglyph/hgscanner.l: specify the prefix.
+
+	* hieroglyph/hglineedit.l (hg_lineedit_get_statement): fix a typo.
+
+2010-07-30  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgvm.c (hg_vm_get_io): generate hg_file_t for %lineedit
+	and %statementedit.
+
+	* hieroglyph/hgfile.c (hg_file_get_lineedit_vtable): new.
+
+	* hieroglyph/hglineedit.[lh]: new.
+
+2010-07-29  Akira TAGOH  <akira@tagoh.org>
+
+	* lib/hg_init.ps (odef): copy the procedure exactly and try to avoid
+	overwrite the saved operand stack.
+
+	* hieroglyph/hgoperator.c (INIT_STACK_VALIDATOR): add debug macro.
+	(VALIDATE_STACK_SIZE): likewise.
+	(_hg_operator_real_private_abort): implemented.
+	(_hg_operator_real_private_findlibfile): implemented.
+	(_hg_operator_real_private_hgrevision): implemented.
+	(_hg_operator_real_private_product): implemented.
+	(_hg_operator_real_private_revision): implemented.
+	(_hg_operator_real_private_stringcvs): implemented.
+	(_hg_operator_real_private_write_eqeq_only): implemented.
+	(_hg_operator_real_protected_forall_array_continue): implemented.
+	(_hg_operator_real_protected_forall_string_continue): implemented.
+	(_hg_operator_real_protected_loop_continue): implemented.
+	(_hg_operator_real_add): implemented.
+	(_hg_operator_real_aload): implemented.
+	(_hg_operator_real_array): implemented.
+	(_hg_operator_real_astore): implemented.
+	(_hg_operator_real_begin): implemented.
+	(_hg_operator_real_clear): implemented.
+	(_hg_operator_real_cleartomark): implemented.
+	(_hg_operator_real_end): implemented.
+	(_hg_operator_real_eq): implemented.
+	(_hg_operator_real_file): if the built-in I/O is Qnil, raise
+	/undefinedfilename.
+	(_hg_operator_real_flush): implemented.
+	(_hg_operator_real_forall): implemented.
+	(_hg_operator_real_ge): implemented.
+	(_hg_operator_real_getinterval): implemented.
+	(_hg_operator_real_gt): implemented.
+	(_hg_operator_real_length): implemented.
+	(_hg_operator_real_loop): implemented.
+	(_hg_operator_real_lt): implemented.
+	(_hg_operator_real_mod): implemented.
+	(_hg_operator_real_ne): implemented.
+	(_hg_operator_real_pop): implemented.
+	(_hg_operator_real_print): implemented.
+	(_hg_operator_real_stop): implemented.
+	(_hg_operator_real_stopped): unlock the systemdict after used.
+	(_hg_operator_real_string): implemented.
+	(_hg_operator_real_sub): implemented.
+	(_hg_operator_real_type): implemented.
+	(_hg_operator_real_writestring): implemented.
+	(_hg_operator_real_countdictstack): implemented.
+	(_hg_operator_real_countexecstack): implemented.
+	(_hg_operator_real_dictstack): implemented.
+	(_hg_operator_real_execstack): implemented.
+	(_hg_operator_real_languagelevel): implemented.
+
+2010-07-28  Akira TAGOH  <akira@tagoh.org>
+
+	* lib/hg_init.ps: update.
+
+	* hieroglyph/hgvm.c (_hg_vm_quark_iterate_to_cstr): fix a segfault
+	when the lock fail.
+	(hg_vm_quark_compare): new.
+	(hg_vm_stepi): raise VMerror only if no error is set.
+	(hg_vm_find_libfile): new.
+	(hg_vm_startjob): evaluate the main script to keep VM in a loop.
+	(hg_vm_set_error): fix a segfault when the lock fail.
+
+	* hieroglyph/hgversion.h.in.in (HIEROGLYPH_MAJOR_VERSION): new.
+	(HIEROGLYPH_MINOR_VERSION): new.
+	(HIEROGLYPH_RELEASE_VERSION): new.
+
+	* hieroglyph/hgstring.c (_hg_object_string_to_cstr): revised to print
+	out the non-printable characters.
+	(hg_string_append_c): restore the string length if expand fail.
+	(hg_string_append): likewise.
+	(hg_string_overwrite_c): likewise.
+
+	* hieroglyph/hgquark.h (hg_quark_compare): new.
+
+	* hieroglyph/hgoperator.h (HG_OPER): new.
+
+	* hieroglyph/hgarray.c (hg_array_set): restore the array length
+	if expand fail.
+
+2010-07-27  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgvm.c (hg_vm_setup): use correct memory spool to create
+	dictionaries.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_protected_arraytomark):
+	implemented.
+	(_hg_operator_real_cvx): likewise.
+	(_hg_operator_real_exec): likewise.
+	(_hg_operator_real_pop): likewise.
+	(_hg_operator_real_put): fix a typo.
+
+	* hieroglyph/hgvm.c (hg_vm_quark_set_attributes): set an exec bit only
+	for operator.
+
+	* lib/hg_init.ps (anchorsearch): defined.
+	(cvs): ditto.
+	(definefont): ditto.
+	(executive): ditto.
+	(findfont): ditto.
+	(floor): ditto.
+	(load): ditto.
+	(matrix): ditto.
+	(pstack): ditto.
+	(prompt): ditto.
+	(putinterval): ditto.
+	(quit): ditto.
+	(run): ditto.
+	(stack): ditto.
+	(start): ditto.
+	(store): ditto.
+	(undefinefont): ditto.
+	(version): ditto.
+	(=): ditto.
+	(==): ditto.
+	(.seterror): ditto.
+	(.defaulterrorhandler): ditto.
+	(handleerror): ditto.
+	(.printerror): ditto.
+	(/StandardEncoding): ditto.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_protected_repeat_continue):
+	implemented.
+	(_hg_operator_real_protected_stopped_continue): likewise.
+	(_hg_operator_real_counttomark): likewise.
+	(_hg_operator_real_exch): likewise.
+	(_hg_operator_real_repeat): likewise.
+	(_hg_operator_real_stopped): likewise.
+	(_hg_operator_real_where): likewise.
+	(_hg_operator_level1_register): define [, ].
+
+	* hieroglyph/hgvm.c (hg_vm_step_in_exec_array): check null after
+	creating the stack.
+	(hg_vm_setup): initialize $error dict.
+	(hg_vm_stepi): fix a typo.
+	(hg_vm_eval_from_cstring): add \n at the end to avoid failing
+	on scanner for last token.
+	(hg_vm_clear_error): implemented the native code instead of
+	evaluating PostScript.
+
+	* hieroglyph/hgstack.c (hg_stack_new): initialize the return value to
+	avoid segfault when OOM.
+
+	* hieroglyph/hgscanner.l: do not set an error when EOF.
+
+	* hieroglyph/hgquark.h (hg_quark_new): set a exec bit for
+	the immediately evaluated name object.
+
+	* hieroglyph/hgscanner.l: update a regexp to not ignore some control
+	characters.
+	(hg_scanner_attach_file): do not reinitialize if infile isn't changed.
+
+	* hieroglyph/hgoperator.c (_hg_operator_level1_register):
+	add mark as value.
+
+	* hieroglyph/hgstring.c (hg_string_free): new for convenience
+
+	* hieroglyph/hgmem.c (hg_mem_gc_mark): new.
+
+	* hieroglyph/hgvm.c (hg_vm_quark_gc_mark): new.
+	(hg_vm_collect_garbage): new.
+
+	* hieroglyph/hgobject.c (hg_object_gc_mark): new.
+
+	* tests/hgnull.c (test_new): update related to
+	4aacdf47fe70c01f421a23d2ea353f07f3d0d81d
+
+	* hieroglyph/hgarray.c (hg_array_get): return Qnil if index is out
+	of array.
+
+2010-07-26  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_get): implemented.
+	(_hg_operator_real_index): implemented.
+
+	* hieroglyph/hgvm.c (hg_vm_dict_lookup): covert HG_TYPE_EVAL_NAME to
+	HG_TYPE_NAME if specified as the key.
+
+	* hieroglyph/hgquark.h (hg_type_is_simple): add HG_TYPE_EVAL_NAME.
+
+	* hieroglyph/hgmem.h (hg_mem_lock_object_with_gerror): change
+	the message to not be confused.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_private_odef):
+	implemented.
+	(_hg_operator_real_private_odef): implemented.
+	(_hg_operator_real_array): implemented.
+	(_hg_operator_real_astore): implemented.
+	(_hg_operator_real_copy): implemented.
+	(_hg_operator_real_count): implemented.
+	(_hg_operator_real_def): implemented.
+	(_hg_operator_real_idiv): implemented.
+	(_hg_operator_real_put): implemented.
+	(_hg_operator_real_roll): implemented.
+	(_hg_operator_real_dup): implemented.
+
+	* hieroglyph/hgvm.c (hg_vm_stepi): push a copy to the estack for
+	a result of the name lookup.
+	(hg_vm_stepi): fix wrong order for execution.
+
+	* hieroglyph/hgobject.c (_hg_object_new): set self quark.
+
+	* hieroglyph/hgnull.h (HG_QNULL): deal with null differently to Qnil.
+
+	* hieroglyph/hgdict.c (_hg_object_dict_copy): return itself instead of
+	a copy.
+
+	* hieroglyph/hgstring.c (hg_string_make_substring): new.
+	(hg_string_copy_as_substring): new.
+
+	* hieroglyph/hgarray.c (hg_array_make_subarray): new.
+	(hg_array_copy_as_subarray): new.
+
+	* hieroglyph/hgvm.c (hg_vm_quark_to_string): don't update for
+	the executable array if the name is set to the array.
+
+	* hieroglyph/hgarray.c (hg_array_set_name): new.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_bind): implemented.
+	(_hg_operator_real_file): implemented.
+	(_hg_operator_real_known): return a bool value if the given name is
+	really in dictionaries.
+	(REG_OPER): set a exec bit.
+	(REG_PRIV_OPER): likewise.
+
+	* hieroglyph/hgvm.c (hg_vm_clear_error): new.
+	(hg_vm_set_error_from_gerror): new.
+
+	* hieroglyph/hgarray.c (hg_array_set): don't try to expand
+	if the index is less than the length of the array.
+
+	* hieroglyph/hgscanner.l: fix mis-scanning a negative decimal number.
+
+	* hieroglyph/hgstring.c (_hg_object_string_copy): implemented.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_ifelse): implemented.
+
+	* hieroglyph/hgvm.c (hg_vm_stepi_in_exec_array): fix a typo.
+	(_hg_vm_quark_iterate_to_cstr): implemented.
+	(hg_vm_quark_copy): copy permissions.
+	(hg_vm_quark_to_string): update strings for executable array.
+	(hg_vm_stepi): implemented executing array.
+
+	* hieroglyph/hgstring.c (_hg_object_string_to_cstr): implemented.
+
+	* hieroglyph/hgobject.c (hg_object_to_cstr): changed API.
+
+	* hieroglyph/hgarray.c (_hg_object_array_to_cstr): implemented.
+
+	* hieroglyph/hgvm.c (hg_vm_quark_copy): changed API.
+	(hg_vm_quark_to_string): likewise.
+
+	* hieroglyph/hgquark.h (hg_quark_iterate_func_t): new.
+
+	* hieroglyph/hgobject.c (hg_object_copy): changed API.
+	(hg_object_to_string): likewise.
+
+	* hieroglyph/hgarray.c (_hg_object_array_copy): implemented.
+
+2010-07-24  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgvm.c (hg_vm_quark_set_attributes): don't set a write
+	permission to the simple object.
+	(hg_vm_eval_from_file): set a default permission to the file object.
+
+	* hieroglyph/hgquark.h (_hg_quark_type_bit_set_bits): fix a typo
+	to not getting rid of the function by the optimization.
+
+	* .gdbinit (hgquarkinfo): update to show the permissions.
+
+	* hieroglyph/hgvm.c (_hg_vm_stack_real_dump): don't prepent to dump
+	the stacks even if to_string failed.
+	(hg_vm_stepi_in_exec_array): fix a segfault when to_string failed.
+	(hg_vm_stepi): likewise.
+	(hg_vm_stepi_in_exec_array): set the appropriate permissions.
+	(hg_vm_mfree): ignore Qnil.
+	(hg_vm_quark_set_attributes): ignore Qnil.
+
+	* hieroglyph/hgoperator.c (STACK_PUSH_AS_IS): set the appropriate
+	error against given stack.
+	(_hg_operator_real_if): impelemented.
+
+2010-07-23  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgobject.c (hg_object_to_string): initialize
+	the return value if required.
+
+	* hieroglyph/hgvm.c (hg_vm_stepi_in_exec_array): new.
+	(hg_vm_step_in_exec_array): new.
+	(hg_vm_stepi): process the executable array.
+	(hg_vm_has_error): new.
+
+	* hieroglyph/hgarray.c (_hg_array_maybe_expand): fix a typo.
+
+	* hieroglyph/hgscanner.l (hg_scanner_attach_file): unlock the object
+	if different file object is being attached.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_not): implemented.
+
+	* hieroglyph/hgvm.c (hg_vm_quark_set_attributes): new.
+	(hg_vm_set_default_attributes): new.
+	(hg_vm_setup): set certain attributes to the built-in values.
+	(hg_vm_stack_dump): new.
+
+	* hieroglyph/hgoperator.c (STACK_PUSH): set a default attribute.
+	(STACK_PUSH_AS_IS): new.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_private_forceput):
+	fix a typo.
+	(_hg_operator_real_private_forceput): raise /invalidaccess
+	if no appropriate permissions.
+	(_hg_operator_real_known): implemented.
+
+	* hieroglyph/hgquark.h (hg_quark_set_access_bits): new.
+	(hg_quark_get_type_name): new.
+
+	* lib/hg_init.ps: create dictionaries.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_private_forceput):
+	implemented.
+
+	* hieroglyph/hgvm.c (hg_vm_set_io): fix a typo.
+
+	* hieroglyph/hgfile.h (HG_IS_QFILE): fix a typo.
+
+	* hieroglyph/hgarray.h (HG_IS_QARRAY): fix a typo.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_dict): implemented.
+
+	* hieroglyph/hgvm.c (hg_vm_setup): add /systemdict, /globaldict and
+	/$error into systemdict.
+
+2010-07-22  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgvm.c (hg_vm_stepi): drop a object on the exec stack
+	if success.
+
+	* hieroglyph/hgoperator.c (_hg_operator_real_private_setglobal):
+	implemented.
+
+2010-07-21  Akira TAGOH  <akira@tagoh.org>
+
+	* src/hgs/hgs.c: add an interpreter on CUI.
+
+	* hieroglyph/hgoperator.c (DEFUNC_UNIMPLEMENTED_OPER):
+	raise VMerror when invoking not-implemented operator.
+
+	* hieroglyph/hgvm.c (hg_vm_quark_to_string): implemented.
+	(hg_vm_dict_lookup): return a result exactly.
+
+	* hieroglyph/hgscanner.l (YY_INPUT): read 1-byte only.
+
+	* hieroglyph/hgquark.h (hg_quark_get_hash): new.
+
+	* hieroglyph/hgdict.c (hg_dict_add): mask the access flags.
+	(hg_dict_remove): likewise.
+	(hg_dict_lookup): likewise.
+
+	* hieroglyph/hgstring.c (_hg_object_string_initialize): delay
+	to allocate the container to save the memory space
+	in the real world.
+	(_hg_string_maybe_expand): new.
+	(hg_string_append_printf): new.
+
+2010-07-20  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgquark.h (hg_quark_set_readable): new.
+	(hg_quark_is_readable): new.
+	(hg_quark_set_writable): new.
+	(hg_quark_is_writable): new.
+
+	* hieroglyph/hgmem.c (hg_mem_realloc): just invoke hg_mem_alloc
+	if qdata is Qnil. behaving similarly to libc's realloc.
+
+	* hieroglyph/hgname.h (HG_NAME): new.
+
+	* hieroglyph/hgbool.h (HG_BOOL): new.
+
+2010-07-17  Akira TAGOH  <akira@tagoh.org>
+
+	* .gdbinit (hgquarkinfo): add a macro.
+
+	* hieroglyph/hgobject.c (hg_object_copy): new.
+	(hg_object_to_string): new.
+
+2010-07-16  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgbtree.c (hg_btree_find): avoid unnecessary warnings.
+
+	* hieroglyph/hgquark.h (hg_quark_has_same_mem_id): new.
+	cleanup.
+	(_hg_quark_type_bit_shift): renamed.
+	(_hg_quark_type_bit_set_bits): changed API to not being confused.
+	(hg_quark_set_executable): likewise.
+	(hg_quark_set_mem_id): new.
+
+	* hieroglyph/hgscanner.l: create the object with HG_TYPE_EVAL_NAME for
+	//blahblahblah and set the exec bit.
+
+	* hieroglyph/hgname.h (HG_QEVALNAME): new.
+	(HG_IS_QEVALNAME): new.
+
+	* hieroglyph/hgname.c (hg_name_lookup): allow HG_TYPE_EVAL_NAME as well.
+
+	* hieroglyph/hgstring.c (hg_string_new): don't try to unlock the object
+	if Qnil.
+	(hg_string_new_with_value): likewise.
+
+	* hieroglyph/hgobject.c (_hg_object_new): exit the function immediately
+	if the memory allocation failed.
+
+	* hieroglyph/hgfile.c (_hg_file_io_real_file_open): fix a typo.
+	(hg_file_new_with_vtable): don't try to unlock the object if Qnil.
+
+	* hieroglyph/hgdict.c (hg_dict_new): fix a typo.
+	(hg_dict_add): likewise.
+	(hg_dict_remove): likewise.
+	(hg_dict_lookup): likewise.
+
+	* hieroglyph/hgbtree-private.h (HG_BTREE_NODE_LOCK): initialize
+	values to void segfault when failing the lock.
+
+	* hieroglyph/hgmem.c (hg_mem_new_with_allocator): check the id here.
+	(hg_mem_alloc): set the mem id to the quark.
+	(hg_mem_realloc): likewise.
+	(hg_mem_free): check the mem id.
+	(hg_mem_lock_object): likewise.
+	(hg_mem_unlock_object): likewise.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_initialize): revert
+	the change.
+	(_hg_allocator_alloc): likewise.
+	(_hg_allocator_lock_object): likewise.
+	(_hg_allocator_unlock_object): likewise.
+
+2010-07-14  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgoperator.[ch]: new.
+
+2010-07-13  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgfile.c (_hg_file_io_real_buffered_close):
+	add more finalization.
+	(hg_file_new_with_string): lock object since it's referring
+	the real object.
+
+	* hieroglyph/hgscanner.l (hg_scanner_attach_file): restore a lineno.
+	(hg_scanner_scan): save a lineno.
+
+	* hieroglyph/hgfile.c (hg_file_set_lineno): new.
+	(hg_file_get_lineno): new.
+	(hg_file_get_position): new.
+
+2010-07-12  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgmem.c (hg_mem_new_with_allocator): set a mem id.
+	(hg_mem_get_id): new.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_initialize): set a mem id.
+	(_hg_allocator_alloc): likewise.
+	(_hg_allocator_lock_object): likewise.
+	(_hg_allocator_unlock_object): likewise.
+
+	* hieroglyph/hgscanner.l: check the overflow in ASCII85.
+
+2010-07-10  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgstack.c (hg_stack_free): new.
+
+2010-07-09  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgfile.c (hg_file_get_io_type): make it public.
+
+	* hieroglyph/hgfile.h (HG_IS_FILE): new.
+
+	* hieroglyph/hgscanner.l: add a lexical scanner.
+
+	* hieroglyph/hgquark.h (hg_quark_set_lookup): new.
+	(hg_quark_is_lookup_needed): new.
+
+	* hieroglyph/hgarray.h (HG_IS_ARRAY): new.
+
+	* hieroglyph/hgarray.c (_hg_object_array_initialize): delay to
+	allocate the container to save memory space in the real world.
+	(_hg_array_maybe_expand): new.
+	(hg_array_set): update.
+	(hg_array_get): update.
+	(hg_array_insert): update.
+
+2010-07-08  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgstring.c (hg_string_new_with_value): allow the negative
+	value for unsure sized string.
+
+	* hieroglyph/hgfile.c (_hg_file_get_io_type): allow the beggining of
+	'%' in the filename.
+	(hg_file_new_with_string): fix a typo.
+
+	* hieroglyph/hgquark.h (_hg_quark_type_bit_validate_bits): fix
+	masking unexpected bits.
+	(hg_quark_set_executable): new.
+	(hg_quark_is_executable): new.
+
+2010-07-07  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgfile.h (HG_FILE_INIT): initialize the string object.
+
+	* hieroglyph/hgfile.c (_hg_file_io_real_stdin_open): fix a typo.
+	(_hg_file_io_real_stdout_open): likewise.
+	(_hg_file_io_real_stderr_open): likewise.
+	(_hg_file_io_real_file_open): likewise.
+	(_hg_file_io_real_buffered_open): likewise.
+
+	* hieroglyph/hgstring.h (HG_QSTRING): fix a typo.
+
+	* hieroglyph/hgstring.c (_hg_object_string_initialize): allow
+	0-sized string allocation.
+
+	* hieroglyph/hgreal.h (HG_REAL): new.
+	(HG_IS_QREAL): new.
+	(HG_REAL_EQUAL): new.
+	(HG_REAL_IS_ZERO): new.
+	(hg_real_convert_to_native): new.
+
+	* hieroglyph/hgint.h (HG_INT): new.
+
+	* hieroglyph/hgstring.h (HG_STRING_INIT): new.
+
+	* hieroglyph/hgstack.h (HG_STACK_INIT): new.
+
+	* hieroglyph/hgfile.h (HG_FILE_INIT): new.
+
+	* hieroglyph/hgdict.h (HG_DICT_INIT): new.
+
+	* hieroglyph/hgarray.h (HG_ARRAY_INIT): new.
+
+	* hieroglyph/hgobject.c (hg_object_register): new.
+
+2010-07-06  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgfile.[ch]: new.
+
+2010-07-05  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgmem.h (hg_mem_lock_object_with_gerror): new.
+	(HG_MEM_LOCK): new macro.
+	(hg_return_val_with_gerror_if_lock_fail): new macro.
+	(hg_return_with_gerror_if_lock_fail): new macro.
+	(hg_return_val_if_lock_fail): new macro.
+	(hg_return_if_lock_fail): new macro.
+
+2010-07-02  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgstack.[ch]: new.
+
+	* hieroglyph/hgdict.[ch]: new.
+
+	* hieroglyph/hgbtree.c (hg_btree_remove): return a value
+	if the item was removed or not.
+
+	* hieroglyph/hgstring.h (HG_QSTRING): new.
+	(HG_IS_QSTRING): new.
+
+	* hieroglyph/hgnull.h (HG_IS_QNULL): new.
+
+	* hieroglyph/hgname.h (HG_IS_QNAME): new.
+
+	* hieroglyph/hgmark.h (HG_IS_QMARK): new.
+
+	* hieroglyph/hgint.h (HG_IS_QINT): new.
+
+	* hieroglyph/hgbool.h (HG_IS_QBOOL): new.
+
+	* hieroglyph/hgobject.c (hg_object_init): initialize the array object.
+
+	* hieroglyph/hgarray.[ch]: new.
+
+	* hieroglyph/hgstring.c (_hg_object_string_initialize): fail
+	the initialization if allocation failed.
+
+	* hieroglyph/Makefile.am (hg_private_headers): add hgbtree-private.h
+
+2010-07-01  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgname.[ch]: revised a lot.
+
+	* hieroglyph/hgquark.h (hg_quark_new): drop the higher bits
+	to avoid putting the garbage.
+
+	* hieroglyph/hgencoding.c (hg_encoding_init): returns TRUE
+	if the hash table is already initialized.
+
+	* hieroglyph/hgbtree.[ch]: new.
+
+	* hieroglyph/hgerror.h (_hg_gerror_on_fail): new.
+	(hg_return_with_gerror_if_fail): new.
+	(hg_return_val_with_gerror_if_fail): new.
+
+	* hieroglyph/hgerror.c (hg_error_quark): new.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_bitmap_alloc):
+	add more debuginfo message.
+
+2010-06-29  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgmem.c (hg_mem_lock_object): ignore Qnil.
+	(hg_mem_unlock_object): likewise.
+	(hg_mem_free): ignore Qnil.
+
+	* hieroglyph/hgobject.c (hg_object_new): unlock the object
+	if no referrer.
+
+	* hieroglyph/hgstring.c (hg_string_new): likewise.
+	(hg_string_new_with_value): likewise.
+	(hg_string_get_cstr): likewise.
+
+2010-06-28  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgobject.c (hg_object_init): initialize the string object.
+
+	* hieroglyph/hgstring.[ch]: new.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_realloc): unlock the object
+	when any referrer found.
+	(_hg_allocator_alloc): keep a concistency on the behaviour of
+	the lock count.
+	(_hg_allocator_realloc): likewise.
+
+	* tests/hgallocator.c (test_realloc): don't pop up the unnecessary
+	backtrace.
+
+	* tests/hgencoding.c (test_hg_encoding_init): likewise.
+	(test_hg_encoding_get_system_encoding_name): likewise.
+
+	* hieroglyph/hgobject.c (hg_object_new): don't invoke
+	the initialization function when failing allocating the object.
+	(hg_object_new): fail if the initialization fails.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_realloc): not fail
+	when lock_count is less than 2. it's still likely when locking
+	the object in the object.
+	(_hg_allocator_realloc): unlock the object when the lock_count is 2.
+
+2010-06-24  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgreal.h (hg_real_convert_from_native): new.
+	(HG_QREAL): new.
+
+	* hieroglyph/hgmem.c (hg_mem_realloc): new.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_bitmap_alloc):
+	Fix the unexpected marking issue.
+	(_hg_allocator_bitmap_realloc): new.
+	(_hg_allocator_bitmap_free): mutex-lock when clearing the bitmaps.
+	(_hg_allocator_realloc): new.
+	(_hg_allocator_lock_object): mutex-lock to avoid the race-condition
+	with realloc.
+
+2010-06-22  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgerror.c (hg_get_stacktrace): trivial fix to get rid of
+	the unnecessary trace log.
+
+2010-06-08  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgobject.[ch]: clean up.
+
+	* hieroglyph/hgquark.h (hg_type_is_simple): new.
+	(hg_quark_get_value): new.
+
+	* hieroglyph/hgallocator.c: trivial change to keep consistency between
+	Qnil and HG_QNULL.
+
+2010-06-05  Akira TAGOH  <akira@tagoh.org>
+
+	Update the header files that provides the simple object to be based on
+	hg_quark_t rather than hg_object_t.
+
+	* hieroglyph/hgbool.h (HG_QBOOL): new.
+
+	* hieroglyph/hgint.h (HG_QINT): new.
+
+	* hieroglyph/hgmark.h (HG_QMARK): new.
+
+	* hieroglyph/hgnull.h (HG_QNULL): new.
+
+	* hieroglyph/hgquark.h: add more macros and polish some.
+
+2010-05-29  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgquark.h: new.
+
+2010-05-27  Akira TAGOH  <akira@tagoh.org>
+
+	* tests/hgname.c: add testcases.
+
+	* hieroglyph/hgname.c (_hg_object_name_new): Fix a typo.
+
+	* hieroglyph/hgobject.c (_hg_object_new): add the object type to
+	the quark.
+	(hg_object_init): add the name object vtable.
+	(hg_object_init): initialize the encodings.
+
+	* hieroglyph/hgmem.c (hg_mem_free): get rid of the unnecessary bits.
+	(hg_mem_lock_object): likewise.
+	(hg_mem_unlock_object): likewise.
+
+	* tests/hgnull.c: add testcases.
+
+	* tests/hgmark.c: add testcases.
+
+	* hieroglyph/hgnull.h (hg_object_null_new): new macro.
+
+	* hieroglyph/hgmark.h (hg_object_mark_new): new macro.
+
+	* tests/hgint.c: add testcases.
+
+	* hieroglyph/hgint.h (hg_object_int_new): new macro.
+
+	* tests/hgbool.c: add testcases.
+
+	* hieroglyph/hgtypes.h (Qnil): correct a typo.
+
+	* hieroglyph/hgbool.h (hg_object_bool_new): new macro.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_initialize_and_lock_object):
+	Fix wrong casting.
+
+	* tests/hgencoding.c: add testcases.
+
+	* hieroglyph/hgencoding.c (hg_encoding_lookup_system_encoding): 
+	add more sanity check.
+
+	* hieroglyph/hgname.[ch]: new.
+
+	* hieroglyph/hgobject.c (hg_object_new): API change to make this
+	comfortable for others.
+
+	* hieroglyph/hgencoding.[ch]: new.
+
+	* hieroglyph/hgtypes.h: add hg_system_encoding_t type.
+
+2010-05-26  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgobject.c (hg_object_new): align the preallocated size.
+	(hg_object_init): add missing the object vtables initialization.
+
+2010-05-25  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgobject.h (HG_DEFINE_VTABLE): add new macro.
+
+	* hieroglyph/hgnull.[ch]: new.
+
+	* hieroglyph/hgmark.[ch]: new.
+
+	* hieroglyph/hgbool.[ch]: new.
+
+	* hieroglyph/hgint.[ch]: new.
+
+	* hieroglyph/hgobject.[ch]: new.
+
+	* hieroglyph/hgallocator.c: get rid of the unnecessary error check.
+
+	* hieroglyph/hgallocator-private.h (hg_get_allocated_object):
+	new macro.
+	(hg_get_allocator_block): new macro.
+
+2010-05-24  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgallocator.c (_hg_allocator_alloc): add ret argument to
+	be able to set the real address.
+	(_hg_allocator_alloc): don't unlock the object.
+	(_hg_allocator_lock_internal_object): new to get
+	the hg_allocator_block_t object.
+
+	* hieroglyph/hgtypes.h: extend hg_quark_t to 64bit.
+
+	* hieroglyph/hgmem.c (hg_mem_lock_object, hg_mem_unlock_object):
+	add missing functions.
+
+	* hieroglyph/hgerror.h (hg_stacktrace): Output to the glib log
+	instead of stderr directly.
+
+	* hieroglyph/hgallocator.c (_hg_allocator_bitmap_alloc): Fix a typo.
+	(_hg_allocator_bitmap_free): Fix a typo.
+	(_hg_allocator_alloc): Fix a typo.
+
+2010-05-23  Akira TAGOH  <akira@tagoh.org>
+
+	* hieroglyph/hgallocator.c: Drop hg_mem_t dependencies.
+
+	* hieroglyph/hgallocator-private.h: new.
+
+	* hieroglyph/Makefile.am (LIBS): Add missing library.
+
+	* Makefile.am (SUBDIRS): Add tests.
+
+2010-05-21  Akira TAGOH  <akira@tagoh.org>
+
+	* hgallocator.[ch]: Revised.
+
+	* hgerror.[ch]: Revised.
+
+	* hgmacros.h: Revised.
+
+	* hgmem-private.h: Revised.
+
+	* hgmem.[ch]: Revised.
+
+	* hgtypes.h: Revised.
+
+	* hgutils.[ch]: Revised.
+
+
