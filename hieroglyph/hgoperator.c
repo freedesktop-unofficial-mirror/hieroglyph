@@ -5524,6 +5524,8 @@ DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (packedarray);
 DEFUNC_UNIMPLEMENTED_OPER (pathbbox);
+
+/* <move> <line> <curve> <close> pathforall - */
 DEFUNC_UNIMPLEMENTED_OPER (pathforall);
 
 DEFUNC_OPER (pop)
@@ -5882,7 +5884,103 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (__flag ? 1 : 0, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (readhexstring);
+/* <file> <string> readhexstring <substring> <bool> */
+DEFUNC_OPER (readhexstring)
+G_STMT_START {
+	hg_quark_t arg0, arg1, q, qs;
+	hg_file_t *f = NULL;
+	hg_string_t *s = NULL;
+	gchar c[2], hex = 0;
+	gint shift = 4;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+
+	if (!HG_IS_QFILE (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!HG_IS_QSTRING (arg1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!hg_vm_quark_is_readable(vm, &arg0) ||
+	    !hg_vm_quark_is_writable(vm, &arg1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+
+	f = HG_VM_LOCK (vm, arg0, error);
+	if (f == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	s = HG_VM_LOCK (vm, arg1, error);
+	if (s == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		goto finalize;
+	}
+
+	if (hg_string_maxlength(s) == 0) {
+		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		goto finalize;
+	}
+	hg_string_clear(s);
+
+	while (!hg_file_is_eof(f) && hg_string_length(s) < hg_string_maxlength(s)) {
+		hg_file_read(f, c, sizeof (gchar), 1, error);
+		if (c[0] >= '0' && c[0] <= '9') {
+			hex |= ((c[0] - '0') << shift);
+			shift = shift == 0 ? 4 : 0;
+		} else if ((c[0] >= 'a' && c[0] <= 'f') ||
+			   (c[0] >= 'A' && c[0] <= 'F')) {
+			hex |= ((g_ascii_tolower(c[0]) - 'a' + 10) << shift);
+			shift = shift == 0 ? 4 : 0;
+		} else {
+			continue;
+		}
+		if (shift == 4) {
+			hg_string_append_c(s, hex, error);
+			hex = 0;
+		}
+	}
+	if (hg_file_is_eof(f)) {
+		q = HG_QBOOL (FALSE);
+		qs = hg_string_make_substring(s, 0, hg_string_length(s) - 1, NULL, error);
+		if (qs == Qnil) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			goto finalize;
+		}
+		hg_vm_quark_set_attributes(vm, &qs,
+					   hg_vm_quark_is_readable(vm, &arg1),
+					   hg_vm_quark_is_writable(vm, &arg1),
+					   hg_vm_quark_is_executable(vm, &arg1),
+					   hg_vm_quark_is_editable(vm, &arg1));
+	} else {
+		q = HG_QBOOL (TRUE);
+		qs = arg1;
+	}
+	if (qs == arg1)
+		hg_stack_pop(ostack, error);
+	else
+		hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+
+	STACK_PUSH (ostack, qs);
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+  finalize:
+	if (f)
+		HG_VM_UNLOCK (vm, arg0);
+	if (s)
+		HG_VM_UNLOCK (vm, arg1);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (readline);
 
 /* -array- readonly -array-
