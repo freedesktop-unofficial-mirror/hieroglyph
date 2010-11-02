@@ -4434,7 +4434,37 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (identmatrix);
+/* <matrix> identmatrix <matrix> */
+DEFUNC_OPER (identmatrix)
+G_STMT_START {
+	hg_quark_t arg0;
+	hg_array_t *a = NULL;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+
+	if (!HG_IS_QARRAY (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+
+	a = HG_VM_LOCK (vm, arg0, error);
+	if (!a) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		goto error;
+	}
+	if (hg_array_length(a) != 6) {
+		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		goto error;
+	}
+	retval = hg_array_matrix_ident(a);
+  error:
+	if (a)
+		HG_VM_UNLOCK (vm, arg0);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
 
 /* <int1> <int2> idiv <quotient> */
 DEFUNC_OPER (idiv)

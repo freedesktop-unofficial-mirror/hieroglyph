@@ -810,13 +810,10 @@ hg_array_matrix_new(hg_mem_t *mem,
 {
 	hg_quark_t retval;
 	hg_array_t *a = NULL;
-	gsize i;
 
 	retval = hg_array_new(mem, 6, (gpointer *)&a);
 	if (retval != Qnil) {
-		for (i = 0; i < 6; i++) {
-			hg_array_set(a, i, HG_QREAL ((i == 0 || i == 3) ? 1.0L : 0.0L), NULL);
-		}
+		hg_array_matrix_ident(a);
 
 		if (ret) {
 			*ret = a;
@@ -853,6 +850,34 @@ hg_array_is_matrix(hg_array_t *array)
 		    !HG_IS_QREAL (q))
 			return FALSE;
 	}
+
+	return TRUE;
+}
+
+/**
+ * hg_arrray_matrix_ident:
+ * @matrix:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_array_matrix_ident(hg_array_t *matrix)
+{
+	hg_matrix_t m;
+
+	hg_return_val_if_fail (matrix != NULL, FALSE);
+	hg_return_val_if_fail (hg_array_length(matrix) == 6, FALSE);
+
+	m.mtx.xx = 1;
+	m.mtx.xy = 0;
+	m.mtx.yx = 0;
+	m.mtx.yy = 1;
+	m.mtx.x0 = 0;
+	m.mtx.y0 = 0;
+
+	_hg_array_convert_from_matrix(matrix, &m);
 
 	return TRUE;
 }
