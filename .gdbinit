@@ -23,12 +23,13 @@ set $_hg_q_bit_type0  = 0
 set $_hg_q_bit_type1  = 1
 set $_hg_q_bit_type2  = 2
 set $_hg_q_bit_type3  = 3
-set $_hg_q_bit_exec   = 4
-set $_hg_q_bit_read   = 5
-set $_hg_q_bit_write  = 6
-set $_hg_q_bit_access = 7
-set $_hg_q_bit_memid0 = 8
-set $_hg_q_bit_memid1 = 9
+set $_hg_q_bit_type4  = 4
+set $_hg_q_bit_exec   = 5
+set $_hg_q_bit_read   = 6
+set $_hg_q_bit_write  = 7
+set $_hg_q_bit_access = 8
+set $_hg_q_bit_memid0 = 9
+set $_hg_q_bit_memid1 = 10
 
 define hgquarkinfo
   set $_memid = ($arg0 >> 32 & (((1 << ($_hg_q_bit_memid1-$_hg_q_bit_memid0+1)) - 1) << $_hg_q_bit_memid0)) >> $_hg_q_bit_memid0
@@ -36,7 +37,7 @@ define hgquarkinfo
   set $_write  = ($arg0 >> 32 & (((1 << ($_hg_q_bit_write-$_hg_q_bit_write+1)) - 1) << $_hg_q_bit_write)) >> $_hg_q_bit_write
   set $_exec  = ($arg0 >> 32 & (((1 << ($_hg_q_bit_exec-$_hg_q_bit_exec+1)) - 1) << $_hg_q_bit_exec)) >> $_hg_q_bit_exec
   set $_access = ($arg0 >> 32 & (((1 << ($_hg_q_bit_access-$_hg_q_bit_access+1)) - 1) << $_hg_q_bit_access)) >> $_hg_q_bit_access
-  set $_typeid = ($arg0 >> 32 & (((1 << ($_hg_q_bit_type3-$_hg_q_bit_type0+1)) - 1) << $_hg_q_bit_type0)) >> $_hg_q_bit_type0
+  set $_typeid = ($arg0 >> 32 & (((1 << ($_hg_q_bit_type4-$_hg_q_bit_type0+1)) - 1) << $_hg_q_bit_type0)) >> $_hg_q_bit_type0
   set $_value = ($arg0 & ((1LL << 32) - 1))
 
   if ($arg0 == 0)
@@ -109,7 +110,19 @@ define hgquarkinfo
 			      if ($_typeid == 13)
 				printf "stack"
 			      else
-				printf "unknown"
+				if ($_typeid == 14)
+				  printf "dict node"
+				else
+				  if ($_typeid == 15)
+				    printf "path"
+				  else
+				    if ($_typeid == 16)
+				      printf "gstate"
+				    else
+				      printf "unknown"
+				    end
+				  end
+				end
 			      end
 			    end
 			  end
