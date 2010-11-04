@@ -774,8 +774,8 @@ hg_string_fix_string_size(hg_string_t *string)
  * Returns:
  */
 gboolean
-hg_string_compare(const hg_string_t *a,
-		  const hg_string_t *b)
+hg_string_compare(hg_string_t *a,
+		  hg_string_t *b)
 {
 	hg_return_val_if_fail (b != NULL, FALSE);
 
@@ -793,11 +793,11 @@ hg_string_compare(const hg_string_t *a,
  * Returns:
  */
 gboolean
-hg_string_ncompare(const hg_string_t *a,
-		   const hg_string_t *b,
-		   guint              length)
+hg_string_ncompare(hg_string_t *a,
+		   hg_string_t *b,
+		   guint        length)
 {
-	const gchar *sb;
+	gchar *sb;
 	gboolean retval;
 
 	hg_return_val_if_fail (a != NULL, FALSE);
@@ -809,14 +809,11 @@ hg_string_ncompare(const hg_string_t *a,
 	    a->length == length)
 		return TRUE;
 
-	hg_return_val_if_lock_fail (sb,
-				    b->o.mem,
-				    b->qstring,
-				    FALSE);
+	sb = hg_string_get_cstr(b);
 
 	retval = hg_string_ncompare_with_cstr(a, sb, length);
 
-	hg_mem_unlock_object(b->o.mem, b->qstring);
+	g_free(sb);
 
 	return retval;
 }
@@ -832,11 +829,11 @@ hg_string_ncompare(const hg_string_t *a,
  * Returns:
  */
 gboolean
-hg_string_ncompare_with_cstr(const hg_string_t *a,
-			     const gchar       *b,
-			     gssize             length)
+hg_string_ncompare_with_cstr(hg_string_t *a,
+			     const gchar *b,
+			     gssize       length)
 {
-	const gchar *sa;
+	gchar *sa;
 	gboolean retval;
 
 	hg_return_val_if_fail (a != NULL, FALSE);
@@ -848,14 +845,11 @@ hg_string_ncompare_with_cstr(const hg_string_t *a,
 	if (length != a->length)
 		return FALSE;
 
-	hg_return_val_if_lock_fail (sa,
-				    a->o.mem,
-				    a->qstring,
-				    FALSE);
+	sa = hg_string_get_cstr(a);
 
 	retval = memcmp(sa, b, length) == 0;
 
-	hg_mem_unlock_object(a->o.mem, a->qstring);
+	g_free(sa);
 
 	return retval;
 }

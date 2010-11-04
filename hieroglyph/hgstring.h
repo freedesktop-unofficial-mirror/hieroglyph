@@ -67,21 +67,21 @@ hg_quark_t          hg_string_new_with_value    (hg_mem_t           *mem,
                                                  gssize              length,
                                                  gpointer           *ret);
 void                hg_string_free              (hg_string_t        *string,
-						 gboolean            free_segment);
+                                                 gboolean            free_segment);
 guint               hg_string_length            (const hg_string_t  *string);
 guint               hg_string_maxlength         (const hg_string_t  *string);
 gboolean            hg_string_clear             (hg_string_t        *string);
 gboolean            hg_string_append_c          (hg_string_t        *string,
                                                  gchar               c,
-						 GError            **error);
+                                                 GError            **error);
 gboolean            hg_string_append            (hg_string_t        *string,
                                                  const gchar        *str,
                                                  gssize              length,
-						 GError            **error);
+                                                 GError            **error);
 gboolean            hg_string_overwrite_c       (hg_string_t        *string,
                                                  gchar               c,
                                                  guint               index,
-						 GError            **error);
+                                                 GError            **error);
 gboolean            hg_string_erase             (hg_string_t        *string,
                                                  gssize              pos,
                                                  gssize              length);
@@ -91,27 +91,27 @@ gchar               hg_string_index             (hg_string_t        *string,
                                                  guint               index);
 gchar              *hg_string_get_cstr          (hg_string_t        *string);
 gboolean            hg_string_fix_string_size   (hg_string_t        *string);
-gboolean            hg_string_compare           (const hg_string_t  *a,
-                                                 const hg_string_t  *b);
-gboolean            hg_string_ncompare          (const hg_string_t  *a,
-                                                 const hg_string_t  *b,
+gboolean            hg_string_compare           (hg_string_t        *a,
+                                                 hg_string_t        *b);
+gboolean            hg_string_ncompare          (hg_string_t        *a,
+                                                 hg_string_t        *b,
                                                  guint               length);
-gboolean            hg_string_ncompare_with_cstr(const hg_string_t  *a,
+gboolean            hg_string_ncompare_with_cstr(hg_string_t        *a,
                                                  const gchar        *b,
                                                  gssize              length);
 gboolean            hg_string_append_printf     (hg_string_t        *string,
-						 const gchar        *format,
-						 ...);
+                                                 const gchar        *format,
+                                                 ...);
 hg_quark_t          hg_string_make_substring    (hg_string_t        *string,
-						 gssize              start_index,
-						 gssize              end_index,
-						 gpointer           *ret,
-						 GError            **error);
+                                                 gssize              start_index,
+                                                 gssize              end_index,
+                                                 gpointer           *ret,
+                                                 GError            **error);
 gboolean            hg_string_copy_as_substring (hg_string_t        *src,
-						 hg_string_t        *dest,
-						 gssize              start_index,
-						 gssize              end_index,
-						 GError            **error);
+                                                 hg_string_t        *dest,
+                                                 gssize              start_index,
+                                                 gssize              end_index,
+                                                 GError            **error);
 
 G_END_DECLS
 
