@@ -331,7 +331,6 @@ PROTO_OPER (resourceforall);
 PROTO_OPER (resourcestatus);
 PROTO_OPER (restore);
 PROTO_OPER (reversepath);
-PROTO_OPER (revision);
 PROTO_OPER (rlineto);
 PROTO_OPER (rmoveto);
 PROTO_OPER (roll);
@@ -6305,7 +6304,6 @@ VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (reversepath);
-DEFUNC_UNIMPLEMENTED_OPER (revision);
 
 /* <dx> <dy> rlineto - */
 DEFUNC_OPER (rlineto)
@@ -7406,7 +7404,6 @@ _hg_operator_level2_register(hg_vm_t   *vm,
 	REG_OPER (dict, name, product);
 	REG_OPER (dict, name, resourceforall);
 	REG_OPER (dict, name, resourcestatus);
-	REG_OPER (dict, name, revision);
 	REG_OPER (dict, name, serialnumber);
 	REG_OPER (dict, name, setcolorrendering);
 	REG_OPER (dict, name, setdevparams);
@@ -7727,7 +7724,6 @@ hg_operator_init(void)
 	DECL_OPER (resourcestatus);
 	DECL_OPER (restore);
 	DECL_OPER (reversepath);
-	DECL_OPER (revision);
 	DECL_OPER (rlineto);
 	DECL_OPER (rmoveto);
 	DECL_OPER (roll);
@@ -8130,7 +8126,6 @@ hg_operator_tini(void)
 	UNDECL_OPER (resourcestatus);
 	UNDECL_OPER (restore);
 	UNDECL_OPER (reversepath);
-	UNDECL_OPER (revision);
 	UNDECL_OPER (rlineto);
 	UNDECL_OPER (rmoveto);
 	UNDECL_OPER (roll);
