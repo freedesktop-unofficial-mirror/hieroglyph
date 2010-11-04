@@ -293,6 +293,11 @@ systemdict /.statementedit known {
     } ifelse
     3 1 roll put
 } bind odef
+% num1 truncate num2
+/truncate {
+    dup cvi
+    exch type /realtype eq {cvr} if
+} bind odef
 % key undefinefont -
 /undefinefont {
     .undefinefont

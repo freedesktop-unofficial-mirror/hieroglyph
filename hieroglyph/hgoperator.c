@@ -412,7 +412,6 @@ PROTO_OPER (sub);
 PROTO_OPER (token);
 PROTO_OPER (transform);
 PROTO_OPER (translate);
-PROTO_OPER (truncate);
 PROTO_OPER (type);
 PROTO_OPER (uappend);
 PROTO_OPER (ucache);
@@ -7161,7 +7160,6 @@ DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (transform);
 DEFUNC_UNIMPLEMENTED_OPER (translate);
-DEFUNC_UNIMPLEMENTED_OPER (truncate);
 
 /* <any> type <name> */
 DEFUNC_OPER (type)
@@ -7578,7 +7576,6 @@ _hg_operator_level1_register(hg_vm_t   *vm,
 	REG_OPER (dict, name, token);
 	REG_OPER (dict, name, transform);
 	REG_OPER (dict, name, translate);
-	REG_OPER (dict, name, truncate);
 	REG_OPER (dict, name, type);
 //	REG_OPER (dict, name, viewclip); /* ??? */
 //	REG_OPER (dict, name, viewclippath); /* ??? */
@@ -8210,7 +8207,6 @@ hg_operator_init(void)
 	DECL_OPER (token);
 	DECL_OPER (transform);
 	DECL_OPER (translate);
-	DECL_OPER (truncate);
 	DECL_OPER (type);
 	DECL_OPER (uappend);
 	DECL_OPER (ucache);
@@ -8614,7 +8610,6 @@ hg_operator_tini(void)
 	UNDECL_OPER (token);
 	UNDECL_OPER (transform);
 	UNDECL_OPER (translate);
-	UNDECL_OPER (truncate);
 	UNDECL_OPER (type);
 	UNDECL_OPER (uappend);
 	UNDECL_OPER (ucache);
