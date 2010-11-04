@@ -39,6 +39,17 @@ typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
 					 GError  **error);
 
 #ifdef HG_DEBUG
+#define hg_operator_assert(_vm_,_e_)					\
+	G_STMT_START {							\
+		if (!(_e_)) {						\
+			g_printerr("%s: assertion failed: %s\n",	\
+				   __PRETTY_FUNCTION__, #_e_);		\
+			hg_operator_invoke(HG_QOPER (HG_enc_private_abort), \
+					   (_vm_),			\
+					   NULL);			\
+		}							\
+	} G_STMT_END
+
 #define INIT_STACK_VALIDATOR						\
 	gsize __hg_stack_odepth G_GNUC_UNUSED = hg_stack_depth(ostack);	\
 	gsize __hg_stack_edepth G_GNUC_UNUSED = hg_stack_depth(estack);	\
@@ -49,11 +60,12 @@ typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
 		gsize __hg_stack_after_edepth = hg_stack_depth(estack);	\
 		gsize __hg_stack_after_ddepth = hg_stack_depth(dstack);	\
 									\
-		g_assert((__hg_stack_after_odepth - __hg_stack_odepth) == (_o_)); \
-		g_assert((__hg_stack_after_edepth - __hg_stack_edepth) == (_e_)); \
-		g_assert((__hg_stack_after_ddepth - __hg_stack_ddepth) == (_d_)); \
+		hg_operator_assert(vm, (__hg_stack_after_odepth - __hg_stack_odepth) == (_o_)); \
+		hg_operator_assert(vm, (__hg_stack_after_edepth - __hg_stack_edepth) == (_e_)); \
+		hg_operator_assert(vm, (__hg_stack_after_ddepth - __hg_stack_ddepth) == (_d_)); \
 	}
 #else
+#define hg_operator_assert(_vm_,_e_)
 #define INIT_STACK_VALIDATOR
 #define VALIDATE_STACK_SIZE(_o_,_e_,_d_)
 #endif

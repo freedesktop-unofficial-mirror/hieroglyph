@@ -6984,7 +6984,181 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (token);
+/* <file> token <any> true
+ *              false
+ * <string> token <post> <any> true
+ *                false
+ */
+DEFUNC_OPER (token)
+gint __n G_GNUC_UNUSED = 0;
+G_STMT_START {
+	hg_quark_t arg0, qt;
+	gboolean is_proceeded = FALSE;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (HG_IS_QFILE (arg0)) {
+		if (!hg_vm_quark_is_readable(vm, &arg0)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+			return FALSE;
+		}
+
+		hg_quark_set_executable(&arg0, TRUE);
+		STACK_PUSH (estack, arg0);
+
+		hg_vm_stepi(vm, &is_proceeded);
+		if (hg_vm_has_error(vm)) {
+			hg_stack_drop(ostack, error); /* the object where the error happened */
+			/* We want to notify the place
+			 * where the error happened as in token operator
+			 * but not in --file--
+			 */
+			STACK_PUSH (ostack, qself);
+
+			return FALSE;
+		} else {
+			hg_quark_t q;
+
+			if (is_proceeded) {
+				/* EOF may detected */
+				hg_stack_drop(ostack, error); /* the file object given for token operator */
+
+				STACK_PUSH (ostack, HG_QBOOL (FALSE));
+
+				__n = 0;
+			} else {
+				qt = hg_stack_index(estack, 0, error);
+				if (HG_IS_QFILE (qt)) {
+					/* scanner may detected the procedure.
+					 * in this case, the scanned object doesn't appear in the exec stack.
+					 */
+					q = hg_stack_pop(ostack, error);
+				} else {
+					q = hg_stack_pop(estack, error);
+				}
+
+				hg_stack_drop(estack, error); /* the file object executed above */
+				hg_stack_drop(ostack, error); /* the file object given for token operator */
+
+				STACK_PUSH (ostack, q);
+				STACK_PUSH (ostack, HG_QBOOL (TRUE));
+
+				__n = 1;
+			}
+		}
+
+		retval = TRUE;
+	} else if (HG_IS_QSTRING (arg0)) {
+		hg_string_t *s;
+		hg_quark_t qf;
+
+		if (!hg_vm_quark_is_readable(vm, &arg0)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+			return FALSE;
+		}
+		s = HG_VM_LOCK (vm, arg0, error);
+		if (!s) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
+		qf = hg_file_new_with_string(hg_vm_get_mem(vm),
+					     "%stoken",
+					     HG_FILE_IO_MODE_READ,
+					     s,
+					     NULL,
+					     error,
+					     NULL);
+		HG_VM_UNLOCK (vm, arg0);
+		if (qf == Qnil) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
+
+		hg_quark_set_executable(&qf, TRUE);
+		STACK_PUSH (estack, qf);
+
+		hg_vm_stepi(vm, &is_proceeded);
+		if (hg_vm_has_error(vm)) {
+			hg_stack_drop(ostack, error); /* the object where the error happened */
+			/* We want to notify the place
+			 * where the error happened as in token operator
+			 * but not in --file--
+			 */
+			STACK_PUSH (ostack, qself);
+
+			return FALSE;
+		} else {
+			hg_quark_t q, qs;
+			hg_file_t *f;
+			gssize pos;
+			guint length;
+
+			if (is_proceeded) {
+				/* EOF may detected */
+				hg_stack_drop(ostack, error); /* the string object given for token operator */
+
+				STACK_PUSH (ostack, HG_QBOOL (FALSE));
+
+				retval = TRUE;
+				__n = 0;
+			} else {
+				qt = hg_stack_index(estack, 0, error);
+				if (HG_IS_QFILE (qt)) {
+					/* scanner may detected the procedure.
+					 * in this case, the scanned object doesn't appear in the exec stack.
+					 */
+					q = hg_stack_pop(ostack, error);
+				} else {
+					q = hg_stack_pop(estack, error);
+				}
+
+				f = HG_VM_LOCK (vm, qf, error);
+				if (!f) {
+					hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+					return FALSE;
+				}
+
+				pos = hg_file_seek(f, 0, HG_FILE_POS_CURRENT, error);
+				HG_VM_UNLOCK (vm, qf);
+
+				/* safely drop the file object from the stack here.
+				 * shouldn't do that during someone is referring it because it may be destroyed by GC.
+				 */
+				hg_stack_drop(estack, error); /* the file object executed above */
+
+				s = HG_VM_LOCK (vm, arg0, error);
+				if (!s) {
+					hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+					return FALSE;
+				}
+
+				length = hg_string_maxlength(s) - 1;
+				qs = hg_string_make_substring(s, pos, length, NULL, error);
+				if (qs == Qnil) {
+					hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+					goto s_finalize;
+				}
+				hg_stack_drop(ostack, error); /* the string object given for token operator */
+
+				STACK_PUSH (ostack, qs);
+				STACK_PUSH (ostack, q);
+				STACK_PUSH (ostack, HG_QBOOL (TRUE));
+
+				retval = TRUE;
+				__n = 2;
+			  s_finalize:
+				HG_VM_UNLOCK (vm, arg0);
+			}
+		}
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+} G_STMT_END;
+VALIDATE_STACK_SIZE (__n, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (transform);
 DEFUNC_UNIMPLEMENTED_OPER (translate);
 DEFUNC_UNIMPLEMENTED_OPER (truncate);
