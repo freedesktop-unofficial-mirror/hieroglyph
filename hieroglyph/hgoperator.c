@@ -332,6 +332,7 @@ PROTO_OPER (resourceforall);
 PROTO_OPER (resourcestatus);
 PROTO_OPER (restore);
 PROTO_OPER (reversepath);
+/* revision is implemented in PostScript */
 PROTO_OPER (rlineto);
 PROTO_OPER (rmoveto);
 PROTO_OPER (roll);
@@ -343,6 +344,7 @@ PROTO_OPER (rrand);
 PROTO_OPER (save);
 PROTO_OPER (scale);
 PROTO_OPER (scalefont);
+/* scheck is implemented in PostScript */
 PROTO_OPER (search);
 PROTO_OPER (selectfont);
 PROTO_OPER (serialnumber);
@@ -412,13 +414,14 @@ PROTO_OPER (sub);
 PROTO_OPER (token);
 PROTO_OPER (transform);
 PROTO_OPER (translate);
+/* truncate is implemented in PostScript */
 PROTO_OPER (type);
 PROTO_OPER (uappend);
 PROTO_OPER (ucache);
 PROTO_OPER (ucachestatus);
 PROTO_OPER (ueofill);
 PROTO_OPER (ufill);
-PROTO_OPER (undef);
+/* undef is implemented in PostScript */
 /* undefinefont is implemented in PostScript */
 PROTO_OPER (undefineresource);
 PROTO_OPER (undefineuserobject);
