@@ -6472,16 +6472,24 @@ G_STMT_START {
 	if (HG_IS_QINT (arg0)) {
 		/* no need to proceed anything */
 	} else if (HG_IS_QREAL (arg0)) {
-		gdouble d = HG_REAL (arg0), dr;
+		gdouble d = HG_REAL (arg0), dfloat, dr;
+		glong base = (glong)d;
 
+		/* glibc's round(3) behaves differently expecting in PostScript.
+		 * particularly when rounding halfway.
+		 *   glibc's round(3) round halfway cases away from zero.
+		 *   PostScript's round halfway cases returns the greater of the two.
+		 */
+		dfloat = fabs(d - (gdouble)base);
+		dr = (gdouble)base + (base < 0 ? -1.0 : 1.0);
+		if (dfloat < 0.5) {
+			dr = (gdouble)base;
+		} if (HG_REAL_EQUAL (dfloat, 0.5)) {
+			dr = (gdouble)MAX (base, dr);
+		}
+		
 		hg_stack_drop(ostack, error);
 
-		dr = round(d);
-		/* glibc's round(3) behaves differently expecting in PostScript
-		 * for instance, -4.5 round has to be -4.0 but not -5.0
-		 */
-		if (d < 0.0 && HG_REAL_LE (dr, d))
-			dr += 1.0;
 		STACK_PUSH (ostack, HG_QREAL (dr));
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
