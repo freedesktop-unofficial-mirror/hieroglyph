@@ -6672,7 +6672,33 @@ DEFUNC_UNIMPLEMENTED_OPER (shareddict);
 DEFUNC_UNIMPLEMENTED_OPER (show);
 DEFUNC_UNIMPLEMENTED_OPER (showpage);
 
-DEFUNC_UNIMPLEMENTED_OPER (sin);
+/* <angle> sin <real> */
+DEFUNC_OPER (sin)
+G_STMT_START {
+	hg_quark_t arg0, q;
+	gdouble angle;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (HG_IS_QINT (arg0)) {
+		angle = (gdouble)HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg0)) {
+		angle = HG_REAL (arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	q = HG_QREAL (sin(angle / 180 * M_PI));
+	hg_stack_drop(ostack, error);
+
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (sqrt);
 
 /* <int> srand - */
