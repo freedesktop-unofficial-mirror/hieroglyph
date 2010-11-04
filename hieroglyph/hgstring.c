@@ -984,7 +984,7 @@ hg_string_copy_as_substring(hg_string_t  *src,
 	dest->length = end_index - start_index + 1;
 	dest->allocated_size = dest->length + 1;
 	dest->is_fixed_size = TRUE;
-	dest->offset = start_index;
+	dest->offset = src->offset + start_index;
 
 	return TRUE;
 }
