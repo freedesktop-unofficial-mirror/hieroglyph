@@ -7277,8 +7277,95 @@ VALIDATE_STACK_SIZE (__flag ? 1 : 0, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (widthshow);
-DEFUNC_UNIMPLEMENTED_OPER (write);
-DEFUNC_UNIMPLEMENTED_OPER (writehexstring);
+
+/* <file> <int> write - */
+DEFUNC_OPER (write)
+G_STMT_START {
+	hg_quark_t arg0, arg1;
+	hg_file_t *f;
+	gchar c[2];
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+
+	if (!HG_IS_QFILE (arg0) ||
+	    !HG_IS_QINT (arg1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!hg_vm_quark_is_writable(vm, &arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+	f = HG_VM_LOCK (vm, arg0, error);
+	if (!f) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	c[0] = HG_INT (arg1) % 256;
+	retval = (hg_file_write(f, c, sizeof (gchar), 1, error) > 0);
+	if (!retval) {
+		hg_vm_set_error_from_gerror(vm, qself, *error);
+	}
+	HG_VM_UNLOCK (vm, arg0);
+
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-2, 0, 0);
+DEFUNC_OPER_END
+
+/* <file> <string> writehexstring - */
+DEFUNC_OPER (writehexstring)
+G_STMT_START {
+	hg_quark_t arg0, arg1;
+	hg_file_t *f;
+	hg_string_t *s;
+	gchar *cstr;
+	gsize length, i;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QFILE (arg0) ||
+	    !HG_IS_QSTRING (arg1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!hg_vm_quark_is_writable(vm, &arg0) ||
+	    !hg_vm_quark_is_readable(vm, &arg1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+	f = HG_VM_LOCK (vm, arg0, error);
+	s = HG_VM_LOCK (vm, arg1, error);
+	if (f == NULL ||
+	    s == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		goto error;
+	}
+	cstr = hg_string_get_cstr(s);
+	length = hg_string_maxlength(s);
+	for (i = 0; i < length; i++) {
+		if (hg_file_append_printf(f, "%x", cstr[i] & 0xff) < 0) {
+			hg_vm_set_error(vm, qself, HG_VM_e_ioerror);
+			goto error;
+		}
+	}
+
+	retval = TRUE;
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+  error:
+	HG_VM_UNLOCK (vm, arg0);
+	HG_VM_UNLOCK (vm, arg1);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-2, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (writeobject);
 
 /* <file> <string> writestring - */
@@ -7298,7 +7385,8 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-	if (!hg_vm_quark_is_readable(vm, &arg1)) {
+	if (!hg_vm_quark_is_writable(vm, &arg0) ||
+	    !hg_vm_quark_is_readable(vm, &arg1)) {
 		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
 		return FALSE;
 	}
