@@ -1485,6 +1485,23 @@ hg_file_seek(hg_file_t      *file,
 }
 
 /**
+ * hg_file_is_closed:
+ * @file:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_file_is_closed(hg_file_t *file)
+{
+	hg_return_val_if_fail (file != NULL, TRUE);
+	hg_return_val_if_fail (file->o.type == HG_TYPE_FILE, TRUE);
+
+	return file->is_closed;
+}
+
+/**
  * hg_file_is_eof:
  * @file:
  *

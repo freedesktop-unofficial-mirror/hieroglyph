@@ -170,6 +170,7 @@ gssize                  hg_file_seek               (hg_file_t                   
                                                     gssize                             offset,
                                                     hg_file_pos_t                      whence,
                                                     GError                            **error);
+gboolean                hg_file_is_closed          (hg_file_t                         *file);
 gboolean                hg_file_is_eof             (hg_file_t                         *file);
 void                    hg_file_clear_eof          (hg_file_t                         *file);
 gssize                  hg_file_append_printf      (hg_file_t                         *file,

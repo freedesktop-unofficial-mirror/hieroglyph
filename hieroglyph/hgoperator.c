@@ -26,6 +26,7 @@
 #endif
 
 #include <stdlib.h>
+#include <sys/stat.h>
 #include "hgerror.h"
 #include "hgbool.h"
 #include "hgdict.h"
@@ -6750,7 +6751,72 @@ VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (startjob);
-DEFUNC_UNIMPLEMENTED_OPER (status);
+
+/* <file> status <bool>
+ * <filename> status <pages> <bytes> <referenced> <created> true
+ * <filename> status false
+ */
+DEFUNC_OPER (status)
+gint __n G_GNUC_UNUSED = 0;
+G_STMT_START {
+	hg_quark_t arg0, q;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+
+	if (HG_IS_QFILE (arg0)) {
+		hg_file_t *f = HG_VM_LOCK (vm, arg0, error);
+
+		if (!f) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
+		q = HG_QBOOL (!hg_file_is_closed(f));
+
+		HG_VM_UNLOCK (vm, arg0);
+
+		hg_stack_drop(ostack, error);
+
+		STACK_PUSH (ostack, q);
+
+		__n = 1 - 1;
+	} else if (HG_IS_QSTRING (arg0)) {
+		hg_string_t *s = HG_VM_LOCK (vm, arg0, error);
+		gchar *filename;
+		struct stat st;
+
+		if (!s) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
+		filename = hg_string_get_cstr(s);
+		HG_VM_UNLOCK (vm, arg0);
+
+		hg_stack_drop(ostack, error);
+
+		if (lstat(filename, &st) == -1) {
+			STACK_PUSH (ostack, HG_QBOOL (FALSE));
+
+			__n = 1 - 1;
+		} else {
+			STACK_PUSH (ostack, HG_QINT (st.st_blocks));
+			STACK_PUSH (ostack, HG_QINT (st.st_size));
+			STACK_PUSH (ostack, HG_QINT (st.st_atime));
+			STACK_PUSH (ostack, HG_QINT (st.st_mtime));
+			STACK_PUSH (ostack, HG_QBOOL (TRUE));
+
+			__n = 5 - 1;
+		}
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (__n, 0, 0);
+DEFUNC_OPER_END
 
 /* - stop - */
 DEFUNC_OPER (stop)
