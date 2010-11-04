@@ -556,7 +556,7 @@ _hg_file_io_real_file_open(hg_file_t  *file,
 	struct stat st;
 	int fd;
 	gpointer buffer = NULL;
-	static gint modes[] = {
+	static gint flags[] = {
 		0,				/* 0 */
 		O_RDONLY,			/* HG_FILE_IO_MODE_READ */
 		O_WRONLY | O_CREAT | O_TRUNC,	/* HG_FILE_IO_MODE_WRITE */
@@ -601,7 +601,7 @@ _hg_file_io_real_file_open(hg_file_t  *file,
 	if (stat(filename, &st) == -1 && (file->mode & HG_FILE_IO_MODE_READ) != 0) {
 		goto exception;
 	}
-	if ((fd = open(filename, modes[file->mode])) == -1) {
+	if ((fd = open(filename, flags[file->mode], S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH)) == -1) {
 		goto exception;
 	}
 	g_free(filename);
