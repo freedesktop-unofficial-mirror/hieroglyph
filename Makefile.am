@@ -45,7 +45,11 @@ dist-hook:
 		&& mv -f ChangeLog.tmp $(top_distdir)/ChangeLog		\
 		|| ( rm -f ChangeLog.tmp;				\
 		     echo Failed to generate ChangeLog >&2 );		\
+		echo Updating hgversion.h.in &&				\
+		( cd "$(top_srcdir)" &&					\
+		  $(top_srcdir)/missing --run $(top_srcdir)/update-repo.sh)	\
+		&& cp -a $(top_srcdir)/hieroglyph/hgversion.h.in $(top_distdir)/hieroglyph/	\
+		|| echo Failed to update hgversion.h.in >&2;		\
 	else								\
 		echo A git clone is required to generate a ChangeLog >&2;	\
 	fi
-
