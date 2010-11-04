@@ -7189,7 +7189,6 @@ DEFUNC_UNIMPLEMENTED_OPER (ucache);
 DEFUNC_UNIMPLEMENTED_OPER (ucachestatus);
 DEFUNC_UNIMPLEMENTED_OPER (ueofill);
 DEFUNC_UNIMPLEMENTED_OPER (ufill);
-DEFUNC_UNIMPLEMENTED_OPER (undef);
 DEFUNC_UNIMPLEMENTED_OPER (undefineresource);
 DEFUNC_UNIMPLEMENTED_OPER (undefineuserobject);
 DEFUNC_UNIMPLEMENTED_OPER (upath);
@@ -7742,7 +7741,6 @@ _hg_operator_level2_register(hg_vm_t   *vm,
 	REG_OPER (dict, name, ucache);
 	REG_OPER (dict, name, ueofill);
 	REG_OPER (dict, name, ufill);
-	REG_OPER (dict, name, undef);
 	REG_OPER (dict, name, upath);
 	REG_OPER (dict, name, ustroke);
 	REG_OPER (dict, name, writeobject);
@@ -8216,7 +8214,6 @@ hg_operator_init(void)
 	DECL_OPER (ucachestatus);
 	DECL_OPER (ueofill);
 	DECL_OPER (ufill);
-	DECL_OPER (undef);
 	DECL_OPER (undefineresource);
 	DECL_OPER (undefineuserobject);
 	DECL_OPER (upath);
@@ -8619,7 +8616,6 @@ hg_operator_tini(void)
 	UNDECL_OPER (ucachestatus);
 	UNDECL_OPER (ueofill);
 	UNDECL_OPER (ufill);
-	UNDECL_OPER (undef);
 	UNDECL_OPER (undefineresource);
 	UNDECL_OPER (undefineuserobject);
 	UNDECL_OPER (upath);
