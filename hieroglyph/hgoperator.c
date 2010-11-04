@@ -6699,7 +6699,32 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (sqrt);
+/* <num> sqrt <real> */
+DEFUNC_OPER (sqrt)
+G_STMT_START {
+	hg_quark_t arg0, q;
+	gdouble d;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (HG_IS_QINT (arg0)) {
+		d = (gdouble)HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg0)) {
+		d = HG_REAL (arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	q = HG_QREAL (sqrt(d));
+	hg_stack_drop(ostack, error);
+
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
 
 /* <int> srand - */
 DEFUNC_OPER (srand)
