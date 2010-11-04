@@ -6460,7 +6460,39 @@ DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (rootfont);
 DEFUNC_UNIMPLEMENTED_OPER (rotate);
-DEFUNC_UNIMPLEMENTED_OPER (round);
+
+/* <num> round <num> */
+DEFUNC_OPER (round)
+G_STMT_START {
+	hg_quark_t arg0;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+
+	if (HG_IS_QINT (arg0)) {
+		/* no need to proceed anything */
+	} else if (HG_IS_QREAL (arg0)) {
+		gdouble d = HG_REAL (arg0), dr;
+
+		hg_stack_drop(ostack, error);
+
+		dr = round(d);
+		/* glibc's round(3) behaves differently expecting in PostScript
+		 * for instance, -4.5 round has to be -4.0 but not -5.0
+		 */
+		if (d < 0.0 && HG_REAL_LE (dr, d))
+			dr += 1.0;
+		STACK_PUSH (ostack, HG_QREAL (dr));
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
 
 /* - rrand <int> */
 DEFUNC_OPER (rrand)
