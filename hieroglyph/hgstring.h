@@ -103,14 +103,14 @@ gboolean            hg_string_append_printf     (hg_string_t        *string,
 						 const gchar        *format,
 						 ...);
 hg_quark_t          hg_string_make_substring    (hg_string_t        *string,
-						 gsize               start_index,
-						 gsize               end_index,
+						 gssize              start_index,
+						 gssize              end_index,
 						 gpointer           *ret,
 						 GError            **error);
 gboolean            hg_string_copy_as_substring (hg_string_t        *src,
 						 hg_string_t        *dest,
-						 gsize               start_index,
-						 gsize               end_index,
+						 gssize              start_index,
+						 gssize              end_index,
 						 GError            **error);
 
 G_END_DECLS

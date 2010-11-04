@@ -6538,7 +6538,91 @@ DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (scale);
 DEFUNC_UNIMPLEMENTED_OPER (scalefont);
-DEFUNC_UNIMPLEMENTED_OPER (search);
+
+/* <string> <seek> search <post> <match> <pre> true
+ *                               <string> false
+ */
+DEFUNC_OPER (search)
+gint __n G_GNUC_UNUSED = 0;
+G_STMT_START {
+	hg_quark_t arg0, arg1, qpost, qmatch, qpre;
+	hg_string_t *s = NULL, *seek = NULL;
+	gsize len0, len1;
+	gchar *cs0 = NULL, *cs1 = NULL, *p;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+
+	if (!HG_IS_QSTRING (arg0) ||
+	    !HG_IS_QSTRING (arg1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (!hg_vm_quark_is_readable(vm, &arg0) ||
+	    !hg_vm_quark_is_readable(vm, &arg1)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+
+	s = HG_VM_LOCK (vm, arg0, error);
+	seek = HG_VM_LOCK (vm, arg1, error);
+	if (!s || !seek) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		goto finalize;
+	}
+
+	len0 = hg_string_length(s);
+	len1 = hg_string_length(seek);
+	cs0 = hg_string_get_cstr(s);
+	cs1 = hg_string_get_cstr(seek);
+
+	if ((p = strstr(cs0, cs1))) {
+		gsize lmatch, lpre;
+
+		lpre = p - cs0;
+		lmatch = len1;
+
+		qpre = hg_string_make_substring(s, 0, lpre - 1, NULL, error);
+		qmatch = hg_string_make_substring(s, lpre, lpre + len1 - 1, NULL, error);
+		qpost = hg_string_make_substring(s, lpre + lmatch, len0 - 1, NULL, error);
+		if (qpre == Qnil ||
+		    qmatch == Qnil ||
+		    qpost == Qnil) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			goto finalize;
+		}
+
+		hg_stack_drop(ostack, error);
+		hg_stack_drop(ostack, error);
+
+		STACK_PUSH (ostack, qpost);
+		STACK_PUSH (ostack, qmatch);
+		STACK_PUSH (ostack, qpre);
+		STACK_PUSH (ostack, HG_QBOOL (TRUE));
+
+		__n = 4 - 2;
+	} else {
+		hg_stack_drop(ostack, error);
+
+		STACK_PUSH (ostack, HG_QBOOL (FALSE));
+
+		__n = 2 - 2;
+	}
+
+	retval = TRUE;
+  finalize:
+	g_free(cs0);
+	g_free(cs1);
+	if (s)
+		HG_VM_UNLOCK (vm, arg0);
+	if (seek)
+		HG_VM_UNLOCK (vm, arg1);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (__n, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (selectfont);
 DEFUNC_UNIMPLEMENTED_OPER (serialnumber);
 DEFUNC_UNIMPLEMENTED_OPER (setbbox);

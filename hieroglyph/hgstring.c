@@ -129,7 +129,7 @@ _hg_object_string_to_cstr(hg_object_t              *object,
 	hg_return_val_if_fail (object->type == HG_TYPE_STRING, NULL);
 
 	g_string_append_c(retval, '(');
-	for (i = s->offset; i < hg_string_maxlength(s); i++) {
+	for (i = 0; i < hg_string_maxlength(s); i++) {
 		if (cstr == NULL) {
 			g_string_append(retval, "\\000");
 		} else if (isprint(cstr[i])) {
@@ -727,9 +727,9 @@ hg_string_get_cstr(hg_string_t *string)
 				    string->qstring,
 				    NULL);
 
-	retval = g_new0(gchar, string->length - string->offset + 1);
+	retval = g_new0(gchar, string->length + 1);
 	memcpy(retval, &cstr[string->offset], string->length);
-	retval[string->length - string->offset] = 0;
+	retval[string->length] = 0;
 
 	hg_mem_unlock_object(string->o.mem, string->qstring);
 
@@ -907,8 +907,8 @@ hg_string_append_printf(hg_string_t *string,
  */
 hg_quark_t
 hg_string_make_substring(hg_string_t  *string,
-			 gsize         start_index,
-			 gsize         end_index,
+			 gssize        start_index,
+			 gssize        end_index,
 			 gpointer     *ret,
 			 GError      **error)
 {
@@ -971,17 +971,17 @@ hg_string_make_substring(hg_string_t  *string,
 gboolean
 hg_string_copy_as_substring(hg_string_t  *src,
 			    hg_string_t  *dest,
-			    gsize         start_index,
-			    gsize         end_index,
+			    gssize        start_index,
+			    gssize        end_index,
 			    GError      **error)
 {
 	hg_return_val_with_gerror_if_fail (src != NULL, FALSE, error);
 	hg_return_val_with_gerror_if_fail (src->o.type == HG_TYPE_STRING, FALSE, error);
 	hg_return_val_with_gerror_if_fail (dest != NULL, FALSE, error);
 	hg_return_val_with_gerror_if_fail (dest->o.type == HG_TYPE_STRING, FALSE, error);
-	hg_return_val_with_gerror_if_fail (start_index < hg_string_maxlength(src), FALSE, error);
+	hg_return_val_with_gerror_if_fail (start_index < hg_string_maxlength(src) || (end_index - start_index + 1) == 0, FALSE, error);
 	hg_return_val_with_gerror_if_fail (end_index < hg_string_maxlength(src), FALSE, error);
-	hg_return_val_with_gerror_if_fail (start_index <= end_index, FALSE, error);
+	hg_return_val_with_gerror_if_fail ((end_index - start_index + 1) >= 0, FALSE, error);
 
 	/* destroy the unnecessary destination's container */
 	hg_mem_free(dest->o.mem, dest->qstring);
