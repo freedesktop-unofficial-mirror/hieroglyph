@@ -342,7 +342,6 @@ PROTO_OPER (rrand);
 PROTO_OPER (save);
 PROTO_OPER (scale);
 PROTO_OPER (scalefont);
-PROTO_OPER (scheck);
 PROTO_OPER (search);
 PROTO_OPER (selectfont);
 PROTO_OPER (serialnumber);
@@ -6531,7 +6530,6 @@ DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (scale);
 DEFUNC_UNIMPLEMENTED_OPER (scalefont);
-DEFUNC_UNIMPLEMENTED_OPER (scheck);
 DEFUNC_UNIMPLEMENTED_OPER (search);
 DEFUNC_UNIMPLEMENTED_OPER (selectfont);
 DEFUNC_UNIMPLEMENTED_OPER (serialnumber);
@@ -7402,7 +7400,6 @@ _hg_operator_level2_register(hg_vm_t   *vm,
 	REG_OPER (dict, name, realtime);
 	REG_OPER (dict, name, renamefile);
 	REG_OPER (dict, name, rootfont);
-	REG_OPER (dict, name, scheck);
 	REG_OPER (dict, name, setblackgeneration);
 	REG_OPER (dict, name, setcacheparams);
 
@@ -7766,7 +7763,6 @@ hg_operator_init(void)
 	DECL_OPER (save);
 	DECL_OPER (scale);
 	DECL_OPER (scalefont);
-	DECL_OPER (scheck);
 	DECL_OPER (search);
 	DECL_OPER (selectfont);
 	DECL_OPER (serialnumber);
@@ -8168,7 +8164,6 @@ hg_operator_tini(void)
 	UNDECL_OPER (save);
 	UNDECL_OPER (scale);
 	UNDECL_OPER (scalefont);
-	UNDECL_OPER (scheck);
 	UNDECL_OPER (search);
 	UNDECL_OPER (selectfont);
 	UNDECL_OPER (serialnumber);
