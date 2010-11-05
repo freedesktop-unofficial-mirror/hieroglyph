@@ -2867,6 +2867,10 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 			return FALSE;
 		}
+		if (isinf(d)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_limitcheck);
+			return FALSE;
+		}
 		q = HG_QINT (d);
 		hg_stack_drop(ostack, error);
 
@@ -2899,7 +2903,6 @@ G_STMT_START {
 				return FALSE;
 			}
 			if (!HG_BOOL (qq)) {
-				g_print("falllllllllllseeeeeeeeeee\n");
 				hg_vm_set_error(vm, qself, HG_VM_e_syntaxerror);
 				return FALSE;
 			}
@@ -3011,7 +3014,11 @@ G_STMT_START {
 	if (HG_IS_QINT (arg0)) {
 		hg_stack_drop(ostack, error);
 		STACK_PUSH (ostack, HG_QREAL (HG_INT (arg0)));
+
+		retval = TRUE;
 	} else if (HG_IS_QREAL (arg0)) {
+		/* no need to proceed anything */
+		retval = TRUE;
 	} else if (HG_IS_QSTRING (arg0)) {
 		hg_string_t *s;
 
@@ -3031,33 +3038,43 @@ G_STMT_START {
 		STACK_PUSH (ostack, q);
 		retval = _hg_operator_real_token(vm, error);
 		if (retval == TRUE) {
-			hg_quark_t qq;
+			hg_quark_t qq, qv;
 
 			qq = hg_stack_pop(ostack, error);
 			if (!HG_IS_QBOOL (qq)) {
 				hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 				return FALSE;
-			} else {
-				if (!HG_BOOL (qq)) {
-					hg_mem_reserved_spool_remove(hg_vm_get_mem_from_quark(vm, qq),
-								     qq);
-					hg_vm_set_error(vm, qself, HG_VM_e_syntaxerror);
+			}
+			if (!HG_BOOL (qq)) {
+				hg_vm_set_error(vm, qself, HG_VM_e_syntaxerror);
+				return FALSE;
+			}
+			qv = hg_stack_pop(ostack, error);
+			if (HG_IS_QINT (qv)) {
+				qv = HG_QREAL (HG_INT (qv));
+			} else if (HG_IS_QREAL (qv)) {
+				if (isinf(HG_REAL (qv))) {
+					hg_vm_set_error(vm, qself, HG_VM_e_limitcheck);
 					return FALSE;
 				}
+			} else {
+				hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+				return FALSE;
 			}
-			hg_stack_roll(ostack, 2, 1, error);
 			hg_stack_drop(ostack, error);
+
+			STACK_PUSH (ostack, qv);
 
 			retval = TRUE;
 		} else {
 			hg_stack_drop(ostack, error);
+
+			STACK_PUSH (ostack, qself);
 		}
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-
-	retval = TRUE;
 } G_STMT_END;
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END

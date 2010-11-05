@@ -323,7 +323,13 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 		    }
 	    case HG_TYPE_NULL:
 	    case HG_TYPE_INT:
+		    goto push_stack;
 	    case HG_TYPE_REAL:
+		    if (isinf(HG_REAL (qexecobj))) {
+			    hg_vm_set_error(vm, qparent,
+					    HG_VM_e_limitcheck);
+			    return FALSE;
+		    }
 	    case HG_TYPE_BOOL:
 	    case HG_TYPE_DICT:
 	    case HG_TYPE_MARK:
@@ -2410,7 +2416,12 @@ hg_vm_stepi(hg_vm_t  *vm,
 	switch (hg_quark_get_type(qexecobj)) {
 	    case HG_TYPE_NULL:
 	    case HG_TYPE_INT:
+		    goto push_stack;
 	    case HG_TYPE_REAL:
+		    if (isinf(HG_REAL (qexecobj))) {
+			    hg_vm_set_error(vm, qexecobj, HG_VM_e_limitcheck);
+			    return TRUE;
+		    }
 	    case HG_TYPE_BOOL:
 	    case HG_TYPE_DICT:
 	    case HG_TYPE_MARK:
@@ -3121,6 +3132,8 @@ hg_vm_startjob(hg_vm_t           *vm,
 		return TRUE;
 	} else {
 		hg_vm_load_plugins(vm);
+
+		/* FIXME: initialize device */
 
 		if (initializer) {
 			gchar *s = g_strdup_printf("{(%s)(r)file dup type/filetype eq{cvx exec}if}stopped{$error/newerror get{errordict/handleerror get exec 1 .quit}if}if", initializer);
