@@ -2004,7 +2004,7 @@ hg_vm_setup(hg_vm_t           *vm,
 		if (vm->lineedit == NULL)
 			goto error;
 
-		vm->qgstate = hg_gstate_new(hg_vm_get_mem(vm), NULL);
+		vm->qgstate = hg_gstate_new(vm->mem[HG_VM_MEM_LOCAL], NULL);
 		if (vm->qgstate == Qnil)
 			goto error;
 
