@@ -391,7 +391,7 @@ HEXDIGITS	[0-9a-fA-F]
 [\t\f ]+		{
 		/* ignore */
 	}
-[+-]?[0-9]*\.[0-9]+|[+-]?[0-9]+(\.[0-9]+)?e[+-][0-9]+/{CTRL_OR_SPACE}	{
+[+-]?[0-9]*\.[0-9]+|[+-]?[0-9]+(\.[0-9]+)?[eE][+-]?[0-9]+/{CTRL_OR_SPACE}	{
 		gdouble result = 0.0L;
 
 		sscanf(yytext, "%lf", &result);
