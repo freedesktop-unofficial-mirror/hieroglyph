@@ -2891,26 +2891,43 @@ G_STMT_START {
 		STACK_PUSH (ostack, q);
 		retval = _hg_operator_real_token(vm, error);
 		if (retval == TRUE) {
-			hg_quark_t qq;
+			hg_quark_t qq, qv;
 
 			qq = hg_stack_pop(ostack, error);
 			if (!HG_IS_QBOOL (qq)) {
 				hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 				return FALSE;
-			} else {
-				if (!HG_BOOL (qq)) {
-					hg_mem_reserved_spool_remove(hg_vm_get_mem_from_quark(vm, qq),
-								     qq);
-					hg_vm_set_error(vm, qself, HG_VM_e_syntaxerror);
+			}
+			if (!HG_BOOL (qq)) {
+				g_print("falllllllllllseeeeeeeeeee\n");
+				hg_vm_set_error(vm, qself, HG_VM_e_syntaxerror);
+				return FALSE;
+			}
+			qv = hg_stack_pop(ostack, error);
+			if (HG_IS_QINT (qv)) {
+				/* no need to proceed anything here */
+			} else if (HG_IS_QREAL (qv)) {
+				gdouble d = HG_REAL (qv);
+
+				if (d < G_MININT32 ||
+				    d > G_MAXINT32) {
+					hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 					return FALSE;
 				}
+				qv = HG_QINT ((gint32)d);
+			} else {
+				hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+				return FALSE;
 			}
-			hg_stack_roll(ostack, 2, 1, error);
 			hg_stack_drop(ostack, error);
+
+			STACK_PUSH (ostack, qv);
 
 			retval = TRUE;
 		} else {
 			hg_stack_drop(ostack, error);
+
+			STACK_PUSH (ostack, qself);
 		}
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
