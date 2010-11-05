@@ -1,0 +1,61 @@
+%!PS-Adobe-2.0
+% test-eq.ps
+% Copyright (C) 2006-2010 Akira TAGOH
+%
+% Authors:
+%   Akira TAGOH  <akira@tagoh.org>
+%
+% This library is free software; you can redistribute it and/or
+% modify it under the terms of the GNU Lesser General Public
+% License as published by the Free Software Foundation; either
+% version 2 of the License, or (at your option) any later version.
+%
+% This library is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+% Lesser General Public License for more details.
+%
+% You should have received a copy of the GNU Lesser General Public
+% License along with this library; if not, write to the
+% Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+% Boston, MA 02111-1307, USA.
+.initunittest
+
+[] /stackunderflow true .initunittestdict {eq} .unittest
+[1] /stackunderflow true .initunittestdict {1 eq} .unittest
+[(foo) noaccess (foo)] /invalidaccess true .initunittestdict /readable 1 .setunittestmask {(foo) noaccess (foo) eq} .unittest
+[(foo) (foo) noaccess] /invalidaccess true .initunittestdict /readable 1 .setunittestmask {(foo) (foo) noaccess eq} .unittest
+[(foo) noaccess (foo) noaccess] /invalidaccess true .initunittestdict /readable 1 .setunittestmask {(foo) noaccess (foo) noaccess eq} .unittest
+[true] null true .initunittestdict {true true eq} .unittest
+[false] null true .initunittestdict {false true eq} .unittest
+[true] null true .initunittestdict {5 5 eq} .unittest
+[false] null true .initunittestdict {5 5.01 eq} .unittest
+[true] null true .initunittestdict {5 5.0 eq} .unittest
+[false] null true .initunittestdict {5.1 5.0 eq} .unittest
+[true] null true .initunittestdict {/name /name eq} .unittest
+[false] null true .initunittestdict {/namea /name eq} .unittest
+[true] null true .initunittestdict {/name (name) eq} .unittest
+[true] null true .initunittestdict {[1] dup eq} .unittest
+[false] null true .initunittestdict {[1][1] eq} .unittest
+[true] null true .initunittestdict {[1] noaccess dup eq} .unittest
+[false] null true .initunittestdict {[1] noaccess [1] eq} .unittest
+[true] null true .initunittestdict {1 dict dup eq} .unittest
+[false] null true .initunittestdict {1 dict 1 dict eq} .unittest
+[true] null true .initunittestdict {1 dict noaccess dup eq} .unittest
+[false] null true .initunittestdict {1 dict noaccess 1 dict eq} .unittest
+[true] null true .initunittestdict {(foo)(foo) eq} .unittest
+[false] null true .initunittestdict {(foo)(fooo) eq} .unittest
+[true] null true .initunittestdict {null null eq} .unittest
+[false] null true .initunittestdict {null () eq} .unittest
+[true] null true .initunittestdict {{moveto} 0 get {moveto} 0 get eq} .unittest
+[false] null true .initunittestdict {{moveto} 0 get {rmoveto} 0 get eq} .unittest
+[true] null true .initunittestdict {mark mark eq} .unittest
+[false] null true .initunittestdict {mark null eq} .unittest
+[true] null true .initunittestdict {currentfile currentfile eq} .unittest
+[false] null true .initunittestdict {currentfile (.)(r) file eq} .unittest
+[true] null true .initunittestdict {save dup eq} .unittest
+[false] null true .initunittestdict {save save eq} .unittest
+[true] null true .initunittestdict {{foo} dup eq} .unittest
+[false] null true .initunittestdict {{foo} {foo} eq} .unittest
+
+.unittestresult
