@@ -226,8 +226,8 @@ hg_stack_new(hg_mem_t *mem,
 	hg_stack_t *retval = NULL;
 	hg_quark_t self;
 
-	hg_return_val_if_fail (mem != NULL, Qnil);
-	hg_return_val_if_fail (max_depth > 0, Qnil);
+	hg_return_val_if_fail (mem != NULL, NULL);
+	hg_return_val_if_fail (max_depth > 0, NULL);
 
 	self = hg_object_new(mem, (gpointer *)&retval, HG_TYPE_STACK, 0, max_depth, vm);
 	if (self != Qnil) {
