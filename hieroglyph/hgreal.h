@@ -74,6 +74,7 @@ hg_real_convert_from_native(gfloat vfloat)
 	gchar *p = x;
 
 	v.v_float = vfloat;
+
 	return hg_quark_new(HG_TYPE_REAL, (hg_quark_t)*(guint32 *)p);
 }
 
