@@ -791,7 +791,6 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 
 		used_size = data->used_size - priv->slave.used_size;
 
-#define HG_GC_DEBUG
 #if defined (HG_DEBUG) && defined (HG_GC_DEBUG)
 		g_print("GC: marking the locked objects\n");
 #endif
