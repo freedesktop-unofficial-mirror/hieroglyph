@@ -419,6 +419,7 @@ _hg_file_io_real_stdin_open(hg_file_t  *file,
 			errno = ENOMEM;
 			goto exception;
 		}
+		memset(data, 0, sizeof (hg_file_io_data_t));
 		data->self = qdata;
 		data->func = _hg_file_io_data_gc_mark;
 	}
@@ -470,6 +471,7 @@ _hg_file_io_real_stdout_open(hg_file_t  *file,
 			errno = ENOMEM;
 			goto exception;
 		}
+		memset(data, 0, sizeof (hg_file_io_data_t));
 		data->self = qdata;
 		data->func = _hg_file_io_data_gc_mark;
 	}
@@ -521,6 +523,7 @@ _hg_file_io_real_stderr_open(hg_file_t  *file,
 			errno = ENOMEM;
 			goto exception;
 		}
+		memset(data, 0, sizeof (hg_file_io_data_t));
 		data->self = qdata;
 		data->func = _hg_file_io_data_gc_mark;
 	}
@@ -583,6 +586,7 @@ _hg_file_io_real_file_open(hg_file_t  *file,
 			errno = ENOMEM;
 			goto exception;
 		}
+		memset(data, 0, sizeof (hg_file_io_data_t));
 		data->self = qdata;
 		data->func = _hg_file_io_data_gc_mark;
 	}
@@ -1113,6 +1117,7 @@ _hg_file_io_real_lineedit_open(hg_file_t  *file,
 		errno = ENOMEM;
 		goto exception;
 	}
+	memset(bd, 0, sizeof (hg_file_io_buffered_data_t));
 	bd->data.self = q;
 	bd->data.func = _hg_file_io_buffered_data_gc_mark;
 	bd->in = s;
@@ -1313,6 +1318,7 @@ hg_file_new_with_string(hg_mem_t        *mem,
 	if (qbdata == Qnil)
 		return Qnil;
 
+	memset(x, 0, sizeof (hg_file_io_buffered_data_t));
 	x->data.self = qbdata;
 	x->data.func = _hg_file_io_buffered_data_gc_mark;
 	x->in = in;
