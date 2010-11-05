@@ -3452,6 +3452,14 @@ G_STMT_START {
 	arg0 = hg_stack_index(ostack, 1, error);
 	arg1 = hg_stack_index(ostack, 0, error);
 
+	if ((HG_IS_QSTRING (arg0) &&
+	     !hg_vm_quark_is_readable(vm, &arg0)) ||
+	    (HG_IS_QSTRING (arg1) &&
+	     !hg_vm_quark_is_readable(vm, &arg1))) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
+
 	ret = hg_vm_quark_compare(vm, arg0, arg1);
 	if (!ret) {
 		if ((HG_IS_QNAME (arg0) ||
@@ -3468,11 +3476,6 @@ G_STMT_START {
 			} else {
 				hg_string_t *s;
 
-				if (!hg_vm_quark_is_readable(vm, &arg0)) {
-					hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
-					return FALSE;
-				}
-
 				s = HG_VM_LOCK (vm, arg0, error);
 				if (s == NULL) {
 					hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
@@ -3486,11 +3489,6 @@ G_STMT_START {
 				s2 = g_strdup(HG_NAME (vm->name, arg1));
 			} else {
 				hg_string_t *s;
-
-				if (!hg_vm_quark_is_readable(vm, &arg1)) {
-					hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
-					return FALSE;
-				}
 
 				s = HG_VM_LOCK (vm, arg1, error);
 				if (s == NULL) {
