@@ -45,7 +45,7 @@ static hg_quark_t __unittest_enc_list[HG_unittest_enc_END];
 /*< private >*/
 DEFUNC_OPER (private_validatetestresult)
 G_STMT_START {
-	hg_quark_t arg0, qverbose, qattrs, qexp, qaerror, qeerror, q;
+	hg_quark_t arg0, qverbose, qattrs, qexp, qaerror, qeerror, qerrorat, q;
 	hg_quark_t qastack, qestack;
 	hg_string_t *sexp;
 	hg_dict_t *d;
@@ -89,15 +89,16 @@ G_STMT_START {
 
 	qaerror = hg_dict_lookup(d, HG_QNAME (vm->name, "actualerror"), error);
 	qeerror = hg_dict_lookup(d, HG_QNAME (vm->name, "expectederror"), error);
-	if (qaerror == Qnil || qeerror == Qnil) {
+	qerrorat = hg_dict_lookup(d, HG_QNAME (vm->name, "errorat"), error);
+	if (qaerror == Qnil || qeerror == Qnil || qerrorat == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		goto error;
 	} else if (!hg_vm_quark_compare(vm, qaerror, qeerror)) {
 		if (verbose) {
-			hg_quark_t qa, qe, qf;
-			hg_string_t *sa, *se;
+			hg_quark_t qa, qe, qf, qp;
+			hg_string_t *sa, *se, *sp;
 			hg_file_t *f;
-			gchar *csa, *cse;
+			gchar *csa, *cse, *csp;
 
 			qa = hg_vm_quark_to_string(vm, qaerror, TRUE, (gpointer *)&sa, error);
 			if (qa == Qnil) {
@@ -113,14 +114,22 @@ G_STMT_START {
 				cse = hg_string_get_cstr(se);
 			}
 			hg_string_free(se, TRUE);
+			qp = hg_vm_quark_to_string(vm, qerrorat, TRUE, (gpointer *)&sp, error);
+			if (qp == Qnil) {
+				csp = g_strdup("--%unknown--");
+			} else {
+				csp = hg_string_get_cstr(sp);
+			}
+			hg_string_free(sp, TRUE);
 
 			qf = hg_vm_get_io(vm, HG_FILE_IO_STDERR);
 			f = HG_VM_LOCK (vm, qf, error);
-			hg_file_append_printf(f, "Expression: %s - expected error is %s, but actual error was %s\n",
-					      cexp, cse, csa);
+			hg_file_append_printf(f, "Expression: %s - expected error is %s, but actual error was %s at %s\n",
+					      cexp, cse, csa, csp);
 			HG_VM_UNLOCK (vm, qf);
 			g_free(csa);
 			g_free(cse);
+			g_free(csp);
 		}
 		result = FALSE;
 	}

@@ -27,6 +27,7 @@
     /expectederror null
     /expectedostack null
     /actualerror null
+    /errorat null
     /actualostack null
     /verbose true
     /expression null
@@ -109,6 +110,7 @@
     {exec} stopped {
 	$error /newerror get {
 	    $error /errorname get .unittestdict /actualerror 3 -1 roll put
+	    $error /command get .unittestdict /errorat 3 -1 roll put
 	} {
 	    .unittestdict /actualerror /stop put
 	} ifelse
