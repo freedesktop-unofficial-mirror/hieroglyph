@@ -73,6 +73,7 @@ _hg_object_gstate_copy(hg_object_t              *object,
 
 	object->on_copying = retval = hg_gstate_new(gstate->o.mem, (gpointer *)&g);
 	if (retval != Qnil) {
+		memcpy(&g->color, &gstate->color, sizeof (hg_color_t));
 		g->qpath = func(gstate->qpath, user_data, NULL, &err);
 		if (err)
 			goto finalize;
@@ -251,6 +252,8 @@ hg_gstate_save(hg_gstate_t *gstate,
 	GError *err = NULL;
 	hg_gstate_t *g;
 
+	hg_return_val_if_fail (gstate != NULL, Qnil);
+
 	retval = hg_object_copy((hg_object_t *)gstate,
 				_hg_gstate_iterate_copy,
 				gstate, (gpointer *)&g, &err);
@@ -274,4 +277,29 @@ hg_gstate_save(hg_gstate_t *gstate,
 	}
 
 	return retval;
+}
+
+/**
+ * hg_gstate_set_rgbcolor:
+ * @gstate:
+ * @red:
+ * @green:
+ * @blue:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+void
+hg_gstate_set_rgbcolor(hg_gstate_t *gstate,
+		       gdouble      red,
+		       gdouble      green,
+		       gdouble      blue)
+{
+	hg_return_if_fail (gstate != NULL);
+
+	gstate->color.is_rgb = TRUE;
+	gstate->color.is.rgb.red = red;
+	gstate->color.is.rgb.green = green;
+	gstate->color.is.rgb.blue = blue;
 }

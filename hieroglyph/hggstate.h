@@ -36,13 +36,29 @@ G_BEGIN_DECLS
 	(hg_quark_get_type((_q_)) == HG_TYPE_GSTATE)
 
 typedef struct _hg_gstate_t	hg_gstate_t;
+typedef struct _hg_color_t	hg_color_t;
 
+struct _hg_color_t {
+	gboolean is_rgb;
+	union {
+		struct {
+			gdouble red;
+			gdouble green;
+			gdouble blue;
+		} rgb;
+		struct {
+			gdouble hue;
+			gdouble saturation;
+			gdouble brightness;
+		} hsb;
+	} is;
+};
 struct _hg_gstate_t {
 	hg_object_t o;
 	hg_quark_t  qpath;
 	gboolean    is_snapshot;
+	hg_color_t  color;
 };
-
 
 hg_object_vtable_t *hg_object_gstate_get_vtable(void);
 hg_quark_t          hg_gstate_new              (hg_mem_t    *mem,
@@ -52,6 +68,10 @@ void                hg_gstate_set_path         (hg_gstate_t *gstate,
 hg_quark_t          hg_gstate_get_path         (hg_gstate_t *gstate);
 hg_quark_t          hg_gstate_save             (hg_gstate_t *gstate,
 						gboolean     is_snapshot);
+void                hg_gstate_set_rgbcolor     (hg_gstate_t *gstate,
+						gdouble      red,
+						gdouble      green,
+						gdouble      blue);
 
 
 G_END_DECLS

@@ -6739,7 +6739,61 @@ DEFUNC_UNIMPLEMENTED_OPER (setoverprint);
 DEFUNC_UNIMPLEMENTED_OPER (setpacking);
 DEFUNC_UNIMPLEMENTED_OPER (setpagedevice);
 DEFUNC_UNIMPLEMENTED_OPER (setpattern);
-DEFUNC_UNIMPLEMENTED_OPER (setrgbcolor);
+
+/* <red> <green> <blue> setrgbcolor - */
+DEFUNC_OPER (setrgbcolor)
+G_STMT_START {
+	hg_quark_t arg0, arg1, arg2;
+	hg_gstate_t *gstate;
+	gdouble r, g, b;
+
+	CHECK_STACK (ostack, 3);
+
+	arg0 = hg_stack_index(ostack, 2, error);
+	arg1 = hg_stack_index(ostack, 1, error);
+	arg2 = hg_stack_index(ostack, 0, error);
+	if (HG_IS_QINT (arg0)) {
+		r = HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg0)) {
+		r = HG_REAL (arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	if (HG_IS_QINT (arg1)) {
+		g = HG_INT (arg1);
+	} else if (HG_IS_QREAL (arg0)) {
+		g = HG_REAL (arg1);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	if (HG_IS_QINT (arg2)) {
+		b = HG_INT (arg2);
+	} else if (HG_IS_QREAL (arg2)) {
+		b = HG_REAL (arg2);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	gstate = HG_VM_LOCK (vm, vm->qgstate, error);
+	if (gstate == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	hg_gstate_set_rgbcolor(gstate, r, g, b);
+
+	HG_VM_UNLOCK (vm, vm->qgstate);
+
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-3, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (setscreen);
 DEFUNC_UNIMPLEMENTED_OPER (setshared);
 DEFUNC_UNIMPLEMENTED_OPER (setstrokeadjust);
