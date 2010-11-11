@@ -52,9 +52,6 @@ _hg_object_path_initialize(hg_object_t *object,
 	hg_path_t *path = (hg_path_t *)object;
 
 	path->length = 0;
-	path->x = 0.0;
-	path->y = 0.0;
-	path->estimated_point = 0;
 	path->qnode = hg_mem_alloc_with_flags(path->o.mem,
 					      sizeof (hg_path_node_t) * HG_PATH_MAX,
 					      HG_MEM_FLAGS_DEFAULT | HG_MEM_DROP_ON_RESTORE,
@@ -128,6 +125,90 @@ _hg_object_path_compare(hg_object_t             *o1,
 	return FALSE;
 }
 
+static gboolean
+_hg_path_add(hg_path_t      *path,
+	     hg_path_type_t  type,
+	     gdouble         x,
+	     gdouble         y)
+{
+	hg_path_node_t *node;
+	gdouble cx, cy;
+	gboolean retval = TRUE;
+
+	hg_return_val_if_fail (path != NULL, FALSE);
+	hg_return_val_if_fail (type < HG_PATH_END, FALSE);
+	hg_return_val_if_fail (path->length < HG_PATH_MAX, FALSE);
+
+	hg_return_val_if_lock_fail (node,
+				    path->o.mem,
+				    path->qnode,
+				    FALSE);
+
+	if (path->length == 0) {
+		switch (type) {
+		    case HG_PATH_CURVETO:
+		    case HG_PATH_LINETO:
+		    case HG_PATH_RCURVETO:
+		    case HG_PATH_RMOVETO:
+		    case HG_PATH_RLINETO:
+			    /* /nocurrentpoint would be raised. */
+			    retval = FALSE;
+			    goto finalize;
+		    case HG_PATH_CLOSEPATH:
+			    /* no errors */
+			    goto finalize;
+		    default:
+			    break;
+		}
+	}
+
+	cx = node[path->length - 1].cx;
+	cy = node[path->length - 1].cy;
+
+	switch (type) {
+	    case HG_PATH_SETBBOX:
+		    break;
+	    case HG_PATH_CURVETO:
+	    case HG_PATH_LINETO:
+	    case HG_PATH_MOVETO:
+		    node[path->length].dx = x;
+		    node[path->length].dy = y;
+		    node[path->length].cx = x;
+		    node[path->length].cy = y;
+		    break;
+	    case HG_PATH_RCURVETO:
+	    case HG_PATH_RMOVETO:
+	    case HG_PATH_RLINETO:
+		    node[path->length].dx = x;
+		    node[path->length].dy = y;
+		    node[path->length].cx = cx + x;
+		    node[path->length].cy = cy + y;
+		    break;
+	    case HG_PATH_CLOSEPATH:
+		    if (node[path->length - 1].type == HG_PATH_CLOSEPATH) {
+			    /* nothing to do */
+			    goto finalize;
+		    }
+		    node[path->length].cx = node[0].dx;
+		    node[path->length].cy = node[0].dy;
+		    break;
+	    case HG_PATH_UCACHE:
+		    break;
+	    default:
+		    g_warning("%s: Unknown path type: %d",
+			      __PRETTY_FUNCTION__, type);
+		    retval = FALSE;
+		    goto finalize;
+	}
+
+	node[path->length].type = type;
+	path->length++;
+  finalize:
+	hg_mem_unlock_object(path->o.mem, path->qnode);
+
+	return retval;
+}
+
 /*< public >*/
 /**
  * hg_path_new:
@@ -158,57 +239,6 @@ hg_path_new(hg_mem_t *mem,
 }
 
 /**
- * hg_path_add:
- * @path:
- * @type:
- * @x:
- * @y:
- *
- * FIXME
- *
- * Returns:
- */
-gboolean
-hg_path_add(hg_path_t      *path,
-	    hg_path_type_t  type,
-	    gdouble         x,
-	    gdouble         y)
-{
-	hg_path_node_t *node;
-
-	hg_return_val_if_fail (path != NULL, FALSE);
-	hg_return_val_if_fail (type < HG_PATH_END, FALSE);
-	hg_return_val_if_fail (path->length < HG_PATH_MAX, FALSE);
-
-	hg_return_val_if_lock_fail (node,
-				    path->o.mem,
-				    path->qnode,
-				    FALSE);
-
-	node[path->length].type = type;
-	node[path->length].x = x;
-	node[path->length].y = y;
-
-	path->length++;
-
-	hg_mem_unlock_object(path->o.mem, path->qnode);
-
-	return TRUE;
-}
-
-/**
- * hg_path_close:
- * @path:
- *
- * FIXME
- */
-gboolean
-hg_path_close(hg_path_t *path)
-{
-	return hg_path_add(path, HG_PATH_CLOSEPATH, 0.0, 0.0);
-}
-
-/**
  * hg_path_get_current_point:
  * @path:
  * @x:
@@ -223,80 +253,116 @@ hg_path_get_current_point(hg_path_t *path,
 			  gdouble   *x,
 			  gdouble   *y)
 {
-	gboolean retval = FALSE;
 	hg_path_node_t *node;
-	gsize i;
 
 	hg_return_val_if_fail (path != NULL, FALSE);
 
-	if (path->length == path->estimated_point) {
-		if (path->length == 0) {
-			return FALSE;
-		} else {
-			retval = TRUE;
-			goto end;
-		}
-	}
+	if (path->length == 0)
+		return FALSE;
 
 	hg_return_val_if_lock_fail (node,
 				    path->o.mem,
 				    path->qnode,
 				    FALSE);
 
-	for (i = path->estimated_point; i < path->length; i++) {
-		switch (node[i].type) {
-		    case HG_PATH_SETBBOX:
-			    break;
-		    case HG_PATH_CURVETO:
-			    if ((i + 2) >= path->length ||
-				node[i+1].type != node[i].type ||
-				node[i+2].type != node[i].type)
-				    goto fail;
-			    i += 2;
-		    case HG_PATH_LINETO:
-			    if (!retval)
-				    goto fail;
-		    case HG_PATH_MOVETO:
-			    path->x = node[i].x;
-			    path->y = node[i].y;
-			    retval = TRUE;
-			    break;
-		    case HG_PATH_RCURVETO:
-			    if ((i + 2) >= path->length ||
-				node[i+1].type != node[i].type ||
-				node[i+2].type != node[i].type)
-				    goto fail;
-			    i += 2;
-		    case HG_PATH_RMOVETO:
-		    case HG_PATH_RLINETO:
-			    if (!retval)
-				    goto fail;
-			    path->x += node[i].x;
-			    path->y += node[i].y;
-			    retval = TRUE;
-			    break;
-		    case HG_PATH_CLOSEPATH:
-		    case HG_PATH_UCACHE:
-			    break;
-		    default:
-			    g_warning("Unknown path type to estimate the current point: %d", node[i].type);
-			    break;
-		}
-	}
-  fail:
+	if (x)
+		*x = node[path->length - 1].cx;
+	if (y)
+		*y = node[path->length - 1].cy;
+
 	hg_mem_unlock_object(path->o.mem, path->qnode);
 
-  end:
-	if (retval) {
-		if (x)
-			*x = path->x;
-		if (y)
-			*y = path->y;
+	return TRUE;
+}
 
-		path->estimated_point = path->length;
+/**
+ * hg_path_reverse:
+ * @path:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+#if 0
+hg_quark_t
+hg_path_reverse(hg_path_t *path,
+		gpointer  *ret)
+{
+	hg_quark_t retval;
+	hg_path_t *new_path;
+	hg_path_node_t *node, *new_node;
+	gboolean closed = FALSE;
+
+	hg_return_val_if_fail (path != NULL, Qnil);
+	hg_return_val_if_fail (path->length > 0, Qnil);
+
+	retval = hg_path_new(path->o.mem, (gpointer *)&new_path);
+	if (retval != Qnil) {
+		gssize i;
+
+		node = HG_MEM_LOCK (path->o.mem, path->qnode, NULL);
+		new_node = HG_MEM_LOCK (new_path->o.mem, new_path->qnode, NULL);
+		if (node == NULL || new_node == NULL) {
+			retval = Qnil;
+			goto finalize;
+		}
+
+		if (node[path->length - 1].type == HG_PATH_CLOSEPATH)
+			closed = TRUE;
+
+		i = path->length - 1;
+		new_node[new_path->length].type = HG_PATH_MOVETO;
+		new_node[new_path->length].dx = node[i].cx;
+		new_node[new_path->length].dy = node[i].cy;
+		new_node[new_path->length].cx = node[i].cx;
+		new_node[new_path->length].cy = node[i].cy;
+		new_path->length++;
+
+		for (; i >= 0; i++) {
+			new_node[new_path->length].type = node[i].type;
+
+			switch (node[i].type) {
+			    case HG_PATH_MOVETO:
+			    case HG_PATH_LINETO:
+				    new_node[new_path->length].dx = node[i - 1].cx;
+				    new_node[new_path->length].dy = node[i - 1].cy;
+				    new_node[new_path->length].cx = node[i - 1].cx;
+				    new_node[new_path->length].cy = node[i - 1].cy;
+				    break;
+			    case HG_PATH_RMOVETO:
+			    case HG_PATH_RLINETO:
+				    new_node[new_path->length].dx = -node[i].dx;
+				    new_node[new_path->length].dy = -node[i].dy;
+				    new_node[new_path->length].cx = node[i].cx - node[i].dx;
+				    new_node[new_path->length].cy = node[i].cx - node[i].dy;
+				    break;
+			    case HG_PATH_CURVETO:
+		}
+
+		if (ret) {
+			*ret = new_path;
+		} else {
+		  finalize:
+			hg_mem_unlock_object(path->o.mem, retval);
+		}
+		hg_mem_unlock_object(path->o.mem, path->qnode);
+		hg_mem_unlock_object(new_path->o.mem, new_path->qnode);
 	}
 
 	return retval;
+}
+#endif
+
+/**
+ * hg_path_close:
+ * @path:
+ *
+ * FIXME
+ */
+gboolean
+hg_path_close(hg_path_t *path)
+{
+	return _hg_path_add(path, HG_PATH_CLOSEPATH, 0.0, 0.0);
 }
 
 /**
@@ -314,7 +380,7 @@ hg_path_moveto(hg_path_t *path,
 	       gdouble    x,
 	       gdouble    y)
 {
-	return hg_path_add(path, HG_PATH_MOVETO, x, y);
+	return _hg_path_add(path, HG_PATH_MOVETO, x, y);
 }
 
 /**
@@ -335,7 +401,7 @@ hg_path_rmoveto(hg_path_t *path,
 	gboolean retval = hg_path_get_current_point(path, NULL, NULL);
 
 	if (retval)
-		return hg_path_add(path, HG_PATH_RMOVETO, x, y);
+		return _hg_path_add(path, HG_PATH_RMOVETO, x, y);
 
 	return retval;
 }
@@ -358,7 +424,7 @@ hg_path_lineto(hg_path_t *path,
 	gboolean retval = hg_path_get_current_point(path, NULL, NULL);
 
 	if (retval)
-		return hg_path_add(path, HG_PATH_LINETO, x, y);
+		return _hg_path_add(path, HG_PATH_LINETO, x, y);
 
 	return retval;
 }
@@ -381,7 +447,7 @@ hg_path_rlineto(hg_path_t *path,
 	gboolean retval = hg_path_get_current_point(path, NULL, NULL);
 
 	if (retval)
-		return hg_path_add(path, HG_PATH_RLINETO, x, y);
+		return _hg_path_add(path, HG_PATH_RLINETO, x, y);
 
 	return retval;
 }
@@ -412,9 +478,9 @@ hg_path_curveto(hg_path_t *path,
 	gboolean retval = !hg_path_get_current_point(path, NULL, NULL);
 
 	if (!retval) {
-		retval |= !hg_path_add(path, HG_PATH_CURVETO, x1, y1);
-		retval |= !hg_path_add(path, HG_PATH_CURVETO, x2, y2);
-		retval |= !hg_path_add(path, HG_PATH_CURVETO, x3, y3);
+		retval |= !_hg_path_add(path, HG_PATH_CURVETO, x1, y1);
+		retval |= !_hg_path_add(path, HG_PATH_CURVETO, x2, y2);
+		retval |= !_hg_path_add(path, HG_PATH_CURVETO, x3, y3);
 	}
 
 	return !retval;
@@ -446,9 +512,9 @@ hg_path_rcurveto(hg_path_t *path,
 	gboolean retval = !hg_path_get_current_point(path, NULL, NULL);
 
 	if (!retval) {
-		retval |= !hg_path_add(path, HG_PATH_RCURVETO, x1, y1);
-		retval |= !hg_path_add(path, HG_PATH_RCURVETO, x2, y2);
-		retval |= !hg_path_add(path, HG_PATH_RCURVETO, x3, y3);
+		retval |= !_hg_path_add(path, HG_PATH_RCURVETO, x1, y1);
+		retval |= !_hg_path_add(path, HG_PATH_RCURVETO, x2, y2);
+		retval |= !_hg_path_add(path, HG_PATH_RCURVETO, x3, y3);
 	}
 
 	return !retval;
@@ -494,14 +560,14 @@ hg_path_arc(hg_path_t *path,
 	h = 4.0 / 3.0 * tan((angle2 - angle1) / 4.0);
 
 	if (retval) {
-		retval = !hg_path_add(path, HG_PATH_LINETO, r_cos_a1 + x, r_sin_a1 + y);
+		retval = !_hg_path_add(path, HG_PATH_LINETO, r_cos_a1 + x, r_sin_a1 + y);
 	} else {
-		retval = !hg_path_add(path, HG_PATH_MOVETO, r_cos_a1 + x, r_sin_a1 + y);
+		retval = !_hg_path_add(path, HG_PATH_MOVETO, r_cos_a1 + x, r_sin_a1 + y);
 	}
 
-	retval |= !hg_path_add(path, HG_PATH_CURVETO, r_cos_a1 + x - h * r_sin_a1, r_sin_a1 + y + h * r_cos_a1);
-	retval |= !hg_path_add(path, HG_PATH_CURVETO, r_cos_a2 + x + h * r_sin_a2, r_sin_a2 + y - h * r_cos_a2);
-	retval |= !hg_path_add(path, HG_PATH_CURVETO, r_cos_a2 + x, r_sin_a2 + y);
+	retval |= !_hg_path_add(path, HG_PATH_CURVETO, r_cos_a1 + x - h * r_sin_a1, r_sin_a1 + y + h * r_cos_a1);
+	retval |= !_hg_path_add(path, HG_PATH_CURVETO, r_cos_a2 + x + h * r_sin_a2, r_sin_a2 + y - h * r_cos_a2);
+	retval |= !_hg_path_add(path, HG_PATH_CURVETO, r_cos_a2 + x, r_sin_a2 + y);
 
 	return !retval;
 }
@@ -546,14 +612,14 @@ hg_path_arcn(hg_path_t *path,
 	h = 4.0 / 3.0 * tan((angle1 - angle2) / 4.0);
 
 	if (retval) {
-		retval = !hg_path_add(path, HG_PATH_LINETO, r_cos_a1 + x, r_sin_a1 + y);
+		retval = !_hg_path_add(path, HG_PATH_LINETO, r_cos_a1 + x, r_sin_a1 + y);
 	} else {
-		retval = !hg_path_add(path, HG_PATH_MOVETO, r_cos_a1 + x, r_sin_a1 + y);
+		retval = !_hg_path_add(path, HG_PATH_MOVETO, r_cos_a1 + x, r_sin_a1 + y);
 	}
 
-	retval |= !hg_path_add(path, HG_PATH_CURVETO, r_cos_a1 + x - h * r_sin_a1, r_sin_a1 + y + h * r_cos_a1);
-	retval |= !hg_path_add(path, HG_PATH_CURVETO, r_cos_a2 + x + h * r_sin_a2, r_sin_a2 + y - h * r_cos_a2);
-	retval |= !hg_path_add(path, HG_PATH_CURVETO, r_cos_a2 + x, r_sin_a2 + y);
+	retval |= !_hg_path_add(path, HG_PATH_CURVETO, r_cos_a1 + x - h * r_sin_a1, r_sin_a1 + y + h * r_cos_a1);
+	retval |= !_hg_path_add(path, HG_PATH_CURVETO, r_cos_a2 + x + h * r_sin_a2, r_sin_a2 + y - h * r_cos_a2);
+	retval |= !_hg_path_add(path, HG_PATH_CURVETO, r_cos_a2 + x, r_sin_a2 + y);
 
 	return !retval;
 }
@@ -613,13 +679,13 @@ hg_path_arcto(hg_path_t *path,
 		if (HG_REAL_IS_ZERO (t1y * x0 - y0 * t1x)) {
 			/* points to the same place */
 		} else {
-			retval = !hg_path_add(path, HG_PATH_LINETO, t1x, t1y);
+			retval = !_hg_path_add(path, HG_PATH_LINETO, t1x, t1y);
 		}
 		/* FIXME: two the control points */
-		retval |= !hg_path_add(path, HG_PATH_CURVETO, t2x, t2y);
-		retval |= !hg_path_add(path, HG_PATH_CURVETO, t2x, t2y);
+		retval |= !_hg_path_add(path, HG_PATH_CURVETO, t2x, t2y);
+		retval |= !_hg_path_add(path, HG_PATH_CURVETO, t2x, t2y);
 		/* FIXME: end */
-		retval |= !hg_path_add(path, HG_PATH_CURVETO, t2x, t2y);
+		retval |= !_hg_path_add(path, HG_PATH_CURVETO, t2x, t2y);
 	}
 
 	return !retval;

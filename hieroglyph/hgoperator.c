@@ -2319,7 +2319,37 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (closepath);
+/* - closepath - */
+DEFUNC_OPER (closepath)
+G_STMT_START {
+	hg_quark_t q = Qnil;
+	hg_gstate_t *gstate;
+	hg_path_t *path;
+
+	gstate = HG_VM_LOCK (vm, vm->qgstate, error);
+	if (gstate == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	q = hg_gstate_get_path(gstate);
+	path = HG_VM_LOCK (vm, q, error);
+	if (path == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		goto error;
+	}
+	if (!hg_path_close(path)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_limitcheck);
+		goto error;
+	}
+	retval = TRUE;
+  error:
+	if (q != Qnil)
+		HG_VM_UNLOCK (vm, q);
+	HG_VM_UNLOCK (vm, vm->qgstate);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (colorimage);
 DEFUNC_UNIMPLEMENTED_OPER (concat);
 
@@ -4397,7 +4427,29 @@ DEFUNC_OPER_END
 DEFUNC_UNIMPLEMENTED_OPER (glyphshow);
 DEFUNC_UNIMPLEMENTED_OPER (grestore);
 DEFUNC_UNIMPLEMENTED_OPER (grestoreall);
-DEFUNC_UNIMPLEMENTED_OPER (gsave);
+
+/* - gsave - */
+DEFUNC_OPER (gsave)
+G_STMT_START {
+	hg_quark_t q;
+	hg_gstate_t *gstate;
+
+	gstate = HG_VM_LOCK (vm, vm->qgstate, error);
+	if (gstate == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	q = hg_gstate_save(gstate, FALSE);
+
+	HG_VM_UNLOCK (vm, vm->qgstate);
+
+	STACK_PUSH (vm->stacks[HG_VM_STACK_GSTATE], q);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (gstate);
 
 /* <num1> <num2> gt <bool>

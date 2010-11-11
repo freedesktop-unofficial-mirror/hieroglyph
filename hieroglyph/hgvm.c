@@ -894,9 +894,11 @@ hg_vm_new(void)
 	retval->stacks[HG_VM_STACK_OSTACK] = hg_vm_stack_new(retval, 65535);
 	retval->stacks[HG_VM_STACK_ESTACK] = hg_vm_stack_new(retval, 65535);
 	retval->stacks[HG_VM_STACK_DSTACK] = hg_vm_stack_new(retval, 65535);
+	retval->stacks[HG_VM_STACK_GSTATE] = hg_stack_new(retval->mem[HG_VM_MEM_LOCAL], 32, retval);
 	if (retval->stacks[HG_VM_STACK_OSTACK] == NULL ||
 	    retval->stacks[HG_VM_STACK_ESTACK] == NULL ||
-	    retval->stacks[HG_VM_STACK_DSTACK] == NULL)
+	    retval->stacks[HG_VM_STACK_DSTACK] == NULL ||
+	    retval->stacks[HG_VM_STACK_GSTATE] == NULL)
 		goto error;
 
 	hg_vm_set_default_attributes(retval, HG_VM_ACCESS_READABLE|HG_VM_ACCESS_WRITABLE);
@@ -2012,6 +2014,7 @@ hg_vm_setup(hg_vm_t           *vm,
 		hg_stack_clear(vm->stacks[HG_VM_STACK_OSTACK]);
 		hg_stack_clear(vm->stacks[HG_VM_STACK_ESTACK]);
 		hg_stack_clear(vm->stacks[HG_VM_STACK_DSTACK]);
+		hg_stack_clear(vm->stacks[HG_VM_STACK_GSTATE]);
 
 		/* initialize dictionaries */
 		vm->qsystemdict = hg_dict_new(vm->mem[HG_VM_MEM_GLOBAL],

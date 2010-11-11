@@ -40,6 +40,7 @@ typedef struct _hg_gstate_t	hg_gstate_t;
 struct _hg_gstate_t {
 	hg_object_t o;
 	hg_quark_t  qpath;
+	gboolean    is_snapshot;
 };
 
 
@@ -49,6 +50,8 @@ hg_quark_t          hg_gstate_new              (hg_mem_t    *mem,
 void                hg_gstate_set_path         (hg_gstate_t *gstate,
                                                 hg_quark_t   qpath);
 hg_quark_t          hg_gstate_get_path         (hg_gstate_t *gstate);
+hg_quark_t          hg_gstate_save             (hg_gstate_t *gstate,
+						gboolean     is_snapshot);
 
 
 G_END_DECLS

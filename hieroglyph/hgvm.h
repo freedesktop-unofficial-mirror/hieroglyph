@@ -62,6 +62,7 @@ enum _hg_vm_stack_type_t {
 	HG_VM_STACK_OSTACK = 0,
 	HG_VM_STACK_ESTACK,
 	HG_VM_STACK_DSTACK,
+	HG_VM_STACK_GSTATE,
 	HG_VM_STACK_END
 };
 enum _hg_vm_error_t {

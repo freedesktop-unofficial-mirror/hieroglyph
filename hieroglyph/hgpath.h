@@ -60,28 +60,23 @@ struct _hg_path_t {
 	hg_object_t o;
 	hg_quark_t  qnode;
 	gsize       length;
-	gsize       estimated_point;
-	gdouble     x;
-	gdouble     y;
 };
 struct _hg_path_node_t {
 	hg_path_type_t type;
-	gdouble        x;
-	gdouble        y;
+	gdouble        dx;
+	gdouble        dy;
+	gdouble        cx;
+	gdouble        cy;
 };
 
 
 hg_object_vtable_t *hg_object_path_get_vtable(void) G_GNUC_CONST;
 hg_quark_t          hg_path_new              (hg_mem_t       *mem,
                                               gpointer       *ret);
-gboolean            hg_path_add              (hg_path_t      *path,
-                                              hg_path_type_t  type,
-                                              gdouble         x,
-                                              gdouble         y);
-gboolean            hg_path_close            (hg_path_t      *path);
 gboolean            hg_path_get_current_point(hg_path_t      *path,
                                               gdouble        *x,
                                               gdouble        *y);
+gboolean            hg_path_close            (hg_path_t      *path);
 gboolean            hg_path_moveto           (hg_path_t      *path,
                                               gdouble         x,
                                               gdouble         y);
