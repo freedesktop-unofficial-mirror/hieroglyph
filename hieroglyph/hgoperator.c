@@ -639,7 +639,7 @@ G_STMT_START {
 			return FALSE;
 		}
 		index = HG_INT (arg1);
-		if (hg_array_length(a) < index) {
+		if (hg_array_maxlength(a) < index) {
 			HG_VM_UNLOCK (vm, arg0);
 			hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 			return FALSE;
@@ -1117,7 +1117,7 @@ G_STMT_START {
 		return FALSE;
 	}
 	i = HG_INT (n);
-	if (hg_array_length(a) <= i) {
+	if (hg_array_maxlength(a) <= i) {
 		HG_VM_UNLOCK (vm, val);
 		hg_stack_roll(estack, 4, 1, error);
 		hg_stack_drop(estack, error);
@@ -1489,7 +1489,7 @@ G_STMT_START {
 		return FALSE;
 	}
 	hg_stack_pop(ostack, error);
-	__n = len = hg_array_length(a);
+	__n = len = hg_array_maxlength(a);
 	for (i = 0; i < len; i++) {
 		q = hg_array_get(a, i, error);
 		if (error && *error) {
@@ -1920,8 +1920,6 @@ DEFUNC_OPER_END
 DEFUNC_OPER (array)
 G_STMT_START {
 	hg_quark_t arg0, q;
-	hg_array_t *a;
-	gsize i;
 
 	CHECK_STACK (ostack, 1);
 
@@ -1935,15 +1933,11 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 		return FALSE;
 	}
-	q = hg_array_new(hg_vm_get_mem(vm), HG_INT (arg0), (gpointer *)&a);
+	q = hg_array_new(hg_vm_get_mem(vm), HG_INT (arg0), NULL);
 	if (q == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	for (i = 0; i < HG_INT (arg0); i++) {
-		hg_array_set(a, HG_QNULL, i, error);
-	}
-	HG_VM_UNLOCK (vm, q);
 
 	hg_stack_drop(ostack, error);
 
@@ -1981,7 +1975,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	len = hg_array_length(a);
+	len = hg_array_maxlength(a);
 	__n = len;
 	if (hg_stack_depth(ostack) < (len + 1)) {
 		hg_vm_set_error(vm, qself, HG_VM_e_stackunderflow);
@@ -2111,7 +2105,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		goto error;
 	}
-	len = hg_array_length(a);
+	len = hg_array_maxlength(a);
 	for (i = 0; i < len; i++) {
 		q = hg_array_get(a, i, error);
 		if (hg_vm_quark_is_executable(vm, &q)) {
@@ -2352,9 +2346,9 @@ G_STMT_START {
 	a2 = HG_VM_LOCK (vm, arg1, error);
 	a3 = HG_VM_LOCK (vm, arg2, error);
 
-	if (hg_array_length(a1) != 6 ||
-	    hg_array_length(a2) != 6 ||
-	    hg_array_length(a3) != 6) {
+	if (hg_array_maxlength(a1) != 6 ||
+	    hg_array_maxlength(a2) != 6 ||
+	    hg_array_maxlength(a3) != 6) {
 		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 		goto error;
 	}
@@ -2450,8 +2444,8 @@ G_STMT_START {
 				hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 				goto a_error;
 			}
-			len1 = hg_array_length(a1);
-			len2 = hg_array_length(a2);
+			len1 = hg_array_maxlength(a1);
+			len2 = hg_array_maxlength(a2);
 			if (len1 > len2) {
 				hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 				goto a_error;
@@ -3319,7 +3313,7 @@ G_STMT_START {
 		return FALSE;
 	}
 	ddepth = hg_stack_depth(dstack);
-	len = hg_array_length(a);
+	len = hg_array_maxlength(a);
 	if (ddepth > len) {
 		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 		goto error;
@@ -3611,7 +3605,7 @@ G_STMT_START {
 		return FALSE;
 	}
 	edepth = hg_stack_depth(estack);
-	len = hg_array_length(a);
+	len = hg_array_maxlength(a);
 	if (edepth > len) {
 		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 		goto error;
@@ -4248,7 +4242,7 @@ G_STMT_START {
 			return FALSE;
 		}
 		index = HG_INT (arg1);
-		len = hg_array_length(a);
+		len = hg_array_maxlength(a);
 		if (index < 0 || index >= len) {
 			hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 			goto a_error;
@@ -4346,7 +4340,7 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
-		len = hg_array_length(a);
+		len = hg_array_maxlength(a);
 		if (index >= len ||
 		    (len - index) < count) {
 			hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
@@ -4487,7 +4481,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		goto error;
 	}
-	if (hg_array_length(a) != 6) {
+	if (hg_array_maxlength(a) != 6) {
 		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 		goto error;
 	}
@@ -4691,7 +4685,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 		goto error;
 	}
-	if (hg_array_length(a2) != 6) {
+	if (hg_array_maxlength(a2) != 6) {
 		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 		goto error;
 	}
@@ -4861,7 +4855,7 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
-		q = HG_QINT (hg_array_length(a));
+		q = HG_QINT (hg_array_maxlength(a));
 		HG_VM_UNLOCK (vm, arg0);
 	} else if (HG_IS_QDICT (arg0)) {
 		hg_dict_t *d = HG_VM_LOCK (vm, arg0, error);
@@ -5666,7 +5660,7 @@ G_STMT_START {
 			return FALSE;
 		}
 		index = HG_INT (arg1);
-		if (hg_array_length(a) < index) {
+		if (hg_array_maxlength(a) < index) {
 			HG_VM_UNLOCK (vm, arg0);
 			hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 			return FALSE;
