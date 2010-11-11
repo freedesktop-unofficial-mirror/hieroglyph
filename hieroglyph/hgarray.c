@@ -52,6 +52,9 @@ union _hg_matrix_t {
 	gdouble d[6];
 };
 
+static gboolean _hg_array_maybe_expand(hg_array_t *array,
+				       gsize       length);
+
 HG_DEFINE_VTABLE_WITH (array, NULL, NULL, NULL);
 
 /*< private >*/
@@ -112,7 +115,7 @@ _hg_object_array_copy(hg_object_t              *object,
 	if (object->on_copying != Qnil)
 		return object->on_copying;
 
-	len = hg_array_length(array);
+	len = hg_array_maxlength(array);
 	object->on_copying = retval = hg_array_new(array->o.mem,
 						   len,
 						   (gpointer *)&a);
@@ -189,7 +192,7 @@ _hg_object_array_to_cstr(hg_object_t              *object,
 	object->on_to_cstr = TRUE;
 
 	g_string_append_c(retval, '[');
-	len = hg_array_length(array);
+	len = hg_array_maxlength(array);
 	for (i = 0; i < len; i++) {
 		if (i != 0)
 			g_string_append_c(retval, ' ');
@@ -282,8 +285,8 @@ _hg_object_array_compare(hg_object_t             *o1,
 	hg_return_val_if_fail (o2 != NULL, FALSE);
 	hg_return_val_if_fail (func != NULL, FALSE);
 
-	len = hg_array_length(a1);
-	if (len != hg_array_length(a2))
+	len = hg_array_maxlength(a1);
+	if (len != hg_array_maxlength(a2))
 		return FALSE;
 
 	for (i = 0; i < len; i++) {
@@ -299,29 +302,44 @@ _hg_object_array_compare(hg_object_t             *o1,
 }
 
 static gboolean
-_hg_array_maybe_expand(hg_array_t *array)
+_hg_array_maybe_expand(hg_array_t *array,
+		       gsize       length)
 {
+	gsize i;
+	hg_quark_t *container;
+
 	if (array->is_fixed_size ||
 	    array->offset != 0)
 		return TRUE;
 
-	hg_return_val_if_fail ((array->length + 1) <= array->allocated_size, FALSE);
+	hg_return_val_if_fail ((length + 1) <= array->allocated_size, FALSE);
 
 	if (array->qcontainer == Qnil) {
 		array->qcontainer = hg_mem_alloc(array->o.mem,
-						 sizeof (hg_quark_t) * (array->length + 1),
-						 NULL);
+						 sizeof (hg_quark_t) * (length + 1),
+						 (gpointer *)&container);
+		for (i = 0; i < length; i++) {
+			container[i] = HG_QNULL;
+		}
+		hg_mem_unlock_object(array->o.mem, array->qcontainer);
 	} else {
-		hg_quark_t q = hg_mem_realloc(array->o.mem,
-					      array->qcontainer,
-					      sizeof (hg_quark_t) * (array->length + 1),
-					      NULL);
+		hg_quark_t q;
+
+		q = hg_mem_realloc(array->o.mem,
+				   array->qcontainer,
+				   sizeof (hg_quark_t) * (length + 1),
+				   (gpointer *)&container);
 
 		if (q == Qnil)
 			return FALSE;
 		array->qcontainer = q;
+
+		for (i = array->length; i < length; i++) {
+			container[i] = HG_QNULL;
+		}
+		hg_mem_unlock_object(array->o.mem, array->qcontainer);
 	}
-	array->length++;
+	array->length = length + 1;
 
 	return TRUE;
 }
@@ -421,7 +439,7 @@ hg_array_set(hg_array_t  *array,
 	     GError     **error)
 {
 	hg_quark_t *container;
-	gsize old_length;
+	gsize new_length;
 	GError *err = NULL;
 	gboolean retval = TRUE;
 
@@ -429,11 +447,9 @@ hg_array_set(hg_array_t  *array,
 	hg_return_val_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, FALSE, error);
 	hg_return_val_with_gerror_if_fail ((array->offset + index) < array->allocated_size, FALSE, error);
 
-	old_length = array->length;
-	array->length = MAX (index, array->length);
-	if (index >= array->length && array->length >= old_length) {
-		if (!_hg_array_maybe_expand(array)) {
-			array->length = old_length;
+	new_length = MAX (index, array->length);
+	if (index >= new_length && new_length >= array->length) {
+		if (!_hg_array_maybe_expand(array, new_length)) {
 			g_set_error(&err, HG_ERROR, ENOMEM,
 				    "Out of memory");
 			retval = FALSE;
@@ -779,8 +795,8 @@ hg_array_copy_as_subarray(hg_array_t  *src,
 	hg_return_val_with_gerror_if_fail (src->o.type == HG_TYPE_ARRAY, FALSE, error);
 	hg_return_val_with_gerror_if_fail (dest != NULL, FALSE, error);
 	hg_return_val_with_gerror_if_fail (dest->o.type == HG_TYPE_ARRAY, FALSE, error);
-	hg_return_val_with_gerror_if_fail (start_index < hg_array_length(src), FALSE, error);
-	hg_return_val_with_gerror_if_fail (end_index < hg_array_length(src), FALSE, error);
+	hg_return_val_with_gerror_if_fail (start_index < hg_array_maxlength(src), FALSE, error);
+	hg_return_val_with_gerror_if_fail (end_index < hg_array_maxlength(src), FALSE, error);
 	hg_return_val_with_gerror_if_fail (start_index <= end_index, FALSE, error);
 
 	/* destroy the unnecessary destination's container */
@@ -841,7 +857,7 @@ hg_array_is_matrix(hg_array_t *array)
 
 	hg_return_val_if_fail (array != NULL, FALSE);
 
-	if (hg_array_length(array) != 6)
+	if (hg_array_maxlength(array) != 6)
 		return FALSE;
 
 	for (i = 0; i < 6; i++) {
@@ -868,7 +884,7 @@ hg_array_matrix_ident(hg_array_t *matrix)
 	hg_matrix_t m;
 
 	hg_return_val_if_fail (matrix != NULL, FALSE);
-	hg_return_val_if_fail (hg_array_length(matrix) == 6, FALSE);
+	hg_return_val_if_fail (hg_array_maxlength(matrix) == 6, FALSE);
 
 	m.mtx.xx = 1;
 	m.mtx.xy = 0;
@@ -901,7 +917,7 @@ hg_array_matrix_multiply(hg_array_t *matrix1,
 
 	hg_return_val_if_fail (hg_array_is_matrix(matrix1), FALSE);
 	hg_return_val_if_fail (hg_array_is_matrix(matrix2), FALSE);
-	hg_return_val_if_fail (hg_array_length(ret) == 6, FALSE);
+	hg_return_val_if_fail (hg_array_maxlength(ret) == 6, FALSE);
 
 	_hg_array_convert_to_matrix(matrix1, &m1);
 	_hg_array_convert_to_matrix(matrix2, &m2);
@@ -935,7 +951,7 @@ hg_array_matrix_invert(hg_array_t *matrix,
 	gdouble det;
 
 	hg_return_val_if_fail (hg_array_is_matrix(matrix), FALSE);
-	hg_return_val_if_fail (hg_array_length(ret) == 6, FALSE);
+	hg_return_val_if_fail (hg_array_maxlength(ret) == 6, FALSE);
 
 	_hg_array_convert_to_matrix(matrix, &m1);
 

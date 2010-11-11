@@ -28,6 +28,7 @@
 #include "hgarray.h"
 #include "hgint.h"
 #include "hgmem.h"
+#include "hgnull.h"
 #include "main.h"
 
 
@@ -157,6 +158,8 @@ _a2s(hg_mem_t    *mem,
 
 	if (q == Qnil)
 		g_string_append(s, "nil ");
+	else if (HG_IS_QNULL (q))
+		g_string_append(s, "null ");
 	else
 		g_string_append_printf(s, "%ld ", hg_quark_get_value(q));
 
@@ -183,9 +186,9 @@ TDEF (hg_array_insert)
 	t = hg_array_get(a, 2, NULL);
 	fail_unless(t == HG_QINT(2), "Unexpected result on shifting the content of the array after inserting [take 4]: actual: %ld", hg_quark_get_value(t));
 	t = hg_array_get(a, 3, &err);
-	fail_unless(t == Qnil && err == NULL, "Unexpected result to obtain 3rd element in the array.");
+	fail_unless(HG_IS_QNULL (t) && err == NULL, "Unexpected result to obtain 3rd element in the array.");
 	hg_array_foreach(a, _a2s, str, NULL);
-	fail_unless(strcmp(str->str, "3 5 2 nil 4 ") == 0, "Unexpected result on converting the array to the string: actual: %s", str->str);
+	fail_unless(strcmp(str->str, "3 5 2 null 4 ") == 0, "Unexpected result on converting the array to the string: actual: %s", str->str);
 	fail_unless(!hg_array_remove(a, 5), "Unexpected result to remove an element outside of the array.");
 	g_free(hieroglyph_test_pop_error());
 	fail_unless(hg_array_remove(a, 1), "Unable to remove an element from the array."); /* [3 2 nil 4] */
