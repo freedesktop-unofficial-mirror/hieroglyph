@@ -192,7 +192,7 @@ _hg_object_array_to_cstr(hg_object_t              *object,
 	object->on_to_cstr = TRUE;
 
 	g_string_append_c(retval, '[');
-	len = hg_array_maxlength(array);
+	len = hg_array_length(array);
 	for (i = 0; i < len; i++) {
 		if (i != 0)
 			g_string_append_c(retval, ' ');
@@ -334,7 +334,7 @@ _hg_array_maybe_expand(hg_array_t *array,
 			return FALSE;
 		array->qcontainer = q;
 
-		for (i = array->length; i < length; i++) {
+		for (i = array->length; i <= length; i++) {
 			container[i] = HG_QNULL;
 		}
 		hg_mem_unlock_object(array->o.mem, array->qcontainer);
@@ -501,6 +501,7 @@ hg_array_get(hg_array_t  *array,
 {
 	hg_quark_t retval;
 	hg_quark_t *container;
+	GError *err = NULL;
 
 	hg_return_val_with_gerror_if_fail (array != NULL, Qnil, error);
 	hg_return_val_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, Qnil, error);
@@ -511,7 +512,14 @@ hg_array_get(hg_array_t  *array,
 		return HG_QNULL;
 	}
 
-	hg_return_val_with_gerror_if_fail (index < array->length, Qnil, error);
+	if (index >= array->length) {
+		if (!_hg_array_maybe_expand(array, index)) {
+			g_set_error(&err, HG_ERROR, ENOMEM,
+				    "Out of memory");
+			retval = Qnil;
+			goto finalize;
+		}
+	}
 	hg_return_val_with_gerror_if_lock_fail (container,
 						array->o.mem,
 						array->qcontainer,
@@ -521,6 +529,18 @@ hg_array_get(hg_array_t  *array,
 	retval = container[array->offset + index];
 
 	hg_mem_unlock_object(array->o.mem, array->qcontainer);
+  finalize:
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+	}
 
 	return retval;
 }
