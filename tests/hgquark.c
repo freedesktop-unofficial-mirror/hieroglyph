@@ -76,8 +76,8 @@ TDEF (hg_quark_new)
 	hg_quark_t q = hg_quark_new(HG_TYPE_INT, 0);
 	fail_unless(q == 0x14100000000, "Unexpected result for integer quark: %lx", q);
 	q = hg_quark_new(HG_TYPE_INT, (guint32)-1);
-	fail_unless(q == 0x141ffffffff, "Unexpected result for integer quark: expect: -1, actual: %lx", q);
-	fail_unless(hg_quark_get_type(q) == 1, "Unexpected result to obtain the type for integer quark");
+	fail_unless(q == 0x141ffffffff, "Unexpected result for integer quark: expect: %lx, actual: %lx", 0x141ffffffff, q);
+	fail_unless(hg_quark_get_type(q) == HG_TYPE_INT, "Unexpected result to obtain the type for integer quark");
 	fail_unless(hg_quark_is_simple_object(q), "Unexpected result to check if a integer quark is a simple object");
 	q = hg_quark_new(HG_TYPE_STRING, 0xdeadbeaf);
 	fail_unless(q == 0x1c5deadbeaf, "Unexpected result for string quark: 0x1c5deadbeaf, actual: %lx", q);
