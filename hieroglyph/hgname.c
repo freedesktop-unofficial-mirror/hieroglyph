@@ -157,13 +157,15 @@ hg_name_new_with_string(hg_name_t   *name,
 	s = g_strndup(string, len);
 	enc = hg_encoding_lookup_system_encoding(s);
 	if (enc == HG_enc_END) {
-		gpointer p;
+		gpointer p = NULL;
 
 		/* string isn't a system encoding.
 		 * try to look up on the name database.
 		 */
-		p = g_hash_table_lookup(name->name_spool, string);
-		if (p == NULL) {
+		if (!g_hash_table_lookup_extended(name->name_spool,
+						  string,
+						  NULL,
+						  &p)) {
 			/* No name registered for string */
 			retval = _hg_name_new(name, s);
 		} else {
