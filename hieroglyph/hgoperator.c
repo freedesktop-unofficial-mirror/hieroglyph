@@ -4767,9 +4767,8 @@ DEFUNC_UNIMPLEMENTED_OPER (join);
 /* <dict> <key> known <bool> */
 DEFUNC_OPER (known)
 G_STMT_START {
-	hg_quark_t arg0, arg1;
+	hg_quark_t arg0, arg1, q;
 	hg_dict_t *d;
-	gboolean ret;
 
 	CHECK_STACK (ostack, 2);
 
@@ -4789,14 +4788,14 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	ret = hg_dict_lookup(d, arg1, error);
+	q = hg_dict_lookup(d, arg1, error);
 
 	HG_VM_UNLOCK (vm, arg0);
 
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
 
-	STACK_PUSH (ostack, HG_QBOOL (ret != Qnil));
+	STACK_PUSH (ostack, HG_QBOOL (q != Qnil));
 
 	retval = TRUE;
 } G_STMT_END;
