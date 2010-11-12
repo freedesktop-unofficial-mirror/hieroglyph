@@ -855,6 +855,7 @@ hg_vm_new(void)
 {
 	hg_quark_t q;
 	hg_vm_t *retval;
+	gsize i;
 
 	q = hg_mem_alloc(__hg_vm_mem, sizeof (hg_vm_t), (gpointer *)&retval);
 	if (q == Qnil)
@@ -882,6 +883,17 @@ hg_vm_new(void)
 	hg_mem_set_garbage_collector(retval->mem[HG_VM_MEM_LOCAL], _hg_vm_run_gc, retval);
 	hg_mem_reserved_spool_set_garbage_collector(retval->mem[HG_VM_MEM_GLOBAL], _hg_vm_rs_gc, retval);
 	hg_mem_reserved_spool_set_garbage_collector(retval->mem[HG_VM_MEM_LOCAL], _hg_vm_rs_gc, retval);
+
+	/* initialize quarks */
+	for (i = 0; i < HG_FILE_IO_END; i++)
+		retval->qio[i] = Qnil;
+	for (i = 0; i < HG_VM_e_END; i++)
+		retval->qerror_name[i] = Qnil;
+	retval->qerror = Qnil;
+	retval->qsystemdict = Qnil;
+	retval->qglobaldict = Qnil;
+	retval->qinternaldict = Qnil;
+	retval->qgstate = Qnil;
 
 	/* XXX: we prefer not to use the global nor the local
 	 * memory spool to postpone thinking of how to deal

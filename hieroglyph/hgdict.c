@@ -298,6 +298,7 @@ _hg_object_dict_node_initialize(hg_object_t *object,
 	hg_dict_node_t *dnode = (hg_dict_node_t *)object;
 	hg_quark_t *keys = NULL, *vals = NULL, *nodes = NULL;
 	gpointer *ret_key, *ret_val, *ret_nodes;
+	gsize i;
 
 	ret_key = va_arg(args, gpointer *);
 	ret_val = va_arg(args, gpointer *);
@@ -320,6 +321,12 @@ _hg_object_dict_node_initialize(hg_object_t *object,
 					  dnode->qval != Qnil &&
 					  dnode->qnodes != Qnil,
 					  FALSE, _hg_dict_node_free(object->mem, object->self));
+
+	for (i = 0; i < __hg_dict_node_size * 2 + 1; i++) {
+		((hg_quark_t *)keys)[i] = Qnil;
+		((hg_quark_t *)vals)[i] = Qnil;
+		((hg_quark_t *)nodes)[i] = Qnil;
+	}
 
 	if (ret_key)
 		*ret_key = keys;
