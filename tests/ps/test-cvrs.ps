@@ -1,0 +1,43 @@
+%!PS-Adobe-2.0
+% test-cvrs.ps
+% Copyright (C) 2006-2010 Akira TAGOH
+%
+% Authors:
+%   Akira TAGOH  <akira@tagoh.org>
+%
+% This library is free software; you can redistribute it and/or
+% modify it under the terms of the GNU Lesser General Public
+% License as published by the Free Software Foundation; either
+% version 2 of the License, or (at your option) any later version.
+%
+% This library is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+% Lesser General Public License for more details.
+%
+% You should have received a copy of the GNU Lesser General Public
+% License along with this library; if not, write to the
+% Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+% Boston, MA 02111-1307, USA.
+.initunittest
+
+true /cvrs [[/integertype /realtype] [/integertype] [/stringtype]] .typecheck
+false /cvrs [[/booleantype /nametype /arraytype /stringtype /dicttype /nulltype /operatortype /marktype /filetype /savetype /proctype] [/booleantype /realtype /nametype /arraytype /stringtype /dicttype /nulltype /operatortype /marktype /filetype /savetype /proctype] [/booleantype /integertype /realtype /nametype /arraytype /dicttype /nulltype /operatortype /marktype /filetype /savetype /proctype]] .typecheck
+
+[] /stackunderflow true .initunittestdict {cvrs} .unittest
+[1] /stackunderflow true .initunittestdict {1 cvrs} .unittest
+[1 1] /stackunderflow true .initunittestdict {1 1 cvrs} .unittest
+[1 10 (foo) noaccess] /invalidaccess true .initunittestdict /readable /writable 2 .setunittestmask {1 10 (foo) noaccess cvrs} .unittest
+[1 10 (foo) executeonly] /invalidaccess true .initunittestdict /readable /writable /executeonly 3 .setunittestmask {1 10 (foo) executeonly cvrs} .unittest
+[1 10 (foo) readonly] /invalidaccess true .initunittestdict /readable /writable 2 .setunittestmask {1 10 (foo) readonly cvrs} .unittest
+[100 10 2 string] /rangecheck true .initunittestdict {100 10 2 string cvrs} .unittest
+[1 1 (foo)] /rangecheck true .initunittestdict {1 1 (foo) cvrs} .unittest
+[1 37 (foo)] /rangecheck true .initunittestdict {1 37 (foo) cvrs} .unittest
+[(123)] null true .initunittestdict {123 10 12 string cvrs} .unittest
+[(-123)] null true .initunittestdict {-123 10 12 string cvrs} .unittest
+[(123.400000)] null true .initunittestdict {123.4 10 12 string cvrs} .unittest
+[(7B)] null true .initunittestdict {123 16 12 string cvrs} .unittest
+[(FFFFFF85)] null true .initunittestdict {-123 16 12 string cvrs} .unittest
+[(7B)] null true .initunittestdict {123.4 16 12 string cvrs} .unittest
+
+.unittestresult
