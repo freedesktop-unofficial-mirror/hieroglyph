@@ -98,7 +98,7 @@ HEXDIGITS	[0-9a-fA-F]
 	GString *string = NULL;
 	static const gchar *const radix_index = "0123456789abcdefghijklmnopqrstuvwxyz";
 	gchar buf_ascii85[8];
-	gint ascii85_counter;
+	gint ascii85_counter = 0;
 
 <DSC>{
 	"!PS-Adobe-"[0-9.]+.*	{
@@ -395,7 +395,7 @@ HEXDIGITS	[0-9a-fA-F]
 		gdouble result = 0.0L;
 
 		sscanf(yytext, "%lf", &result);
-		scanner->result = HG_QREAL ((gfloat)result);
+		scanner->result = HG_QREAL (result);
 
 		return TRUE;
 	}
@@ -479,7 +479,7 @@ HEXDIGITS	[0-9a-fA-F]
 		    HG_REAL_GE (result, G_MININT32)) {
 			scanner->result = HG_QINT ((gint32)result);
 		} else {
-			scanner->result = HG_QREAL ((gfloat)result);
+			scanner->result = HG_QREAL (result);
 		}
 		return TRUE;
 	}

@@ -55,27 +55,27 @@ struct _hg_bs_real_t {
 #define HG_REAL_LE(_f1_,_f2_)				\
 	(HG_REAL_EQUAL (_f1_,_f2_) || _f1_ < _f2_)
 
-G_INLINE_FUNC hg_quark_t hg_real_convert_from_native(gfloat     vfloat);
-G_INLINE_FUNC gfloat     hg_real_convert_to_native  (hg_quark_t qreal);
+G_INLINE_FUNC hg_quark_t hg_real_convert_from_native(gdouble    vdouble);
+G_INLINE_FUNC gdouble    hg_real_convert_to_native  (hg_quark_t qreal);
 
 /**
  * hg_real_convert_from_native:
- * @vfloat:
+ * @vdouble:
  *
  * FIXME
  *
  * Returns:
  */
 G_INLINE_FUNC hg_quark_t
-hg_real_convert_from_native(gfloat vfloat)
+hg_real_convert_from_native(gdouble vdouble)
 {
-	GFloatIEEE754 v;
+	GDoubleIEEE754 v;
 	gpointer x = &v;
 	gchar *p = x;
 
-	v.v_float = vfloat;
+	v.v_double = vdouble;
 
-	return hg_quark_new(HG_TYPE_REAL, (hg_quark_t)*(guint32 *)p);
+	return hg_quark_new(HG_TYPE_REAL, (hg_quark_t)*(guint64 *)p);
 }
 
 /**
@@ -86,19 +86,19 @@ hg_real_convert_from_native(gfloat vfloat)
  *
  * Returns:
  */
-G_INLINE_FUNC gfloat
+G_INLINE_FUNC gdouble
 hg_real_convert_to_native(hg_quark_t qreal)
 {
-	GFloatIEEE754 v;
+	GDoubleIEEE754 v;
 	gpointer x = &v;
-	gint32 i;
+	gint64 i;
 	gchar *p;
 
 	i = hg_quark_get_value(qreal);
 	p = (gchar *)&i;
-	memcpy(x, p, sizeof (gint32));
+	memcpy(x, p, sizeof (gint64));
 
-	return v.v_float;
+	return v.v_double;
 }
 
 G_END_DECLS

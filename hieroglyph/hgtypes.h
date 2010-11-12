@@ -28,7 +28,7 @@
 
 G_BEGIN_DECLS
 
-#define Qnil	(hg_quark_t)0
+#define Qnil	(hg_quark_t)((guint32)-1)
 
 /* hgquark.h */
 typedef gint64				hg_quark_t;

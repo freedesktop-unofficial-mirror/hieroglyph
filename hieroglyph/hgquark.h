@@ -65,6 +65,7 @@ enum _hg_quark_type_bit_t {
 	HG_QUARK_TYPE_BIT_MEM_ID0 = HG_QUARK_TYPE_BIT_MEM_ID + 0,	/*  9 */
 	HG_QUARK_TYPE_BIT_MEM_ID1 = HG_QUARK_TYPE_BIT_MEM_ID + 1,	/* 10 */
 	HG_QUARK_TYPE_BIT_MEM_ID_END = HG_QUARK_TYPE_BIT_MEM_ID1,	/* 10 */
+	HG_QUARK_TYPE_BIT_END /* 31 */
 };
 enum _hg_type_t {
 	HG_TYPE_NULL      = 0,
@@ -240,16 +241,18 @@ hg_quark_new(hg_type_t  type,
 {
 	hg_quark_t retval = value;
 
-	_hg_quark_type_bit_set_bits(&retval,
-				    HG_QUARK_TYPE_BIT_TYPE,
-				    HG_QUARK_TYPE_BIT_TYPE_END,
-				    type);
-	hg_quark_set_access_bits(&retval,
-				 TRUE,
-				 (hg_type_is_simple(type) ||
-				  type == HG_TYPE_OPER) ? FALSE : TRUE,
-				 type == HG_TYPE_EVAL_NAME,
-				 TRUE);
+	if (type != HG_TYPE_REAL) {
+		_hg_quark_type_bit_set_bits(&retval,
+					    HG_QUARK_TYPE_BIT_TYPE,
+					    HG_QUARK_TYPE_BIT_TYPE_END,
+					    type);
+		hg_quark_set_access_bits(&retval,
+					 TRUE,
+					 (hg_type_is_simple(type) ||
+					  type == HG_TYPE_OPER) ? FALSE : TRUE,
+					 type == HG_TYPE_EVAL_NAME,
+					 TRUE);
+	}
 
 	return retval;
 }
@@ -265,6 +268,11 @@ hg_quark_new(hg_type_t  type,
 G_INLINE_FUNC hg_type_t
 hg_quark_get_type(hg_quark_t quark)
 {
+	if (quark == 0 ||
+	    _hg_quark_type_bit_clear_bits(quark,
+					  HG_QUARK_TYPE_BIT_BIT0,
+					  HG_QUARK_TYPE_BIT_END))
+		return HG_TYPE_REAL;
 	return (hg_type_t)_hg_quark_type_bit_get_bits(quark,
 						      HG_QUARK_TYPE_BIT_TYPE,
 						      HG_QUARK_TYPE_BIT_TYPE_END);
@@ -281,6 +289,8 @@ hg_quark_get_type(hg_quark_t quark)
 G_INLINE_FUNC hg_quark_t
 hg_quark_get_value(hg_quark_t quark)
 {
+	if (hg_quark_get_type(quark) == HG_TYPE_REAL)
+		return quark;
 	return _hg_quark_type_bit_get_value(quark);
 }
 
@@ -313,7 +323,8 @@ hg_quark_set_executable(hg_quark_t *quark,
 {
 	hg_return_if_fail (quark != NULL);
 
-	if (*quark != Qnil) {
+	if (*quark != Qnil &&
+	    hg_quark_get_type(*quark) != HG_TYPE_REAL) {
 		if (hg_quark_is_editable(*quark)) {
 			_hg_quark_type_bit_set_bits(quark,
 						    HG_QUARK_TYPE_BIT_EXECUTABLE,
@@ -339,6 +350,12 @@ hg_quark_set_executable(hg_quark_t *quark,
 G_INLINE_FUNC gboolean
 hg_quark_is_executable(hg_quark_t quark)
 {
+	if (hg_quark_get_type(quark) == HG_TYPE_REAL) {
+		/* this is the unfortunate limitation for
+		 * the implementation of the double precision real number.
+		 */
+		return FALSE;
+	}
 	return _hg_quark_type_bit_get_bits(quark,
 					   HG_QUARK_TYPE_BIT_EXECUTABLE,
 					   HG_QUARK_TYPE_BIT_EXECUTABLE) != 0;
@@ -357,7 +374,8 @@ hg_quark_set_readable(hg_quark_t *quark,
 {
 	hg_return_if_fail (quark != NULL);
 
-	if (*quark != Qnil) {
+	if (*quark != Qnil &&
+	    hg_quark_get_type(*quark) != HG_TYPE_REAL) {
 		if (hg_quark_is_editable(*quark)) {
 			_hg_quark_type_bit_set_bits(quark,
 						    HG_QUARK_TYPE_BIT_READABLE,
@@ -383,6 +401,12 @@ hg_quark_set_readable(hg_quark_t *quark,
 G_INLINE_FUNC gboolean
 hg_quark_is_readable(hg_quark_t quark)
 {
+	if (hg_quark_get_type(quark) == HG_TYPE_REAL) {
+		/* this is the unfortunate limitation for
+		 * the implementation of the double precision real number.
+		 */
+		return TRUE;
+	}
 	return _hg_quark_type_bit_get_bits(quark,
 					   HG_QUARK_TYPE_BIT_READABLE,
 					   HG_QUARK_TYPE_BIT_READABLE) != 0;
@@ -401,7 +425,8 @@ hg_quark_set_writable(hg_quark_t *quark,
 {
 	hg_return_if_fail (quark != NULL);
 
-	if (*quark != Qnil) {
+	if (*quark != Qnil &&
+	    hg_quark_get_type(*quark) != HG_TYPE_REAL) {
 		if (hg_quark_is_editable(*quark)) {
 			_hg_quark_type_bit_set_bits(quark,
 						    HG_QUARK_TYPE_BIT_WRITABLE,
@@ -427,6 +452,12 @@ hg_quark_set_writable(hg_quark_t *quark,
 G_INLINE_FUNC gboolean
 hg_quark_is_writable(hg_quark_t quark)
 {
+	if (hg_quark_get_type(quark) == HG_TYPE_REAL) {
+		/* this is the unfortunate limitation for
+		 * the implementation of the double precision real number.
+		 */
+		return FALSE;
+	}
 	return _hg_quark_type_bit_get_bits(quark,
 					   HG_QUARK_TYPE_BIT_WRITABLE,
 					   HG_QUARK_TYPE_BIT_WRITABLE) != 0 &&
@@ -446,7 +477,8 @@ hg_quark_set_editable(hg_quark_t *quark,
 {
 	hg_return_if_fail (quark != NULL);
 
-	if (*quark != Qnil) {
+	if (*quark != Qnil &&
+	    hg_quark_get_type(*quark) != HG_TYPE_REAL) {
 		_hg_quark_type_bit_set_bits(quark,
 					    HG_QUARK_TYPE_BIT_EDITABLE,
 					    HG_QUARK_TYPE_BIT_EDITABLE,
@@ -465,6 +497,12 @@ hg_quark_set_editable(hg_quark_t *quark,
 G_INLINE_FUNC gboolean
 hg_quark_is_editable(hg_quark_t quark)
 {
+	if (hg_quark_get_type(quark) == HG_TYPE_REAL) {
+		/* this is the unfortunate limitation for
+		 * the implementation of the double precision real number.
+		 */
+		return TRUE;
+	}
 	return _hg_quark_type_bit_get_bits(quark,
 					   HG_QUARK_TYPE_BIT_EDITABLE,
 					   HG_QUARK_TYPE_BIT_EDITABLE) != 0;
@@ -489,7 +527,8 @@ hg_quark_set_access_bits(hg_quark_t *quark,
 {
 	hg_return_if_fail (quark != NULL);
 
-	if (*quark != Qnil) {
+	if (*quark != Qnil &&
+	    hg_quark_get_type(*quark) != HG_TYPE_REAL) {
 		_hg_quark_type_bit_set_bits(quark,
 					    HG_QUARK_TYPE_BIT_ACCESS,
 					    HG_QUARK_TYPE_BIT_ACCESS_END,
@@ -512,9 +551,16 @@ G_INLINE_FUNC gboolean
 hg_quark_has_same_mem_id(hg_quark_t quark,
 			 guint      id)
 {
-	return _hg_quark_type_bit_get_bits(quark,
-					   HG_QUARK_TYPE_BIT_MEM_ID,
-					   HG_QUARK_TYPE_BIT_MEM_ID_END) == id;
+	guint xid;
+
+	if (hg_quark_get_type(quark) == HG_TYPE_REAL)
+		xid = 0;
+	else
+		xid = _hg_quark_type_bit_get_bits(quark,
+						  HG_QUARK_TYPE_BIT_MEM_ID,
+						  HG_QUARK_TYPE_BIT_MEM_ID_END);
+
+	return xid == id;
 }
 
 /**
@@ -528,6 +574,8 @@ hg_quark_has_same_mem_id(hg_quark_t quark,
 G_INLINE_FUNC gint
 hg_quark_get_mem_id(hg_quark_t quark)
 {
+	if (hg_quark_get_type(quark) == HG_TYPE_REAL)
+		return 0;
 	return _hg_quark_type_bit_get_bits(quark,
 					   HG_QUARK_TYPE_BIT_MEM_ID,
 					   HG_QUARK_TYPE_BIT_MEM_ID_END);
@@ -544,7 +592,8 @@ G_INLINE_FUNC void
 hg_quark_set_mem_id(hg_quark_t *quark,
 		    guint       id)
 {
-	if (*quark != Qnil) {
+	if (*quark != Qnil &&
+	    hg_quark_get_type(*quark) != HG_TYPE_REAL) {
 		_hg_quark_type_bit_set_bits(quark,
 					    HG_QUARK_TYPE_BIT_MEM_ID,
 					    HG_QUARK_TYPE_BIT_MEM_ID_END,
@@ -563,6 +612,8 @@ hg_quark_set_mem_id(hg_quark_t *quark,
 G_INLINE_FUNC hg_quark_t
 hg_quark_get_hash(hg_quark_t quark)
 {
+	if (hg_quark_get_type(quark) == HG_TYPE_REAL)
+		return quark;
 	return _hg_quark_type_bit_shift(_hg_quark_type_bit_clear_bits(quark,
 								      HG_QUARK_TYPE_BIT_ACCESS,
 								      HG_QUARK_TYPE_BIT_ACCESS_END)) |
