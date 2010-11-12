@@ -49,10 +49,11 @@ teardown(void)
 /** test cases **/
 TDEF (new)
 {
-	hg_quark_t q;
+	hg_quark_t q, qnil;
 
+	qnil = Qnil | 0x14a00000000;
 	q = HG_QMARK;
-	fail_unless(q == 0x14a00000000, "Unexpected result to create a quark for mark: expected %lx, actual:%lx", 0x14a00000000, q);
+	fail_unless(q == qnil, "Unexpected result to create a quark for mark: expected %lx, actual:%lx", qnil, q);
 } TEND
 
 /****/
