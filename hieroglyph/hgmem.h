@@ -64,6 +64,8 @@ gpointer                hg_mem_lock_object                         (hg_mem_t    
                                                                     hg_quark_t               qdata);
 void                    hg_mem_unlock_object                       (hg_mem_t                *mem,
                                                                     hg_quark_t               qdata);
+void                    hg_mem_enable_garbage_collector            (hg_mem_t                *mem,
+								    gboolean                 flag);
 void                    hg_mem_set_garbage_collector               (hg_mem_t                *mem,
                                                                     hg_gc_func_t             func,
                                                                     gpointer                 user_data);

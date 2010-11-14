@@ -470,6 +470,22 @@ hg_mem_unlock_object(hg_mem_t   *mem,
 }
 
 /**
+ * hg_mem_enable_garbage_collector:
+ * @mem:
+ * @flag:
+ *
+ * FIXME
+ */
+void
+hg_mem_enable_garbage_collector(hg_mem_t *mem,
+				gboolean  flag)
+{
+	hg_return_if_fail (mem != NULL);
+
+	mem->enable_gc = (flag == TRUE);
+}
+
+/**
  * hg_mem_set_garbage_collector:
  * @mem:
  * @func:
@@ -509,7 +525,8 @@ hg_mem_collect_garbage(hg_mem_t *mem)
 
 	if (mem->allocator->gc_init &&
 	    mem->allocator->gc_mark &&
-	    mem->allocator->gc_finish) {
+	    mem->allocator->gc_finish &&
+	    mem->enable_gc) {
 		if (mem->allocator->gc_init(mem->data)) {
 			gboolean ret = TRUE;
 

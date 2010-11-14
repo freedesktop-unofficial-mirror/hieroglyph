@@ -6594,8 +6594,9 @@ DEFUNC_OPER_END
 /* - save <save> */
 DEFUNC_OPER (save)
 G_STMT_START {
-	hg_quark_t q;
+	hg_quark_t q, qg;
 	hg_snapshot_t *sn;
+	hg_gstate_t *gstate;
 	gboolean is_global;
 
 	is_global = hg_vm_is_global_mem_used(vm);
@@ -6607,6 +6608,19 @@ G_STMT_START {
 		return FALSE;
 	}
 	HG_VM_UNLOCK (vm, q);
+
+	/* save the gstate too */
+	gstate = HG_VM_LOCK (vm, vm->qgstate, error);
+	if (gstate == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	qg = hg_gstate_save(gstate, TRUE);
+
+	STACK_PUSH (vm->stacks[HG_VM_STACK_GSTATE], qg);
+
+	HG_VM_UNLOCK (vm, vm->qgstate);
+
 	hg_vm_use_global_mem(vm, is_global);
 
 	STACK_PUSH (ostack, q);
@@ -7328,7 +7342,47 @@ DEFUNC_UNIMPLEMENTED_OPER (ustroke);
 DEFUNC_UNIMPLEMENTED_OPER (ustrokepath);
 DEFUNC_UNIMPLEMENTED_OPER (viewclip);
 DEFUNC_UNIMPLEMENTED_OPER (viewclippath);
-DEFUNC_UNIMPLEMENTED_OPER (vmreclaim);
+
+/* <int> vmreclaim - */
+DEFUNC_OPER (vmreclaim)
+G_STMT_START {
+	hg_quark_t arg0;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QINT (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	switch (HG_INT (arg0)) {
+	    case -2:
+		    hg_mem_enable_garbage_collector(vm->mem[HG_VM_MEM_GLOBAL], FALSE);
+	    case -1:
+		    hg_mem_enable_garbage_collector(vm->mem[HG_VM_MEM_LOCAL], FALSE);
+		    break;
+	    case 0:
+		    /* XXX: no multi-context support yet */
+		    hg_mem_enable_garbage_collector(vm->mem[HG_VM_MEM_GLOBAL], FALSE);
+		    hg_mem_enable_garbage_collector(vm->mem[HG_VM_MEM_LOCAL], FALSE);
+		    break;
+	    case 2:
+		    hg_mem_collect_garbage(vm->mem[HG_VM_MEM_GLOBAL]);
+	    case 1:
+		    hg_mem_collect_garbage(vm->mem[HG_VM_MEM_LOCAL]);
+		    break;
+	    default:
+		    hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		    return FALSE;
+	}
+
+	hg_stack_drop(ostack, error);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (vmstatus);
 DEFUNC_UNIMPLEMENTED_OPER (wait);
 
