@@ -175,6 +175,7 @@ hg_mem_new_with_allocator(hg_mem_vtable_t *allocator,
 		retval->finalizer_table = g_hash_table_new(g_direct_hash, g_direct_equal);
 		retval->reserved_spool = g_hash_table_new(g_direct_hash, g_direct_equal);
 	}
+	retval->enable_gc = TRUE;
 	__hg_mem_spool[id] = retval;
 
 	return retval;
