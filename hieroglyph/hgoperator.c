@@ -4419,8 +4419,58 @@ VALIDATE_STACK_SIZE (-2, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (glyphshow);
-DEFUNC_UNIMPLEMENTED_OPER (grestore);
-DEFUNC_UNIMPLEMENTED_OPER (grestoreall);
+
+/* - grestore - */
+DEFUNC_OPER (grestore)
+G_STMT_START {
+	hg_quark_t q;
+	hg_gstate_t *g;
+
+	if (hg_stack_depth(vm->stacks[HG_VM_STACK_GSTATE]) > 0) {
+		q = hg_stack_index(vm->stacks[HG_VM_STACK_GSTATE], 0, error);
+
+		g = HG_VM_LOCK (vm, q, error);
+		if (g == NULL) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
+		vm->qgstate = q;
+		if (!g->is_snapshot)
+			hg_stack_drop(vm->stacks[HG_VM_STACK_GSTATE], error);
+
+		HG_VM_UNLOCK (vm, q);
+	}
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
+/* - grestoreall - */
+DEFUNC_OPER (grestoreall)
+G_STMT_START {
+	hg_quark_t q;
+	hg_gstate_t *g;
+	gboolean ret = TRUE;
+
+	while (hg_stack_depth(vm->stacks[HG_VM_STACK_GSTATE]) > 0 && ret) {
+		q = hg_stack_index(vm->stacks[HG_VM_STACK_GSTATE], 0, error);
+
+		g = HG_VM_LOCK (vm, q, error);
+		if (g == NULL) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
+		vm->qgstate = q;
+		ret = !g->is_snapshot;
+		if (ret)
+			hg_stack_drop(vm->stacks[HG_VM_STACK_GSTATE], error);
+
+		HG_VM_UNLOCK (vm, q);
+	}
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
 
 /* - gsave - */
 DEFUNC_OPER (gsave)
@@ -6597,11 +6647,8 @@ G_STMT_START {
 	hg_quark_t q, qg;
 	hg_snapshot_t *sn;
 	hg_gstate_t *gstate;
-	gboolean is_global;
 
-	is_global = hg_vm_is_global_mem_used(vm);
-	hg_vm_use_global_mem(vm, FALSE);
-	q = hg_snapshot_new(hg_vm_get_mem(vm),
+	q = hg_snapshot_new(vm->mem[HG_VM_MEM_LOCAL],
 			    (gpointer *)&sn);
 	if (q == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
@@ -6618,10 +6665,9 @@ G_STMT_START {
 	qg = hg_gstate_save(gstate, TRUE);
 
 	STACK_PUSH (vm->stacks[HG_VM_STACK_GSTATE], qg);
+	STACK_PUSH (vm->stacks[HG_VM_STACK_SAVE], q);
 
 	HG_VM_UNLOCK (vm, vm->qgstate);
-
-	hg_vm_use_global_mem(vm, is_global);
 
 	STACK_PUSH (ostack, q);
 
@@ -7383,7 +7429,14 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (vmstatus);
+/* - vmstatus <level> <used> <maximum> */
+DEFUNC_OPER (vmstatus)
+G_STMT_START {
+	
+} G_STMT_END;
+VALIDATE_STACK_SIZE (3, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (wait);
 
 /* <array> wcheck <bool>

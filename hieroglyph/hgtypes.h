@@ -122,6 +122,7 @@ typedef struct _hg_scanner_t		hg_scanner_t;
 
 /* hgvm.h */
 typedef struct _hg_vm_t			hg_vm_t;
+typedef struct _hg_vm_state_t		hg_vm_state_t;
 typedef enum _hg_vm_langlevel_t		hg_vm_langlevel_t;
 
 enum _hg_vm_langlevel_t {

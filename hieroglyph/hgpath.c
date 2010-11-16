@@ -69,7 +69,50 @@ _hg_object_path_copy(hg_object_t              *object,
 		     gpointer                 *ret,
 		     GError                  **error)
 {
-	return Qnil;
+	hg_path_t *path = (hg_path_t *)object, *p = NULL;
+	hg_path_node_t *on, *nn;
+	hg_quark_t retval;
+	GError *err = NULL;
+
+	hg_return_val_if_fail (object->type == HG_TYPE_PATH, Qnil);
+
+	if (object->on_copying != Qnil)
+		return object->on_copying;
+
+	object->on_copying = retval = hg_path_new(path->o.mem, (gpointer *)&p);
+	if (retval != Qnil) {
+		p->length = path->length;
+		on = HG_MEM_LOCK (path->o.mem, path->qnode, &err);
+		nn = HG_MEM_LOCK (path->o.mem, p->qnode, &err);
+		if (on == NULL ||
+		    nn == NULL) {
+			goto finalize;
+		}
+		memcpy(nn, on, sizeof (hg_path_node_t) * path->length);
+		hg_mem_unlock_object(path->o.mem, path->qnode);
+		hg_mem_unlock_object(path->o.mem, p->qnode);
+
+		if (ret)
+			*ret = p;
+		else
+			hg_mem_unlock_object(path->o.mem, retval);
+	}
+  finalize:
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+		hg_object_free(p->o.mem, retval);
+		retval = Qnil;
+	}
+	
+	return retval;
 }
 
 static gchar *

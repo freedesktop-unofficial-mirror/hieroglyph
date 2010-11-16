@@ -63,6 +63,7 @@ enum _hg_vm_stack_type_t {
 	HG_VM_STACK_ESTACK,
 	HG_VM_STACK_DSTACK,
 	HG_VM_STACK_GSTATE,
+	HG_VM_STACK_SAVE,
 	HG_VM_STACK_END
 };
 enum _hg_vm_error_t {
@@ -96,10 +97,14 @@ enum _hg_vm_error_t {
 	HG_VM_e_undefinedresource,
 	HG_VM_e_END
 };
+struct _hg_vm_state_t {
+	hg_quark_t       self;
+	hg_vm_mem_type_t current_mem_index;
+};
 struct _hg_vm_t {
 	hg_quark_t         self;
 	hg_name_t         *name;
-	hg_vm_mem_type_t   current_mem_index;
+	hg_vm_state_t     *vm_state;
 	hg_mem_t          *mem[HG_VM_MEM_END];
 	gint               mem_id[HG_VM_MEM_END];
 	hg_quark_t         qio[HG_FILE_IO_END];

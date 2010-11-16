@@ -734,6 +734,8 @@ _hg_vm_run_gc(hg_mem_t *mem,
 			goto error;
 	}
 	/** marking miscellaneous **/
+	if (!hg_mem_gc_mark(vm->mem[HG_VM_MEM_LOCAL], vm->vm_state->self, &err))
+		goto error;
 #if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
 	g_print("GC: marking objects in $error\n");
 #endif
@@ -866,7 +868,7 @@ hg_vm_tini(void)
 hg_vm_t *
 hg_vm_new(void)
 {
-	hg_quark_t q;
+	hg_quark_t q, qq;
 	hg_vm_t *retval;
 	gsize i;
 
@@ -886,7 +888,6 @@ hg_vm_new(void)
 
 	retval->plugin_table = g_hash_table_new_full(g_str_hash, g_str_equal,
 						     g_free, NULL);
-	retval->current_mem_index = HG_VM_MEM_GLOBAL;
 	retval->mem[HG_VM_MEM_GLOBAL] = hg_mem_new(HG_VM_GLOBAL_MEM_SIZE);
 	retval->mem[HG_VM_MEM_LOCAL] = hg_mem_new(HG_VM_LOCAL_MEM_SIZE);
 	if (retval->mem[HG_VM_MEM_GLOBAL] == NULL ||
@@ -898,6 +899,15 @@ hg_vm_new(void)
 	hg_mem_set_garbage_collector(retval->mem[HG_VM_MEM_LOCAL], _hg_vm_run_gc, retval);
 	hg_mem_reserved_spool_set_garbage_collector(retval->mem[HG_VM_MEM_GLOBAL], _hg_vm_rs_gc, retval);
 	hg_mem_reserved_spool_set_garbage_collector(retval->mem[HG_VM_MEM_LOCAL], _hg_vm_rs_gc, retval);
+
+	qq = hg_mem_alloc(retval->mem[HG_VM_MEM_LOCAL],
+			  sizeof (hg_vm_state_t),
+			  (gpointer *)&retval->vm_state);
+	if (qq == Qnil)
+		goto error;
+
+	retval->vm_state->self = qq;
+	retval->vm_state->current_mem_index = HG_VM_MEM_GLOBAL;
 
 	/* initialize quarks */
 	for (i = 0; i < HG_FILE_IO_END; i++)
@@ -922,10 +932,12 @@ hg_vm_new(void)
 	retval->stacks[HG_VM_STACK_ESTACK] = hg_vm_stack_new(retval, 65535);
 	retval->stacks[HG_VM_STACK_DSTACK] = hg_vm_stack_new(retval, 65535);
 	retval->stacks[HG_VM_STACK_GSTATE] = hg_stack_new(retval->mem[HG_VM_MEM_LOCAL], 32, retval);
+	retval->stacks[HG_VM_STACK_SAVE] = hg_stack_new(retval->mem[HG_VM_MEM_GLOBAL], 16, retval);
 	if (retval->stacks[HG_VM_STACK_OSTACK] == NULL ||
 	    retval->stacks[HG_VM_STACK_ESTACK] == NULL ||
 	    retval->stacks[HG_VM_STACK_DSTACK] == NULL ||
-	    retval->stacks[HG_VM_STACK_GSTATE] == NULL)
+	    retval->stacks[HG_VM_STACK_GSTATE] == NULL ||
+	    retval->stacks[HG_VM_STACK_SAVE] == NULL)
 		goto error;
 
 	hg_vm_set_default_attributes(retval, HG_VM_ACCESS_READABLE|HG_VM_ACCESS_WRITABLE);
@@ -1833,9 +1845,9 @@ hg_mem_t *
 hg_vm_get_mem(hg_vm_t *vm)
 {
 	hg_return_val_if_fail (vm != NULL, NULL);
-	hg_return_val_if_fail (vm->current_mem_index < HG_VM_MEM_END, NULL);
+	hg_return_val_if_fail (vm->vm_state->current_mem_index < HG_VM_MEM_END, NULL);
 
-	return vm->mem[vm->current_mem_index];
+	return vm->mem[vm->vm_state->current_mem_index];
 }
 
 /**
@@ -1868,9 +1880,9 @@ hg_vm_use_global_mem(hg_vm_t  *vm,
 	hg_return_if_fail (vm != NULL);
 
 	if (flag)
-		vm->current_mem_index = HG_VM_MEM_GLOBAL;
+		vm->vm_state->current_mem_index = HG_VM_MEM_GLOBAL;
 	else
-		vm->current_mem_index = HG_VM_MEM_LOCAL;
+		vm->vm_state->current_mem_index = HG_VM_MEM_LOCAL;
 }
 
 /**
@@ -1886,7 +1898,7 @@ hg_vm_is_global_mem_used(hg_vm_t *vm)
 {
 	hg_return_val_if_fail (vm != NULL, TRUE);
 
-	return vm->current_mem_index == HG_VM_MEM_GLOBAL;
+	return vm->vm_state->current_mem_index == HG_VM_MEM_GLOBAL;
 }
 
 /**
