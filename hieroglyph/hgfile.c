@@ -241,13 +241,15 @@ _hg_object_file_initialize(hg_object_t *object,
 
 	retval = vtable->open(file, file->user_data, &err);
 	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+		if (err->code != ENOENT) {
+			if (error) {
+				*error = g_error_copy(err);
+			} else {
+				g_warning("%s: %s (code: %d)",
+					  __PRETTY_FUNCTION__,
+					  err->message,
+					  err->code);
+			}
 		}
 		g_error_free(err);
 	}
