@@ -32,6 +32,7 @@
 struct _hg_snapshot_t {
 	hg_object_t             o;
 	hg_mem_snapshot_data_t *snapshot;
+	hg_vm_state_t           vm_state;
 };
 
 HG_DEFINE_VTABLE (snapshot);
@@ -134,12 +135,6 @@ hg_snapshot_new(hg_mem_t *mem,
 
 	retval = hg_object_new(mem, (gpointer *)&s, HG_TYPE_SNAPSHOT, 0);
 	if (retval != Qnil) {
-		s->snapshot = hg_mem_save_snapshot(mem);
-		if (s->snapshot == NULL) {
-			hg_object_free(mem, retval);
-			return Qnil;
-		}
-
 		if (ret)
 			*ret = s;
 		else
@@ -150,15 +145,41 @@ hg_snapshot_new(hg_mem_t *mem,
 }
 
 /**
- * hg_snapshot_restore:
+ * hg_snapshot_save:
  * @snapshot:
+ * @vm_state:
  *
  * FIXME
  *
  * Returns:
  */
 gboolean
-hg_snapshot_restore(hg_snapshot_t *snapshot)
+hg_snapshot_save(hg_snapshot_t *snapshot,
+		 hg_vm_state_t *vm_state)
+{
+	hg_return_val_if_fail (snapshot != NULL, FALSE);
+	hg_return_val_if_fail (vm_state != NULL, FALSE);
+
+	snapshot->snapshot = hg_mem_save_snapshot(snapshot->o.mem);
+	if (snapshot->snapshot == NULL)
+		return FALSE;
+	memcpy(&snapshot->vm_state, vm_state, sizeof (hg_vm_state_t));
+
+	return TRUE;
+}
+
+/**
+ * hg_snapshot_restore:
+ * @snapshot:
+ * @vm_state:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_snapshot_restore(hg_snapshot_t *snapshot,
+		    hg_vm_state_t *vm_state)
 {
 	gboolean retval;
 
@@ -167,8 +188,10 @@ hg_snapshot_restore(hg_snapshot_t *snapshot)
 
 	retval = hg_mem_restore_snapshot(snapshot->o.mem,
 					 snapshot->snapshot);
-	if (retval)
+	if (retval) {
 		snapshot->snapshot = NULL;
+		memcpy(vm_state, &snapshot->vm_state, sizeof (hg_vm_state_t));
+	}
 
 	return retval;
 }

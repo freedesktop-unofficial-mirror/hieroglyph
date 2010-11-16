@@ -4487,7 +4487,9 @@ G_STMT_START {
 
 	HG_VM_UNLOCK (vm, vm->qgstate);
 
-	STACK_PUSH (vm->stacks[HG_VM_STACK_GSTATE], q);
+	STACK_PUSH (vm->stacks[HG_VM_STACK_GSTATE], vm->qgstate);
+	vm->qgstate = q;
+	hg_mem_reserved_spool_remove(vm->mem[HG_VM_MEM_LOCAL], q);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -6415,12 +6417,16 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
+	_hg_operator_real_grestoreall(vm, error);
+	hg_stack_drop(vm->stacks[HG_VM_STACK_GSTATE], error);
+
 	sn = HG_VM_LOCK (vm, arg0, error);
 	if (sn == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	if (!hg_snapshot_restore(sn)) {
+	hg_mem_collect_garbage(vm->mem[HG_VM_MEM_LOCAL]);
+	if (!hg_snapshot_restore(sn, vm->vm_state)) {
 		hg_vm_set_error(vm, qself, HG_VM_e_invalidrestore);
 		goto error;
 	}
@@ -6654,6 +6660,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
+	hg_snapshot_save(sn, vm->vm_state);
 	HG_VM_UNLOCK (vm, q);
 
 	/* save the gstate too */
@@ -6664,12 +6671,15 @@ G_STMT_START {
 	}
 	qg = hg_gstate_save(gstate, TRUE);
 
-	STACK_PUSH (vm->stacks[HG_VM_STACK_GSTATE], qg);
-	STACK_PUSH (vm->stacks[HG_VM_STACK_SAVE], q);
+	STACK_PUSH (vm->stacks[HG_VM_STACK_GSTATE], vm->qgstate);
 
 	HG_VM_UNLOCK (vm, vm->qgstate);
+	vm->qgstate = qg;
+	hg_mem_reserved_spool_remove(vm->mem[HG_VM_MEM_LOCAL], qg);
 
 	STACK_PUSH (ostack, q);
+
+	vm->vm_state->n_save_objects++;
 
 	retval = TRUE;
 } G_STMT_END;
@@ -7432,7 +7442,13 @@ DEFUNC_OPER_END
 /* - vmstatus <level> <used> <maximum> */
 DEFUNC_OPER (vmstatus)
 G_STMT_START {
-	
+	hg_mem_t *mem = hg_vm_get_mem(vm);
+
+	STACK_PUSH (ostack, HG_QINT (vm->vm_state->n_save_objects));
+	STACK_PUSH (ostack, HG_QINT (hg_mem_get_used_size(mem)));
+	STACK_PUSH (ostack, HG_QINT (hg_mem_get_total_size(mem) - hg_mem_get_used_size(mem)));
+
+	retval = TRUE;
 } G_STMT_END;
 VALIDATE_STACK_SIZE (3, 0, 0);
 DEFUNC_OPER_END

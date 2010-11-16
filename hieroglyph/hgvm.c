@@ -908,6 +908,7 @@ hg_vm_new(void)
 
 	retval->vm_state->self = qq;
 	retval->vm_state->current_mem_index = HG_VM_MEM_GLOBAL;
+	retval->vm_state->n_save_objects = 0;
 
 	/* initialize quarks */
 	for (i = 0; i < HG_FILE_IO_END; i++)
@@ -932,12 +933,10 @@ hg_vm_new(void)
 	retval->stacks[HG_VM_STACK_ESTACK] = hg_vm_stack_new(retval, 65535);
 	retval->stacks[HG_VM_STACK_DSTACK] = hg_vm_stack_new(retval, 65535);
 	retval->stacks[HG_VM_STACK_GSTATE] = hg_stack_new(retval->mem[HG_VM_MEM_LOCAL], 32, retval);
-	retval->stacks[HG_VM_STACK_SAVE] = hg_stack_new(retval->mem[HG_VM_MEM_GLOBAL], 16, retval);
 	if (retval->stacks[HG_VM_STACK_OSTACK] == NULL ||
 	    retval->stacks[HG_VM_STACK_ESTACK] == NULL ||
 	    retval->stacks[HG_VM_STACK_DSTACK] == NULL ||
-	    retval->stacks[HG_VM_STACK_GSTATE] == NULL ||
-	    retval->stacks[HG_VM_STACK_SAVE] == NULL)
+	    retval->stacks[HG_VM_STACK_GSTATE] == NULL)
 		goto error;
 
 	hg_vm_set_default_attributes(retval, HG_VM_ACCESS_READABLE|HG_VM_ACCESS_WRITABLE);

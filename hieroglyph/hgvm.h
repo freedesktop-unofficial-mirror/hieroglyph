@@ -42,7 +42,6 @@ G_BEGIN_DECLS
 	((_a_) >> 1)
 
 typedef enum _hg_vm_access_t		hg_vm_access_t;
-typedef enum _hg_vm_mem_type_t		hg_vm_mem_type_t;
 typedef enum _hg_vm_stack_type_t	hg_vm_stack_type_t;
 typedef enum _hg_vm_error_t		hg_vm_error_t;
 
@@ -53,17 +52,11 @@ enum _hg_vm_access_t {
 	HG_VM_ACCESS_EDITABLE   = HG_ACCESS_EDITABLE,
 	HG_VM_ACCESS_END
 };
-enum _hg_vm_mem_type_t {
-	HG_VM_MEM_GLOBAL = 0,
-	HG_VM_MEM_LOCAL = 1,
-	HG_VM_MEM_END
-};
 enum _hg_vm_stack_type_t {
 	HG_VM_STACK_OSTACK = 0,
 	HG_VM_STACK_ESTACK,
 	HG_VM_STACK_DSTACK,
 	HG_VM_STACK_GSTATE,
-	HG_VM_STACK_SAVE,
 	HG_VM_STACK_END
 };
 enum _hg_vm_error_t {
@@ -96,10 +89,6 @@ enum _hg_vm_error_t {
 	HG_VM_e_configurationerror,
 	HG_VM_e_undefinedresource,
 	HG_VM_e_END
-};
-struct _hg_vm_state_t {
-	hg_quark_t       self;
-	hg_vm_mem_type_t current_mem_index;
 };
 struct _hg_vm_t {
 	hg_quark_t         self;

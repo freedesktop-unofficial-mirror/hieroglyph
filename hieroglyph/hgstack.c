@@ -129,7 +129,10 @@ _hg_list_new(hg_mem_t *mem)
 	hg_quark_t self;
 	hg_list_t *l = NULL;
 
-	self = hg_mem_alloc(mem, sizeof (hg_list_t), (gpointer *)&l);
+	self = hg_mem_alloc_with_flags(mem,
+				       sizeof (hg_list_t),
+				       HG_MEM_FLAGS_DEFAULT | HG_MEM_DROP_ON_RESTORE,
+				       (gpointer *)&l);
 	if (self == Qnil)
 		return NULL;
 
@@ -143,6 +146,14 @@ _hg_list_new(hg_mem_t *mem)
 }
 
 static void
+_hg_list_free1(hg_mem_t  *mem,
+	       hg_list_t *list)
+{
+	hg_mem_reserved_spool_remove(mem, list->self);
+	hg_mem_free(mem, list->self);
+}
+
+static void
 _hg_list_free(hg_mem_t  *mem,
 	      hg_list_t *list)
 {
@@ -150,8 +161,7 @@ _hg_list_free(hg_mem_t  *mem,
 
 	for (l = list; l != NULL; l = tmp) {
 		tmp = l->next;
-		hg_mem_reserved_spool_remove(mem, l->self);
-		hg_mem_free(mem, l->self);
+		_hg_list_free1(mem, l);
 	}
 }
 
@@ -205,7 +215,7 @@ _hg_stack_pop(hg_stack_t  *stack,
 		stack->stack = NULL;
 	}
 	retval = l->data;
-	hg_mem_free(stack->o.mem, l->self);
+	_hg_list_free1(stack->o.mem, l);
 	stack->depth--;
 
 	return retval;
