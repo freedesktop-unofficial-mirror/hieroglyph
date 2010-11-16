@@ -531,6 +531,8 @@ hg_scanner_new(hg_mem_t  *mem,
 		return NULL;
 	}
 
+	hg_mem_reserved_spool_add(mem, q);
+
 	return retval;
 }
 
@@ -547,6 +549,7 @@ hg_scanner_destroy(hg_scanner_t *scanner)
 
 	if (scanner->yyscanner)
 		yylex_destroy(scanner->yyscanner);
+	hg_mem_reserved_spool_remove(scanner->mem, scanner->self);
 	hg_mem_free(scanner->mem, scanner->self);
 }
 

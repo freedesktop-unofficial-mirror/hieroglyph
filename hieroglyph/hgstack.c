@@ -137,6 +137,8 @@ _hg_list_new(hg_mem_t *mem)
 	l->data = Qnil;
 	l->next = l->prev = NULL;
 
+	hg_mem_reserved_spool_add(mem, self);
+
 	return l;
 }
 
@@ -148,6 +150,7 @@ _hg_list_free(hg_mem_t  *mem,
 
 	for (l = list; l != NULL; l = tmp) {
 		tmp = l->next;
+		hg_mem_reserved_spool_remove(mem, l->self);
 		hg_mem_free(mem, l->self);
 	}
 }

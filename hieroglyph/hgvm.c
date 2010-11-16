@@ -642,6 +642,16 @@ _hg_vm_quark_complex_compare_content(hg_quark_t q1,
 }
 
 static gboolean
+_hg_vm_vm_rs_gc(hg_mem_t    *mem,
+		hg_quark_t   qkey,
+		hg_quark_t   qval,
+		gpointer     data,
+		GError     **error)
+{
+	return hg_mem_gc_mark(mem, qkey, error);
+}
+
+static gboolean
 _hg_vm_rs_gc(hg_mem_t    *mem,
 	     hg_quark_t   qkey,
 	     hg_quark_t   qval,
@@ -799,6 +809,9 @@ hg_vm_init(void)
 		if (__hg_vm_mem == NULL)
 			return FALSE;
 
+		hg_mem_reserved_spool_set_garbage_collector(__hg_vm_mem,
+							    _hg_vm_vm_rs_gc,
+							    NULL);
 		__hg_vm_is_initialized = TRUE;
 
 		/* initialize objects */
@@ -860,6 +873,8 @@ hg_vm_new(void)
 	q = hg_mem_alloc(__hg_vm_mem, sizeof (hg_vm_t), (gpointer *)&retval);
 	if (q == Qnil)
 		return NULL;
+
+	hg_mem_reserved_spool_add(__hg_vm_mem, q);
 
 	memset(retval, 0, sizeof (hg_vm_t));
 	retval->self = q;
@@ -988,6 +1003,7 @@ hg_vm_destroy(hg_vm_t *vm)
 		hg_name_tini(vm->name);
 	if (vm->rand_)
 		g_rand_free(vm->rand_);
+	hg_mem_reserved_spool_remove(__hg_vm_mem, vm->self);
 	hg_mem_free(__hg_vm_mem, vm->self);
 }
 

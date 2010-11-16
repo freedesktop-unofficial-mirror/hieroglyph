@@ -160,9 +160,7 @@ hg_object_new(hg_mem_t  *mem,
 	if (index == Qnil)
 		return Qnil;
 
-	/* XXX */
-	if (type < HG_TYPE_STACK)
-		hg_mem_reserved_spool_add(mem, index);
+	hg_mem_reserved_spool_add(mem, index);
 
 	va_start(ap, preallocated_size);
 
