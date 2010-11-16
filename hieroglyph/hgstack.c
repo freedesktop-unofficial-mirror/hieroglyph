@@ -249,7 +249,7 @@ hg_stack_free(hg_stack_t *stack)
 	if (!stack)
 		return;
 
-	hg_mem_free(stack->o.mem, stack->self);
+	hg_object_free(stack->o.mem, stack->self);
 }
 
 /**
