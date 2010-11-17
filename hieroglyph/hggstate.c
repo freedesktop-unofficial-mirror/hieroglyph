@@ -109,7 +109,7 @@ _hg_object_gstate_to_cstr(hg_object_t              *object,
 			  gpointer                  user_data,
 			  GError                  **error)
 {
-	return NULL;
+	return g_strdup("-gstate-");
 }
 
 static gboolean

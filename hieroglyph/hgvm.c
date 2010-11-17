@@ -1338,6 +1338,9 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 		"-file-",
 		"-save-",
 		"-stack-",
+		"-dictnode-",
+		"-path-",
+		"-gstate-",
 		NULL
 	};
 	gchar *cstr;
