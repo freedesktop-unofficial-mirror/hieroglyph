@@ -734,8 +734,6 @@ _hg_vm_run_gc(hg_mem_t *mem,
 			goto error;
 	}
 	/** marking miscellaneous **/
-	if (!hg_mem_gc_mark(vm->mem[HG_VM_MEM_LOCAL], vm->vm_state->self, &err))
-		goto error;
 #if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
 	g_print("GC: marking objects in $error\n");
 #endif
@@ -793,6 +791,76 @@ _hg_vm_dup_stack(hg_mem_t    *mem,
 	hg_stack_t *s = data;
 
 	return hg_stack_push(s, qdata);
+}
+
+static const hg_quark_t *
+_hg_vm_get_user_params_quark(hg_vm_t *vm)
+{
+	static hg_quark_t retval[HG_VM_u_END + 1] = { Qnil };
+
+	if (retval[0] == Qnil) {
+		retval[HG_VM_u_MaxOpStack] = HG_QNAME (vm->name, "MaxOpStack");
+		retval[HG_VM_u_MaxExecStack] = HG_QNAME (vm->name, "MaxExecStack");
+		retval[HG_VM_u_MaxDictStack] = HG_QNAME (vm->name, "MaxDictStack");
+		retval[HG_VM_u_MaxGStateStack] = HG_QNAME (vm->name, "MaxGStateStack");
+		retval[HG_VM_u_END] = Qnil;
+	}
+
+	return retval;
+}
+
+static gboolean
+_hg_vm_set_user_params(hg_mem_t    *mem,
+		       hg_quark_t   qkey,
+		       hg_quark_t   qval,
+		       gpointer     data,
+		       GError     **error)
+{
+	hg_vm_t *vm = (hg_vm_t *)data;
+
+	if (HG_IS_QNAME (qkey)) {
+		const hg_quark_t *qlist = _hg_vm_get_user_params_quark(vm);
+		gsize i;
+
+		for (i = 0; i < HG_VM_u_END; i++) {
+			if (hg_quark_get_hash(qlist[i]) == hg_quark_get_hash(qkey))
+				break;
+		}
+		switch (i) {
+		    case HG_VM_u_MaxOpStack:
+			    if (HG_IS_QINT (qval)) {
+				    vm->user_params.max_op_stack = HG_INT (qval);
+				    hg_stack_set_max_depth(vm->stacks[HG_VM_STACK_OSTACK],
+							   vm->user_params.max_op_stack);
+			    }
+			    break;
+		    case HG_VM_u_MaxExecStack:
+			    if (HG_IS_QINT (qval)) {
+				    vm->user_params.max_exec_stack = HG_INT (qval);
+				    hg_stack_set_max_depth(vm->stacks[HG_VM_STACK_ESTACK],
+							   vm->user_params.max_exec_stack);
+			    }
+			    break;
+		    case HG_VM_u_MaxDictStack:
+			    if (HG_IS_QINT (qval)) {
+				    vm->user_params.max_dict_stack = HG_INT (qval);
+				    hg_stack_set_max_depth(vm->stacks[HG_VM_STACK_DSTACK],
+							   vm->user_params.max_dict_stack);
+			    }
+			    break;
+		    case HG_VM_u_MaxGStateStack:
+			    if (HG_IS_QINT (qval)) {
+				    vm->user_params.max_gstate_stack = HG_INT (qval);
+				    hg_stack_set_max_depth(vm->stacks[HG_VM_STACK_GSTATE],
+							   vm->user_params.max_gstate_stack);
+			    }
+			    break;
+		    default:
+			    break;
+		}
+	}
+
+	return TRUE;
 }
 
 /*< public >*/
@@ -868,7 +936,7 @@ hg_vm_tini(void)
 hg_vm_t *
 hg_vm_new(void)
 {
-	hg_quark_t q, qq;
+	hg_quark_t q;
 	hg_vm_t *retval;
 	gsize i;
 
@@ -900,15 +968,13 @@ hg_vm_new(void)
 	hg_mem_reserved_spool_set_garbage_collector(retval->mem[HG_VM_MEM_GLOBAL], _hg_vm_rs_gc, retval);
 	hg_mem_reserved_spool_set_garbage_collector(retval->mem[HG_VM_MEM_LOCAL], _hg_vm_rs_gc, retval);
 
-	qq = hg_mem_alloc(retval->mem[HG_VM_MEM_LOCAL],
-			  sizeof (hg_vm_state_t),
-			  (gpointer *)&retval->vm_state);
-	if (qq == Qnil)
-		goto error;
+	retval->vm_state.current_mem_index = HG_VM_MEM_GLOBAL;
+	retval->vm_state.n_save_objects = 0;
 
-	retval->vm_state->self = qq;
-	retval->vm_state->current_mem_index = HG_VM_MEM_GLOBAL;
-	retval->vm_state->n_save_objects = 0;
+	retval->user_params.max_op_stack = 500;
+	retval->user_params.max_exec_stack = 250;
+	retval->user_params.max_dict_stack = 20;
+	retval->user_params.max_gstate_stack = 31;
 
 	/* initialize quarks */
 	for (i = 0; i < HG_FILE_IO_END; i++)
@@ -929,10 +995,15 @@ hg_vm_new(void)
 					 retval->name);
 	if (retval->scanner == NULL)
 		goto error;
-	retval->stacks[HG_VM_STACK_OSTACK] = hg_vm_stack_new(retval, 65535);
-	retval->stacks[HG_VM_STACK_ESTACK] = hg_vm_stack_new(retval, 65535);
-	retval->stacks[HG_VM_STACK_DSTACK] = hg_vm_stack_new(retval, 65535);
-	retval->stacks[HG_VM_STACK_GSTATE] = hg_stack_new(retval->mem[HG_VM_MEM_LOCAL], 32, retval);
+	retval->stacks[HG_VM_STACK_OSTACK] = hg_vm_stack_new(retval,
+							     retval->user_params.max_op_stack);
+	retval->stacks[HG_VM_STACK_ESTACK] = hg_vm_stack_new(retval,
+							     retval->user_params.max_exec_stack);
+	retval->stacks[HG_VM_STACK_DSTACK] = hg_vm_stack_new(retval,
+							     retval->user_params.max_dict_stack);
+	retval->stacks[HG_VM_STACK_GSTATE] = hg_stack_new(retval->mem[HG_VM_MEM_LOCAL],
+							  retval->user_params.max_gstate_stack,
+							  retval);
 	if (retval->stacks[HG_VM_STACK_OSTACK] == NULL ||
 	    retval->stacks[HG_VM_STACK_ESTACK] == NULL ||
 	    retval->stacks[HG_VM_STACK_DSTACK] == NULL ||
@@ -1844,9 +1915,9 @@ hg_mem_t *
 hg_vm_get_mem(hg_vm_t *vm)
 {
 	hg_return_val_if_fail (vm != NULL, NULL);
-	hg_return_val_if_fail (vm->vm_state->current_mem_index < HG_VM_MEM_END, NULL);
+	hg_return_val_if_fail (vm->vm_state.current_mem_index < HG_VM_MEM_END, NULL);
 
-	return vm->mem[vm->vm_state->current_mem_index];
+	return vm->mem[vm->vm_state.current_mem_index];
 }
 
 /**
@@ -1879,9 +1950,9 @@ hg_vm_use_global_mem(hg_vm_t  *vm,
 	hg_return_if_fail (vm != NULL);
 
 	if (flag)
-		vm->vm_state->current_mem_index = HG_VM_MEM_GLOBAL;
+		vm->vm_state.current_mem_index = HG_VM_MEM_GLOBAL;
 	else
-		vm->vm_state->current_mem_index = HG_VM_MEM_LOCAL;
+		vm->vm_state.current_mem_index = HG_VM_MEM_LOCAL;
 }
 
 /**
@@ -1897,7 +1968,7 @@ hg_vm_is_global_mem_used(hg_vm_t *vm)
 {
 	hg_return_val_if_fail (vm != NULL, TRUE);
 
-	return vm->vm_state->current_mem_index == HG_VM_MEM_GLOBAL;
+	return vm->vm_state.current_mem_index == HG_VM_MEM_GLOBAL;
 }
 
 /**
@@ -3209,6 +3280,111 @@ hg_vm_shutdown(hg_vm_t *vm,
 }
 
 /**
+ * hg_vm_get_user_params:
+ * @vm:
+ * @ret:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_quark_t
+hg_vm_get_user_params(hg_vm_t   *vm,
+		      gpointer  *ret,
+		      GError   **error)
+{
+	hg_quark_t retval;
+	const hg_quark_t *qlist;
+	hg_dict_t *d;
+	GError *err = NULL;
+
+	hg_return_val_if_fail (vm != NULL, Qnil);
+
+	retval = hg_dict_new(hg_vm_get_mem(vm),
+			     sizeof (hg_vm_user_params_t) / sizeof (gint) + 1,
+			     (gpointer *)&d);
+	if (retval == Qnil)
+		return Qnil;
+
+	hg_vm_quark_set_default_attributes(vm, &retval);
+	qlist = _hg_vm_get_user_params_quark(vm);
+	if (!hg_dict_add(d, qlist[HG_VM_u_MaxOpStack],
+			 HG_QINT (vm->user_params.max_op_stack), &err))
+		goto error;
+	if (!hg_dict_add(d, qlist[HG_VM_u_MaxExecStack],
+			 HG_QINT (vm->user_params.max_exec_stack), &err))
+		goto error;
+	if (!hg_dict_add(d, qlist[HG_VM_u_MaxDictStack],
+			 HG_QINT (vm->user_params.max_dict_stack), &err))
+		goto error;
+	if (!hg_dict_add(d, qlist[HG_VM_u_MaxGStateStack],
+			 HG_QINT (vm->user_params.max_gstate_stack), &err))
+		goto error;
+
+	if (ret)
+		*ret = d;
+	else
+		hg_mem_unlock_object(d->o.mem, retval);
+  error:
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+		hg_object_free(d->o.mem, retval);
+		retval = Qnil;
+	}
+
+	return retval;
+}
+
+/**
+ * hg_vm_set_user_params:
+ * @vm:
+ * @qdict:
+ * @error:
+ *
+ * FIXME
+ */
+void
+hg_vm_set_user_params(hg_vm_t     *vm,
+		      hg_quark_t   qdict,
+		      GError     **error)
+{
+	GError *err = NULL;
+
+	hg_return_if_fail (vm != NULL);
+
+	if (qdict != Qnil) {
+		hg_dict_t *d = _HG_VM_LOCK (vm, qdict, &err);
+
+		if (d == NULL)
+			goto finalize;
+		hg_dict_foreach(d, _hg_vm_set_user_params, vm, &err);
+
+		HG_VM_UNLOCK (vm, qdict);
+  finalize:
+		if (err) {
+			if (error) {
+				*error = g_error_copy(err);
+			} else {
+				g_warning("%s: %s (code: %d)",
+					  __PRETTY_FUNCTION__,
+					  err->message,
+					  err->code);
+			}
+			g_error_free(err);
+		}
+	}
+}
+
+/**
  * hg_vm_set_rand_seed:
  * @vm:
  * @seed:
@@ -3297,6 +3473,7 @@ void
 hg_vm_reset_error(hg_vm_t *vm)
 {
 	hg_dict_t *dict_error;
+	gsize i;
 
 	hg_return_if_fail (vm != NULL);
 
@@ -3322,6 +3499,9 @@ hg_vm_reset_error(hg_vm_t *vm)
 		goto error;
 
 	hg_vm_clear_error(vm);
+	for (i = 0; i < HG_VM_STACK_END; i++) {
+		hg_stack_set_validation(vm->stacks[i], TRUE);
+	}
 
 	return;
   error:
@@ -3346,6 +3526,7 @@ hg_vm_set_error(hg_vm_t       *vm,
 	hg_quark_t qerrordict, qnerrordict, qhandler, q;
 	hg_dict_t *errordict;
 	GError *err = NULL;
+	gsize i;
 
 	hg_return_val_if_fail (vm != NULL, FALSE);
 	hg_return_val_if_fail (error < HG_VM_e_END, FALSE);
@@ -3416,6 +3597,9 @@ hg_vm_set_error(hg_vm_t       *vm,
 		g_free(scommand);
 
 		hg_operator_invoke(HG_QOPER (HG_enc_private_abort), vm, &err);
+	}
+	for (i = 0; i < HG_VM_STACK_END; i++) {
+		hg_stack_set_validation(vm->stacks[i], FALSE);
 	}
 	qnerrordict = HG_QNAME (vm->name, "errordict");
 	qerrordict = hg_vm_dict_lookup(vm, qnerrordict);

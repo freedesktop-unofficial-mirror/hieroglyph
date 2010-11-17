@@ -2768,7 +2768,24 @@ DEFUNC_UNIMPLEMENTED_OPER (currentstrokeadjust);
 DEFUNC_UNIMPLEMENTED_OPER (currentsystemparams);
 DEFUNC_UNIMPLEMENTED_OPER (currenttransfer);
 DEFUNC_UNIMPLEMENTED_OPER (currentundercolorremoval);
-DEFUNC_UNIMPLEMENTED_OPER (currentuserparams);
+
+/* - currentuserparams <dict> */
+DEFUNC_OPER (currentuserparams)
+G_STMT_START {
+	hg_quark_t q;
+
+	q = hg_vm_get_user_params(vm, NULL, error);
+	if (q == Qnil) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (1, 0, 0);
+DEFUNC_OPER_END
 
 /* <x1> <y1> <x2> <y2> <x3> <y3> curveto - */
 DEFUNC_OPER (curveto)
@@ -6442,7 +6459,7 @@ G_STMT_START {
 		return FALSE;
 	}
 	hg_mem_collect_garbage(vm->mem[HG_VM_MEM_LOCAL]);
-	if (!hg_snapshot_restore(sn, vm->vm_state)) {
+	if (!hg_snapshot_restore(sn, &vm->vm_state)) {
 		hg_vm_set_error(vm, qself, HG_VM_e_invalidrestore);
 		goto error;
 	}
@@ -6676,7 +6693,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	hg_snapshot_save(sn, vm->vm_state);
+	hg_snapshot_save(sn, &vm->vm_state);
 	HG_VM_UNLOCK (vm, q);
 
 	/* save the gstate too */
@@ -6695,7 +6712,7 @@ G_STMT_START {
 
 	STACK_PUSH (ostack, q);
 
-	vm->vm_state->n_save_objects++;
+	vm->vm_state.n_save_objects++;
 
 	retval = TRUE;
 } G_STMT_END;
@@ -6886,7 +6903,29 @@ DEFUNC_UNIMPLEMENTED_OPER (setsystemparams);
 DEFUNC_UNIMPLEMENTED_OPER (settransfer);
 DEFUNC_UNIMPLEMENTED_OPER (setucacheparams);
 DEFUNC_UNIMPLEMENTED_OPER (setundercolorremoval);
-DEFUNC_UNIMPLEMENTED_OPER (setuserparams);
+
+/* <dict> setuserparams - */
+DEFUNC_OPER (setuserparams)
+G_STMT_START {
+	hg_quark_t arg0;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+
+	if (!HG_IS_QDICT (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	hg_vm_set_user_params(vm, arg0, error);
+
+	hg_stack_drop(ostack, error);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (setvmthreshold);
 DEFUNC_UNIMPLEMENTED_OPER (shareddict);
 DEFUNC_UNIMPLEMENTED_OPER (show);
@@ -7460,7 +7499,7 @@ DEFUNC_OPER (vmstatus)
 G_STMT_START {
 	hg_mem_t *mem = hg_vm_get_mem(vm);
 
-	STACK_PUSH (ostack, HG_QINT (vm->vm_state->n_save_objects));
+	STACK_PUSH (ostack, HG_QINT (vm->vm_state.n_save_objects));
 	STACK_PUSH (ostack, HG_QINT (hg_mem_get_used_size(mem)));
 	STACK_PUSH (ostack, HG_QINT (hg_mem_get_total_size(mem) - hg_mem_get_used_size(mem)));
 
@@ -8105,6 +8144,7 @@ _hg_operator_level2_register(hg_vm_t   *vm,
 	REG_VALUE (dict, name, >>, HG_QEVALNAME (name, "%dicttomark"));
 
 	REG_PRIV_OPER (dict, name, %dicttomark, protected_dicttomark);
+	REG_PRIV_OPER (dict, name, .dicttomark, protected_dicttomark);
 
 	REG_OPER (dict, name, arct);
 	REG_OPER (dict, name, colorimage);

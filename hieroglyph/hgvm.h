@@ -44,6 +44,7 @@ G_BEGIN_DECLS
 typedef enum _hg_vm_access_t		hg_vm_access_t;
 typedef enum _hg_vm_stack_type_t	hg_vm_stack_type_t;
 typedef enum _hg_vm_error_t		hg_vm_error_t;
+typedef enum _hg_vm_user_params_name_t	hg_vm_user_params_name_t;
 
 enum _hg_vm_access_t {
 	HG_VM_ACCESS_EXECUTABLE = HG_ACCESS_EXECUTABLE,
@@ -90,34 +91,48 @@ enum _hg_vm_error_t {
 	HG_VM_e_undefinedresource,
 	HG_VM_e_END
 };
+enum _hg_vm_user_params_name_t {
+	HG_VM_u_MaxOpStack = 0,
+	HG_VM_u_MaxExecStack,
+	HG_VM_u_MaxDictStack,
+	HG_VM_u_MaxGStateStack,
+	HG_VM_u_END
+};
+struct _hg_vm_user_params_t {
+	gsize max_op_stack;
+	gsize max_exec_stack;
+	gsize max_dict_stack;
+	gsize max_gstate_stack;
+};
 struct _hg_vm_t {
-	hg_quark_t         self;
-	hg_name_t         *name;
-	hg_vm_state_t     *vm_state;
-	hg_mem_t          *mem[HG_VM_MEM_END];
-	gint               mem_id[HG_VM_MEM_END];
-	hg_quark_t         qio[HG_FILE_IO_END];
-	hg_stack_t        *stacks[HG_VM_STACK_END];
-	hg_quark_t         qerror_name[HG_VM_e_END];
-	hg_quark_t         qerror;
-	hg_quark_t         qsystemdict;
-	hg_quark_t         qglobaldict;
-	hg_quark_t         qinternaldict;
-	hg_quark_t         qgstate;
-	hg_scanner_t      *scanner;
-	hg_lineedit_t     *lineedit;
-	hg_vm_langlevel_t  language_level;
-	gboolean           is_initialized:1;
-	gboolean           hold_lang_level:1;
-	gboolean           shutdown:1;
-	gboolean           has_error:1;
-	gint               error_code;
-	guint              qattributes;
-	guint              n_nest_scan;
-	GHashTable        *plugin_table;
-	GList             *plugin_list;
-	GRand             *rand_;
-	guint32            rand_seed;
+	hg_quark_t           self;
+	hg_name_t           *name;
+	hg_vm_state_t        vm_state;
+	hg_vm_user_params_t  user_params;
+	hg_mem_t            *mem[HG_VM_MEM_END];
+	gint                 mem_id[HG_VM_MEM_END];
+	hg_quark_t           qio[HG_FILE_IO_END];
+	hg_stack_t          *stacks[HG_VM_STACK_END];
+	hg_quark_t           qerror_name[HG_VM_e_END];
+	hg_quark_t           qerror;
+	hg_quark_t           qsystemdict;
+	hg_quark_t           qglobaldict;
+	hg_quark_t           qinternaldict;
+	hg_quark_t           qgstate;
+	hg_scanner_t        *scanner;
+	hg_lineedit_t       *lineedit;
+	hg_vm_langlevel_t    language_level;
+	gboolean             is_initialized:1;
+	gboolean             hold_lang_level:1;
+	gboolean             shutdown:1;
+	gboolean             has_error:1;
+	gint                 error_code;
+	guint                qattributes;
+	guint                n_nest_scan;
+	GHashTable          *plugin_table;
+	GList               *plugin_list;
+	GRand               *rand_;
+	guint32              rand_seed;
 };
 
 
@@ -253,6 +268,12 @@ gboolean           hg_vm_startjob                    (hg_vm_t                 *v
                                                       gboolean                 encapsulated);
 void               hg_vm_shutdown                    (hg_vm_t                 *vm,
                                                       gint                     error_code);
+hg_quark_t         hg_vm_get_user_params             (hg_vm_t                 *vm,
+						      gpointer                *ret,
+						      GError                 **error);
+void               hg_vm_set_user_params             (hg_vm_t                 *vm,
+						      hg_quark_t               qdict,
+						      GError                 **error);
 void               hg_vm_set_rand_seed               (hg_vm_t                 *vm,
 						      guint32                  seed);
 guint32            hg_vm_get_rand_seed               (hg_vm_t                 *vm);

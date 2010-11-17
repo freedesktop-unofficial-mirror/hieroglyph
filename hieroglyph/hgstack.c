@@ -298,6 +298,29 @@ hg_stack_depth(hg_stack_t *stack)
 }
 
 /**
+ * hg_stack_set_max_depth:
+ * @stack:
+ * @depth:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_stack_set_max_depth(hg_stack_t *stack,
+		       gsize       depth)
+{
+	hg_return_val_if_fail (stack != NULL, FALSE);
+
+	if (depth < stack->depth || depth == 0)
+		return FALSE;
+
+	stack->max_depth = depth;
+
+	return TRUE;
+}
+
+/**
  * hg_stack_push:
  * @stack:
  * @quark:

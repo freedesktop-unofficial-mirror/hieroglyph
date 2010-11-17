@@ -45,6 +45,8 @@ void                hg_stack_free             (hg_stack_t                *stack)
 void                hg_stack_set_validation   (hg_stack_t                *stack,
                                                gboolean                   flag);
 gsize               hg_stack_depth            (hg_stack_t                *stack);
+gboolean            hg_stack_set_max_depth    (hg_stack_t                *stack,
+					       gsize                      depth);
 gboolean            hg_stack_push             (hg_stack_t                *stack,
                                                hg_quark_t                 quark);
 hg_quark_t          hg_stack_pop              (hg_stack_t                *stack,

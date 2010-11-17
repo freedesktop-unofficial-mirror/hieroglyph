@@ -125,6 +125,7 @@ typedef struct _hg_vm_t			hg_vm_t;
 typedef enum _hg_vm_mem_type_t		hg_vm_mem_type_t;
 typedef struct _hg_vm_state_t		hg_vm_state_t;
 typedef enum _hg_vm_langlevel_t		hg_vm_langlevel_t;
+typedef struct _hg_vm_user_params_t	hg_vm_user_params_t;
 
 enum _hg_vm_mem_type_t {
 	HG_VM_MEM_GLOBAL = 0,
@@ -138,7 +139,6 @@ enum _hg_vm_langlevel_t {
 	HG_LANG_LEVEL_END
 };
 struct _hg_vm_state_t {
-	hg_quark_t       self;
 	hg_vm_mem_type_t current_mem_index;
 	gint             n_save_objects;
 };

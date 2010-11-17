@@ -46,6 +46,7 @@
 	/accessible 16
     >> readonly
     /attrsmask 0
+    /userparams null
 >> /.unittestdict exch def
 
 % - .initunittest -
@@ -54,7 +55,9 @@
 	/nunit 0 def
 	/nsuccess 0 def
 	/nfailure 0 def
+	/userparams currentuserparams def
     end
+    mark /MaxGStateStack 2000 .dicttomark setuserparams
     .promptmsg length 2 add dup string 1 1 4 -1 roll 2 sub {1 index exch 32 put} for
     dup 0 13 put
     dup dup length 1 sub 13 put =only
@@ -267,5 +270,6 @@
 	nfailure 0 gt {
 	    1 .quit
 	} if
+	userparams setuserparams
     end
 } bind odef

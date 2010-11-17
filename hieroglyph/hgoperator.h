@@ -180,8 +180,10 @@ typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
 				hg_vm_set_error(vm, qself, HG_VM_e_stackoverflow); \
 			} else if ((_s_) == estack) {			\
 				hg_vm_set_error(vm, qself, HG_VM_e_execstackoverflow); \
-			} else {					\
+			} else if ((_s_) == dstack) {			\
 				hg_vm_set_error(vm, qself, HG_VM_e_dictstackoverflow); \
+			} else {					\
+				hg_vm_set_error(vm, qself, HG_VM_e_limitcheck);	\
 			}						\
 			return FALSE;					\
 		}							\
