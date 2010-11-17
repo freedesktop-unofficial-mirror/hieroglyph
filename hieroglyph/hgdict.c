@@ -648,6 +648,7 @@ _hg_dict_node_balance(hg_dict_node_t  *node,
 	hg_mem_unlock_object(node->o.mem, new_node->qval);
 	hg_mem_unlock_object(node->o.mem, new_node->qnodes);
 	hg_mem_unlock_object(node->o.mem, q);
+	hg_mem_reserved_spool_remove(node->o.mem, q);
 }
 
 G_INLINE_FUNC gboolean
@@ -1063,6 +1064,7 @@ hg_dict_add(hg_dict_t   *dict,
 		dict->qroot = qnode;
 
 		HG_DICT_NODE_UNLOCK_NO_LABEL (dict->o.mem, qnode, qnode);
+		hg_mem_reserved_spool_remove(dict->o.mem, qnode);
 	}
 	if (!hg_quark_is_simple_object(qkey) &&
 	    hg_quark_get_type(qkey) != HG_TYPE_OPER) {
