@@ -646,6 +646,9 @@ hg_quark_get_type_name(hg_quark_t  qdata)
 		"filetype",
 		"savetype",
 		"stacktype",
+		"dictnodetype",
+		"pathtype",
+		"gstatetype",
 		NULL
 	};
 	static const gchar const *unknown = "unknowntype";
