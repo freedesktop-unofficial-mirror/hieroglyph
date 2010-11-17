@@ -4435,7 +4435,7 @@ G_STMT_START {
 			return FALSE;
 		}
 		vm->qgstate = q;
-		if (!g->is_snapshot)
+		if (g->is_snapshot == Qnil)
 			hg_stack_drop(vm->stacks[HG_VM_STACK_GSTATE], error);
 
 		HG_VM_UNLOCK (vm, q);
@@ -4448,11 +4448,10 @@ DEFUNC_OPER_END
 /* - grestoreall - */
 DEFUNC_OPER (grestoreall)
 G_STMT_START {
-	hg_quark_t q;
+	hg_quark_t q, qq = Qnil;
 	hg_gstate_t *g;
-	gboolean ret = TRUE;
 
-	while (hg_stack_depth(vm->stacks[HG_VM_STACK_GSTATE]) > 0 && ret) {
+	while (hg_stack_depth(vm->stacks[HG_VM_STACK_GSTATE]) > 0 && qq == Qnil) {
 		q = hg_stack_index(vm->stacks[HG_VM_STACK_GSTATE], 0, error);
 
 		g = HG_VM_LOCK (vm, q, error);
@@ -4461,8 +4460,8 @@ G_STMT_START {
 			return FALSE;
 		}
 		vm->qgstate = q;
-		ret = !g->is_snapshot;
-		if (ret)
+		qq = g->is_snapshot;
+		if (qq == Qnil)
 			hg_stack_drop(vm->stacks[HG_VM_STACK_GSTATE], error);
 
 		HG_VM_UNLOCK (vm, q);
@@ -4483,7 +4482,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	q = hg_gstate_save(gstate, FALSE);
+	q = hg_gstate_save(gstate, Qnil);
 
 	HG_VM_UNLOCK (vm, vm->qgstate);
 
@@ -6407,8 +6406,9 @@ DEFUNC_UNIMPLEMENTED_OPER (resourcestatus);
 
 DEFUNC_OPER (restore)
 G_STMT_START {
-	hg_quark_t arg0;
+	hg_quark_t arg0, q, qq = Qnil;
 	hg_snapshot_t *sn;
+	hg_gstate_t *g;
 
 	CHECK_STACK (ostack, 1);
 
@@ -6417,8 +6417,24 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-	_hg_operator_real_grestoreall(vm, error);
-	hg_stack_drop(vm->stacks[HG_VM_STACK_GSTATE], error);
+	/* can't call _hg_operator_real_grestoreall.
+	 * check the quark what it's referenced from.
+	 * otherwise restore will fails due to the remaining gstate object.
+	 */
+	while (hg_stack_depth(vm->stacks[HG_VM_STACK_GSTATE]) > 0 && qq != arg0) {
+		q = hg_stack_index(vm->stacks[HG_VM_STACK_GSTATE], 0, error);
+
+		g = HG_VM_LOCK (vm, q, error);
+		if (g == NULL) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			return FALSE;
+		}
+		vm->qgstate = q;
+		qq = g->is_snapshot;
+		hg_stack_drop(vm->stacks[HG_VM_STACK_GSTATE], error);
+
+		HG_VM_UNLOCK (vm, q);
+	}
 
 	sn = HG_VM_LOCK (vm, arg0, error);
 	if (sn == NULL) {
@@ -6669,7 +6685,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	qg = hg_gstate_save(gstate, TRUE);
+	qg = hg_gstate_save(gstate, q);
 
 	STACK_PUSH (vm->stacks[HG_VM_STACK_GSTATE], vm->qgstate);
 

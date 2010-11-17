@@ -246,7 +246,7 @@ hg_gstate_get_path(hg_gstate_t *gstate)
  */
 hg_quark_t
 hg_gstate_save(hg_gstate_t *gstate,
-	       gboolean     is_snapshot)
+	       hg_quark_t   is_snapshot)
 {
 	hg_quark_t retval;
 	GError *err = NULL;
