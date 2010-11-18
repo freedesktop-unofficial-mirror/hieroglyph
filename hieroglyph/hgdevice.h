@@ -31,6 +31,8 @@ G_BEGIN_DECLS
 
 typedef hg_device_t *	(* hg_device_init_func_t)     (void);
 typedef void		(* hg_device_finalize_func_t) (hg_device_t *device);
+typedef gboolean        (* hg_device_operator_t)      (hg_device_t *device,
+						       hg_gstate_t *gstate);
 
 struct _hg_device_t {
 	/*< private >*/
@@ -38,19 +40,22 @@ struct _hg_device_t {
 	hg_device_finalize_func_t  finalizer;
 
 	/*< protected >*/
-	gboolean (* fill) (hg_device_t *device,
-			   hg_gstate_t *gstate);
+	hg_device_operator_t fill;
+	hg_device_operator_t stroke;
 
 	/*< public >*/
 	
 };
 
 
-hg_device_t *hg_device_open (const gchar  *name);
-void         hg_device_close(hg_device_t  *device);
-gboolean     hg_device_fill (hg_device_t  *device,
-			     hg_gstate_t  *gstate,
-			     GError      **error);
+hg_device_t *hg_device_open  (const gchar  *name);
+void         hg_device_close (hg_device_t  *device);
+gboolean     hg_device_fill  (hg_device_t  *device,
+			      hg_gstate_t  *gstate,
+			      GError      **error);
+gboolean     hg_device_stroke(hg_device_t  *device,
+			      hg_gstate_t  *gstate,
+			      GError      **error);
 
 /* null device */
 hg_device_t *hg_device_null_new(void);

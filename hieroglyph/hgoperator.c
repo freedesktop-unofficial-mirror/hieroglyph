@@ -3930,7 +3930,8 @@ DEFUNC_UNIMPLEMENTED_OPER (fileposition);
 /* - fill - */
 DEFUNC_OPER (fill)
 G_STMT_START {
-	hg_gstate_t *gstate = HG_VM_LOCK (vm, hg_vm_get_gstate(vm), error);
+	hg_quark_t qg = hg_vm_get_gstate(vm);
+	hg_gstate_t *gstate = HG_VM_LOCK (vm, qg, error);
 
 	if (gstate == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
@@ -3946,7 +3947,7 @@ G_STMT_START {
 	}
 	retval = TRUE;
   finalize:
-	HG_VM_UNLOCK (vm, hg_vm_get_gstate(vm));
+	HG_VM_UNLOCK (vm, qg);
 } G_STMT_END;
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
@@ -7290,7 +7291,32 @@ VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (stringwidth);
-DEFUNC_UNIMPLEMENTED_OPER (stroke);
+
+/* - stroke - */
+DEFUNC_OPER (stroke)
+G_STMT_START {
+	hg_quark_t qg = hg_vm_get_gstate(vm);
+	hg_gstate_t *gstate = HG_VM_LOCK (vm, qg, error);
+
+	if (gstate == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	if (!hg_device_stroke(vm->device, gstate, error)) {
+		if (error && *error) {
+			hg_vm_set_error_from_gerror(vm, qself, *error);
+		} else {
+			hg_vm_set_error(vm, qself, HG_VM_e_limitcheck);
+		}
+		goto finalize;
+	}
+	retval = TRUE;
+  finalize:
+	HG_VM_UNLOCK (vm, qg);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (strokepath);
 
 /* <num1> <num2> sub <diff> */
