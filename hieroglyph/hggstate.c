@@ -294,8 +294,6 @@ hg_gstate_save(hg_gstate_t *gstate,
  * @blue:
  *
  * FIXME
- *
- * Returns:
  */
 void
 hg_gstate_set_rgbcolor(hg_gstate_t *gstate,
@@ -305,8 +303,27 @@ hg_gstate_set_rgbcolor(hg_gstate_t *gstate,
 {
 	hg_return_if_fail (gstate != NULL);
 
-	gstate->color.is_rgb = TRUE;
+	gstate->color.type = HG_COLOR_RGB;
 	gstate->color.is.rgb.red = red;
 	gstate->color.is.rgb.green = green;
 	gstate->color.is.rgb.blue = blue;
+}
+
+/**
+ * hg_gstate_set_gray:
+ * @gstate:
+ * @gray:
+ *
+ * FIXME
+ */
+void
+hg_gstate_set_graycolor(hg_gstate_t *gstate,
+			gdouble      gray)
+{
+	hg_return_if_fail (gstate != NULL);
+
+	gstate->color.type = HG_COLOR_GRAY;
+	gstate->color.is.rgb.red = gray;
+	gstate->color.is.rgb.green = gray;
+	gstate->color.is.rgb.blue = gray;
 }

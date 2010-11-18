@@ -6849,7 +6849,45 @@ DEFUNC_UNIMPLEMENTED_OPER (setdevparams);
 DEFUNC_UNIMPLEMENTED_OPER (setfileposition);
 DEFUNC_UNIMPLEMENTED_OPER (setflat);
 DEFUNC_UNIMPLEMENTED_OPER (setfont);
-DEFUNC_UNIMPLEMENTED_OPER (setgray);
+
+/* <num> setgray - */
+DEFUNC_OPER (setgray)
+G_STMT_START {
+	hg_quark_t arg0, qg = hg_vm_get_gstate(vm);
+	gdouble d;
+	hg_gstate_t *gstate;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+
+	if (HG_IS_QINT (arg0)) {
+		d = HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg0)) {
+		d = HG_REAL (arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (d > 1.0)
+		d = 1.0;
+	if (d < 0.0)
+		d = 0.0;
+	gstate = HG_VM_LOCK (vm, qg, error);
+	if (gstate == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	hg_gstate_set_graycolor(gstate, d);
+	HG_VM_UNLOCK (vm, qg);
+
+	hg_stack_drop(ostack, error);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (setgstate);
 DEFUNC_UNIMPLEMENTED_OPER (sethalftone);
 DEFUNC_UNIMPLEMENTED_OPER (sethalftonephase);

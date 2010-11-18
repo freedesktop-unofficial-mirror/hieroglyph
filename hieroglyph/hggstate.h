@@ -36,9 +36,15 @@ G_BEGIN_DECLS
 	(hg_quark_get_type((_q_)) == HG_TYPE_GSTATE)
 
 typedef struct _hg_color_t	hg_color_t;
+typedef enum _hg_color_mode_t	hg_color_mode_t;
 
+enum _hg_color_mode_t {
+	HG_COLOR_RGB,
+	HG_COLOR_HSB,
+	HG_COLOR_GRAY,
+};
 struct _hg_color_t {
-	gboolean is_rgb;
+	hg_color_mode_t type;
 	union {
 		struct {
 			gdouble red;
@@ -71,6 +77,8 @@ void                hg_gstate_set_rgbcolor     (hg_gstate_t *gstate,
 						gdouble      red,
 						gdouble      green,
 						gdouble      blue);
+void                hg_gstate_set_graycolor    (hg_gstate_t *gstate,
+						gdouble      gray);
 
 
 G_END_DECLS
