@@ -52,6 +52,11 @@ _hg_object_path_initialize(hg_object_t *object,
 	hg_path_t *path = (hg_path_t *)object;
 
 	path->length = 0;
+	/* initialize node with Qnil first
+	 * to avoid a fail on checking the mem id.
+	 * when GC is running.
+	 */
+	path->qnode = Qnil;
 	path->qnode = hg_mem_alloc_with_flags(path->o.mem,
 					      sizeof (hg_path_node_t) * HG_PATH_MAX,
 					      HG_MEM_FLAGS_DEFAULT | HG_MEM_DROP_ON_RESTORE,

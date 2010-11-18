@@ -34,7 +34,6 @@ G_BEGIN_DECLS
 #define HG_IS_QPATH(_q_)				\
 	(hg_quark_get_type((_q_)) == HG_TYPE_PATH)
 
-typedef struct _hg_path_t	hg_path_t;
 typedef enum _hg_path_type_t	hg_path_type_t;
 typedef struct _hg_path_node_t	hg_path_node_t;
 
