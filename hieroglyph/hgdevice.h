@@ -29,30 +29,35 @@
 
 G_BEGIN_DECLS
 
-typedef struct _hg_device_t	hg_device_t;
-typedef enum _hg_device_type_t	hg_device_type_t;
 typedef hg_device_t *	(* hg_device_init_func_t)     (void);
 typedef void		(* hg_device_finalize_func_t) (hg_device_t *device);
 
-enum _hg_device_type_t {
-	HG_DEVICE_VECTOR,
-	HG_DEVICE_RASTER,
-};
 struct _hg_device_t {
 	/*< private >*/
 	GModule                   *module;
 	hg_device_finalize_func_t  finalizer;
 
+	/*< protected >*/
+	gboolean (* fill) (hg_device_t *device,
+			   hg_gstate_t *gstate);
+
 	/*< public >*/
-	hg_device_type_t           type;
-	union {
-		/* XXX: vector or raster */
-	} v;
+	
 };
 
 
-hg_device_t *hg_device_open (const gchar *name);
-void         hg_device_close(hg_device_t *device);
+hg_device_t *hg_device_open (const gchar  *name);
+void         hg_device_close(hg_device_t  *device);
+gboolean     hg_device_fill (hg_device_t  *device,
+			     hg_gstate_t  *gstate,
+			     GError      **error);
+
+/* null device */
+hg_device_t *hg_device_null_new(void);
+
+/* modules */
+hg_device_t *hg_init    (void);
+void         hg_finalize(hg_device_t *device);
 
 G_END_DECLS
 

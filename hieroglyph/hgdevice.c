@@ -27,6 +27,8 @@
 
 #include <string.h>
 #include "hgerror.h"
+#include "hggstate.h"
+#include "hgpath.h"
 #include "hgdevice.h"
 
 /*< private >*/
@@ -137,11 +139,97 @@ hg_device_close(hg_device_t *device)
 	GModule *module;
 
 	hg_return_if_fail (device != NULL);
-	hg_return_if_fail (device->module != NULL);
 	hg_return_if_fail (device->finalizer != NULL);
 
 	module = device->module;
 	device->finalizer(device);
 
-	g_module_close(module);
+	if (module)
+		g_module_close(module);
+}
+
+/**
+ * hg_device_fill:
+ * @device:
+ * @gstate:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_device_fill(hg_device_t  *device,
+	       hg_gstate_t  *gstate,
+	       GError      **error)
+{
+	gboolean retval;
+	GError *err = NULL;
+
+	hg_return_val_if_fail (device != NULL, FALSE);
+	hg_return_val_if_fail (gstate != NULL, FALSE);
+	hg_return_val_if_fail (device->fill != NULL, FALSE);
+
+	retval = device->fill(device, gstate);
+	if (retval) {
+		hg_quark_t qpath = hg_path_new(gstate->o.mem, NULL);
+
+		if (qpath == Qnil) {
+			g_set_error(&err, HG_ERROR, ENOMEM,
+				    "Out of memory.");
+			retval = FALSE;
+		} else {
+			hg_gstate_set_path(gstate, qpath);
+		}
+	}
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+	}
+
+	return retval;
+}
+
+
+/* null device */
+/*< private >*/
+
+typedef struct _hg_null_device_t	hg_null_device_t;
+
+struct _hg_null_device_t {
+	hg_device_t parent;
+};
+
+static gboolean
+_hg_device_null_nop(hg_device_t *device,
+		    hg_gstate_t *gstate)
+{
+	return TRUE;
+}
+
+static void
+_hg_device_null_destroy(hg_device_t *device)
+{
+	hg_null_device_t *devnul = (hg_null_device_t *)device;
+
+	g_free(devnul);
+}
+
+/*< public >*/
+hg_device_t *
+hg_device_null_new(void)
+{
+	hg_null_device_t *retval = g_new0(hg_null_device_t, 1);
+
+	retval->parent.finalizer = _hg_device_null_destroy;
+	retval->parent.fill = _hg_device_null_nop;
+
+	return (hg_device_t *)retval;
 }

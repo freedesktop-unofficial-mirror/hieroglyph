@@ -101,6 +101,9 @@ enum _hg_mem_flags_t {
 	HG_MEM_DROP_ON_RESTORE = 1 << 1,
 };
 
+/* hgdevice.h */
+typedef struct _hg_device_t		hg_device_t;
+
 /* hgdict.h */
 typedef struct _hg_dict_t		hg_dict_t;
 typedef struct _hg_dict_node_t		hg_dict_node_t;
@@ -110,6 +113,9 @@ typedef gboolean (* hg_dict_traverse_func_t) (hg_mem_t    *mem,
 					      gpointer     data,
 					      GError     **error);
 
+/* hggstate.h */
+typedef struct _hg_gstate_t		hg_gstate_t;
+
 /* hgname.h */
 typedef struct _hg_name_t		hg_name_t;
 
@@ -117,6 +123,10 @@ typedef struct _hg_name_t		hg_name_t;
 typedef gboolean (* hg_gc_iterate_func_t)	(hg_quark_t   qdata,
 						 gpointer     user_data,
 						 GError     **error);
+
+/* hgpath.h */
+typedef struct _hg_path_t		hg_path_t;
+
 /* hgscanner.h */
 typedef struct _hg_scanner_t		hg_scanner_t;
 

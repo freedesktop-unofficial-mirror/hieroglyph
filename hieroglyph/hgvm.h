@@ -133,6 +133,7 @@ struct _hg_vm_t {
 	GList               *plugin_list;
 	GRand               *rand_;
 	guint32              rand_seed;
+	hg_device_t         *device;
 };
 
 
@@ -268,6 +269,9 @@ gboolean           hg_vm_startjob                    (hg_vm_t                 *v
                                                       gboolean                 encapsulated);
 void               hg_vm_shutdown                    (hg_vm_t                 *vm,
                                                       gint                     error_code);
+hg_quark_t         hg_vm_get_gstate                  (hg_vm_t                 *vm);
+void               hg_vm_set_gstate                  (hg_vm_t                 *vm,
+						      hg_quark_t               qgstate);
 hg_quark_t         hg_vm_get_user_params             (hg_vm_t                 *vm,
 						      gpointer                *ret,
 						      GError                 **error);

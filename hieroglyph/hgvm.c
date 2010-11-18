@@ -27,6 +27,7 @@
 
 #include <stdlib.h>
 #include "hgbool.h"
+#include "hgdevice.h"
 #include "hgdict.h"
 #include "hggstate.h"
 #include "hgint.h"
@@ -2122,6 +2123,8 @@ hg_vm_setup(hg_vm_t           *vm,
 		if (vm->qgstate == Qnil)
 			goto error;
 
+		hg_mem_reserved_spool_remove(vm->mem[HG_VM_MEM_LOCAL], vm->qgstate);
+
 		/* initialize stacks */
 		hg_stack_clear(vm->stacks[HG_VM_STACK_OSTACK]);
 		hg_stack_clear(vm->stacks[HG_VM_STACK_ESTACK]);
@@ -3248,6 +3251,7 @@ hg_vm_startjob(hg_vm_t           *vm,
 	} else {
 		hg_vm_load_plugins(vm);
 
+		vm->device = hg_device_null_new();
 		/* XXX: initialize device */
 
 		if (initializer) {
@@ -3279,6 +3283,54 @@ hg_vm_shutdown(hg_vm_t *vm,
 
 	vm->error_code = error_code;
 	vm->shutdown = TRUE;
+}
+
+/**
+ * hg_vm_get_gstate:
+ * @vm:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_quark_t
+hg_vm_get_gstate(hg_vm_t *vm)
+{
+	hg_return_val_if_fail (vm != NULL, Qnil);
+
+	return vm->qgstate;
+}
+
+/**
+ * hg_vm_set_gstate:
+ * @vm:
+ * @qgstate:
+ *
+ * FIXME
+ */
+void
+hg_vm_set_gstate(hg_vm_t    *vm,
+		 hg_quark_t  qgstate)
+{
+	guint id;
+	hg_mem_t *mem = NULL;
+
+	hg_return_if_fail (vm != NULL);
+	hg_return_if_fail (HG_IS_QGSTATE (qgstate));
+
+	id = hg_quark_get_mem_id(qgstate);
+	if (id == vm->mem_id[HG_VM_MEM_GLOBAL]) {
+		mem = vm->mem[HG_VM_MEM_GLOBAL];
+	} else if (id == vm->mem_id[HG_VM_MEM_LOCAL]) {
+		mem = vm->mem[HG_VM_MEM_LOCAL];
+	} else {
+		g_printerr("%s: gstate allocated with the unknown memory spool: 0x%lx\n",
+			   __PRETTY_FUNCTION__,
+			   qgstate);
+		return;
+	}
+	vm->qgstate = qgstate;
+	hg_mem_reserved_spool_remove(mem, qgstate);
 }
 
 /**
