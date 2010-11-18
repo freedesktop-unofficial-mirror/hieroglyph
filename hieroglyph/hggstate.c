@@ -213,10 +213,17 @@ void
 hg_gstate_set_path(hg_gstate_t *gstate,
 		   hg_quark_t   qpath)
 {
+	guint mem_id;
+
 	hg_return_if_fail (gstate != NULL);
 	hg_return_if_fail (HG_IS_QPATH (qpath));
 
+	mem_id = hg_quark_get_mem_id(gstate->o.self);
+
+	hg_return_if_fail (hg_quark_has_same_mem_id(qpath, mem_id));
+
 	gstate->qpath = qpath;
+	hg_mem_reserved_spool_remove(gstate->o.mem, qpath);
 }
 
 /**

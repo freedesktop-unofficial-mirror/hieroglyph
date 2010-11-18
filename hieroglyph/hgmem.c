@@ -735,6 +735,7 @@ hg_mem_reserved_spool_add(hg_mem_t     *mem,
 
 	hg_return_if_fail (mem != NULL);
 	hg_return_if_fail (qdata != Qnil);
+	hg_return_if_fail (hg_quark_has_same_mem_id(qdata, mem->id));
 
 	p = HGQUARK_TO_POINTER (hg_quark_get_hash(qdata));
 	count = GPOINTER_TO_INT (g_hash_table_lookup(mem->reserved_spool, p));

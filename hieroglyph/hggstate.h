@@ -32,10 +32,9 @@ G_BEGIN_DECLS
 #define HG_GSTATE_INIT						\
 	(hg_object_register(HG_TYPE_GSTATE,			\
 			    hg_object_gstate_get_vtable()))
-#define HG_IS_GSTATE(_q_)				\
+#define HG_IS_QGSTATE(_q_)				\
 	(hg_quark_get_type((_q_)) == HG_TYPE_GSTATE)
 
-typedef struct _hg_gstate_t	hg_gstate_t;
 typedef struct _hg_color_t	hg_color_t;
 
 struct _hg_color_t {
