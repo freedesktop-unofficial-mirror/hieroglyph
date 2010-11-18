@@ -327,3 +327,19 @@ hg_gstate_set_graycolor(hg_gstate_t *gstate,
 	gstate->color.is.rgb.green = gray;
 	gstate->color.is.rgb.blue = gray;
 }
+
+/**
+ * hg_gstate_set_linewidth:
+ * @gstate:
+ * @width:
+ *
+ * FIXME
+ */
+void
+hg_gstate_set_linewidth(hg_gstate_t *gstate,
+			gdouble      width)
+{
+	hg_return_if_fail (gstate != NULL);
+
+	gstate->linewidth = width;
+}

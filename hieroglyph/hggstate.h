@@ -63,6 +63,7 @@ struct _hg_gstate_t {
 	hg_quark_t  qpath;
 	gboolean    is_snapshot;
 	hg_color_t  color;
+	gdouble     linewidth;
 };
 
 hg_object_vtable_t *hg_object_gstate_get_vtable(void);
@@ -79,6 +80,8 @@ void                hg_gstate_set_rgbcolor     (hg_gstate_t *gstate,
 						gdouble      blue);
 void                hg_gstate_set_graycolor    (hg_gstate_t *gstate,
 						gdouble      gray);
+void                hg_gstate_set_linewidth    (hg_gstate_t *gstate,
+						gdouble      width);
 
 
 G_END_DECLS

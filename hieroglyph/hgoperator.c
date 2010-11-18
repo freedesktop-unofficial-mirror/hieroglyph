@@ -6894,7 +6894,42 @@ DEFUNC_UNIMPLEMENTED_OPER (sethalftonephase);
 DEFUNC_UNIMPLEMENTED_OPER (sethsbcolor);
 DEFUNC_UNIMPLEMENTED_OPER (setlinecap);
 DEFUNC_UNIMPLEMENTED_OPER (setlinejoin);
-DEFUNC_UNIMPLEMENTED_OPER (setlinewidth);
+
+/* <num> setlinewidth - */
+DEFUNC_OPER (setlinewidth)
+G_STMT_START {
+	hg_quark_t arg0, qg = hg_vm_get_gstate(vm);
+	gdouble d;
+	hg_gstate_t *gstate;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+
+	if (HG_IS_QINT (arg0)) {
+		d = HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg0)) {
+		d = HG_REAL (arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	gstate = HG_VM_LOCK (vm, qg, error);
+	if (gstate == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	hg_gstate_set_linewidth(gstate, d);
+
+	HG_VM_UNLOCK (vm, qg);
+
+	hg_stack_drop(ostack, error);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (setmatrix);
 DEFUNC_UNIMPLEMENTED_OPER (setmiterlimit);
 DEFUNC_UNIMPLEMENTED_OPER (setobjectformat);
