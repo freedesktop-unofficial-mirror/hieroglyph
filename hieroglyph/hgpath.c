@@ -724,10 +724,10 @@ hg_path_arcto(hg_path_t *path,
 		} else {
 			retval = !_hg_path_add(path, HG_PATH_LINETO, t1x, t1y);
 		}
-		/* FIXME: two the control points */
+		/* XXX: two the control points */
 		retval |= !_hg_path_add(path, HG_PATH_CURVETO, t2x, t2y);
 		retval |= !_hg_path_add(path, HG_PATH_CURVETO, t2x, t2y);
-		/* FIXME: end */
+		/* XXX: end */
 		retval |= !_hg_path_add(path, HG_PATH_CURVETO, t2x, t2y);
 	}
 

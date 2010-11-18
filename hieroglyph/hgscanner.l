@@ -377,7 +377,7 @@ HEXDIGITS	[0-9a-fA-F]
 	}
 [\x80-\xa1]+		{
 		/* binary tokens */
-		g_warning("FIXME: binary token appears");
+		g_warning("XXX: binary token appears");
 	}
 \r\n			{
 		/* ignore */

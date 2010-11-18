@@ -759,7 +759,6 @@ _hg_vm_run_gc(hg_mem_t *mem,
 #endif
 	if (!hg_vm_quark_gc_mark(vm, vm->qgstate, &err))
 		goto error;
-	/** XXX: marking scanner */
 
 	/* sweeping objects */
 
@@ -3249,7 +3248,7 @@ hg_vm_startjob(hg_vm_t           *vm,
 	} else {
 		hg_vm_load_plugins(vm);
 
-		/* FIXME: initialize device */
+		/* XXX: initialize device */
 
 		if (initializer) {
 			gchar *s = g_strdup_printf("{(%s)(r)file dup type/filetype eq{cvx exec}if}stopped{$error/newerror get{errordict/handleerror get exec 1 .quit}if}if", initializer);
