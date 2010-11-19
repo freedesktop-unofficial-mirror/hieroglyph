@@ -7570,7 +7570,19 @@ DEFUNC_UNIMPLEMENTED_OPER (ufill);
 DEFUNC_UNIMPLEMENTED_OPER (undefineresource);
 DEFUNC_UNIMPLEMENTED_OPER (undefineuserobject);
 DEFUNC_UNIMPLEMENTED_OPER (upath);
-DEFUNC_UNIMPLEMENTED_OPER (usertime);
+
+/* - usertime <int> */
+DEFUNC_OPER (usertime)
+G_STMT_START {
+	gint32 i = hg_vm_get_current_time(vm);
+
+	STACK_PUSH (ostack, HG_QINT (i));
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (1, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (ustroke);
 DEFUNC_UNIMPLEMENTED_OPER (ustrokepath);
 DEFUNC_UNIMPLEMENTED_OPER (viewclip);

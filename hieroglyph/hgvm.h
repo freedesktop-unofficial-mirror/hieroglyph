@@ -133,6 +133,7 @@ struct _hg_vm_t {
 	GList               *plugin_list;
 	GRand               *rand_;
 	guint32              rand_seed;
+	GTimeVal             initiation_time;
 	hg_device_t         *device;
 };
 
@@ -282,6 +283,7 @@ void               hg_vm_set_rand_seed               (hg_vm_t                 *v
 						      guint32                  seed);
 guint32            hg_vm_get_rand_seed               (hg_vm_t                 *vm);
 guint32            hg_vm_rand_int                    (hg_vm_t                 *vm);
+guint32            hg_vm_get_current_time            (hg_vm_t                 *vm);
 gboolean           hg_vm_has_error                   (hg_vm_t                 *vm);
 void               hg_vm_clear_error                 (hg_vm_t                 *vm);
 void               hg_vm_reset_error                 (hg_vm_t                 *vm);

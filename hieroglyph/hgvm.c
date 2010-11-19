@@ -953,6 +953,7 @@ hg_vm_new(void)
 	retval->rand_ = g_rand_new();
 	retval->rand_seed = g_rand_int(retval->rand_);
 	g_rand_set_seed(retval->rand_, retval->rand_seed);
+	g_get_current_time(&retval->initiation_time);
 
 	retval->plugin_table = g_hash_table_new_full(g_str_hash, g_str_equal,
 						     g_free, NULL);
@@ -3485,6 +3486,38 @@ hg_vm_rand_int(hg_vm_t *vm)
 	hg_return_val_if_fail (vm != NULL, 0);
 
 	return g_rand_int(vm->rand_);
+}
+
+/**
+ * hg_vm_get_current_time:
+ * @vm:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+guint32
+hg_vm_get_current_time(hg_vm_t *vm)
+{
+	GTimeVal t;
+	guint32 retval, i;
+
+	hg_return_val_if_fail (vm != NULL, 0);
+
+	g_get_current_time(&t);
+	if (t.tv_sec == vm->initiation_time.tv_sec) {
+		retval = (t.tv_usec - vm->initiation_time.tv_usec) / 1000;
+	} else {
+		i = t.tv_sec - vm->initiation_time.tv_sec;
+		if (t.tv_usec > vm->initiation_time.tv_usec) {
+			retval = i * 1000 + (t.tv_usec - vm->initiation_time.tv_usec) / 1000;
+		} else {
+			i--;
+			retval = i * 1000 + ((1 * 1000000 - vm->initiation_time.tv_usec) + t.tv_usec) / 1000;
+		}
+	}
+
+	return retval;
 }
 
 /**
