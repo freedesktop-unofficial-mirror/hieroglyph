@@ -61,6 +61,7 @@ struct _hg_color_t {
 struct _hg_gstate_t {
 	hg_object_t o;
 	hg_quark_t  qpath;
+	hg_quark_t  qclippath;
 	gboolean    is_snapshot;
 	hg_color_t  color;
 	gdouble     linewidth;
@@ -72,6 +73,9 @@ hg_quark_t          hg_gstate_new              (hg_mem_t    *mem,
 void                hg_gstate_set_path         (hg_gstate_t *gstate,
                                                 hg_quark_t   qpath);
 hg_quark_t          hg_gstate_get_path         (hg_gstate_t *gstate);
+void                hg_gstate_set_clippath     (hg_gstate_t *gstate,
+                                                hg_quark_t   qpath);
+hg_quark_t          hg_gstate_get_clippath     (hg_gstate_t *gstate);
 hg_quark_t          hg_gstate_save             (hg_gstate_t *gstate,
 						hg_quark_t   is_snapshot);
 void                hg_gstate_set_rgbcolor     (hg_gstate_t *gstate,

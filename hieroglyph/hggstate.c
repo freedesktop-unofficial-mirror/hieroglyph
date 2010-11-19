@@ -51,6 +51,7 @@ _hg_object_gstate_initialize(hg_object_t *object,
 	hg_gstate_t *gstate = (hg_gstate_t *)object;
 
 	gstate->qpath = Qnil;
+	gstate->qclippath = Qnil;
 
 	return TRUE;
 }
@@ -75,6 +76,9 @@ _hg_object_gstate_copy(hg_object_t              *object,
 	if (retval != Qnil) {
 		memcpy(&g->color, &gstate->color, sizeof (hg_color_t));
 		g->qpath = func(gstate->qpath, user_data, NULL, &err);
+		if (err)
+			goto finalize;
+		g->qclippath = func(gstate->qclippath, user_data, NULL, &err);
 		if (err)
 			goto finalize;
 
@@ -123,6 +127,8 @@ _hg_object_gstate_gc_mark(hg_object_t           *object,
 	gboolean retval = TRUE;
 
 	if (!func(gstate->qpath, user_data, &err))
+		goto finalize;
+	if (!func(gstate->qclippath, user_data, &err))
 		goto finalize;
 
   finalize:
@@ -240,6 +246,46 @@ hg_gstate_get_path(hg_gstate_t *gstate)
 	hg_return_val_if_fail (gstate != NULL, Qnil);
 
 	return gstate->qpath;
+}
+
+/**
+ * hg_gstate_set_clippath:
+ * @gstate:
+ * @qpath:
+ *
+ * FIXME
+ */
+void
+hg_gstate_set_clippath(hg_gstate_t *gstate,
+		       hg_quark_t   qpath)
+{
+	guint mem_id;
+
+	hg_return_if_fail (gstate != NULL);
+	hg_return_if_fail (HG_IS_QPATH (qpath));
+
+	mem_id = hg_quark_get_mem_id(gstate->o.self);
+
+	hg_return_if_fail (hg_quark_has_same_mem_id(qpath, mem_id));
+
+	gstate->qclippath = qpath;
+	hg_mem_reserved_spool_remove(gstate->o.mem, qpath);
+}
+
+/**
+ * hg_gstate_get_clippath:
+ * @gstate:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_quark_t
+hg_gstate_get_clippath(hg_gstate_t *gstate)
+{
+	hg_return_val_if_fail (gstate != NULL, Qnil);
+
+	return gstate->qclippath;
 }
 
 /**

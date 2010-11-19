@@ -2278,7 +2278,30 @@ VALIDATE_STACK_SIZE (-__n, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (clip);
-DEFUNC_UNIMPLEMENTED_OPER (clippath);
+
+/* - clippath - */
+DEFUNC_OPER (clippath)
+G_STMT_START {
+	hg_quark_t q, qq, qg = hg_vm_get_gstate(vm);
+	hg_gstate_t *gstate = HG_VM_LOCK (vm, qg, error);
+
+	if (gstate == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	q = hg_gstate_get_clippath(gstate);
+	qq = hg_vm_quark_copy(vm, q, NULL, error);
+	if (qq == Qnil) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		goto finalize;
+	}
+	hg_gstate_set_path(gstate, qq);
+	retval = TRUE;
+  finalize:
+	HG_VM_UNLOCK (vm, qg);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
 
 /* <file> closefile - */
 DEFUNC_OPER (closefile)
