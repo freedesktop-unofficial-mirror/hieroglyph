@@ -8242,7 +8242,6 @@ _hg_operator_level1_register(hg_vm_t   *vm,
 	REG_OPER (dict, name, srand);
 	REG_OPER (dict, name, stack);
 	REG_OPER (dict, name, status);
-	REG_OPER (dict, name, statusdict);
 
 	REG_OPER (dict, name, usertime);
 	REG_OPER (dict, name, vmstatus);
@@ -9184,7 +9183,6 @@ hg_operator_tini(void)
 	UNDECL_OPER (srand);
 	UNDECL_OPER (startjob);
 	UNDECL_OPER (status);
-	UNDECL_OPER (statusdict);
 	UNDECL_OPER (stop);
 	UNDECL_OPER (stopped);
 	UNDECL_OPER (string);
