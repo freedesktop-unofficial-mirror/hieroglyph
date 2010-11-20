@@ -2544,6 +2544,8 @@ hg_vm_stepi(hg_vm_t  *vm,
 	    case HG_TYPE_BOOL:
 	    case HG_TYPE_DICT:
 	    case HG_TYPE_MARK:
+	    case HG_TYPE_SNAPSHOT:
+	    case HG_TYPE_GSTATE:
 	    push_stack:
 		    if (!hg_stack_push(ostack, qexecobj)) {
 			    hg_vm_set_error(vm, qexecobj, HG_VM_e_stackoverflow);
