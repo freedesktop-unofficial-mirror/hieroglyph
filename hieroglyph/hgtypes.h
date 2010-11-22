@@ -83,7 +83,8 @@ struct _hg_mem_vtable_t {
 						       gboolean                 was_error);
 	hg_mem_snapshot_data_t * (* save_snapshot)    (hg_allocator_data_t     *data);
 	gboolean                 (* restore_snapshot) (hg_allocator_data_t     *data,
-						       hg_mem_snapshot_data_t  *snapshot);
+						       hg_mem_snapshot_data_t  *snapshot,
+						       GHashTable              *references);
 	void                     (* destroy_snapshot) (hg_allocator_data_t     *data,
 						       hg_mem_snapshot_data_t  *snapshot);
 };

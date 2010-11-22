@@ -75,7 +75,11 @@ gboolean                hg_mem_gc_mark                             (hg_mem_t    
                                                                     GError                  **error);
 hg_mem_snapshot_data_t *hg_mem_save_snapshot                       (hg_mem_t                *mem);
 gboolean                hg_mem_restore_snapshot                    (hg_mem_t                *mem,
-                                                                    hg_mem_snapshot_data_t  *snapshot);
+                                                                    hg_mem_snapshot_data_t  *snapshot,
+								    hg_gc_func_t             func,
+								    gpointer                 data);
+void                    hg_mem_restore_mark                        (hg_mem_t                *mem,
+								    hg_quark_t               qdata);
 void                    hg_mem_snapshot_free                       (hg_mem_t                *mem,
                                                                     hg_mem_snapshot_data_t  *snapshot);
 gint                    hg_mem_get_id                              (hg_mem_t                *mem);

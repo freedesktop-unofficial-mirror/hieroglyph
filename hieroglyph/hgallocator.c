@@ -91,7 +91,8 @@ static gboolean                      _hg_allocator_gc_finish              (hg_al
                                                                            gboolean                was_error);
 static hg_mem_snapshot_data_t       *_hg_allocator_save_snapshot          (hg_allocator_data_t    *data);
 static gboolean                      _hg_allocator_restore_snapshot       (hg_allocator_data_t    *data,
-                                                                           hg_mem_snapshot_data_t *snapshot);
+                                                                           hg_mem_snapshot_data_t *snapshot,
+									   GHashTable             *references);
 static void                          _hg_allocator_destroy_snapshot       (hg_allocator_data_t    *data,
                                                                            hg_mem_snapshot_data_t *snapshot);
 
@@ -874,7 +875,8 @@ _hg_allocator_save_snapshot(hg_allocator_data_t *data)
 
 static gboolean
 _hg_allocator_restore_snapshot(hg_allocator_data_t    *data,
-			       hg_mem_snapshot_data_t *snapshot)
+			       hg_mem_snapshot_data_t *snapshot,
+			       GHashTable             *references)
 {
 	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
 	hg_allocator_snapshot_private_t *spriv = (hg_allocator_snapshot_private_t *)snapshot;
@@ -900,10 +902,16 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t    *data,
 			b2 = (hg_allocator_block_t *)((gulong)spriv->heap + idx);
 			if (b1->size != b2->size ||
 			    b1->age != b2->age) {
+				if (g_hash_table_lookup_extended(references,
+								 HGQUARK_TO_POINTER (i + 1),
+								 NULL,
+								 NULL) ||
+				    b1->lock_count > 0) {
 #if defined (HG_DEBUG) && defined (HG_SNAPSHOT_DEBUG)
-				g_print("SN: detected the block has different size or different age at the index: %" G_GSIZE_FORMAT ": [%ld:%d] [%ld:%d]\n", i + 1, b1->size, b1->age, b2->size, b2->age);
+					g_print("SN: detected the block has different size or different age at the index: %" G_GSIZE_FORMAT ": [%ld:%d] [%ld:%d]\n", i + 1, b1->size, b1->age, b2->size, b2->age);
 #endif
-				goto error;
+					goto error;
+				}
 			}
 			aligned_size = hg_mem_aligned_to(b1->size, BLOCK_SIZE) / BLOCK_SIZE;
 			i += aligned_size - 1;
@@ -911,15 +919,18 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t    *data,
 			hg_allocator_block_t *b1;
 
 			b1 = _hg_allocator_get_internal_block(priv, i + 1, FALSE);
-			if (b1->drop_on_restore) {
-				aligned_size = hg_mem_aligned_to(b1->size, BLOCK_SIZE) / BLOCK_SIZE;
-				i += aligned_size - 1;
-			} else {
+			if (g_hash_table_lookup_extended(references,
+							 HGQUARK_TO_POINTER (i + 1),
+							 NULL,
+							 NULL) ||
+			    b1->lock_count > 0) {
 #if defined (HG_DEBUG) && defined (HG_SNAPSHOT_DEBUG)
 				g_print("SN: detected newly allocated block at the index: %" G_GSIZE_FORMAT "\n", i + 1);
 #endif
 				goto error;
 			}
+			aligned_size = hg_mem_aligned_to(b1->size, BLOCK_SIZE) / BLOCK_SIZE;
+			i += aligned_size - 1;
 		} else if (!f1 && f2) {
 			hg_allocator_block_t *b2;
 			gsize j, check_size;

@@ -174,6 +174,7 @@ hg_mem_new_with_allocator(hg_mem_vtable_t *allocator,
 		hg_mem_resize_heap(retval, size);
 		retval->finalizer_table = g_hash_table_new(g_direct_hash, g_direct_equal);
 		retval->reserved_spool = g_hash_table_new(g_direct_hash, g_direct_equal);
+		retval->reference_table = NULL;
 	}
 	retval->enable_gc = TRUE;
 	__hg_mem_spool[id] = retval;
@@ -628,6 +629,8 @@ hg_mem_save_snapshot(hg_mem_t *mem)
  * hg_mem_restore_snapshot:
  * @mem:
  * @snapshot:
+ * @func:
+ * @data:
  *
  * FIXME
  *
@@ -635,19 +638,56 @@ hg_mem_save_snapshot(hg_mem_t *mem)
  */
 gboolean
 hg_mem_restore_snapshot(hg_mem_t               *mem,
-			hg_mem_snapshot_data_t *snapshot)
+			hg_mem_snapshot_data_t *snapshot,
+			hg_gc_func_t            func,
+			gpointer                data)
 {
+	gboolean retval = FALSE;
+
 	hg_return_val_if_fail (mem != NULL, FALSE);
 	hg_return_val_if_fail (mem->allocator != NULL, FALSE);
 	hg_return_val_if_fail (mem->allocator->restore_snapshot != NULL, FALSE);
 	hg_return_val_if_fail (mem->data != NULL, FALSE);
+	hg_return_val_if_fail (mem->reference_table == NULL, FALSE);
 
-	/* clean up to obtain the certain information to be restored */
-	if (hg_mem_collect_garbage(mem) < 0)
-		return FALSE;
+	mem->reference_table = g_hash_table_new(g_direct_hash, g_direct_equal);
+	if (!func(mem, data))
+		goto finalize;
 
-	return mem->allocator->restore_snapshot(mem->data,
-						snapshot);
+	retval = mem->allocator->restore_snapshot(mem->data,
+						  snapshot,
+						  mem->reference_table);
+
+  finalize:
+	g_hash_table_destroy(mem->reference_table);
+	mem->reference_table = NULL;
+
+	return retval;
+}
+
+/**
+ * hg_mem_restore_mark:
+ * @mem:
+ * @qdata:
+ *
+ * FIXME
+ */
+void
+hg_mem_restore_mark(hg_mem_t    *mem,
+		    hg_quark_t   qdata)
+{
+	hg_return_if_fail (mem != NULL);
+
+	if (qdata == Qnil)
+		return;
+	if (mem->reference_table == NULL)
+		return;
+
+	hg_return_if_fail (hg_quark_has_same_mem_id(qdata, mem->id));
+
+	g_hash_table_insert(mem->reference_table,
+			    HGQUARK_TO_POINTER (hg_quark_get_value(qdata)),
+			    HGQUARK_TO_POINTER (hg_quark_get_value(qdata)));
 }
 
 /**

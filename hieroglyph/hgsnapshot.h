@@ -43,7 +43,9 @@ hg_quark_t          hg_snapshot_new              (hg_mem_t      *mem,
 gboolean            hg_snapshot_save             (hg_snapshot_t *snapshot,
 						  hg_vm_state_t *vm_state);
 gboolean            hg_snapshot_restore          (hg_snapshot_t *snapshot,
-						  hg_vm_state_t *vm_state);
+						  hg_vm_state_t *vm_state,
+						  hg_gc_func_t   func,
+						  gpointer       data);
 
 
 G_END_DECLS

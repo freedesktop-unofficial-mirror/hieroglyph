@@ -172,6 +172,8 @@ hg_snapshot_save(hg_snapshot_t *snapshot,
  * hg_snapshot_restore:
  * @snapshot:
  * @vm_state:
+ * @func:
+ * @data:
  *
  * FIXME
  *
@@ -179,7 +181,9 @@ hg_snapshot_save(hg_snapshot_t *snapshot,
  */
 gboolean
 hg_snapshot_restore(hg_snapshot_t *snapshot,
-		    hg_vm_state_t *vm_state)
+		    hg_vm_state_t *vm_state,
+		    hg_gc_func_t   func,
+		    gpointer       data)
 {
 	gboolean retval;
 
@@ -187,7 +191,9 @@ hg_snapshot_restore(hg_snapshot_t *snapshot,
 	hg_return_val_if_fail (snapshot->snapshot != NULL, FALSE);
 
 	retval = hg_mem_restore_snapshot(snapshot->o.mem,
-					 snapshot->snapshot);
+					 snapshot->snapshot,
+					 func,
+					 data);
 	if (retval) {
 		snapshot->snapshot = NULL;
 		memcpy(vm_state, &snapshot->vm_state, sizeof (hg_vm_state_t));

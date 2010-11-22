@@ -6469,6 +6469,46 @@ DEFUNC_UNIMPLEMENTED_OPER (resetfile);
 DEFUNC_UNIMPLEMENTED_OPER (resourceforall);
 DEFUNC_UNIMPLEMENTED_OPER (resourcestatus);
 
+static gboolean
+_hg_operator_restore_mark_traverse(hg_mem_t    *mem,
+				   hg_quark_t   qdata,
+				   gpointer     data,
+				   GError     **error)
+{
+	guint id = hg_quark_get_mem_id(qdata);
+	hg_mem_t *m = hg_mem_get(id);
+
+	if (m == NULL) {
+		g_set_error(error, HG_ERROR, EINVAL,
+			    "No memory spool found");
+		return FALSE;
+	}
+	hg_mem_restore_mark(m, qdata);
+
+	return TRUE;
+}
+
+static gboolean
+_hg_operator_restore_mark(hg_mem_t *mem,
+			  gpointer  data)
+{
+	hg_vm_t *vm = (hg_vm_t *)data;
+	gsize i;
+	GError *err = NULL;
+
+	for (i = 0; i <= HG_VM_STACK_DSTACK; i++) {
+		hg_stack_foreach(vm->stacks[i],
+				 _hg_operator_restore_mark_traverse,
+				 vm, FALSE, &err);
+		if (err) {
+			g_error_free(err);
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
 DEFUNC_OPER (restore)
 G_STMT_START {
 	hg_quark_t arg0, q, qq = Qnil;
@@ -6506,8 +6546,10 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	hg_mem_collect_garbage(vm->mem[HG_VM_MEM_LOCAL]);
-	if (!hg_snapshot_restore(sn, &vm->vm_state)) {
+	if (!hg_snapshot_restore(sn,
+				 &vm->vm_state,
+				 _hg_operator_restore_mark,
+				 vm)) {
 		hg_vm_set_error(vm, qself, HG_VM_e_invalidrestore);
 		goto error;
 	}
