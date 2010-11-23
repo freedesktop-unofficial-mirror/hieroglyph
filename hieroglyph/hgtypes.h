@@ -54,6 +54,19 @@ typedef gboolean (* hg_array_traverse_func_t) (hg_mem_t    *mem,
 					       hg_quark_t   q,
 					       gpointer     data,
 					       GError     **error);
+typedef union _hg_matrix_t		hg_matrix_t;
+
+union _hg_matrix_t {
+	struct {
+		gdouble xx;
+		gdouble yx;
+		gdouble xy;
+		gdouble yy;
+		gdouble x0;
+		gdouble y0;
+	} mtx;
+	gdouble d[6];
+};
 
 /* hgmem.h */
 struct _hg_mem_vtable_t {

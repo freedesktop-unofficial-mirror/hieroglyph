@@ -38,20 +38,6 @@
 #define HG_ARRAY_MAX_SIZE	65535 /* defined as PostScript spec */
 
 
-typedef union _hg_matrix_t	hg_matrix_t;
-
-union _hg_matrix_t {
-	struct {
-		gdouble xx;
-		gdouble yx;
-		gdouble xy;
-		gdouble yy;
-		gdouble x0;
-		gdouble y0;
-	} mtx;
-	gdouble d[6];
-};
-
 static gboolean _hg_array_maybe_expand(hg_array_t *array,
 				       gsize       length);
 
@@ -345,7 +331,7 @@ _hg_array_maybe_expand(hg_array_t *array,
 	return TRUE;
 }
 
-static void
+G_INLINE_FUNC void
 _hg_array_convert_to_matrix(hg_array_t  *array,
 			    hg_matrix_t *matrix)
 {
@@ -362,7 +348,7 @@ _hg_array_convert_to_matrix(hg_array_t  *array,
 	}
 }
 
-static void
+G_INLINE_FUNC void
 _hg_array_convert_from_matrix(hg_array_t  *array,
 			      hg_matrix_t *matrix)
 {
@@ -892,7 +878,51 @@ hg_array_is_matrix(hg_array_t *array)
 }
 
 /**
- * hg_arrray_matrix_ident:
+ * hg_array_from_matrix:
+ * @array:
+ * @matrix:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_array_from_matrix(hg_array_t  *array,
+		     hg_matrix_t *matrix)
+{
+	hg_return_val_if_fail (array != NULL, FALSE);
+	hg_return_val_if_fail (matrix != NULL, FALSE);
+	hg_return_val_if_fail (hg_array_maxlength(array) == 6, FALSE);
+
+	_hg_array_convert_from_matrix(array, matrix);
+
+	return TRUE;
+}
+
+/**
+ * hg_array_to_matrix:
+ * @array:
+ * @matrix:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_array_to_matrix(hg_array_t  *array,
+		   hg_matrix_t *matrix)
+{
+	hg_return_val_if_fail (array != NULL, FALSE);
+	hg_return_val_if_fail (matrix != NULL, FALSE);
+	hg_return_val_if_fail (hg_array_is_matrix(array), FALSE);
+
+	_hg_array_convert_to_matrix(array, matrix);
+
+	return TRUE;
+}
+
+/**
+ * hg_array_matrix_ident:
  * @matrix:
  *
  * FIXME

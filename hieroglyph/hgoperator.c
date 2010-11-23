@@ -263,7 +263,7 @@ PROTO_OPER (ineofill);
 PROTO_OPER (infill);
 PROTO_OPER (initclip);
 /* initgraphics is implemented in PostScript */
-PROTO_OPER (initmatrix);
+/* initmatrix is implemented in PostScript */
 PROTO_OPER (initviewclip);
 PROTO_OPER (instroke);
 PROTO_OPER (inueofill);
@@ -3316,7 +3316,43 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-2, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (defaultmatrix);
+/* <matrix> defaultmatrix <matrix> */
+DEFUNC_OPER (defaultmatrix)
+G_STMT_START {
+	hg_quark_t arg0;
+	hg_array_t *a;
+	hg_matrix_t m;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+
+	if (!HG_IS_QARRAY (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	a = HG_VM_LOCK (vm, arg0, error);
+	if (a == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	if (hg_array_maxlength(a) != 6) {
+		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		goto finalize;
+	}
+	if (!hg_device_get_ctm(vm->device, &m) ||
+	    !hg_array_from_matrix(a, &m)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		goto finalize;
+	}
+
+	retval = TRUE;
+  finalize:
+	HG_VM_UNLOCK (vm, arg0);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (defineresource);
 DEFUNC_UNIMPLEMENTED_OPER (defineusername);
 DEFUNC_UNIMPLEMENTED_OPER (defineuserobject);
@@ -4818,7 +4854,6 @@ DEFUNC_OPER_END
 DEFUNC_UNIMPLEMENTED_OPER (ineofill);
 DEFUNC_UNIMPLEMENTED_OPER (infill);
 DEFUNC_UNIMPLEMENTED_OPER (initclip);
-DEFUNC_UNIMPLEMENTED_OPER (initmatrix);
 DEFUNC_UNIMPLEMENTED_OPER (initviewclip);
 DEFUNC_UNIMPLEMENTED_OPER (instroke);
 DEFUNC_UNIMPLEMENTED_OPER (inueofill);
@@ -8252,7 +8287,6 @@ _hg_operator_level1_register(hg_vm_t   *vm,
 	REG_OPER (dict, name, grestoreall);
 	REG_OPER (dict, name, initclip);
 
-	REG_OPER (dict, name, initmatrix);
 //	REG_OPER (dict, name, join); /* ??? */
 	REG_OPER (dict, name, kshow);
 	REG_OPER (dict, name, ln);
@@ -8697,7 +8731,6 @@ hg_operator_init(void)
 	DECL_OPER (ineofill);
 	DECL_OPER (infill);
 	DECL_OPER (initclip);
-	DECL_OPER (initmatrix);
 	DECL_OPER (initviewclip);
 	DECL_OPER (instroke);
 	DECL_OPER (inueofill);
@@ -9095,7 +9128,6 @@ hg_operator_tini(void)
 	UNDECL_OPER (ineofill);
 	UNDECL_OPER (infill);
 	UNDECL_OPER (initclip);
-	UNDECL_OPER (initmatrix);
 	UNDECL_OPER (initviewclip);
 	UNDECL_OPER (instroke);
 	UNDECL_OPER (inueofill);

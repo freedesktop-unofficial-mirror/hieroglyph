@@ -40,6 +40,9 @@ struct _hg_device_t {
 	hg_device_finalize_func_t  finalizer;
 
 	/*< protected >*/
+	gboolean (* get_ctm) (hg_device_t *device,
+			      hg_matrix_t *array);
+
 	hg_device_operator_t fill;
 	hg_device_operator_t stroke;
 
@@ -48,14 +51,16 @@ struct _hg_device_t {
 };
 
 
-hg_device_t *hg_device_open  (const gchar  *name);
-void         hg_device_close (hg_device_t  *device);
-gboolean     hg_device_fill  (hg_device_t  *device,
-			      hg_gstate_t  *gstate,
-			      GError      **error);
-gboolean     hg_device_stroke(hg_device_t  *device,
-			      hg_gstate_t  *gstate,
-			      GError      **error);
+hg_device_t *hg_device_open   (const gchar  *name);
+void         hg_device_close  (hg_device_t  *device);
+gboolean     hg_device_get_ctm(hg_device_t  *device,
+			       hg_matrix_t  *array);
+gboolean     hg_device_fill   (hg_device_t  *device,
+			       hg_gstate_t  *gstate,
+			       GError      **error);
+gboolean     hg_device_stroke (hg_device_t  *device,
+			       hg_gstate_t  *gstate,
+			       GError      **error);
 
 /* null device */
 hg_device_t *hg_device_null_new(void);

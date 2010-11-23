@@ -93,6 +93,10 @@ gboolean            hg_array_copy_as_subarray (hg_array_t                *src,
 hg_quark_t          hg_array_matrix_new       (hg_mem_t                  *mem,
 					       gpointer                  *ret);
 gboolean            hg_array_is_matrix        (hg_array_t                *array);
+gboolean            hg_array_from_matrix      (hg_array_t                *array,
+					       hg_matrix_t               *matrix);
+gboolean            hg_array_to_matrix        (hg_array_t                *array,
+					       hg_matrix_t               *matrix);
 gboolean            hg_array_matrix_ident     (hg_array_t                *matrix);
 gboolean            hg_array_matrix_multiply  (hg_array_t                *matrix1,
 					       hg_array_t                *matrix2,

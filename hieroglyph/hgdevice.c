@@ -149,6 +149,26 @@ hg_device_close(hg_device_t *device)
 }
 
 /**
+ * hg_device_get_ctm:
+ * @device:
+ * @matrix:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_device_get_ctm(hg_device_t *device,
+		  hg_matrix_t *matrix)
+{
+	hg_return_val_if_fail (device != NULL, FALSE);
+	hg_return_val_if_fail (matrix != NULL, FALSE);
+	hg_return_val_if_fail (device->get_ctm != NULL, FALSE);
+
+	return device->get_ctm(device, matrix);
+}
+
+/**
  * hg_device_fill:
  * @device:
  * @gstate:
@@ -270,6 +290,20 @@ _hg_device_null_destroy(hg_device_t *device)
 	g_free(devnul);
 }
 
+static gboolean
+_hg_device_null_get_ctm(hg_device_t *device,
+			hg_matrix_t *matrix)
+{
+	matrix->mtx.xx = 1;
+	matrix->mtx.xy = 0;
+	matrix->mtx.yx = 0;
+	matrix->mtx.yy = 1;
+	matrix->mtx.x0 = 0;
+	matrix->mtx.y0 = 0;
+
+	return TRUE;
+}
+
 /*< public >*/
 hg_device_t *
 hg_device_null_new(void)
@@ -277,6 +311,7 @@ hg_device_null_new(void)
 	hg_null_device_t *retval = g_new0(hg_null_device_t, 1);
 
 	retval->parent.finalizer = _hg_device_null_destroy;
+	retval->parent.get_ctm = _hg_device_null_get_ctm;
 	retval->parent.fill = _hg_device_null_nop;
 	retval->parent.stroke = _hg_device_null_nop;
 
