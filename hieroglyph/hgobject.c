@@ -165,6 +165,7 @@ hg_object_new(hg_mem_t  *mem,
 	va_start(ap, preallocated_size);
 
 	if (!v->initialize(retval, ap)) {
+		hg_mem_reserved_spool_remove(mem, index);
 		hg_mem_free(mem, index);
 		return Qnil;
 	}
