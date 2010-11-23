@@ -8113,6 +8113,7 @@ _hg_operator_level1_register(hg_vm_t   *vm,
 
 	REG_PRIV_OPER (dict, name, .abort, private_abort);
 	REG_PRIV_OPER (dict, name, .clearerror, private_clearerror);
+	REG_PRIV_OPER (dict, name, .dicttomark, protected_dicttomark);
 	REG_PRIV_OPER (dict, name, .exit, private_exit);
 	REG_PRIV_OPER (dict, name, .findlibfile, private_findlibfile);
 	REG_PRIV_OPER (dict, name, .forceput, private_forceput);
@@ -8419,7 +8420,6 @@ _hg_operator_level2_register(hg_vm_t   *vm,
 	REG_VALUE (dict, name, >>, HG_QEVALNAME (name, "%dicttomark"));
 
 	REG_PRIV_OPER (dict, name, %dicttomark, protected_dicttomark);
-	REG_PRIV_OPER (dict, name, .dicttomark, protected_dicttomark);
 
 	REG_OPER (dict, name, arct);
 	REG_OPER (dict, name, colorimage);
