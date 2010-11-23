@@ -277,11 +277,12 @@ hg_path_new(hg_mem_t *mem,
 	hg_return_val_if_fail (mem != NULL, Qnil);
 
 	retval = hg_object_new(mem, (gpointer *)&path, HG_TYPE_PATH, 0);
-
-	if (ret)
-		*ret = path;
-	else
-		hg_mem_unlock_object(mem, retval);
+	if (retval != Qnil) {
+		if (ret)
+			*ret = path;
+		else
+			hg_mem_unlock_object(mem, retval);
+	}
 
 	return retval;
 }
