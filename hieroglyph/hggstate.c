@@ -209,6 +209,40 @@ hg_gstate_new(hg_mem_t *mem,
 }
 
 /**
+ * hg_gstate_set_ctm:
+ * @gstate:
+ * @matrix:
+ *
+ * FIXME
+ */
+void
+hg_gstate_set_ctm(hg_gstate_t *gstate,
+		  hg_matrix_t *matrix)
+{
+	hg_return_if_fail (gstate != NULL);
+	hg_return_if_fail (matrix != NULL);
+
+	memcpy(&gstate->ctm, matrix, sizeof (hg_matrix_t));
+}
+
+/**
+ * hg_gstate_get_ctm:
+ * @gstate:
+ * @matrix:
+ *
+ * FIXME
+ */
+void
+hg_gstate_get_ctm(hg_gstate_t *gstate,
+		  hg_matrix_t *matrix)
+{
+	hg_return_if_fail (gstate != NULL);
+	hg_return_if_fail (matrix != NULL);
+
+	memcpy(matrix, &gstate->ctm, sizeof (hg_matrix_t));
+}
+
+/**
  * hg_gstate_set_path:
  * @gstate:
  * @qpath:

@@ -62,14 +62,19 @@ struct _hg_gstate_t {
 	hg_object_t o;
 	hg_quark_t  qpath;
 	hg_quark_t  qclippath;
-	gboolean    is_snapshot;
+	hg_matrix_t ctm;
 	hg_color_t  color;
 	gdouble     linewidth;
+	gboolean    is_snapshot:1;
 };
 
 hg_object_vtable_t *hg_object_gstate_get_vtable(void);
 hg_quark_t          hg_gstate_new              (hg_mem_t    *mem,
                                                 gpointer    *ret);
+void                hg_gstate_set_ctm          (hg_gstate_t *gstate,
+						hg_matrix_t *matrix);
+void                hg_gstate_get_ctm          (hg_gstate_t *gstate,
+						hg_matrix_t *matrix);
 void                hg_gstate_set_path         (hg_gstate_t *gstate,
                                                 hg_quark_t   qpath);
 hg_quark_t          hg_gstate_get_path         (hg_gstate_t *gstate);

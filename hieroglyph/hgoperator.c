@@ -5636,22 +5636,22 @@ DEFUNC_OPER_END
 /* - newpath - */
 DEFUNC_OPER (newpath)
 G_STMT_START {
-	hg_quark_t q;
+	hg_quark_t q, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 
-	q = hg_path_new(hg_vm_get_mem(vm), NULL);
+	q = hg_path_new(vm->mem[HG_VM_MEM_LOCAL], NULL);
 	if (q == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	gstate = HG_VM_LOCK (vm, hg_vm_get_gstate(vm), error);
+	gstate = HG_VM_LOCK (vm, qg, error);
 	if (gstate == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
 	hg_gstate_set_path(gstate, q);
 
-	HG_VM_UNLOCK (vm, hg_vm_get_gstate(vm));
+	HG_VM_UNLOCK (vm, qg);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -7031,7 +7031,50 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (setmatrix);
+/* <matrix> setmatrix - */
+DEFUNC_OPER (setmatrix)
+G_STMT_START {
+	hg_quark_t arg0, qg = hg_vm_get_gstate(vm);
+	hg_array_t *a;
+	hg_matrix_t m;
+	hg_gstate_t *gstate = NULL;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+
+	if (!HG_IS_QARRAY (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	a = HG_VM_LOCK (vm, arg0, error);
+	if (a == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	gstate = HG_VM_LOCK (vm, qg, error);
+	if (gstate == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		goto finalize;
+	}
+	if (!hg_array_is_matrix(a) ||
+	    !hg_array_to_matrix(a, &m)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		goto finalize;
+	}
+	hg_gstate_set_ctm(gstate, &m);
+
+	hg_stack_drop(ostack, error);
+
+	retval = TRUE;
+  finalize:
+	if (gstate)
+		HG_VM_UNLOCK (vm, qg);
+	HG_VM_UNLOCK (vm, arg0);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (setmiterlimit);
 DEFUNC_UNIMPLEMENTED_OPER (setobjectformat);
 DEFUNC_UNIMPLEMENTED_OPER (setoverprint);
