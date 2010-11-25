@@ -1606,7 +1606,8 @@ G_STMT_START {
 	if (q == Qnil) {
 		path = NULL;
 		q = hg_path_new(hg_vm_get_mem(vm), (gpointer *)&path);
-		hg_gstate_set_path(gstate, q);
+		if (q != Qnil)
+			hg_gstate_set_path(gstate, q);
 	} else {
 		path = HG_VM_LOCK (vm, q, error);
 	}
@@ -1701,7 +1702,8 @@ G_STMT_START {
 	if (q == Qnil) {
 		path = NULL;
 		q = hg_path_new(hg_vm_get_mem(vm), (gpointer *)&path);
-		hg_gstate_set_path(gstate, q);
+		if (q != Qnil)
+			hg_gstate_set_path(gstate, q);
 	} else {
 		path = HG_VM_LOCK (vm, q, error);
 	}
@@ -5439,7 +5441,8 @@ G_STMT_START {
 	if (q == Qnil) {
 		path = NULL;
 		q = hg_path_new(hg_vm_get_mem(vm), (gpointer *)&path);
-		hg_gstate_set_path(gstate, q);
+		if (q != Qnil)
+			hg_gstate_set_path(gstate, q);
 	} else {
 		path = HG_VM_LOCK (vm, q, error);
 	}
