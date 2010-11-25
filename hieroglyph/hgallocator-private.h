@@ -30,6 +30,49 @@ G_BEGIN_DECLS
 
 #define BLOCK_SIZE		32
 
+typedef enum _hg_allocator_type_bit_t	hg_allocator_type_bit_t;
+
+enum _hg_allocator_type_bit_t {
+	HG_ALLOC_TYPE_BIT_BIT0 = 0,
+	HG_ALLOC_TYPE_BIT_INDEX = HG_ALLOC_TYPE_BIT_BIT0,
+	HG_ALLOC_TYPE_BIT_INDEX00 = HG_ALLOC_TYPE_BIT_INDEX +  0,
+	HG_ALLOC_TYPE_BIT_INDEX01 = HG_ALLOC_TYPE_BIT_INDEX +  1,
+	HG_ALLOC_TYPE_BIT_INDEX02 = HG_ALLOC_TYPE_BIT_INDEX +  2,
+	HG_ALLOC_TYPE_BIT_INDEX03 = HG_ALLOC_TYPE_BIT_INDEX +  3,
+	HG_ALLOC_TYPE_BIT_INDEX04 = HG_ALLOC_TYPE_BIT_INDEX +  4,
+	HG_ALLOC_TYPE_BIT_INDEX05 = HG_ALLOC_TYPE_BIT_INDEX +  5,
+	HG_ALLOC_TYPE_BIT_INDEX06 = HG_ALLOC_TYPE_BIT_INDEX +  6,
+	HG_ALLOC_TYPE_BIT_INDEX07 = HG_ALLOC_TYPE_BIT_INDEX +  7,
+	HG_ALLOC_TYPE_BIT_INDEX08 = HG_ALLOC_TYPE_BIT_INDEX +  8,
+	HG_ALLOC_TYPE_BIT_INDEX09 = HG_ALLOC_TYPE_BIT_INDEX +  9,
+	HG_ALLOC_TYPE_BIT_INDEX10 = HG_ALLOC_TYPE_BIT_INDEX + 10,
+	HG_ALLOC_TYPE_BIT_INDEX11 = HG_ALLOC_TYPE_BIT_INDEX + 11,
+	HG_ALLOC_TYPE_BIT_INDEX12 = HG_ALLOC_TYPE_BIT_INDEX + 12,
+	HG_ALLOC_TYPE_BIT_INDEX13 = HG_ALLOC_TYPE_BIT_INDEX + 13,
+	HG_ALLOC_TYPE_BIT_INDEX14 = HG_ALLOC_TYPE_BIT_INDEX + 14,
+	HG_ALLOC_TYPE_BIT_INDEX15 = HG_ALLOC_TYPE_BIT_INDEX + 15,
+	HG_ALLOC_TYPE_BIT_INDEX16 = HG_ALLOC_TYPE_BIT_INDEX + 16,
+	HG_ALLOC_TYPE_BIT_INDEX17 = HG_ALLOC_TYPE_BIT_INDEX + 17,
+	HG_ALLOC_TYPE_BIT_INDEX18 = HG_ALLOC_TYPE_BIT_INDEX + 18,
+	HG_ALLOC_TYPE_BIT_INDEX19 = HG_ALLOC_TYPE_BIT_INDEX + 19,
+	HG_ALLOC_TYPE_BIT_INDEX20 = HG_ALLOC_TYPE_BIT_INDEX + 20,
+	HG_ALLOC_TYPE_BIT_INDEX21 = HG_ALLOC_TYPE_BIT_INDEX + 21,
+	HG_ALLOC_TYPE_BIT_INDEX22 = HG_ALLOC_TYPE_BIT_INDEX + 22,
+	HG_ALLOC_TYPE_BIT_INDEX23 = HG_ALLOC_TYPE_BIT_INDEX + 23,
+	HG_ALLOC_TYPE_BIT_INDEX_END = HG_ALLOC_TYPE_BIT_INDEX23,
+	HG_ALLOC_TYPE_BIT_PAGE = HG_ALLOC_TYPE_BIT_INDEX_END + 1,
+	HG_ALLOC_TYPE_BIT_PAGE0 = HG_ALLOC_TYPE_BIT_PAGE + 0,
+	HG_ALLOC_TYPE_BIT_PAGE1 = HG_ALLOC_TYPE_BIT_PAGE + 1,
+	HG_ALLOC_TYPE_BIT_PAGE2 = HG_ALLOC_TYPE_BIT_PAGE + 2,
+	HG_ALLOC_TYPE_BIT_PAGE3 = HG_ALLOC_TYPE_BIT_PAGE + 3,
+	HG_ALLOC_TYPE_BIT_PAGE4 = HG_ALLOC_TYPE_BIT_PAGE + 4,
+	HG_ALLOC_TYPE_BIT_PAGE5 = HG_ALLOC_TYPE_BIT_PAGE + 5,
+	HG_ALLOC_TYPE_BIT_PAGE6 = HG_ALLOC_TYPE_BIT_PAGE + 6,
+	HG_ALLOC_TYPE_BIT_PAGE7 = HG_ALLOC_TYPE_BIT_PAGE + 7,
+	HG_ALLOC_TYPE_BIT_PAGE_END = HG_ALLOC_TYPE_BIT_PAGE7,
+	HG_ALLOC_TYPE_BIT_END
+};
+
 #define hg_get_allocated_object(x)		\
 	(gpointer)((gchar *)(x) + hg_mem_aligned_size(sizeof (hg_allocator_block_t)))
 #define hg_get_allocator_block(x)		\
@@ -37,10 +80,10 @@ G_BEGIN_DECLS
 
 
 struct _hg_allocator_bitmap_t {
-	guint32    *bitmaps;
-	gsize       size;
-	gsize       last_allocated_size;
-	hg_quark_t  last_index;
+	guint32    **bitmaps;
+	gsize       *size;
+	hg_quark_t  *last_index;
+	guint32      last_page;
 };
 struct _hg_allocator_block_t {
 	gsize          size;
@@ -54,13 +97,13 @@ struct _hg_allocator_private_t {
 	hg_allocator_data_t    slave;
 	hg_allocator_bitmap_t *bitmap;
 	hg_allocator_bitmap_t *slave_bitmap;
-	gpointer               heap;
+	gpointer              *heaps;
 	gint                   snapshot_age;
 };
 struct _hg_allocator_snapshot_private_t {
 	hg_mem_snapshot_data_t  parent;
 	hg_allocator_bitmap_t  *bitmap;
-	gpointer                heap;
+	gpointer               *heaps;
 	gint                    age;
 };
 

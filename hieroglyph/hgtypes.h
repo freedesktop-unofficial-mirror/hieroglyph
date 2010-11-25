@@ -72,7 +72,7 @@ union _hg_matrix_t {
 struct _hg_mem_vtable_t {
 	gpointer                 (* initialize)       (void);
 	void                     (* finalize)         (hg_allocator_data_t     *data);
-	gboolean                 (* resize_heap)      (hg_allocator_data_t     *data,
+	gboolean                 (* expand_heap)      (hg_allocator_data_t     *data,
 						       gsize                    size);
 	hg_quark_t               (* alloc)            (hg_allocator_data_t     *data,
 						       gsize                    size,

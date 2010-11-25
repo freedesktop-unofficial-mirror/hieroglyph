@@ -65,7 +65,7 @@ TDEF (initialize)
 	priv = (hg_allocator_private_t *)retval;
 
 	fail_unless(priv->bitmap == NULL, "Detected the garbage entry on the bitmap table.");
-	fail_unless(priv->heap == NULL, "Detected the garbage entry on the heap.");
+	fail_unless(priv->heaps == NULL, "Detected the garbage entry on the heap.");
 
 	vtable->finalize(retval);
 } TEND
@@ -82,16 +82,16 @@ TDEF (resize_heap)
 
 	retval = vtable->initialize();
 	fail_unless(retval != NULL, "Unable to initialize the allocator.");
-	fail_unless(vtable->resize_heap(retval, 256), "Unable to initialize the heap.");
+	fail_unless(vtable->expand_heap(retval, 256), "Unable to initialize the heap.");
 	priv = (hg_allocator_private_t *)retval;
 	fail_unless(retval->total_size >= 256, "Unable to assign the heap more than requested size.");
 	fail_unless(priv->bitmap != NULL, "Unable tto initialize the bitmap table.");
-	fail_unless(priv->heap != NULL, "Unable to initialize the heap.");
+	fail_unless(priv->heaps != NULL && priv->heaps[0] != NULL, "Unable to initialize the heap.");
 
-	fail_unless(vtable->resize_heap(retval, 512), "Unable to resize the heap.");
+	fail_unless(vtable->expand_heap(retval, 512), "Unable to resize the heap.");
 	fail_unless(retval->total_size >= 512, "Unable to reassign the heap more than requested size.");
 	fail_unless(priv->bitmap != NULL, "Unable tto resize the bitmap table.");
-	fail_unless(priv->heap != NULL, "Unable to resize the heap.");
+	fail_unless(priv->heaps[1] != NULL, "Unable to resize the heap.");
 
 	vtable->finalize(retval);
 } TEND
@@ -103,7 +103,7 @@ TDEF (alloc)
 
 	retval = vtable->initialize();
 	fail_unless(retval != NULL, "Unable to initialize the allocator.");
-	fail_unless(vtable->resize_heap(retval, 256), "Unable to initialize the heap.");
+	fail_unless(vtable->expand_heap(retval, 256), "Unable to initialize the heap.");
 
 	t = vtable->alloc(retval, 128, 0, NULL);
 	fail_unless(t != Qnil, "Unable to allocate the memory.");
@@ -127,7 +127,7 @@ TDEF (realloc)
 
 	retval = vtable->initialize();
 	fail_unless(retval != NULL, "Unable to initialize the allocator.");
-	fail_unless(vtable->resize_heap(retval, 384), "Unable to initialize the heap.");
+	fail_unless(vtable->expand_heap(retval, 384), "Unable to initialize the heap.");
 
 	t = vtable->alloc(retval, 32, 0, NULL);
 	fail_unless(t != Qnil, "Unable to allocate the memory.");
@@ -188,7 +188,7 @@ TDEF (lock_object)
 
 	retval = vtable->initialize();
 	fail_unless(retval != NULL, "Unable to initialize the allocator.");
-	fail_unless(vtable->resize_heap(retval, 256), "Unable to initialize the heap.");
+	fail_unless(vtable->expand_heap(retval, 256), "Unable to initialize the heap.");
 
 	t = vtable->alloc(retval, 128, 0, &p2);
 	fail_unless(t != Qnil, "Unable to allocate the memory.");

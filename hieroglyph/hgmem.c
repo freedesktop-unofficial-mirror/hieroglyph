@@ -171,7 +171,7 @@ hg_mem_new_with_allocator(hg_mem_vtable_t *allocator,
 		retval = NULL;
 	} else {
 		retval->data->resizable = FALSE;
-		hg_mem_resize_heap(retval, size);
+		hg_mem_expand_heap(retval, size);
 		retval->finalizer_table = g_hash_table_new(g_direct_hash, g_direct_equal);
 		retval->reserved_spool = g_hash_table_new(g_direct_hash, g_direct_equal);
 		retval->reference_table = NULL;
@@ -212,23 +212,23 @@ hg_mem_destroy(gpointer data)
 }
 
 /**
- * hg_mem_resize_heap:
+ * hg_mem_expand_heap:
  * @mem:
  * @size:
  *
  * FIXME
  */
 gboolean
-hg_mem_resize_heap(hg_mem_t  *mem,
+hg_mem_expand_heap(hg_mem_t  *mem,
 		   gsize      size)
 {
 	hg_return_val_if_fail (mem != NULL, FALSE);
 	hg_return_val_if_fail (mem->allocator != NULL, FALSE);
-	hg_return_val_if_fail (mem->allocator->resize_heap != NULL, FALSE);
+	hg_return_val_if_fail (mem->allocator->expand_heap != NULL, FALSE);
 	hg_return_val_if_fail (mem->data != NULL, FALSE);
 	hg_return_val_if_fail (size > 0, FALSE);
 
-	return mem->allocator->resize_heap(mem->data, size);
+	return mem->allocator->expand_heap(mem->data, size);
 }
 
 /**
