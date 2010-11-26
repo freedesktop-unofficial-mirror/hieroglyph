@@ -2061,6 +2061,7 @@ hg_vm_setup(hg_vm_t           *vm,
 	hg_dict_t *dict = NULL, *dict_error;
 	hg_file_t *fstdin, *fstdout;
 	GError *err = NULL;
+	gsize i;
 
 	hg_return_val_if_fail (vm != NULL, FALSE);
 	hg_return_val_if_fail (lang_level < HG_LANG_LEVEL_END, FALSE);
@@ -2152,6 +2153,10 @@ hg_vm_setup(hg_vm_t           *vm,
 			goto error;
 	} else {
 		dict_error = _HG_VM_LOCK (vm, vm->qerror, &err);
+	}
+
+	for (i = 0; i < HG_VM_MEM_END; i++) {
+		hg_mem_set_resizable(vm->mem[i], (lang_level >= HG_LANG_LEVEL_2));
 	}
 
 	hg_vm_quark_set_attributes(vm, &vm->qsystemdict, TRUE, TRUE, FALSE, TRUE);
@@ -3822,12 +3827,8 @@ hg_vm_stack_dump(hg_vm_t    *vm,
 	hg_return_if_fail (output != NULL);
 
 	m = hg_vm_get_mem(vm);
-#if 0
 	/* to avoid unusable result when OOM */
 	hg_mem_set_resizable(m, TRUE);
-	/* XXX: to avoid crashes after resizing heap with keeping a pointer */
-	hg_mem_resize_heap(m, hg_mem_get_total_size(m) * 2);
-#endif
 
 	data.vm = vm;
 	data.stack = stack;
@@ -3858,9 +3859,7 @@ hg_vm_reserved_spool_dump(hg_vm_t   *vm,
 	hg_return_if_fail (ofile != NULL);
 
 	/* to avoid unusable result when OOM */
-#if 0
 	hg_mem_set_resizable(hg_vm_get_mem(vm), TRUE);
-#endif
 
 	data.vm = vm;
 	data.mem = mem;

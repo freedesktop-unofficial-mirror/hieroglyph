@@ -70,36 +70,37 @@ union _hg_matrix_t {
 
 /* hgmem.h */
 struct _hg_mem_vtable_t {
-	gpointer                 (* initialize)       (void);
-	void                     (* finalize)         (hg_allocator_data_t     *data);
-	gboolean                 (* expand_heap)      (hg_allocator_data_t     *data,
-						       gsize                    size);
-	hg_quark_t               (* alloc)            (hg_allocator_data_t     *data,
-						       gsize                    size,
-						       guint                    flags,
-						       gpointer                *ret);
-	hg_quark_t               (* realloc)          (hg_allocator_data_t     *data,
-						       hg_quark_t               quark,
-						       gsize                    size,
-						       gpointer                *ret);
-	void                     (* free)             (hg_allocator_data_t     *data,
-						       hg_quark_t               quark);
-	gpointer                 (* lock_object)      (hg_allocator_data_t     *data,
-						       hg_quark_t               quark);
-	void                     (* unlock_object)    (hg_allocator_data_t     *data,
-						       hg_quark_t               quark);
-	gboolean                 (* gc_init)          (hg_allocator_data_t     *data);
-	gboolean                 (* gc_mark)          (hg_allocator_data_t     *data,
-						       hg_quark_t               quark,
-						       GError                 **error);
-	gboolean                 (* gc_finish)        (hg_allocator_data_t     *data,
-						       gboolean                 was_error);
-	hg_mem_snapshot_data_t * (* save_snapshot)    (hg_allocator_data_t     *data);
-	gboolean                 (* restore_snapshot) (hg_allocator_data_t     *data,
-						       hg_mem_snapshot_data_t  *snapshot,
-						       GHashTable              *references);
-	void                     (* destroy_snapshot) (hg_allocator_data_t     *data,
-						       hg_mem_snapshot_data_t  *snapshot);
+	gpointer                 (* initialize)        (void);
+	void                     (* finalize)          (hg_allocator_data_t     *data);
+	gboolean                 (* expand_heap)       (hg_allocator_data_t     *data,
+							gsize                    size);
+	gsize                    (* get_max_heap_size) (hg_allocator_data_t     *data);
+	hg_quark_t               (* alloc)             (hg_allocator_data_t     *data,
+							gsize                    size,
+							guint                    flags,
+							gpointer                *ret);
+	hg_quark_t               (* realloc)           (hg_allocator_data_t     *data,
+							hg_quark_t               quark,
+							gsize                    size,
+							gpointer                *ret);
+	void                     (* free)              (hg_allocator_data_t     *data,
+							hg_quark_t               quark);
+	gpointer                 (* lock_object)       (hg_allocator_data_t     *data,
+							hg_quark_t               quark);
+	void                     (* unlock_object)     (hg_allocator_data_t     *data,
+							hg_quark_t               quark);
+	gboolean                 (* gc_init)           (hg_allocator_data_t     *data);
+	gboolean                 (* gc_mark)           (hg_allocator_data_t     *data,
+							hg_quark_t               quark,
+							GError                 **error);
+	gboolean                 (* gc_finish)         (hg_allocator_data_t     *data,
+							gboolean                 was_error);
+	hg_mem_snapshot_data_t * (* save_snapshot)     (hg_allocator_data_t     *data);
+	gboolean                 (* restore_snapshot)  (hg_allocator_data_t     *data,
+							hg_mem_snapshot_data_t  *snapshot,
+							GHashTable              *references);
+	void                     (* destroy_snapshot)  (hg_allocator_data_t     *data,
+							hg_mem_snapshot_data_t  *snapshot);
 };
 struct _hg_allocator_data_t {
 	gsize    total_size;

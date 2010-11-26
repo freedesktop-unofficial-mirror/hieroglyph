@@ -70,6 +70,7 @@ static gpointer                      _hg_allocator_initialize                   
 static void                          _hg_allocator_finalize                              (hg_allocator_data_t     *data);
 static gboolean                      _hg_allocator_expand_heap                           (hg_allocator_data_t     *data,
                                                                                           gsize                    size);
+static gsize                         _hg_allocator_get_max_heap_size                     (hg_allocator_data_t     *data);
 static hg_quark_t                    _hg_allocator_alloc                                 (hg_allocator_data_t     *data,
                                                                                           gsize                    size,
                                                                                           guint                    flags,
@@ -109,20 +110,21 @@ static void                          _hg_allocator_destroy_snapshot             
 
 
 static hg_mem_vtable_t __hg_allocator_vtable = {
-	.initialize       = _hg_allocator_initialize,
-	.finalize         = _hg_allocator_finalize,
-	.expand_heap      = _hg_allocator_expand_heap,
-	.alloc            = _hg_allocator_alloc,
-	.realloc          = _hg_allocator_realloc,
-	.free             = _hg_allocator_free,
-	.lock_object      = _hg_allocator_lock_object,
-	.unlock_object    = _hg_allocator_unlock_object,
-	.gc_init          = _hg_allocator_gc_init,
-	.gc_mark          = _hg_allocator_gc_mark,
-	.gc_finish        = _hg_allocator_gc_finish,
-	.save_snapshot    = _hg_allocator_save_snapshot,
-	.restore_snapshot = _hg_allocator_restore_snapshot,
-	.destroy_snapshot = _hg_allocator_destroy_snapshot,
+	.initialize        = _hg_allocator_initialize,
+	.finalize          = _hg_allocator_finalize,
+	.expand_heap       = _hg_allocator_expand_heap,
+	.get_max_heap_size = _hg_allocator_get_max_heap_size,
+	.alloc             = _hg_allocator_alloc,
+	.realloc           = _hg_allocator_realloc,
+	.free              = _hg_allocator_free,
+	.lock_object       = _hg_allocator_lock_object,
+	.unlock_object     = _hg_allocator_unlock_object,
+	.gc_init           = _hg_allocator_gc_init,
+	.gc_mark           = _hg_allocator_gc_mark,
+	.gc_finish         = _hg_allocator_gc_finish,
+	.save_snapshot     = _hg_allocator_save_snapshot,
+	.restore_snapshot  = _hg_allocator_restore_snapshot,
+	.destroy_snapshot  = _hg_allocator_destroy_snapshot,
 };
 G_LOCK_DEFINE_STATIC (bitmap);
 G_LOCK_DEFINE_STATIC (allocator);
@@ -563,6 +565,19 @@ _hg_allocator_expand_heap(hg_allocator_data_t *data,
 	data->total_size = priv->bitmap->size[page] * BLOCK_SIZE;
 
 	return TRUE;
+}
+
+static gsize
+_hg_allocator_get_max_heap_size(hg_allocator_data_t *data)
+{
+	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
+	gsize retval = 0, i;
+
+	for (i = 0; i < hg_allocator_get_max_page(); i++) {
+		retval = MAX (retval, priv->bitmap->size[i]);
+	}
+
+	return retval * BLOCK_SIZE;
 }
 
 static hg_quark_t

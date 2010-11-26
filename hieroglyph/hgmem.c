@@ -323,7 +323,8 @@ hg_mem_alloc_with_flags(hg_mem_t *mem,
 			gpointer *ret)
 {
 	hg_quark_t retval;
-	gboolean retried = FALSE;
+	gboolean fgc = FALSE, fheap = FALSE;
+	gsize hsize;
 
 	hg_return_val_if_fail (mem != NULL, Qnil);
 	hg_return_val_if_fail (mem->allocator != NULL, Qnil);
@@ -336,10 +337,21 @@ hg_mem_alloc_with_flags(hg_mem_t *mem,
 	if (retval != Qnil) {
 		hg_quark_set_mem_id(&retval, mem->id);
 	} else {
-		if (!retried &&
-		    hg_mem_collect_garbage(mem) > 0) {
-			retried = TRUE;
-			goto retry;
+		if (!fgc) {
+			if (hg_mem_collect_garbage(mem) > 0) {
+				fgc = TRUE;
+				goto retry;
+			}
+		}
+		if (!fheap &&
+		    mem->data->resizable &&
+		    mem->allocator->expand_heap &&
+		    mem->allocator->get_max_heap_size) {
+			hsize = mem->allocator->get_max_heap_size(mem->data);
+			if (mem->allocator->expand_heap(mem->data, MAX (hsize, size))) {
+				fheap = TRUE;
+				goto retry;
+			}
 		}
 	}
 
@@ -364,7 +376,8 @@ hg_mem_realloc(hg_mem_t   *mem,
 	       gpointer   *ret)
 {
 	hg_quark_t retval;
-	gboolean retried = FALSE;
+	gboolean fgc = FALSE, fheap = FALSE;
+	gsize hsize;
 
 	if (qdata == Qnil)
 		return hg_mem_alloc(mem, size, ret);
@@ -384,10 +397,21 @@ hg_mem_realloc(hg_mem_t   *mem,
 	if (retval != Qnil) {
 		retval = _hg_quark_type_bit_shift(_hg_quark_type_bit_get(qdata)) | retval;
 	} else {
-		if (!retried &&
-		    hg_mem_collect_garbage(mem) > 0) {
-			retried = TRUE;
-			goto retry;
+		if (!fgc) {
+			if (hg_mem_collect_garbage(mem) > 0) {
+				fgc = TRUE;
+				goto retry;
+			}
+		}
+		if (!fheap &&
+		    mem->data->resizable &&
+		    mem->allocator->expand_heap &&
+		    mem->allocator->get_max_heap_size) {
+			hsize = mem->allocator->get_max_heap_size(mem->data);
+			if (mem->allocator->expand_heap(mem->data, MAX (hsize, size))) {
+				fheap = TRUE;
+				goto retry;
+			}
 		}
 	}
 
