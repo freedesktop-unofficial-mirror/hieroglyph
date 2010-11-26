@@ -117,6 +117,23 @@ TDEF (alloc)
 	fail_unless(t3 != Qnil, "Unable to allocate the memory.");
 
 	vtable->finalize(retval);
+
+	/* test case for paging */
+	retval = vtable->initialize();
+	fail_unless(retval != NULL, "Unable to initialize the allocator.");
+	fail_unless(vtable->expand_heap(retval, 256), "Unable to initialize the heap.");
+	fail_unless(vtable->expand_heap(retval, 256), "Unable to initialize the heap.");
+
+	t = vtable->alloc(retval, 192, 0, NULL);
+	fail_unless(t != Qnil, "Unable to allocate the memory.");
+	t2 = vtable->alloc(retval, 192, 0, NULL);
+	fail_unless(t2 != Qnil, "Unable to allocate the memory.");
+	t3 = vtable->alloc(retval, 192, 0, NULL);
+	fail_unless(t3 == Qnil, "Should be no free spaces available.");
+
+	fail_unless(_hg_allocator_quark_get_page(t) != _hg_allocator_quark_get_page(t2), "Unlikely to be allocated at the same page.");
+
+	vtable->finalize(retval);
 } TEND
 
 TDEF (realloc)

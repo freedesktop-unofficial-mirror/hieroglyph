@@ -106,10 +106,6 @@ static gboolean                      _hg_allocator_restore_snapshot             
                                                                                           GHashTable              *references);
 static void                          _hg_allocator_destroy_snapshot                      (hg_allocator_data_t     *data,
                                                                                           hg_mem_snapshot_data_t  *snapshot);
-G_INLINE_FUNC hg_quark_t             _hg_allocator_quark_build                           (gint32                   page,
-                                                                                          guint32                  idx);
-G_INLINE_FUNC guint32                _hg_allocator_quark_get_page                        (hg_quark_t               qdata);
-G_INLINE_FUNC guint32                _hg_allocator_quark_get_index                       (hg_quark_t               qdata);
 
 
 static hg_mem_vtable_t __hg_allocator_vtable = {
@@ -285,15 +281,14 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 			retry = TRUE;
 			idx = 0;
 			goto find_free_bitmap;
-		} else {
-			page++;
-			retry = FALSE;
-			if (page != bitmap->last_page) {
-				if (page >= hg_allocator_get_max_page())
-					page = 0;
-				goto find_free_page;
-			}
 		}
+	}
+	page++;
+	if (page >= hg_allocator_get_max_page())
+		page = 0;
+	if (page != bitmap->last_page) {
+		retry = FALSE;
+		goto find_free_page;
 	}
 
 	return Qnil;
@@ -1128,36 +1123,6 @@ _hg_allocator_destroy_snapshot(hg_allocator_data_t    *data,
 	}
 	g_free(spriv->heaps);
 	g_free(spriv);
-}
-
-G_INLINE_FUNC hg_quark_t
-_hg_allocator_quark_build(gint32  page,
-			  guint32 idx)
-{
-	hg_quark_t retval;
-
-	retval = (_hg_quark_type_bit_validate_bits(page, 
-						   HG_ALLOC_TYPE_BIT_PAGE,
-						   HG_ALLOC_TYPE_BIT_PAGE_END) << HG_ALLOC_TYPE_BIT_PAGE) |
-		(_hg_quark_type_bit_validate_bits(idx,
-						  HG_ALLOC_TYPE_BIT_INDEX,
-						  HG_ALLOC_TYPE_BIT_INDEX_END) << HG_ALLOC_TYPE_BIT_INDEX);
-
-	return retval;
-}
-
-G_INLINE_FUNC guint32
-_hg_allocator_quark_get_page(hg_quark_t qdata)
-{
-	return (qdata & _hg_quark_type_bit_mask_bits(HG_ALLOC_TYPE_BIT_PAGE,
-						     HG_ALLOC_TYPE_BIT_PAGE_END)) >> HG_ALLOC_TYPE_BIT_PAGE;
-}
-
-G_INLINE_FUNC guint32
-_hg_allocator_quark_get_index(hg_quark_t qdata)
-{
-	return (qdata & _hg_quark_type_bit_mask_bits(HG_ALLOC_TYPE_BIT_INDEX,
-						     HG_ALLOC_TYPE_BIT_INDEX_END)) >> HG_ALLOC_TYPE_BIT_INDEX;
 }
 
 /*< public >*/

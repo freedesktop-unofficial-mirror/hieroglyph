@@ -25,6 +25,7 @@
 #define __HIEROGLYPH_HGALLOCATOR_PRIVATE_H__
 
 #include <hieroglyph/hgtypes.h>
+#include <hieroglyph/hgquark.h>
 
 G_BEGIN_DECLS
 
@@ -106,6 +107,43 @@ struct _hg_allocator_snapshot_private_t {
 	gpointer               *heaps;
 	gint                    age;
 };
+
+
+G_INLINE_FUNC hg_quark_t             _hg_allocator_quark_build                           (gint32                   page,
+                                                                                          guint32                  idx);
+G_INLINE_FUNC guint32                _hg_allocator_quark_get_page                        (hg_quark_t               qdata);
+G_INLINE_FUNC guint32                _hg_allocator_quark_get_index                       (hg_quark_t               qdata);
+
+
+G_INLINE_FUNC hg_quark_t
+_hg_allocator_quark_build(gint32  page,
+			  guint32 idx)
+{
+	hg_quark_t retval;
+
+	retval = (_hg_quark_type_bit_validate_bits(page, 
+						   HG_ALLOC_TYPE_BIT_PAGE,
+						   HG_ALLOC_TYPE_BIT_PAGE_END) << HG_ALLOC_TYPE_BIT_PAGE) |
+		(_hg_quark_type_bit_validate_bits(idx,
+						  HG_ALLOC_TYPE_BIT_INDEX,
+						  HG_ALLOC_TYPE_BIT_INDEX_END) << HG_ALLOC_TYPE_BIT_INDEX);
+
+	return retval;
+}
+
+G_INLINE_FUNC guint32
+_hg_allocator_quark_get_page(hg_quark_t qdata)
+{
+	return (qdata & _hg_quark_type_bit_mask_bits(HG_ALLOC_TYPE_BIT_PAGE,
+						     HG_ALLOC_TYPE_BIT_PAGE_END)) >> HG_ALLOC_TYPE_BIT_PAGE;
+}
+
+G_INLINE_FUNC guint32
+_hg_allocator_quark_get_index(hg_quark_t qdata)
+{
+	return (qdata & _hg_quark_type_bit_mask_bits(HG_ALLOC_TYPE_BIT_INDEX,
+						     HG_ALLOC_TYPE_BIT_INDEX_END)) >> HG_ALLOC_TYPE_BIT_INDEX;
+}
 
 G_END_DECLS
 
