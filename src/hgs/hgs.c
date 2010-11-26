@@ -109,21 +109,23 @@ main(int    argc,
 		gsize len = strlen(token);
 
 		psfile = argv[1];
-		if ((fp = fopen(psfile, "r")) == NULL) {
-			g_printerr("Unable to open a file: %s\n", psfile);
-			goto finalize;
-		}
-		if (fgets(buffer, 255, fp)) {
-			if (strncmp(buffer, token, len) == 0) {
-				gchar *p = &buffer[len];
-				gdouble d;
-
-				sscanf(p, "%lf", &d);
-				arg_langlevel = (guint)d;
-				hg_vm_hold_language_level(vm, TRUE);
+		if (arg_langlevel == HG_LANG_LEVEL_END) {
+			if ((fp = fopen(psfile, "r")) == NULL) {
+				g_printerr("Unable to open a file: %s\n", psfile);
+				goto finalize;
 			}
+			if (fgets(buffer, 255, fp)) {
+				if (strncmp(buffer, token, len) == 0) {
+					gchar *p = &buffer[len];
+					gdouble d;
+
+					sscanf(p, "%lf", &d);
+					arg_langlevel = (guint)d;
+					hg_vm_hold_language_level(vm, TRUE);
+				}
+			}
+			fclose(fp);
 		}
-		fclose(fp);
 	}
 	if (arg_langlevel == HG_LANG_LEVEL_END)
 		arg_langlevel = HG_LANG_LEVEL_END - 1;
