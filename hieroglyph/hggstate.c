@@ -457,3 +457,26 @@ hg_gstate_set_linejoin(hg_gstate_t   *gstate,
 
 	gstate->linejoin = linejoin;
 }
+
+/**
+ * hg_gstate_set_miterlimit:
+ * @gstate:
+ * @miterlen:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_gstate_set_miterlimit(hg_gstate_t *gstate,
+			 gdouble      miterlen)
+{
+	hg_return_val_if_fail (gstate != NULL, FALSE);
+
+	if (miterlen < 1.0)
+		return FALSE;
+
+	gstate->miterlen = miterlen;
+
+	return TRUE;
+}

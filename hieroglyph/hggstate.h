@@ -81,6 +81,7 @@ struct _hg_gstate_t {
 	hg_linecap_t  linecap;
 	hg_linejoin_t linejoin;
 	gdouble       linewidth;
+	gdouble       miterlen;
 	gboolean      is_snapshot:1;
 };
 
@@ -111,6 +112,8 @@ void                hg_gstate_set_linecap      (hg_gstate_t   *gstate,
 						hg_linecap_t   linecap);
 void                hg_gstate_set_linejoin     (hg_gstate_t   *gstate,
 						hg_linejoin_t  linejoin);
+gboolean            hg_gstate_set_miterlimit   (hg_gstate_t   *gstate,
+						gdouble        miterlen);
 
 
 G_END_DECLS
