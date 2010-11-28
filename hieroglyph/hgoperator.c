@@ -9550,9 +9550,9 @@ hg_operator_invoke(hg_quark_t   qoper,
 	GError *err = NULL;
 	gboolean retval = TRUE;
 
-	hg_return_val_with_gerror_if_fail (HG_IS_QOPER (qoper), FALSE, error);
-	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error);
-	hg_return_val_with_gerror_if_fail ((q = hg_quark_get_value(qoper)) < HG_enc_END, FALSE, error);
+	hg_return_val_with_gerror_if_fail (HG_IS_QOPER (qoper), FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail ((q = hg_quark_get_value(qoper)) < HG_enc_END, FALSE, error, HG_VM_e_VMerror);
 
 	if (__hg_operator_func_table[q] == NULL) {
 		if (__hg_operator_name_table[q] == NULL) {

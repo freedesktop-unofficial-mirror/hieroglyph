@@ -265,7 +265,7 @@ hg_plugin_t *
 plugin_new(hg_mem_t  *mem,
 	   GError   **error)
 {
-	hg_return_val_with_gerror_if_fail (mem != NULL, NULL, error);
+	hg_return_val_with_gerror_if_fail (mem != NULL, NULL, error, HG_VM_e_VMerror);
 
 	return hg_plugin_new(mem,
 			     &__unittest_plugin_info);

@@ -613,8 +613,8 @@ hg_scanner_scan(hg_scanner_t  *scanner,
 {
 	gboolean retval;
 
-	hg_return_val_with_gerror_if_fail (scanner != NULL, FALSE, error);
-	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (scanner != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error, HG_VM_e_VMerror);
 	hg_return_val_if_fail (error != NULL, FALSE);
 
 	scanner->result = Qnil;

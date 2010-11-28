@@ -111,11 +111,11 @@ hg_mem_lock_object_with_gerror(hg_mem_t     *mem,
 	gpointer retval;
 	GError *err = NULL;
 
-	hg_return_val_with_gerror_if_fail (mem != NULL, NULL, error);
+	hg_return_val_with_gerror_if_fail (mem != NULL, NULL, error, HG_VM_e_VMerror);
 
 	retval = hg_mem_lock_object(mem, quark);
 	if (retval == NULL) {
-		g_set_error(&err, HG_ERROR, EINVAL,
+		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 			    "%s: Invalid quark to obtain the actual object [mem: %p, quark: 0x%lx]",
 			    pretty_function,
 			    mem,

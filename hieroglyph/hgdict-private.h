@@ -39,28 +39,28 @@ G_BEGIN_DECLS
 		_nodeprefix_ ## _nodes = NULL;				\
 		_nodeprefix_ ## _node = hg_mem_lock_object((_mem_), (_node_quark_)); \
 		if (_nodeprefix_ ## _node == NULL) {			\
-			g_set_error((_error_), HG_ERROR, EINVAL,	\
+			g_set_error((_error_), HG_ERROR, HG_VM_e_VMerror, \
 				    "%s: Invalid quark to obtain the " _comment_ "node object: mem: %p, quark: %" G_GSIZE_FORMAT, \
 				    __PRETTY_FUNCTION__, (_mem_), (_node_quark_)); \
 			goto _nodeprefix_ ## _finalize;			\
 		}							\
 		_nodeprefix_ ## _keys = hg_mem_lock_object(_nodeprefix_ ## _node->o.mem, _nodeprefix_ ## _node->qkey); \
 		if (_nodeprefix_ ## _keys == NULL) {			\
-			g_set_error((_error_), HG_ERROR, EINVAL,	\
+			g_set_error((_error_), HG_ERROR, HG_VM_e_VMerror, \
 				    "%s: Invalid quark to obtain the " _comment_ "keys container object: mem: %p, quark: %" G_GSIZE_FORMAT, \
 				    __PRETTY_FUNCTION__, _nodeprefix_ ## _node->o.mem, _nodeprefix_ ## _node->qkey); \
 			goto _nodeprefix_ ## _finalize;			\
 		}							\
 		_nodeprefix_ ## _vals = hg_mem_lock_object(_nodeprefix_ ## _node->o.mem, _nodeprefix_ ## _node->qval); \
 		if (_nodeprefix_ ## _vals == NULL) {			\
-			g_set_error((_error_), HG_ERROR, EINVAL,	\
+			g_set_error((_error_), HG_ERROR, HG_VM_e_VMerror, \
 				    "%s: Invalid quark to obtain the " _comment_ "vals container object: mem: %p, quark: %" G_GSIZE_FORMAT, \
 				    __PRETTY_FUNCTION__, _nodeprefix_ ## _node->o.mem, _nodeprefix_ ## _node->qval); \
 			goto _nodeprefix_ ## _finalize;			\
 		}							\
 		_nodeprefix_ ## _nodes = hg_mem_lock_object(_nodeprefix_ ## _node->o.mem, _nodeprefix_ ## _node->qnodes); \
 		if (_nodeprefix_ ## _nodes == NULL) {			\
-			g_set_error((_error_), HG_ERROR, EINVAL,	\
+			g_set_error((_error_), HG_ERROR, HG_VM_e_VMerror, \
 				    "%s: Invalid quark to obtain the " _comment_ "nodes container object: mem: %p, quark: %" G_GSIZE_FORMAT, \
 				    __PRETTY_FUNCTION__, _nodeprefix_ ## _node->o.mem, _nodeprefix_ ## _node->qnodes); \
 			goto _nodeprefix_ ## _finalize;			\

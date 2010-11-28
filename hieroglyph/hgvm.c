@@ -1226,7 +1226,7 @@ hg_vm_quark_gc_mark(hg_vm_t     *vm,
 	GError *err = NULL;
 	gboolean retval = FALSE;
 
-	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error, HG_VM_e_VMerror);
 
 	if (qdata == Qnil)
 		return TRUE;
@@ -1277,7 +1277,7 @@ hg_vm_quark_copy(hg_vm_t     *vm,
 	hg_quark_t retval = Qnil;
 	GError *err = NULL;
 
-	hg_return_val_with_gerror_if_fail (vm != NULL, Qnil, error);
+	hg_return_val_with_gerror_if_fail (vm != NULL, Qnil, error, HG_VM_e_VMerror);
 
 	if (qdata == Qnil)
 		return Qnil;
@@ -2927,7 +2927,7 @@ hg_vm_eval(hg_vm_t     *vm,
 	gboolean retval = FALSE, old_state_hold_langlevel = FALSE;
 	hg_vm_langlevel_t lang = 0;
 
-	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error, HG_VM_e_VMerror);
 
 	if (hg_quark_is_simple_object(qeval)) {
 		/* XXX */
@@ -3067,8 +3067,8 @@ hg_vm_eval_from_cstring(hg_vm_t      *vm,
 	gboolean retval = FALSE;
 	gchar *str;
 
-	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error);
-	hg_return_val_with_gerror_if_fail (cstring != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (cstring != NULL, FALSE, error, HG_VM_e_VMerror);
 
 	if (clen < 0)
 		clen = strlen(cstring);
@@ -3138,8 +3138,8 @@ hg_vm_eval_from_file(hg_vm_t      *vm,
 	gchar *filename;
 	gboolean retval = FALSE;
 
-	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error);
-	hg_return_val_with_gerror_if_fail (initfile != NULL && initfile[0] != 0, FALSE, error);
+	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (initfile != NULL && initfile[0] != 0, FALSE, error, HG_VM_e_VMerror);
 
 	filename = _hg_vm_find_file(initfile);
 	if (filename) {
@@ -3882,8 +3882,8 @@ hg_vm_add_plugin(hg_vm_t      *vm,
 {
 	hg_plugin_t *plugin;
 
-	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error);
-	hg_return_val_with_gerror_if_fail (name != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (name != NULL, FALSE, error, HG_VM_e_VMerror);
 
 	if (g_hash_table_lookup(vm->plugin_table, name) != NULL) {
 		g_warning("%s plugin is already loaded", name);
@@ -3950,8 +3950,8 @@ hg_vm_remove_plugin(hg_vm_t      *vm,
 	GList *l;
 	gboolean retval;
 
-	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error);
-	hg_return_val_with_gerror_if_fail (name != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (name != NULL, FALSE, error, HG_VM_e_VMerror);
 
 	if ((l = g_hash_table_lookup(vm->plugin_table, name)) == NULL) {
 		g_warning("No such plugins loaded: %s", name);

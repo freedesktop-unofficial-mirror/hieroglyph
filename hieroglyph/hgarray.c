@@ -430,9 +430,9 @@ hg_array_set(hg_array_t  *array,
 	GError *err = NULL;
 	gboolean retval = TRUE;
 
-	hg_return_val_with_gerror_if_fail (array != NULL, FALSE, error);
-	hg_return_val_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, FALSE, error);
-	hg_return_val_with_gerror_if_fail ((array->offset + index) < array->allocated_size, FALSE, error);
+	hg_return_val_with_gerror_if_fail (array != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail ((array->offset + index) < array->allocated_size, FALSE, error, HG_VM_e_rangecheck);
 
 	new_length = MAX (index, array->length);
 	if (index >= new_length && new_length >= array->length) {
@@ -490,9 +490,9 @@ hg_array_get(hg_array_t  *array,
 	hg_quark_t *container;
 	GError *err = NULL;
 
-	hg_return_val_with_gerror_if_fail (array != NULL, Qnil, error);
-	hg_return_val_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, Qnil, error);
-	hg_return_val_with_gerror_if_fail (index < array->allocated_size, Qnil, error);
+	hg_return_val_with_gerror_if_fail (array != NULL, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (index < array->allocated_size, Qnil, error, HG_VM_e_rangecheck);
 
 	if (array->qcontainer == Qnil) {
 		/* emulate containing null */
@@ -552,18 +552,18 @@ hg_array_insert(hg_array_t  *array,
 	gssize i;
 	hg_quark_t *container;
 
-	hg_return_val_with_gerror_if_fail (array != NULL, FALSE, error);
-	hg_return_val_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, FALSE, error);
-	hg_return_val_with_gerror_if_fail (array->offset == 0, FALSE, error);
+	hg_return_val_with_gerror_if_fail (array != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (array->offset == 0, FALSE, error, HG_VM_e_invalidaccess);
 
 	if (pos < 0)
 		pos = array->length;
 
-	hg_return_val_with_gerror_if_fail (pos < array->allocated_size, FALSE, error);
+	hg_return_val_with_gerror_if_fail (pos < array->allocated_size, FALSE, error, HG_VM_e_rangecheck);
 
 	if (pos < array->length) {
-		hg_return_val_with_gerror_if_fail ((array->length + 1) < array->allocated_size, FALSE, error);
-		hg_return_val_with_gerror_if_fail (array->qcontainer != Qnil, FALSE, error); /* unlikely */
+		hg_return_val_with_gerror_if_fail ((array->length + 1) < array->allocated_size, FALSE, error, HG_VM_e_rangecheck);
+		hg_return_val_with_gerror_if_fail (array->qcontainer != Qnil, FALSE, error, HG_VM_e_VMerror); /* unlikely */
 		hg_return_val_with_gerror_if_lock_fail (container,
 							array->o.mem,
 							array->qcontainer,
@@ -673,9 +673,9 @@ hg_array_foreach(hg_array_t                *array,
 	hg_quark_t *container;
 	gsize i;
 
-	hg_return_with_gerror_if_fail (array != NULL, error);
-	hg_return_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, error);
-	hg_return_with_gerror_if_fail (func != NULL, error);
+	hg_return_with_gerror_if_fail (array != NULL, error, HG_VM_e_VMerror);
+	hg_return_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, error, HG_VM_e_VMerror);
+	hg_return_with_gerror_if_fail (func != NULL, error, HG_VM_e_VMerror);
 	hg_return_with_gerror_if_lock_fail (container,
 					    array->o.mem,
 					    array->qcontainer,
@@ -739,8 +739,8 @@ hg_array_make_subarray(hg_array_t  *array,
 	GError *err = NULL;
 	hg_array_t *a;
 
-	hg_return_val_with_gerror_if_fail (array != NULL, Qnil, error);
-	hg_return_val_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, Qnil, error);
+	hg_return_val_with_gerror_if_fail (array != NULL, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, Qnil, error, HG_VM_e_VMerror);
 
 	retval = hg_array_new(array->o.mem, 0, (gpointer *)&a);
 	if (retval == Qnil) {
@@ -798,13 +798,13 @@ hg_array_copy_as_subarray(hg_array_t  *src,
 			  gsize        end_index,
 			  GError     **error)
 {
-	hg_return_val_with_gerror_if_fail (src != NULL, FALSE, error);
-	hg_return_val_with_gerror_if_fail (src->o.type == HG_TYPE_ARRAY, FALSE, error);
-	hg_return_val_with_gerror_if_fail (dest != NULL, FALSE, error);
-	hg_return_val_with_gerror_if_fail (dest->o.type == HG_TYPE_ARRAY, FALSE, error);
-	hg_return_val_with_gerror_if_fail (start_index < hg_array_maxlength(src), FALSE, error);
-	hg_return_val_with_gerror_if_fail (end_index < hg_array_maxlength(src), FALSE, error);
-	hg_return_val_with_gerror_if_fail (start_index <= end_index, FALSE, error);
+	hg_return_val_with_gerror_if_fail (src != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (src->o.type == HG_TYPE_ARRAY, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (dest != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (dest->o.type == HG_TYPE_ARRAY, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (start_index < hg_array_maxlength(src), FALSE, error, HG_VM_e_rangecheck);
+	hg_return_val_with_gerror_if_fail (end_index < hg_array_maxlength(src), FALSE, error, HG_VM_e_rangecheck);
+	hg_return_val_with_gerror_if_fail (start_index <= end_index, FALSE, error, HG_VM_e_rangecheck);
 
 	/* destroy the unnecessary destination's container */
 	hg_mem_free(dest->o.mem, dest->qcontainer);

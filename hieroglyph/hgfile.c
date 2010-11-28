@@ -401,7 +401,7 @@ _hg_file_io_real_stdin_open(hg_file_t  *file,
 	hg_file_io_data_t *data = user_data;
 	hg_quark_t qdata;
 
-	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error);
+	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error, HG_VM_e_VMerror);
 
 	if (file->io_type != HG_FILE_IO_STDIN) {
 		g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
@@ -451,7 +451,7 @@ _hg_file_io_real_stdout_open(hg_file_t  *file,
 	hg_file_io_data_t *data = user_data;
 	hg_quark_t qdata;
 
-	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error);
+	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error, HG_VM_e_VMerror);
 
 	if (file->io_type != HG_FILE_IO_STDOUT) {
 		g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
@@ -501,7 +501,7 @@ _hg_file_io_real_stderr_open(hg_file_t  *file,
 	hg_file_io_data_t *data = user_data;
 	hg_quark_t qdata;
 
-	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error);
+	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error, HG_VM_e_VMerror);
 
 	if (file->io_type != HG_FILE_IO_STDERR) {
 		g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
@@ -566,7 +566,7 @@ _hg_file_io_real_file_open(hg_file_t  *file,
 		O_RDWR | O_CREAT | O_APPEND,	/* HG_FILE_IO_MODE_READWRITE | HG_FILE_IO_MODE_APPEND */
 	};
 
-	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error);
+	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error, HG_VM_e_VMerror);
 
 	if (file->io_type != HG_FILE_IO_FILE) {
 		g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
@@ -829,7 +829,7 @@ _hg_file_io_real_buffered_open(hg_file_t  *file,
 {
 	hg_file_io_buffered_data_t *bd = user_data;
 
-	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error);
+	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error, HG_VM_e_VMerror);
 
 	switch (file->io_type) {
 	    case HG_FILE_IO_FILE:
@@ -1049,7 +1049,7 @@ _hg_file_io_real_lineedit_open(hg_file_t  *file,
 	hg_lineedit_t *lineedit = (hg_lineedit_t *)user_data;
 	hg_string_t *s;
 
-	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error);
+	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error, HG_VM_e_VMerror);
 
 	switch (file->io_type) {
 	    case HG_FILE_IO_LINEEDIT:
@@ -1190,9 +1190,9 @@ hg_file_new(hg_mem_t        *mem,
 	hg_file_io_t io;
 	hg_file_vtable_t *vtable = NULL;
 
-	hg_return_val_with_gerror_if_fail (mem != NULL, Qnil, error);
-	hg_return_val_with_gerror_if_fail (name != NULL, Qnil, error);
-	hg_return_val_with_gerror_if_fail (name[0] != 0, Qnil, error);
+	hg_return_val_with_gerror_if_fail (mem != NULL, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (name != NULL, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (name[0] != 0, Qnil, error, HG_VM_e_VMerror);
 
 	io = hg_file_get_io_type(name);
 	switch (io) {
@@ -1243,10 +1243,10 @@ hg_file_new_with_vtable(hg_mem_t                *mem,
 	hg_quark_t retval;
 	hg_file_t *f = NULL;
 
-	hg_return_val_with_gerror_if_fail (mem != NULL, Qnil, error);
-	hg_return_val_with_gerror_if_fail (name != NULL, Qnil, error);
-	hg_return_val_with_gerror_if_fail (name[0] != 0, Qnil, error);
-	hg_return_val_with_gerror_if_fail (vtable != NULL, Qnil, error);
+	hg_return_val_with_gerror_if_fail (mem != NULL, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (name != NULL, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (name[0] != 0, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (vtable != NULL, Qnil, error, HG_VM_e_VMerror);
 
 	retval = hg_object_new(mem, (gpointer *)&f, HG_TYPE_FILE, 0, name, mode, vtable, user_data, error);
 
@@ -1286,9 +1286,9 @@ hg_file_new_with_string(hg_mem_t        *mem,
 	hg_file_t *f = NULL;
 	hg_file_io_buffered_data_t *x;
 
-	hg_return_val_with_gerror_if_fail (mem != NULL, Qnil, error);
-	hg_return_val_with_gerror_if_fail (name != NULL, Qnil, error);
-	hg_return_val_with_gerror_if_fail (name[0] != 0, Qnil, error);
+	hg_return_val_with_gerror_if_fail (mem != NULL, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (name != NULL, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (name[0] != 0, Qnil, error, HG_VM_e_VMerror);
 
 	qbdata = hg_mem_alloc(mem, sizeof (hg_file_io_buffered_data_t), (gpointer *)&x);
 	if (qbdata == Qnil)
@@ -1332,10 +1332,10 @@ void
 hg_file_close(hg_file_t  *file,
 	      GError    **error)
 {
-	hg_return_with_gerror_if_fail (file != NULL, error);
-	hg_return_with_gerror_if_fail (file->o.type == HG_TYPE_FILE, error);
-	hg_return_with_gerror_if_fail (file->vtable != NULL, error);
-	hg_return_with_gerror_if_fail (file->vtable->close != NULL, error);
+	hg_return_with_gerror_if_fail (file != NULL, error, HG_VM_e_VMerror);
+	hg_return_with_gerror_if_fail (file->o.type == HG_TYPE_FILE, error, HG_VM_e_VMerror);
+	hg_return_with_gerror_if_fail (file->vtable != NULL, error, HG_VM_e_VMerror);
+	hg_return_with_gerror_if_fail (file->vtable->close != NULL, error, HG_VM_e_VMerror);
 
 	if (file->is_closed) {
 		hg_file_set_error(error, __PRETTY_FUNCTION__, EBADF);
@@ -1363,11 +1363,11 @@ hg_file_read(hg_file_t  *file,
 	     gsize       n,
 	     GError    **error)
 {
-	hg_return_val_with_gerror_if_fail (file != NULL, -1, error);
-	hg_return_val_with_gerror_if_fail (file->o.type == HG_TYPE_FILE, -1, error);
-	hg_return_val_with_gerror_if_fail (buffer != NULL, -1, error);
-	hg_return_val_with_gerror_if_fail (file->vtable != NULL, -1, error);
-	hg_return_val_with_gerror_if_fail (file->vtable->read != NULL, -1, error);
+	hg_return_val_with_gerror_if_fail (file != NULL, -1, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (file->o.type == HG_TYPE_FILE, -1, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (buffer != NULL, -1, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (file->vtable != NULL, -1, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (file->vtable->read != NULL, -1, error, HG_VM_e_VMerror);
 
 	if (file->is_closed) {
 		hg_file_set_error(error, __PRETTY_FUNCTION__, EBADF);
@@ -1396,11 +1396,11 @@ hg_file_write(hg_file_t  *file,
 	      gsize       n,
 	      GError    **error)
 {
-	hg_return_val_with_gerror_if_fail (file != NULL, -1, error);
-	hg_return_val_with_gerror_if_fail (file->o.type == HG_TYPE_FILE, -1, error);
-	hg_return_val_with_gerror_if_fail (buffer != NULL, -1, error);
-	hg_return_val_with_gerror_if_fail (file->vtable != NULL, -1, error);
-	hg_return_val_with_gerror_if_fail (file->vtable->write != NULL, -1, error);
+	hg_return_val_with_gerror_if_fail (file != NULL, -1, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (file->o.type == HG_TYPE_FILE, -1, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (buffer != NULL, -1, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (file->vtable != NULL, -1, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (file->vtable->write != NULL, -1, error, HG_VM_e_VMerror);
 
 	if (file->is_closed) {
 		hg_file_set_error(error, __PRETTY_FUNCTION__, EBADF);
@@ -1423,10 +1423,10 @@ gboolean
 hg_file_flush(hg_file_t  *file,
 	      GError    **error)
 {
-	hg_return_val_with_gerror_if_fail (file != NULL, FALSE, error);
-	hg_return_val_with_gerror_if_fail (file->o.type == HG_TYPE_FILE, FALSE, error);
-	hg_return_val_with_gerror_if_fail (file->vtable != NULL, FALSE, error);
-	hg_return_val_with_gerror_if_fail (file->vtable->flush != NULL, FALSE, error);
+	hg_return_val_with_gerror_if_fail (file != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (file->o.type == HG_TYPE_FILE, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (file->vtable != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (file->vtable->flush != NULL, FALSE, error, HG_VM_e_VMerror);
 
 	if (file->is_closed) {
 		hg_file_set_error(error, __PRETTY_FUNCTION__, EBADF);
@@ -1453,10 +1453,10 @@ hg_file_seek(hg_file_t      *file,
 	     hg_file_pos_t   whence,
 	     GError        **error)
 {
-	hg_return_val_with_gerror_if_fail (file != NULL, -1, error);
-	hg_return_val_with_gerror_if_fail (file->o.type == HG_TYPE_FILE, -1, error);
-	hg_return_val_with_gerror_if_fail (file->vtable != NULL, -1, error);
-	hg_return_val_with_gerror_if_fail (file->vtable->seek != NULL, -1, error);
+	hg_return_val_with_gerror_if_fail (file != NULL, -1, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (file->o.type == HG_TYPE_FILE, -1, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (file->vtable != NULL, -1, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (file->vtable->seek != NULL, -1, error, HG_VM_e_VMerror);
 
 	if (file->is_closed) {
 		hg_file_set_error(error, __PRETTY_FUNCTION__, EBADF);

@@ -112,8 +112,8 @@ hg_plugin_open(hg_mem_t          *mem,
 	};
 	GError *err = NULL;
 
-	hg_return_val_with_gerror_if_fail (mem != NULL, NULL, error);
-	hg_return_val_with_gerror_if_fail (name != NULL, NULL, error);
+	hg_return_val_with_gerror_if_fail (mem != NULL, NULL, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (name != NULL, NULL, error, HG_VM_e_VMerror);
 
 	realname = g_path_get_basename(name);
 	switch (type) {

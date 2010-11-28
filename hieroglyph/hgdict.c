@@ -1293,9 +1293,9 @@ hg_dict_foreach(hg_dict_t                 *dict,
 {
 	GError *err = NULL;
 
-	hg_return_with_gerror_if_fail (dict != NULL, error);
-	hg_return_with_gerror_if_fail (dict->o.type == HG_TYPE_DICT, error);
-	hg_return_with_gerror_if_fail (func != NULL, error);
+	hg_return_with_gerror_if_fail (dict != NULL, error, HG_VM_e_VMerror);
+	hg_return_with_gerror_if_fail (dict->o.type == HG_TYPE_DICT, error, HG_VM_e_VMerror);
+	hg_return_with_gerror_if_fail (func != NULL, error, HG_VM_e_VMerror);
 
 	_hg_dict_node_foreach(dict->o.mem, dict->qroot, func, data, &err);
 	if (err) {
@@ -1331,8 +1331,8 @@ hg_dict_first_item(hg_dict_t   *dict,
 	hg_dict_item_t x;
 	GError *err = NULL;
 
-	hg_return_val_with_gerror_if_fail (dict != NULL, FALSE, error);
-	hg_return_val_with_gerror_if_fail (dict->o.type == HG_TYPE_DICT, FALSE, error);
+	hg_return_val_with_gerror_if_fail (dict != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (dict->o.type == HG_TYPE_DICT, FALSE, error, HG_VM_e_VMerror);
 
 	_hg_dict_node_foreach(dict->o.mem, dict->qroot, _hg_dict_traverse_first_item, &x, &err);
 	if (err) {

@@ -83,11 +83,11 @@ G_BEGIN_DECLS
 			return (__val__);				\
 		}							\
 	} G_STMT_END
-#define _hg_gerror_on_fail(__expr__,__err__)				\
+#define _hg_gerror_on_fail(__expr__,__err__,__code__)			\
 	G_STMT_START {							\
 		hg_stacktrace();					\
 		if ((__err__)) {					\
-			g_set_error((__err__), HG_ERROR, EINVAL,	\
+			g_set_error((__err__), HG_ERROR, __code__,	\
 				    "%s: assertion `%s' failed",	\
 				    __PRETTY_FUNCTION__,		\
 				    #__expr__);				\
@@ -126,7 +126,7 @@ G_BEGIN_DECLS
 	G_STMT_START {							\
 		hg_stacktrace();					\
 		if ((__err__)) {					\
-			g_set_error((__err__), HG_ERROR, EINVAL,	\
+			g_set_error((__err__), HG_ERROR, HG_VM_e_VMerror, \
 				    "file %s: line %d: assertion `%s' failed", \
 				    __FILE__,				\
 				    __LINE__,				\
@@ -143,10 +143,10 @@ G_BEGIN_DECLS
 	_hg_return_after_eval_if_fail(__expr__,hg_stacktrace();__eval__)
 #define hg_return_val_after_eval_if_fail(__expr__,__val__,__eval__)	\
 	_hg_return_val_after_eval_if_fail(__expr__,__val__,hg_stacktrace();__eval__)
-#define hg_return_with_gerror_if_fail(__expr__,__err__)			\
-	_hg_return_after_eval_if_fail(__expr__,_hg_gerror_on_fail(__expr__,__err__))
-#define hg_return_val_with_gerror_if_fail(__expr__,__val__,__err__)	\
-	_hg_return_val_after_eval_if_fail(__expr__,__val__,_hg_gerror_on_fail(__expr__,__err__))
+#define hg_return_with_gerror_if_fail(__expr__,__err__,__code__)	\
+	_hg_return_after_eval_if_fail(__expr__,_hg_gerror_on_fail(__expr__,__err__,__code__))
+#define hg_return_val_with_gerror_if_fail(__expr__,__val__,__err__,__code__) \
+	_hg_return_val_after_eval_if_fail(__expr__,__val__,_hg_gerror_on_fail(__expr__,__err__,__code__))
 
 
 gchar    *hg_get_stacktrace       (void) G_GNUC_MALLOC;

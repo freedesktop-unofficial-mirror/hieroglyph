@@ -910,8 +910,8 @@ hg_string_make_substring(hg_string_t  *string,
 	hg_quark_t retval;
 	GError *err = NULL;
 
-	hg_return_val_with_gerror_if_fail (string != NULL, Qnil, error);
-	hg_return_val_with_gerror_if_fail (string->o.type == HG_TYPE_STRING, Qnil, error);
+	hg_return_val_with_gerror_if_fail (string != NULL, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (string->o.type == HG_TYPE_STRING, Qnil, error, HG_VM_e_VMerror);
 
 	retval = hg_string_new(string->o.mem, 0, (gpointer *)&s);
 	if (retval == Qnil) {
@@ -969,13 +969,13 @@ hg_string_copy_as_substring(hg_string_t  *src,
 			    gssize        end_index,
 			    GError      **error)
 {
-	hg_return_val_with_gerror_if_fail (src != NULL, FALSE, error);
-	hg_return_val_with_gerror_if_fail (src->o.type == HG_TYPE_STRING, FALSE, error);
-	hg_return_val_with_gerror_if_fail (dest != NULL, FALSE, error);
-	hg_return_val_with_gerror_if_fail (dest->o.type == HG_TYPE_STRING, FALSE, error);
-	hg_return_val_with_gerror_if_fail (start_index < hg_string_maxlength(src) || (end_index - start_index + 1) == 0, FALSE, error);
-	hg_return_val_with_gerror_if_fail (end_index < hg_string_maxlength(src), FALSE, error);
-	hg_return_val_with_gerror_if_fail ((end_index - start_index + 1) >= 0, FALSE, error);
+	hg_return_val_with_gerror_if_fail (src != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (src->o.type == HG_TYPE_STRING, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (dest != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (dest->o.type == HG_TYPE_STRING, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (start_index < hg_string_maxlength(src) || (end_index - start_index + 1) == 0, FALSE, error, HG_VM_e_rangecheck);
+	hg_return_val_with_gerror_if_fail (end_index < hg_string_maxlength(src), FALSE, error, HG_VM_e_rangecheck);
+	hg_return_val_with_gerror_if_fail ((end_index - start_index + 1) >= 0, FALSE, error, HG_VM_e_rangecheck);
 
 	/* destroy the unnecessary destination's container */
 	hg_mem_free(dest->o.mem, dest->qstring);

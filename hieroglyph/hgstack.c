@@ -358,7 +358,7 @@ hg_stack_pop(hg_stack_t  *stack,
 	hg_quark_t retval;
 	hg_mem_t *m;
 
-	hg_return_val_with_gerror_if_fail (stack != NULL, Qnil, error);
+	hg_return_val_with_gerror_if_fail (stack != NULL, Qnil, error, HG_VM_e_VMerror);
 
 	retval = _hg_stack_pop(stack, error);
 
@@ -383,7 +383,7 @@ void
 hg_stack_drop(hg_stack_t  *stack,
 	      GError     **error)
 {
-	hg_return_with_gerror_if_fail (stack != NULL, error);
+	hg_return_with_gerror_if_fail (stack != NULL, error, HG_VM_e_VMerror);
 
 	_hg_stack_pop(stack, error);
 }
@@ -421,8 +421,8 @@ hg_stack_index(hg_stack_t  *stack,
 {
 	hg_list_t *l;
 
-	hg_return_val_with_gerror_if_fail (stack != NULL, Qnil, error);
-	hg_return_val_with_gerror_if_fail (index < stack->depth, Qnil, error);
+	hg_return_val_with_gerror_if_fail (stack != NULL, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (index < stack->depth, Qnil, error, HG_VM_e_stackunderflow);
 
 	for (l = stack->last_stack; index > 0; l = l->prev, index--);
 
@@ -447,8 +447,8 @@ hg_stack_roll(hg_stack_t  *stack,
 	hg_list_t *notargeted_before, *notargeted_after, *beginning, *ending;
 	gsize n, i;
 
-	hg_return_with_gerror_if_fail (stack != NULL, error);
-	hg_return_with_gerror_if_fail (n_blocks <= stack->depth, error);
+	hg_return_with_gerror_if_fail (stack != NULL, error, HG_VM_e_VMerror);
+	hg_return_with_gerror_if_fail (n_blocks <= stack->depth, error, HG_VM_e_stackunderflow);
 
 	if (n_blocks == 0 ||
 	    n_times == 0)
