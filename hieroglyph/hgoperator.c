@@ -4855,7 +4855,40 @@ DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (ineofill);
 DEFUNC_UNIMPLEMENTED_OPER (infill);
-DEFUNC_UNIMPLEMENTED_OPER (initclip);
+
+/* - initclip - */
+DEFUNC_OPER (initclip)
+G_STMT_START {
+	hg_stack_t *es = hg_vm_stack_new(vm, 256);
+
+	if (hg_vm_eval_from_cstring(vm, ".currentpagedevice /PageSize get 0 0 moveto dup 0 get 0 lineto dup aload pop lineto 1 get 0 exch lineto closepath", -1,
+				    NULL, es, NULL, TRUE, error)) {
+		hg_quark_t qg = hg_vm_get_gstate(vm), qpath;
+		hg_gstate_t *gstate = HG_VM_LOCK (vm, qg, error);
+
+		if (gstate == NULL) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			goto finalize;
+		}
+		qpath = hg_gstate_get_path(gstate);
+		hg_gstate_set_clippath(gstate, qpath);
+		qpath = hg_path_new(gstate->o.mem, NULL);
+		if (qpath == Qnil) {
+			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			goto e_finalize;
+		}
+		hg_gstate_set_path(gstate, qpath);
+
+		retval = TRUE;
+	  e_finalize:
+		HG_VM_UNLOCK (vm, qg);
+	}
+  finalize:
+	hg_stack_free(es);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (initviewclip);
 DEFUNC_UNIMPLEMENTED_OPER (instroke);
 DEFUNC_UNIMPLEMENTED_OPER (inueofill);
