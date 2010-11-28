@@ -147,6 +147,8 @@ G_BEGIN_DECLS
 	_hg_return_after_eval_if_fail(__expr__,_hg_gerror_on_fail(__expr__,__err__,__code__))
 #define hg_return_val_with_gerror_if_fail(__expr__,__val__,__err__,__code__) \
 	_hg_return_val_after_eval_if_fail(__expr__,__val__,_hg_gerror_on_fail(__expr__,__err__,__code__))
+#define hg_return_val_with_gerror_after_eval_if_fail(__expr__,__val__,__eval__,__err__,__code__) \
+	_hg_return_val_after_eval_if_fail(__expr__,__val__,_hg_gerror_on_fail(__expr__,__err__,__code__);__eval__)
 
 
 gchar    *hg_get_stacktrace       (void) G_GNUC_MALLOC;
