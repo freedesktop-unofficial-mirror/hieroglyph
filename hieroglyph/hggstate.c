@@ -423,3 +423,20 @@ hg_gstate_set_linewidth(hg_gstate_t *gstate,
 
 	gstate->linewidth = width;
 }
+
+/**
+ * hg_gstate_set_linecap:
+ * @gstate:
+ * @linecap:
+ *
+ * FIXME
+ */
+void
+hg_gstate_set_linecap(hg_gstate_t  *gstate,
+		      hg_linecap_t  linecap)
+{
+	hg_return_if_fail (gstate != NULL);
+	hg_return_if_fail (linecap >= 0 && linecap < HG_LINECAP_END);
+
+	gstate->linecap = linecap;
+}
