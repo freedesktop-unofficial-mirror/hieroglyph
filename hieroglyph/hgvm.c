@@ -727,6 +727,14 @@ _hg_vm_run_gc(hg_mem_t *mem,
 				       vm, &err))
 			goto error;
 	}
+	for (i = 0; i < vm->stacks_stack->len; i++) {
+		gpointer p = g_ptr_array_index(vm->stacks_stack, i);
+
+		if (!hg_object_gc_mark((hg_object_t *)p,
+				       _hg_vm_quark_iterate_gc_mark,
+				       vm, &err))
+			goto error;
+	}
 	/** marking plugins **/
 	for (l = vm->plugin_list; l != NULL; l = g_list_next(l)) {
 		hg_plugin_t *p = l->data;
@@ -1011,6 +1019,8 @@ hg_vm_new(void)
 	    retval->stacks[HG_VM_STACK_GSTATE] == NULL)
 		goto error;
 
+	retval->stacks_stack = g_ptr_array_new();
+
 	hg_vm_set_default_attributes(retval, HG_VM_ACCESS_READABLE|HG_VM_ACCESS_WRITABLE);
 
 #define DECL_ERROR(_v_,_n_)						\
@@ -1078,6 +1088,8 @@ hg_vm_destroy(hg_vm_t *vm)
 	for (i = 0; i < HG_VM_MEM_END; i++) {
 		hg_mem_destroy(vm->mem[i]);
 	}
+	if (vm->stacks_stack)
+		g_ptr_array_free(vm->stacks_stack, TRUE);
 	if (vm->plugin_table)
 		g_hash_table_destroy(vm->plugin_table);
 	if (vm->plugin_list)
@@ -2983,25 +2995,34 @@ hg_vm_eval(hg_vm_t     *vm,
 	}
 	if (ostack) {
 		old_ostack = vm->stacks[HG_VM_STACK_OSTACK];
+		g_ptr_array_add(vm->stacks_stack, old_ostack);
 		vm->stacks[HG_VM_STACK_OSTACK] = ostack;
 	}
 	if (estack) {
 		old_estack = vm->stacks[HG_VM_STACK_ESTACK];
+		g_ptr_array_add(vm->stacks_stack, old_estack);
 		vm->stacks[HG_VM_STACK_ESTACK] = estack;
 	}
 	if (dstack) {
 		old_dstack = vm->stacks[HG_VM_STACK_DSTACK];
+		g_ptr_array_add(vm->stacks_stack, old_dstack);
 		vm->stacks[HG_VM_STACK_DSTACK] = dstack;
 	}
 	hg_stack_push(vm->stacks[HG_VM_STACK_ESTACK], qeval);
 	retval = hg_vm_main_loop(vm);
 
-	if (old_ostack)
+	if (old_ostack) {
 		vm->stacks[HG_VM_STACK_OSTACK] = old_ostack;
-	if (old_estack)
+		g_ptr_array_remove(vm->stacks_stack, old_ostack);
+	}
+	if (old_estack) {
 		vm->stacks[HG_VM_STACK_ESTACK] = old_estack;
-	if (old_dstack)
+		g_ptr_array_remove(vm->stacks_stack, old_estack);
+	}
+	if (old_dstack) {
 		vm->stacks[HG_VM_STACK_DSTACK] = old_dstack;
+		g_ptr_array_remove(vm->stacks_stack, old_dstack);
+	}
   finalize:
 	if (protect_systemdict) {
 		vm->qsystemdict = old_systemdict;
