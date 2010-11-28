@@ -404,7 +404,7 @@ _hg_file_io_real_stdin_open(hg_file_t  *file,
 	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error);
 
 	if (file->io_type != HG_FILE_IO_STDIN) {
-		g_set_error(error, HG_ERROR, EINVAL,
+		g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
 			    "%s: Invalid I/O request.",
 			    __PRETTY_FUNCTION__);
 		return FALSE;
@@ -437,9 +437,7 @@ _hg_file_io_real_stdin_open(hg_file_t  *file,
 	G_STMT_START {
 		gint errno_ = errno;
 
-		g_set_error(error, HG_ERROR, errno_,
-			    "%s",
-			    g_strerror(errno_));
+		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
 	} G_STMT_END;
 
 	return FALSE;
@@ -456,7 +454,7 @@ _hg_file_io_real_stdout_open(hg_file_t  *file,
 	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error);
 
 	if (file->io_type != HG_FILE_IO_STDOUT) {
-		g_set_error(error, HG_ERROR, EINVAL,
+		g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
 			    "%s: Invalid I/O request.",
 			    __PRETTY_FUNCTION__);
 		return FALSE;
@@ -489,9 +487,7 @@ _hg_file_io_real_stdout_open(hg_file_t  *file,
 	G_STMT_START {
 		gint errno_ = errno;
 
-		g_set_error(error, HG_ERROR, errno_,
-			    "%s",
-			    g_strerror(errno_));
+		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
 	} G_STMT_END;
 
 	return FALSE;
@@ -508,7 +504,7 @@ _hg_file_io_real_stderr_open(hg_file_t  *file,
 	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error);
 
 	if (file->io_type != HG_FILE_IO_STDERR) {
-		g_set_error(error, HG_ERROR, EINVAL,
+		g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
 			    "%s: Invalid I/O request.",
 			    __PRETTY_FUNCTION__);
 		return FALSE;
@@ -541,9 +537,7 @@ _hg_file_io_real_stderr_open(hg_file_t  *file,
 	G_STMT_START {
 		gint errno_ = errno;
 
-		g_set_error(error, HG_ERROR, errno_,
-			    "%s",
-			    g_strerror(errno_));
+		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
 	} G_STMT_END;
 
 	return FALSE;
@@ -575,7 +569,7 @@ _hg_file_io_real_file_open(hg_file_t  *file,
 	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error);
 
 	if (file->io_type != HG_FILE_IO_FILE) {
-		g_set_error(error, HG_ERROR, EINVAL,
+		g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
 			    "%s: Invalid I/O request.",
 			    __PRETTY_FUNCTION__);
 		return FALSE;
@@ -623,9 +617,7 @@ _hg_file_io_real_file_open(hg_file_t  *file,
 	G_STMT_START {
 		gint errno_ = errno;
 
-		g_set_error(error, HG_ERROR, errno_,
-			    "%s",
-			    g_strerror(errno_));
+		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
 	} G_STMT_END;
 
 	return FALSE;
@@ -688,9 +680,7 @@ _hg_file_io_real_file_read(hg_file_t  *file,
 	G_STMT_START {
 		gint errno_ = errno;
 
-		g_set_error(error, HG_ERROR, errno_,
-			    "%s",
-			    g_strerror(errno_));
+		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
 	} G_STMT_END;
 
 	return -1;
@@ -721,9 +711,7 @@ _hg_file_io_real_file_write(hg_file_t      *file,
 	G_STMT_START {
 		gint errno_ = errno;
 
-		g_set_error(error, HG_ERROR, errno_,
-			    "%s",
-			    g_strerror(errno_));
+		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
 	} G_STMT_END;
 
 	return -1;
@@ -752,9 +740,7 @@ _hg_file_io_real_file_flush(hg_file_t  *file,
 	G_STMT_START {
 		gint errno_ = errno;
 
-		g_set_error(error, HG_ERROR, errno_,
-			    "%s",
-			    g_strerror(errno_));
+		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
 	} G_STMT_END;
 
 	return FALSE;
@@ -811,9 +797,7 @@ _hg_file_io_real_file_seek(hg_file_t      *file,
 	G_STMT_START {
 		gint errno_ = errno;
 
-		g_set_error(error, HG_ERROR, errno_,
-			    "%s",
-			    g_strerror(errno_));
+		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
 	} G_STMT_END;
 
 	return -1;
@@ -866,7 +850,7 @@ _hg_file_io_real_buffered_open(hg_file_t  *file,
 		    }
 		    break;
 	    default:
-		    g_set_error(error, HG_ERROR, EINVAL,
+		    g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
 				"%s: Invalid I/O request.",
 				__PRETTY_FUNCTION__);
 		    return FALSE;
@@ -881,9 +865,7 @@ _hg_file_io_real_buffered_open(hg_file_t  *file,
 	G_STMT_START {
 		gint errno_ = errno;
 
-		g_set_error(error, HG_ERROR, errno_,
-			    "%s",
-			    g_strerror(errno_));
+		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
 	} G_STMT_END;
 
 	return FALSE;
@@ -940,9 +922,7 @@ _hg_file_io_real_buffered_read(hg_file_t      *file,
 	G_STMT_START {
 		gint errno_ = errno;
 
-		g_set_error(error, HG_ERROR, errno_,
-			    "%s",
-			    g_strerror(errno_));
+		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
 	} G_STMT_END;
 
 	return -1;
@@ -971,9 +951,7 @@ _hg_file_io_real_buffered_write(hg_file_t       *file,
 	G_STMT_START {
 		gint errno_ = errno;
 
-		g_set_error(error, HG_ERROR, errno_,
-			    "%s",
-			    g_strerror(errno_));
+		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
 	} G_STMT_END;
 
 	return -1;
@@ -1035,9 +1013,7 @@ _hg_file_io_real_buffered_seek(hg_file_t      *file,
 	G_STMT_START {
 		gint errno_ = errno;
 
-		g_set_error(error, HG_ERROR, errno_,
-			    "%s",
-			    g_strerror(errno_));
+		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
 	} G_STMT_END;
 
 	return -1;
@@ -1099,7 +1075,7 @@ _hg_file_io_real_lineedit_open(hg_file_t  *file,
 		    }
 		    break;
 	    default:
-		    g_set_error(error, HG_ERROR, EINVAL,
+		    g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
 				"%s: Invalid I/O request.",
 				__PRETTY_FUNCTION__);
 		    return FALSE;
@@ -1137,9 +1113,7 @@ _hg_file_io_real_lineedit_open(hg_file_t  *file,
 	G_STMT_START {
 		gint errno_ = errno;
 
-		g_set_error(error, HG_ERROR, errno_,
-			    "%s",
-			    g_strerror(errno_));
+		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
 	} G_STMT_END;
 
 	return FALSE;
@@ -1364,7 +1338,7 @@ hg_file_close(hg_file_t  *file,
 	hg_return_with_gerror_if_fail (file->vtable->close != NULL, error);
 
 	if (file->is_closed) {
-		g_set_error(error, HG_ERROR, EBADF, "%s", g_strerror(EBADF));
+		hg_file_set_error(error, __PRETTY_FUNCTION__, EBADF);
 	} else {
 		file->vtable->close(file, file->user_data, error);
 	}
@@ -1396,7 +1370,7 @@ hg_file_read(hg_file_t  *file,
 	hg_return_val_with_gerror_if_fail (file->vtable->read != NULL, -1, error);
 
 	if (file->is_closed) {
-		g_set_error(error, HG_ERROR, EBADF, "%s", g_strerror(EBADF));
+		hg_file_set_error(error, __PRETTY_FUNCTION__, EBADF);
 		return -1;
 	}
 
@@ -1429,7 +1403,7 @@ hg_file_write(hg_file_t  *file,
 	hg_return_val_with_gerror_if_fail (file->vtable->write != NULL, -1, error);
 
 	if (file->is_closed) {
-		g_set_error(error, HG_ERROR, EBADF, "%s", g_strerror(EBADF));
+		hg_file_set_error(error, __PRETTY_FUNCTION__, EBADF);
 		return -1;
 	}
 
@@ -1455,7 +1429,7 @@ hg_file_flush(hg_file_t  *file,
 	hg_return_val_with_gerror_if_fail (file->vtable->flush != NULL, FALSE, error);
 
 	if (file->is_closed) {
-		g_set_error(error, HG_ERROR, EBADF, "%s", g_strerror(EBADF));
+		hg_file_set_error(error, __PRETTY_FUNCTION__, EBADF);
 		return FALSE;
 	}
 
@@ -1485,7 +1459,7 @@ hg_file_seek(hg_file_t      *file,
 	hg_return_val_with_gerror_if_fail (file->vtable->seek != NULL, -1, error);
 
 	if (file->is_closed) {
-		g_set_error(error, HG_ERROR, EBADF, "%s", g_strerror(EBADF));
+		hg_file_set_error(error, __PRETTY_FUNCTION__, EBADF);
 		return -1;
 	}
 
@@ -1698,4 +1672,66 @@ hg_file_get_yybuffer(hg_file_t *file)
 	hg_return_val_if_fail (file != NULL, NULL);
 
 	return file->yybuffer;
+}
+
+/**
+ * hg_file_set_error:
+ * @error:
+ * @function:
+ * @errno_:
+ *
+ * FIXME
+ */
+void
+hg_file_set_error(GError      **error,
+		  const gchar  *function,
+		  guint         errno_)
+{
+	hg_vm_error_t e = 0;
+	gchar *msg;
+
+	hg_return_if_fail (error != NULL);
+
+	msg = g_strdup_printf("%s: %s", function, g_strerror(errno_));
+
+	switch (errno_) {
+	    case 0:
+		    /* ??? */
+		    break;
+	    case EACCES:
+	    case EBADF:
+	    case EEXIST:
+	    case ENOTDIR:
+	    case ENOTEMPTY:
+	    case EPERM:
+	    case EROFS:
+		    e = HG_VM_e_invalidaccess;
+		    break;
+	    case EAGAIN:
+	    case EBUSY:
+	    case EIO:
+	    case ENOSPC:
+	    case EINVAL:
+		    e = HG_VM_e_ioerror;
+		    break;
+	    case EMFILE:
+		    e = HG_VM_e_limitcheck;
+		    break;
+	    case ENAMETOOLONG:
+	    case ENODEV:
+	    case ENOENT:
+		    e = HG_VM_e_undefinedfilename;
+		    break;
+	    case ENOMEM:
+		    e = HG_VM_e_VMerror;
+		    break;
+	    default:
+		    g_warning("No matching error code for: %s", msg);
+		    e = HG_VM_e_VMerror;
+		    break;
+	}
+	if (e > 0) {
+		g_set_error(error, HG_ERROR, e, msg);
+	}
+	g_free(msg);
 }

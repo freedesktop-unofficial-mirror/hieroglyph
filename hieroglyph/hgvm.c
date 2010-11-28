@@ -665,7 +665,7 @@ _hg_vm_rs_gc(hg_mem_t    *mem,
 
 	retval = hg_vm_quark_gc_mark(vm, qkey, &err);
 	if (!retval && err == NULL) {
-		g_set_error(&err, HG_ERROR, ENOMEM,
+		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 			    "GC failed");
 	}
 	if (err) {
@@ -1363,7 +1363,7 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 	retval = hg_string_new(hg_vm_get_mem(vm),
 			       65535, (gpointer *)&s);
 	if (retval == Qnil) {
-		g_set_error(&err, HG_ERROR, ENOMEM,
+		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 			    "Out of memory.");
 		goto error;
 	}
@@ -1404,7 +1404,7 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 						    hg_operator_get_name(qdata));
 			    break;
 		    default:
-			    g_set_error(&err, HG_ERROR, EINVAL,
+			    g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 					"Unknown simple object type: %d",
 					hg_quark_get_type(qdata));
 			    goto error;
@@ -1448,7 +1448,7 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 				    }
 				    break;
 			    default:
-				    g_set_error(&err, HG_ERROR, EINVAL,
+				    g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 						"Unknown complex object type: %d",
 						hg_quark_get_type(qdata));
 				    goto error;
@@ -1458,7 +1458,7 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
   error:
 	if (retval != Qnil) {
 		if (!hg_string_fix_string_size(s)) {
-			g_set_error(&err, HG_ERROR, ENOMEM,
+			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 				    "Out of memory");
 		}
 		if (ret)
@@ -3082,7 +3082,7 @@ hg_vm_eval_from_cstring(hg_vm_t      *vm,
 				  str, clen + 1);
 	g_free(str);
 	if (qstring == Qnil) {
-		g_set_error(&err, HG_ERROR, ENOMEM,
+		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 			    "Out of memory");
 		goto error;
 	}
@@ -3719,7 +3719,7 @@ hg_vm_set_error(hg_vm_t       *vm,
 	qnerrordict = HG_QNAME (vm->name, "errordict");
 	qerrordict = hg_vm_dict_lookup(vm, qnerrordict);
 	if (qerrordict == Qnil) {
-		g_set_error(&err, HG_ERROR, EINVAL,
+		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 			    "Unable to lookup errordict");
 		goto fatal_error;
 	}
@@ -3731,7 +3731,7 @@ hg_vm_set_error(hg_vm_t       *vm,
 	_HG_VM_UNLOCK (vm, qerrordict);
 
 	if (qhandler == Qnil) {
-		g_set_error(&err, HG_ERROR, EINVAL,
+		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 			    "Unale to obtain the error handler for %s",
 			    hg_name_lookup(vm->name, vm->qerror_name[error]));
 		goto fatal_error;
@@ -3777,36 +3777,10 @@ hg_vm_set_error_from_gerror(hg_vm_t    *vm,
 	if (error == NULL) {
 		/* no error */
 	} else {
-		switch (error->code) {
-		    case 0:
-			    /* ??? */
-			    break;
-		    case EACCES:
-		    case EBADF:
-		    case EEXIST:
-		    case ENOTDIR:
-		    case ENOTEMPTY:
-		    case EPERM:
-		    case EROFS:
-			    return hg_vm_set_error(vm, qdata, HG_VM_e_invalidaccess);
-		    case EAGAIN:
-		    case EBUSY:
-		    case EIO:
-		    case ENOSPC:
-			    return hg_vm_set_error(vm, qdata, HG_VM_e_ioerror);
-		    case EMFILE:
-			    return hg_vm_set_error(vm, qdata, HG_VM_e_limitcheck);
-		    case ENAMETOOLONG:
-		    case ENODEV:
-		    case ENOENT:
-			    return hg_vm_set_error(vm, qdata, HG_VM_e_undefinedfilename);
-		    case ENOMEM:
-			    return hg_vm_set_error(vm, qdata, HG_VM_e_VMerror);
-		    default:
-			    g_warning("No matching error code for: %s (code: %d)",
-				      error->message, error->code);
-			    return hg_vm_set_error(vm, qdata, HG_VM_e_VMerror);
-		}
+#ifdef HG_DEBUG
+		g_warning("%s", error->message);
+#endif
+		return hg_vm_set_error(vm, qdata, error->code);
 	}
 
 	return TRUE;

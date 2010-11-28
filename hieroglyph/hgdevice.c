@@ -195,7 +195,7 @@ hg_device_fill(hg_device_t  *device,
 		hg_quark_t qpath = hg_path_new(gstate->o.mem, NULL);
 
 		if (qpath == Qnil) {
-			g_set_error(&err, HG_ERROR, ENOMEM,
+			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 				    "Out of memory.");
 			retval = FALSE;
 		} else {
@@ -244,7 +244,7 @@ hg_device_stroke(hg_device_t  *device,
 		hg_quark_t qpath = hg_path_new(gstate->o.mem, NULL);
 
 		if (qpath == Qnil) {
-			g_set_error(&err, HG_ERROR, ENOMEM,
+			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 				    "Out of memory.");
 			retval = FALSE;
 		} else {

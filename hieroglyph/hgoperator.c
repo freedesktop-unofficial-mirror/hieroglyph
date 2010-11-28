@@ -6550,7 +6550,7 @@ _hg_operator_restore_mark_traverse(hg_mem_t    *mem,
 	hg_mem_t *m = hg_mem_get(id);
 
 	if (m == NULL) {
-		g_set_error(error, HG_ERROR, EINVAL,
+		g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
 			    "No memory spool found");
 		return FALSE;
 	}
@@ -9556,10 +9556,10 @@ hg_operator_invoke(hg_quark_t   qoper,
 
 	if (__hg_operator_func_table[q] == NULL) {
 		if (__hg_operator_name_table[q] == NULL) {
-			g_set_error(&err, HG_ERROR, EINVAL,
+			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 				    "Invalid operators - quark: %lx", qoper);
 		} else {
-			g_set_error(&err, HG_ERROR, EINVAL,
+			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 				    "%s operator isn't yet implemented.",
 				    __hg_operator_name_table[q]);
 		}

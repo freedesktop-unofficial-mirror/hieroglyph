@@ -875,7 +875,7 @@ _hg_allocator_gc_mark(hg_allocator_data_t  *data,
 		}
 		_hg_allocator_real_unlock_object(block);
 	} else {
-		g_set_error(&err, HG_ERROR, EINVAL,
+		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 			    "%lx isn't an allocated object from this spool", index_);
 	}
 	if (err) {

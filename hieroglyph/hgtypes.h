@@ -128,6 +128,41 @@ typedef gboolean (* hg_dict_traverse_func_t) (hg_mem_t    *mem,
 					      gpointer     data,
 					      GError     **error);
 
+/* hgerror.h */
+typedef enum _hg_vm_error_t		hg_vm_error_t;
+
+enum _hg_vm_error_t {
+	HG_VM_e_dictfull = 1,
+	HG_VM_e_dictstackoverflow,
+	HG_VM_e_dictstackunderflow,
+	HG_VM_e_execstackoverflow,
+	HG_VM_e_handleerror,
+	HG_VM_e_interrupt,
+	HG_VM_e_invalidaccess,
+	HG_VM_e_invalidexit,
+	HG_VM_e_invalidfileaccess,
+	HG_VM_e_invalidfont,
+	HG_VM_e_invalidrestore,
+	HG_VM_e_ioerror,
+	HG_VM_e_limitcheck,
+	HG_VM_e_nocurrentpoint,
+	HG_VM_e_rangecheck,
+	HG_VM_e_stackoverflow,
+	HG_VM_e_stackunderflow,
+	HG_VM_e_syntaxerror,
+	HG_VM_e_timeout,
+	HG_VM_e_typecheck,
+	HG_VM_e_undefined,
+	HG_VM_e_undefinedfilename,
+	HG_VM_e_undefinedresult,
+	HG_VM_e_unmatchedmark,
+	HG_VM_e_unregistered,
+	HG_VM_e_VMerror,
+	HG_VM_e_configurationerror,
+	HG_VM_e_undefinedresource,
+	HG_VM_e_END
+};
+
 /* hggstate.h */
 typedef struct _hg_gstate_t		hg_gstate_t;
 

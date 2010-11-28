@@ -152,7 +152,7 @@ HEXDIGITS	[0-9a-fA-F]
 								   string->len,
 								   NULL);
 			if (scanner->result == Qnil) {
-				g_set_error(error, HG_ERROR, ENOMEM,
+				g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
 					    "Out of memory");
 				retval = FALSE;
 				/* yyterminate(); */
@@ -170,7 +170,7 @@ HEXDIGITS	[0-9a-fA-F]
 		       "%o",
 		       &result);
 		if (result > 0xff) {
-			g_set_error(error, HG_ERROR, ERANGE,
+			g_set_error(error, HG_ERROR, HG_VM_e_syntaxerror,
 				    "Octadecimal code is too big");
 			g_string_free(string, TRUE);
 			yyterminate();
@@ -178,7 +178,7 @@ HEXDIGITS	[0-9a-fA-F]
 		g_string_append_c(string, result);
 	}
 	\\[0-9]+	{
-		g_set_error(error, HG_ERROR, EINVAL,
+		g_set_error(error, HG_ERROR, HG_VM_e_syntaxerror,
 			    "bad octal sequence");
 		g_string_free(string, TRUE);
 		yyterminate();
@@ -208,7 +208,7 @@ HEXDIGITS	[0-9a-fA-F]
 		g_string_append_len(string, yytext, yyleng);
 	}
 	<<EOF>>		{
-		g_set_error(error, HG_ERROR, EINVAL,
+		g_set_error(error, HG_ERROR, HG_VM_e_syntaxerror,
 			    "Reached the end of the file during scanning the string");
 		g_string_free(string, TRUE);
 		yyterminate();
@@ -229,7 +229,7 @@ HEXDIGITS	[0-9a-fA-F]
 							   string->len,
 							   NULL);
 		if (scanner->result == Qnil) {
-			g_set_error(error, HG_ERROR, ENOMEM,
+			g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
 				    "Out of memory");
 			retval = FALSE;
 			/* yyterminate(); */
@@ -249,7 +249,7 @@ HEXDIGITS	[0-9a-fA-F]
 				g_string_append_c(string, 0);
 				g_string_append_c(string, 0);
 			} else {
-				g_set_error(error, HG_ERROR, EINVAL,
+				g_set_error(error, HG_ERROR, HG_VM_e_syntaxerror,
 					    "Syntax error");
 				g_string_free(string, TRUE);
 				yyterminate();
@@ -265,7 +265,7 @@ HEXDIGITS	[0-9a-fA-F]
 				decoded += (buf_ascii85[3] - 33) * 0x55LL;
 				decoded += (buf_ascii85[4] - 33);
 				if (decoded > G_MAXUINT32) {
-					g_set_error(error, HG_ERROR, EINVAL,
+					g_set_error(error, HG_ERROR, HG_VM_e_syntaxerror,
 						    "Syntax error");
 					g_string_free(string, TRUE);
 					yyterminate();
@@ -279,13 +279,13 @@ HEXDIGITS	[0-9a-fA-F]
 		}
 	}
 	<<EOF>>		{
-		g_set_error(error, HG_ERROR, EINVAL,
+		g_set_error(error, HG_ERROR, HG_VM_e_syntaxerror,
 			    "Reached the end of the file during scanning the hex string");
 		g_string_free(string, TRUE);
 		yyterminate();
 	}
 	.	{
-		g_set_error(error, HG_ERROR, EINVAL,
+		g_set_error(error, HG_ERROR, HG_VM_e_syntaxerror,
 			    "Syntax error");
 		g_string_free(string, TRUE);
 		yyterminate();
@@ -306,7 +306,7 @@ HEXDIGITS	[0-9a-fA-F]
 							   string->len,
 							   NULL);
 		if (scanner->result == Qnil) {
-			g_set_error(error, HG_ERROR, ENOMEM,
+			g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
 				    "Out of memory");
 			retval = FALSE;
 			/* yyterminate(); */
@@ -350,13 +350,13 @@ HEXDIGITS	[0-9a-fA-F]
 		/* ignore */
 	}
 	<<EOF>>		{
-		g_set_error(error, HG_ERROR, EINVAL,
+		g_set_error(error, HG_ERROR, HG_VM_e_syntaxerror,
 			    "Reached the end of the file during scanning the hex string");
 		g_string_free(string, TRUE);
 		yyterminate();
 	}
 	.	{
-		g_set_error(error, HG_ERROR, EINVAL,
+		g_set_error(error, HG_ERROR, HG_VM_e_syntaxerror,
 			    "Syntax error");
 		g_string_free(string, TRUE);
 		yyterminate();
@@ -425,7 +425,7 @@ HEXDIGITS	[0-9a-fA-F]
 			}
 			if ((result > 0 && (result * radix) < 0) ||
 			    (result < 0 && (result * radix) > 0)) {
-				g_set_error(error, HG_ERROR, ERANGE,
+				g_set_error(error, HG_ERROR, HG_VM_e_syntaxerror,
 					    "digit is too big.");
 				g_free(s);
 				yyterminate();
@@ -471,7 +471,7 @@ HEXDIGITS	[0-9a-fA-F]
 			result = -result;
 		if (isinf(result) ||
 		    isnan(result)) {
-			g_set_error(error, HG_ERROR, ERANGE,
+			g_set_error(error, HG_ERROR, HG_VM_e_syntaxerror,
 				    "digit isn't a valid or too big.");
 			yyterminate();
 		}

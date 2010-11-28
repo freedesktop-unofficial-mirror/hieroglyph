@@ -125,7 +125,7 @@ _hg_object_array_copy(hg_object_t              *object,
 		else
 			hg_mem_unlock_object(a->o.mem, retval);
 	} else {
-		g_set_error(&err, HG_ERROR, ENOMEM,
+		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 			    "Out of memory");
 	}
   finalize:
@@ -437,7 +437,7 @@ hg_array_set(hg_array_t  *array,
 	new_length = MAX (index, array->length);
 	if (index >= new_length && new_length >= array->length) {
 		if (!_hg_array_maybe_expand(array, new_length)) {
-			g_set_error(&err, HG_ERROR, ENOMEM,
+			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 				    "Out of memory");
 			retval = FALSE;
 			goto finalize;
@@ -501,7 +501,7 @@ hg_array_get(hg_array_t  *array,
 
 	if (index >= array->length) {
 		if (!_hg_array_maybe_expand(array, index)) {
-			g_set_error(&err, HG_ERROR, ENOMEM,
+			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 				    "Out of memory");
 			retval = Qnil;
 			goto finalize;
@@ -744,7 +744,7 @@ hg_array_make_subarray(hg_array_t  *array,
 
 	retval = hg_array_new(array->o.mem, 0, (gpointer *)&a);
 	if (retval == Qnil) {
-		g_set_error(&err, HG_ERROR, ENOMEM,
+		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 			    "Out of memory");
 		goto error;
 	}

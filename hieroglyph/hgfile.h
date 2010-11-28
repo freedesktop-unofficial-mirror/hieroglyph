@@ -188,6 +188,9 @@ void                    hg_file_set_yybuffer       (hg_file_t                   
                                                     hg_file_yybuffer_finalizer_func_t  func,
 						    gpointer                           user_data);
 gpointer                hg_file_get_yybuffer       (hg_file_t                         *file);
+void                    hg_file_set_error          (GError                           **error,
+						    const gchar                       *function,
+						    guint                              errno_);
 
 
 G_END_DECLS

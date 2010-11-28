@@ -403,7 +403,7 @@ _hg_object_dict_node_gc_mark(hg_object_t           *object,
 	if (qnode_keys == NULL ||
 	    qnode_vals == NULL ||
 	    qnode_nodes == NULL) {
-		g_set_error(&err, HG_ERROR, EINVAL,
+		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 			    "%s: Invalid quark to obtain the actual object in dnode", __PRETTY_FUNCTION__);
 		goto qfinalize;
 	}
@@ -612,7 +612,7 @@ _hg_dict_node_balance(hg_dict_node_t  *node,
 			      (gpointer *)&qnewnode_vals,
 			      (gpointer *)&qnewnode_nodes);
 	if (q == Qnil) {
-		g_set_error(error, HG_ERROR, ENOMEM,
+		g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
 			    "%s: Out of memory.", __PRETTY_FUNCTION__);
 		return;
 	}
@@ -690,7 +690,7 @@ _hg_dict_node_remove(hg_mem_t    *mem,
 					hg_mem_unlock_object(qnode_node->o.mem, qqnode);
 				p = hg_mem_lock_object(qnode_node->o.mem, q);
 				if (p == NULL) {
-					g_set_error(error, HG_ERROR, EINVAL,
+					g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
 						    "%s: Invalid quark to obtain the node in the nodes container object: mem: %p, quark: %" G_GSIZE_FORMAT " in the node %p(q: %" G_GSIZE_FORMAT ")",
 						    __PRETTY_FUNCTION__, mem, q, qtnode, qqnode != Qnil ? qqnode : qnode_nodes[i + 1]);
 					retval = FALSE;
@@ -1051,7 +1051,7 @@ hg_dict_add(hg_dict_t   *dict,
 					  (gpointer *)&qnode_vals,
 					  (gpointer *)&qnode_nodes);
 		if (qnode == Qnil) {
-			g_set_error(&err, HG_ERROR, ENOMEM,
+			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 				    "%s: Out of memory",
 				    __PRETTY_FUNCTION__);
 			goto finalize;

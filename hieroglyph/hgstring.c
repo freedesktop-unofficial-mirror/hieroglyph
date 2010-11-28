@@ -96,7 +96,7 @@ _hg_object_string_copy(hg_object_t              *object,
 	retval = HG_QSTRING_LEN (s->o.mem, cstr, hg_string_length(s));
 	g_free(cstr);
 	if (retval == Qnil) {
-		g_set_error(&err, HG_ERROR, ENOMEM,
+		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 			    "Out of memory");
 	}
 	if (err) {
@@ -398,7 +398,7 @@ hg_string_append_c(hg_string_t  *string,
 		string->length++;
 		if (!_hg_string_maybe_expand(string)) {
 			string->length = old_length;
-			g_set_error(&err, HG_ERROR, ENOMEM,
+			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 				    "Out of memory");
 			goto finalize;
 		}
@@ -480,7 +480,7 @@ hg_string_append(hg_string_t  *string,
 		string->length += length;
 		if (!_hg_string_maybe_expand(string)) {
 			string->length = old_length;
-			g_set_error(&err, HG_ERROR, ENOMEM,
+			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 				    "Out of memory");
 			goto finalize;
 		}
@@ -561,7 +561,7 @@ hg_string_overwrite_c(hg_string_t  *string,
 		string->length = index + 1;
 		if (!_hg_string_maybe_expand(string)) {
 			string->length = old_length;
-			g_set_error(&err, HG_ERROR, ENOMEM,
+			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 				    "Out of memory");
 			goto error;
 		}
@@ -915,7 +915,7 @@ hg_string_make_substring(hg_string_t  *string,
 
 	retval = hg_string_new(string->o.mem, 0, (gpointer *)&s);
 	if (retval == Qnil) {
-		g_set_error(&err, HG_ERROR, ENOMEM,
+		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 			    "Out of memory");
 		goto error;
 	}

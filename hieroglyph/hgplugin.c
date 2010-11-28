@@ -29,13 +29,13 @@
 #include "hgmem.h"
 #include "hgplugin.h"
 
-#define CHECK_SYMBOL(_mod_,_sym_,_err_)				\
-	G_STMT_START {						\
-		g_module_symbol(_mod_, #_sym_, &(_sym_));	\
-		if ((_sym_) == NULL) {				\
-			g_set_error(&(_err_), HG_ERROR, EINVAL,	\
-				    g_module_error());		\
-		}						\
+#define CHECK_SYMBOL(_mod_,_sym_,_err_)					\
+	G_STMT_START {							\
+		g_module_symbol(_mod_, #_sym_, &(_sym_));		\
+		if ((_sym_) == NULL) {					\
+			g_set_error(&(_err_), HG_ERROR, HG_VM_e_VMerror, \
+				    g_module_error());			\
+		}							\
 	} G_STMT_END
 
 /*< private >*/
@@ -60,12 +60,12 @@ _hg_plugin_load(hg_mem_t     *mem,
 			retval->module = module;
 		} else {
 			if (err == NULL)
-				g_set_error(&err, HG_ERROR, EINVAL,
+				g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 					    "Unable to create a plugin instance: %s", filename);
 			goto error;
 		}
 	} else {
-		g_set_error(&err, HG_ERROR, ENOENT,
+		g_set_error(&err, HG_ERROR, HG_VM_e_undefinedfilename,
 			    g_module_error());
 	}
   error:
@@ -124,7 +124,7 @@ hg_plugin_open(hg_mem_t          *mem,
 		    modulename = g_strdup_printf("libdevice-%s.so", realname);
 		    break;
 	    default:
-		    g_set_error(&err, HG_ERROR, EINVAL,
+		    g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 				"Unknown plugin type: %d", type);
 		    goto error;
 	}
@@ -166,7 +166,7 @@ hg_plugin_open(hg_mem_t          *mem,
 			g_clear_error(&err);
 	}
 	if (retval == NULL) {
-		g_set_error(&err, HG_ERROR, ENOENT,
+		g_set_error(&err, HG_ERROR, HG_VM_e_undefinedfilename,
 			    "No such %s plugins found: %s",
 			    typename[type],
 			    realname);
@@ -266,7 +266,7 @@ hg_plugin_load(hg_plugin_t  *plugin,
 		plugin->is_loaded = TRUE;
 	} else {
 		if (err == NULL) {
-			g_set_error(&err, HG_ERROR, EINVAL,
+			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 				    "Unable to load a plugin: %s",
 				    g_module_name(plugin->module));
 		}
@@ -312,7 +312,7 @@ hg_plugin_unload(hg_plugin_t  *plugin,
 		plugin->is_loaded = FALSE;
 	} else {
 		if (err == NULL) {
-			g_set_error(&err, HG_ERROR, EINVAL,
+			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 				    "Unable to unload a plugin: %s",
 				    g_module_name(plugin->module));
 		}
