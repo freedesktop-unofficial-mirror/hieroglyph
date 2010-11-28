@@ -76,44 +76,50 @@ struct _hg_gstate_t {
 	hg_object_t   o;
 	hg_quark_t    qpath;
 	hg_quark_t    qclippath;
+	hg_quark_t    qdashpattern;
 	hg_matrix_t   ctm;
 	hg_color_t    color;
 	hg_linecap_t  linecap;
 	hg_linejoin_t linejoin;
 	gdouble       linewidth;
 	gdouble       miterlen;
+	gdouble       dash_offset;
 	gboolean      is_snapshot:1;
 };
 
 hg_object_vtable_t *hg_object_gstate_get_vtable(void) G_GNUC_CONST;
-hg_quark_t          hg_gstate_new              (hg_mem_t      *mem,
-                                                gpointer      *ret);
-void                hg_gstate_set_ctm          (hg_gstate_t   *gstate,
-						hg_matrix_t   *matrix);
-void                hg_gstate_get_ctm          (hg_gstate_t   *gstate,
-						hg_matrix_t   *matrix);
-void                hg_gstate_set_path         (hg_gstate_t   *gstate,
-                                                hg_quark_t     qpath);
-hg_quark_t          hg_gstate_get_path         (hg_gstate_t   *gstate);
-void                hg_gstate_set_clippath     (hg_gstate_t   *gstate,
-                                                hg_quark_t     qpath);
-hg_quark_t          hg_gstate_get_clippath     (hg_gstate_t   *gstate);
-hg_quark_t          hg_gstate_save             (hg_gstate_t   *gstate,
-						hg_quark_t     is_snapshot);
-void                hg_gstate_set_rgbcolor     (hg_gstate_t   *gstate,
-						gdouble        red,
-						gdouble        green,
-						gdouble        blue);
-void                hg_gstate_set_graycolor    (hg_gstate_t   *gstate,
-						gdouble        gray);
-void                hg_gstate_set_linewidth    (hg_gstate_t   *gstate,
-						gdouble        width);
-void                hg_gstate_set_linecap      (hg_gstate_t   *gstate,
-						hg_linecap_t   linecap);
-void                hg_gstate_set_linejoin     (hg_gstate_t   *gstate,
-						hg_linejoin_t  linejoin);
-gboolean            hg_gstate_set_miterlimit   (hg_gstate_t   *gstate,
-						gdouble        miterlen);
+hg_quark_t          hg_gstate_new              (hg_mem_t       *mem,
+                                                gpointer       *ret);
+void                hg_gstate_set_ctm          (hg_gstate_t    *gstate,
+						hg_matrix_t    *matrix);
+void                hg_gstate_get_ctm          (hg_gstate_t    *gstate,
+						hg_matrix_t    *matrix);
+void                hg_gstate_set_path         (hg_gstate_t    *gstate,
+                                                hg_quark_t      qpath);
+hg_quark_t          hg_gstate_get_path         (hg_gstate_t    *gstate);
+void                hg_gstate_set_clippath     (hg_gstate_t    *gstate,
+                                                hg_quark_t      qpath);
+hg_quark_t          hg_gstate_get_clippath     (hg_gstate_t    *gstate);
+hg_quark_t          hg_gstate_save             (hg_gstate_t    *gstate,
+						hg_quark_t      is_snapshot);
+void                hg_gstate_set_rgbcolor     (hg_gstate_t    *gstate,
+						gdouble         red,
+						gdouble         green,
+						gdouble         blue);
+void                hg_gstate_set_graycolor    (hg_gstate_t    *gstate,
+						gdouble         gray);
+void                hg_gstate_set_linewidth    (hg_gstate_t    *gstate,
+						gdouble         width);
+void                hg_gstate_set_linecap      (hg_gstate_t    *gstate,
+						hg_linecap_t    linecap);
+void                hg_gstate_set_linejoin     (hg_gstate_t    *gstate,
+						hg_linejoin_t   linejoin);
+gboolean            hg_gstate_set_miterlimit   (hg_gstate_t    *gstate,
+						gdouble         miterlen);
+gboolean            hg_gstate_set_dash         (hg_gstate_t    *gstate,
+						hg_quark_t      qpattern,
+						gdouble         offset,
+						GError        **error);
 
 
 G_END_DECLS

@@ -25,6 +25,8 @@
 #include "config.h"
 #endif
 
+#include "hgarray.h"
+#include "hgint.h"
 #include "hgmem.h"
 #include "hggstate.h"
 
@@ -74,11 +76,14 @@ _hg_object_gstate_copy(hg_object_t              *object,
 
 	object->on_copying = retval = hg_gstate_new(gstate->o.mem, (gpointer *)&g);
 	if (retval != Qnil) {
-		memcpy(&g->color, &gstate->color, sizeof (hg_color_t));
+		memcpy(&g->ctm, &gstate->ctm, sizeof (hg_gstate_t) - sizeof (hg_object_t) - (sizeof (hg_quark_t) * 3));
 		g->qpath = func(gstate->qpath, user_data, NULL, &err);
 		if (err)
 			goto finalize;
 		g->qclippath = func(gstate->qclippath, user_data, NULL, &err);
+		if (err)
+			goto finalize;
+		g->qdashpattern = func(gstate->qdashpattern, user_data, NULL, &err);
 		if (err)
 			goto finalize;
 
@@ -479,4 +484,73 @@ hg_gstate_set_miterlimit(hg_gstate_t *gstate,
 	gstate->miterlen = miterlen;
 
 	return TRUE;
+}
+
+/**
+ * hg_gstate_set_dash:
+ * @gstate:
+ * @qpattern:
+ * @offset:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_gstate_set_dash(hg_gstate_t  *gstate,
+		   hg_quark_t    qpattern,
+		   gdouble       offset,
+		   GError      **error)
+{
+	hg_array_t *a;
+	hg_mem_t *mem;
+	guint id;
+	gsize i;
+	gboolean is_zero = TRUE;
+
+	hg_return_val_with_gerror_if_fail (gstate != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (HG_IS_QARRAY (qpattern), FALSE, error, HG_VM_e_typecheck);
+	hg_return_val_if_fail(error != NULL, FALSE);
+
+	id = hg_quark_get_mem_id(qpattern);
+
+	hg_return_val_with_gerror_if_fail ((mem = hg_mem_get(id)) != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_lock_fail (a, mem, qpattern, error, FALSE);
+
+	if (hg_array_length(a) > 11) {
+		g_set_error(error, HG_ERROR, HG_VM_e_limitcheck,
+			    "pattern array is too big.");
+		goto finalize;
+	}
+	if (hg_array_length(a) > 0) {
+		for (i = 0; i < hg_array_length(a); i++) {
+			hg_quark_t q = hg_array_get(a, i, error);
+
+			if (*error != NULL)
+				return FALSE;
+			if (HG_IS_QINT (q)) {
+				if (HG_INT (q) != 0)
+					is_zero = FALSE;
+			} else if (HG_IS_QREAL (q)) {
+				if (!HG_REAL_IS_ZERO (q))
+					is_zero = FALSE;
+			} else {
+				g_set_error(error, HG_ERROR, HG_VM_e_typecheck,
+					    "pattern contains non-numeric.");
+				goto finalize;
+			}
+		}
+		if (is_zero) {
+			g_set_error(error, HG_ERROR, HG_VM_e_rangecheck,
+				    "no patterns");
+			goto finalize;
+		}
+	}
+
+	gstate->qdashpattern = qpattern;
+	gstate->dash_offset = offset;
+  finalize:
+	hg_mem_unlock_object(mem, qpattern);
+
+	return *error == NULL;
 }

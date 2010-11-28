@@ -6981,7 +6981,52 @@ DEFUNC_UNIMPLEMENTED_OPER (setcolorrendering);
 DEFUNC_UNIMPLEMENTED_OPER (setcolorscreen);
 DEFUNC_UNIMPLEMENTED_OPER (setcolorspace);
 DEFUNC_UNIMPLEMENTED_OPER (setcolortransfer);
-DEFUNC_UNIMPLEMENTED_OPER (setdash);
+
+/* <array> <offset> setdash - */
+DEFUNC_OPER (setdash)
+G_STMT_START {
+	hg_quark_t arg0, arg1, qg = hg_vm_get_gstate(vm);
+	hg_gstate_t *gstate = NULL;
+	gdouble offset;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+
+	if (!HG_IS_QARRAY (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (HG_IS_QINT (arg1)) {
+		offset = HG_INT (arg1);
+	} else if (HG_IS_QREAL (arg1)) {
+		offset = HG_REAL (arg1);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	gstate = HG_VM_LOCK (vm, qg, error);
+	if (gstate == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+
+	if (!hg_gstate_set_dash(gstate, arg0, offset, error)) {
+		hg_vm_set_error_from_gerror(vm, qself, *error);
+		goto finalize;
+	}
+
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+
+	retval = TRUE;
+  finalize:
+	HG_VM_UNLOCK (vm, qg);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-2, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (setdevparams);
 DEFUNC_UNIMPLEMENTED_OPER (setfileposition);
 DEFUNC_UNIMPLEMENTED_OPER (setflat);
