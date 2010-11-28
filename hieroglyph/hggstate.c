@@ -440,3 +440,20 @@ hg_gstate_set_linecap(hg_gstate_t  *gstate,
 
 	gstate->linecap = linecap;
 }
+
+/**
+ * hg_gstate_set_linejoin:
+ * @gstate:
+ * @linejoin:
+ *
+ * FIXME
+ */
+void
+hg_gstate_set_linejoin(hg_gstate_t   *gstate,
+		       hg_linejoin_t  linejoin)
+{
+	hg_return_if_fail (gstate != NULL);
+	hg_return_if_fail (linejoin >= 0 && linejoin < HG_LINEJOIN_END);
+
+	gstate->linejoin = linejoin;
+}

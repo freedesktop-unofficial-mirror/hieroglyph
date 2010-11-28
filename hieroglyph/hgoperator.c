@@ -7065,7 +7065,40 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
-DEFUNC_UNIMPLEMENTED_OPER (setlinejoin);
+/* <int> setlinejoin - */
+DEFUNC_OPER (setlinejoin)
+G_STMT_START {
+	hg_quark_t arg0, qg = hg_vm_get_gstate(vm);
+	hg_gstate_t *gstate;
+	gint32 i;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+
+	if (!HG_IS_QINT (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	i = HG_INT (arg0);
+	if (i < 0 || i > 2) {
+		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		return FALSE;
+	}
+	gstate = HG_VM_LOCK (vm, qg, error);
+	if (gstate == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	hg_gstate_set_linejoin(gstate, i);
+
+	hg_stack_drop(ostack, error);
+	HG_VM_UNLOCK (vm, qg);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
 
 /* <num> setlinewidth - */
 DEFUNC_OPER (setlinewidth)
