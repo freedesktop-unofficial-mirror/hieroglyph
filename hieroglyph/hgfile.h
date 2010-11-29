@@ -117,7 +117,8 @@ struct _hg_file_t {
 };
 struct _hg_file_io_data_t {
 	hg_quark_t           self;
-	hg_gc_iterate_func_t func;
+	hg_gc_iterate_func_t gc_func;
+	hg_destroy_func_t    destroy_func;
 	gboolean             is_eof;
 	gint                 fd;
 	gpointer             mmapped_buffer;
