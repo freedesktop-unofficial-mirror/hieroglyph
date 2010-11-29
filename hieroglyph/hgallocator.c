@@ -1009,7 +1009,7 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t    *data,
 {
 	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
 	hg_allocator_snapshot_private_t *spriv = (hg_allocator_snapshot_private_t *)snapshot;
-	gsize i, j;
+	guint32 i, j;
 	gboolean retval = FALSE;
 
 	if (spriv->age >= priv->snapshot_age)
@@ -1055,7 +1055,7 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t    *data,
 								 NULL) ||
 				    b1->lock_count > 0) {
 #if defined (HG_DEBUG) && defined (HG_SNAPSHOT_DEBUG)
-					g_print("SN: detected newly allocated block: [page: %d, index: %d]n", i, j + 1);
+					g_print("SN: detected newly allocated block: [page: %d, index: %d]\n", i, j + 1);
 #endif
 					goto error;
 				}
@@ -1072,7 +1072,7 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t    *data,
 				for (k = j + 1; check_size > 0 && k < priv->bitmap->size[i]; k++) {
 					if (_hg_allocator_bitmap_is_marked(priv->bitmap, i, k + 1)) {
 #if defined (HG_DEBUG) && defined (HG_SNAPSHOT_DEBUG)
-						g_print("SN: detected newly allocated block: [page: %d, index: %d] - [size: %" G_GSIZE_FORMAT "]\n", i, k + 1, b2->size);
+						g_print("SN: detected newly allocated block: [page: %d, index: %" G_GSIZE_FORMAT "] - [size: %" G_GSIZE_FORMAT "]\n", i, k + 1, b2->size);
 #endif
 						goto error;
 					}
