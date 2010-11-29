@@ -135,6 +135,8 @@ _hg_object_gstate_gc_mark(hg_object_t           *object,
 		goto finalize;
 	if (!func(gstate->qclippath, user_data, &err))
 		goto finalize;
+	if (!func(gstate->qdashpattern, user_data, &err))
+		goto finalize;
 
   finalize:
 	if (err) {
