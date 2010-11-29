@@ -190,6 +190,7 @@ hg_snapshot_restore(hg_snapshot_t *snapshot,
 	hg_return_val_if_fail (snapshot != NULL, FALSE);
 	hg_return_val_if_fail (snapshot->snapshot != NULL, FALSE);
 
+	hg_mem_collect_garbage(snapshot->o.mem);
 	retval = hg_mem_restore_snapshot(snapshot->o.mem,
 					 snapshot->snapshot,
 					 func,
