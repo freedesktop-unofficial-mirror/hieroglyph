@@ -30,5 +30,10 @@ for i in $(dirname $0)/../plugins/*; do
 	export HIEROGLYPH_PLUGIN_PATH=$i/.libs:$HIEROGLYPH_PLUGIN_PATH
     fi
 done
+for i in $(dirname $0)/../devices/*; do
+    if test -d $i && test -d $i/.libs; then
+	export HIEROGLYPH_DEVICE_PATH=$i/.libs:$HIEROGLYPH_DEVICE_PATH
+    fi
+done
 export LD_LIBRARY_PATH="`dirname $0`/../hieroglyph/.libs:$LD_LIBRARY_PATH"
 $@
