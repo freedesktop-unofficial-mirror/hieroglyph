@@ -237,6 +237,10 @@ systemdict /.statementedit known {
     10 setmiterlimit
     [] 0 setdash
 } bind odef
+% - initmatrix -
+/initmatrix {
+    6 array defaultmatrix setmatrix
+} bind odef
 % -key- load -value-
 /load {
     dup where {
@@ -506,6 +510,9 @@ userdict begin
 %% almost initialization finished here
 %% and allows 'end' operator to be described now.
 %%
+
+%% apply the parameters from the command line
+userdict .applyparams
 
 %% initialize $error dictionary
 %   $error is a built-in dictionary on hieroglyph.

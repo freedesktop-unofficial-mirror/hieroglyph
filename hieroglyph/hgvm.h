@@ -98,6 +98,7 @@ struct _hg_vm_t {
 	gint                 error_code;
 	guint                qattributes;
 	guint                n_nest_scan;
+	GHashTable          *params;
 	GHashTable          *plugin_table;
 	GList               *plugin_list;
 	GRand               *rand_;
@@ -278,6 +279,14 @@ gboolean           hg_vm_remove_plugin               (hg_vm_t                 *v
                                                       const gchar             *name,
                                                       GError                 **error);
 void               hg_vm_unload_plugins              (hg_vm_t                 *vm);
+void               hg_vm_add_param                   (hg_vm_t                 *vm,
+						      const gchar             *name,
+						      hg_vm_value_t           *value);
+void               hg_vm_value_free                  (gpointer                 data);
+hg_vm_value_t     *hg_vm_value_boolean_new           (gboolean                 value);
+hg_vm_value_t     *hg_vm_value_integer_new           (gint32                   value);
+hg_vm_value_t     *hg_vm_value_real_new              (gdouble                  value);
+hg_vm_value_t     *hg_vm_value_string_new            (const gchar             *value);
 
 G_END_DECLS
 

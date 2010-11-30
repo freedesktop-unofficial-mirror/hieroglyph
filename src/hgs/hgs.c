@@ -38,10 +38,11 @@ _hgs_arg_define_cb(const gchar  *option_name,
 {
 	gboolean retval = FALSE;
 	hg_vm_t *vm G_GNUC_UNUSED = data;
+	hg_vm_value_t *v;
 
 	if (value && *value) {
-		/* XXX */
-		g_print("%s\n", value);
+		v = hg_vm_value_boolean_new(TRUE);
+		hg_vm_add_param(vm, value, v);
 		retval = TRUE;
 	}
 

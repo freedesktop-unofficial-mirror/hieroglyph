@@ -52,6 +52,7 @@ static gboolean __hg_operator_is_initialized = FALSE;
 
 /*< private >*/
 PROTO_OPER (private_abort);
+PROTO_OPER (private_applyparams);
 PROTO_OPER (private_clearerror);
 PROTO_OPER (private_exit);
 PROTO_OPER (private_findlibfile);
@@ -487,6 +488,65 @@ G_STMT_START {
 	abort();
 } G_STMT_END;
 VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
+/* <dict> .applyparams - */
+DEFUNC_OPER (private_applyparams)
+G_STMT_START {
+	hg_quark_t arg0;
+	hg_dict_t *d;
+	GList *l, *keys;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+	if (!HG_IS_QDICT (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	d = HG_VM_LOCK (vm, arg0, error);
+	if (d == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	keys = g_hash_table_get_keys(vm->params);
+	for (l = keys; l != NULL; l = g_list_next(l)) {
+		gchar *name = l->data;
+		hg_quark_t qn = HG_QNAME (vm->name, name);
+
+		if (hg_dict_lookup(d, qn, error) == Qnil) {
+			/* only add the value not in the dictionary yet */
+			hg_vm_value_t *v = g_hash_table_lookup(vm->params, name);
+			hg_quark_t q = Qnil;
+
+			switch (v->type) {
+			    case HG_TYPE_BOOL:
+				    q = HG_QBOOL (v->u.bool);
+				    break;
+			    case HG_TYPE_INT:
+				    q = HG_QINT (v->u.integer);
+				    break;
+			    case HG_TYPE_REAL:
+				    q = HG_QREAL (v->u.real);
+				    break;
+			    case HG_TYPE_STRING:
+				    q = HG_QSTRING (hg_vm_get_mem(vm), v->u.string);
+				    break;
+			    default:
+				    g_warning("Unknown parameter type: %d", v->type);
+				    break;
+			}
+			if (q != Qnil)
+				hg_dict_add(d, qn, q, error);
+		}
+	}
+	g_list_free(keys);
+
+	hg_stack_drop(ostack, error);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
 /* - .clearerror - */
@@ -8298,6 +8358,7 @@ _hg_operator_level1_register(hg_vm_t   *vm,
 	REG_VALUE (dict, name, ], HG_QEVALNAME (name, "%arraytomark"));
 
 	REG_PRIV_OPER (dict, name, .abort, private_abort);
+	REG_PRIV_OPER (dict, name, .applyparams, private_applyparams);
 	REG_PRIV_OPER (dict, name, .clearerror, private_clearerror);
 	REG_PRIV_OPER (dict, name, .dicttomark, protected_dicttomark);
 	REG_PRIV_OPER (dict, name, .exit, private_exit);
@@ -8755,6 +8816,7 @@ hg_operator_init(void)
 	} G_STMT_END
 
 	DECL_PRIV_OPER (.abort, private_abort);
+	DECL_PRIV_OPER (.applyparams, private_applyparams);
 	DECL_PRIV_OPER (.clearerror, private_clearerror);
 	DECL_PRIV_OPER (.exit, private_exit);
 	DECL_PRIV_OPER (.findlibfile, private_findlibfile);
@@ -9153,6 +9215,7 @@ hg_operator_tini(void)
 	} G_STMT_END
 
 	UNDECL_OPER (private_abort);
+	UNDECL_OPER (private_applyparams);
 	UNDECL_OPER (private_clearerror);
 	UNDECL_OPER (private_exit);
 	UNDECL_OPER (private_findlibfile);

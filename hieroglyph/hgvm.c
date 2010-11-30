@@ -963,6 +963,8 @@ hg_vm_new(void)
 	g_rand_set_seed(retval->rand_, retval->rand_seed);
 	g_get_current_time(&retval->initiation_time);
 
+	retval->params = g_hash_table_new_full(g_str_hash, g_str_equal,
+					       g_free, hg_vm_value_free);
 	retval->plugin_table = g_hash_table_new_full(g_str_hash, g_str_equal,
 						     g_free, NULL);
 	retval->mem[HG_VM_MEM_GLOBAL] = hg_mem_new(HG_VM_GLOBAL_MEM_SIZE);
@@ -1076,7 +1078,10 @@ hg_vm_destroy(hg_vm_t *vm)
 	hg_return_if_fail (vm != NULL);
 	gsize i;
 
+	if (vm->device)
+		hg_device_close(vm->device);
 	hg_scanner_destroy(vm->scanner);
+	hg_lineedit_destroy(vm->lineedit);
 	for (i = 0; i < HG_VM_STACK_END; i++) {
 		if (vm->stacks[i])
 			hg_stack_free(vm->stacks[i]);
@@ -1090,6 +1095,8 @@ hg_vm_destroy(hg_vm_t *vm)
 	}
 	if (vm->stacks_stack)
 		g_ptr_array_free(vm->stacks_stack, TRUE);
+	if (vm->params)
+		g_hash_table_destroy(vm->params);
 	if (vm->plugin_table)
 		g_hash_table_destroy(vm->plugin_table);
 	if (vm->plugin_list)
@@ -3987,4 +3994,129 @@ hg_vm_unload_plugins(hg_vm_t *vm)
 	g_list_free(lk);
 	g_list_free(vm->plugin_list);
 	vm->plugin_list = NULL;
+}
+
+/**
+ * hg_vm_add_param:
+ * @vm:
+ * @name:
+ * @value:
+ *
+ * FIXME
+ */
+void
+hg_vm_add_param(hg_vm_t       *vm,
+		const gchar   *name,
+		hg_vm_value_t *value)
+{
+	hg_return_if_fail (vm != NULL);
+	hg_return_if_fail (name != NULL);
+	hg_return_if_fail (value != NULL);
+
+	g_hash_table_insert(vm->params, g_strdup(name), value);
+}
+
+/**
+ * hg_vm_value_free:
+ * @data:
+ *
+ * FIXME
+ */
+void
+hg_vm_value_free(gpointer data)
+{
+	hg_vm_value_t *v = (hg_vm_value_t *)data;
+
+	if (v->type == HG_TYPE_STRING)
+		g_free(v->u.string);
+
+	g_free(v);
+}
+
+/**
+ * hg_vm_value_boolean_new:
+ * @value:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_vm_value_t *
+hg_vm_value_boolean_new(gboolean value)
+{
+	hg_vm_value_t *retval;
+
+	retval = g_new(hg_vm_value_t, 1);
+	if (retval) {
+		retval->type = HG_TYPE_BOOL;
+		retval->u.bool = value;
+	}
+
+	return retval;
+}
+
+/**
+ * hg_vm_value_integer_new:
+ * @value:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_vm_value_t *
+hg_vm_value_integer_new(gint32 value)
+{
+	hg_vm_value_t *retval;
+
+	retval = g_new(hg_vm_value_t, 1);
+	if (retval) {
+		retval->type = HG_TYPE_INT;
+		retval->u.integer = value;
+	}
+
+	return retval;
+}
+
+/**
+ * hg_vm_value_real_new:
+ * @value:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_vm_value_t *
+hg_vm_value_real_new(gdouble value)
+{
+	hg_vm_value_t *retval;
+
+	retval = g_new(hg_vm_value_t, 1);
+	if (retval) {
+		retval->type = HG_TYPE_REAL;
+		retval->u.real = value;
+	}
+
+	return retval;
+}
+
+/**
+ * hg_vm_value_string_new:
+ * @value:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_vm_value_t *
+hg_vm_value_string_new(const gchar *value)
+{
+	hg_vm_value_t *retval;
+
+	retval = g_new(hg_vm_value_t, 1);
+	if (retval) {
+		retval->type = HG_TYPE_STRING;
+		retval->u.string = g_strdup(value);
+	}
+
+	return retval;
 }

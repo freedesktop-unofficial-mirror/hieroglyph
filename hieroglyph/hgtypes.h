@@ -173,6 +173,8 @@ typedef struct _hg_name_t		hg_name_t;
 typedef gboolean (* hg_gc_iterate_func_t)	(hg_quark_t   qdata,
 						 gpointer     user_data,
 						 GError     **error);
+typedef void (* hg_destroy_func_t)		(hg_mem_t    *mem,
+						 gpointer     user_data);
 
 /* hgpath.h */
 typedef struct _hg_path_t		hg_path_t;
@@ -186,6 +188,7 @@ typedef enum _hg_vm_mem_type_t		hg_vm_mem_type_t;
 typedef struct _hg_vm_state_t		hg_vm_state_t;
 typedef enum _hg_vm_langlevel_t		hg_vm_langlevel_t;
 typedef struct _hg_vm_user_params_t	hg_vm_user_params_t;
+typedef struct _hg_vm_value_t		hg_vm_value_t;
 
 enum _hg_vm_mem_type_t {
 	HG_VM_MEM_GLOBAL = 0,
@@ -201,6 +204,15 @@ enum _hg_vm_langlevel_t {
 struct _hg_vm_state_t {
 	hg_vm_mem_type_t current_mem_index;
 	gint             n_save_objects;
+};
+struct _hg_vm_value_t {
+	gint type;
+	union {
+		gboolean  bool;
+		gint32    integer;
+		gdouble   real;
+		gchar    *string;
+	} u;
 };
 
 /**/
@@ -716,6 +728,7 @@ enum _hg_system_encoding_t {
 	HG_enc_eexec,
 
 	HG_enc_private_abort,
+	HG_enc_private_applyparams,
 	HG_enc_private_exit,
 	HG_enc_private_clearerror,
 	HG_enc_private_findlibfile,
