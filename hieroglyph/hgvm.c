@@ -801,22 +801,6 @@ _hg_vm_dup_stack(hg_mem_t    *mem,
 	return hg_stack_push(s, qdata);
 }
 
-static const hg_quark_t *
-_hg_vm_get_user_params_quark(hg_vm_t *vm)
-{
-	static hg_quark_t retval[HG_VM_u_END + 1] = { Qnil };
-
-	if (retval[0] == Qnil) {
-		retval[HG_VM_u_MaxOpStack] = HG_QNAME (vm->name, "MaxOpStack");
-		retval[HG_VM_u_MaxExecStack] = HG_QNAME (vm->name, "MaxExecStack");
-		retval[HG_VM_u_MaxDictStack] = HG_QNAME (vm->name, "MaxDictStack");
-		retval[HG_VM_u_MaxGStateStack] = HG_QNAME (vm->name, "MaxGStateStack");
-		retval[HG_VM_u_END] = Qnil;
-	}
-
-	return retval;
-}
-
 static gboolean
 _hg_vm_set_user_params(hg_mem_t    *mem,
 		       hg_quark_t   qkey,
@@ -825,38 +809,36 @@ _hg_vm_set_user_params(hg_mem_t    *mem,
 		       GError     **error)
 {
 	hg_vm_t *vm = (hg_vm_t *)data;
+	gsize i;
 
 	if (HG_IS_QNAME (qkey)) {
-		const hg_quark_t *qlist = _hg_vm_get_user_params_quark(vm);
-		gsize i;
-
-		for (i = 0; i < HG_VM_u_END; i++) {
-			if (hg_quark_get_hash(qlist[i]) == hg_quark_get_hash(qkey))
+		for (i = 0; i < HG_VM_user_END; i++) {
+			if (hg_quark_get_hash(vm->quparams_name[i]) == hg_quark_get_hash(qkey))
 				break;
 		}
 		switch (i) {
-		    case HG_VM_u_MaxOpStack:
+		    case HG_VM_user_MaxOpStack:
 			    if (HG_IS_QINT (qval)) {
 				    vm->user_params.max_op_stack = HG_INT (qval);
 				    hg_stack_set_max_depth(vm->stacks[HG_VM_STACK_OSTACK],
 							   vm->user_params.max_op_stack);
 			    }
 			    break;
-		    case HG_VM_u_MaxExecStack:
+		    case HG_VM_user_MaxExecStack:
 			    if (HG_IS_QINT (qval)) {
 				    vm->user_params.max_exec_stack = HG_INT (qval);
 				    hg_stack_set_max_depth(vm->stacks[HG_VM_STACK_ESTACK],
 							   vm->user_params.max_exec_stack);
 			    }
 			    break;
-		    case HG_VM_u_MaxDictStack:
+		    case HG_VM_user_MaxDictStack:
 			    if (HG_IS_QINT (qval)) {
 				    vm->user_params.max_dict_stack = HG_INT (qval);
 				    hg_stack_set_max_depth(vm->stacks[HG_VM_STACK_DSTACK],
 							   vm->user_params.max_dict_stack);
 			    }
 			    break;
-		    case HG_VM_u_MaxGStateStack:
+		    case HG_VM_user_MaxGStateStack:
 			    if (HG_IS_QINT (qval)) {
 				    vm->user_params.max_gstate_stack = HG_INT (qval);
 				    hg_stack_set_max_depth(vm->stacks[HG_VM_STACK_GSTATE],
@@ -992,6 +974,12 @@ hg_vm_new(void)
 		retval->qio[i] = Qnil;
 	for (i = 0; i < HG_VM_e_END; i++)
 		retval->qerror_name[i] = Qnil;
+	for (i = 0; i < HG_VM_user_END; i++)
+		retval->quparams_name[i] = Qnil;
+	for (i = 0; i < HG_VM_sys_END; i++)
+		retval->qsparams_name[i] = Qnil;
+	for (i = 0; i < HG_VM_pdev_END; i++)
+		retval->qpdevparams_name[i] = Qnil;
 	retval->qerror = Qnil;
 	retval->qsystemdict = Qnil;
 	retval->qglobaldict = Qnil;
@@ -1058,6 +1046,26 @@ hg_vm_new(void)
 	DECL_ERROR (retval, undefinedresource);
 
 #undef DECL_ERROR
+
+#define DECL_UPARAM(_v_,_n_)						\
+	(_v_)->quparams_name[HG_VM_user_ ## _n_] = HG_QNAME ((_v_)->name, #_n_);
+
+	DECL_UPARAM (retval, MaxOpStack);
+	DECL_UPARAM (retval, MaxExecStack);
+	DECL_UPARAM (retval, MaxDictStack);
+	DECL_UPARAM (retval, MaxGStateStack);
+
+#undef DECL_UPARAM
+
+#define DECL_SPARAM(_v_,_n_)						\
+	(_v_)->qsparams_name[HG_VM_sys_ ## _n_] = HG_QNAME ((_v_)->name, #_n_);
+
+#undef DECL_SPARAM
+
+#define DECL_PDPARAM(_v_,_n_)						\
+	(_v_)->qpdevparams_name[HG_VM_pdev_ ## _n_] = HG_QNAME ((_v_)->name, #_n_);
+
+#undef DECL_PDPARAM
 
 	return retval;
   error:
@@ -3385,7 +3393,6 @@ hg_vm_get_user_params(hg_vm_t   *vm,
 		      GError   **error)
 {
 	hg_quark_t retval;
-	const hg_quark_t *qlist;
 	hg_dict_t *d;
 	GError *err = NULL;
 
@@ -3398,17 +3405,16 @@ hg_vm_get_user_params(hg_vm_t   *vm,
 		return Qnil;
 
 	hg_vm_quark_set_default_attributes(vm, &retval);
-	qlist = _hg_vm_get_user_params_quark(vm);
-	if (!hg_dict_add(d, qlist[HG_VM_u_MaxOpStack],
+	if (!hg_dict_add(d, vm->quparams_name[HG_VM_user_MaxOpStack],
 			 HG_QINT (vm->user_params.max_op_stack), &err))
 		goto error;
-	if (!hg_dict_add(d, qlist[HG_VM_u_MaxExecStack],
+	if (!hg_dict_add(d, vm->quparams_name[HG_VM_user_MaxExecStack],
 			 HG_QINT (vm->user_params.max_exec_stack), &err))
 		goto error;
-	if (!hg_dict_add(d, qlist[HG_VM_u_MaxDictStack],
+	if (!hg_dict_add(d, vm->quparams_name[HG_VM_user_MaxDictStack],
 			 HG_QINT (vm->user_params.max_dict_stack), &err))
 		goto error;
-	if (!hg_dict_add(d, qlist[HG_VM_u_MaxGStateStack],
+	if (!hg_dict_add(d, vm->quparams_name[HG_VM_user_MaxGStateStack],
 			 HG_QINT (vm->user_params.max_gstate_stack), &err))
 		goto error;
 

@@ -44,6 +44,8 @@ G_BEGIN_DECLS
 typedef enum _hg_vm_access_t		hg_vm_access_t;
 typedef enum _hg_vm_stack_type_t	hg_vm_stack_type_t;
 typedef enum _hg_vm_user_params_name_t	hg_vm_user_params_name_t;
+typedef enum _hg_vm_sys_params_name_t	hg_vm_sys_params_name_t;
+typedef enum _hg_vm_pdev_params_name_t	hg_vm_pdev_params_name_t;
 
 enum _hg_vm_access_t {
 	HG_VM_ACCESS_EXECUTABLE = HG_ACCESS_EXECUTABLE,
@@ -60,17 +62,27 @@ enum _hg_vm_stack_type_t {
 	HG_VM_STACK_END
 };
 enum _hg_vm_user_params_name_t {
-	HG_VM_u_MaxOpStack = 0,
-	HG_VM_u_MaxExecStack,
-	HG_VM_u_MaxDictStack,
-	HG_VM_u_MaxGStateStack,
-	HG_VM_u_END
+	HG_VM_user_MaxOpStack = 0,
+	HG_VM_user_MaxExecStack,
+	HG_VM_user_MaxDictStack,
+	HG_VM_user_MaxGStateStack,
+	HG_VM_user_END
+};
+enum _hg_vm_sys_params_name_t {
+	HG_VM_sys_END
+};
+enum _hg_vm_pdev_params_name_t {
+	HG_VM_pdev_END
 };
 struct _hg_vm_user_params_t {
 	gsize max_op_stack;
 	gsize max_exec_stack;
 	gsize max_dict_stack;
 	gsize max_gstate_stack;
+};
+struct _hg_vm_sys_params_t {
+};
+struct _hg_vm_pdev_params_t {
 };
 struct _hg_vm_t {
 	hg_quark_t           self;
@@ -83,6 +95,9 @@ struct _hg_vm_t {
 	hg_stack_t          *stacks[HG_VM_STACK_END];
 	GPtrArray           *stacks_stack;
 	hg_quark_t           qerror_name[HG_VM_e_END];
+	hg_quark_t           quparams_name[HG_VM_user_END];
+	hg_quark_t           qsparams_name[HG_VM_sys_END];
+	hg_quark_t           qpdevparams_name[HG_VM_pdev_END];
 	hg_quark_t           qerror;
 	hg_quark_t           qsystemdict;
 	hg_quark_t           qglobaldict;

@@ -188,6 +188,8 @@ typedef enum _hg_vm_mem_type_t		hg_vm_mem_type_t;
 typedef struct _hg_vm_state_t		hg_vm_state_t;
 typedef enum _hg_vm_langlevel_t		hg_vm_langlevel_t;
 typedef struct _hg_vm_user_params_t	hg_vm_user_params_t;
+typedef struct _hg_vm_sys_params_t	hg_vm_sys_params_t;
+typedef struct _hg_vm_pdev_params_t	hg_vm_pdev_params_t;
 typedef struct _hg_vm_value_t		hg_vm_value_t;
 
 enum _hg_vm_mem_type_t {
