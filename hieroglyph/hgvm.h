@@ -279,6 +279,8 @@ gboolean           hg_vm_remove_plugin               (hg_vm_t                 *v
                                                       const gchar             *name,
                                                       GError                 **error);
 void               hg_vm_unload_plugins              (hg_vm_t                 *vm);
+gboolean           hg_vm_set_device                  (hg_vm_t                 *vm,
+						      const gchar             *name);
 void               hg_vm_add_param                   (hg_vm_t                 *vm,
 						      const gchar             *name,
 						      hg_vm_value_t           *value);

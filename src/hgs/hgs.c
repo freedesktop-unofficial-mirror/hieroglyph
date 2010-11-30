@@ -50,6 +50,24 @@ _hgs_arg_define_cb(const gchar  *option_name,
 }
 
 static gboolean
+_hgs_arg_device_cb(const gchar  *option_name,
+		   const gchar  *value,
+		   gpointer      data,
+		   GError      **error)
+{
+	hg_vm_t *vm = data;
+
+	if (!hg_vm_set_device(vm, value)) {
+		g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
+			    "Unable to open a device: %s",
+			    value);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
 _hgs_arg_load_plugin_cb(const gchar  *option_name,
 			const gchar  *value,
 			gpointer      data,
@@ -78,7 +96,8 @@ main(int    argc,
 	GOptionContext *ctxt = g_option_context_new("<PostScript file>");
 	GOptionGroup *group;
 	GOptionEntry entries[] = {
-		{"define", 'd', 0, G_OPTION_ARG_CALLBACK, _hgs_arg_define_cb, "Define a variable in systemdict.", "SYMBOL"},
+		{"define", 'd', 0, G_OPTION_ARG_CALLBACK, _hgs_arg_define_cb, "Define a variable in dict.", "SYMBOL"},
+		{"device", 0, 0, G_OPTION_ARG_CALLBACK, _hgs_arg_device_cb, "Set a device", "NAME"},
 		{"langlevel", 0, 0, G_OPTION_ARG_INT, &arg_langlevel, "Specify a language level supported on VM", "INT"},
 		{"load-plugin", 'l', 0, G_OPTION_ARG_CALLBACK, _hgs_arg_load_plugin_cb, "Load a plugin", "NAME"},
 		{NULL}

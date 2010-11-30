@@ -3997,6 +3997,38 @@ hg_vm_unload_plugins(hg_vm_t *vm)
 }
 
 /**
+ * hg_vm_set_device:
+ * @vm:
+ * @name:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_vm_set_device(hg_vm_t      *vm,
+		 const gchar  *name)
+{
+	hg_device_t *dev;
+
+	hg_return_val_if_fail (vm != NULL, FALSE);
+	hg_return_val_if_fail (name != NULL, FALSE);
+
+	dev = hg_device_open(name);
+
+	if (vm->device)
+		hg_device_close(vm->device);
+	if (!dev) {
+		vm->device = hg_device_null_new();
+	} else {
+		vm->device = dev;
+	}
+
+	return dev != NULL;
+}
+
+/**
  * hg_vm_add_param:
  * @vm:
  * @name:
