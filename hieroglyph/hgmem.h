@@ -58,6 +58,7 @@ void                    hg_mem_add_gc_finalizer                    (hg_mem_t    
                                                                     hg_mem_finalizer_func_t  func);
 void                    hg_mem_remove_gc_finalizer                 (hg_mem_t                *mem,
                                                                     hg_quark_t               index);
+hg_mem_type_t           hg_mem_get_type                            (hg_mem_t                *mem);
 hg_quark_t              hg_mem_alloc                               (hg_mem_t                *mem,
                                                                     gsize                    size,
                                                                     gpointer                *ret);

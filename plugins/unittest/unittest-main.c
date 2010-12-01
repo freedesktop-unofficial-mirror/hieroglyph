@@ -122,7 +122,7 @@ G_STMT_START {
 			}
 			hg_string_free(sp, TRUE);
 
-			qf = hg_vm_get_io(vm, HG_FILE_IO_STDERR);
+			qf = hg_vm_get_io(vm, HG_FILE_IO_STDERR, error);
 			f = HG_VM_LOCK (vm, qf, error);
 			hg_file_append_printf(f, "Expression: %s - expected error is %s, but actual error was %s at %s\n",
 					      cexp, cse, csa, csp);
@@ -164,7 +164,7 @@ G_STMT_START {
 
 		if (!hg_vm_quark_compare_content(vm, qastack, qestack)) {
 			if (verbose) {
-				qf = hg_vm_get_io(vm, HG_FILE_IO_STDERR);
+				qf = hg_vm_get_io(vm, HG_FILE_IO_STDERR, error);
 				f = HG_VM_LOCK (vm, qf, error);
 				hg_file_append_printf(f, "Expression: %s - expected ostack is %s, but actual ostack was %s\n",
 						      cexp, cse, csa);

@@ -98,7 +98,7 @@ TDEF (gc_mark)
 	hg_mem_t *m = hg_mem_new(HG_MEM_TYPE_LOCAL, 256);
 
 	q = hg_array_new(m, 10, (gpointer *)&a);
-	fail_unless(hg_array_set(a, HG_QINT (1), 9, NULL), "Unable to put a value into the array");
+	fail_unless(hg_array_set(a, HG_QINT (1), 9, FALSE, NULL), "Unable to put a value into the array");
 	hg_mem_reserved_spool_set_garbage_collector(m, _gc_func, a);
 	size = hg_mem_collect_garbage(m);
 	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
@@ -129,7 +129,7 @@ TDEF (hg_array_set)
 	fail_unless(q != Qnil, "Unable to create an array object");
 	fail_unless(hg_array_length(a) == 0, "Unexpected result to obtain the size of the array.");
 	fail_unless(hg_array_maxlength(a) == 5, "Unexpected result to obtain the allocated size of the array.");
-	fail_unless(hg_array_set(a, HG_QINT (1), 0, NULL), "Unable to put a value into the array.");
+	fail_unless(hg_array_set(a, HG_QINT (1), 0, FALSE, NULL), "Unable to put a value into the array.");
 	fail_unless(hg_array_length(a) == 1, "Unexpected result to obtain the size of the array after putting a value");
 	fail_unless(hg_array_get(a, 0, NULL) == HG_QINT (1), "Unexpected result to obtain the value in the array.");
 
@@ -137,7 +137,7 @@ TDEF (hg_array_set)
 	fail_unless(q != Qnil, "Unable to create an array object");
 	fail_unless(hg_array_length(a) == 0, "Unexpected result to obtain the size of the 0-array.");
 	fail_unless(hg_array_maxlength(a) == 0, "Unexpected result to obtain the allocated size of the 0-array.");
-	fail_unless(!hg_array_set(a, HG_QINT (1), 0, NULL), "Unexpected result to put a value into the 0-array.");
+	fail_unless(!hg_array_set(a, HG_QINT (1), 0, FALSE, NULL), "Unexpected result to put a value into the 0-array.");
 	g_free(hieroglyph_test_pop_error());
 	fail_unless(hg_array_get(a, 0, NULL) == Qnil, "Unexpected result to obtain the value from the 0-array.");
 	g_free(hieroglyph_test_pop_error());

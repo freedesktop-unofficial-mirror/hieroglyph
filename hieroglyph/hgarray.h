@@ -62,6 +62,7 @@ void                hg_array_free             (hg_array_t                *array)
 gboolean            hg_array_set              (hg_array_t                *array,
                                                hg_quark_t                 quark,
                                                gsize                      index,
+					       gboolean                   force,
 					       GError                   **error);
 hg_quark_t          hg_array_get              (hg_array_t                *array,
                                                gsize                      index,

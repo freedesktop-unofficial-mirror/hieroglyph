@@ -162,6 +162,7 @@ hg_mem_new_with_allocator(hg_mem_vtable_t *allocator,
 
 	retval = g_new0(hg_mem_t, 1);
 	retval->allocator = allocator;
+	retval->type = type;
 	id = retval->id = __hg_mem_id++;
 	if (_hg_quark_type_bit_validate_bits(retval->id,
 					     HG_QUARK_TYPE_BIT_MEM_ID,
@@ -293,6 +294,12 @@ hg_mem_remove_gc_finalizer(hg_mem_t   *mem,
 {
 	g_hash_table_remove(mem->finalizer_table,
 			    HGQUARK_TO_POINTER (hg_quark_get_hash(index)));
+}
+
+hg_mem_type_t
+hg_mem_get_type(hg_mem_t *mem)
+{
+	return mem->type;
 }
 
 /**

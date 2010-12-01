@@ -465,7 +465,7 @@ G_STMT_START {
 	hg_quark_t q;
 	hg_file_t *file;
 
-	q = hg_vm_get_io(vm, HG_FILE_IO_STDERR);
+	q = hg_vm_get_io(vm, HG_FILE_IO_STDERR, error);
 	file = HG_VM_LOCK (vm, q, error);
 	if (file == NULL) {
 		g_printerr("  Unable to obtain stderr.\n");
@@ -688,26 +688,17 @@ G_STMT_START {
 	 */
 	if (HG_IS_QARRAY (arg0)) {
 		gsize index;
-		hg_array_t *a;
 
 		if (!HG_IS_QINT (arg1)) {
 			hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 			return FALSE;
 		}
-		a = HG_VM_LOCK (vm, arg0, error);
-		if (a == NULL) {
-			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
-			return FALSE;
-		}
 		index = HG_INT (arg1);
-		if (hg_array_maxlength(a) < index) {
-			HG_VM_UNLOCK (vm, arg0);
-			hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		retval = hg_vm_array_set(vm, arg0, arg2, index, TRUE, error);
+		if (!retval) {
+			hg_vm_set_error_from_gerror(vm, qself, *error);
 			return FALSE;
 		}
-		retval = hg_array_set(a, arg2, index, error);
-
-		HG_VM_UNLOCK (vm, arg0);
 	} else if (HG_IS_QDICT (arg0)) {
 		hg_dict_t *d;
 
@@ -2020,7 +2011,6 @@ G_STMT_START {
 	hg_quark_t arg0, q;
 	hg_array_t *a;
 	gsize len, i;
-	gboolean is_in_global;
 
 	CHECK_STACK (ostack, 1);
 
@@ -2044,17 +2034,10 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_stackunderflow);
 		goto error;
 	}
-	is_in_global = hg_quark_has_same_mem_id(arg0, vm->mem_id[HG_VM_MEM_GLOBAL]);
 	for (i = 0; i < len; i++) {
 		q = hg_stack_index(ostack, len - i, error);
-		if (is_in_global) {
-			if (!hg_quark_is_simple_object(q) &&
-			    hg_quark_has_same_mem_id(q, vm->mem_id[HG_VM_MEM_LOCAL])) {
-				hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
-				goto error;
-			}
-		}
-		hg_array_set(a, q, i, error);
+		if (!hg_array_set(a, q, i, FALSE, error))
+			goto error;
 	}
 	for (i = 0; i <= len; i++) {
 		if (i == 0)
@@ -2176,13 +2159,15 @@ G_STMT_START {
 				STACK_PUSH (ostack, q);
 				_hg_operator_real_bind(vm, error);
 				hg_vm_quark_set_writable(vm, &q, FALSE);
-				hg_array_set(a, q, i, error);
+				if (!hg_array_set(a, q, i, TRUE, error))
+					goto error;
 				hg_stack_drop(ostack, error);
 			} else if (HG_IS_QNAME (q)) {
 				hg_quark_t qop = hg_vm_dict_lookup(vm, q);
 
 				if (HG_IS_QOPER (qop)) {
-					hg_array_set(a, qop, i, error);
+					if (!hg_array_set(a, qop, i, TRUE, error))
+						goto error;
 				}
 			}
 		}
@@ -2570,7 +2555,8 @@ G_STMT_START {
 				hg_quark_t qq;
 
 				qq = hg_array_get(a1, i, error);
-				hg_array_set(a2, qq, i, error);
+				if (!hg_array_set(a2, qq, i, TRUE, error))
+					goto a_error;
 			}
 			if (len2 > len1) {
 				q = hg_array_make_subarray(a2, 0, len1 - 1, NULL, error);
@@ -3489,7 +3475,8 @@ G_STMT_START {
 	}
 	for (i = 0; i < ddepth; i++) {
 		q = hg_stack_index(dstack, ddepth - i - 1, error);
-		hg_array_set(a, q, i, error);
+		if (!hg_array_set(a, q, i, FALSE, error))
+			goto error;
 	}
 	if (ddepth != len) {
 		q = hg_array_make_subarray(a, 0, ddepth - 1, NULL, error);
@@ -3782,7 +3769,8 @@ G_STMT_START {
 	/* do not include the last node */
 	for (i = 0; i < edepth - 1; i++) {
 		q = hg_stack_index(estack, edepth - i - 1, error);
-		hg_array_set(a, q, i, error);
+		if (!hg_array_set(a, q, i, FALSE, error))
+			goto error;
 	}
 	if (edepth != (len + 1)) {
 		q = hg_array_make_subarray(a, 0, edepth - 2, NULL, error);
@@ -4016,7 +4004,11 @@ G_STMT_START {
 		goto error;
 	}
 	if (iotype != HG_FILE_IO_FILE) {
-		q = hg_vm_get_io(vm, iotype);
+		q = hg_vm_get_io(vm, iotype, error);
+		if (*error) {
+			hg_vm_set_error_from_gerror(vm, qself, *error);
+			goto error;
+		}
 		if (q == Qnil) {
 			hg_vm_set_error(vm, qself, HG_VM_e_undefinedfilename);
 			goto error;
@@ -4084,7 +4076,7 @@ G_STMT_START {
 	hg_quark_t q;
 	hg_file_t *stdout_;
 
-	q = hg_vm_get_io(vm, HG_FILE_IO_STDOUT);
+	q = hg_vm_get_io(vm, HG_FILE_IO_STDOUT, error);
 	stdout_ = HG_VM_LOCK (vm, q, error);
 	if (stdout_ == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
@@ -5888,7 +5880,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	qstdout = hg_vm_get_io(vm, HG_FILE_IO_STDOUT);
+	qstdout = hg_vm_get_io(vm, HG_FILE_IO_STDOUT, error);
 	stdout = HG_VM_LOCK (vm, qstdout, error);
 	if (stdout == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
@@ -5946,26 +5938,17 @@ G_STMT_START {
 	}
 	if (HG_IS_QARRAY (arg0)) {
 		gsize index;
-		hg_array_t *a;
 
 		if (!HG_IS_QINT (arg1)) {
 			hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 			return FALSE;
 		}
-		a = HG_VM_LOCK (vm, arg0, error);
-		if (a == NULL) {
-			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
-			return FALSE;
-		}
 		index = HG_INT (arg1);
-		if (hg_array_maxlength(a) < index) {
-			HG_VM_UNLOCK (vm, arg0);
-			hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		retval = hg_vm_array_set(vm, arg0, arg2, index, FALSE, error);
+		if (!retval) {
+			hg_vm_set_error_from_gerror(vm, qself, *error);
 			return FALSE;
 		}
-		retval = hg_array_set(a, arg2, index, error);
-
-		HG_VM_UNLOCK (vm, arg0);
 	} else if (HG_IS_QDICT (arg0)) {
 		hg_dict_t *d;
 

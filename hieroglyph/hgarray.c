@@ -113,7 +113,7 @@ _hg_object_array_copy(hg_object_t              *object,
 			qr = func(q, user_data, NULL, &err);
 			if (err)
 				goto finalize;
-			hg_array_set(a, qr, i, &err);
+			hg_array_set(a, qr, i, TRUE, &err);
 			if (err)
 				goto finalize;
 		}
@@ -355,7 +355,7 @@ _hg_array_convert_from_matrix(hg_array_t  *array,
 	gsize i;
 
 	for (i = 0; i < 6; i++) {
-		hg_array_set(array, HG_QREAL (matrix->d[i]), i, NULL);
+		hg_array_set(array, HG_QREAL (matrix->d[i]), i, TRUE, NULL);
 	}
 }
 
@@ -413,6 +413,7 @@ hg_array_free(hg_array_t *array)
  * @array:
  * @quark:
  * @index:
+ * @force:
  * @error:
  *
  * FIXME
@@ -423,6 +424,7 @@ gboolean
 hg_array_set(hg_array_t  *array,
 	     hg_quark_t   quark,
 	     gsize        index,
+	     gboolean     force,
 	     GError     **error)
 {
 	hg_quark_t *container;
@@ -432,7 +434,21 @@ hg_array_set(hg_array_t  *array,
 
 	hg_return_val_with_gerror_if_fail (array != NULL, FALSE, error, HG_VM_e_VMerror);
 	hg_return_val_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail ((array->offset + index) < array->allocated_size, FALSE, error, HG_VM_e_rangecheck);
+
+	if (index > hg_array_maxlength(array)) {
+		g_set_error(&err, HG_ERROR, HG_VM_e_rangecheck,
+			    "wrong index to access the array");
+		goto finalize;
+	}
+	if (!force &&
+	    !(hg_quark_is_simple_object(quark) ||
+	      hg_quark_get_type(quark) == HG_TYPE_OPER) &&
+	    hg_mem_get_type(array->o.mem) == HG_MEM_TYPE_GLOBAL &&
+	    hg_mem_get_type(hg_mem_get(hg_quark_get_mem_id(quark))) == HG_MEM_TYPE_LOCAL) {
+		g_set_error(&err, HG_ERROR, HG_VM_e_invalidaccess,
+			    "Unable to store the object allocated in the local memory into the global memory");
+		goto finalize;
+	}
 
 	new_length = MAX (index, array->length);
 	if (index >= new_length && new_length >= array->length) {
@@ -486,13 +502,18 @@ hg_array_get(hg_array_t  *array,
 	     gsize        index,
 	     GError     **error)
 {
-	hg_quark_t retval;
+	hg_quark_t retval = Qnil;
 	hg_quark_t *container;
 	GError *err = NULL;
 
 	hg_return_val_with_gerror_if_fail (array != NULL, Qnil, error, HG_VM_e_VMerror);
 	hg_return_val_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, Qnil, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (index < array->allocated_size, Qnil, error, HG_VM_e_rangecheck);
+
+	if (index >= hg_array_maxlength(array)) {
+		g_set_error(&err, HG_ERROR, HG_VM_e_rangecheck,
+			    "wrong index to access the array");
+		goto finalize;
+	}
 
 	if (array->qcontainer == Qnil) {
 		/* emulate containing null */
@@ -581,7 +602,7 @@ hg_array_insert(hg_array_t  *array,
 		hg_mem_reserved_spool_remove(hg_mem_get(hg_quark_get_mem_id(quark)),
 					     quark);
 	} else {
-		return hg_array_set(array, quark, pos, error);
+		return hg_array_set(array, quark, pos, FALSE, error);
 	}
 
 	return TRUE;
