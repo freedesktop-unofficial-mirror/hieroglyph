@@ -882,7 +882,8 @@ _hg_allocator_gc_mark(hg_allocator_data_t  *data,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s (code: %d)",
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
 				  err->message,
 				  err->code);
 		}
