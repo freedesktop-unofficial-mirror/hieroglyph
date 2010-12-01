@@ -36,6 +36,7 @@
 
 static gint __hg_mem_id = 0;
 static hg_mem_t *__hg_mem_spool[HG_MAX_MEM];
+static hg_mem_t *__hg_mem_master = NULL;
 
 /*< private >*/
 G_INLINE_FUNC void
@@ -127,9 +128,10 @@ hg_mem_get(gint id)
  * Returns:
  */
 hg_mem_t *
-hg_mem_new(gsize size)
+hg_mem_new(hg_mem_type_t type,
+	   gsize         size)
 {
-	return hg_mem_new_with_allocator(hg_allocator_get_vtable(), size);
+	return hg_mem_new_with_allocator(hg_allocator_get_vtable(), type, size);
 }
 
 /**
@@ -143,6 +145,7 @@ hg_mem_new(gsize size)
  */
 hg_mem_t *
 hg_mem_new_with_allocator(hg_mem_vtable_t *allocator,
+			  hg_mem_type_t    type,
 			  gsize            size)
 {
 	hg_mem_t *retval;
@@ -150,6 +153,9 @@ hg_mem_new_with_allocator(hg_mem_vtable_t *allocator,
 
 	hg_return_val_if_fail (allocator != NULL, NULL);
 	hg_return_val_if_fail (allocator->initialize != NULL, NULL);
+	hg_return_val_if_fail (type < HG_MEM_TYPE_END, NULL);
+	if (type == HG_MEM_TYPE_MASTER)
+		hg_return_val_if_fail (__hg_mem_master == NULL, NULL);
 	hg_return_val_if_fail (size > 0, NULL);
 	hg_return_val_if_fail (__hg_mem_id >= 0, NULL);
 	hg_return_val_if_fail (__hg_mem_id < HG_MAX_MEM, NULL);
@@ -178,6 +184,8 @@ hg_mem_new_with_allocator(hg_mem_vtable_t *allocator,
 	}
 	retval->enable_gc = TRUE;
 	__hg_mem_spool[id] = retval;
+	if (type == HG_MEM_TYPE_MASTER)
+		__hg_mem_master = retval;
 
 	return retval;
 }
@@ -207,6 +215,8 @@ hg_mem_destroy(gpointer data)
 		g_hash_table_destroy(mem->finalizer_table);
 	if (mem->reserved_spool)
 		g_hash_table_destroy(mem->reserved_spool);
+	if (mem->type == HG_MEM_TYPE_MASTER)
+		__hg_mem_master = NULL;
 
 	g_free(mem);
 }

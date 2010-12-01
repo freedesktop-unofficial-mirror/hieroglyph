@@ -41,7 +41,7 @@ setup(void)
 {
 	hg_object_init();
 	HG_ARRAY_INIT;
-	mem = hg_mem_new(100000);
+	mem = hg_mem_new(HG_MEM_TYPE_LOCAL, 100000);
 	vtable = hg_object_array_get_vtable();
 }
 
@@ -95,7 +95,7 @@ TDEF (gc_mark)
 	hg_quark_t q;
 	hg_array_t *a;
 	gssize size = 0;
-	hg_mem_t *m = hg_mem_new(256);
+	hg_mem_t *m = hg_mem_new(HG_MEM_TYPE_LOCAL, 256);
 
 	q = hg_array_new(m, 10, (gpointer *)&a);
 	fail_unless(hg_array_set(a, HG_QINT (1), 9, NULL), "Unable to put a value into the array");

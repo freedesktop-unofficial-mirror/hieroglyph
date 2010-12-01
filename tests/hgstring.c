@@ -39,7 +39,7 @@ setup(void)
 {
 	hg_object_init();
 	HG_STRING_INIT;
-	mem = hg_mem_new(100000);
+	mem = hg_mem_new(HG_MEM_TYPE_LOCAL, 100000);
 	vtable = hg_object_string_get_vtable();
 }
 
@@ -90,7 +90,7 @@ TDEF (gc_mark)
 	hg_quark_t q;
 	hg_string_t *s;
 	gssize size = 0;
-	hg_mem_t *m = hg_mem_new(256);
+	hg_mem_t *m = hg_mem_new(HG_MEM_TYPE_LOCAL, 256);
 
 	q = hg_string_new_with_value(m, "abc", -1, (gpointer *)&s);
 	hg_mem_set_garbage_collector(m, _gc_func, s);

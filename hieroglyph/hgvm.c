@@ -865,7 +865,8 @@ gboolean
 hg_vm_init(void)
 {
 	if (!__hg_vm_is_initialized) {
-		__hg_vm_mem = hg_mem_new(HG_VM_MEM_SIZE);
+		__hg_vm_mem = hg_mem_new(HG_MEM_TYPE_MASTER,
+					 HG_VM_MEM_SIZE);
 		if (__hg_vm_mem == NULL)
 			return FALSE;
 
@@ -949,8 +950,10 @@ hg_vm_new(void)
 					       g_free, hg_vm_value_free);
 	retval->plugin_table = g_hash_table_new_full(g_str_hash, g_str_equal,
 						     g_free, NULL);
-	retval->mem[HG_VM_MEM_GLOBAL] = hg_mem_new(HG_VM_GLOBAL_MEM_SIZE);
-	retval->mem[HG_VM_MEM_LOCAL] = hg_mem_new(HG_VM_LOCAL_MEM_SIZE);
+	retval->mem[HG_VM_MEM_GLOBAL] = hg_mem_new(HG_MEM_TYPE_GLOBAL,
+						   HG_VM_GLOBAL_MEM_SIZE);
+	retval->mem[HG_VM_MEM_LOCAL] = hg_mem_new(HG_MEM_TYPE_LOCAL,
+						  HG_VM_LOCAL_MEM_SIZE);
 	if (retval->mem[HG_VM_MEM_GLOBAL] == NULL ||
 	    retval->mem[HG_VM_MEM_LOCAL] == NULL)
 		goto error;

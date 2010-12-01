@@ -45,7 +45,7 @@ setup(void)
 {
 	hg_object_init();
 	HG_DICT_INIT;
-	mem = hg_mem_new(100000);
+	mem = hg_mem_new(HG_MEM_TYPE_LOCAL, 100000);
 	vtable = hg_object_dict_get_vtable();
 	node_vtable = hg_object_dict_node_get_vtable();
 	_hg_dict_node_set_size(2);
@@ -158,7 +158,7 @@ TDEF (gc_mark)
 	hg_quark_t q;
 	hg_dict_t *d;
 	gssize size = 0;
-	hg_mem_t *m = hg_mem_new(65535);
+	hg_mem_t *m = hg_mem_new(HG_MEM_TYPE_LOCAL, 65535);
 	gsize i;
 
 	q = hg_dict_new(m, 10, (gpointer *)&d);

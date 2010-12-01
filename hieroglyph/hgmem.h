@@ -32,10 +32,21 @@ G_BEGIN_DECLS
 #define HG_MEM_FLAGS_DEFAULT			HG_MEM_RESTORABLE
 #define HG_MEM_FLAGS_DEFAULT_WITHOUT_RESTORABLE	(HG_MEM_FLAGS_DEFAULT & ~HG_MEM_RESTORABLE)
 
+typedef enum _hg_mem_type_t	hg_mem_type_t;
+
+enum _hg_mem_type_t {
+	HG_MEM_TYPE_MASTER = 0,
+	HG_MEM_TYPE_GLOBAL,
+	HG_MEM_TYPE_LOCAL,
+	HG_MEM_TYPE_END
+};
+
 
 hg_mem_t               *hg_mem_get                                 (gint                     id);
-hg_mem_t               *hg_mem_new                                 (gsize                    size);
+hg_mem_t               *hg_mem_new                                 (hg_mem_type_t            type,
+								    gsize                    size);
 hg_mem_t               *hg_mem_new_with_allocator                  (hg_mem_vtable_t         *allocator,
+								    hg_mem_type_t            type,
                                                                     gsize                    size);
 void                    hg_mem_destroy                             (gpointer                 data);
 gboolean                hg_mem_expand_heap                         (hg_mem_t                *mem,
