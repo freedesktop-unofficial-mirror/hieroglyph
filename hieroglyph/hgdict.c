@@ -147,6 +147,7 @@ _hg_object_dict_initialize(hg_object_t *object,
 	dict->qroot = Qnil;
 	dict->length = 0;
 	dict->allocated_size = va_arg(args, gsize);
+	dict->raise_dictfull = va_arg(args, gboolean);
 
 	return TRUE;
 }
@@ -983,6 +984,7 @@ _hg_dict_node_set_size(gsize size)
  * hg_dict_new:
  * @mem:
  * @size:
+ * @raise_dictfull:
  * @ret:
  *
  * FIXME
@@ -992,6 +994,7 @@ _hg_dict_node_set_size(gsize size)
 hg_quark_t
 hg_dict_new(hg_mem_t *mem,
 	    gsize     size,
+	    gboolean  raise_dictfull,
 	    gpointer *ret)
 {
 	hg_quark_t retval;
@@ -1000,7 +1003,7 @@ hg_dict_new(hg_mem_t *mem,
 	hg_return_val_if_fail (mem != NULL, Qnil);
 	hg_return_val_if_fail (size < (HG_DICT_MAX_SIZE + 1), Qnil);
 
-	retval = hg_object_new(mem, (gpointer *)&dict, HG_TYPE_DICT, 0, size);
+	retval = hg_object_new(mem, (gpointer *)&dict, HG_TYPE_DICT, 0, size, raise_dictfull);
 	if (retval != Qnil) {
 		if (ret)
 			*ret = dict;
@@ -1016,6 +1019,7 @@ hg_dict_new(hg_mem_t *mem,
  * @dict:
  * @qkey:
  * @qval:
+ * @force:
  * @error:
  *
  * FIXME
@@ -1026,6 +1030,7 @@ gboolean
 hg_dict_add(hg_dict_t   *dict,
 	    hg_quark_t   qkey,
 	    hg_quark_t   qval,
+	    gboolean     force,
 	    GError     **error)
 {
 	gboolean inserted;
@@ -1035,9 +1040,34 @@ hg_dict_add(hg_dict_t   *dict,
 	GError *err = NULL;
 	hg_mem_t *m;
 
-	hg_return_val_if_fail (dict != NULL, FALSE);
-	hg_return_val_if_fail (dict->o.type == HG_TYPE_DICT, FALSE);
-	hg_return_val_if_fail (!HG_IS_QSTRING (qkey), FALSE);
+	hg_return_val_with_gerror_if_fail (dict != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (dict->o.type == HG_TYPE_DICT, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (!HG_IS_QSTRING (qkey), FALSE, error, HG_VM_e_typecheck);
+
+	if (!force &&
+	    hg_mem_get_type(dict->o.mem) == HG_MEM_TYPE_GLOBAL) {
+		if (!(hg_quark_is_simple_object(qkey) ||
+		      hg_quark_get_type(qkey) == HG_TYPE_OPER) &&
+		    hg_mem_get_type(hg_mem_get(hg_quark_get_mem_id(qkey))) == HG_MEM_TYPE_LOCAL) {
+			g_set_error(&err, HG_ERROR, HG_VM_e_invalidaccess,
+				    "Unable to store the object allocated in the local memory into the global memory");
+			goto finalize;
+		}
+		if (!(hg_quark_is_simple_object(qval) ||
+		      hg_quark_get_type(qval) == HG_TYPE_OPER) &&
+		    hg_mem_get_type(hg_mem_get(hg_quark_get_mem_id(qval))) == HG_MEM_TYPE_LOCAL) {
+			g_set_error(&err, HG_ERROR, HG_VM_e_invalidaccess,
+				    "Unable to store the object allocated in the local memory into the global memory");
+			goto finalize;
+		}
+	}
+	if (dict->raise_dictfull &&
+	    hg_dict_length(dict) == hg_dict_maxlength(dict) &&
+	    hg_dict_lookup(dict, qkey, &err) == Qnil) {
+		g_set_error(&err, HG_ERROR, HG_VM_e_dictfull,
+			    "no more spaces in the dict");
+		goto finalize;
+	}
 
 	qmasked = hg_quark_get_hash(qkey);
 	inserted = _hg_dict_node_insert(dict->o.mem, dict->qroot,
@@ -1116,9 +1146,9 @@ hg_dict_remove(hg_dict_t   *dict,
 	hg_quark_t qmasked;
 	GError *err = NULL;
 
-	hg_return_val_if_fail (dict != NULL, FALSE);
-	hg_return_val_if_fail (dict->o.type == HG_TYPE_DICT, FALSE);
-	hg_return_val_if_fail (!HG_IS_QSTRING (qkey), FALSE);
+	hg_return_val_with_gerror_if_fail (dict != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (dict->o.type == HG_TYPE_DICT, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (!HG_IS_QSTRING (qkey), FALSE, error, HG_VM_e_typecheck);
 
 	qmasked = hg_quark_get_hash(qkey);
 	removed = _hg_dict_node_remove(dict->o.mem, dict->qroot,

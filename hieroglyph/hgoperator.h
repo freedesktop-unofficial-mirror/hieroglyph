@@ -123,6 +123,7 @@ typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
 		if (!hg_dict_add((_d_),					\
 				 __o_name__,				\
 				 __op__,				\
+				 FALSE,					\
 				 NULL))					\
 			return FALSE;					\
 	} G_STMT_END
@@ -135,6 +136,7 @@ typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
 		if (!hg_dict_add((_d_),				\
 				 __o_name__,			\
 				 __v__,				\
+				 FALSE,				\
 				 NULL))				\
 			return FALSE;				\
 	} G_STMT_END

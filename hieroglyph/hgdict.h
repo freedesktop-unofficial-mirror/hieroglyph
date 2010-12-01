@@ -50,6 +50,7 @@ struct _hg_dict_t {
 	hg_quark_t  qroot;
 	gsize       length;
 	gsize       allocated_size;
+	gboolean    raise_dictfull:1;
 };
 
 
@@ -57,10 +58,12 @@ hg_object_vtable_t *hg_object_dict_get_vtable     (void) G_GNUC_CONST;
 hg_object_vtable_t *hg_object_dict_node_get_vtable(void) G_GNUC_CONST;
 hg_quark_t          hg_dict_new                   (hg_mem_t                 *mem,
 						   gsize                     size,
+						   gboolean                  raise_dictfull,
 						   gpointer                 *ret);
 gboolean            hg_dict_add                   (hg_dict_t                *dict,
 						   hg_quark_t                qkey,
 						   hg_quark_t                qval,
+						   gboolean                  force,
 						   GError                  **error);
 gboolean            hg_dict_remove                (hg_dict_t                *dict,
 						   hg_quark_t                qkey,

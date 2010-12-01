@@ -784,7 +784,7 @@ _hg_vm_dup_dict(hg_mem_t    *mem,
 {
 	hg_dict_t *dict = data;
 
-	hg_dict_add(dict, qkey, qval, error);
+	hg_dict_add(dict, qkey, qval, TRUE, error);
 
 	return TRUE;
 }
@@ -1470,15 +1470,19 @@ hg_vm_setup(hg_vm_t           *vm,
 		/* initialize dictionaries */
 		vm->qsystemdict = hg_dict_new(vm->mem[HG_VM_MEM_GLOBAL],
 					      65535,
+					      FALSE,
 					      NULL);
 		vm->qinternaldict = hg_dict_new(vm->mem[HG_VM_MEM_GLOBAL],
 						65535,
+						FALSE,
 						NULL);
 		vm->qglobaldict = hg_dict_new(vm->mem[HG_VM_MEM_GLOBAL],
 					      65535,
+					      FALSE,
 					      NULL);
 		vm->qerror = hg_dict_new(vm->mem[HG_VM_MEM_LOCAL],
 					 65535,
+					 FALSE,
 					 (gpointer *)&dict_error);
 		if (vm->qsystemdict == Qnil ||
 		    vm->qinternaldict == Qnil ||
@@ -1509,16 +1513,19 @@ hg_vm_setup(hg_vm_t           *vm,
 	if (!hg_dict_add(dict_error,
 			 HG_QNAME (vm->name, "newerror"),
 			 HG_QBOOL (FALSE),
+			 FALSE,
 			 &err))
 		goto error;
 	if (!hg_dict_add(dict_error,
 			 HG_QNAME (vm->name, "errorname"),
 			 HG_QNULL,
+			 FALSE,
 			 &err))
 		goto error;
 	if (!hg_dict_add(dict_error,
 			 HG_QNAME (vm->name, ".stopped"),
 			 HG_QBOOL (FALSE),
+			 FALSE,
 			 &err))
 		goto error;
 
@@ -1530,16 +1537,19 @@ hg_vm_setup(hg_vm_t           *vm,
 	if (!hg_dict_add(dict,
 			 HG_QNAME (vm->name, "systemdict"),
 			 vm->qsystemdict,
+			 TRUE,
 			 &err))
 		goto error;
 	if (!hg_dict_add(dict,
 			 HG_QNAME (vm->name, "globaldict"),
 			 vm->qglobaldict,
+			 TRUE,
 			 &err))
 		goto error;
 	if (!hg_dict_add(dict,
 			 HG_QNAME (vm->name, "$error"),
 			 vm->qerror,
+			 TRUE,
 			 &err))
 		goto error;
 
@@ -1547,12 +1557,15 @@ hg_vm_setup(hg_vm_t           *vm,
 	if (!hg_operator_register(vm, dict, vm->name, lang_level))
 		goto error;
 
+	_HG_VM_UNLOCK (vm, vm->qerror);
 	_HG_VM_UNLOCK (vm, vm->qsystemdict);
 
 	vm->language_level = lang_level;
 
 	return TRUE;
   error:
+	if (dict_error)
+		_HG_VM_UNLOCK (vm, vm->qerror);
 	if (dict)
 		_HG_VM_UNLOCK (vm, vm->qsystemdict);
 	if (err) {
@@ -2264,6 +2277,7 @@ hg_vm_eval(hg_vm_t     *vm,
 		}
 		vm->qsystemdict = hg_dict_new(o->o.mem,
 					      hg_dict_maxlength(o),
+					      o->raise_dictfull,
 					      (gpointer *)&d);
 		if (vm->qsystemdict == Qnil) {
 			g_warning("Unable to duplicate systemdict.");
@@ -2280,6 +2294,7 @@ hg_vm_eval(hg_vm_t     *vm,
 		if (!hg_dict_add(d,
 				 HG_QNAME (vm->name, "systemdict"),
 				 vm->qsystemdict,
+				 FALSE,
 				 error)) {
 			g_warning("Unable to reregister systemdict");
 			flag = FALSE;
@@ -2586,6 +2601,7 @@ hg_vm_startjob(hg_vm_t           *vm,
 	hg_vm_quark_set_writable(vm, &vm->qinternaldict, FALSE);
 	if (!hg_dict_add(dict, HG_QNAME (vm->name, "systemdict"),
 			 vm->qsystemdict,
+			 FALSE,
 			 NULL)) {
 		g_warning("Unable to update the entry for systemdict");
 		return FALSE;
@@ -2702,22 +2718,27 @@ hg_vm_get_user_params(hg_vm_t   *vm,
 
 	retval = hg_dict_new(hg_vm_get_mem(vm),
 			     sizeof (hg_vm_user_params_t) / sizeof (gint) + 1,
+			     hg_vm_get_language_level(vm) == HG_LANG_LEVEL_1,
 			     (gpointer *)&d);
 	if (retval == Qnil)
 		return Qnil;
 
 	hg_vm_quark_set_default_attributes(vm, &retval);
 	if (!hg_dict_add(d, vm->quparams_name[HG_VM_user_MaxOpStack],
-			 HG_QINT (vm->user_params.max_op_stack), &err))
+			 HG_QINT (vm->user_params.max_op_stack),
+			 FALSE, &err))
 		goto error;
 	if (!hg_dict_add(d, vm->quparams_name[HG_VM_user_MaxExecStack],
-			 HG_QINT (vm->user_params.max_exec_stack), &err))
+			 HG_QINT (vm->user_params.max_exec_stack),
+			 FALSE, &err))
 		goto error;
 	if (!hg_dict_add(d, vm->quparams_name[HG_VM_user_MaxDictStack],
-			 HG_QINT (vm->user_params.max_dict_stack), &err))
+			 HG_QINT (vm->user_params.max_dict_stack),
+			 FALSE, &err))
 		goto error;
 	if (!hg_dict_add(d, vm->quparams_name[HG_VM_user_MaxGStateStack],
-			 HG_QINT (vm->user_params.max_gstate_stack), &err))
+			 HG_QINT (vm->user_params.max_gstate_stack),
+			 FALSE, &err))
 		goto error;
 
 	if (ret)
@@ -2915,16 +2936,19 @@ hg_vm_reset_error(hg_vm_t *vm)
 	if (!hg_dict_add(dict_error,
 			 HG_QNAME (vm->name, "newerror"),
 			 HG_QBOOL (FALSE),
+			 FALSE,
 			 NULL))
 		goto error;
 	if (!hg_dict_add(dict_error,
 			 HG_QNAME (vm->name, "errorname"),
 			 HG_QNULL,
+			 FALSE,
 			 NULL))
 		goto error;
 	if (!hg_dict_add(dict_error,
 			 HG_QNAME (vm->name, ".stopped"),
 			 HG_QBOOL (FALSE),
+			 FALSE,
 			 NULL))
 		goto error;
 
@@ -3419,6 +3443,73 @@ hg_vm_array_get(hg_vm_t     *vm,
 	retval = hg_array_get(a, index, &err);
 
 	_HG_VM_UNLOCK (vm, qarray);
+
+  finalize:
+	if (!retval && !err) {
+		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
+			    "[BUG] no errors is set.");
+	}
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+	}
+
+	return retval;
+}
+
+/* hg_dict_t */
+/**
+ * hg_vm_dict_add:
+ * @vm:
+ * @qdict:
+ * @qkey:
+ * @qval:
+ * @force:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_vm_dict_add(hg_vm_t     *vm,
+	       hg_quark_t   qdict,
+	       hg_quark_t   qkey,
+	       hg_quark_t   qval,
+	       gboolean     force,
+	       GError     **error)
+{
+	GError *err = NULL;
+	hg_dict_t *d;
+	gboolean retval = FALSE;
+
+	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error, HG_VM_e_VMerror);
+
+	if (!HG_IS_QDICT (qdict)) {
+		g_set_error(&err, HG_ERROR, HG_VM_e_typecheck,
+			    "not a dict");
+		goto finalize;
+	}
+	if (!force &&
+	    !hg_vm_quark_is_writable(vm, &qdict)) {
+		g_set_error(&err, HG_ERROR, HG_VM_e_invalidaccess,
+			    "No writable permission to access the dict");
+		goto finalize;
+	}
+	d = _HG_VM_LOCK (vm, qdict, &err);
+	if (!d)
+		goto finalize;
+
+	retval = hg_dict_add(d, qkey, qval, force, &err);
+
+	_HG_VM_UNLOCK (vm, qdict);
 
   finalize:
 	if (!retval && !err) {

@@ -161,13 +161,13 @@ TDEF (gc_mark)
 	hg_mem_t *m = hg_mem_new(HG_MEM_TYPE_LOCAL, 65535);
 	gsize i;
 
-	q = hg_dict_new(m, 10, (gpointer *)&d);
-	hg_dict_add(d, 0, 0, NULL);
+	q = hg_dict_new(m, 10, TRUE, (gpointer *)&d);
+	hg_dict_add(d, 0, 0, FALSE, NULL);
 	hg_mem_set_garbage_collector(m, _gc_func, d);
 	size = hg_mem_collect_garbage(m);
 	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
 	for (i = 1; i < 256; i++) {
-		hg_dict_add(d, i, i, NULL);
+		hg_dict_add(d, i, i, FALSE, NULL);
 	}
 	size = hg_mem_collect_garbage(m);
 	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
@@ -179,10 +179,10 @@ TDEF (hg_dict_new)
 {
 	hg_quark_t q;
 
-	q = hg_dict_new(mem, 0, NULL);
+	q = hg_dict_new(mem, 0, TRUE, NULL);
 	fail_unless(q != Qnil, "Unexpected result to create 0-sized dict.");
 	hg_mem_free(mem, q);
-	q = hg_dict_new(mem, HG_DICT_MAX_SIZE + 1, NULL);
+	q = hg_dict_new(mem, HG_DICT_MAX_SIZE + 1, TRUE, NULL);
 	fail_unless(q == Qnil, "Unable to create a dict object.");
 	g_free(hieroglyph_test_pop_error());
 } TEND
@@ -196,27 +196,27 @@ TDEF (hg_dict_add)
 	const gchar *test = "(((((.0.1.)2(.3.4.)5(.6.7.))8((.9.10.)11(.12.13.)14(.15.16.))17((.18.19.)20(.21.22.)23(.24.25.)))26(((.27.28.)29(.30.31.)32(.33.34.))35((.36.37.)38(.39.40.)41(.42.43.))44((.45.46.)47(.48.49.)50(.51.52.)))53(((.54.55.)56(.57.58.)59(.60.61.))62((.63.64.)65(.66.67.)68(.69.70.))71((.72.73.)74(.75.76.)77(.78.79.))))80((((.81.82.)83(.84.85.)86(.87.88.))89((.90.91.)92(.93.94.)95(.96.97.))98((.99.100.)101(.102.103.)104(.105.106.)))107(((.108.109.)110(.111.112.)113(.114.115.))116((.117.118.)119(.120.121.)122(.123.124.))125((.126.127.)128(.129.130.)131(.132.133.)))134(((.135.136.)137(.138.139.)140(.141.142.))143((.144.145.)146(.147.148.)149(.150.151.))152((.153.154.)155(.156.157.)158(.159.160.))))161((((.162.163.)164(.165.166.)167(.168.169.))170((.171.172.)173(.174.175.)176(.177.178.))179((.180.181.)182(.183.184.)185(.186.187.)))188(((.189.190.)191(.192.193.)194(.195.196.))197((.198.199.)200(.201.202.)203(.204.205.))206((.207.208.)209(.210.211.)212(.213.214.)))215(((.216.217.)218(.219.220.)221(.222.223.))224((.225.226.)227(.228.229.)230(.231.232.))233((.234.235.)236(.237.238.)239(.240.241.))242((.243.244.)245(.246.247.)248(.249.250.)251(.252.253.254.255.)))))";
 	gint xx[256];
 
-	q = hg_dict_new(mem, 2, (gpointer *)&dict);
+	q = hg_dict_new(mem, 256, TRUE, (gpointer *)&dict);
 	fail_unless(q != Qnil, "Unable to create a dict object.");
-	hg_dict_add(dict, 0, 0, NULL);
+	hg_dict_add(dict, 0, 0, FALSE, NULL);
 	tree2string(mem, dict->qroot, string, TRUE);
 	fail_unless(strcmp(string->str, "([1].0.)") == 0, "Unexpected result in the tree structure: expect: %s, actual: %s", "([1].0.)", string->str);
-	hg_dict_add(dict, 1, 1, NULL);
+	hg_dict_add(dict, 1, 1, FALSE, NULL);
 	g_string_erase(string, 0, -1);
 	tree2string(mem, dict->qroot, string, TRUE);
 	fail_unless(strcmp(string->str, "([2].0.1.)") == 0, "Unexpected result in the tree structure: expect: %s, actual: %s", "([2].0.1.)", string->str);
-	hg_dict_add(dict, 2, 2, NULL);
-	hg_dict_add(dict, 3, 3, NULL);
+	hg_dict_add(dict, 2, 2, FALSE, NULL);
+	hg_dict_add(dict, 3, 3, FALSE, NULL);
 	g_string_erase(string, 0, -1);
 	tree2string(mem, dict->qroot, string, TRUE);
 	fail_unless(strcmp(string->str, "([4].0.1.2.3.)") == 0, "Unexpected result in the tree structure: expect: %s, actual: %s", "([4].0.1.2.3.)", string->str);
-	hg_dict_add(dict, 4, 4, NULL);
+	hg_dict_add(dict, 4, 4, FALSE, NULL);
 	g_string_erase(string, 0, -1);
 	tree2string(mem, dict->qroot, string, TRUE);
 	fail_unless(strcmp(string->str, "([1]([2].0.1.)2([2].3.4.))") == 0, "Unexpected result in the tree structure: expect: %s, actual: %s", "([1]([2].0.1.)2([2].3.4.))", string->str);
 	g_string_erase(string, 0, -1);
 	for (i = 5; i < 256; i++) {
-		hg_dict_add(dict, i, i, NULL);
+		hg_dict_add(dict, i, i, FALSE, NULL);
 	}
 	tree2string(mem, dict->qroot, string, FALSE);
 	fail_unless(strcmp(string->str, test) == 0, "Unexpected result in the tree structure: expect: %s, actual: %s", test, string->str);
@@ -256,14 +256,14 @@ TDEF (hg_dict_lookup)
 	hg_dict_t *dict;
 	hg_quark_t q, t, t2;
 
-	q = hg_dict_new(mem, 2, (gpointer *)&dict);
+	q = hg_dict_new(mem, 2, TRUE, (gpointer *)&dict);
 	fail_unless(q != Qnil, "Unable to create a dict object.");
 	t = hg_quark_new(HG_TYPE_BOOL, TRUE);
 	hg_quark_set_access_bits(&t, TRUE, TRUE, TRUE, TRUE);
 	fail_unless(hg_quark_is_readable(t), "Failed for prechecking read permission");
 	fail_unless(hg_quark_is_writable(t), "Failed for prechecking write permission");
 	fail_unless(hg_quark_is_executable(t), "Failed for prechecking execute permission");
-	hg_dict_add(dict, t, t, NULL);
+	hg_dict_add(dict, t, t, FALSE, NULL);
 	t2 = hg_dict_lookup(dict, t, NULL);
 	fail_unless(t == t2, "Unexpected result in lookup: expected: %lx, actual: %lx", t, t2);
 	fail_unless(hg_quark_is_readable(t2), "Failed for post-checking read permission");

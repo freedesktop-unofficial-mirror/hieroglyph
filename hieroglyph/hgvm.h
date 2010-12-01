@@ -264,6 +264,14 @@ hg_quark_t hg_vm_array_get(hg_vm_t     *vm,
                            gboolean     force,
                            GError     **error);
 
+/* hg_dict_t */
+gboolean hg_vm_dict_add(hg_vm_t     *vm,
+			hg_quark_t   qdict,
+			hg_quark_t   qkey,
+			hg_quark_t   qval,
+			gboolean     force,
+			GError     **error);
+
 /* hg_quark_t */
 gboolean   hg_vm_quark_gc_mark               (hg_vm_t     *vm,
                                               hg_quark_t   qdata,

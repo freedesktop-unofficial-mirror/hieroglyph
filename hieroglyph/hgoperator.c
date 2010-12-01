@@ -504,6 +504,11 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
+	if (!hg_vm_quark_is_readable(vm, &arg0) ||
+	    !hg_vm_quark_is_writable(vm, &arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		return FALSE;
+	}
 	d = HG_VM_LOCK (vm, arg0, error);
 	if (d == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
@@ -537,7 +542,7 @@ G_STMT_START {
 				    break;
 			}
 			if (q != Qnil)
-				hg_dict_add(d, qn, q, error);
+				hg_dict_add(d, qn, q, FALSE, error);
 		}
 	}
 	g_list_free(keys);
@@ -700,16 +705,11 @@ G_STMT_START {
 			return FALSE;
 		}
 	} else if (HG_IS_QDICT (arg0)) {
-		hg_dict_t *d;
-
-		d = HG_VM_LOCK (vm, arg0, error);
-		if (d == NULL) {
-			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		retval = hg_vm_dict_add(vm, arg0, arg1, arg2, TRUE, error);
+		if (!retval) {
+			hg_vm_set_error_from_gerror(vm, qself, *error);
 			return FALSE;
 		}
-		retval = hg_dict_add(d, arg1, arg2, error);
-
-		HG_VM_UNLOCK (vm, arg0);
 	} else if (HG_IS_QSTRING (arg0)) {
 		hg_string_t *s;
 
@@ -1020,7 +1020,10 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 		return FALSE;
 	}
-	qd = hg_dict_new(hg_vm_get_mem(vm), __n / 2, (gpointer *)&dict);
+	qd = hg_dict_new(hg_vm_get_mem(vm),
+			 __n / 2,
+			 hg_vm_get_language_level(vm) == HG_LANG_LEVEL_1,
+			 (gpointer *)&dict);
 	if (qd == Qnil) {
 		hg_stack_drop(ostack, error);
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
@@ -1030,7 +1033,7 @@ G_STMT_START {
 	for (i = __n; i > 0; i -= 2) {
 		qk = hg_stack_index(ostack, i, error);
 		qv = hg_stack_index(ostack, i - 1, error);
-		hg_dict_add(dict, qk, qv, error);
+		hg_dict_add(dict, qk, qv, FALSE, error);
 	}
 	for (i = 0; i <= (__n + 1); i++)
 		hg_stack_drop(ostack, error);
@@ -1401,7 +1404,7 @@ G_STMT_START {
 	if (q != Qnil &&
 	    HG_IS_QBOOL (q) &&
 	    HG_BOOL (q)) {
-		hg_dict_add(dict, qn, HG_QBOOL (FALSE), error);
+		hg_dict_add(dict, qn, HG_QBOOL (FALSE), FALSE, error);
 		hg_vm_clear_error(vm);
 		ret = TRUE;
 	}
@@ -2486,9 +2489,7 @@ _hg_operator_copy_real_traverse_dict(hg_mem_t    *mem,
 {
 	hg_dict_t *d2 = (hg_dict_t *)data;
 
-	hg_dict_add(d2, qkey, qval, error);
-
-	return TRUE;
+	return hg_dict_add(d2, qkey, qval, TRUE, error);
 }
 
 /* <any> ... <n> copy <any> ...
@@ -3317,36 +3318,19 @@ DEFUNC_OPER_END
 DEFUNC_OPER (def)
 G_STMT_START {
 	hg_quark_t arg0, arg1, qd;
-	gboolean is_dict_global;
-	hg_dict_t *dict;
 
 	CHECK_STACK (ostack, 2);
 
 	arg0 = hg_stack_index(ostack, 1, error);
 	arg1 = hg_stack_index(ostack, 0, error);
 	qd = hg_stack_index(dstack, 0, error);
-	if (!hg_vm_quark_is_writable(vm, &qd)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+
+	retval = hg_vm_dict_add(vm, qd, arg0, arg1, FALSE, error);
+	if (!retval) {
+		hg_vm_set_error_from_gerror(vm, qself, *error);
 		return FALSE;
 	}
-	is_dict_global = hg_quark_has_same_mem_id(qd, vm->mem_id[HG_VM_MEM_GLOBAL]);
-	if (is_dict_global) {
-		if (!hg_quark_is_simple_object(arg0) &&
-		    hg_quark_has_same_mem_id(arg0, vm->mem_id[HG_VM_MEM_LOCAL])) {
-			hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
-			return FALSE;
-		}
-		if (!hg_quark_is_simple_object(arg1) &&
-		    hg_quark_has_same_mem_id(arg1, vm->mem_id[HG_VM_MEM_LOCAL])) {
-			hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
-			return FALSE;
-		}
-	}
-	dict = HG_VM_LOCK (vm, qd, error);
-	if (dict == NULL) {
-		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
-		return FALSE;
-	}
+/*
 	if (hg_vm_get_language_level(vm) == HG_LANG_LEVEL_1) {
 		if (hg_dict_length(dict) == hg_dict_maxlength(dict) &&
 		    hg_dict_lookup(dict, arg0, error) == Qnil) {
@@ -3354,12 +3338,10 @@ G_STMT_START {
 			goto error;
 		}
 	}
-	retval = hg_dict_add(dict, arg0, arg1, error);
+*/
 
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
-  error:
-	HG_VM_UNLOCK (vm, qd);
 } G_STMT_END;
 VALIDATE_STACK_SIZE (-2, 0, 0);
 DEFUNC_OPER_END
@@ -3430,6 +3412,7 @@ G_STMT_START {
 	}
 	ret = hg_dict_new(hg_vm_get_mem(vm),
 			  HG_INT (arg0),
+			  hg_vm_get_language_level(vm) == HG_LANG_LEVEL_1,
 			  NULL);
 	if (ret == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
@@ -4205,9 +4188,7 @@ _hg_operator_dup_dict(hg_mem_t    *mem,
 {
 	hg_dict_t *dict = data;
 
-	hg_dict_add(dict, qkey, qval, error);
-
-	return TRUE;
+	return hg_dict_add(dict, qkey, qval, TRUE, error);
 }
 
 /* <array> <proc> forall -
@@ -4248,7 +4229,10 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
-		qd = hg_dict_new(dict->o.mem, hg_dict_maxlength(dict), (gpointer *)&new_dict);
+		qd = hg_dict_new(dict->o.mem,
+				 hg_dict_maxlength(dict),
+				 dict->raise_dictfull,
+				 (gpointer *)&new_dict);
 		if (qd == Qnil) {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			goto d_error;
@@ -5950,22 +5934,11 @@ G_STMT_START {
 			return FALSE;
 		}
 	} else if (HG_IS_QDICT (arg0)) {
-		hg_dict_t *d;
-
-		d = HG_VM_LOCK (vm, arg0, error);
-		if (d == NULL) {
-			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		retval = hg_vm_dict_add(vm, arg0, arg1, arg2, FALSE, error);
+		if (!retval) {
+			hg_vm_set_error_from_gerror(vm, qself, *error);
 			return FALSE;
 		}
-		if (hg_vm_get_language_level(vm) == HG_LANG_LEVEL_1 &&
-		    hg_dict_length(d) == hg_dict_maxlength(d) &&
-		    hg_dict_lookup(d, arg1, error) == Qnil) {
-			hg_vm_set_error(vm, qself, HG_VM_e_dictfull);
-			goto d_error;
-		}
-		retval = hg_dict_add(d, arg1, arg2, error);
-	  d_error:
-		HG_VM_UNLOCK (vm, arg0);
 	} else if (HG_IS_QSTRING (arg0)) {
 		hg_string_t *s;
 
@@ -7572,7 +7545,7 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
-		if (!hg_dict_add(dict_error, HG_QNAME (vm->name, ".stopped"), HG_QBOOL (TRUE), error)) {
+		if (!hg_dict_add(dict_error, HG_QNAME (vm->name, ".stopped"), HG_QBOOL (TRUE), FALSE, error)) {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
@@ -8300,6 +8273,7 @@ DEFUNC_UNIMPLEMENTED_OPER (yshow);
 		if (!hg_dict_add((_d_),					\
 				 __o_name__,				\
 				 __op__,				\
+				 FALSE,					\
 				 NULL))					\
 			return FALSE;					\
 	} G_STMT_END
@@ -8312,6 +8286,7 @@ DEFUNC_UNIMPLEMENTED_OPER (yshow);
 		if (!hg_dict_add((_d_),					\
 				 __o_name__,				\
 				 __op__,				\
+				 FALSE,					\
 				 NULL))					\
 			return FALSE;					\
 	} G_STMT_END
@@ -8324,6 +8299,7 @@ DEFUNC_UNIMPLEMENTED_OPER (yshow);
 		if (!hg_dict_add((_d_),				\
 				 __o_name__,			\
 				 __v__,				\
+				 FALSE,				\
 				 NULL))				\
 			return FALSE;				\
 	} G_STMT_END
