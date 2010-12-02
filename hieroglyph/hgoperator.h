@@ -70,48 +70,11 @@ typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
 #define VALIDATE_STACK_SIZE(_o_,_e_,_d_)
 #endif
 #ifndef PLUGIN
-#define PROTO_OPER(_n_)							\
-	static gboolean _hg_operator_real_ ## _n_(hg_vm_t  *vm,		\
-						  GError  **error);
-#define DEFUNC_OPER(_n_)						\
-	static gboolean							\
-	_hg_operator_real_ ## _n_(hg_vm_t  *vm,				\
-				  GError  **error)			\
-	{								\
-		hg_stack_t *ostack G_GNUC_UNUSED = vm->stacks[HG_VM_STACK_OSTACK]; \
-		hg_stack_t *estack G_GNUC_UNUSED = vm->stacks[HG_VM_STACK_ESTACK]; \
-		hg_stack_t *dstack G_GNUC_UNUSED = vm->stacks[HG_VM_STACK_DSTACK]; \
-		hg_quark_t qself G_GNUC_UNUSED = hg_stack_index(estack, 0, error); \
-		gboolean retval = FALSE;				\
-		INIT_STACK_VALIDATOR;
-#define DEFUNC_UNIMPLEMENTED_OPER(_n_)					\
-	static gboolean							\
-	_hg_operator_real_ ## _n_(hg_vm_t  *vm,				\
-				  GError  **error)			\
-	{								\
-		g_warning("%s isn't yet implemented.", #_n_);		\
-		hg_vm_set_error(vm,					\
-				hg_stack_index(vm->stacks[HG_VM_STACK_ESTACK], 0, error), \
-				HG_VM_e_VMerror);					\
-		return FALSE;						\
-	}
+#define OPER_FUNC_NAME(_n_)			\
+	_hg_operator_real_ ## _n_
 #else
 #define OPER_FUNC_NAME(_n_)						\
 	_plugin_real_ ## _n_
-#define PROTO_OPER(_n_)						\
-	static gboolean OPER_FUNC_NAME (_n_) (hg_vm_t  *vm,	\
-					      GError  **error);
-#define DEFUNC_OPER(_n_)						\
-	static gboolean							\
-	OPER_FUNC_NAME (_n_) (hg_vm_t  *vm,				\
-			      GError  **error)				\
-	{								\
-		hg_stack_t *ostack G_GNUC_UNUSED = vm->stacks[HG_VM_STACK_OSTACK]; \
-		hg_stack_t *estack G_GNUC_UNUSED = vm->stacks[HG_VM_STACK_ESTACK]; \
-		hg_stack_t *dstack G_GNUC_UNUSED = vm->stacks[HG_VM_STACK_DSTACK]; \
-		hg_quark_t qself G_GNUC_UNUSED = hg_stack_index(estack, 0, error); \
-		gboolean retval = FALSE;				\
-		INIT_STACK_VALIDATOR;
 #define REG_ENC(_n_,_k_,_f_)						\
 	(hg_operator_add_dynamic((_n_), #_k_, OPER_FUNC_NAME (_f_)))
 #define REG_OPER(_d_,_k_)						\
@@ -164,6 +127,31 @@ typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
 	}
 #endif
 
+#define PROTO_OPER(_n_)						\
+	static gboolean OPER_FUNC_NAME (_n_) (hg_vm_t  *vm,	\
+					      GError  **error);
+#define DEFUNC_OPER(_n_)						\
+	static gboolean							\
+	OPER_FUNC_NAME (_n_) (hg_vm_t  *vm,				\
+			      GError  **error)				\
+	{								\
+		hg_stack_t *ostack G_GNUC_UNUSED = vm->stacks[HG_VM_STACK_OSTACK]; \
+		hg_stack_t *estack G_GNUC_UNUSED = vm->stacks[HG_VM_STACK_ESTACK]; \
+		hg_stack_t *dstack G_GNUC_UNUSED = vm->stacks[HG_VM_STACK_DSTACK]; \
+		hg_quark_t qself G_GNUC_UNUSED = hg_stack_index(estack, 0, error); \
+		gboolean retval = FALSE;				\
+		INIT_STACK_VALIDATOR;
+#define DEFUNC_UNIMPLEMENTED_OPER(_n_)					\
+	static gboolean							\
+	OPER_FUNC_NAME (_n_) (hg_vm_t  *vm,				\
+			      GError  **error)				\
+	{								\
+		g_warning("%s isn't yet implemented.", #_n_);		\
+		hg_vm_set_error(vm,					\
+				hg_stack_index(vm->stacks[HG_VM_STACK_ESTACK], 0, error), \
+				HG_VM_e_VMerror);					\
+		return FALSE;						\
+	}
 #define DEFUNC_OPER_END					\
 		return retval;				\
 	}
