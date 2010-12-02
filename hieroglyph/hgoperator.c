@@ -8760,14 +8760,14 @@ hg_operator_init(void)
 		__hg_operator_name_table[HG_enc_ ## _n_] = g_strdup("--" #_n_ "--"); \
 		if (__hg_operator_name_table[HG_enc_ ## _n_] == NULL)	\
 			return FALSE;					\
-		__hg_operator_func_table[HG_enc_ ## _n_] = _hg_operator_real_ ## _n_; \
+		__hg_operator_func_table[HG_enc_ ## _n_] = OPER_FUNC_NAME (_n_); \
 	} G_STMT_END
 #define DECL_PRIV_OPER(_on_,_n_)						\
 	G_STMT_START {							\
 		__hg_operator_name_table[HG_enc_ ## _n_] = g_strdup("--" #_on_ "--"); \
 		if (__hg_operator_name_table[HG_enc_ ## _n_] == NULL)	\
 			return FALSE;					\
-		__hg_operator_func_table[HG_enc_ ## _n_] = _hg_operator_real_ ## _n_; \
+		__hg_operator_func_table[HG_enc_ ## _n_] = OPER_FUNC_NAME (_n_); \
 	} G_STMT_END
 
 	DECL_PRIV_OPER (.abort, private_abort);

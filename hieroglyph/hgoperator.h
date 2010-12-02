@@ -149,7 +149,7 @@ typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
 		g_warning("%s isn't yet implemented.", #_n_);		\
 		hg_vm_set_error(vm,					\
 				hg_stack_index(vm->stacks[HG_VM_STACK_ESTACK], 0, error), \
-				HG_VM_e_VMerror);					\
+				HG_VM_e_VMerror);			\
 		return FALSE;						\
 	}
 #define DEFUNC_OPER_END					\
