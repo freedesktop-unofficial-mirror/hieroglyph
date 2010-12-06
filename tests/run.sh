@@ -36,4 +36,10 @@ for i in $(dirname $0)/../devices/*; do
     fi
 done
 export LD_LIBRARY_PATH="`dirname $0`/../hieroglyph/.libs:$LD_LIBRARY_PATH"
-$@
+if [ "x$1" = "x-d" ]; then
+    shift
+    libtool --mode=execute gdb --args $@
+else
+    $@
+fi
+
