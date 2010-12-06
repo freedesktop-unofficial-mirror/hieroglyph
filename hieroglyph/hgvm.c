@@ -1975,6 +1975,11 @@ hg_vm_stepi(hg_vm_t  *vm,
 				    if (hg_vm_quark_is_executable(vm, &qresult) &&
 					(HG_IS_QNAME (qresult) ||
 					 HG_IS_QOPER (qresult))) {
+					    if (hg_array_length(a) == 1) {
+						    hg_stack_drop(estack, &err);
+					    } else {
+						    hg_array_remove(a, 0);
+					    }
 					    if (!hg_stack_push(estack, qresult)) {
 						    hg_vm_set_error(vm, qexecobj,
 								    HG_VM_e_execstackoverflow);
@@ -1986,8 +1991,12 @@ hg_vm_stepi(hg_vm_t  *vm,
 								    HG_VM_e_stackoverflow);
 						    goto a_error;
 					    }
+					    if (hg_array_length(a) == 1) {
+						    hg_stack_drop(estack, &err);
+					    } else {
+						    hg_array_remove(a, 0);
+					    }
 				    }
-				    hg_array_remove(a, 0);
 			    } else {
 				    hg_stack_drop(estack, &err);
 			    }

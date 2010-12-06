@@ -7536,10 +7536,10 @@ G_STMT_START {
 		q = hg_stack_pop(estack, error);
 		STACK_PUSH (estack, HG_QOPER (HG_enc_private_abort));
 		STACK_PUSH (estack, q);
+		__n++;
 	} else {
 		hg_dict_t *dict_error;
 
-		__n = i - 1;
 		dict_error = HG_VM_LOCK (vm, vm->qerror, error);
 		if (dict_error == NULL) {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
@@ -7549,12 +7549,14 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
-		for (; i > 1; i--)
+		for (; i > 1; i--) {
+			__n--;
 			hg_stack_drop(estack, error);
+		}
 	}
 	retval = TRUE;
 } G_STMT_END;
-VALIDATE_STACK_SIZE (0, __n != 0 ? -__n : 1, 0);
+VALIDATE_STACK_SIZE (0, __n, 0);
 DEFUNC_OPER_END
 
 /* <any> stopped <bool> */
