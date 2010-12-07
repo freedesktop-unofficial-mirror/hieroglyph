@@ -333,6 +333,14 @@ void        hg_vm_stack_dump(hg_vm_t    *vm,
                              hg_stack_t *stack,
                              hg_file_t  *output);
 
+/* hg_string_t */
+gchar *hg_vm_string_get_cstr(hg_vm_t     *vm,
+                             hg_quark_t   qstring,
+                             GError     **error);
+guint  hg_vm_string_length  (hg_vm_t     *vm,
+                             hg_quark_t   qstring,
+                             GError     **error);
+
 /* hg_vm_value_t */
 void           hg_vm_value_free       (gpointer     data);
 hg_vm_value_t *hg_vm_value_boolean_new(gboolean     value);
