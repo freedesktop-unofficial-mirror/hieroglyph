@@ -885,28 +885,16 @@ DEFUNC_OPER_END
 DEFUNC_OPER (private_undef)
 G_STMT_START {
 	hg_quark_t arg0, arg1;
-	hg_dict_t *dict;
 
 	CHECK_STACK (ostack, 2);
 
 	arg0 = hg_stack_index(ostack, 1, error);
 	arg1 = hg_stack_index(ostack, 0, error);
-	if (!HG_IS_QDICT (arg0)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+	hg_vm_dict_remove(vm, arg0, arg1, error);
+	if (*error) {
+		hg_vm_set_error_from_gerror(vm, qself, *error);
 		return FALSE;
 	}
-	if (!hg_vm_quark_is_writable(vm, &arg0)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
-		return FALSE;
-	}
-	dict = HG_VM_LOCK (vm, arg0, error);
-	if (dict == NULL) {
-		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
-		return FALSE;
-	}
-	hg_dict_remove(dict, arg1, error);
-
-	HG_VM_UNLOCK (vm, arg0);
 
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
@@ -1586,7 +1574,7 @@ DEFUNC_OPER_END
 /* <x> <y> <r> <angle1> <angle2> arc - */
 DEFUNC_OPER (arc)
 G_STMT_START {
-	hg_quark_t arg0, arg1, arg2, arg3, arg4, q;
+	hg_quark_t arg0, arg1, arg2, arg3, arg4, q, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 	hg_path_t *path;
 	gdouble dx, dy, dr, dangle1, dangle2, dc = 2.0 * M_PI / 360;
@@ -1640,7 +1628,7 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	gstate = HG_VM_LOCK (vm, hg_vm_get_gstate(vm), error);
+	gstate = HG_VM_LOCK (vm, qg, error);
 	if (gstate == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
@@ -1674,7 +1662,7 @@ G_STMT_START {
   error2:
 	HG_VM_UNLOCK (vm, q);
   error:
-	HG_VM_UNLOCK (vm, hg_vm_get_gstate(vm));
+	HG_VM_UNLOCK (vm, qg);
 } G_STMT_END;
 VALIDATE_STACK_SIZE (-5, 0, 0);
 DEFUNC_OPER_END
@@ -1682,7 +1670,7 @@ DEFUNC_OPER_END
 /* <x> <y> <r> <angle1> <angle2> arcn - */
 DEFUNC_OPER (arcn)
 G_STMT_START {
-	hg_quark_t arg0, arg1, arg2, arg3, arg4, q;
+	hg_quark_t arg0, arg1, arg2, arg3, arg4, q, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 	hg_path_t *path;
 	gdouble dx, dy, dr, dangle1, dangle2, dc = 2.0 * M_PI / 360;
@@ -1736,7 +1724,7 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	gstate = HG_VM_LOCK (vm, hg_vm_get_gstate(vm), error);
+	gstate = HG_VM_LOCK (vm, qg, error);
 	if (gstate == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
@@ -1770,7 +1758,7 @@ G_STMT_START {
   error2:
 	HG_VM_UNLOCK (vm, q);
   error:
-	HG_VM_UNLOCK (vm, hg_vm_get_gstate(vm));
+	HG_VM_UNLOCK (vm, qg);
 } G_STMT_END;
 VALIDATE_STACK_SIZE (-5, 0, 0);
 DEFUNC_OPER_END
@@ -1778,7 +1766,7 @@ DEFUNC_OPER_END
 /* <x1> <y1> <x2> <y2> <r> arct - */
 DEFUNC_OPER (arct)
 G_STMT_START {
-	hg_quark_t arg0, arg1, arg2, arg3, arg4, q;
+	hg_quark_t arg0, arg1, arg2, arg3, arg4, q, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 	hg_path_t *path;
 	gdouble dx1, dy1, dx2, dy2, dr;
@@ -1832,7 +1820,7 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	gstate = HG_VM_LOCK (vm, hg_vm_get_gstate(vm), error);
+	gstate = HG_VM_LOCK (vm, qg, error);
 	if (gstate == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
@@ -1861,7 +1849,7 @@ G_STMT_START {
   error2:
 	HG_VM_UNLOCK (vm, q);
   error:
-	HG_VM_UNLOCK (vm, hg_vm_get_gstate(vm));
+	HG_VM_UNLOCK (vm, qg);
 } G_STMT_END;
 VALIDATE_STACK_SIZE (-5, 0, 0);
 DEFUNC_OPER_END
@@ -1869,7 +1857,7 @@ DEFUNC_OPER_END
 /* <x1> <y1> <x2> <y2> <r> arcto <xt1> <yt1> <xt2> <yt2> */
 DEFUNC_OPER (arcto)
 G_STMT_START {
-	hg_quark_t arg0, arg1, arg2, arg3, arg4, q;
+	hg_quark_t arg0, arg1, arg2, arg3, arg4, q, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 	hg_path_t *path;
 	gdouble dx1, dy1, dx2, dy2, dr, dt[4];
@@ -1923,7 +1911,7 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	gstate = HG_VM_LOCK (vm, hg_vm_get_gstate(vm), error);
+	gstate = HG_VM_LOCK (vm, qg, error);
 	if (gstate == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
@@ -1957,7 +1945,7 @@ G_STMT_START {
   error2:
 	HG_VM_UNLOCK (vm, q);
   error:
-	HG_VM_UNLOCK (vm, hg_vm_get_gstate(vm));
+	HG_VM_UNLOCK (vm, qg);
 } G_STMT_END;
 VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
@@ -2379,11 +2367,11 @@ DEFUNC_OPER_END
 /* - closepath - */
 DEFUNC_OPER (closepath)
 G_STMT_START {
-	hg_quark_t q = Qnil;
+	hg_quark_t q = Qnil, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 	hg_path_t *path;
 
-	gstate = HG_VM_LOCK (vm, hg_vm_get_gstate(vm), error);
+	gstate = HG_VM_LOCK (vm, qg, error);
 	if (gstate == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
@@ -2402,7 +2390,7 @@ G_STMT_START {
   error:
 	if (q != Qnil)
 		HG_VM_UNLOCK (vm, q);
-	HG_VM_UNLOCK (vm, hg_vm_get_gstate(vm));
+	HG_VM_UNLOCK (vm, qg);
 } G_STMT_END;
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
@@ -2852,7 +2840,7 @@ DEFUNC_OPER_END
 /* <x1> <y1> <x2> <y2> <x3> <y3> curveto - */
 DEFUNC_OPER (curveto)
 G_STMT_START {
-	hg_quark_t arg0, arg1, arg2, arg3, arg4, arg5, q;
+	hg_quark_t arg0, arg1, arg2, arg3, arg4, arg5, q, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 	hg_path_t *path;
 	gdouble dx1, dy1, dx2, dy2, dx3, dy3;
@@ -2915,7 +2903,7 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	gstate = HG_VM_LOCK (vm, hg_vm_get_gstate(vm), error);
+	gstate = HG_VM_LOCK (vm, qg, error);
 	if (gstate == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
@@ -2945,7 +2933,7 @@ G_STMT_START {
   error2:
 	HG_VM_UNLOCK (vm, q);
   error:
-	HG_VM_UNLOCK (vm, hg_vm_get_gstate(vm));
+	HG_VM_UNLOCK (vm, qg);
 } G_STMT_END;
 VALIDATE_STACK_SIZE (-6, 0, 0);
 DEFUNC_OPER_END
@@ -4570,19 +4558,19 @@ DEFUNC_OPER_END
 /* - gsave - */
 DEFUNC_OPER (gsave)
 G_STMT_START {
-	hg_quark_t q;
+	hg_quark_t q, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 
-	gstate = HG_VM_LOCK (vm, hg_vm_get_gstate(vm), error);
+	gstate = HG_VM_LOCK (vm, qg, error);
 	if (gstate == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
 	q = hg_gstate_save(gstate, Qnil);
 
-	HG_VM_UNLOCK (vm, hg_vm_get_gstate(vm));
+	HG_VM_UNLOCK (vm, qg);
 
-	STACK_PUSH (vm->stacks[HG_VM_STACK_GSTATE], hg_vm_get_gstate(vm));
+	STACK_PUSH (vm->stacks[HG_VM_STACK_GSTATE], qg);
 	hg_vm_set_gstate(vm, q);
 
 	retval = TRUE;
@@ -5108,7 +5096,7 @@ DEFUNC_OPER_END
 /* <x> <y> lineto - */
 DEFUNC_OPER (lineto)
 G_STMT_START {
-	hg_quark_t arg0, arg1, q;
+	hg_quark_t arg0, arg1, q, qg = hg_vm_get_gstate(vm);
 	gdouble dx, dy;
 	hg_gstate_t *gstate;
 	hg_path_t *path;
@@ -5135,7 +5123,7 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	gstate = HG_VM_LOCK (vm, hg_vm_get_gstate(vm), error);
+	gstate = HG_VM_LOCK (vm, qg, error);
 	if (gstate == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
@@ -5161,7 +5149,7 @@ G_STMT_START {
   error2:
 	HG_VM_UNLOCK (vm, q);
   error:
-	HG_VM_UNLOCK (vm, hg_vm_get_gstate(vm));
+	HG_VM_UNLOCK (vm, qg);
 } G_STMT_END;
 VALIDATE_STACK_SIZE (-2, 0, 0);
 DEFUNC_OPER_END
@@ -5401,7 +5389,7 @@ DEFUNC_UNIMPLEMENTED_OPER (monitor);
 /* <x> <y> moveto - */
 DEFUNC_OPER (moveto)
 G_STMT_START {
-	hg_quark_t arg0, arg1, q;
+	hg_quark_t arg0, arg1, q, qg = hg_vm_get_gstate(vm);
 	gdouble dx, dy;
 	hg_gstate_t *gstate;
 	hg_path_t *path;
@@ -5428,7 +5416,7 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	gstate = HG_VM_LOCK (vm, hg_vm_get_gstate(vm), error);
+	gstate = HG_VM_LOCK (vm, qg, error);
 	if (gstate == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
@@ -5457,7 +5445,7 @@ G_STMT_START {
   error2:
 	HG_VM_UNLOCK (vm, q);
   error:
-	HG_VM_UNLOCK (vm, hg_vm_get_gstate(vm));
+	HG_VM_UNLOCK (vm, qg);
 } G_STMT_END;
 VALIDATE_STACK_SIZE (-2, 0, 0);
 DEFUNC_OPER_END
@@ -5926,7 +5914,7 @@ DEFUNC_OPER_END
 /* <dx1> <dy1> <dx2> <dy2> <dx3> <dy3> rcurveto - */
 DEFUNC_OPER (rcurveto)
 G_STMT_START {
-	hg_quark_t arg0, arg1, arg2, arg3, arg4, arg5, q;
+	hg_quark_t arg0, arg1, arg2, arg3, arg4, arg5, q, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 	hg_path_t *path;
 	gdouble dx1, dy1, dx2, dy2, dx3, dy3;
@@ -5989,7 +5977,7 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	gstate = HG_VM_LOCK (vm, hg_vm_get_gstate(vm), error);
+	gstate = HG_VM_LOCK (vm, qg, error);
 	if (gstate == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
@@ -6019,7 +6007,7 @@ G_STMT_START {
   error2:
 	HG_VM_UNLOCK (vm, q);
   error:
-	HG_VM_UNLOCK (vm, hg_vm_get_gstate(vm));
+	HG_VM_UNLOCK (vm, qg);
 } G_STMT_END;
 VALIDATE_STACK_SIZE (-6, 0, 0);
 DEFUNC_OPER_END
@@ -6560,7 +6548,7 @@ DEFUNC_UNIMPLEMENTED_OPER (reversepath);
 /* <dx> <dy> rlineto - */
 DEFUNC_OPER (rlineto)
 G_STMT_START {
-	hg_quark_t arg0, arg1, q;
+	hg_quark_t arg0, arg1, q, qg = hg_vm_get_gstate(vm);
 	gdouble dx, dy;
 	hg_gstate_t *gstate;
 	hg_path_t *path;
@@ -6587,7 +6575,7 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	gstate = HG_VM_LOCK (vm, hg_vm_get_gstate(vm), error);
+	gstate = HG_VM_LOCK (vm, qg, error);
 	if (gstate == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
@@ -6613,7 +6601,7 @@ G_STMT_START {
   error2:
 	HG_VM_UNLOCK (vm, q);
   error:
-	HG_VM_UNLOCK (vm, hg_vm_get_gstate(vm));
+	HG_VM_UNLOCK (vm, qg);
 } G_STMT_END;
 VALIDATE_STACK_SIZE (-2, 0, 0);
 DEFUNC_OPER_END
@@ -6621,7 +6609,7 @@ DEFUNC_OPER_END
 /* <dx> <dy> rmoveto - */
 DEFUNC_OPER (rmoveto)
 G_STMT_START {
-	hg_quark_t arg0, arg1, q;
+	hg_quark_t arg0, arg1, q, qg = hg_vm_get_gstate(vm);
 	gdouble dx, dy;
 	hg_gstate_t *gstate;
 	hg_path_t *path;
@@ -6648,7 +6636,7 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	gstate = HG_VM_LOCK (vm, hg_vm_get_gstate(vm), error);
+	gstate = HG_VM_LOCK (vm, qg, error);
 	if (gstate == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
@@ -6674,7 +6662,7 @@ G_STMT_START {
   error2:
 	HG_VM_UNLOCK (vm, q);
   error:
-	HG_VM_UNLOCK (vm, hg_vm_get_gstate(vm));
+	HG_VM_UNLOCK (vm, qg);
 } G_STMT_END;
 VALIDATE_STACK_SIZE (-2, 0, 0);
 DEFUNC_OPER_END
@@ -6767,7 +6755,7 @@ DEFUNC_OPER_END
 /* - save <save> */
 DEFUNC_OPER (save)
 G_STMT_START {
-	hg_quark_t q, qg;
+	hg_quark_t q, qgg = hg_vm_get_gstate(vm), qg;
 	hg_snapshot_t *sn;
 	hg_gstate_t *gstate;
 
@@ -6781,16 +6769,16 @@ G_STMT_START {
 	HG_VM_UNLOCK (vm, q);
 
 	/* save the gstate too */
-	gstate = HG_VM_LOCK (vm, hg_vm_get_gstate(vm), error);
+	gstate = HG_VM_LOCK (vm, qgg, error);
 	if (gstate == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
 	qg = hg_gstate_save(gstate, q);
 
-	STACK_PUSH (vm->stacks[HG_VM_STACK_GSTATE], hg_vm_get_gstate(vm));
+	STACK_PUSH (vm->stacks[HG_VM_STACK_GSTATE], qgg);
 
-	HG_VM_UNLOCK (vm, hg_vm_get_gstate(vm));
+	HG_VM_UNLOCK (vm, qgg);
 	hg_vm_set_gstate(vm, qg);
 
 	STACK_PUSH (ostack, q);
@@ -7194,7 +7182,7 @@ DEFUNC_UNIMPLEMENTED_OPER (setpattern);
 /* <red> <green> <blue> setrgbcolor - */
 DEFUNC_OPER (setrgbcolor)
 G_STMT_START {
-	hg_quark_t arg0, arg1, arg2;
+	hg_quark_t arg0, arg1, arg2, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 	gdouble r, g, b;
 
@@ -7227,14 +7215,14 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	gstate = HG_VM_LOCK (vm, hg_vm_get_gstate(vm), error);
+	gstate = HG_VM_LOCK (vm, qg, error);
 	if (gstate == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
 	hg_gstate_set_rgbcolor(gstate, r, g, b);
 
-	HG_VM_UNLOCK (vm, hg_vm_get_gstate(vm));
+	HG_VM_UNLOCK (vm, qg);
 
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
@@ -7443,15 +7431,11 @@ G_STMT_START {
 		STACK_PUSH (estack, q);
 		__n++;
 	} else {
-		hg_dict_t *dict_error;
-
-		dict_error = HG_VM_LOCK (vm, vm->qerror, error);
-		if (dict_error == NULL) {
-			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
-			return FALSE;
-		}
-		if (!hg_dict_add(dict_error, HG_QNAME (vm->name, ".stopped"), HG_QBOOL (TRUE), FALSE, error)) {
-			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		if (!hg_vm_dict_add(vm, vm->qerror,
+				    HG_QNAME (vm->name, ".stopped"),
+				    HG_QBOOL (TRUE),
+				    FALSE, error)) {
+			hg_vm_set_error_from_gerror(vm, qself, *error);
 			return FALSE;
 		}
 		for (; i > 1; i--) {

@@ -272,6 +272,10 @@ gboolean   hg_vm_dict_add       (hg_vm_t     *vm,
                                  hg_quark_t   qval,
                                  gboolean     force,
                                  GError     **error);
+gboolean   hg_vm_dict_remove    (hg_vm_t     *vm,
+				 hg_quark_t   qdict,
+				 hg_quark_t   qkey,
+				 GError     **error);
 hg_quark_t hg_vm_dict_lookup    (hg_vm_t     *vm,
                                  hg_quark_t   qdict,
                                  hg_quark_t   qkey,

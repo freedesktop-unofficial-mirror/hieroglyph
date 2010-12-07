@@ -3542,6 +3542,63 @@ hg_vm_dict_add(hg_vm_t     *vm,
 }
 
 /**
+ * hg_vm_dict_remove:
+ * @vm:
+ * @qdict:
+ * @qkey:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_vm_dict_remove(hg_vm_t     *vm,
+		  hg_quark_t   qdict,
+		  hg_quark_t   qkey,
+		  GError     **error)
+{
+	GError *err = NULL;
+	hg_dict_t *d;
+	gboolean retval = FALSE;
+
+	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error, HG_VM_e_VMerror);
+
+	if (!HG_IS_QDICT (qdict)) {
+		g_set_error(&err, HG_ERROR, HG_VM_e_typecheck,
+			    "not a dict");
+		goto finalize;
+	}
+	if (!hg_vm_quark_is_writable(vm, &qdict)) {
+		g_set_error(&err, HG_ERROR, HG_VM_e_invalidaccess,
+			    "No writable permission to access the dict");
+		goto finalize;
+	}
+	d = _HG_VM_LOCK (vm, qdict, &err);
+	if (!d)
+		goto finalize;
+
+	retval = hg_dict_remove(d, qkey, &err);
+
+	_HG_VM_UNLOCK (vm, qdict);
+
+  finalize:
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+	}
+
+	return retval;
+}
+
+/**
  * hg_vm_dict_lookup:
  * @vm:
  * @qdict:
