@@ -57,6 +57,7 @@ typedef struct _hg_vm_dict_lookup_data_t {
 	hg_vm_t    *vm;
 	hg_quark_t  qname;
 	hg_quark_t  result;
+	gboolean    check_perms;
 } hg_vm_dict_lookup_data_t;
 typedef struct _hg_vm_dict_remove_data_t {
 	hg_vm_t    *vm;
@@ -130,20 +131,10 @@ _hg_vm_real_dict_lookup(hg_mem_t    *mem,
 			GError     **error)
 {
 	hg_vm_dict_lookup_data_t *x = data;
-	hg_dict_t *dict;
-	gboolean retval = TRUE;
 
-	dict = _HG_VM_LOCK (x->vm, q, error);
-	if (dict == NULL)
-		return FALSE;
+	x->result = hg_vm_dict_lookup(x->vm, q, x->qname, x->check_perms, error);
 
-	if ((x->result = hg_dict_lookup(dict, x->qname, error)) != Qnil) {
-		retval = FALSE;
-	}
-
-	_HG_VM_UNLOCK (x->vm, q);
-
-	return retval;
+	return x->result == Qnil && *error == NULL;
 }
 
 static gboolean
@@ -312,7 +303,7 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 	switch (hg_quark_get_type(qexecobj)) {
 	    case HG_TYPE_EVAL_NAME:
 		    if (hg_vm_quark_is_executable(vm, &qexecobj)) {
-			    qresult = hg_vm_dict_lookup(vm, qexecobj);
+			    qresult = hg_vm_dstack_lookup(vm, qexecobj);
 			    if (qresult == Qnil) {
 				    hg_vm_set_error(vm, qparent,
 						    HG_VM_e_undefined);
@@ -1686,141 +1677,6 @@ hg_vm_hold_language_level(hg_vm_t  *vm,
 }
 
 /**
- * hg_vm_dict_lookup:
- * @vm:
- * @qname:
- *
- * FIXME
- *
- * Returns:
- */
-hg_quark_t
-hg_vm_dict_lookup(hg_vm_t    *vm,
-		  hg_quark_t  qname)
-{
-	hg_quark_t retval = Qnil, quark;
-	hg_stack_t *dstack;
-	GError *err = NULL;
-	hg_vm_dict_lookup_data_t ldata;
-
-	hg_return_val_if_fail (vm != NULL, Qnil);
-
-	if (HG_IS_QSTRING (qname)) {
-		gchar *str;
-		hg_string_t *s;
-
-		s = _HG_VM_LOCK (vm, qname, &err);
-		if (s == NULL)
-			goto error;
-		str = hg_string_get_cstr(s);
-		quark = hg_name_new_with_string(vm->name, str, -1);
-
-		g_free(str);
-		_HG_VM_UNLOCK (vm, qname);
-	} else if (HG_IS_QEVALNAME (qname)) {
-		quark = hg_quark_new(HG_TYPE_NAME, qname);
-	} else {
-		quark = qname;
-	}
-	dstack = vm->stacks[HG_VM_STACK_DSTACK];
-	ldata.vm = vm;
-	ldata.result = Qnil;
-	ldata.qname = quark;
-	hg_stack_foreach(dstack, _hg_vm_real_dict_lookup, &ldata, FALSE, &err);
-	retval = ldata.result;
-  error:
-	if (err) {
-		/* XXX: remove name too to reduce the memory usage */
-		g_error_free(err);
-	} else {
-		retval = ldata.result;
-	}
-
-	return retval;
-}
-
-/**
- * hg_vm_dict_remove:
- * @vm:
- * @qname:
- * @remove_all:
- *
- * FIXME
- *
- * Returns:
- */
-gboolean
-hg_vm_dict_remove(hg_vm_t    *vm,
-		  hg_quark_t  qname,
-		  gboolean    remove_all)
-{
-	hg_stack_t *dstack;
-	GError *err = NULL;
-	hg_vm_dict_remove_data_t ldata;
-	gboolean retval = FALSE;
-	hg_quark_t quark;
-
-	hg_return_val_if_fail (vm != NULL, FALSE);
-
-	if (HG_IS_QSTRING (qname)) {
-		gchar *str;
-		hg_string_t *s;
-
-		s = _HG_VM_LOCK (vm, qname, &err);
-		if (s == NULL)
-			goto error;
-		str = hg_string_get_cstr(s);
-		quark = hg_name_new_with_string(vm->name, str, -1);
-
-		g_free(str);
-		_HG_VM_UNLOCK (vm, qname);
-	} else {
-		quark = qname;
-	}
-	dstack = vm->stacks[HG_VM_STACK_DSTACK];
-	ldata.vm = vm;
-	ldata.result = FALSE;
-	ldata.qname = qname;
-	ldata.remove_all = remove_all;
-	hg_stack_foreach(dstack, _hg_vm_real_dict_remove, &ldata, FALSE, &err);
-
-  error:
-	if (err) {
-		/* XXX */
-		g_error_free(err);
-	} else {
-		retval = ldata.result;
-	}
-
-	return retval;
-}
-
-/**
- * hg_vm_get_dict:
- * @vm:
- *
- * FIXME
- *
- * Returns:
- */
-hg_quark_t
-hg_vm_get_dict(hg_vm_t *vm)
-{
-	hg_quark_t qdict;
-	GError *err = NULL;
-
-	hg_return_val_if_fail (vm != NULL, Qnil);
-
-	qdict = hg_stack_index(vm->stacks[HG_VM_STACK_DSTACK], 0, &err);
-	if (err) {
-		/* XXX */
-		g_error_free(err);
-	}
-
-	return qdict;
-}
-
-/**
  * hg_vm_stepi:
  * @vm:
  * @is_proceeded:
@@ -1908,7 +1764,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 		    break;
 	    case HG_TYPE_EVAL_NAME:
 		    if (hg_vm_quark_is_executable(vm, &qexecobj)) {
-			    qresult = hg_vm_dict_lookup(vm, qexecobj);
+			    qresult = hg_vm_dstack_lookup(vm, qexecobj);
 			    if (qresult == Qnil) {
 				    hg_vm_set_error(vm, qexecobj,
 						    HG_VM_e_undefined);
@@ -1927,7 +1783,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 		    if (hg_vm_quark_is_executable(vm, &qexecobj)) {
 			    hg_quark_t q;
 
-			    qresult = hg_vm_dict_lookup(vm, qexecobj);
+			    qresult = hg_vm_dstack_lookup(vm, qexecobj);
 			    if (qresult == Qnil) {
 				    hg_vm_set_error(vm, qexecobj,
 						    HG_VM_e_undefined);
@@ -2202,7 +2058,7 @@ hg_vm_main_loop(hg_vm_t *vm)
 	hg_return_val_if_fail (vm != NULL, FALSE);
 
 	vm->shutdown = FALSE;
-	while (!vm->shutdown) {
+	while (!hg_vm_is_finished(vm)) {
 		gsize depth = hg_stack_depth(vm->stacks[HG_VM_STACK_ESTACK]);
 
 		if (depth == 0)
@@ -2657,6 +2513,20 @@ hg_vm_shutdown(hg_vm_t *vm,
 }
 
 /**
+ * hg_vm_is_finished
+ * @vm:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_vm_is_finished(hg_vm_t *vm)
+{
+	return vm->shutdown;
+}
+
+/**
  * hg_vm_get_gstate:
  * @vm:
  *
@@ -2987,7 +2857,6 @@ hg_vm_set_error(hg_vm_t       *vm,
 		hg_vm_error_t  error)
 {
 	hg_quark_t qerrordict, qnerrordict, qhandler, q;
-	hg_dict_t *errordict;
 	GError *err = NULL;
 	gsize i;
 
@@ -3065,19 +2934,15 @@ hg_vm_set_error(hg_vm_t       *vm,
 		hg_stack_set_validation(vm->stacks[i], FALSE);
 	}
 	qnerrordict = HG_QNAME (vm->name, "errordict");
-	qerrordict = hg_vm_dict_lookup(vm, qnerrordict);
+	qerrordict = hg_vm_dstack_lookup(vm, qnerrordict);
 	if (qerrordict == Qnil) {
 		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 			    "Unable to lookup errordict");
 		goto fatal_error;
 	}
-	errordict = _HG_VM_LOCK (vm, qerrordict, &err);
+	qhandler = hg_vm_dict_lookup(vm, qerrordict, vm->qerror_name[error], FALSE, &err);
 	if (err)
 		goto fatal_error;
-
-	qhandler = hg_dict_lookup(errordict, vm->qerror_name[error], &err);
-	_HG_VM_UNLOCK (vm, qerrordict);
-
 	if (qhandler == Qnil) {
 		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 			    "Unale to obtain the error handler for %s",
@@ -3475,6 +3340,142 @@ hg_vm_array_get(hg_vm_t     *vm,
 
 /* hg_dict_t */
 /**
+ * hg_vm_dstack_lookup:
+ * @vm:
+ * @qname:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_quark_t
+hg_vm_dstack_lookup(hg_vm_t    *vm,
+		    hg_quark_t  qname)
+{
+	hg_quark_t retval = Qnil, quark;
+	hg_stack_t *dstack;
+	GError *err = NULL;
+	hg_vm_dict_lookup_data_t ldata;
+
+	hg_return_val_if_fail (vm != NULL, Qnil);
+
+	if (HG_IS_QSTRING (qname)) {
+		gchar *str;
+		hg_string_t *s;
+
+		s = _HG_VM_LOCK (vm, qname, &err);
+		if (s == NULL)
+			goto error;
+		str = hg_string_get_cstr(s);
+		quark = hg_name_new_with_string(vm->name, str, -1);
+
+		g_free(str);
+		_HG_VM_UNLOCK (vm, qname);
+	} else if (HG_IS_QEVALNAME (qname)) {
+		quark = hg_quark_new(HG_TYPE_NAME, qname);
+	} else {
+		quark = qname;
+	}
+	dstack = vm->stacks[HG_VM_STACK_DSTACK];
+	ldata.vm = vm;
+	ldata.result = Qnil;
+	ldata.qname = quark;
+	ldata.check_perms = TRUE;
+	hg_stack_foreach(dstack, _hg_vm_real_dict_lookup, &ldata, FALSE, &err);
+	retval = ldata.result;
+  error:
+	if (err) {
+		/* XXX: remove name too to reduce the memory usage */
+		g_error_free(err);
+	} else {
+		retval = ldata.result;
+	}
+
+	return retval;
+}
+
+/**
+ * hg_vm_dstack_remove:
+ * @vm:
+ * @qname:
+ * @remove_all:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_vm_dstack_remove(hg_vm_t    *vm,
+		    hg_quark_t  qname,
+		    gboolean    remove_all)
+{
+	hg_stack_t *dstack;
+	GError *err = NULL;
+	hg_vm_dict_remove_data_t ldata;
+	gboolean retval = FALSE;
+	hg_quark_t quark;
+
+	hg_return_val_if_fail (vm != NULL, FALSE);
+
+	if (HG_IS_QSTRING (qname)) {
+		gchar *str;
+		hg_string_t *s;
+
+		s = _HG_VM_LOCK (vm, qname, &err);
+		if (s == NULL)
+			goto error;
+		str = hg_string_get_cstr(s);
+		quark = hg_name_new_with_string(vm->name, str, -1);
+
+		g_free(str);
+		_HG_VM_UNLOCK (vm, qname);
+	} else {
+		quark = qname;
+	}
+	dstack = vm->stacks[HG_VM_STACK_DSTACK];
+	ldata.vm = vm;
+	ldata.result = FALSE;
+	ldata.qname = qname;
+	ldata.remove_all = remove_all;
+	hg_stack_foreach(dstack, _hg_vm_real_dict_remove, &ldata, FALSE, &err);
+
+  error:
+	if (err) {
+		/* XXX */
+		g_error_free(err);
+	} else {
+		retval = ldata.result;
+	}
+
+	return retval;
+}
+
+/**
+ * hg_vm_dstack_get_dict:
+ * @vm:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_quark_t
+hg_vm_dstack_get_dict(hg_vm_t *vm)
+{
+	hg_quark_t qdict;
+	GError *err = NULL;
+
+	hg_return_val_if_fail (vm != NULL, Qnil);
+
+	qdict = hg_stack_index(vm->stacks[HG_VM_STACK_DSTACK], 0, &err);
+	if (err) {
+		/* XXX */
+		g_error_free(err);
+	}
+
+	return qdict;
+}
+
+/**
  * hg_vm_dict_add:
  * @vm:
  * @qdict:
@@ -3525,6 +3526,66 @@ hg_vm_dict_add(hg_vm_t     *vm,
 		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 			    "[BUG] no errors is set.");
 	}
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+	}
+
+	return retval;
+}
+
+/**
+ * hg_vm_dict_lookup:
+ * @vm:
+ * @qdict:
+ * @qkey:
+ * @check_perms:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_quark_t
+hg_vm_dict_lookup(hg_vm_t     *vm,
+		  hg_quark_t   qdict,
+		  hg_quark_t   qkey,
+		  gboolean     check_perms,
+		  GError     **error)
+{
+	GError *err = NULL;
+	hg_dict_t *d;
+	hg_quark_t retval = Qnil;
+
+	hg_return_val_with_gerror_if_fail (vm != NULL, Qnil, error, HG_VM_e_VMerror);
+
+	if (!HG_IS_QDICT (qdict)) {
+		g_set_error(&err, HG_ERROR, HG_VM_e_typecheck,
+			    "not a dict");
+		goto finalize;
+	}
+	if (check_perms &&
+	    !hg_vm_quark_is_readable(vm, &qdict)) {
+		g_set_error(&err, HG_ERROR, HG_VM_e_invalidaccess,
+			    "No readable permission to access the dict");
+		goto finalize;
+	}
+	d = _HG_VM_LOCK (vm, qdict, &err);
+	if (!d)
+		goto finalize;
+
+	retval = hg_dict_lookup(d, qkey, &err);
+
+	_HG_VM_UNLOCK (vm, qdict);
+
+  finalize:
 	if (err) {
 		if (error) {
 			*error = g_error_copy(err);

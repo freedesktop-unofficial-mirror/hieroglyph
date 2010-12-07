@@ -168,12 +168,6 @@ gboolean           hg_vm_set_language_level    (hg_vm_t            *vm,
                                                 hg_vm_langlevel_t   level);
 void               hg_vm_hold_language_level   (hg_vm_t            *vm,
                                                 gboolean            flag);
-hg_quark_t         hg_vm_dict_lookup           (hg_vm_t            *vm,
-                                                hg_quark_t          qname);
-gboolean           hg_vm_dict_remove           (hg_vm_t            *vm,
-                                                hg_quark_t          qname,
-                                                gboolean            remove_all);
-hg_quark_t         hg_vm_get_dict              (hg_vm_t            *vm);
 gboolean           hg_vm_stepi                 (hg_vm_t            *vm,
                                                 gboolean           *is_proceeded);
 gboolean           hg_vm_step                  (hg_vm_t            *vm);
@@ -211,6 +205,7 @@ gboolean           hg_vm_startjob              (hg_vm_t            *vm,
                                                 gboolean            encapsulated);
 void               hg_vm_shutdown              (hg_vm_t            *vm,
                                                 gint                error_code);
+gboolean           hg_vm_is_finished           (hg_vm_t            *vm);
 hg_quark_t         hg_vm_get_gstate            (hg_vm_t            *vm);
 void               hg_vm_set_gstate            (hg_vm_t            *vm,
                                                 hg_quark_t          qgstate);
@@ -265,12 +260,23 @@ hg_quark_t hg_vm_array_get(hg_vm_t     *vm,
                            GError     **error);
 
 /* hg_dict_t */
-gboolean hg_vm_dict_add(hg_vm_t     *vm,
-			hg_quark_t   qdict,
-			hg_quark_t   qkey,
-			hg_quark_t   qval,
-			gboolean     force,
-			GError     **error);
+hg_quark_t hg_vm_dstack_lookup  (hg_vm_t     *vm,
+                                 hg_quark_t   qname);
+gboolean   hg_vm_dstack_remove  (hg_vm_t     *vm,
+                                 hg_quark_t   qname,
+                                 gboolean     remove_all);
+hg_quark_t hg_vm_dstack_get_dict(hg_vm_t     *vm);
+gboolean   hg_vm_dict_add       (hg_vm_t     *vm,
+                                 hg_quark_t   qdict,
+                                 hg_quark_t   qkey,
+                                 hg_quark_t   qval,
+                                 gboolean     force,
+                                 GError     **error);
+hg_quark_t hg_vm_dict_lookup    (hg_vm_t     *vm,
+                                 hg_quark_t   qdict,
+                                 hg_quark_t   qkey,
+                                 gboolean     check_perms,
+                                 GError     **error);
 
 /* hg_quark_t */
 gboolean   hg_vm_quark_gc_mark               (hg_vm_t     *vm,

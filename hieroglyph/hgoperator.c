@@ -2166,7 +2166,7 @@ G_STMT_START {
 					goto error;
 				hg_stack_drop(ostack, error);
 			} else if (HG_IS_QNAME (q)) {
-				hg_quark_t qop = hg_vm_dict_lookup(vm, q);
+				hg_quark_t qop = hg_vm_dstack_lookup(vm, q);
 
 				if (HG_IS_QOPER (qop)) {
 					if (!hg_array_set(a, qop, i, TRUE, error))
@@ -3330,15 +3330,6 @@ G_STMT_START {
 		hg_vm_set_error_from_gerror(vm, qself, *error);
 		return FALSE;
 	}
-/*
-	if (hg_vm_get_language_level(vm) == HG_LANG_LEVEL_1) {
-		if (hg_dict_length(dict) == hg_dict_maxlength(dict) &&
-		    hg_dict_lookup(dict, arg0, error) == Qnil) {
-			hg_vm_set_error(vm, qself, HG_VM_e_dictfull);
-			goto error;
-		}
-	}
-*/
 
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
@@ -4112,7 +4103,6 @@ DEFUNC_OPER (for)
 G_STMT_START {
 	hg_quark_t arg0, arg1, arg2, arg3, q;
 	gdouble dinit, dinc, dlimit;
-	hg_dict_t *dict;
 	gboolean fint = TRUE;
 
 	CHECK_STACK (ostack, 4);
@@ -4138,24 +4128,29 @@ G_STMT_START {
 	dinc   = (HG_IS_QINT (arg1) ? HG_INT (arg1) : HG_REAL (arg1));
 	dlimit = (HG_IS_QINT (arg2) ? HG_INT (arg2) : HG_REAL (arg2));
 
-	dict = HG_VM_LOCK (vm, vm->qsystemdict, error);
-	if (dict == NULL) {
-		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
-		return FALSE;
-	}
 	if (fint) {
-		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%for_yield_int_continue"), error);
+		q = hg_vm_dict_lookup(vm,
+				      vm->qsystemdict,
+				      HG_QNAME (vm->name, "%for_yield_int_continue"),
+				      FALSE,
+				      error);
 		arg0 = HG_QINT ((gint32)dinit);
 		arg1 = HG_QINT ((gint32)dinc);
 		arg2 = HG_QINT ((gint32)dlimit);
 	} else {
-		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%for_yield_real_continue"), error);
+		q = hg_vm_dict_lookup(vm,
+				      vm->qsystemdict,
+				      HG_QNAME (vm->name, "%for_yield_real_continue"),
+				      FALSE,
+				      error);
 		arg0 = HG_QREAL (dinit);
 		arg1 = HG_QREAL (dinc);
 		arg2 = HG_QREAL (dlimit);
 	}
-	HG_VM_UNLOCK (vm, vm->qsystemdict);
-
+	if (*error) {
+		hg_vm_set_error_from_gerror(vm, qself, *error);
+		return FALSE;
+	}
 	if (q == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_undefined);
 		return FALSE;
@@ -4216,13 +4211,13 @@ G_STMT_START {
 		return FALSE;
 	}
 	if (HG_IS_QARRAY (arg0)) {
-		dict = HG_VM_LOCK (vm, vm->qsystemdict, error);
-		if (dict == NULL) {
-			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		q = hg_vm_dict_lookup(vm, vm->qsystemdict,
+				      HG_QNAME (vm->name, "%forall_array_continue"),
+				      FALSE, error);
+		if (*error) {
+			hg_vm_set_error_from_gerror(vm, qself, *error);
 			return FALSE;
 		}
-		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%forall_array_continue"), error);
-		HG_VM_UNLOCK (vm, vm->qsystemdict);
 	} else if (HG_IS_QDICT (arg0)) {
 		dict = HG_VM_LOCK (vm, arg0, error);
 		if (dict == NULL) {
@@ -4235,6 +4230,7 @@ G_STMT_START {
 				 (gpointer *)&new_dict);
 		if (qd == Qnil) {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+			HG_VM_UNLOCK (vm, arg0);
 			goto d_error;
 		}
 		hg_vm_quark_set_attributes(vm, &qd,
@@ -4244,22 +4240,25 @@ G_STMT_START {
 					   hg_vm_quark_is_editable(vm, &arg0));
 		hg_dict_foreach(dict, _hg_operator_dup_dict, new_dict, error);
 		HG_VM_UNLOCK (vm, arg0);
-		HG_VM_UNLOCK (vm, qd);
 
 		arg0 = qd;
 
-		dict = HG_VM_LOCK (vm, vm->qsystemdict, error);
-		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%forall_dict_continue"), error);
+		q = hg_vm_dict_lookup(vm, vm->qsystemdict,
+				      HG_QNAME (vm->name, "%forall_dict_continue"),
+				      FALSE, error);
+		if (*error) {
+			hg_vm_set_error_from_gerror(vm, qself, *error);
+		}
 	  d_error:
-		HG_VM_UNLOCK (vm, vm->qsystemdict);
+		HG_VM_UNLOCK (vm, qd);
 	} else if (HG_IS_QSTRING (arg0)) {
-		dict = HG_VM_LOCK (vm, vm->qsystemdict, error);
-		if (dict == NULL) {
-			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		q = hg_vm_dict_lookup(vm, vm->qsystemdict,
+				      HG_QNAME (vm->name, "%forall_string_continue"),
+				      FALSE, error);
+		if (*error) {
+			hg_vm_set_error_from_gerror(vm, qself, *error);
 			return FALSE;
 		}
-		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%forall_string_continue"), error);
-		HG_VM_UNLOCK (vm, vm->qsystemdict);
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
@@ -4423,16 +4422,11 @@ G_STMT_START {
 	  a_error:
 		HG_VM_UNLOCK (vm, arg0);
 	} else if (HG_IS_QDICT (arg0)) {
-		hg_dict_t *d;
-
-		d = HG_VM_LOCK (vm, arg0, error);
-		if (d == NULL) {
-			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		q = hg_vm_dict_lookup(vm, arg0, arg1, TRUE, error);
+		if (*error) {
+			hg_vm_set_error_from_gerror(vm, qself, *error);
 			return FALSE;
 		}
-		q = hg_dict_lookup(d, arg1, error);
-		HG_VM_UNLOCK (vm, arg0);
-
 		if (q == Qnil) {
 			hg_vm_set_error(vm, qself, HG_VM_e_undefined);
 			return FALSE;
@@ -4990,7 +4984,6 @@ DEFUNC_UNIMPLEMENTED_OPER (join);
 DEFUNC_OPER (known)
 G_STMT_START {
 	hg_quark_t arg0, arg1, q;
-	hg_dict_t *d;
 
 	CHECK_STACK (ostack, 2);
 
@@ -5005,14 +4998,11 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
 		return FALSE;
 	}
-	d = HG_VM_LOCK (vm, arg0, error);
-	if (d == NULL) {
-		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+	q = hg_vm_dict_lookup(vm, arg0, arg1, TRUE, error);
+	if (*error) {
+		hg_vm_set_error_from_gerror(vm, qself, *error);
 		return FALSE;
 	}
-	q = hg_dict_lookup(d, arg1, error);
-
-	HG_VM_UNLOCK (vm, arg0);
 
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
@@ -5302,7 +5292,6 @@ DEFUNC_OPER_END
 DEFUNC_OPER (loop)
 G_STMT_START {
 	hg_quark_t arg0, q;
-	hg_dict_t *dict;
 
 	CHECK_STACK (ostack, 1);
 
@@ -5316,18 +5305,18 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
 		return FALSE;
 	}
-	dict = HG_VM_LOCK (vm, vm->qsystemdict, error);
-	if (dict == NULL) {
-		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+	q = hg_vm_dict_lookup(vm, vm->qsystemdict,
+			      HG_QNAME (vm->name, "%loop_continue"),
+			      FALSE, error);
+	if (*error) {
+		hg_vm_set_error_from_gerror(vm, qself, *error);
 		return FALSE;
 	}
-	q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%loop_continue"), error);
-	HG_VM_UNLOCK (vm, vm->qsystemdict);
-
 	if (q == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_undefined);
 		return FALSE;
 	}
+
 	STACK_PUSH (estack, arg0);
 	STACK_PUSH (estack, q);
 
@@ -6503,7 +6492,6 @@ DEFUNC_UNIMPLEMENTED_OPER (renderbands);
 DEFUNC_OPER (repeat)
 G_STMT_START {
 	hg_quark_t arg0, arg1, q;
-	hg_dict_t *dict;
 
 	CHECK_STACK (ostack, 2);
 
@@ -6525,18 +6513,17 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	dict = HG_VM_LOCK (vm, vm->qsystemdict, error);
-	if (dict == NULL) {
-		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+	q = hg_vm_dict_lookup(vm, vm->qsystemdict,
+			      HG_QNAME (vm->name, "%repeat_continue"),
+			      FALSE, error);
+	if (*error) {
+		hg_vm_set_error_from_gerror(vm, qself, *error);
 		return FALSE;
 	}
-	q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%repeat_continue"), error);
 	if (q == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_undefined);
-		HG_VM_UNLOCK (vm, vm->qsystemdict);
 		return FALSE;
 	}
-	HG_VM_UNLOCK (vm, vm->qsystemdict);
 
 	STACK_PUSH (estack, arg0);
 	STACK_PUSH (estack, arg1);
@@ -7563,7 +7550,6 @@ DEFUNC_OPER_END
 DEFUNC_OPER (stopped)
 G_STMT_START {
 	hg_quark_t arg0, q;
-	hg_dict_t *dict;
 
 	CHECK_STACK (ostack, 1);
 
@@ -7575,18 +7561,18 @@ G_STMT_START {
 		return FALSE;
 	}
 	if (hg_vm_quark_is_executable(vm, &arg0)) {
-		dict = HG_VM_LOCK (vm, vm->qsystemdict, error);
-		if (dict == NULL) {
-			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		q = hg_vm_dict_lookup(vm, vm->qsystemdict,
+				      HG_QNAME (vm->name, "%stopped_continue"),
+				      FALSE, error);
+		if (*error) {
+			hg_vm_set_error_from_gerror(vm, qself, *error);
 			return FALSE;
 		}
-		q = hg_dict_lookup(dict, HG_QNAME (vm->name, "%stopped_continue"), error);
-		HG_VM_UNLOCK (vm, vm->qsystemdict);
-
 		if (q == Qnil) {
 			hg_vm_set_error(vm, qself, HG_VM_e_undefined);
 			return FALSE;
 		}
+
 		STACK_PUSH (estack, q);
 		STACK_PUSH (estack, arg0);
 
@@ -8028,25 +8014,17 @@ gboolean __flag G_GNUC_UNUSED = FALSE;
 G_STMT_START {
 	hg_quark_t arg0, q = Qnil, qq = Qnil;
 	gsize ddepth = hg_stack_depth(dstack), i;
-	hg_dict_t *dict;
 
 	CHECK_STACK (ostack, 1);
 
 	arg0 = hg_stack_index(ostack, 0, error);
 	for (i = 0; i < ddepth; i++) {
 		q = hg_stack_index(dstack, i, error);
-		if (!HG_IS_QDICT (q)) {
-			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		qq = hg_vm_dict_lookup(vm, q, arg0, TRUE, error);
+		if (*error) {
+			hg_vm_set_error_from_gerror(vm, qself, *error);
 			return FALSE;
 		}
-		dict = HG_VM_LOCK (vm, q, error);
-		if (dict == NULL) {
-			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
-			return FALSE;
-		}
-		qq = hg_dict_lookup(dict, arg0, error);
-		HG_VM_UNLOCK (vm, q);
-
 		if (qq != Qnil)
 			break;
 	}
