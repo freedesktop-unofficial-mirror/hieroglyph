@@ -19,6 +19,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
+## constant
 set $_hg_q_bit_type0  = 0
 set $_hg_q_bit_type1  = 1
 set $_hg_q_bit_type2  = 2
@@ -30,8 +31,40 @@ set $_hg_q_bit_write  = 7
 set $_hg_q_bit_access = 8
 set $_hg_q_bit_memid0 = 9
 set $_hg_q_bit_memid1 = 10
+set $_hg_v_bit_idx00 = 0
+set $_hg_v_bit_idx01 = 1
+set $_hg_v_bit_idx02 = 2
+set $_hg_v_bit_idx03 = 3
+set $_hg_v_bit_idx04 = 4
+set $_hg_v_bit_idx05 = 5
+set $_hg_v_bit_idx06 = 6
+set $_hg_v_bit_idx07 = 7
+set $_hg_v_bit_idx08 = 8
+set $_hg_v_bit_idx09 = 9
+set $_hg_v_bit_idx10 = 10
+set $_hg_v_bit_idx11 = 11
+set $_hg_v_bit_idx12 = 12
+set $_hg_v_bit_idx13 = 13
+set $_hg_v_bit_idx14 = 14
+set $_hg_v_bit_idx15 = 15
+set $_hg_v_bit_idx16 = 16
+set $_hg_v_bit_idx17 = 17
+set $_hg_v_bit_idx18 = 18
+set $_hg_v_bit_idx19 = 19
+set $_hg_v_bit_idx20 = 20
+set $_hg_v_bit_idx21 = 21
+set $_hg_v_bit_idx22 = 22
+set $_hg_v_bit_idx23 = 23
+set $_hg_v_bit_page0 = 24
+set $_hg_v_bit_page1 = 25
+set $_hg_v_bit_page2 = 26
+set $_hg_v_bit_page3 = 27
+set $_hg_v_bit_page4 = 28
+set $_hg_v_bit_page5 = 29
+set $_hg_v_bit_page6 = 30
+set $_hg_v_bit_page7 = 31
 
-define hgquarkinfo
+define _sethgquarkinfo
   set $_memid = ($arg0 >> 32 & (((1 << ($_hg_q_bit_memid1-$_hg_q_bit_memid0+1)) - 1) << $_hg_q_bit_memid0)) >> $_hg_q_bit_memid0
   set $_read  = ($arg0 >> 32 & (((1 << ($_hg_q_bit_read-$_hg_q_bit_read+1)) - 1) << $_hg_q_bit_read)) >> $_hg_q_bit_read
   set $_write  = ($arg0 >> 32 & (((1 << ($_hg_q_bit_write-$_hg_q_bit_write+1)) - 1) << $_hg_q_bit_write)) >> $_hg_q_bit_write
@@ -39,6 +72,12 @@ define hgquarkinfo
   set $_access = ($arg0 >> 32 & (((1 << ($_hg_q_bit_access-$_hg_q_bit_access+1)) - 1) << $_hg_q_bit_access)) >> $_hg_q_bit_access
   set $_typeid = ($arg0 >> 32 & (((1 << ($_hg_q_bit_type4-$_hg_q_bit_type0+1)) - 1) << $_hg_q_bit_type0)) >> $_hg_q_bit_type0
   set $_value = ($arg0 & ((1LL << 32) - 1))
+  set $_page = ($_value & (((1 << ($_hg_v_bit_page7-$_hg_v_bit_page0+1)) - 1) << $_hg_v_bit_page0)) >> $_hg_v_bit_page0
+  set $_idx = ($_value & (((1 << ($_hg_v_bit_idx23-$_hg_v_bit_idx00+1)) - 1) << $_hg_v_bit_idx00)) >> $_hg_v_bit_idx00
+end
+
+define hgquarkinfo
+  _sethgquarkinfo $arg0
 
   if ($arg0 == 0)
     printf "nil\n"
@@ -138,7 +177,7 @@ define hgquarkinfo
       end
     end
     printf "\n"
-    printf "  [value]: %d (%p)\n", $_value, $_value
+    printf "  [value]: page %d, index %d (%p)\n", $_page, $_idx, $_value
   end
 end
 
