@@ -3339,6 +3339,7 @@ hg_vm_array_get(hg_vm_t     *vm,
 }
 
 /* hg_dict_t */
+
 /**
  * hg_vm_dstack_lookup:
  * @vm:
