@@ -129,10 +129,9 @@ _hg_list_new(hg_mem_t *mem)
 	hg_quark_t self;
 	hg_list_t *l = NULL;
 
-	self = hg_mem_alloc_with_flags(mem,
-				       sizeof (hg_list_t),
-				       HG_MEM_FLAGS_DEFAULT | HG_MEM_DROP_ON_RESTORE,
-				       (gpointer *)&l);
+	self = hg_mem_alloc(mem,
+			    sizeof (hg_list_t),
+			    (gpointer *)&l);
 	if (self == Qnil)
 		return NULL;
 

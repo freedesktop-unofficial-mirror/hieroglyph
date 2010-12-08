@@ -34,8 +34,6 @@ typedef struct _hg_allocator_private_t		hg_allocator_private_t;
 typedef struct _hg_allocator_snapshot_private_t	hg_allocator_snapshot_private_t;
 
 
-gsize            hg_allocator_get_page_size(void) G_GNUC_CONST;
-gsize            hg_allocator_get_max_page (void) G_GNUC_CONST;
 hg_mem_vtable_t *hg_allocator_get_vtable   (void) G_GNUC_CONST;
 
 G_END_DECLS

@@ -89,9 +89,7 @@ _hg_vm_get_mem(hg_vm_t    *vm,
 	       hg_quark_t  quark)
 {
 	hg_mem_t *retval = NULL;
-	gint id = _hg_quark_type_bit_get_bits(quark,
-					      HG_QUARK_TYPE_BIT_MEM_ID,
-					      HG_QUARK_TYPE_BIT_MEM_ID_END);
+	gint id = hg_quark_get_mem_id(quark);
 
 	if (vm->mem_id[HG_VM_MEM_GLOBAL] == id) {
 		retval = vm->mem[HG_VM_MEM_GLOBAL];

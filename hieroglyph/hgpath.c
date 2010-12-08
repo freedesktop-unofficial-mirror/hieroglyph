@@ -42,7 +42,7 @@ _hg_object_path_get_capsulated_size(void)
 static guint
 _hg_object_path_get_allocation_flags(void)
 {
-	return HG_MEM_FLAGS_DEFAULT | HG_MEM_DROP_ON_RESTORE;
+	return HG_MEM_FLAGS_DEFAULT;
 }
 
 static gboolean
@@ -57,10 +57,9 @@ _hg_object_path_initialize(hg_object_t *object,
 	 * when GC is running.
 	 */
 	path->qnode = Qnil;
-	path->qnode = hg_mem_alloc_with_flags(path->o.mem,
-					      sizeof (hg_path_node_t) * HG_PATH_MAX,
-					      HG_MEM_FLAGS_DEFAULT | HG_MEM_DROP_ON_RESTORE,
-					      NULL);
+	path->qnode = hg_mem_alloc(path->o.mem,
+				   sizeof (hg_path_node_t) * HG_PATH_MAX,
+				   NULL);
 	if (path->qnode == Qnil)
 		return FALSE;
 

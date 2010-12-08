@@ -113,7 +113,6 @@ struct _hg_mem_snapshot_data_t {
 };
 enum _hg_mem_flags_t {
 	HG_MEM_RESTORABLE      = 1 << 0,
-	HG_MEM_DROP_ON_RESTORE = 1 << 1,
 };
 
 /* hgdevice.h */
