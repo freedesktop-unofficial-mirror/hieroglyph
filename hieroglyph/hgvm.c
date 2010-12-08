@@ -800,7 +800,7 @@ _hg_vm_set_user_params(hg_mem_t    *mem,
 	gsize i;
 
 	if (HG_IS_QNAME (qkey)) {
-		for (i = 0; i < HG_VM_user_END; i++) {
+		for (i = HG_VM_user_BEGIN + 1; i < HG_VM_user_END; i++) {
 			if (hg_quark_get_hash(vm->quparams_name[i]) == hg_quark_get_hash(qkey))
 				break;
 		}
@@ -1055,6 +1055,33 @@ hg_vm_new(void)
 
 #define DECL_PDPARAM(_v_,_n_)						\
 	(_v_)->qpdevparams_name[HG_VM_pdev_ ## _n_] = HG_QNAME ((_v_)->name, #_n_);
+
+	DECL_PDPARAM (retval, InputAttributes);
+	DECL_PDPARAM (retval, PageSize);
+	DECL_PDPARAM (retval, MediaColor);
+	DECL_PDPARAM (retval, MediaWeight);
+	DECL_PDPARAM (retval, MediaType);
+	DECL_PDPARAM (retval, ManualFeed);
+	DECL_PDPARAM (retval, Orientation);
+	DECL_PDPARAM (retval, AdvanceMedia);
+	DECL_PDPARAM (retval, AdvanceDistance);
+	DECL_PDPARAM (retval, CutMedia);
+	DECL_PDPARAM (retval, HWResolution);
+	DECL_PDPARAM (retval, ImagingBBox);
+	DECL_PDPARAM (retval, Margins);
+	DECL_PDPARAM (retval, MirrorPrint);
+	DECL_PDPARAM (retval, NegativePrint);
+	DECL_PDPARAM (retval, Duplex);
+	DECL_PDPARAM (retval, Tumble);
+	DECL_PDPARAM (retval, OutputType);
+	DECL_PDPARAM (retval, NumCopies);
+	DECL_PDPARAM (retval, Collate);
+	DECL_PDPARAM (retval, Jog);
+	DECL_PDPARAM (retval, OutputFaceUp);
+	DECL_PDPARAM (retval, Separations);
+	DECL_PDPARAM (retval, Install);
+	DECL_PDPARAM (retval, BeginPage);
+	DECL_PDPARAM (retval, EndPage);
 
 #undef DECL_PDPARAM
 
@@ -2655,8 +2682,13 @@ hg_vm_set_user_params(hg_vm_t     *vm,
 {
 	GError *err = NULL;
 
-	hg_return_if_fail (vm != NULL);
+	hg_return_with_gerror_if_fail (vm != NULL, error, HG_VM_e_VMerror);
 
+	if (!HG_IS_QDICT (qdict)) {
+		g_set_error(&err, HG_ERROR, HG_VM_e_typecheck,
+			    "not a dict");
+		goto finalize;
+	}
 	if (qdict != Qnil) {
 		hg_dict_t *d = _HG_VM_LOCK (vm, qdict, &err);
 

@@ -62,16 +62,45 @@ enum _hg_vm_stack_type_t {
 	HG_VM_STACK_END
 };
 enum _hg_vm_user_params_name_t {
-	HG_VM_user_MaxOpStack = 0,
+	HG_VM_user_BEGIN = 0,
+	HG_VM_user_MaxOpStack,
 	HG_VM_user_MaxExecStack,
 	HG_VM_user_MaxDictStack,
 	HG_VM_user_MaxGStateStack,
 	HG_VM_user_END
 };
 enum _hg_vm_sys_params_name_t {
+	HG_VM_sys_BEGIN = 0,
 	HG_VM_sys_END
 };
 enum _hg_vm_pdev_params_name_t {
+	HG_VM_pdev_BEGIN = 0,
+	HG_VM_pdev_InputAttributes,
+	HG_VM_pdev_PageSize,
+	HG_VM_pdev_MediaColor,
+	HG_VM_pdev_MediaWeight,
+	HG_VM_pdev_MediaType,
+	HG_VM_pdev_ManualFeed,
+	HG_VM_pdev_Orientation,
+	HG_VM_pdev_AdvanceMedia,
+	HG_VM_pdev_AdvanceDistance,
+	HG_VM_pdev_CutMedia,
+	HG_VM_pdev_HWResolution,
+	HG_VM_pdev_ImagingBBox,
+	HG_VM_pdev_Margins,
+	HG_VM_pdev_MirrorPrint,
+	HG_VM_pdev_NegativePrint,
+	HG_VM_pdev_Duplex,
+	HG_VM_pdev_Tumble,
+	HG_VM_pdev_OutputType,
+	HG_VM_pdev_NumCopies,
+	HG_VM_pdev_Collate,
+	HG_VM_pdev_Jog,
+	HG_VM_pdev_OutputFaceUp,
+	HG_VM_pdev_Separations,
+	HG_VM_pdev_Install,
+	HG_VM_pdev_BeginPage,
+	HG_VM_pdev_EndPage,
 	HG_VM_pdev_END
 };
 struct _hg_vm_user_params_t {

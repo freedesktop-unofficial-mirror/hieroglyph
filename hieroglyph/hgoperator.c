@@ -7161,11 +7161,11 @@ G_STMT_START {
 
 	arg0 = hg_stack_index(ostack, 0, error);
 
-	if (!HG_IS_QDICT (arg0)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+	hg_vm_set_user_params(vm, arg0, error);
+	if (*error) {
+		hg_vm_set_error_from_gerror(vm, qself, *error);
 		return FALSE;
 	}
-	hg_vm_set_user_params(vm, arg0, error);
 
 	hg_stack_drop(ostack, error);
 
@@ -7998,7 +7998,6 @@ G_STMT_START {
 
 	ret = hg_stack_peek(ostack, 0, error);
 	arg0 = *ret;
-	hg_stack_drop(ostack, error);
 
 	*ret = HG_QBOOL (hg_vm_quark_is_executable(vm, &arg0));
 
