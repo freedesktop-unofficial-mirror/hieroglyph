@@ -1028,16 +1028,17 @@ DEFUNC_OPER_END
 DEFUNC_OPER (protected_for_yield_int_continue)
 gboolean __flag G_GNUC_UNUSED = FALSE;
 G_STMT_START {
-	hg_quark_t self, proc, limit, inc, init, q, qq;
+	hg_quark_t self, proc, limit, inc, qq;
+	hg_quark_t *init = NULL;
 	gint iinit, iinc, ilimit;
 
 	self  = hg_stack_index(estack, 0, error);
 	proc  = hg_stack_index(estack, 1, error);
 	limit = hg_stack_index(estack, 2, error);
 	inc   = hg_stack_index(estack, 3, error);
-	init  = hg_stack_index(estack, 4, error);
+	init  = hg_stack_peek(estack, 4, error);
 
-	iinit  = HG_INT (init);
+	iinit  = HG_INT (*init);
 	iinc   = HG_INT (inc);
 	ilimit = HG_INT (limit);
 
@@ -1060,17 +1061,11 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	hg_stack_roll(estack, 5, -1, error);
-	hg_stack_drop(estack, error);
-
-	q = HG_QINT (iinit + iinc);
-	STACK_PUSH (estack, q);
-
-	hg_stack_roll(estack, 5, 1, error);
-
-	STACK_PUSH (ostack, init);
+	STACK_PUSH (ostack, *init);
 	STACK_PUSH (estack, qq);
 	STACK_PUSH (estack, self); /* dummy */
+
+	*init = HG_QINT (iinit + iinc);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -1081,16 +1076,17 @@ DEFUNC_OPER_END
 DEFUNC_OPER (protected_for_yield_real_continue)
 gboolean __flag G_GNUC_UNUSED = FALSE;
 G_STMT_START {
-	hg_quark_t self, proc, limit, inc, init, q, qq;
+	hg_quark_t self, proc, limit, inc, qq;
+	hg_quark_t *init = NULL;
 	gdouble dinit, dinc, dlimit;
 
 	self  = hg_stack_index(estack, 0, error);
 	proc  = hg_stack_index(estack, 1, error);
 	limit = hg_stack_index(estack, 2, error);
 	inc   = hg_stack_index(estack, 3, error);
-	init  = hg_stack_index(estack, 4, error);
+	init  = hg_stack_peek(estack, 4, error);
 
-	dinit  = HG_REAL (init);
+	dinit  = HG_REAL (*init);
 	dinc   = HG_REAL (inc);
 	dlimit = HG_REAL (limit);
 
@@ -1113,17 +1109,11 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	hg_stack_roll(estack, 5, -1, error);
-	hg_stack_drop(estack, error);
-
-	q = HG_QREAL (dinit + dinc);
-	STACK_PUSH (estack, q);
-
-	hg_stack_roll(estack, 5, 1, error);
-
-	STACK_PUSH (ostack, init);
+	STACK_PUSH (ostack, *init);
 	STACK_PUSH (estack, qq);
 	STACK_PUSH (estack, self); /* dummy */
+
+	*init = HG_QREAL (dinit + dinc);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -1134,21 +1124,22 @@ DEFUNC_OPER_END
 DEFUNC_OPER (protected_forall_array_continue)
 gint __n G_GNUC_UNUSED = 0;
 G_STMT_START {
-	hg_quark_t self, proc, val, n, q, qq;
+	hg_quark_t self, proc, val, q, qq;
+	hg_quark_t *n = NULL;
 	hg_array_t *a;
 	gsize i;
 
 	self = hg_stack_index(estack, 0, error);
 	proc = hg_stack_index(estack, 1, error);
 	val = hg_stack_index(estack, 2, error);
-	n = hg_stack_index(estack, 3, error);
+	n = hg_stack_peek(estack, 3, error);
 
 	a = HG_VM_LOCK (vm, val, error);
 	if (a == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	i = HG_INT (n);
+	i = HG_INT (*n);
 	if (hg_array_maxlength(a) <= i) {
 		HG_VM_UNLOCK (vm, val);
 		hg_stack_roll(estack, 4, 1, error);
@@ -1160,10 +1151,7 @@ G_STMT_START {
 		__n = 3;
 		break;
 	}
-	hg_stack_roll(estack, 4, -1, error);
-	hg_stack_drop(estack, error);
-	STACK_PUSH (estack, HG_QINT (i + 1));
-	hg_stack_roll(estack, 4, 1, error);
+	*n = HG_QINT (i + 1);
 
 	qq = hg_array_get(a, i, error);
 	HG_VM_UNLOCK (vm, val);
@@ -1188,21 +1176,22 @@ DEFUNC_OPER_END
 DEFUNC_OPER (protected_forall_dict_continue)
 gint __n G_GNUC_UNUSED = 0;
 G_STMT_START {
-	hg_quark_t self, proc, val, n, q, qk, qv;
+	hg_quark_t self, proc, val, q, qk, qv;
+	hg_quark_t *n = NULL;
 	hg_dict_t *d;
 	gsize i;
 
 	self = hg_stack_index(estack, 0, error);
 	proc = hg_stack_index(estack, 1, error);
 	val = hg_stack_index(estack, 2, error);
-	n = hg_stack_index(estack, 3, error);
+	n = hg_stack_peek(estack, 3, error);
 
 	d = HG_VM_LOCK (vm, val, error);
 	if (d == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	i = HG_INT (n);
+	i = HG_INT (*n);
 	if (hg_dict_length(d) == 0) {
 		HG_VM_UNLOCK (vm, val);
 		hg_stack_roll(estack, 4, 1, error);
@@ -1214,10 +1203,7 @@ G_STMT_START {
 		__n = 3;
 		break;
 	}
-	hg_stack_roll(estack, 4, -1, error);
-	hg_stack_drop(estack, error);
-	STACK_PUSH (estack, HG_QINT (i + 1));
-	hg_stack_roll(estack, 4, 1, error);
+	*n = HG_QINT (i + 1);
 
 	if (!hg_dict_first_item(d, &qk, &qv, error)) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
@@ -1249,21 +1235,22 @@ DEFUNC_OPER_END
 DEFUNC_OPER (protected_forall_string_continue)
 gboolean __flag G_GNUC_UNUSED = FALSE;
 G_STMT_START {
-	hg_quark_t self, proc, val, n, q, qq;
+	hg_quark_t self, proc, val, q, qq;
+	hg_quark_t *n = NULL;
 	hg_string_t *s;
 	gsize i;
 
 	self = hg_stack_index(estack, 0, error);
 	proc = hg_stack_index(estack, 1, error);
 	val = hg_stack_index(estack, 2, error);
-	n = hg_stack_index(estack, 3, error);
+	n = hg_stack_peek(estack, 3, error);
 
 	s = HG_VM_LOCK (vm, val, error);
 	if (s == NULL) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	i = HG_INT (n);
+	i = HG_INT (*n);
 	if (hg_string_length(s) <= i) {
 		HG_VM_UNLOCK (vm, val);
 		hg_stack_roll(estack, 4, 1, error);
@@ -1274,10 +1261,7 @@ G_STMT_START {
 		__flag = retval = TRUE;
 		break;
 	}
-	hg_stack_roll(estack, 4, -1, error);
-	hg_stack_drop(estack, error);
-	STACK_PUSH (estack, HG_QINT (i + 1));
-	hg_stack_roll(estack, 4, 1, error);
+	*n = HG_QINT (i + 1);
 
 	qq = HG_QINT (hg_string_index(s, i));
 	HG_VM_UNLOCK (vm, val);
@@ -1325,22 +1309,15 @@ DEFUNC_OPER_END
 DEFUNC_OPER (protected_repeat_continue)
 gboolean __flag G_GNUC_UNUSED = FALSE;
 G_STMT_START {
-	hg_quark_t arg0, arg1, self, q;
+	hg_quark_t *arg0 = NULL;
+	hg_quark_t arg1, self, q;
 
-	arg0 = hg_stack_index(estack, 2, error);
+	arg0 = hg_stack_peek(estack, 2, error);
 	arg1 = hg_stack_index(estack, 1, error);
 	self = hg_stack_index(estack, 0, error);
 
-	if (HG_INT (arg0) > 0) {
-		arg0 = HG_QINT (HG_INT (arg0) - 1);
-
-		hg_stack_pop(estack, error);
-		hg_stack_pop(estack, error);
-		hg_stack_pop(estack, error);
-
-		STACK_PUSH (estack, arg0);
-		STACK_PUSH (estack, arg1);
-		STACK_PUSH (estack, self);
+	if (HG_INT (*arg0) > 0) {
+		*arg0 = HG_QINT (HG_INT (*arg0) - 1);
 
 		q = hg_vm_quark_copy(vm, arg1, NULL, error);
 		if (q == Qnil) {
@@ -1428,20 +1405,19 @@ DEFUNC_UNIMPLEMENTED_OPER (UserObjects);
 /* <num1> abs <num2> */
 DEFUNC_OPER (abs)
 G_STMT_START {
-	hg_quark_t arg0, q;
+	hg_quark_t arg0, *ret;
 
 	CHECK_STACK (ostack, 1);
-	arg0 = hg_stack_index(ostack, 0, error);
+	ret = hg_stack_peek(ostack, 0, error);
+	arg0 = *ret;
 	if (HG_IS_QINT (arg0)) {
-		q = HG_QINT (abs(HG_INT (arg0)));
+		*ret = HG_QINT (abs(HG_INT (arg0)));
 	} else if (HG_IS_QREAL (arg0)) {
-		q = HG_QREAL (fabs(HG_REAL (arg0)));
+		*ret = HG_QREAL (fabs(HG_REAL (arg0)));
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-	hg_stack_drop(ostack, error);
-	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -1451,13 +1427,14 @@ DEFUNC_OPER_END
 /* <num1> <num2> add <sum> */
 DEFUNC_OPER (add)
 G_STMT_START {
-	hg_quark_t arg0, arg1, q;
+	hg_quark_t arg0, arg1, *ret;
 	gdouble d1, d2, dr;
 	gboolean is_int = TRUE;
 
 	CHECK_STACK (ostack, 2);
 
-	arg0 = hg_stack_index(ostack, 1, error);
+	ret = hg_stack_peek(ostack, 1, error);
+	arg0 = *ret;
 	arg1 = hg_stack_index(ostack, 0, error);
 	if (HG_IS_QINT (arg0)) {
 		d1 = HG_INT (arg0);
@@ -1482,14 +1459,11 @@ G_STMT_START {
 	if (is_int &&
 	    HG_REAL_LE (dr, G_MAXINT32) &&
 	    HG_REAL_GE (dr, G_MININT32)) {
-		q = HG_QINT ((gint32)dr);
+		*ret = HG_QINT ((gint32)dr);
 	} else {
-		q = HG_QREAL (dr);
+		*ret = HG_QREAL (dr);
 	}
 	hg_stack_drop(ostack, error);
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -1544,27 +1518,25 @@ DEFUNC_OPER_END
  */
 DEFUNC_OPER (and)
 G_STMT_START {
-	hg_quark_t arg0, arg1, q;
+	hg_quark_t arg0, arg1, *ret;
 
 	CHECK_STACK (ostack, 2);
 
-	arg0 = hg_stack_index(ostack, 1, error);
+	ret = hg_stack_peek(ostack, 1, error);
+	arg0 = *ret;
 	arg1 = hg_stack_index(ostack, 0, error);
 	if (HG_IS_QBOOL (arg0) &&
 	    HG_IS_QBOOL (arg1)) {
-		q = HG_QBOOL (HG_BOOL (arg0) & HG_BOOL (arg1));
+		*ret = HG_QBOOL (HG_BOOL (arg0) & HG_BOOL (arg1));
 	} else if (HG_IS_QINT (arg0) &&
 		   HG_IS_QINT (arg1)) {
-		q = HG_QINT (HG_INT (arg0) & HG_INT (arg1));
+		*ret = HG_QINT (HG_INT (arg0) & HG_INT (arg1));
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
 
 	hg_stack_drop(ostack, error);
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -1953,11 +1925,13 @@ DEFUNC_OPER_END
 /* <int> array <array> */
 DEFUNC_OPER (array)
 G_STMT_START {
-	hg_quark_t arg0, q;
+	hg_quark_t arg0, q, *ret;
+	hg_mem_t *m;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	ret = hg_stack_peek(ostack, 0, error);
+	arg0 = *ret;
 	if (!HG_IS_QINT (arg0)) {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
@@ -1967,15 +1941,14 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 		return FALSE;
 	}
-	q = hg_array_new(hg_vm_get_mem(vm), HG_INT (arg0), NULL);
+	m = hg_vm_get_mem(vm);
+	q = hg_array_new(m, HG_INT (arg0), NULL);
 	if (q == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, q);
+	*ret = q;
+	hg_mem_reserved_spool_remove(m, q);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -2038,11 +2011,12 @@ DEFUNC_OPER_END
 /* <num> <den> atan <angle> */
 DEFUNC_OPER (atan)
 G_STMT_START {
-	hg_quark_t arg0, arg1, q;
+	hg_quark_t arg0, arg1, *ret;
 	double num, den, angle;
 
 	CHECK_STACK (ostack, 2);
-	arg0 = hg_stack_index(ostack, 1, error);
+	ret = hg_stack_peek(ostack, 1, error);
+	arg0 = *ret;
 	arg1 = hg_stack_index(ostack, 0, error);
 	if (HG_IS_QINT (arg0)) {
 		num = HG_INT (arg0);
@@ -2067,12 +2041,9 @@ G_STMT_START {
 	angle = atan2(num, den) / (2 * M_PI / 360);
 	if (angle < 0)
 		angle = 360.0 + angle;
-	q = HG_QREAL (angle);
+	*ret = HG_QREAL (angle);
 
 	hg_stack_drop(ostack, error);
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -2162,11 +2133,12 @@ DEFUNC_OPER_END
 /* <int1> <shiftt> bitshift <int2> */
 DEFUNC_OPER (bitshift)
 G_STMT_START {
-	hg_quark_t arg0, arg1, q;
+	hg_quark_t arg0, arg1, *ret;
 
 	CHECK_STACK (ostack, 2);
 
-	arg0 = hg_stack_index(ostack, 1, error);
+	ret = hg_stack_peek(ostack, 1, error);
+	arg0 = *ret;
 	arg1 = hg_stack_index(ostack, 0, error);
 	if (!HG_IS_QINT (arg0) ||
 	    !HG_IS_QINT (arg1)) {
@@ -2174,14 +2146,11 @@ G_STMT_START {
 		return FALSE;
 	}
 	if (HG_INT (arg1) < 0) {
-		q = HG_QINT (HG_INT (arg0) >> -HG_INT (arg1));
+		*ret = HG_QINT (HG_INT (arg0) >> -HG_INT (arg1));
 	} else {
-		q = HG_QINT (HG_INT (arg0) << HG_INT (arg1));
+		*ret = HG_QINT (HG_INT (arg0) << HG_INT (arg1));
 	}
 	hg_stack_drop(ostack, error);
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -2191,13 +2160,14 @@ DEFUNC_OPER_END
 /* <file> bytesavailable <int> */
 DEFUNC_OPER (bytesavailable)
 G_STMT_START {
-	hg_quark_t arg0, q;
+	hg_quark_t arg0, *ret;
 	hg_file_t *f;
 	gssize cur_pos;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	ret = hg_stack_peek(ostack, 0, error);
+	arg0 = *ret;
 	if (!HG_IS_QFILE (arg0)) {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
@@ -2209,14 +2179,10 @@ G_STMT_START {
 	f = HG_VM_LOCK (vm, arg0, error);
 
 	cur_pos = hg_file_seek(f, 0, HG_FILE_POS_CURRENT, error);
-	q = HG_QINT (hg_file_seek(f, 0, HG_FILE_POS_END, error));
+	*ret = HG_QINT (hg_file_seek(f, 0, HG_FILE_POS_END, error));
 	hg_file_seek(f, cur_pos, HG_FILE_POS_BEGIN, error);
 
 	HG_VM_UNLOCK (vm, arg0);
-
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -2225,20 +2191,19 @@ DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (cachestatus);
 
+/* <num1> ceiling <num2> */
 DEFUNC_OPER (ceiling)
 G_STMT_START {
-	hg_quark_t arg0;
-	gdouble d;
+	hg_quark_t arg0, *ret;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	ret = hg_stack_peek(ostack, 0, error);
+	arg0 = *ret;
 	if (HG_IS_QINT (arg0)) {
 		/* nothing to do */
 	} else if (HG_IS_QREAL (arg0)) {
-		d = ceil(HG_REAL (arg0));
-		hg_stack_drop(ostack, error);
-		STACK_PUSH (ostack, HG_QREAL (d));
+		*ret = HG_QREAL (ceil(HG_REAL (arg0)));
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
@@ -2260,6 +2225,7 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (-__hg_stack_odepth, 0, 0);
 DEFUNC_OPER_END
 
+/* - cleardictstack - */
 DEFUNC_OPER (cleardictstack)
 gssize __n G_GNUC_UNUSED = 0;
 G_STMT_START {
@@ -2658,12 +2624,13 @@ DEFUNC_UNIMPLEMENTED_OPER (copypage);
 /* <angle> cos <real> */
 DEFUNC_OPER (cos)
 G_STMT_START {
-	hg_quark_t arg0, q;
+	hg_quark_t arg0, *ret;
 	gdouble angle;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	ret = hg_stack_peek(ostack, 0, error);
+	arg0 = *ret;
 	if (HG_IS_QINT (arg0)) {
 		angle = (gdouble)HG_INT (arg0);
 	} else if (HG_IS_QREAL (arg0)) {
@@ -2672,10 +2639,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-	q = HG_QREAL (cos(angle / 180 * M_PI));
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, q);
+	*ret = HG_QREAL (cos(angle / 180 * M_PI));
 
 	retval = TRUE;
 } G_STMT_END;
@@ -2943,11 +2907,12 @@ DEFUNC_OPER_END
  */
 DEFUNC_OPER (cvi)
 G_STMT_START {
-	hg_quark_t arg0, q;
+	hg_quark_t arg0, q, *ret;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	ret = hg_stack_peek(ostack, 0, error);
+	arg0 = *ret;
 	if (HG_IS_QINT (arg0)) {
 		/* nothing to do */
 		retval = TRUE;
@@ -2962,10 +2927,8 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_limitcheck);
 			return FALSE;
 		}
-		q = HG_QINT (d);
-		hg_stack_drop(ostack, error);
+		*ret = HG_QINT (d);
 
-		STACK_PUSH (ostack, q);
 		retval = TRUE;
 	} else if (HG_IS_QSTRING (arg0)) {
 		hg_string_t *s;
@@ -2999,7 +2962,7 @@ G_STMT_START {
 			}
 			qv = hg_stack_pop(ostack, error);
 			if (HG_IS_QINT (qv)) {
-				/* no need to proceed anything here */
+				*ret = qv;
 			} else if (HG_IS_QREAL (qv)) {
 				gdouble d = HG_REAL (qv);
 
@@ -3008,14 +2971,11 @@ G_STMT_START {
 					hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 					return FALSE;
 				}
-				qv = HG_QINT ((gint32)d);
+				*ret = HG_QINT ((gint32)d);
 			} else {
 				hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 				return FALSE;
 			}
-			hg_stack_drop(ostack, error);
-
-			STACK_PUSH (ostack, qv);
 
 			retval = TRUE;
 		} else {
@@ -3034,13 +2994,12 @@ DEFUNC_OPER_END
 /* <any> cvlit <any> */
 DEFUNC_OPER (cvlit)
 G_STMT_START {
-	hg_quark_t arg0;
+	hg_quark_t *ret;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_pop(ostack, error);
-	hg_vm_quark_set_executable(vm, &arg0, FALSE);
-	STACK_PUSH (ostack, arg0);
+	ret = hg_stack_peek(ostack, 0, error);
+	hg_vm_quark_set_executable(vm, ret, FALSE);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -3050,12 +3009,13 @@ DEFUNC_OPER_END
 /* <string> cvn <name> */
 DEFUNC_OPER (cvn)
 G_STMT_START {
-	hg_quark_t arg0, ret;
+	hg_quark_t arg0, *ret;
 	gchar *cstr;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	ret = hg_stack_peek(ostack, 0, error);
+	arg0 = *ret;
 	cstr = hg_vm_string_get_cstr(vm, arg0, error);
 	if (*error) {
 		hg_vm_set_error_from_gerror(vm, qself, *error);
@@ -3071,14 +3031,10 @@ G_STMT_START {
 		return FALSE;
 	}
 
-	ret = HG_QNAME (vm->name, cstr);
-	hg_vm_quark_set_executable(vm, &ret,
+	*ret = HG_QNAME (vm->name, cstr);
+	hg_vm_quark_set_executable(vm, ret,
 				   hg_vm_quark_is_executable(vm, &arg0));
 	g_free(cstr);
-
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, ret);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -3090,14 +3046,14 @@ DEFUNC_OPER_END
  */
 DEFUNC_OPER (cvr)
 G_STMT_START {
-	hg_quark_t arg0, q;
+	hg_quark_t arg0, q, *ret;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	ret = hg_stack_peek(ostack, 0, error);
+	arg0 = *ret;
 	if (HG_IS_QINT (arg0)) {
-		hg_stack_drop(ostack, error);
-		STACK_PUSH (ostack, HG_QREAL (HG_INT (arg0)));
+		*ret = HG_QREAL (HG_INT (arg0));
 
 		retval = TRUE;
 	} else if (HG_IS_QREAL (arg0)) {
@@ -3145,9 +3101,7 @@ G_STMT_START {
 				hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 				return FALSE;
 			}
-			hg_stack_drop(ostack, error);
-
-			STACK_PUSH (ostack, qv);
+			*ret = qv;
 
 			retval = TRUE;
 		} else {
@@ -3270,14 +3224,12 @@ DEFUNC_OPER_END
 /* <any> cvx <any> */
 DEFUNC_OPER (cvx)
 G_STMT_START {
-	hg_quark_t arg0;
+	hg_quark_t *ret;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_pop(ostack, error);
-	hg_vm_quark_set_executable(vm, &arg0, TRUE);
-
-	STACK_PUSH (ostack, arg0);
+	ret = hg_stack_peek(ostack, 0, error);
+	hg_vm_quark_set_executable(vm, ret, TRUE);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -3389,6 +3341,7 @@ G_STMT_START {
 VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
+/* <array> dictstack <subarray> */
 DEFUNC_OPER (dictstack)
 G_STMT_START {
 	hg_quark_t arg0, q;
@@ -3453,12 +3406,13 @@ DEFUNC_OPER_END
 /* <num1> <num2> div <quotient> */
 DEFUNC_OPER (div)
 G_STMT_START {
-	hg_quark_t arg0, arg1, ret;
+	hg_quark_t arg0, arg1, *ret;
 	gdouble d1, d2;
 
 	CHECK_STACK (ostack, 2);
 
-	arg0 = hg_stack_index(ostack, 1, error);
+	ret = hg_stack_peek(ostack, 1, error);
+	arg0 = *ret;
 	arg1 = hg_stack_index(ostack, 0, error);
 	if (HG_IS_QINT (arg0)) {
 		d1 = HG_INT (arg0);
@@ -3480,12 +3434,9 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_undefinedresult);
 		return FALSE;
 	}
-	ret = HG_QREAL (d1 / d2);
+	*ret = HG_QREAL (d1 / d2);
 
 	hg_stack_drop(ostack, error);
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, ret);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -3538,12 +3489,13 @@ DEFUNC_UNIMPLEMENTED_OPER (eoviewclip);
 /* <any1> <any2> eq <bool> */
 DEFUNC_OPER (eq)
 G_STMT_START {
-	hg_quark_t arg0, arg1;
+	hg_quark_t arg0, arg1, *qret;
 	gboolean ret = FALSE;
 
 	CHECK_STACK (ostack, 2);
 
-	arg0 = hg_stack_index(ostack, 1, error);
+	qret = hg_stack_peek(ostack, 1, error);
+	arg0 = *qret;
 	arg1 = hg_stack_index(ostack, 0, error);
 
 	if ((HG_IS_QSTRING (arg0) &&
@@ -3608,10 +3560,8 @@ G_STMT_START {
 		}
 	}
 	if (!*error) {
+		*qret = HG_QBOOL (ret);
 		hg_stack_drop(ostack, error);
-		hg_stack_drop(ostack, error);
-
-		STACK_PUSH (ostack, HG_QBOOL (ret));
 
 		retval = TRUE;
 	}
@@ -3624,15 +3574,16 @@ DEFUNC_UNIMPLEMENTED_OPER (erasepage);
 /* <any1> <any2> exch <any2> <any1> */
 DEFUNC_OPER (exch)
 G_STMT_START {
-	hg_quark_t arg0, arg1;
+	hg_quark_t *arg0, *arg1, q;
 
 	CHECK_STACK (ostack, 2);
 
-	arg1 = hg_stack_pop(ostack, error);
-	arg0 = hg_stack_pop(ostack, error);
+	arg0 = hg_stack_peek(ostack, 1, error);
+	arg1 = hg_stack_peek(ostack, 0, error);
 
-	STACK_PUSH (ostack, arg1);
-	STACK_PUSH (ostack, arg0);
+	q = *arg0;
+	*arg0 = *arg1;
+	*arg1 = q;
 
 	retval = TRUE;
 } G_STMT_END;
@@ -3747,24 +3698,21 @@ DEFUNC_UNIMPLEMENTED_OPER (execuserobject);
  */
 DEFUNC_OPER (executeonly)
 G_STMT_START {
-	hg_quark_t arg0;
+	hg_quark_t *arg0;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
-	if (HG_IS_QARRAY (arg0) ||
-	    HG_IS_QFILE (arg0) ||
-	    HG_IS_QSTRING (arg0)) {
-		if (!hg_vm_quark_is_editable(vm, &arg0)) {
+	arg0 = hg_stack_peek(ostack, 0, error);
+	if (HG_IS_QARRAY (*arg0) ||
+	    HG_IS_QFILE (*arg0) ||
+	    HG_IS_QSTRING (*arg0)) {
+		if (!hg_vm_quark_is_editable(vm, arg0)) {
 			hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
 			return FALSE;
 		}
-		hg_vm_quark_set_readable(vm, &arg0, FALSE);
-		hg_vm_quark_set_writable(vm, &arg0, FALSE);
-		hg_vm_quark_set_editable(vm, &arg0, TRUE);
-
-		hg_stack_pop(ostack, error);
-		STACK_PUSH (ostack, arg0);
+		hg_vm_quark_set_readable(vm, arg0, FALSE);
+		hg_vm_quark_set_writable(vm, arg0, FALSE);
+		hg_vm_quark_set_editable(vm, arg0, TRUE);
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
@@ -3835,12 +3783,13 @@ DEFUNC_OPER_END
 /* <base> <exponent> exp <real> */
 DEFUNC_OPER (exp)
 G_STMT_START {
-	hg_quark_t arg0, arg1, ret;
+	hg_quark_t arg0, arg1, *ret;
 	gdouble base, exponent;
 
 	CHECK_STACK (ostack, 2);
 
-	arg0 = hg_stack_index(ostack, 1, error);
+	ret = hg_stack_peek(ostack, 1, error);
+	arg0 = *ret;
 	arg1 = hg_stack_index(ostack, 0, error);
 
 	if (HG_IS_QINT (arg0)) {
@@ -3864,12 +3813,9 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_undefinedresult);
 		return FALSE;
 	}
-	ret = HG_QREAL (pow(base, exponent));
+	*ret = HG_QREAL (pow(base, exponent));
 
 	hg_stack_drop(ostack, error);
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, ret);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -4248,22 +4194,20 @@ DEFUNC_UNIMPLEMENTED_OPER (framedevice);
 /* <any> gcheck <bool> */
 DEFUNC_OPER (gcheck)
 G_STMT_START {
-	hg_quark_t arg0;
+	hg_quark_t arg0, *qret;
 	gboolean ret;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	qret = hg_stack_peek(ostack, 0, error);
+	arg0 = *qret;
 	if (hg_quark_is_simple_object(arg0) ||
 	    HG_IS_QOPER (arg0)) {
 		ret = TRUE;
 	} else {
 		ret = hg_quark_has_same_mem_id(arg0, vm->mem_id[HG_VM_MEM_GLOBAL]);
 	}
-
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, HG_QBOOL (ret));
+	*qret = HG_QBOOL (ret);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -4275,11 +4219,12 @@ DEFUNC_OPER_END
  */
 DEFUNC_OPER (ge)
 G_STMT_START {
-	hg_quark_t arg0, arg1, q = Qnil;
+	hg_quark_t arg0, arg1, q = Qnil, *ret;
 
 	CHECK_STACK (ostack, 2);
 
-	arg0 = hg_stack_index(ostack, 1, error);
+	ret = hg_stack_peek(ostack, 1, error);
+	arg0 = *ret;
 	arg1 = hg_stack_index(ostack, 0, error);
 	if ((HG_IS_QINT (arg0) || HG_IS_QREAL (arg0)) &&
 	    (HG_IS_QINT (arg1) || HG_IS_QREAL (arg1))) {
@@ -4319,10 +4264,9 @@ G_STMT_START {
 		return FALSE;
 	}
 	if (q != Qnil) {
-		hg_stack_drop(ostack, error);
+		*ret = q;
 		hg_stack_drop(ostack, error);
 
-		STACK_PUSH (ostack, q);
 		retval = TRUE;
 	}
 } G_STMT_END;
@@ -4585,11 +4529,12 @@ DEFUNC_UNIMPLEMENTED_OPER (gstate);
  */
 DEFUNC_OPER (gt)
 G_STMT_START {
-	hg_quark_t arg0, arg1, q = Qnil;
+	hg_quark_t arg0, arg1, q = Qnil, *ret;
 
 	CHECK_STACK (ostack, 2);
 
-	arg0 = hg_stack_index(ostack, 1, error);
+	ret = hg_stack_peek(ostack, 1, error);
+	arg0 = *ret;
 	arg1 = hg_stack_index(ostack, 0, error);
 	if ((HG_IS_QINT (arg0) || HG_IS_QREAL (arg0)) &&
 	    (HG_IS_QINT (arg1) || HG_IS_QREAL (arg1))) {
@@ -4629,10 +4574,9 @@ G_STMT_START {
 		return FALSE;
 	}
 	if (q != Qnil) {
-		hg_stack_drop(ostack, error);
+		*ret = q;
 		hg_stack_drop(ostack, error);
 
-		STACK_PUSH (ostack, q);
 		retval = TRUE;
 	}
 } G_STMT_END;
@@ -4674,23 +4618,21 @@ DEFUNC_OPER_END
 /* <int1> <int2> idiv <quotient> */
 DEFUNC_OPER (idiv)
 G_STMT_START {
-	hg_quark_t arg0, arg1, q;
+	hg_quark_t arg0, arg1, *ret;
 
 	CHECK_STACK (ostack, 2);
 
-	arg0 = hg_stack_index(ostack, 1, error);
+	ret = hg_stack_peek(ostack, 1, error);
+	arg0 = *ret;
 	arg1 = hg_stack_index(ostack, 0, error);
 	if (!HG_IS_QINT (arg0) ||
 	    !HG_IS_QINT (arg1)) {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-	q = HG_QINT (HG_INT (arg0) / HG_INT (arg1));
+	*ret = HG_QINT (HG_INT (arg0) / HG_INT (arg1));
 
 	hg_stack_drop(ostack, error);
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -4925,11 +4867,12 @@ DEFUNC_UNIMPLEMENTED_OPER (join);
 /* <dict> <key> known <bool> */
 DEFUNC_OPER (known)
 G_STMT_START {
-	hg_quark_t arg0, arg1, q;
+	hg_quark_t arg0, arg1, q, *ret;
 
 	CHECK_STACK (ostack, 2);
 
-	arg0 = hg_stack_index(ostack, 1, error);
+	ret = hg_stack_peek(ostack, 1, error);
+	arg0 = *ret;
 	arg1 = hg_stack_index(ostack, 0, error);
 
 	if (!HG_IS_QDICT (arg0)) {
@@ -4946,10 +4889,8 @@ G_STMT_START {
 		return FALSE;
 	}
 
+	*ret = HG_QBOOL (q != Qnil);
 	hg_stack_drop(ostack, error);
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, HG_QBOOL (q != Qnil));
 
 	retval = TRUE;
 } G_STMT_END;
@@ -4973,11 +4914,12 @@ DEFUNC_OPER_END
  */
 DEFUNC_OPER (le)
 G_STMT_START {
-	hg_quark_t arg0, arg1, q = Qnil;
+	hg_quark_t arg0, arg1, q = Qnil, *ret;
 
 	CHECK_STACK (ostack, 2);
 
-	arg0 = hg_stack_index(ostack, 1, error);
+	ret = hg_stack_peek(ostack, 1, error);
+	arg0 = *ret;
 	arg1 = hg_stack_index(ostack, 0, error);
 	if ((HG_IS_QINT (arg0) || HG_IS_QREAL (arg0)) &&
 	    (HG_IS_QINT (arg1) || HG_IS_QREAL (arg1))) {
@@ -5017,10 +4959,9 @@ G_STMT_START {
 		return FALSE;
 	}
 	if (q != Qnil) {
-		hg_stack_drop(ostack, error);
+		*ret = q;
 		hg_stack_drop(ostack, error);
 
-		STACK_PUSH (ostack, q);
 		retval = TRUE;
 	}
 } G_STMT_END;
@@ -5035,11 +4976,12 @@ DEFUNC_OPER_END
  */
 DEFUNC_OPER (length)
 G_STMT_START {
-	hg_quark_t arg0, q = Qnil;
+	hg_quark_t arg0, *ret;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	ret = hg_stack_peek(ostack, 0, error);
+	arg0 = *ret;
 
 	if (!hg_vm_quark_is_readable(vm, &arg0)) {
 		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
@@ -5052,7 +4994,7 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
-		q = HG_QINT (hg_array_maxlength(a));
+		*ret = HG_QINT (hg_array_maxlength(a));
 		HG_VM_UNLOCK (vm, arg0);
 	} else if (HG_IS_QDICT (arg0)) {
 		hg_dict_t *d = HG_VM_LOCK (vm, arg0, error);
@@ -5061,7 +5003,7 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
-		q = HG_QINT (hg_dict_length(d));
+		*ret = HG_QINT (hg_dict_length(d));
 		HG_VM_UNLOCK (vm, arg0);
 	} else if (HG_IS_QSTRING (arg0)) {
 		hg_string_t *s = HG_VM_LOCK (vm, arg0, error);
@@ -5070,7 +5012,7 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
-		q = HG_QINT (hg_string_maxlength(s));
+		*ret = HG_QINT (hg_string_maxlength(s));
 		HG_VM_UNLOCK (vm, arg0);
 	} else if (HG_IS_QNAME (arg0) || HG_IS_QEVALNAME (arg0)) {
 		const gchar *n = hg_name_lookup(vm->name, arg0);
@@ -5079,14 +5021,11 @@ G_STMT_START {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
-		q = HG_QINT (strlen(n));
+		*ret = HG_QINT (strlen(n));
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -5157,12 +5096,13 @@ DEFUNC_OPER_END
 /* <num> ln <real> */
 DEFUNC_OPER (ln)
 G_STMT_START {
-	hg_quark_t arg0, ret;
+	hg_quark_t arg0, *ret;
 	gdouble d;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	ret = hg_stack_peek(ostack, 0, error);
+	arg0 = *ret;
 	if (HG_IS_QINT (arg0)) {
 		d = HG_INT (arg0);
 	} else if (HG_IS_QREAL (arg0)) {
@@ -5176,11 +5116,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 		return FALSE;
 	}
-	ret = HG_QREAL (log(d));
-
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, ret);
+	*ret = HG_QREAL (log(d));
 
 	retval = TRUE;
 } G_STMT_END;
@@ -5192,12 +5128,13 @@ DEFUNC_UNIMPLEMENTED_OPER (lock);
 /* <num> log <real> */
 DEFUNC_OPER (log)
 G_STMT_START {
-	hg_quark_t arg0, ret;
+	hg_quark_t arg0, *ret;
 	gdouble d;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	ret = hg_stack_peek(ostack, 0, error);
+	arg0 = *ret;
 	if (HG_IS_QINT (arg0)) {
 		d = HG_INT (arg0);
 	} else if (HG_IS_QREAL (arg0)) {
@@ -5211,11 +5148,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 		return FALSE;
 	}
-	ret = HG_QREAL (log10(d));
-
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, ret);
+	*ret = HG_QREAL (log10(d));
 
 	retval = TRUE;
 } G_STMT_END;
@@ -5267,11 +5200,12 @@ DEFUNC_OPER_END
  */
 DEFUNC_OPER (lt)
 G_STMT_START {
-	hg_quark_t arg0, arg1, q = Qnil;
+	hg_quark_t arg0, arg1, q = Qnil, *ret;
 
 	CHECK_STACK (ostack, 2);
 
-	arg0 = hg_stack_index(ostack, 1, error);
+	ret = hg_stack_peek(ostack, 1, error);
+	arg0 = *ret;
 	arg1 = hg_stack_index(ostack, 0, error);
 	if ((HG_IS_QINT (arg0) || HG_IS_QREAL (arg0)) &&
 	    (HG_IS_QINT (arg1) || HG_IS_QREAL (arg1))) {
@@ -5311,10 +5245,9 @@ G_STMT_START {
 		return FALSE;
 	}
 	if (q != Qnil) {
-		hg_stack_drop(ostack, error);
+		*ret = q;
 		hg_stack_drop(ostack, error);
 
-		STACK_PUSH (ostack, q);
 		retval = TRUE;
 	}
 } G_STMT_END;
@@ -5327,12 +5260,13 @@ DEFUNC_UNIMPLEMENTED_OPER (makepattern);
 /* <dict> maxlength <int> */
 DEFUNC_OPER (maxlength)
 G_STMT_START {
-	hg_quark_t arg0, q;
+	hg_quark_t arg0, *ret;
 	hg_dict_t *dict;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	ret = hg_stack_peek(ostack, 0, error);
+	arg0 = *ret;
 	if (!HG_IS_QDICT (arg0)) {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
@@ -5342,12 +5276,8 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	q = HG_QINT (hg_dict_maxlength(dict));
+	*ret = HG_QINT (hg_dict_maxlength(dict));
 	HG_VM_UNLOCK (vm, arg0);
-
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -5357,11 +5287,12 @@ DEFUNC_OPER_END
 /* <int1> <int2> mod <remainder> */
 DEFUNC_OPER (mod)
 G_STMT_START {
-	hg_quark_t arg0, arg1, q;
+	hg_quark_t arg0, arg1, *ret;
 
 	CHECK_STACK (ostack, 2);
 
-	arg0 = hg_stack_index(ostack, 1, error);
+	ret = hg_stack_peek(ostack, 1, error);
+	arg0 = *ret;
 	arg1 = hg_stack_index(ostack, 0, error);
 	if (!HG_IS_QINT (arg0) ||
 	    !HG_IS_QINT (arg1)) {
@@ -5372,12 +5303,9 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_undefinedresult);
 		return FALSE;
 	}
-	q = HG_QINT (HG_INT (arg0) % HG_INT (arg1));
+	*ret = HG_QINT (HG_INT (arg0) % HG_INT (arg1));
 
 	hg_stack_drop(ostack, error);
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -5453,13 +5381,14 @@ DEFUNC_OPER_END
 /* <num1> <num2> mul <product> */
 DEFUNC_OPER (mul)
 G_STMT_START {
-	hg_quark_t arg0, arg1, ret;
+	hg_quark_t arg0, arg1, *ret;
 	gdouble d1, d2, dr;
 	gboolean is_int = TRUE;
 
 	CHECK_STACK (ostack, 2);
 
-	arg0 = hg_stack_index(ostack, 1, error);
+	ret = hg_stack_peek(ostack, 1, error);
+	arg0 = *ret;
 	arg1 = hg_stack_index(ostack, 0, error);
 	if (HG_IS_QINT (arg0)) {
 		d1 = HG_INT (arg0);
@@ -5484,14 +5413,11 @@ G_STMT_START {
 	if (is_int &&
 	    HG_REAL_LE (dr, G_MAXINT32) &&
 	    HG_REAL_GE (dr, G_MININT32)) {
-		ret = HG_QINT ((gint32)dr);
+		*ret = HG_QINT ((gint32)dr);
 	} else {
-		ret = HG_QREAL (dr);
+		*ret = HG_QREAL (dr);
 	}
 	hg_stack_drop(ostack, error);
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, ret);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -5501,12 +5427,13 @@ DEFUNC_OPER_END
 /* <any1> <any2> ne <bool> */
 DEFUNC_OPER (ne)
 G_STMT_START {
-	hg_quark_t arg0, arg1;
+	hg_quark_t arg0, arg1, *qret;
 	gboolean ret = FALSE;
 
 	CHECK_STACK (ostack, 2);
 
-	arg0 = hg_stack_index(ostack, 1, error);
+	qret = hg_stack_peek(ostack, 1, error);
+	arg0 = *qret;
 	arg1 = hg_stack_index(ostack, 0, error);
 	if (!hg_vm_quark_is_readable(vm, &arg0) ||
 	    !hg_vm_quark_is_readable(vm, &arg1)) {
@@ -5567,10 +5494,8 @@ G_STMT_START {
 		}
 	}
 	if (!*error) {
+		*qret = HG_QBOOL (ret);
 		hg_stack_drop(ostack, error);
-		hg_stack_drop(ostack, error);
-
-		STACK_PUSH (ostack, HG_QBOOL (ret));
 
 		retval = TRUE;
 	}
@@ -5581,13 +5506,14 @@ DEFUNC_OPER_END
 /* <num1> neg <num2> */
 DEFUNC_OPER (neg)
 G_STMT_START {
-	hg_quark_t arg0, ret;
+	hg_quark_t arg0, *ret;
 	gdouble d;
 	gboolean is_int = TRUE;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	ret = hg_stack_peek(ostack, 0, error);
+	arg0 = *ret;
 	if (HG_IS_QINT (arg0)) {
 		d = -HG_INT (arg0);
 	} else if (HG_IS_QREAL (arg0)) {
@@ -5601,13 +5527,10 @@ G_STMT_START {
 	if (is_int &&
 	    HG_REAL_LE (d, G_MAXINT32) &&
 	    HG_REAL_GE (d, G_MININT32)) {
-		ret = HG_QINT ((gint32)d);
+		*ret = HG_QINT ((gint32)d);
 	} else {
-		ret = HG_QREAL (d);
+		*ret = HG_QREAL (d);
 	}
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, ret);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -5647,23 +5570,21 @@ DEFUNC_OPER_END
  */
 DEFUNC_OPER (noaccess)
 G_STMT_START {
-	hg_quark_t arg0;
+	hg_quark_t *arg0;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
-	if (HG_IS_QARRAY (arg0) ||
-	    HG_IS_QFILE (arg0) ||
-	    HG_IS_QSTRING (arg0) ||
-	    HG_IS_QDICT (arg0)) {
-		hg_vm_quark_set_attributes(vm, &arg0,
+	arg0 = hg_stack_peek(ostack, 0, error);
+	if (HG_IS_QARRAY (*arg0) ||
+	    HG_IS_QFILE (*arg0) ||
+	    HG_IS_QSTRING (*arg0) ||
+	    HG_IS_QDICT (*arg0)) {
+		hg_vm_quark_set_attributes(vm, arg0,
 					   FALSE, FALSE, FALSE, FALSE);
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-	hg_stack_pop(ostack, error);
-	STACK_PUSH (ostack, arg0);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -5675,22 +5596,20 @@ DEFUNC_OPER_END
  */
 DEFUNC_OPER (not)
 G_STMT_START {
-	hg_quark_t arg0, ret;
+	hg_quark_t arg0, *ret;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	ret = hg_stack_peek(ostack, 0, error);
+	arg0 = *ret;
 	if (HG_IS_QBOOL (arg0)) {
-		ret = HG_QBOOL (!HG_BOOL (arg0));
+		*ret = HG_QBOOL (!HG_BOOL (arg0));
 	} else if (HG_IS_QINT (arg0)) {
-		ret = HG_QINT (-HG_INT (arg0));
+		*ret = HG_QINT (-HG_INT (arg0));
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, ret);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -5705,27 +5624,25 @@ DEFUNC_UNIMPLEMENTED_OPER (nulldevice);
  */
 DEFUNC_OPER (or)
 G_STMT_START {
-	hg_quark_t arg0, arg1, q;
+	hg_quark_t arg0, arg1, *ret;
 
 	CHECK_STACK (ostack, 2);
 
-	arg0 = hg_stack_index(ostack, 1, error);
+	ret = hg_stack_peek(ostack, 1, error);
+	arg0 = *ret;
 	arg1 = hg_stack_index(ostack, 0, error);
 	if (HG_IS_QBOOL (arg0) &&
 	    HG_IS_QBOOL (arg1)) {
-		q = HG_QBOOL (HG_BOOL (arg0) | HG_BOOL (arg1));
+		*ret = HG_QBOOL (HG_BOOL (arg0) | HG_BOOL (arg1));
 	} else if (HG_IS_QINT (arg0) &&
 		   HG_IS_QINT (arg1)) {
-		q = HG_QINT (HG_INT (arg0) | HG_INT (arg1));
+		*ret = HG_QINT (HG_INT (arg0) | HG_INT (arg1));
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
 
 	hg_stack_drop(ostack, error);
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -5888,11 +5805,12 @@ DEFUNC_OPER_END
  */
 DEFUNC_OPER (rcheck)
 G_STMT_START {
-	hg_quark_t arg0, q;
+	hg_quark_t arg0, *ret;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	ret = hg_stack_peek(ostack, 0, error);
+	arg0 = *ret;
 	if (!HG_IS_QARRAY (arg0) &&
 	    !HG_IS_QDICT (arg0) &&
 	    !HG_IS_QFILE (arg0) &&
@@ -5900,11 +5818,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-	q = HG_QBOOL (hg_vm_quark_is_readable(vm, &arg0));
-
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, q);
+	*ret = HG_QBOOL (hg_vm_quark_is_readable(vm, &arg0));
 
 	retval = TRUE;
 } G_STMT_END;
@@ -6276,22 +6190,19 @@ DEFUNC_OPER_END
  */
 DEFUNC_OPER (readonly)
 G_STMT_START {
-	hg_quark_t arg0;
+	hg_quark_t *arg0;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
-	if (!HG_IS_QARRAY (arg0) &&
-	    !HG_IS_QDICT (arg0) &&
-	    !HG_IS_QFILE (arg0) &&
-	    !HG_IS_QSTRING (arg0)) {
+	arg0 = hg_stack_peek(ostack, 0, error);
+	if (!HG_IS_QARRAY (*arg0) &&
+	    !HG_IS_QDICT (*arg0) &&
+	    !HG_IS_QFILE (*arg0) &&
+	    !HG_IS_QSTRING (*arg0)) {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-	hg_vm_quark_set_writable(vm, &arg0, FALSE);
-	hg_stack_pop(ostack, error);
-
-	STACK_PUSH (ostack, arg0);
+	hg_vm_quark_set_writable(vm, arg0, FALSE);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -6491,6 +6402,7 @@ _hg_operator_restore_mark(hg_mem_t *mem,
 	return TRUE;
 }
 
+/* <save> restore - */
 DEFUNC_OPER (restore)
 G_STMT_START {
 	hg_quark_t arg0, q, qq = Qnil;
@@ -6704,11 +6616,12 @@ DEFUNC_UNIMPLEMENTED_OPER (rotate);
 /* <num> round <num> */
 DEFUNC_OPER (round)
 G_STMT_START {
-	hg_quark_t arg0;
+	hg_quark_t arg0, *ret;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	ret = hg_stack_peek(ostack, 0, error);
+	arg0 = *ret;
 
 	if (HG_IS_QINT (arg0)) {
 		/* no need to proceed anything */
@@ -6728,10 +6641,8 @@ G_STMT_START {
 		} if (HG_REAL_EQUAL (dfloat, 0.5)) {
 			dr = (gdouble)MAX (base, dr);
 		}
-		
-		hg_stack_drop(ostack, error);
 
-		STACK_PUSH (ostack, HG_QREAL (dr));
+		*ret = HG_QREAL (dr);
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
@@ -7271,12 +7182,13 @@ DEFUNC_UNIMPLEMENTED_OPER (showpage);
 /* <angle> sin <real> */
 DEFUNC_OPER (sin)
 G_STMT_START {
-	hg_quark_t arg0, q;
+	hg_quark_t arg0, *ret;
 	gdouble angle;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	ret = hg_stack_peek(ostack, 0, error);
+	arg0 = *ret;
 	if (HG_IS_QINT (arg0)) {
 		angle = (gdouble)HG_INT (arg0);
 	} else if (HG_IS_QREAL (arg0)) {
@@ -7285,10 +7197,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-	q = HG_QREAL (sin(angle / 180 * M_PI));
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, q);
+	*ret = HG_QREAL (sin(angle / 180 * M_PI));
 
 	retval = TRUE;
 } G_STMT_END;
@@ -7298,12 +7207,13 @@ DEFUNC_OPER_END
 /* <num> sqrt <real> */
 DEFUNC_OPER (sqrt)
 G_STMT_START {
-	hg_quark_t arg0, q;
+	hg_quark_t arg0, *ret;
 	gdouble d;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	ret = hg_stack_peek(ostack, 0, error);
+	arg0 = *ret;
 	if (HG_IS_QINT (arg0)) {
 		d = (gdouble)HG_INT (arg0);
 	} else if (HG_IS_QREAL (arg0)) {
@@ -7312,10 +7222,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-	q = HG_QREAL (sqrt(d));
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, q);
+	*ret = HG_QREAL (sqrt(d));
 
 	retval = TRUE;
 } G_STMT_END;
@@ -7557,13 +7464,14 @@ DEFUNC_UNIMPLEMENTED_OPER (strokepath);
 /* <num1> <num2> sub <diff> */
 DEFUNC_OPER (sub)
 G_STMT_START {
-	hg_quark_t arg0, arg1, q;
+	hg_quark_t arg0, arg1, *ret;
 	gdouble d1, d2;
 	gboolean is_int = TRUE;
 
 	CHECK_STACK (ostack, 2);
 
-	arg0 = hg_stack_index(ostack, 1, error);
+	ret = hg_stack_peek(ostack, 1, error);
+	arg0 = *ret;
 	arg1 = hg_stack_index(ostack, 0, error);
 	if (HG_IS_QINT (arg0)) {
 		d1 = HG_INT (arg0);
@@ -7585,14 +7493,11 @@ G_STMT_START {
 	}
 
 	if (is_int) {
-		q = HG_QINT ((gint32)(d1 - d2));
+		*ret = HG_QINT ((gint32)(d1 - d2));
 	} else {
-		q = HG_QREAL (d1 - d2);
+		*ret = HG_QREAL (d1 - d2);
 	}
 	hg_stack_drop(ostack, error);
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -7780,17 +7685,16 @@ DEFUNC_UNIMPLEMENTED_OPER (translate);
 /* <any> type <name> */
 DEFUNC_OPER (type)
 G_STMT_START {
-	hg_quark_t arg0, q;
+	hg_quark_t arg0, q, *ret;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	ret = hg_stack_peek(ostack, 0, error);
+	arg0 = *ret;
 	q = HG_QNAME (vm->name, hg_quark_get_type_name(arg0));
 	hg_vm_quark_set_executable(vm, &q, TRUE); /* ??? */
 
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, q);
+	*ret = q;
 
 	retval = TRUE;
 } G_STMT_END;
@@ -7887,11 +7791,12 @@ DEFUNC_UNIMPLEMENTED_OPER (wait);
  */
 DEFUNC_OPER (wcheck)
 G_STMT_START {
-	hg_quark_t arg0;
+	hg_quark_t arg0, *ret;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	ret = hg_stack_peek(ostack, 0, error);
+	arg0 = *ret;
 	if (!HG_IS_QARRAY (arg0) &&
 	    !HG_IS_QDICT (arg0) &&
 	    !HG_IS_QFILE (arg0) &&
@@ -7899,9 +7804,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, HG_QBOOL (hg_vm_quark_is_writable(vm, &arg0)));
+	*ret = HG_QBOOL (hg_vm_quark_is_writable(vm, &arg0));
 
 	retval = TRUE;
 } G_STMT_END;
@@ -8089,14 +7992,15 @@ DEFUNC_UNIMPLEMENTED_OPER (wtranslation);
 /* <any> xcheck <bool> */
 DEFUNC_OPER (xcheck)
 G_STMT_START {
-	hg_quark_t arg0;
+	hg_quark_t arg0, *ret;
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	ret = hg_stack_peek(ostack, 0, error);
+	arg0 = *ret;
 	hg_stack_drop(ostack, error);
 
-	STACK_PUSH (ostack, HG_QBOOL (hg_vm_quark_is_executable(vm, &arg0)));
+	*ret = HG_QBOOL (hg_vm_quark_is_executable(vm, &arg0));
 
 	retval = TRUE;
 } G_STMT_END;
@@ -8108,27 +8012,25 @@ DEFUNC_OPER_END
  */
 DEFUNC_OPER (xor)
 G_STMT_START {
-	hg_quark_t arg0, arg1, q;
+	hg_quark_t arg0, arg1, *ret;
 
 	CHECK_STACK (ostack, 2);
 
-	arg0 = hg_stack_index(ostack, 1, error);
+	ret = hg_stack_peek(ostack, 1, error);
+	arg0 = *ret;
 	arg1 = hg_stack_index(ostack, 0, error);
 	if (HG_IS_QBOOL (arg0) &&
 	    HG_IS_QBOOL (arg1)) {
-		q = HG_QBOOL (HG_BOOL (arg0) ^ HG_BOOL (arg1));
+		*ret = HG_QBOOL (HG_BOOL (arg0) ^ HG_BOOL (arg1));
 	} else if (HG_IS_QINT (arg0) &&
 		   HG_IS_QINT (arg1)) {
-		q = HG_QINT (HG_INT (arg0) ^ HG_INT (arg1));
+		*ret = HG_QINT (HG_INT (arg0) ^ HG_INT (arg1));
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
 
 	hg_stack_drop(ostack, error);
-	hg_stack_drop(ostack, error);
-
-	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
 } G_STMT_END;

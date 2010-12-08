@@ -429,6 +429,31 @@ hg_stack_index(hg_stack_t  *stack,
 }
 
 /**
+ * hg_stack_peek:
+ * @stack:
+ * @index:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_quark_t *
+hg_stack_peek(hg_stack_t  *stack,
+	      gsize        index,
+	      GError     **error)
+{
+	hg_list_t *l;
+
+	hg_return_val_with_gerror_if_fail (stack != NULL, NULL, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (index < stack->depth, NULL, error, HG_VM_e_stackunderflow);
+
+	for (l = stack->last_stack; index > 0; l = l->prev, index--);
+
+	return &l->data;
+}
+
+/**
  * hg_stack_roll:
  * @stack:
  * @n_blocks:
