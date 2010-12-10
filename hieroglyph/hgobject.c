@@ -82,6 +82,16 @@ _hg_object_new(hg_mem_t     *mem,
 	return object->self;
 }
 
+static hg_quark_t
+_hg_object_quark_iterate_copy(hg_quark_t   qdata,
+			      gpointer     user_data,
+			      gpointer    *ret,
+			      GError     **error)
+{
+	return hg_object_quark_copy((hg_mem_t *)user_data,
+				    qdata, ret, error);
+}
+
 /*< public >*/
 /**
  * hg_object_init:
@@ -422,6 +432,56 @@ hg_object_get_attributes(hg_object_t *object)
 
 	if (v->get_attributes)
 		retval = v->get_attributes(object);
+
+	return retval;
+}
+
+/**
+ * hg_object_quark_copy:
+ * @mem:
+ * @qdata:
+ * @ret:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_quark_t
+hg_object_quark_copy(hg_mem_t    *mem,
+		     hg_quark_t   qdata,
+		     gpointer    *ret,
+		     GError     **error)
+{
+	hg_quark_t retval = Qnil;
+	hg_object_t *o;
+	GError *err = NULL;
+
+	hg_return_val_with_gerror_if_fail (mem != NULL, Qnil, error, HG_VM_e_VMerror);
+
+	if (qdata == Qnil)
+		return Qnil;
+	if (hg_quark_is_simple_object(qdata) ||
+	    hg_quark_get_type(qdata) == HG_TYPE_OPER)
+		return qdata;
+
+	o = HG_MEM_LOCK (mem, qdata, &err);
+	if (o) {
+		retval = hg_object_copy(o, _hg_object_quark_iterate_copy, mem, ret, &err);
+		hg_mem_unlock_object(mem, qdata);
+	}
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+		retval = Qnil;
+	}
 
 	return retval;
 }

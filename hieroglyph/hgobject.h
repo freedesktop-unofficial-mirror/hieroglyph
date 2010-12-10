@@ -172,6 +172,10 @@ void        hg_object_set_attributes(hg_object_t              *object,
                                      gint                      executable,
 				     gint                      editable);
 gint        hg_object_get_attributes(hg_object_t              *object);
+hg_quark_t  hg_object_quark_copy    (hg_mem_t                 *mem,
+				     hg_quark_t                qdata,
+				     gpointer                 *ret,
+				     GError                  **error);
 
 G_END_DECLS
 
