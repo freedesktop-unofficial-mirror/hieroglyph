@@ -207,6 +207,11 @@ hg_object_free(hg_mem_t   *mem,
 	hg_return_if_fail (__hg_object_is_initialized);
 	hg_return_if_fail (mem != NULL);
 	hg_return_if_fail (index != Qnil);
+
+	if (hg_quark_is_simple_object(index) ||
+	    hg_quark_get_type(index) == HG_TYPE_OPER)
+		return;
+
 	hg_return_if_lock_fail (object, mem, index);
 	hg_return_after_eval_if_fail (object->type < HG_TYPE_END,
 				      hg_mem_unlock_object(mem, index));
