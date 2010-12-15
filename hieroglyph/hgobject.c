@@ -474,6 +474,11 @@ hg_object_quark_copy(hg_mem_t    *mem,
 	if (o) {
 		retval = hg_object_copy(o, _hg_object_quark_iterate_copy, mem, ret, &err);
 		hg_mem_unlock_object(mem, qdata);
+		hg_quark_set_access_bits(&retval,
+					 hg_quark_is_readable(qdata) ? TRUE : FALSE,
+					 hg_quark_is_writable(qdata) ? TRUE : FALSE,
+					 hg_quark_is_executable(qdata) ? TRUE : FALSE,
+					 hg_quark_is_editable(qdata) ? TRUE : FALSE);
 	}
 	if (err) {
 		if (error) {
