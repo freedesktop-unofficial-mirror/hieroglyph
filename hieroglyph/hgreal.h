@@ -74,6 +74,18 @@ hg_real_convert_from_native(gdouble vdouble)
 	gchar *p = x;
 
 	v.v_double = vdouble;
+	if (v.mpn.biased_exponent == 0 &&
+	    (v.mpn.mantissa_low != 0 ||
+	     v.mpn.mantissa_high != 0)) {
+		/* ignore a subnormal number.
+		 * it avoids to detect the real number right way
+		 * since this is relying on something is there
+		 * on the biased exponent bits. which isn't used
+		 * for anything else on hg_quark_t.
+		 */
+		v.mpn.mantissa_low = 0;
+		v.mpn.mantissa_high = 0;
+	}
 
 	return hg_quark_new(HG_TYPE_REAL, (hg_quark_t)*(guint64 *)p);
 }
