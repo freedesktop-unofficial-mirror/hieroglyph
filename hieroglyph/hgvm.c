@@ -756,6 +756,15 @@ _hg_vm_run_gc(hg_mem_t *mem,
 #endif
 	if (!hg_vm_quark_gc_mark(vm, vm->qgstate, &err))
 		goto error;
+#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
+	g_print("GC: marking objects in gstate\n");
+#endif
+	if (vm->device &&
+	    !hg_device_gc_mark(vm->device,
+			       _hg_vm_quark_iterate_gc_mark,
+			       vm, &err))
+		goto error;
+
 
 	/* sweeping objects */
 
@@ -969,7 +978,7 @@ hg_vm_new(void)
 		retval->quparams_name[i] = Qnil;
 	for (i = 0; i < HG_VM_sys_END; i++)
 		retval->qsparams_name[i] = Qnil;
-	for (i = 0; i < HG_VM_pdev_END; i++)
+	for (i = 0; i < HG_pdev_END; i++)
 		retval->qpdevparams_name[i] = Qnil;
 	retval->qerror = Qnil;
 	retval->qsystemdict = Qnil;
@@ -1054,7 +1063,7 @@ hg_vm_new(void)
 #undef DECL_SPARAM
 
 #define DECL_PDPARAM(_v_,_n_)						\
-	(_v_)->qpdevparams_name[HG_VM_pdev_ ## _n_] = HG_QNAME ((_v_)->name, #_n_);
+	(_v_)->qpdevparams_name[HG_pdev_ ## _n_] = HG_QNAME ((_v_)->name, #_n_);
 
 	DECL_PDPARAM (retval, InputAttributes);
 	DECL_PDPARAM (retval, PageSize);
@@ -2503,7 +2512,7 @@ hg_vm_startjob(hg_vm_t           *vm,
 	} else {
 		hg_vm_load_plugins(vm);
 
-		vm->device = hg_device_null_new();
+		vm->device = hg_device_null_new(vm->mem[HG_VM_MEM_LOCAL]);
 		/* XXX: initialize device */
 
 		if (initializer) {
@@ -3203,12 +3212,12 @@ hg_vm_set_device(hg_vm_t      *vm,
 	hg_return_val_if_fail (vm != NULL, FALSE);
 	hg_return_val_if_fail (name != NULL, FALSE);
 
-	dev = hg_device_open(name);
+	dev = hg_device_open(vm->mem[HG_VM_MEM_LOCAL], name);
 
 	if (vm->device)
 		hg_device_close(vm->device);
 	if (!dev) {
-		vm->device = hg_device_null_new();
+		vm->device = hg_device_null_new(vm->mem[HG_VM_MEM_LOCAL]);
 	} else {
 		vm->device = dev;
 	}

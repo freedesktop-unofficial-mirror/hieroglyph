@@ -29,7 +29,7 @@
 G_BEGIN_DECLS
 
 #define HG_QOPER(_v_)				\
-	(hg_quark_new(HG_TYPE_OPER, (_v_)))
+	(hg_operator_new(_v_))
 #define HG_OPER(_q_)						\
 	((hg_system_encoding_t)hg_quark_get_value((_q_)))
 #define HG_IS_QOPER(_v_)				\
@@ -82,7 +82,6 @@ typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
 		hg_quark_t __o_name__ = (_k_);				\
 		hg_quark_t __op__ = HG_QOPER (__o_name__);		\
 									\
-		hg_quark_set_executable(&__op__, TRUE);			\
 		if (!hg_dict_add((_d_),					\
 				 __o_name__,				\
 				 __op__,				\
@@ -179,6 +178,26 @@ typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
 		}							\
 	} G_STMT_END
 
+
+G_INLINE_FUNC hg_quark_t hg_operator_new(guint encoding);
+
+/**
+ * hg_operator_new:
+ * @encoding:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+G_INLINE_FUNC hg_quark_t
+hg_operator_new(guint encoding)
+{
+	hg_quark_t retval = hg_quark_new(HG_TYPE_OPER, encoding);
+
+	hg_quark_set_executable(&retval, TRUE);
+
+	return retval;
+}
 
 gboolean     hg_operator_init          (void);
 void         hg_operator_tini          (void);

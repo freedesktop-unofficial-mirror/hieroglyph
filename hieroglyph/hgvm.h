@@ -45,7 +45,6 @@ typedef enum _hg_vm_access_t		hg_vm_access_t;
 typedef enum _hg_vm_stack_type_t	hg_vm_stack_type_t;
 typedef enum _hg_vm_user_params_name_t	hg_vm_user_params_name_t;
 typedef enum _hg_vm_sys_params_name_t	hg_vm_sys_params_name_t;
-typedef enum _hg_vm_pdev_params_name_t	hg_vm_pdev_params_name_t;
 
 enum _hg_vm_access_t {
 	HG_VM_ACCESS_EXECUTABLE = HG_ACCESS_EXECUTABLE,
@@ -73,36 +72,6 @@ enum _hg_vm_sys_params_name_t {
 	HG_VM_sys_BEGIN = 0,
 	HG_VM_sys_END
 };
-enum _hg_vm_pdev_params_name_t {
-	HG_VM_pdev_BEGIN = 0,
-	HG_VM_pdev_InputAttributes,
-	HG_VM_pdev_PageSize,
-	HG_VM_pdev_MediaColor,
-	HG_VM_pdev_MediaWeight,
-	HG_VM_pdev_MediaType,
-	HG_VM_pdev_ManualFeed,
-	HG_VM_pdev_Orientation,
-	HG_VM_pdev_AdvanceMedia,
-	HG_VM_pdev_AdvanceDistance,
-	HG_VM_pdev_CutMedia,
-	HG_VM_pdev_HWResolution,
-	HG_VM_pdev_ImagingBBox,
-	HG_VM_pdev_Margins,
-	HG_VM_pdev_MirrorPrint,
-	HG_VM_pdev_NegativePrint,
-	HG_VM_pdev_Duplex,
-	HG_VM_pdev_Tumble,
-	HG_VM_pdev_OutputType,
-	HG_VM_pdev_NumCopies,
-	HG_VM_pdev_Collate,
-	HG_VM_pdev_Jog,
-	HG_VM_pdev_OutputFaceUp,
-	HG_VM_pdev_Separations,
-	HG_VM_pdev_Install,
-	HG_VM_pdev_BeginPage,
-	HG_VM_pdev_EndPage,
-	HG_VM_pdev_END
-};
 struct _hg_vm_user_params_t {
 	gsize max_op_stack;
 	gsize max_exec_stack;
@@ -110,8 +79,6 @@ struct _hg_vm_user_params_t {
 	gsize max_gstate_stack;
 };
 struct _hg_vm_sys_params_t {
-};
-struct _hg_vm_pdev_params_t {
 };
 struct _hg_vm_t {
 	hg_quark_t           self;
@@ -126,7 +93,7 @@ struct _hg_vm_t {
 	hg_quark_t           qerror_name[HG_VM_e_END];
 	hg_quark_t           quparams_name[HG_VM_user_END];
 	hg_quark_t           qsparams_name[HG_VM_sys_END];
-	hg_quark_t           qpdevparams_name[HG_VM_pdev_END];
+	hg_quark_t           qpdevparams_name[HG_pdev_END];
 	hg_quark_t           qerror;
 	hg_quark_t           qsystemdict;
 	hg_quark_t           qglobaldict;

@@ -54,6 +54,10 @@ static gboolean __hg_operator_is_initialized = FALSE;
 PROTO_OPER (private_abort);
 PROTO_OPER (private_applyparams);
 PROTO_OPER (private_clearerror);
+PROTO_OPER (private_callbeginpage);
+PROTO_OPER (private_callendpage);
+PROTO_OPER (private_callinstall);
+PROTO_OPER (private_currentpagedevice);
 PROTO_OPER (private_exit);
 PROTO_OPER (private_findlibfile);
 PROTO_OPER (private_forceput);
@@ -562,6 +566,43 @@ G_STMT_START {
 	retval = TRUE;
 } G_STMT_END;
 VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
+DEFUNC_UNIMPLEMENTED_OPER (private_callbeginpage);
+DEFUNC_UNIMPLEMENTED_OPER (private_callendpage);
+DEFUNC_UNIMPLEMENTED_OPER (private_callinstall);
+
+static hg_quark_t
+_hg_operator_pdev_name_lookup(hg_pdev_params_name_t param,
+			      gpointer              user_data)
+{
+	hg_vm_t *vm = (hg_vm_t *)user_data;
+
+	return vm->qpdevparams_name[param];
+}
+
+/* - .currentpagedevice <dict> */
+DEFUNC_OPER (private_currentpagedevice)
+G_STMT_START {
+	hg_quark_t q;
+
+	q = hg_device_get_page_params(vm->device,
+				      vm->mem[HG_VM_MEM_LOCAL],
+				      hg_vm_get_language_level(vm) == HG_LANG_LEVEL_1,
+				      _hg_operator_pdev_name_lookup, vm,
+				      NULL,
+				      error);
+	if (q == Qnil) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	hg_vm_quark_set_default_attributes(vm, &q);
+
+	STACK_PUSH (ostack, q);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (1, 0, 0);
 DEFUNC_OPER_END
 
 /* - .exit - */
@@ -8048,7 +8089,6 @@ DEFUNC_UNIMPLEMENTED_OPER (yshow);
 								  HG_enc_ ## _o_); \
 		hg_quark_t __op__ = HG_QOPER (HG_enc_ ## _o_);		\
 									\
-		hg_vm_quark_set_executable(vm, &__op__, TRUE);		\
 		if (!hg_dict_add((_d_),					\
 				 __o_name__,				\
 				 __op__,				\
@@ -8061,7 +8101,6 @@ DEFUNC_UNIMPLEMENTED_OPER (yshow);
 		hg_quark_t __o_name__ = HG_QNAME ((_n_),#_k_);		\
 		hg_quark_t __op__ = HG_QOPER (HG_enc_ ## _o_);		\
 									\
-		hg_vm_quark_set_executable(vm, &__op__, TRUE);		\
 		if (!hg_dict_add((_d_),					\
 				 __o_name__,				\
 				 __op__,				\
@@ -8098,6 +8137,10 @@ _hg_operator_level1_register(hg_vm_t   *vm,
 	REG_PRIV_OPER (dict, name, .abort, private_abort);
 	REG_PRIV_OPER (dict, name, .applyparams, private_applyparams);
 	REG_PRIV_OPER (dict, name, .clearerror, private_clearerror);
+	REG_PRIV_OPER (dict, name, .callbeginpage, private_callbeginpage);
+	REG_PRIV_OPER (dict, name, .callendpage, private_callendpage);
+	REG_PRIV_OPER (dict, name, .callinstall, private_callinstall);
+	REG_PRIV_OPER (dict, name, .currentpagedevice, private_currentpagedevice);
 	REG_PRIV_OPER (dict, name, .dicttomark, protected_dicttomark);
 	REG_PRIV_OPER (dict, name, .exit, private_exit);
 	REG_PRIV_OPER (dict, name, .findlibfile, private_findlibfile);
@@ -8556,6 +8599,10 @@ hg_operator_init(void)
 	DECL_PRIV_OPER (.abort, private_abort);
 	DECL_PRIV_OPER (.applyparams, private_applyparams);
 	DECL_PRIV_OPER (.clearerror, private_clearerror);
+	DECL_PRIV_OPER (.callbeginpage, private_callbeginpage);
+	DECL_PRIV_OPER (.callendpage, private_callendpage);
+	DECL_PRIV_OPER (.callinstall, private_callinstall);
+	DECL_PRIV_OPER (.currentpagedevice, private_currentpagedevice);
 	DECL_PRIV_OPER (.exit, private_exit);
 	DECL_PRIV_OPER (.findlibfile, private_findlibfile);
 	DECL_PRIV_OPER (.forceput, private_forceput);
@@ -8955,6 +9002,10 @@ hg_operator_tini(void)
 	UNDECL_OPER (private_abort);
 	UNDECL_OPER (private_applyparams);
 	UNDECL_OPER (private_clearerror);
+	UNDECL_OPER (private_callbeginpage);
+	UNDECL_OPER (private_callendpage);
+	UNDECL_OPER (private_callinstall);
+	UNDECL_OPER (private_currentpagedevice);
 	UNDECL_OPER (private_exit);
 	UNDECL_OPER (private_findlibfile);
 	UNDECL_OPER (private_forceput);

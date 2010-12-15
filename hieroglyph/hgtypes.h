@@ -117,6 +117,71 @@ enum _hg_mem_flags_t {
 
 /* hgdevice.h */
 typedef struct _hg_device_t		hg_device_t;
+typedef struct _hg_pdev_params_t	hg_pdev_params_t;
+typedef struct _hg_device_page_size_t	hg_device_page_size_t;
+typedef struct _hg_device_axis_t	hg_device_axis_t;
+typedef struct _hg_device_bbox_t	hg_device_bbox_t;
+typedef enum _hg_device_orientation_t	hg_device_orientation_t;
+typedef enum _hg_device_ops_t		hg_device_ops_t;
+typedef enum _hg_pdev_params_name_t	hg_pdev_params_name_t;
+
+struct _hg_device_page_size_t {
+	gdouble width;
+	gdouble height;
+};
+struct _hg_device_axis_t {
+	gdouble x;
+	gdouble y;
+};
+struct _hg_device_bbox_t {
+	gdouble x1;
+	gdouble y1;
+	gdouble x2;
+	gdouble y2;
+};
+enum _hg_device_orientation_t {
+	HG_ORIENTATION_DEFAULT = 0,
+	HG_ORIENTATION_90_DEGREES = 1,
+	HG_ORIENTATION_180_DEGREES = 2,
+	HG_ORIENTATION_270_DEGREES = 3
+};
+enum _hg_device_ops_t {
+	HG_OPS_NONE = 0,
+	HG_OPS_DEACTIVATION = 1,
+	HG_OPS_END_OF_JOB = 2,
+	HG_OPS_COLLATE = 3,
+	HG_OPS_SHOWPAGE = 4
+};
+enum _hg_pdev_params_name_t {
+	HG_pdev_BEGIN = 0,
+	HG_pdev_InputAttributes,
+	HG_pdev_PageSize,
+	HG_pdev_MediaColor,
+	HG_pdev_MediaWeight,
+	HG_pdev_MediaType,
+	HG_pdev_ManualFeed,
+	HG_pdev_Orientation,
+	HG_pdev_AdvanceMedia,
+	HG_pdev_AdvanceDistance,
+	HG_pdev_CutMedia,
+	HG_pdev_HWResolution,
+	HG_pdev_ImagingBBox,
+	HG_pdev_Margins,
+	HG_pdev_MirrorPrint,
+	HG_pdev_NegativePrint,
+	HG_pdev_Duplex,
+	HG_pdev_Tumble,
+	HG_pdev_OutputType,
+	HG_pdev_NumCopies,
+	HG_pdev_Collate,
+	HG_pdev_Jog,
+	HG_pdev_OutputFaceUp,
+	HG_pdev_Separations,
+	HG_pdev_Install,
+	HG_pdev_BeginPage,
+	HG_pdev_EndPage,
+	HG_pdev_END
+};
 
 /* hgdict.h */
 typedef struct _hg_dict_t		hg_dict_t;
@@ -188,7 +253,6 @@ typedef struct _hg_vm_state_t		hg_vm_state_t;
 typedef enum _hg_vm_langlevel_t		hg_vm_langlevel_t;
 typedef struct _hg_vm_user_params_t	hg_vm_user_params_t;
 typedef struct _hg_vm_sys_params_t	hg_vm_sys_params_t;
-typedef struct _hg_vm_pdev_params_t	hg_vm_pdev_params_t;
 typedef struct _hg_vm_value_t		hg_vm_value_t;
 
 enum _hg_vm_mem_type_t {
@@ -732,6 +796,10 @@ enum _hg_system_encoding_t {
 	HG_enc_private_applyparams,
 	HG_enc_private_exit,
 	HG_enc_private_clearerror,
+	HG_enc_private_callbeginpage,
+	HG_enc_private_callendpage,
+	HG_enc_private_callinstall,
+	HG_enc_private_currentpagedevice,
 	HG_enc_private_findlibfile,
 	HG_enc_private_forceput,
 	HG_enc_private_hgrevision,
