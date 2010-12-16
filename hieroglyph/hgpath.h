@@ -34,8 +34,9 @@ G_BEGIN_DECLS
 #define HG_IS_QPATH(_q_)				\
 	(hg_quark_get_type((_q_)) == HG_TYPE_PATH)
 
-typedef enum _hg_path_type_t	hg_path_type_t;
-typedef struct _hg_path_node_t	hg_path_node_t;
+typedef enum _hg_path_type_t			hg_path_type_t;
+typedef struct _hg_path_node_t			hg_path_node_t;
+typedef struct _hg_path_operate_vtable_t	hg_path_operate_vtable_t;
 
 
 /* ref. PLRM 4.6.2. */
@@ -66,6 +67,36 @@ struct _hg_path_node_t {
 	gdouble        dy;
 	gdouble        cx;
 	gdouble        cy;
+};
+struct _hg_path_operate_vtable_t {
+	void (* new_path)   (gpointer user_data);
+	void (* close_path) (gpointer user_data);
+	void (* moveto)     (gpointer user_data,
+			     gdouble  x,
+			     gdouble  y);
+	void (* rmoveto)    (gpointer user_data,
+			     gdouble  rx,
+			     gdouble  ry);
+	void (* lineto)     (gpointer user_data,
+			     gdouble  x,
+			     gdouble  y);
+	void (* rlineto)    (gpointer user_data,
+			     gdouble  rx,
+			     gdouble  ry);
+	void (* curveto)    (gpointer user_data,
+			     gdouble  x1,
+			     gdouble  y1,
+			     gdouble  x2,
+			     gdouble  y2,
+			     gdouble  x3,
+			     gdouble  y3);
+	void (* rcurveto)   (gpointer user_data,
+			     gdouble  rx1,
+			     gdouble  ry1,
+			     gdouble  rx2,
+			     gdouble  ry2,
+			     gdouble  rx3,
+			     gdouble  ry3);
 };
 
 
@@ -121,6 +152,10 @@ gboolean            hg_path_arcto            (hg_path_t      *path,
 					      gdouble         y2,
 					      gdouble         r,
 					      gdouble         tp[4]);
+gboolean            hg_path_operate          (hg_path_t                 *path,
+					      hg_path_operate_vtable_t  *vtable,
+					      gpointer                   user_data,
+					      GError                   **error);
 
 G_END_DECLS
 

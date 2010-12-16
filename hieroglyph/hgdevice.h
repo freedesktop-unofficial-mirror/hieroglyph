@@ -83,6 +83,9 @@ struct _hg_device_t {
 					     GError               **error);
 	hg_quark_t (* get_page_param)       (hg_device_t           *device,
 					     guint                  index);
+	void       (* install)              (hg_device_t           *device,
+					     hg_vm_t               *vm,
+					     GError               **error);
 	gboolean   (* get_ctm)              (hg_device_t           *device,
 					     hg_matrix_t           *array);
 
@@ -108,6 +111,9 @@ hg_quark_t   hg_device_get_page_params(hg_device_t                 *device,
 				       gpointer                     func_user_data,
                                        gpointer                    *ret,
                                        GError                     **error);
+void         hg_device_install        (hg_device_t                 *device,
+				       hg_vm_t                     *vm,
+				       GError                     **error);
 gboolean     hg_device_get_ctm        (hg_device_t                 *device,
                                        hg_matrix_t                 *array);
 gboolean     hg_device_fill           (hg_device_t                 *device,

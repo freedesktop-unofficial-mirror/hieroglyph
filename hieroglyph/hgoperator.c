@@ -570,7 +570,16 @@ DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (private_callbeginpage);
 DEFUNC_UNIMPLEMENTED_OPER (private_callendpage);
-DEFUNC_UNIMPLEMENTED_OPER (private_callinstall);
+
+/* - .callinstall - */
+DEFUNC_OPER (private_callinstall)
+G_STMT_START {
+	hg_device_install(vm->device, vm, error);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
 
 static hg_quark_t
 _hg_operator_pdev_name_lookup(hg_pdev_params_name_t param,
@@ -5095,7 +5104,7 @@ G_STMT_START {
 		return FALSE;
 	}
 	if (HG_IS_QINT (arg1)) {
-		dy = HG_INT (arg0);
+		dy = HG_INT (arg1);
 	} else if (HG_IS_QREAL (arg1)) {
 		dy = HG_REAL (arg1);
 	} else {

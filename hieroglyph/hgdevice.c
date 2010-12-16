@@ -533,6 +533,26 @@ hg_device_get_page_params(hg_device_t                 *device,
 }
 
 /**
+ * hg_device_install:
+ * @device:
+ * @vm:
+ * @error:
+ *
+ * FIXME
+ */
+void
+hg_device_install(hg_device_t  *device,
+		  hg_vm_t      *vm,
+		  GError      **error)
+{
+	hg_return_with_gerror_if_fail (device != NULL, error, HG_VM_e_VMerror);
+	hg_return_with_gerror_if_fail (vm != NULL, error, HG_VM_e_VMerror);
+
+	if (device->install)
+		device->install(device, vm, error);
+}
+
+/**
  * hg_device_get_ctm:
  * @device:
  * @matrix:

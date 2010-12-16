@@ -179,7 +179,7 @@ _hg_path_add(hg_path_t      *path,
 	     gdouble         y)
 {
 	hg_path_node_t *node;
-	gdouble cx, cy;
+	gdouble cx = 0.0, cy = 0.0;
 	gboolean retval = TRUE;
 
 	hg_return_val_if_fail (path != NULL, FALSE);
@@ -209,8 +209,10 @@ _hg_path_add(hg_path_t      *path,
 		}
 	}
 
-	cx = node[path->length - 1].cx;
-	cy = node[path->length - 1].cy;
+	if (path->length > 0) {
+		cx = node[path->length - 1].cx;
+		cy = node[path->length - 1].cy;
+	}
 
 	switch (type) {
 	    case HG_PATH_SETBBOX:
@@ -385,6 +387,7 @@ hg_path_reverse(hg_path_t *path,
 				    new_node[new_path->length].cy = node[i].cx - node[i].dy;
 				    break;
 			    case HG_PATH_CURVETO:
+			}
 		}
 
 		if (ret) {
@@ -737,4 +740,99 @@ hg_path_arcto(hg_path_t *path,
 	}
 
 	return !retval;
+}
+
+/**
+ * hg_path_operate:
+ * @path:
+ * @vtable:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_path_operate(hg_path_t                 *path,
+		hg_path_operate_vtable_t  *vtable,
+		gpointer                   user_data,
+		GError                   **error)
+{
+	hg_path_node_t *node;
+	gboolean retval = TRUE;
+	gsize i;
+
+	hg_return_val_with_gerror_if_fail (path != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (vtable != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (vtable->new_path != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (vtable->moveto != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (vtable->lineto != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (vtable->curveto != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_with_gerror_if_fail (vtable->close_path != NULL, FALSE, error, HG_VM_e_VMerror);
+
+	hg_return_val_with_gerror_if_lock_fail (node,
+						path->o.mem,
+						path->qnode,
+						error,
+						FALSE);
+
+	vtable->new_path(user_data);
+	for (i = 0; i < path->length; i++) {
+		switch (node[i].type) {
+		    case HG_PATH_SETBBOX:
+			    g_assert("XXX: not yet implemented.");
+			    break;
+		    case HG_PATH_RMOVETO:
+			    if (vtable->rmoveto) {
+				    vtable->rmoveto(user_data,
+						    node[i].dx, node[i].dy);
+				    break;
+			    }
+		    case HG_PATH_MOVETO:
+			    vtable->moveto(user_data,
+					   node[i].cx, node[i].cy);
+			    break;
+		    case HG_PATH_RLINETO:
+			    if (vtable->rlineto) {
+				    vtable->rlineto(user_data,
+						    node[i].dx, node[i].dy);
+				    break;
+			    }
+		    case HG_PATH_LINETO:
+			    vtable->lineto(user_data,
+					   node[i].cx, node[i].cy);
+			    break;
+		    case HG_PATH_RCURVETO:
+			    if (vtable->rcurveto) {
+				    vtable->rcurveto(user_data,
+						     node[i].dx, node[i].dy,
+						     node[i + 1].dx, node[i + 1].dy,
+						     node[i + 2].dx, node[i + 2].dy);
+				    i += 2;
+				    break;
+			    }
+		    case HG_PATH_CURVETO:
+			    vtable->curveto(user_data,
+					    node[i].cx, node[i].cy,
+					    node[i + 1].cx, node[i + 1].cy,
+					    node[i + 2].cx, node[i + 2].cy);
+			    i += 2;
+			    break;
+		    case HG_PATH_CLOSEPATH:
+			    vtable->close_path(user_data);
+			    break;
+		    case HG_PATH_UCACHE:
+			    g_assert("XXX: not yet implemented.");
+			    break;
+		    default:
+			    g_warning("%s: Unknown path type: %d",
+				      __PRETTY_FUNCTION__, node[i].type);
+			    retval = FALSE;
+			    goto finalize;
+		}
+	}
+  finalize:
+	hg_mem_unlock_object(path->o.mem, path->qnode);
+
+	return retval;
 }
