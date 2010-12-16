@@ -188,6 +188,15 @@ systemdict /.statementedit known {
 /definefont {
     .definefont
 } bind odef
+% - erasepage -
+/erasepage {
+    gsave
+	initclip
+	clippath
+	1.0 setgray
+	fill
+    grestore
+} bind odef
 % - executive -
 /executive {
     {
