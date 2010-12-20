@@ -5386,7 +5386,7 @@ G_STMT_START {
 		return FALSE;
 	}
 	if (HG_IS_QINT (arg1)) {
-		dy = HG_INT (arg0);
+		dy = HG_INT (arg1);
 	} else if (HG_IS_QREAL (arg1)) {
 		dy = HG_REAL (arg1);
 	} else {
