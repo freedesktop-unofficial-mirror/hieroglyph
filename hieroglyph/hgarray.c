@@ -994,12 +994,7 @@ hg_array_matrix_multiply(hg_array_t *matrix1,
 	_hg_array_convert_to_matrix(matrix1, &m1);
 	_hg_array_convert_to_matrix(matrix2, &m2);
 
-	m3.mtx.xx = m1.mtx.xx * m2.mtx.xx + m1.mtx.yx * m2.mtx.xy;
-	m3.mtx.yx = m1.mtx.xx * m2.mtx.yx + m1.mtx.yx * m2.mtx.yy;
-	m3.mtx.xy = m1.mtx.xy * m2.mtx.xx + m1.mtx.yy * m2.mtx.xy;
-	m3.mtx.yy = m1.mtx.xy * m2.mtx.yx + m1.mtx.yy * m2.mtx.yy;
-	m3.mtx.x0 = m1.mtx.x0 * m2.mtx.xx + m1.mtx.y0 * m2.mtx.xy + m2.mtx.x0;
-	m3.mtx.y0 = m1.mtx.x0 * m2.mtx.yx + m1.mtx.y0 * m2.mtx.yy + m2.mtx.y0;
+	hg_matrix_multiply(&m1, &m2, &m3);
 
 	_hg_array_convert_from_matrix(ret, &m3);
 
@@ -1054,6 +1049,35 @@ hg_array_matrix_invert(hg_array_t *matrix,
 	m2.mtx.y0 = ( m1.mtx.yx * m1.mtx.x0 - m1.mtx.xx * m1.mtx.y0) / det;
 
 	_hg_array_convert_from_matrix(ret, &m2);
+
+	return TRUE;
+}
+
+/**
+ * hg_array_matrix_translate:
+ * @matrix:
+ * @tx:
+ * @ty:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_array_matrix_translate(hg_array_t *matrix,
+			  gdouble     tx,
+			  gdouble     ty)
+{
+	hg_matrix_t m;
+
+	hg_return_val_if_fail (matrix != NULL, FALSE);
+	hg_return_val_if_fail (hg_array_is_matrix(matrix), FALSE);
+
+	_hg_array_convert_to_matrix(matrix, &m);
+
+	hg_matrix_translate(&m, tx, ty);
+
+	_hg_array_convert_from_matrix(matrix, &m);
 
 	return TRUE;
 }

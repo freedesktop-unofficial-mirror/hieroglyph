@@ -104,7 +104,75 @@ gboolean            hg_array_matrix_multiply  (hg_array_t                *matrix
 					       hg_array_t                *ret);
 gboolean            hg_array_matrix_invert    (hg_array_t                *matrix,
 					       hg_array_t                *ret);
+gboolean            hg_array_matrix_translate (hg_array_t                *matrix,
+					       gdouble                    tx,
+					       gdouble                    ty);
 
+
+/* hg_matrix_t */
+
+G_INLINE_FUNC void hg_matrix_multiply (hg_matrix_t *matrix1,
+				       hg_matrix_t *matrix2,
+				       hg_matrix_t *ret);
+G_INLINE_FUNC void hg_matrix_translate(hg_matrix_t *matrix,
+				       gdouble      tx,
+				       gdouble      ty);
+
+/**
+ * hg_matrix_multiply:
+ * @matrix1:
+ * @matrix2:
+ * @ret:
+ *
+ * FIXME
+ */
+G_INLINE_FUNC void
+hg_matrix_multiply(hg_matrix_t *matrix1,
+		   hg_matrix_t *matrix2,
+		   hg_matrix_t *ret)
+{
+	hg_matrix_t m3;
+
+	hg_return_if_fail (matrix1 != NULL);
+	hg_return_if_fail (matrix2 != NULL);
+	hg_return_if_fail (ret != NULL);
+
+	m3.mtx.xx = matrix1->mtx.xx * matrix2->mtx.xx + matrix1->mtx.yx * matrix2->mtx.xy;
+	m3.mtx.yx = matrix1->mtx.xx * matrix2->mtx.yx + matrix1->mtx.yx * matrix2->mtx.yy;
+	m3.mtx.xy = matrix1->mtx.xy * matrix2->mtx.xx + matrix1->mtx.yy * matrix2->mtx.xy;
+	m3.mtx.yy = matrix1->mtx.xy * matrix2->mtx.yx + matrix1->mtx.yy * matrix2->mtx.yy;
+	m3.mtx.x0 = matrix1->mtx.x0 * matrix2->mtx.xx + matrix1->mtx.y0 * matrix2->mtx.xy + matrix2->mtx.x0;
+	m3.mtx.y0 = matrix1->mtx.x0 * matrix2->mtx.yx + matrix1->mtx.y0 * matrix2->mtx.yy + matrix2->mtx.y0;
+
+	memcpy(ret, &m3, sizeof (hg_matrix_t));
+}
+
+/**
+ * hg_matrix_translate:
+ * @matrix:
+ * @tx:
+ * @ty:
+ *
+ * FIXME
+ */
+G_INLINE_FUNC void
+hg_matrix_translate(hg_matrix_t *matrix,
+		    gdouble      tx,
+		    gdouble      ty)
+{
+	hg_matrix_t t;
+
+	hg_return_if_fail (matrix != NULL);
+
+	t.mtx.xx = 1;
+	t.mtx.xy = 0;
+	t.mtx.yx = 0;
+	t.mtx.yy = 1;
+	t.mtx.x0 = tx;
+	t.mtx.y0 = ty;
+
+	hg_matrix_multiply(matrix, &t, matrix);
+}
 
 G_END_DECLS
 

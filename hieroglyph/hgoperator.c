@@ -4406,10 +4406,12 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-	hg_stack_drop(ostack, error);
-	hg_stack_drop(ostack, error);
+	if (retval) {
+		hg_stack_drop(ostack, error);
+		hg_stack_drop(ostack, error);
 
-	STACK_PUSH (ostack, q);
+		STACK_PUSH (ostack, q);
+	}
 } G_STMT_END;
 VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
@@ -7771,7 +7773,86 @@ VALIDATE_STACK_SIZE (__n, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (transform);
-DEFUNC_UNIMPLEMENTED_OPER (translate);
+
+/* <tx> <ty> translate -
+ * <tx> <ty> <matrix> translate <matrix>
+ */
+DEFUNC_OPER (translate)
+G_STMT_START {
+	hg_quark_t arg0, arg1, arg2 = Qnil, qg = hg_vm_get_gstate(vm);
+	gdouble tx, ty;
+	hg_matrix_t ctm;
+	hg_array_t *a;
+	hg_gstate_t *gstate;
+
+	CHECK_STACK (ostack, 2);
+
+	arg0 = hg_stack_index(ostack, 1, error);
+	arg1 = hg_stack_index(ostack, 0, error);
+
+	if (HG_IS_QARRAY (arg1)) {
+		CHECK_STACK (ostack, 3);
+
+		arg2 = arg1;
+		arg1 = arg0;
+		arg0 = hg_stack_index(ostack, 2, error);
+		a = HG_VM_LOCK (vm, arg2, error);
+		if (!a)
+			return FALSE;
+		if (!hg_array_to_matrix(a, &ctm)) {
+			hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+			HG_VM_UNLOCK (vm, arg2);
+			return FALSE;
+		}
+		HG_VM_UNLOCK (vm, arg2);
+	} else {
+		gstate = HG_VM_LOCK (vm, qg, error);
+		if (!gstate)
+			return FALSE;
+		hg_gstate_get_ctm(gstate, &ctm);
+		HG_VM_UNLOCK (vm, qg);
+	}
+	if (HG_IS_QINT (arg0)) {
+		tx = HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg0)) {
+		tx = HG_REAL (arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (HG_IS_QINT (arg1)) {
+		ty = HG_INT (arg1);
+	} else if (HG_IS_QREAL (arg1)) {
+		ty = HG_REAL (arg1);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	hg_matrix_translate(&ctm, tx, ty);
+
+	if (arg2 == Qnil) {
+		gstate = HG_VM_LOCK (vm, qg, error);
+		if (!gstate)
+			return FALSE;
+		hg_gstate_set_ctm(gstate, &ctm);
+		HG_VM_UNLOCK (vm, qg);
+	} else {
+		a = HG_VM_LOCK (vm, arg2, error);
+		if (!a)
+			return FALSE;
+		hg_array_from_matrix(a, &ctm);
+		HG_VM_UNLOCK (vm, arg2);
+
+		hg_stack_roll(ostack, 3, 1, error);
+	}
+
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-2, 0, 0);
+DEFUNC_OPER_END
 
 /* <any> type <name> */
 DEFUNC_OPER (type)

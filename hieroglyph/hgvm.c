@@ -2512,7 +2512,14 @@ hg_vm_startjob(hg_vm_t           *vm,
 	} else {
 		hg_vm_load_plugins(vm);
 
-		vm->device = hg_device_null_new(vm->mem[HG_VM_MEM_LOCAL]);
+		if (!vm->device)
+			vm->device = hg_device_null_new(vm->mem[HG_VM_MEM_LOCAL]);
+		hg_device_install(vm->device, vm, &err);
+		if (err) {
+			g_warning(err->message);
+			return FALSE;
+		}
+		hg_vm_eval_from_cstring(vm, "initgraphics", -1, NULL, NULL, NULL, FALSE, NULL);
 		/* XXX: initialize device */
 
 		if (initializer) {
@@ -2765,9 +2772,13 @@ hg_vm_get_rand_seed(hg_vm_t *vm)
 guint32
 hg_vm_rand_int(hg_vm_t *vm)
 {
+	gint r;
+
 	hg_return_val_if_fail (vm != NULL, 0);
 
-	return g_rand_int(vm->rand_);
+	r = g_rand_int(vm->rand_);
+
+	return r & 0x7fffffff;
 }
 
 /**
