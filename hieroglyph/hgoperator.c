@@ -5700,7 +5700,48 @@ VALIDATE_STACK_SIZE (-1, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (packedarray);
-DEFUNC_UNIMPLEMENTED_OPER (pathbbox);
+
+/* - pathbbox <llx> <lly> <urx> <ury> */
+DEFUNC_OPER (pathbbox)
+G_STMT_START {
+	hg_quark_t q, qg = hg_vm_get_gstate(vm);
+	hg_path_t *path = NULL;
+	hg_path_bbox_t bbox;
+	hg_gstate_t *gstate = HG_VM_LOCK (vm, qg, error);
+
+	if (gstate == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	q = hg_gstate_get_path(gstate);
+	if (q == Qnil) {
+		hg_vm_set_error(vm, qself, HG_VM_e_nocurrentpoint);
+		goto finalize;
+	}
+	path = HG_VM_LOCK (vm, q, error);
+	if (path == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		goto finalize;
+	}
+	if (!hg_path_get_bbox(path,
+			      hg_vm_get_language_level(vm) != HG_LANG_LEVEL_1,
+			      &bbox, error)) {
+		hg_vm_set_error_from_gerror(vm, qself, *error);
+		goto finalize;
+	}
+	STACK_PUSH (ostack, HG_QREAL (bbox.llx));
+	STACK_PUSH (ostack, HG_QREAL (bbox.lly));
+	STACK_PUSH (ostack, HG_QREAL (bbox.urx));
+	STACK_PUSH (ostack, HG_QREAL (bbox.ury));
+
+	retval = TRUE;
+  finalize:
+	if (path)
+		HG_VM_UNLOCK (vm, q);
+	HG_VM_UNLOCK (vm, qg);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (4, 0, 0);
+DEFUNC_OPER_END
 
 /* <move> <line> <curve> <close> pathforall - */
 DEFUNC_UNIMPLEMENTED_OPER (pathforall);

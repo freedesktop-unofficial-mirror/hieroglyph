@@ -242,6 +242,7 @@ typedef void (* hg_destroy_func_t)		(hg_mem_t    *mem,
 
 /* hgpath.h */
 typedef struct _hg_path_t		hg_path_t;
+typedef struct _hg_path_bbox_t		hg_path_bbox_t;
 
 /* hgscanner.h */
 typedef struct _hg_scanner_t		hg_scanner_t;

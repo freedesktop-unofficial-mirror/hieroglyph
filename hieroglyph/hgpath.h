@@ -68,6 +68,12 @@ struct _hg_path_node_t {
 	gdouble        cx;
 	gdouble        cy;
 };
+struct _hg_path_bbox_t {
+	gdouble llx;
+	gdouble lly;
+	gdouble urx;
+	gdouble ury;
+};
 struct _hg_path_operate_vtable_t {
 	void (* new_path)   (gpointer user_data);
 	void (* close_path) (gpointer user_data);
@@ -155,6 +161,10 @@ gboolean            hg_path_arcto            (hg_path_t      *path,
 gboolean            hg_path_operate          (hg_path_t                 *path,
 					      hg_path_operate_vtable_t  *vtable,
 					      gpointer                   user_data,
+					      GError                   **error);
+gboolean            hg_path_get_bbox         (hg_path_t                 *path,
+					      gboolean                   ignore_last_moveto,
+					      hg_path_bbox_t            *ret,
 					      GError                   **error);
 
 G_END_DECLS

@@ -30,6 +30,14 @@
 
 #define HG_PATH_MAX	1500
 
+typedef struct _hg_path_bbox_private_t {
+	hg_path_bbox_t bbox1;
+	hg_path_bbox_t bbox2;
+	gboolean       initialized:1;
+	gboolean       all_moveto:1;
+} hg_path_bbox_private_t;
+
+
 HG_DEFINE_VTABLE_WITH (path, NULL, NULL, NULL);
 
 /*< private >*/
@@ -256,6 +264,121 @@ _hg_path_add(hg_path_t      *path,
 	hg_mem_unlock_object(path->o.mem, path->qnode);
 
 	return retval;
+}
+
+static void
+_hg_path_bbox_nop(gpointer user_data)
+{
+}
+
+static void
+_hg_path_bbox_moveto(gpointer user_data,
+		     gdouble  x,
+		     gdouble  y)
+{
+	hg_path_bbox_private_t *priv = (hg_path_bbox_private_t *)user_data;
+
+	if (!priv->initialized) {
+		priv->bbox1.llx = priv->bbox2.llx = x;
+		priv->bbox1.lly = priv->bbox2.lly = y;
+		priv->initialized = TRUE;
+	}
+	if (x < priv->bbox1.llx) {
+		priv->bbox1.llx = x;
+		if (priv->all_moveto)
+			priv->bbox2.llx = x;
+	}
+	if (y < priv->bbox1.lly) {
+		priv->bbox1.lly = y;
+		if (priv->all_moveto)
+			priv->bbox2.lly = y;
+	}
+	if (x > priv->bbox1.urx) {
+		priv->bbox1.urx = x;
+		if (priv->all_moveto)
+			priv->bbox2.urx = x;
+	}
+	if (y > priv->bbox1.ury) {
+		priv->bbox1.ury = y;
+		if (priv->all_moveto)
+			priv->bbox2.ury = y;
+	}
+}
+
+static void
+_hg_path_bbox_lineto(gpointer user_data,
+		     gdouble  x,
+		     gdouble  y)
+{
+	hg_path_bbox_private_t *priv = (hg_path_bbox_private_t *)user_data;
+
+	priv->all_moveto = FALSE;
+	/* update since only last moveto are ignored in any case */
+	memcpy(&priv->bbox2, &priv->bbox1, sizeof (hg_path_bbox_t));
+	if (x < priv->bbox1.llx) {
+		priv->bbox1.llx = priv->bbox2.llx = x;
+	}
+	if (y < priv->bbox1.lly) {
+		priv->bbox1.lly = priv->bbox2.lly = y;
+	}
+	if (x > priv->bbox1.urx) {
+		priv->bbox1.urx = priv->bbox2.urx = x;
+	}
+	if (y > priv->bbox1.ury) {
+		priv->bbox1.ury = priv->bbox2.ury = y;
+	}
+}
+
+static void
+_hg_path_bbox_curveto(gpointer user_data,
+		      gdouble  x1,
+		      gdouble  y1,
+		      gdouble  x2,
+		      gdouble  y2,
+		      gdouble  x3,
+		      gdouble  y3)
+{
+	hg_path_bbox_private_t *priv = (hg_path_bbox_private_t *)user_data;
+
+	priv->all_moveto = FALSE;
+	/* update since only last moveto are ignored in any case */
+	memcpy(&priv->bbox2, &priv->bbox1, sizeof (hg_path_bbox_t));
+	if (x1 < priv->bbox1.llx) {
+		priv->bbox1.llx = priv->bbox2.llx = x1;
+	}
+	if (y1 < priv->bbox1.lly) {
+		priv->bbox1.lly = priv->bbox2.lly = y1;
+	}
+	if (x1 > priv->bbox1.urx) {
+		priv->bbox1.urx = priv->bbox2.urx = x1;
+	}
+	if (y1 > priv->bbox1.ury) {
+		priv->bbox1.ury = priv->bbox2.ury = y1;
+	}
+	if (x2 < priv->bbox1.llx) {
+		priv->bbox1.llx = priv->bbox2.llx = x2;
+	}
+	if (y2 < priv->bbox1.lly) {
+		priv->bbox1.lly = priv->bbox2.lly = y2;
+	}
+	if (x2 > priv->bbox1.urx) {
+		priv->bbox1.urx = priv->bbox2.urx = x2;
+	}
+	if (y2 > priv->bbox1.ury) {
+		priv->bbox1.ury = priv->bbox2.ury = y2;
+	}
+	if (x3 < priv->bbox1.llx) {
+		priv->bbox1.llx = priv->bbox2.llx = x3;
+	}
+	if (y3 < priv->bbox1.lly) {
+		priv->bbox1.lly = priv->bbox2.lly = y3;
+	}
+	if (x3 > priv->bbox1.urx) {
+		priv->bbox1.urx = priv->bbox2.urx = x3;
+	}
+	if (y3 > priv->bbox1.ury) {
+		priv->bbox1.ury = priv->bbox2.ury = y3;
+	}
 }
 
 /*< public >*/
@@ -833,6 +956,60 @@ hg_path_operate(hg_path_t                 *path,
 	}
   finalize:
 	hg_mem_unlock_object(path->o.mem, path->qnode);
+
+	return retval;
+}
+
+/**
+ * hg_path_get_bbox:
+ * @path:
+ * @ignore_last_moveto:
+ * @ret:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_path_get_bbox(hg_path_t       *path,
+		 gboolean         ignore_last_moveto,
+		 hg_path_bbox_t  *ret,
+		 GError         **error)
+{
+	hg_path_bbox_private_t priv;
+	hg_path_operate_vtable_t vtable = {
+		_hg_path_bbox_nop, /* new_path */
+		_hg_path_bbox_nop, /* close_path */
+		_hg_path_bbox_moveto, /* moveto */
+		NULL, /* rmoveto */
+		_hg_path_bbox_lineto, /* lineto */
+		NULL, /* rlineto */
+		_hg_path_bbox_curveto, /* curveto */
+		NULL /* rcurveto */
+	};
+	gboolean retval;
+
+	hg_return_val_with_gerror_if_fail (path != NULL, FALSE, error, HG_VM_e_VMerror);
+
+	if (path->length == 0) {
+		g_set_error(error, HG_ERROR, HG_VM_e_nocurrentpoint,
+			    "no current point");
+		return FALSE;
+	}
+	memset(&priv, 0, sizeof (hg_path_bbox_private_t));
+
+	priv.initialized = FALSE;
+	priv.all_moveto = TRUE;
+
+	if ((retval = hg_path_operate(path, &vtable, &priv, error))) {
+		if (ret) {
+			if (ignore_last_moveto)
+				memcpy(ret, &priv.bbox2, sizeof (hg_path_bbox_t));
+			else
+				memcpy(ret, &priv.bbox1, sizeof (hg_path_bbox_t));
+		}
+	}
 
 	return retval;
 }
