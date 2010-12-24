@@ -15,9 +15,9 @@ AM_CONFIG_HEADER([config.h])
 AC_PROG_LIBTOOL
 AC_PROG_INTLTOOL
 AC_PROG_LEX
-AC_PROG_YACC
 
 AC_PROG_CC
+AM_PROG_CC_C_O
 
 GNOME_COMPILE_WARNINGS
 
@@ -106,7 +106,6 @@ void *foo = exp10;
 	])
 ])
 
-
 dnl ======================================================================
 dnl gettext stuff
 dnl ======================================================================
@@ -119,11 +118,13 @@ AM_GLIB_GNU_GETTEXT
 dnl ======================================================================
 dnl check pkg-config stuff
 dnl ======================================================================
+PKG_PROG_PKG_CONFIG
 PKG_CHECK_MODULES(GMODULE, gmodule-2.0,
 	[use_plugins="yes"],
 	[use_plugins="no"])
 PKG_CHECK_MODULES(CHECK, check >= $CHECK_REQUIRED,
-	[use_check="yes"],
+	[use_check="yes"
+	 plugins="${plugins}unittest "],
 	[use_check="no"])
 PKG_CHECK_MODULES(LIBEDIT, libedit,
 	[use_libedit="yes"],
@@ -145,6 +146,7 @@ AM_CONDITIONAL(ENABLE_LIBEDIT, test x$use_libedit != xno)
 
 if test x$use_libedit != xno; then
 	AC_DEFINE(USE_LIBEDIT,,[enable libedit])
+	plugins="${plugins}libedit "
 fi
 
 dnl ======================================================================
@@ -163,6 +165,10 @@ AC_ARG_ENABLE(profile,
 	AC_HELP_STRING([--enable-profile], [build with the profiler option enabled.])
 	,,
 	enable_profile=no)
+AC_ARG_WITH(cairo,
+	AC_HELP_STRING([--without-cairo], [build without the cairo device.])
+	,,
+	with_cairo=yes)
 
 dnl ======================================================================
 dnl options - profile
@@ -178,10 +184,23 @@ else
 fi
 
 dnl ======================================================================
+dnl options - cairo
+dnl ======================================================================
+if test "x$with_cairo" = xyes; then
+	PKG_CHECK_MODULES(CAIRO, cairo >= $CAIRO_REQUIRED)
+	AC_SUBST(CAIRO_CFLAGS)
+	AC_SUBST(CAIRO_LIBS)
+	devices="${devices}cairo "
+fi
+AM_CONDITIONAL(ENABLE_CAIRO, test x$with_cairo != xno)
+
+dnl ======================================================================
 dnl output
 dnl ======================================================================
 AC_CONFIG_FILES([
 	Makefile
+	devices/Makefile
+	devices/cairo/Makefile
 	hieroglyph/Makefile
 	hieroglyph/hgversion.h
 	hieroglyph.pc
@@ -206,8 +225,20 @@ echo "========== Build Information =========="
 echo " CFLAGS:			$CFLAGS $GLIB_CFLAGS"
 echo " LDFLAGS:			$LDFLAGS $GLIB_LIBS"
 echo ""
+echo " Binary version:		$HIEROGLYPH_BINARY_VERSION"
 echo " Enable the debugging build:	$enable_debug"
 echo " Enable the profile:		$enable_profile"
 echo " Unit testing:			$use_check"
-echo " Enable plugins:			$use_plugins"
+echo " Enable plugins:		$use_plugins"
+echo ""
+echo "========== Path Information =========="
+echo " Library path:			$HIEROGLYPH_LIBDIR"
+echo " Device path:			$HIEROGLYPH_DEVICEDIR"
+echo " Plugin path:			$HIEROGLYPH_PLUGINDIR"
+echo ""
+echo "========== Device Information =========="
+echo " Devices:			$devices"
+echo ""
+echo "========== Plugin Information =========="
+echo " Plugins:			$plugins"
 echo ""

@@ -13,6 +13,7 @@ Makefile.in
 a\.out
 aclocal\.m4
 autom4te\.cache
+compile
 config\.*
 configure
 core.*
