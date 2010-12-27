@@ -2908,7 +2908,39 @@ DEFUNC_UNIMPLEMENTED_OPER (currentobjectformat);
 DEFUNC_UNIMPLEMENTED_OPER (currentoverprint);
 DEFUNC_UNIMPLEMENTED_OPER (currentpacking);
 DEFUNC_UNIMPLEMENTED_OPER (currentpagedevice);
-DEFUNC_UNIMPLEMENTED_OPER (currentpoint);
+
+/* - currentpoint <x> <y> */
+DEFUNC_OPER (currentpoint)
+G_STMT_START {
+	hg_quark_t qg = hg_vm_get_gstate(vm), qpath;
+	hg_gstate_t *gstate = HG_VM_LOCK (vm, qg, error);
+	hg_path_t *path = NULL;
+	gdouble x, y;
+
+	if (!gstate)
+		return FALSE;
+	qpath = hg_gstate_get_path(gstate);
+	path = HG_VM_LOCK (vm, qpath, error);
+	if (!path)
+		goto finalize;
+	if (!hg_path_get_current_point(path, &x, &y)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_nocurrentpoint);
+		goto finalize;
+	}
+
+	STACK_PUSH (ostack, HG_QREAL (x));
+	STACK_PUSH (ostack, HG_QREAL (y));
+
+	retval = TRUE;
+  finalize:
+	if (path)
+		HG_VM_UNLOCK (vm, qpath);
+	if (gstate)
+		HG_VM_UNLOCK (vm, qg);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (2, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (currentrgbcolor);
 DEFUNC_UNIMPLEMENTED_OPER (currentscreen);
 DEFUNC_UNIMPLEMENTED_OPER (currentcolorspace);
