@@ -6988,7 +6988,60 @@ DEFUNC_OPER_END
 DEFUNC_UNIMPLEMENTED_OPER (setgstate);
 DEFUNC_UNIMPLEMENTED_OPER (sethalftone);
 DEFUNC_UNIMPLEMENTED_OPER (sethalftonephase);
-DEFUNC_UNIMPLEMENTED_OPER (sethsbcolor);
+
+/* <hue> <saturation> <brightness> sethsbcolor - */
+DEFUNC_OPER (sethsbcolor)
+G_STMT_START {
+	hg_quark_t arg0, arg1, arg2, qg = hg_vm_get_gstate(vm);
+	hg_gstate_t *gstate;
+	gdouble h, s, b;
+
+	CHECK_STACK (ostack, 3);
+
+	arg0 = hg_stack_index(ostack, 2, error);
+	arg1 = hg_stack_index(ostack, 1, error);
+	arg2 = hg_stack_index(ostack, 0, error);
+
+	if (HG_IS_QINT (arg0)) {
+		h = HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg0)) {
+		h = HG_REAL (arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (HG_IS_QINT (arg1)) {
+		s = HG_INT (arg1);
+	} else if (HG_IS_QREAL (arg1)) {
+		s = HG_REAL (arg1);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	if (HG_IS_QINT (arg2)) {
+		b = HG_INT (arg2);
+	} else if (HG_IS_QREAL (arg2)) {
+		b = HG_REAL (arg2);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	gstate = HG_VM_LOCK (vm, qg, error);
+	if (!gstate)
+		return FALSE;
+
+	hg_gstate_set_hsbcolor(gstate, h, s, b);
+
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack, error);
+
+	HG_VM_UNLOCK (vm, qg);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-3, 0, 0);
+DEFUNC_OPER_END
 
 /* <int> setlinecap - */
 DEFUNC_OPER (setlinecap)

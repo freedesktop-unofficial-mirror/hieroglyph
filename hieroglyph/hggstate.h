@@ -106,6 +106,10 @@ void                hg_gstate_set_rgbcolor     (hg_gstate_t    *gstate,
 						gdouble         red,
 						gdouble         green,
 						gdouble         blue);
+void                hg_gstate_set_hsbcolor     (hg_gstate_t    *gstate,
+						gdouble         hue,
+						gdouble         saturation,
+						gdouble         brightness);
 void                hg_gstate_set_graycolor    (hg_gstate_t    *gstate,
 						gdouble         gray);
 void                hg_gstate_set_linewidth    (hg_gstate_t    *gstate,

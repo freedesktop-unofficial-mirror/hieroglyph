@@ -397,6 +397,29 @@ hg_gstate_set_rgbcolor(hg_gstate_t *gstate,
 }
 
 /**
+ * hg_gstate_set_hsbcolor:
+ * @gstate:
+ * @hue:
+ * @saturation:
+ * @brightness:
+ *
+ * FIXME
+ */
+void
+hg_gstate_set_hsbcolor(hg_gstate_t *gstate,
+		       gdouble      hue,
+		       gdouble      saturation,
+		       gdouble      brightness)
+{
+	hg_return_if_fail (gstate != NULL);
+
+	gstate->color.type = HG_COLOR_HSB;
+	gstate->color.is.hsb.hue = hue;
+	gstate->color.is.hsb.saturation = saturation;
+	gstate->color.is.hsb.brightness = brightness;
+}
+
+/**
  * hg_gstate_set_gray:
  * @gstate:
  * @gray:
