@@ -2412,7 +2412,51 @@ VALIDATE_STACK_SIZE (0, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (colorimage);
-DEFUNC_UNIMPLEMENTED_OPER (concat);
+
+/* <matrix> concat - */
+DEFUNC_OPER (concat)
+G_STMT_START {
+	hg_quark_t arg0, qg = hg_vm_get_gstate(vm);
+	hg_array_t *a = NULL;
+	hg_gstate_t *gstate = NULL;
+	hg_matrix_t m1, m2;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+
+	if (!HG_IS_QARRAY (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	a = HG_VM_LOCK (vm, arg0, error);
+	if (!a)
+		return FALSE;
+	if (!hg_array_is_matrix(a)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		goto finalize;
+	}
+	hg_array_to_matrix(a, &m1);
+	gstate = HG_VM_LOCK (vm, qg, error);
+	if (!gstate)
+		goto finalize;
+	hg_gstate_get_ctm(gstate, &m2);
+
+	hg_matrix_multiply(&m1, &m2, &m1);
+
+	hg_gstate_set_ctm(gstate, &m1);
+
+	hg_stack_drop(ostack, error);
+
+	retval = TRUE;
+  finalize:
+	if (gstate)
+		HG_VM_UNLOCK (vm, qg);
+	if (a)
+		HG_VM_UNLOCK (vm, arg0);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
 
 /* <matrix1> <matrix2> <matrix3> concatmatrix <matrix3> */
 DEFUNC_OPER (concatmatrix)
@@ -2817,7 +2861,48 @@ DEFUNC_UNIMPLEMENTED_OPER (currenthsbcolor);
 DEFUNC_UNIMPLEMENTED_OPER (currentlinecap);
 DEFUNC_UNIMPLEMENTED_OPER (currentlinejoin);
 DEFUNC_UNIMPLEMENTED_OPER (currentlinewidth);
-DEFUNC_UNIMPLEMENTED_OPER (currentmatrix);
+
+/* <matrix> currentmatrix <matrix> */
+DEFUNC_OPER (currentmatrix)
+G_STMT_START {
+	hg_quark_t arg0, qg = hg_vm_get_gstate(vm);
+	hg_array_t *a = NULL;
+	hg_matrix_t m;
+	hg_gstate_t *gstate = NULL;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+
+	if (!HG_IS_QARRAY (arg0)) {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	a = HG_VM_LOCK (vm, arg0, error);
+	if (!a)
+		return FALSE;
+
+	if (hg_array_maxlength(a) != 6) {
+		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+		goto finalize;
+	}
+	gstate = HG_VM_LOCK (vm, qg, error);
+	if (!gstate)
+		goto finalize;
+
+	hg_gstate_get_ctm(gstate, &m);
+	hg_array_from_matrix(a, &m);
+
+	retval = TRUE;
+  finalize:
+	if (gstate)
+		HG_VM_UNLOCK (vm, qg);
+	if (a)
+		HG_VM_UNLOCK (vm, arg0);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (currentmiterlimit);
 DEFUNC_UNIMPLEMENTED_OPER (currentobjectformat);
 DEFUNC_UNIMPLEMENTED_OPER (currentoverprint);
