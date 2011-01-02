@@ -7969,12 +7969,18 @@ G_STMT_START {
 		a = HG_VM_LOCK (vm, arg2, error);
 		if (!a)
 			return FALSE;
-		if (!hg_array_to_matrix(a, &ctm)) {
+		if (hg_array_maxlength(a) != 6) {
 			hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 			HG_VM_UNLOCK (vm, arg2);
 			return FALSE;
 		}
 		HG_VM_UNLOCK (vm, arg2);
+		ctm.mtx.xx = 1;
+		ctm.mtx.xy = 0;
+		ctm.mtx.yx = 0;
+		ctm.mtx.yy = 1;
+		ctm.mtx.x0 = 0;
+		ctm.mtx.y0 = 0;
 	} else {
 		gstate = HG_VM_LOCK (vm, qg, error);
 		if (!gstate)
