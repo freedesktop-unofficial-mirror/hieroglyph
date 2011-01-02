@@ -171,7 +171,7 @@ hg_matrix_translate(hg_matrix_t *matrix,
 	t.mtx.x0 = tx;
 	t.mtx.y0 = ty;
 
-	hg_matrix_multiply(matrix, &t, matrix);
+	hg_matrix_multiply(&t, matrix, matrix);
 }
 
 G_END_DECLS
