@@ -573,6 +573,55 @@ hg_device_get_ctm(hg_device_t *device,
 }
 
 /**
+ * hg_device_eofill:
+ * @device:
+ * @gstate:
+ * @error:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_device_eofill(hg_device_t  *device,
+		 hg_gstate_t  *gstate,
+		 GError      **error)
+{
+	gboolean retval;
+	GError *err = NULL;
+
+	hg_return_val_if_fail (device != NULL, FALSE);
+	hg_return_val_if_fail (gstate != NULL, FALSE);
+	hg_return_val_if_fail (device->eofill != NULL, FALSE);
+
+	retval = device->eofill(device, gstate);
+	if (retval) {
+		hg_quark_t qpath = hg_path_new(gstate->o.mem, NULL);
+
+		if (qpath == Qnil) {
+			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
+				    "Out of memory.");
+			retval = FALSE;
+		} else {
+			hg_gstate_set_path(gstate, qpath);
+		}
+	}
+	if (err) {
+		if (error) {
+			*error = g_error_copy(err);
+		} else {
+			g_warning("%s: %s (code: %d)",
+				  __PRETTY_FUNCTION__,
+				  err->message,
+				  err->code);
+		}
+		g_error_free(err);
+	}
+
+	return retval;
+}
+
+/**
  * hg_device_fill:
  * @device:
  * @gstate:

@@ -3650,7 +3650,32 @@ VALIDATE_STACK_SIZE (0, 0, -1);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (eoclip);
-DEFUNC_UNIMPLEMENTED_OPER (eofill);
+
+/* - eofill - */
+DEFUNC_OPER (eofill)
+G_STMT_START {
+	hg_quark_t qg = hg_vm_get_gstate(vm);
+	hg_gstate_t *gstate = HG_VM_LOCK (vm, qg, error);
+
+	if (gstate == NULL) {
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
+	if (!hg_device_eofill(vm->device, gstate, error)) {
+		if (error && *error) {
+			hg_vm_set_error_from_gerror(vm, qself, *error);
+		} else {
+			hg_vm_set_error(vm, qself, HG_VM_e_limitcheck);
+		}
+		goto finalize;
+	}
+	retval = TRUE;
+  finalize:
+	HG_VM_UNLOCK (vm, qg);
+} G_STMT_END;
+VALIDATE_STACK_SIZE (0, 0, 0);
+DEFUNC_OPER_END
+
 DEFUNC_UNIMPLEMENTED_OPER (eoviewclip);
 
 /* <any1> <any2> eq <bool> */
@@ -6821,7 +6846,81 @@ VALIDATE_STACK_SIZE (-2, 0, 0);
 DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (rootfont);
-DEFUNC_UNIMPLEMENTED_OPER (rotate);
+
+/* <angle> rotate -
+ * <angle> <matrix> rotate <matrix>
+ */
+DEFUNC_OPER (rotate)
+G_STMT_START {
+	hg_quark_t arg0, arg1 = Qnil, qg = hg_vm_get_gstate(vm);
+	gdouble angle;
+	hg_matrix_t ctm;
+	hg_array_t *a;
+	hg_gstate_t *gstate;
+
+	CHECK_STACK (ostack, 1);
+
+	arg0 = hg_stack_index(ostack, 0, error);
+
+	if (HG_IS_QARRAY (arg0)) {
+		CHECK_STACK (ostack, 2);
+
+		arg1 = arg0;
+		arg0 = hg_stack_index(ostack, 1, error);
+		a = HG_VM_LOCK (vm, arg1, error);
+		if (!a)
+			return FALSE;
+		if (hg_array_maxlength(a) != 6) {
+			hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
+			HG_VM_UNLOCK (vm, arg1);
+			return FALSE;
+		}
+		HG_VM_UNLOCK (vm, arg1);
+		ctm.mtx.xx = 1;
+		ctm.mtx.xy = 0;
+		ctm.mtx.yx = 0;
+		ctm.mtx.yy = 1;
+		ctm.mtx.x0 = 0;
+		ctm.mtx.y0 = 0;
+	} else {
+		gstate = HG_VM_LOCK (vm, qg, error);
+		if (!gstate)
+			return FALSE;
+		hg_gstate_get_ctm(gstate, &ctm);
+		HG_VM_UNLOCK (vm, qg);
+	}
+	if (HG_IS_QINT (arg0)) {
+		angle = HG_INT (arg0);
+	} else if (HG_IS_QREAL (arg0)) {
+		angle = HG_REAL (arg0);
+	} else {
+		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		return FALSE;
+	}
+	hg_matrix_rotate(&ctm, angle);
+
+	if (arg1 == Qnil) {
+		gstate = HG_VM_LOCK (vm, qg, error);
+		if (!gstate)
+			return FALSE;
+		hg_gstate_set_ctm(gstate, &ctm);
+		HG_VM_UNLOCK (vm, qg);
+	} else {
+		a = HG_VM_LOCK (vm, arg1, error);
+		if (!a)
+			return FALSE;
+		hg_array_from_matrix(a, &ctm);
+		HG_VM_UNLOCK (vm, arg1);
+
+		hg_stack_roll(ostack, 2, 1, error);
+	}
+
+	hg_stack_drop(ostack, error);
+
+	retval = TRUE;
+} G_STMT_END;
+VALIDATE_STACK_SIZE (-1, 0, 0);
+DEFUNC_OPER_END
 
 /* <num> round <num> */
 DEFUNC_OPER (round)

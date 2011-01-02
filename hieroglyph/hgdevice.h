@@ -89,6 +89,7 @@ struct _hg_device_t {
 	gboolean   (* get_ctm)              (hg_device_t           *device,
 					     hg_matrix_t           *array);
 
+	hg_device_operator_t eofill;
 	hg_device_operator_t fill;
 	hg_device_operator_t stroke;
 
@@ -116,6 +117,9 @@ void         hg_device_install        (hg_device_t                 *device,
 				       GError                     **error);
 gboolean     hg_device_get_ctm        (hg_device_t                 *device,
                                        hg_matrix_t                 *array);
+gboolean     hg_device_eofill         (hg_device_t                 *device,
+				       hg_gstate_t                 *gstate,
+				       GError                     **error);
 gboolean     hg_device_fill           (hg_device_t                 *device,
                                        hg_gstate_t                 *gstate,
                                        GError                     **error);

@@ -117,6 +117,8 @@ G_INLINE_FUNC void hg_matrix_multiply (hg_matrix_t *matrix1,
 G_INLINE_FUNC void hg_matrix_translate(hg_matrix_t *matrix,
 				       gdouble      tx,
 				       gdouble      ty);
+G_INLINE_FUNC void hg_matrix_rotate   (hg_matrix_t *matrix,
+				       gdouble      angle);
 
 /**
  * hg_matrix_multiply:
@@ -170,6 +172,33 @@ hg_matrix_translate(hg_matrix_t *matrix,
 	t.mtx.yy = 1;
 	t.mtx.x0 = tx;
 	t.mtx.y0 = ty;
+
+	hg_matrix_multiply(&t, matrix, matrix);
+}
+
+/**
+ * hg_matrix_rotate:
+ * @matrix:
+ * @angle:
+ *
+ * FIXME
+ */
+G_INLINE_FUNC void
+hg_matrix_rotate(hg_matrix_t *matrix,
+		 gdouble      angle)
+{
+	hg_matrix_t t;
+	gdouble cos_a = cos(angle / 180 * G_PI);
+	gdouble sin_a = sin(angle / 180 * G_PI);
+
+	hg_return_if_fail (matrix != NULL);
+
+	t.mtx.xx = cos_a;
+	t.mtx.xy = sin_a;
+	t.mtx.yx = -sin_a;
+	t.mtx.yy = cos_a;
+	t.mtx.x0 = 0;
+	t.mtx.y0 = 0;
 
 	hg_matrix_multiply(&t, matrix, matrix);
 }
