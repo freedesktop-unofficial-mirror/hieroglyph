@@ -36,6 +36,7 @@
 #include "hgmem.h"
 #include "hgpath.h"
 #include "hgreal.h"
+#include "hgvm.h"
 #include "hgdevice.h"
 
 typedef enum _hg_cairo_device_surface_t {
@@ -184,7 +185,7 @@ _hg_cairo_device_set_ctm(hg_cairo_device_t *device,
 			  matrix->mtx.x0, matrix->mtx.y0);
 	cairo_matrix_init(&trans, 1.0, 0.0,
 			  0.0, -1.0,
-			  0.0, 600);
+			  0.0, device->parent.params->page_size.height);
 	cairo_matrix_multiply(&trans, &mtx_, &trans);
 	cairo_set_matrix(device->cr, &trans);
 }
@@ -200,6 +201,61 @@ _hg_cairo_device_set_color(hg_cairo_device_t *device,
 				     color->is.rgb.green,
 				     color->is.rgb.blue);
 	} else if (color->type == HG_COLOR_HSB) {
+		gdouble r, g, b, h, s, v, f, p, q, t;
+
+		if (color->is.hsb.saturation == 0.0) {
+			r = color->is.hsb.brightness;
+			g = color->is.hsb.brightness;
+			b = color->is.hsb.brightness;
+		} else {
+			h = color->is.hsb.hue * 6.0;
+			s = color->is.hsb.saturation;
+			v = color->is.hsb.brightness;
+
+			if (HG_REAL_EQUAL (h, 6.0))
+				h = 0.0;
+
+			f = h - (int) h;
+			p = v * (1.0 - s);
+			q = v * (1.0 - s * f);
+			t = v * (1.0 - s * (1.0 - f));
+
+			switch ((int)h) {
+			    case 0:
+				    r = v;
+				    g = t;
+				    b = p;
+				    break;
+			    case 1:
+				    r = q;
+				    g = v;
+				    b = p;
+				    break;
+			    case 2:
+				    r = p;
+				    g = v;
+				    b = t;
+				    break;
+			    case 3:
+				    r = p;
+				    g = q;
+				    b = v;
+				    break;
+			    case 4:
+				    r = t;
+				    g = p;
+				    b = v;
+				    break;
+			    case 5:
+				    r = v;
+				    g = p;
+				    b = q;
+				    break;
+			    default:
+				    g_assert_not_reached();
+			}
+		}
+		cairo_set_source_rgb(device->cr, r, g, b);
 	}
 }
 
@@ -281,65 +337,6 @@ _hg_cairo_device_set_dash(hg_cairo_device_t *device,
 	hg_mem_unlock_object(m, qdash);
 }
 
-/* XXX: This has to be integrated into GMainLoop etc. */
-static void *
-_thread_main(void *data)
-{
-	hg_cairo_device_t *cdev = (hg_cairo_device_t *)data;
-	XEvent xev;
-	XRectangle r;
-	GC gc;
-
-	while (1) {
-		if (!XPending(cdev->u.xlib.dpy)) {
-			G_LOCK (cairo);
-
-			if (cdev->u.xlib.region) {
-				XRectangle ext;
-
-				XClipBox(cdev->u.xlib.region, &ext);
-				gc = XCreateGC(cdev->u.xlib.dpy, cdev->u.xlib.pixmap, 0, NULL);
-				XCopyArea(cdev->u.xlib.dpy, cdev->u.xlib.pixmap, cdev->u.xlib.drawable, gc,
-					  ext.x, ext.y, ext.width, ext.height, ext.x, ext.y);
-				XFlush(cdev->u.xlib.dpy);
-				XFreeGC(cdev->u.xlib.dpy, gc);
-				XDestroyRegion(cdev->u.xlib.region);
-				cdev->u.xlib.region = NULL;
-
-				G_UNLOCK (cairo);
-			} else {
-				G_UNLOCK (cairo);
-				usleep(50000);
-			}
-			continue;
-		}
-
-		XNextEvent(cdev->u.xlib.dpy, &xev);
-		switch (xev.xany.type) {
-		    case Expose:
-			    G_LOCK (cairo);
-
-			    if (!cdev->u.xlib.region)
-				    cdev->u.xlib.region = XCreateRegion();
-
-			    r.x = xev.xexpose.x;
-			    r.y = xev.xexpose.y;
-			    r.width = xev.xexpose.width;
-			    r.height = xev.xexpose.height;
-			    XUnionRectWithRegion(&r, cdev->u.xlib.region, cdev->u.xlib.region);
-
-			    G_UNLOCK (cairo);
-			    break;
-		    case NoExpose:
-			    break;
-		    default:
-			    g_print("%d\n", xev.xany.type);
-			    break;
-		}
-	}
-	return NULL;
-}
-
 static void
 _hg_cairo_device_install(hg_device_t  *device,
 			 hg_vm_t      *vm,
@@ -350,6 +347,8 @@ _hg_cairo_device_install(hg_device_t  *device,
 	gulong black, white;
 	cairo_matrix_t mtx;
 
+	device->params->page_size.width = 600;
+	device->params->page_size.height = 600;
 	cdev->u.type = HG_CAIRO_DEVICE_SURFACE_XLIB;
 
 	switch (cdev->u.type) {
@@ -366,16 +365,22 @@ _hg_cairo_device_install(hg_device_t  *device,
 		    cdev->u.xlib.drawable = XCreateSimpleWindow(cdev->u.xlib.dpy,
 								DefaultRootWindow(cdev->u.xlib.dpy),
 								0, 0,
-								600, 600, 0,
-								black, white);
-		    cdev->u.xlib.pixmap = XCreatePixmap(cdev->u.xlib.dpy, DefaultRootWindow(cdev->u.xlib.dpy), 600, 600, DefaultDepth(cdev->u.xlib.dpy, screen));
+								device->params->page_size.width,
+								device->params->page_size.height,
+								0, black, white);
+		    cdev->u.xlib.pixmap = XCreatePixmap(cdev->u.xlib.dpy,
+							DefaultRootWindow(cdev->u.xlib.dpy),
+							device->params->page_size.width,
+							device->params->page_size.height,
+							DefaultDepth(cdev->u.xlib.dpy, screen));
 
 		    XSelectInput(cdev->u.xlib.dpy, cdev->u.xlib.drawable, ExposureMask);
 		    XMapWindow(cdev->u.xlib.dpy, cdev->u.xlib.drawable);
 		    cdev->surface = cairo_xlib_surface_create(cdev->u.xlib.dpy,
 							      (Drawable)cdev->u.xlib.pixmap,
 							      DefaultVisual (cdev->u.xlib.dpy, screen),
-							      600, 600);
+							      device->params->page_size.width,
+							      device->params->page_size.height);
 		    break;
 	    default:
 		    g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
@@ -391,11 +396,85 @@ _hg_cairo_device_install(hg_device_t  *device,
 	/* The page needs to be transformed.
 	 * it's wrong side up comparing with PostScript's.
 	 */
-	cairo_matrix_init(&mtx, 1.0, 0.0, 0.0, -1.0, 0.0, 600);
+	cairo_matrix_init(&mtx, 1.0, 0.0, 0.0, -1.0, 0.0, device->params->page_size.height);
 	cairo_set_matrix(cdev->cr, &mtx);
+}
 
-	g_thread_init(NULL);
-	g_thread_create(_thread_main, cdev, FALSE, NULL);
+static gboolean
+_hg_cairo_device_is_pending_draw(hg_device_t *device)
+{
+	hg_cairo_device_t *cdev = (hg_cairo_device_t *)device;
+
+	switch (cdev->u.type) {
+	    case HG_CAIRO_DEVICE_SURFACE_XLIB:
+		    G_LOCK (cairo);
+
+		    if (cdev->u.xlib.region) {
+			    XRectangle ext;
+			    GC gc;
+
+			    XClipBox(cdev->u.xlib.region, &ext);
+			    gc = XCreateGC(cdev->u.xlib.dpy,
+					   cdev->u.xlib.pixmap,
+					   0, NULL);
+			    XCopyArea(cdev->u.xlib.dpy, cdev->u.xlib.pixmap,
+				      cdev->u.xlib.drawable, gc,
+				      ext.x, ext.y,
+				      ext.width, ext.height,
+				      ext.x, ext.y);
+			    XFlush(cdev->u.xlib.dpy);
+			    XFreeGC(cdev->u.xlib.dpy, gc);
+			    XDestroyRegion(cdev->u.xlib.region);
+			    cdev->u.xlib.region = NULL;
+		    }
+
+		    G_UNLOCK (cairo);
+
+		    return cdev->u.xlib.dpy && XPending(cdev->u.xlib.dpy);
+	    default:
+		    return FALSE;
+	}
+}
+
+static void
+_hg_cairo_device_draw(hg_device_t *device)
+{
+	hg_cairo_device_t *cdev = (hg_cairo_device_t *)device;
+
+	switch (cdev->u.type) {
+	    case HG_CAIRO_DEVICE_SURFACE_XLIB:
+		    if (XPending(cdev->u.xlib.dpy)) {
+			    XEvent xev;
+			    XRectangle r;
+
+			    XNextEvent(cdev->u.xlib.dpy, &xev);
+			    switch (xev.xany.type) {
+				case Expose:
+					G_LOCK (cairo);
+
+					if (!cdev->u.xlib.region)
+						cdev->u.xlib.region = XCreateRegion();
+
+					r.x = xev.xexpose.x;
+					r.y = xev.xexpose.y;
+					r.width = xev.xexpose.width;
+					r.height = xev.xexpose.height;
+					XUnionRectWithRegion(&r,
+							     cdev->u.xlib.region,
+							     cdev->u.xlib.region);
+
+					G_UNLOCK (cairo);
+					break;
+				case NoExpose:
+					break;
+				default:
+					break;
+			    }
+		    }
+		    break;
+	    default:
+		    break;
+	}
 }
 
 static gboolean
@@ -405,9 +484,50 @@ _hg_cairo_device_get_ctm(hg_device_t *device,
 	matrix->mtx.xx = 1.0;
 	matrix->mtx.yx = 0.0;
 	matrix->mtx.xy = 0.0;
-	matrix->mtx.yy = -1.0;
+	matrix->mtx.yy = 1.0;
 	matrix->mtx.x0 = 0.0;
 	matrix->mtx.y0 = 0.0;
+
+	return TRUE;
+}
+
+static gboolean
+_hg_cairo_device_eofill(hg_device_t  *device,
+			hg_gstate_t  *gstate)
+{
+	hg_cairo_device_t *cdev = (hg_cairo_device_t *)device;
+	hg_quark_t qpath = hg_gstate_get_path(gstate);
+	hg_path_t *path;
+	hg_matrix_t mtx;
+	XRectangle r;
+
+	hg_return_val_if_lock_fail (path,
+				    gstate->o.mem,
+				    qpath,
+				    FALSE);
+
+	hg_gstate_get_ctm(gstate, &mtx);
+	_hg_cairo_device_set_ctm(cdev, &mtx);
+	cairo_new_path(cdev->cr);
+	if (!hg_path_operate(path, &__vtable, cdev->cr, NULL))
+		return FALSE;
+	_hg_cairo_device_set_color(cdev, &gstate->color);
+
+	cairo_set_fill_rule(cdev->cr, CAIRO_FILL_RULE_EVEN_ODD);
+	cairo_fill(cdev->cr);
+
+	G_LOCK (cairo);
+
+	if (!cdev->u.xlib.region) {
+		cdev->u.xlib.region = XCreateRegion();
+		r.x = 0;
+		r.y = 0;
+		r.width = device->params->page_size.width;
+		r.height = device->params->page_size.height;
+		XUnionRectWithRegion(&r, cdev->u.xlib.region, cdev->u.xlib.region);
+	}
+
+	G_UNLOCK (cairo);
 
 	return TRUE;
 }
@@ -443,8 +563,8 @@ _hg_cairo_device_fill(hg_device_t  *device,
 		cdev->u.xlib.region = XCreateRegion();
 		r.x = 0;
 		r.y = 0;
-		r.width = 600;
-		r.height = 600;
+		r.width = device->params->page_size.width;
+		r.height = device->params->page_size.height;
 		XUnionRectWithRegion(&r, cdev->u.xlib.region, cdev->u.xlib.region);
 	}
 
@@ -488,8 +608,8 @@ _hg_cairo_device_stroke(hg_device_t  *device,
 		cdev->u.xlib.region = XCreateRegion();
 		r.x = 0;
 		r.y = 0;
-		r.width = 600;
-		r.height = 600;
+		r.width = device->params->page_size.width;
+		r.height = device->params->page_size.height;
 		XUnionRectWithRegion(&r, cdev->u.xlib.region, cdev->u.xlib.region);
 	}
 
@@ -505,10 +625,13 @@ hg_init(void)
 	hg_cairo_device_t *retval = g_new0(hg_cairo_device_t, 1);
 	hg_device_t *dev = (hg_device_t *)retval;
 
-	dev->install = _hg_cairo_device_install;
-	dev->get_ctm = _hg_cairo_device_get_ctm;
-	dev->fill    = _hg_cairo_device_fill;
-	dev->stroke  = _hg_cairo_device_stroke;
+	dev->install         = _hg_cairo_device_install;
+	dev->is_pending_draw = _hg_cairo_device_is_pending_draw;
+	dev->draw            = _hg_cairo_device_draw;
+	dev->get_ctm         = _hg_cairo_device_get_ctm;
+	dev->eofill          = _hg_cairo_device_eofill;
+	dev->fill            = _hg_cairo_device_fill;
+	dev->stroke          = _hg_cairo_device_stroke;
 
 	return dev;
 }

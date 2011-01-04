@@ -553,6 +553,40 @@ hg_device_install(hg_device_t  *device,
 }
 
 /**
+ * hg_device_is_pending_draw:
+ * @device:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+gboolean
+hg_device_is_pending_draw(hg_device_t *device)
+{
+	hg_return_val_if_fail (device != NULL, FALSE);
+
+	if (device->is_pending_draw)
+		return device->is_pending_draw(device);
+
+	return FALSE;
+}
+
+/**
+ * hg_device_draw:
+ * @device:
+ *
+ * FIXME
+ */
+void
+hg_device_draw(hg_device_t *device)
+{
+	hg_return_if_fail (device != NULL);
+
+	if (device->draw)
+		device->draw(device);
+}
+
+/**
  * hg_device_get_ctm:
  * @device:
  * @matrix:

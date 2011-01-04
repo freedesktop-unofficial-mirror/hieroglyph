@@ -88,6 +88,8 @@ struct _hg_device_t {
 					     GError               **error);
 	gboolean   (* get_ctm)              (hg_device_t           *device,
 					     hg_matrix_t           *array);
+	gboolean   (* is_pending_draw)      (hg_device_t           *device);
+	void       (* draw)                 (hg_device_t           *device);
 
 	hg_device_operator_t eofill;
 	hg_device_operator_t fill;
@@ -106,26 +108,28 @@ hg_device_t *hg_device_open           (hg_mem_t                    *mem,
 				       const gchar                 *name);
 void         hg_device_close          (hg_device_t                 *device);
 hg_quark_t   hg_device_get_page_params(hg_device_t                 *device,
-                                       hg_mem_t                    *mem,
-                                       gboolean                     check_dictfull,
-                                       hg_pdev_name_lookup_func_t   func,
+				       hg_mem_t                    *mem,
+				       gboolean                     check_dictfull,
+				       hg_pdev_name_lookup_func_t   func,
 				       gpointer                     func_user_data,
-                                       gpointer                    *ret,
-                                       GError                     **error);
+				       gpointer                    *ret,
+				       GError                     **error);
 void         hg_device_install        (hg_device_t                 *device,
 				       hg_vm_t                     *vm,
 				       GError                     **error);
+gboolean     hg_device_is_pending_draw(hg_device_t                 *device);
+void         hg_device_draw           (hg_device_t                 *device);
 gboolean     hg_device_get_ctm        (hg_device_t                 *device,
-                                       hg_matrix_t                 *array);
+				       hg_matrix_t                 *array);
 gboolean     hg_device_eofill         (hg_device_t                 *device,
 				       hg_gstate_t                 *gstate,
 				       GError                     **error);
 gboolean     hg_device_fill           (hg_device_t                 *device,
-                                       hg_gstate_t                 *gstate,
-                                       GError                     **error);
+				       hg_gstate_t                 *gstate,
+				       GError                     **error);
 gboolean     hg_device_stroke         (hg_device_t                 *device,
-                                       hg_gstate_t                 *gstate,
-                                       GError                     **error);
+				       hg_gstate_t                 *gstate,
+				       GError                     **error);
 
 /* null device */
 hg_device_t *hg_device_null_new(hg_mem_t *mem);

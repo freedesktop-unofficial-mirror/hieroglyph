@@ -2104,6 +2104,8 @@ hg_vm_main_loop(hg_vm_t *vm)
 				hg_operator_invoke(HG_QOPER (HG_enc_private_abort), vm, NULL);
 			}
 		}
+		if (vm->device && hg_device_is_pending_draw(vm->device))
+			hg_device_draw(vm->device);
 	}
 
 	return retval;
