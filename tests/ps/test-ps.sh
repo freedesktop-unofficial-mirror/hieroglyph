@@ -24,12 +24,16 @@ set -e
 
 function run_test() {
     echo `basename $1`:
-    ./tests/run.sh ./src/hgs/hgs -d QUIET -l unittest $1
+    ./tests/run.sh $args ./src/hgs/hgs -d QUIET -l unittest $1
 }
 
 rootdir=`dirname $0`/../..
 pushd $rootdir
 
+if [ "x$1" = "x-d" ]; then
+    shift
+    args="-d"
+fi
 if [ $# -ne 0 ]; then
     run_test $1
 else
