@@ -28,20 +28,18 @@
 
 G_BEGIN_DECLS
 
-typedef struct _hg_list_t	hg_list_t;
+typedef struct _hg_slist_t	hg_slist_t;
 
-struct _hg_list_t {
+struct _hg_slist_t {
 	hg_quark_t  self;
 	hg_quark_t  data;
-	hg_list_t  *next;
-	hg_list_t  *prev;
+	hg_slist_t *next;
 };
 struct _hg_stack_t {
 	hg_object_t  o;
 	hg_quark_t   self;
 	hg_vm_t     *vm;
-	hg_list_t   *stack;
-	hg_list_t   *last_stack;
+	hg_slist_t  *last_stack;
 	gsize        max_depth;
 	gsize        depth;
 	gboolean     validate_depth;

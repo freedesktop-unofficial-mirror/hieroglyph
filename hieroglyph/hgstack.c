@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
  * hgstack.c
- * Copyright (C) 2005-2010 Akira TAGOH
+ * Copyright (C) 2005-2011 Akira TAGOH
  * 
  * Authors:
  *   Akira TAGOH  <akira@tagoh.org>
@@ -33,11 +33,11 @@
 #include "hgvm.h"
 
 
-static hg_list_t *_hg_list_new  (hg_mem_t   *mem);
-static void       _hg_list_free (hg_mem_t   *mem,
-                                 hg_list_t  *list);
-static gboolean   _hg_stack_push(hg_stack_t *stack,
-                                 hg_quark_t  quark);
+static hg_slist_t *_hg_slist_new  (hg_mem_t   *mem);
+static void        _hg_slist_free (hg_mem_t   *mem,
+				   hg_slist_t  *list);
+static gboolean    _hg_stack_push (hg_stack_t *stack,
+				   hg_quark_t  quark);
 
 
 HG_DEFINE_VTABLE_WITH (stack, NULL, NULL, NULL);
@@ -62,7 +62,6 @@ _hg_object_stack_initialize(hg_object_t *object,
 	hg_stack_t *stack = (hg_stack_t *)object;
 
 	stack->max_depth = va_arg(args, gsize);
-	stack->stack = NULL;
 	stack->last_stack = NULL;
 	stack->depth = 0;
 	stack->validate_depth = TRUE;
@@ -97,10 +96,10 @@ _hg_object_stack_gc_mark(hg_object_t           *object,
 			 GError               **error)
 {
 	hg_stack_t *stack = (hg_stack_t *)object;
-	hg_list_t *l;
+	hg_slist_t *l;
 	gboolean retval = TRUE;
 
-	for (l = stack->stack; l != NULL; l = l->next) {
+	for (l = stack->last_stack; l != NULL; l = l->next) {
 		if (!hg_mem_gc_mark(object->mem, l->self, error)) {
 			retval = FALSE;
 			break;
@@ -123,21 +122,21 @@ _hg_object_stack_compare(hg_object_t             *o1,
 	return o1->self == o2->self;
 }
 
-static hg_list_t *
-_hg_list_new(hg_mem_t *mem)
+static hg_slist_t *
+_hg_slist_new(hg_mem_t *mem)
 {
 	hg_quark_t self;
-	hg_list_t *l = NULL;
+	hg_slist_t *l = NULL;
 
 	self = hg_mem_alloc(mem,
-			    sizeof (hg_list_t),
+			    sizeof (hg_slist_t),
 			    (gpointer *)&l);
 	if (self == Qnil)
 		return NULL;
 
 	l->self = self;
 	l->data = Qnil;
-	l->next = l->prev = NULL;
+	l->next = NULL;
 
 	hg_mem_reserved_spool_add(mem, self);
 
@@ -145,22 +144,22 @@ _hg_list_new(hg_mem_t *mem)
 }
 
 static void
-_hg_list_free1(hg_mem_t  *mem,
-	       hg_list_t *list)
+_hg_slist_free1(hg_mem_t   *mem,
+		hg_slist_t *list)
 {
 	hg_mem_reserved_spool_remove(mem, list->self);
 	hg_mem_free(mem, list->self);
 }
 
 static void
-_hg_list_free(hg_mem_t  *mem,
-	      hg_list_t *list)
+_hg_slist_free(hg_mem_t   *mem,
+	       hg_slist_t *list)
 {
-	hg_list_t *l, *tmp = NULL;
+	hg_slist_t *l, *tmp = NULL;
 
 	for (l = list; l != NULL; l = tmp) {
 		tmp = l->next;
-		_hg_list_free1(mem, l);
+		_hg_slist_free1(mem, l);
 	}
 }
 
@@ -168,20 +167,15 @@ static gboolean
 _hg_stack_push(hg_stack_t *stack,
 	       hg_quark_t  quark)
 {
-	hg_list_t *l = _hg_list_new(stack->o.mem);
+	hg_slist_t *l = _hg_slist_new(stack->o.mem);
 	hg_mem_t *m;
 
 	if (l == NULL)
 		return FALSE;
 
 	l->data = quark;
-	if (stack->stack == NULL) {
-		stack->stack = stack->last_stack = l;
-	} else {
-		stack->last_stack->next = l;
-		l->prev = stack->last_stack;
-		stack->last_stack = l;
-	}
+	l->next = stack->last_stack;
+	stack->last_stack = l;
 	stack->depth++;
 
 	if (stack->vm &&
@@ -198,23 +192,16 @@ static hg_quark_t
 _hg_stack_pop(hg_stack_t  *stack,
 	      GError     **error)
 {
-	hg_list_t *l;
+	hg_slist_t *l;
 	hg_quark_t retval;
 
 	if (stack->last_stack == NULL)
 		return Qnil;
 
 	l = stack->last_stack;
-	stack->last_stack = l->prev;
-	if (l->prev) {
-		l->prev->next = NULL;
-		l->prev = NULL;
-	}
-	if (stack->stack == l) {
-		stack->stack = NULL;
-	}
+	stack->last_stack = l->next;
 	retval = l->data;
-	_hg_list_free1(stack->o.mem, l);
+	_hg_slist_free1(stack->o.mem, l);
 	stack->depth--;
 
 	return retval;
@@ -398,8 +385,8 @@ hg_stack_clear(hg_stack_t *stack)
 {
 	hg_return_if_fail (stack != NULL);
 
-	_hg_list_free(stack->o.mem, stack->stack);
-	stack->stack = stack->last_stack = NULL;
+	_hg_slist_free(stack->o.mem, stack->last_stack);
+	stack->last_stack = NULL;
 	stack->depth = 0;
 }
 
@@ -418,12 +405,12 @@ hg_stack_index(hg_stack_t  *stack,
 	       gsize        index,
 	       GError     **error)
 {
-	hg_list_t *l;
+	hg_slist_t *l;
 
 	hg_return_val_with_gerror_if_fail (stack != NULL, Qnil, error, HG_VM_e_VMerror);
 	hg_return_val_with_gerror_if_fail (index < stack->depth, Qnil, error, HG_VM_e_stackunderflow);
 
-	for (l = stack->last_stack; index > 0; l = l->prev, index--);
+	for (l = stack->last_stack; index > 0; l = l->next, index--);
 
 	return l->data;
 }
@@ -443,12 +430,12 @@ hg_stack_peek(hg_stack_t  *stack,
 	      gsize        index,
 	      GError     **error)
 {
-	hg_list_t *l;
+	hg_slist_t *l;
 
 	hg_return_val_with_gerror_if_fail (stack != NULL, NULL, error, HG_VM_e_VMerror);
 	hg_return_val_with_gerror_if_fail (index < stack->depth, NULL, error, HG_VM_e_stackunderflow);
 
-	for (l = stack->last_stack; index > 0; l = l->prev, index--);
+	for (l = stack->last_stack; index > 0; l = l->next, index--);
 
 	return &l->data;
 }
@@ -470,8 +457,8 @@ hg_stack_exch(hg_stack_t  *stack,
 	hg_return_with_gerror_if_fail (stack->depth > 1, error, HG_VM_e_stackunderflow);
 
 	q = stack->last_stack->data;
-	stack->last_stack->data = stack->last_stack->prev->data;
-	stack->last_stack->prev->data = q;
+	stack->last_stack->data = stack->last_stack->next->data;
+	stack->last_stack->next->data = q;
 }
 
 /**
@@ -489,8 +476,8 @@ hg_stack_roll(hg_stack_t  *stack,
 	      gssize       n_times,
 	      GError     **error)
 {
-	hg_list_t *notargeted_before, *notargeted_after, *beginning, *ending;
-	gsize n, i;
+	hg_slist_t *oonode, *top_node, *last_node;
+	gssize n, i;
 
 	hg_return_with_gerror_if_fail (stack != NULL, error, HG_VM_e_VMerror);
 	hg_return_with_gerror_if_fail (n_blocks <= stack->depth, error, HG_VM_e_stackunderflow);
@@ -500,33 +487,20 @@ hg_stack_roll(hg_stack_t  *stack,
 		return;
 	n = abs(n_times) % n_blocks;
 	if (n != 0) {
-		/* find the place that isn't targeted for roll */
-		for (notargeted_before = stack->last_stack, i = n_blocks;
-		     i > 0;
-		     notargeted_before = notargeted_before->prev, i--);
-		if (!notargeted_before)
-			notargeted_after = stack->stack;
-		else
-			notargeted_after = notargeted_before->next;
-		/* try to find the place to cut off */
-		if (n_times > 0) {
-			for (beginning = stack->last_stack; n > 1; beginning = beginning->prev, n--);
-			ending = beginning->prev;
-		} else {
-			for (ending = notargeted_after; n > 1; ending = ending->next, n--);
-			beginning = ending->next;
-		}
-		stack->last_stack->next = notargeted_after;
-		stack->last_stack->next->prev = stack->last_stack;
-		if (notargeted_before) {
-			notargeted_before->next = beginning;
-			notargeted_before->next->prev = notargeted_before;
-		} else {
-			stack->stack = beginning;
-			stack->stack->prev = NULL;
-		}
-		stack->last_stack = ending;
-		stack->last_stack->next = NULL;
+		/* find out a node out of the blocks */
+		for (last_node = stack->last_stack, i = n_blocks;
+		     i > 1;
+		     last_node = last_node->next, i--);
+		oonode = last_node->next;
+		last_node->next = stack->last_stack;
+		/* rolling out! */
+		if (n_times < 0)
+			n = n_blocks - n;
+		for (top_node = stack->last_stack;
+		     n > 1;
+		     top_node = top_node->next, n--);
+		stack->last_stack = top_node->next;
+		top_node->next = oonode;
 	}
 }
 
@@ -547,21 +521,31 @@ hg_stack_foreach(hg_stack_t                *stack,
 		 gboolean                   is_forwarded,
 		 GError                   **error)
 {
-	hg_list_t *l;
+	hg_slist_t *l;
 
 	hg_return_if_fail (stack != NULL);
 	hg_return_if_fail (func != NULL);
 
-	if (is_forwarded)
-		l = stack->stack;
-	else
-		l = stack->last_stack;
-	while (l != NULL) {
-		if (!func(stack->o.mem, l->data, data, error))
-			break;
-		if (is_forwarded)
-			l = l->next;
-		else
-			l = l->prev;
+	if (stack->depth == 0)
+		return;
+
+	if (is_forwarded) {
+		gpointer *p = g_new0(gpointer, stack->depth + 1);
+		gssize i;
+
+		for (l = stack->last_stack, i = stack->depth;
+		     l != NULL && i > 0;
+		     l = l->next, i--)
+			p[i - 1] = l;
+		for (i = 0; i < stack->depth; i++) {
+			if (!func(stack->o.mem, ((hg_slist_t *)p[i])->data, data, error))
+				break;
+		}
+		g_free(p);
+	} else {
+		for (l = stack->last_stack; l != NULL; l = l->next) {
+			if (!func(stack->o.mem, l->data, data, error))
+				break;
+		}
 	}
 }
