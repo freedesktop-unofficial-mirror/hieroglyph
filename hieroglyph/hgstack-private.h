@@ -40,6 +40,7 @@ struct _hg_stack_t {
 	hg_quark_t   self;
 	hg_vm_t     *vm;
 	hg_slist_t  *last_stack;
+	hg_slist_t  *free_node;
 	gsize        max_depth;
 	gsize        depth;
 	gboolean     validate_depth;

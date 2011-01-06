@@ -63,6 +63,7 @@ _hg_object_stack_initialize(hg_object_t *object,
 
 	stack->max_depth = va_arg(args, gsize);
 	stack->last_stack = NULL;
+	stack->free_node = NULL;
 	stack->depth = 0;
 	stack->validate_depth = TRUE;
 	stack->vm = va_arg(args, hg_vm_t *);
@@ -108,6 +109,10 @@ _hg_object_stack_gc_mark(hg_object_t           *object,
 			retval = FALSE;
 			break;
 		}
+	}
+	if (stack->free_node) {
+		_hg_slist_free(object->mem, stack->free_node);
+		stack->free_node = NULL;
 	}
 
 	return retval;
@@ -167,9 +172,15 @@ static gboolean
 _hg_stack_push(hg_stack_t *stack,
 	       hg_quark_t  quark)
 {
-	hg_slist_t *l = _hg_slist_new(stack->o.mem);
+	hg_slist_t *l;
 	hg_mem_t *m;
 
+	if (stack->free_node) {
+		l = stack->free_node;
+		stack->free_node = l->next;
+	} else {
+		l = _hg_slist_new(stack->o.mem);
+	}
 	if (l == NULL)
 		return FALSE;
 
@@ -201,7 +212,8 @@ _hg_stack_pop(hg_stack_t  *stack,
 	l = stack->last_stack;
 	stack->last_stack = l->next;
 	retval = l->data;
-	_hg_slist_free1(stack->o.mem, l);
+	l->next = stack->free_node;
+	stack->free_node = l;
 	stack->depth--;
 
 	return retval;
