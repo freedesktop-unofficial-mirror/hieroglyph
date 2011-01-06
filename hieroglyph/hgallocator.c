@@ -948,7 +948,7 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 						}
 					}
 					aligned_size = hg_mem_aligned_to(block->size, BLOCK_SIZE) / BLOCK_SIZE;
-					i += aligned_size - 1;
+					j += aligned_size - 1;
 				}
 			}
 		}
