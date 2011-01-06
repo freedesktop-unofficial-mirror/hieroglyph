@@ -60,6 +60,8 @@ hg_quark_t          hg_stack_index            (hg_stack_t                *stack,
 hg_quark_t         *hg_stack_peek             (hg_stack_t                *stack,
 					       gsize                      index,
 					       GError                   **error);
+void                hg_stack_exch             (hg_stack_t                *stack,
+					       GError                   **error);
 void                hg_stack_roll             (hg_stack_t                *stack,
                                                gsize                      n_blocks,
                                                gssize                     n_times,

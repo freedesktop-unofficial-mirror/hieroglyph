@@ -3766,16 +3766,9 @@ DEFUNC_UNIMPLEMENTED_OPER (erasepage);
 /* <any1> <any2> exch <any2> <any1> */
 DEFUNC_OPER (exch)
 G_STMT_START {
-	hg_quark_t *arg0, *arg1, q;
-
 	CHECK_STACK (ostack, 2);
 
-	arg0 = hg_stack_peek(ostack, 1, error);
-	arg1 = hg_stack_peek(ostack, 0, error);
-
-	q = *arg0;
-	*arg0 = *arg1;
-	*arg1 = q;
+	hg_stack_exch(ostack, error);
 
 	retval = TRUE;
 } G_STMT_END;
@@ -3807,7 +3800,7 @@ G_STMT_START {
 
 		STACK_PUSH (estack, q);
 
-		hg_stack_roll(estack, 2, 1, error);
+		hg_stack_exch(estack, error);
 		__flag = TRUE;
 	}
 
@@ -4865,7 +4858,7 @@ G_STMT_START {
 			return FALSE;
 		}
 		STACK_PUSH (estack, q);
-		hg_stack_roll(estack, 2, 1, error);
+		hg_stack_exch(estack, error);
 		__flag = TRUE;
 	}
 	hg_stack_drop(ostack, error);
@@ -4918,7 +4911,7 @@ G_STMT_START {
 		return FALSE;
 	}
 	STACK_PUSH (estack, q);
-	hg_stack_roll(estack, 2, 1, error);
+	hg_stack_exch(estack, error);
 
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
@@ -5041,7 +5034,7 @@ G_STMT_START {
 		goto error;
 	}
 
-	hg_stack_roll(ostack, 2, 1, error);
+	hg_stack_exch(ostack, error);
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
@@ -6912,7 +6905,7 @@ G_STMT_START {
 		hg_array_from_matrix(a, &ctm);
 		HG_VM_UNLOCK (vm, arg1);
 
-		hg_stack_roll(ostack, 2, 1, error);
+		hg_stack_exch(ostack, error);
 	}
 
 	hg_stack_drop(ostack, error);

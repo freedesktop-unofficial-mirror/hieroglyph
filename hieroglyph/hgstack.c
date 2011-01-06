@@ -454,6 +454,27 @@ hg_stack_peek(hg_stack_t  *stack,
 }
 
 /**
+ * hg_stack_exch:
+ * @stack:
+ * @error:
+ *
+ * FIXME
+ */
+void
+hg_stack_exch(hg_stack_t  *stack,
+	      GError     **error)
+{
+	hg_quark_t q;
+
+	hg_return_with_gerror_if_fail (stack != NULL, error, HG_VM_e_VMerror);
+	hg_return_with_gerror_if_fail (stack->depth > 1, error, HG_VM_e_stackunderflow);
+
+	q = stack->last_stack->data;
+	stack->last_stack->data = stack->last_stack->prev->data;
+	stack->last_stack->prev->data = q;
+}
+
+/**
  * hg_stack_roll:
  * @stack:
  * @n_blocks:
