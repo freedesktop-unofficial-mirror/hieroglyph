@@ -541,6 +541,7 @@ _hg_cairo_device_fill(hg_device_t  *device,
 	hg_path_t *path;
 	hg_matrix_t mtx;
 	XRectangle r;
+	gboolean retval = TRUE;
 
 	hg_return_val_if_lock_fail (path,
 				    gstate->o.mem,
@@ -550,8 +551,10 @@ _hg_cairo_device_fill(hg_device_t  *device,
 	hg_gstate_get_ctm(gstate, &mtx);
 	_hg_cairo_device_set_ctm(cdev, &mtx);
 	cairo_new_path(cdev->cr);
-	if (!hg_path_operate(path, &__vtable, cdev->cr, NULL))
-		return FALSE;
+	if (!hg_path_operate(path, &__vtable, cdev->cr, NULL)) {
+		retval = FALSE;
+		goto finalize;
+	}
 	_hg_cairo_device_set_color(cdev, &gstate->color);
 
 	cairo_set_fill_rule(cdev->cr, CAIRO_FILL_RULE_WINDING);
@@ -569,6 +572,8 @@ _hg_cairo_device_fill(hg_device_t  *device,
 	}
 
 	G_UNLOCK (cairo);
+  finalize:
+	hg_mem_unlock_object(gstate->o.mem, qpath);
 
 	return TRUE;
 }
