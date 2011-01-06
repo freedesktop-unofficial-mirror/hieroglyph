@@ -54,6 +54,7 @@ _hg_object_gstate_initialize(hg_object_t *object,
 
 	gstate->qpath = Qnil;
 	gstate->qclippath = Qnil;
+	gstate->qdashpattern = Qnil;
 
 	return TRUE;
 }
