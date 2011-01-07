@@ -59,6 +59,9 @@ static gboolean     _hg_file_io_real_stdout_open       (hg_file_t     *file,
 static gboolean     _hg_file_io_real_stderr_open       (hg_file_t     *file,
 							gpointer       user_data,
 							GError       **error);
+static void         _hg_file_io_real_no_close          (hg_file_t     *file,
+							gpointer       user_data,
+							GError       **error);
 static gboolean     _hg_file_io_real_file_open         (hg_file_t     *file,
 							gpointer       user_data,
 							GError        **error);
@@ -126,7 +129,7 @@ static gboolean     _hg_file_io_real_lineedit_open     (hg_file_t     *file,
 
 static hg_file_vtable_t __hg_file_io_stdin_vtable = {
 	.open      = _hg_file_io_real_stdin_open,
-	.close     = _hg_file_io_real_file_close,
+	.close     = _hg_file_io_real_no_close,
 	.read      = _hg_file_io_real_file_read,
 	.write     = _hg_file_io_real_file_write,
 	.flush     = _hg_file_io_real_file_flush,
@@ -136,7 +139,7 @@ static hg_file_vtable_t __hg_file_io_stdin_vtable = {
 };
 static hg_file_vtable_t __hg_file_io_stdout_vtable = {
 	.open      = _hg_file_io_real_stdout_open,
-	.close     = _hg_file_io_real_file_close,
+	.close     = _hg_file_io_real_no_close,
 	.read      = _hg_file_io_real_file_read,
 	.write     = _hg_file_io_real_file_write,
 	.flush     = _hg_file_io_real_file_flush,
@@ -146,7 +149,7 @@ static hg_file_vtable_t __hg_file_io_stdout_vtable = {
 };
 static hg_file_vtable_t __hg_file_io_stderr_vtable = {
 	.open      = _hg_file_io_real_stderr_open,
-	.close     = _hg_file_io_real_file_close,
+	.close     = _hg_file_io_real_no_close,
 	.read      = _hg_file_io_real_file_read,
 	.write     = _hg_file_io_real_file_write,
 	.flush     = _hg_file_io_real_file_flush,
@@ -570,6 +573,14 @@ _hg_file_io_real_stderr_open(hg_file_t  *file,
 	} G_STMT_END;
 
 	return FALSE;
+}
+
+static void
+_hg_file_io_real_no_close(hg_file_t  *file,
+			  gpointer    user_data,
+			  GError    **error)
+{
+	file->is_closed = TRUE;
 }
 
 static gboolean
