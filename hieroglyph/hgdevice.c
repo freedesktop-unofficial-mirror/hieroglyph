@@ -32,6 +32,7 @@
 #include "hgerror.h"
 #include "hggstate.h"
 #include "hgint.h"
+#include "hgmatrix.h"
 #include "hgmem.h"
 #include "hgnull.h"
 #include "hgoperator.h"
@@ -781,12 +782,7 @@ static gboolean
 _hg_device_null_get_ctm(hg_device_t *device,
 			hg_matrix_t *matrix)
 {
-	matrix->mtx.xx = 1;
-	matrix->mtx.xy = 0;
-	matrix->mtx.yx = 0;
-	matrix->mtx.yy = 1;
-	matrix->mtx.x0 = 0;
-	matrix->mtx.y0 = 0;
+	hg_matrix_init_identity(matrix);
 
 	return TRUE;
 }

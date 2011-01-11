@@ -25,6 +25,7 @@
 #define __HIEROGLYPH_HGGSTATE_H__
 
 #include <hieroglyph/hgobject.h>
+#include <hieroglyph/hgmatrix.h>
 #include <hieroglyph/hgpath.h>
 
 G_BEGIN_DECLS

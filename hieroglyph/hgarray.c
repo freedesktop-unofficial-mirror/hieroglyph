@@ -27,6 +27,7 @@
 
 #include <string.h>
 #include "hgerror.h"
+#include "hgmatrix.h"
 #include "hgmem.h"
 #include "hgint.h"
 #include "hgmark.h"
@@ -958,13 +959,7 @@ hg_array_matrix_ident(hg_array_t *matrix)
 	hg_return_val_if_fail (matrix != NULL, FALSE);
 	hg_return_val_if_fail (hg_array_maxlength(matrix) == 6, FALSE);
 
-	m.mtx.xx = 1;
-	m.mtx.xy = 0;
-	m.mtx.yx = 0;
-	m.mtx.yy = 1;
-	m.mtx.x0 = 0;
-	m.mtx.y0 = 0;
-
+	hg_matrix_init_identity(&m);
 	_hg_array_convert_from_matrix(matrix, &m);
 
 	return TRUE;
@@ -1015,38 +1010,13 @@ hg_array_matrix_invert(hg_array_t *matrix,
 		       hg_array_t *ret)
 {
 	hg_matrix_t m1, m2;
-	gdouble det;
 
 	hg_return_val_if_fail (hg_array_is_matrix(matrix), FALSE);
 	hg_return_val_if_fail (hg_array_maxlength(ret) == 6, FALSE);
 
 	_hg_array_convert_to_matrix(matrix, &m1);
-
-	/*
-	 * detA = a11a22a33 + a21a32a13 + a31a12a23
-	 *      - a11a32a23 - a31a22a13 - a21a12a33
-	 *
-	 *      xx xy 0
-	 * A = {yx yy 0}
-	 *      x0 y0 1
-	 * detA = xx * yy * 1 + yx * y0 * 0 + x0 * xy * 0 - xx * y0 * 0 - x0 * yy * 0 - yx * xy * 1
-	 * detA = xx * yy - yx * xy
-	 */
-	det = m1.mtx.xx * m1.mtx.yy - m1.mtx.yx * m1.mtx.xy;
-	if (det == 0)
+	if (!hg_matrix_invert(&m1, &m2))
 		return FALSE;
-
-	/*
-	 *                    d      -b   0
-	 * A-1 = 1/detA {    -c       a   0}
-	 *               -dx0+by0 cx0-ay0 1
-	 */
-	m2.mtx.xx =  m1.mtx.yy / det;
-	m2.mtx.xy = -m1.mtx.xy / det;
-	m2.mtx.yx = -m1.mtx.yx / det;
-	m2.mtx.yy =  m1.mtx.xx / det;
-	m2.mtx.x0 = (-m1.mtx.yy * m1.mtx.x0 + m1.mtx.xy * m1.mtx.y0) / det;
-	m2.mtx.y0 = ( m1.mtx.yx * m1.mtx.x0 - m1.mtx.xx * m1.mtx.y0) / det;
 
 	_hg_array_convert_from_matrix(ret, &m2);
 

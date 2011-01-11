@@ -41,6 +41,7 @@ hg_public_headers =						\
 	hglineedit.h						\
 	hgmacros.h						\
 	hgmark.h						\
+	hgmatrix.h						\
 	hgmem.h							\
 	hgname.h						\
 	hgnull.h						\
@@ -85,6 +86,7 @@ hg_sources =							\
 	hgfile.c						\
 	hggstate.c						\
 	hglineedit.l						\
+	hgmatrix.c						\
 	hgmem.c							\
 	hgname.c						\
 	hgpath.c						\
