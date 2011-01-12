@@ -1,6 +1,6 @@
 #! /bin/sh
 # run.sh
-# Copyright (C) 2010 Akira TAGOH
+# Copyright (C) 2010-2011 Akira TAGOH
 #
 # Authors:
 #   Akira TAGOH  <akira@tagoh.org>

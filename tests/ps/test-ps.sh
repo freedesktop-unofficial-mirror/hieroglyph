@@ -1,6 +1,6 @@
 #! /bin/sh
 # test-ps.sh
-# Copyright (C) 2006-2010 Akira TAGOH
+# Copyright (C) 2006-2011 Akira TAGOH
 #
 # Authors:
 #   Akira TAGOH  <akira@tagoh.org>
