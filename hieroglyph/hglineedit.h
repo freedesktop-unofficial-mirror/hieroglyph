@@ -27,7 +27,7 @@
 #include <hieroglyph/hgtypes.h>
 #include <hieroglyph/hgfile.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 typedef struct _hg_lineedit_vtable_t	hg_lineedit_vtable_t;
 typedef struct _hg_lineedit_t		hg_lineedit_t;
@@ -71,6 +71,6 @@ void                  hg_lineedit_set_outfile       (hg_lineedit_t              
 gboolean              hg_lineedit_gc_mark           (hg_lineedit_t               *lineedit,
 						     GError                     **error);
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGLINEEDIT_H__ */

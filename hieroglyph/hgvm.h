@@ -30,7 +30,7 @@
 #include <hieroglyph/hgscanner.h>
 #include <hieroglyph/hgstack.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 #define HG_VM_LOCK(_v_,_q_,_e_)						\
 	(hg_vm_lock_object((_v_),(_q_),__PRETTY_FUNCTION__,(_e_)))
@@ -348,6 +348,6 @@ hg_vm_value_t *hg_vm_value_integer_new(gint32       value);
 hg_vm_value_t *hg_vm_value_real_new   (gdouble      value);
 hg_vm_value_t *hg_vm_value_string_new (const gchar *value);
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGVM_H__ */

@@ -26,7 +26,7 @@
 
 #include <hieroglyph/hgobject.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 #define HG_DICT_INIT							\
 	G_STMT_START {							\
@@ -83,6 +83,6 @@ gboolean            hg_dict_first_item            (hg_dict_t                *dic
 						   GError                  **error);
 
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGDICT_H__ */

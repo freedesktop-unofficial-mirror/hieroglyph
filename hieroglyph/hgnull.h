@@ -26,7 +26,7 @@
 
 #include <hieroglyph/hgquark.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 typedef struct _hg_bs_null_t	hg_bs_null_t;
 
@@ -43,6 +43,6 @@ struct _hg_bs_null_t {
 	(hg_quark_get_type(_v_) == HG_TYPE_NULL)
 
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HG_NULL_H__ */

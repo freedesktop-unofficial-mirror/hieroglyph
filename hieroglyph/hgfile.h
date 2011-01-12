@@ -28,7 +28,7 @@
 #include <hieroglyph/hgobject.h>
 #include <hieroglyph/hgstring.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 #define HG_FILE_INIT						\
 	HG_STRING_INIT;						\
@@ -194,6 +194,6 @@ void                    hg_file_set_error          (GError                      
 						    guint                              errno_);
 
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGFILE_H__ */

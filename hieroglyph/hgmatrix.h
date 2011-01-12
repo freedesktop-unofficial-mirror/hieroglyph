@@ -26,7 +26,7 @@
 
 #include <hieroglyph/hgtypes.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 union _hg_matrix_t {
 	struct {
@@ -66,6 +66,6 @@ void     hg_matrix_get_affine   (hg_matrix_t *matrix,
                                  gdouble     *x0,
                                  gdouble     *y0);
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGMATRIX_H__ */

@@ -27,7 +27,7 @@
 #include <gmodule.h>
 #include <hieroglyph/hgtypes.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 typedef hg_device_t *	(* hg_device_init_func_t)	(void);
 typedef void		(* hg_device_finalize_func_t)	(hg_device_t *device);
@@ -138,6 +138,6 @@ hg_device_t *hg_device_null_new(hg_mem_t *mem);
 hg_device_t *hg_init    (void);
 void         hg_finalize(hg_device_t *device);
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGDEVICE_H__ */

@@ -27,7 +27,7 @@
 #include <hieroglyph/hgobject.h>
 #include <hieroglyph/hgarray.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 #define HG_STACK_INIT						\
 	(hg_object_register(HG_TYPE_STACK,			\
@@ -72,6 +72,6 @@ void                hg_stack_foreach          (hg_stack_t                *stack,
 					       gboolean                   is_forwarded,
                                                GError                   **error);
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGSTACK_H__ */

@@ -26,8 +26,9 @@
 
 #include <check.h>
 #include <glib.h>
+#include <hieroglyph/hgmacros.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 #define HIEROGLYPH_TEST_ERROR	hieroglyph_test_get_error_quark()
 #define TDEF(fn)		START_TEST (test_ ## fn)
@@ -43,6 +44,6 @@ GQuark  hieroglyph_test_get_error_quark     (void);
 gchar  *hieroglyph_test_pop_error           (void) G_GNUC_MALLOC;
 
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_TEST_MAIN_H__ */

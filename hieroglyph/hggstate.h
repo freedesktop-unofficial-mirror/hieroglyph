@@ -28,7 +28,7 @@
 #include <hieroglyph/hgmatrix.h>
 #include <hieroglyph/hgpath.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 #define HG_GSTATE_INIT						\
 	(hg_object_register(HG_TYPE_GSTATE,			\
@@ -127,6 +127,6 @@ gboolean            hg_gstate_set_dash         (hg_gstate_t    *gstate,
 						GError        **error);
 
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGGSTATE_H__ */

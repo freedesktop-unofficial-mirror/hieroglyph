@@ -27,7 +27,7 @@
 #include <hieroglyph/hgtypes.h>
 #include <hieroglyph/hgquark.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 #define BLOCK_SIZE		32
 
@@ -145,6 +145,6 @@ _hg_allocator_quark_get_index(hg_quark_t qdata)
 						     HG_ALLOC_TYPE_BIT_INDEX_END)) >> HG_ALLOC_TYPE_BIT_INDEX;
 }
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGALLOCATOR_PRIVATE_H__ */

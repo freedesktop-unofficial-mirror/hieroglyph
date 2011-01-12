@@ -26,7 +26,7 @@
 
 #include <hieroglyph/hgobject.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 #define HG_PATH_INIT						\
 	(hg_object_register(HG_TYPE_PATH,			\
@@ -167,6 +167,6 @@ gboolean            hg_path_get_bbox         (hg_path_t                 *path,
 					      hg_path_bbox_t            *ret,
 					      GError                   **error);
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGPATH_H__ */

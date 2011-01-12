@@ -26,7 +26,7 @@
 
 #include <hieroglyph/hgencoding.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 #define HG_QNAME(_n_,_s_)			\
 	hg_name_new_with_string(_n_,_s_, -1)
@@ -67,6 +67,6 @@ hg_quark_t   hg_name_new_with_string  (hg_name_t            *name,
 const gchar *hg_name_lookup           (hg_name_t            *name,
                                        hg_quark_t            quark);
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGNAME_H__ */

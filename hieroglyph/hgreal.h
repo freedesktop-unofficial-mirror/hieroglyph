@@ -29,7 +29,7 @@
 #include <math.h>
 #include <string.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 typedef struct _hg_bs_real_t	hg_bs_real_t;
 
@@ -113,6 +113,6 @@ hg_real_convert_to_native(hg_quark_t qreal)
 	return v.v_double;
 }
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGREAL_H__ */

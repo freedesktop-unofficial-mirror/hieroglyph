@@ -26,7 +26,7 @@
 
 #include <hieroglyph/hgquark.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 typedef struct _hg_bs_bool_t	hg_bs_bool_t;
 
@@ -45,6 +45,6 @@ struct _hg_bs_bool_t {
 	(hg_quark_get_type(_v_) == HG_TYPE_BOOL)
 
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGBOOL_H__ */

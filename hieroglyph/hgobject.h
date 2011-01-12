@@ -27,7 +27,7 @@
 #include <stdarg.h>
 #include <hieroglyph/hgquark.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 #define HG_DEFINE_VTABLE(_name_)					\
 	static void        _hg_object_ ## _name_ ## _free                (hg_object_t              *object); \
@@ -177,6 +177,6 @@ hg_quark_t  hg_object_quark_copy    (hg_mem_t                 *mem,
 				     gpointer                 *ret,
 				     GError                  **error);
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGOBJECT_H__ */

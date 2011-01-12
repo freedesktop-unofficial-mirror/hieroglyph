@@ -26,7 +26,7 @@
 
 #include <hieroglyph/hgtypes.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 typedef struct _hg_allocator_bitmap_t		hg_allocator_bitmap_t;
 typedef struct _hg_allocator_block_t		hg_allocator_block_t;
@@ -36,6 +36,6 @@ typedef struct _hg_allocator_snapshot_private_t	hg_allocator_snapshot_private_t;
 
 hg_mem_vtable_t *hg_allocator_get_vtable   (void) G_GNUC_CONST;
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGALLOCATOR_H__ */

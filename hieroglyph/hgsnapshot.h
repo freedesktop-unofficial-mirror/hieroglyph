@@ -26,7 +26,7 @@
 
 #include <hieroglyph/hgobject.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 #define HG_SNAPSHOT_INIT					\
 	(hg_object_register(HG_TYPE_SNAPSHOT,			\
@@ -48,6 +48,6 @@ gboolean            hg_snapshot_restore          (hg_snapshot_t *snapshot,
 						  gpointer       data);
 
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGSNAPSHOT_H__ */

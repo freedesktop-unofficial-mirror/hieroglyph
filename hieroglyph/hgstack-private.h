@@ -26,7 +26,7 @@
 
 #include <hieroglyph/hgobject.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 typedef struct _hg_slist_t	hg_slist_t;
 
@@ -46,6 +46,6 @@ struct _hg_stack_t {
 	gboolean     validate_depth;
 };
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGSTACK_PRIVATE_H__ */

@@ -29,7 +29,7 @@
 #include "hgmem.h"
 #include "hgobject.h"
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 #define HG_DICT_MAX_SIZE	65535
 #define HG_DICT_NODE_LOCK(_mem_,_node_quark_,_nodeprefix_,_comment_,_error_) \
@@ -95,6 +95,6 @@ struct _hg_dict_node_t {
 
 void _hg_dict_node_set_size(gsize size);
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGDICT_PRIVATE_H__ */

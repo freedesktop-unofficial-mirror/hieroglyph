@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
- * version.h
- * Copyright (C) 2005-2010 Akira TAGOH
+ * hgversion.h
+ * Copyright (C) 2005-2011 Akira TAGOH
  * 
  * Authors:
  *   Akira TAGOH  <akira@tagoh.org>
@@ -27,7 +27,7 @@
 #include <glib/gmacros.h>
 
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 #define HIEROGLYPH_VERSION		"@VERSION@"
 #define HIEROGLYPH_MAJOR_VERSION	@HIEROGLYPH_MAJOR_VERSION@
@@ -36,6 +36,6 @@ G_BEGIN_DECLS
 
 const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH__VERSION_H__ */

@@ -27,7 +27,7 @@
 #include <hieroglyph/hgtypes.h>
 #include <hieroglyph/hgerror.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 #define HG_MEM_FLAGS_DEFAULT			HG_MEM_RESTORABLE
 #define HG_MEM_FLAGS_DEFAULT_WITHOUT_RESTORABLE	(HG_MEM_FLAGS_DEFAULT & ~HG_MEM_RESTORABLE)
@@ -161,6 +161,6 @@ hg_mem_lock_object_with_gerror(hg_mem_t     *mem,
 	hg_return_val_with_gerror_if_lock_fail(_o_,_m_,_q_,NULL,)
 
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGMEM_H__ */

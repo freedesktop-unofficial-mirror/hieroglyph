@@ -26,7 +26,7 @@
 
 #include <hieroglyph/hgquark.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 typedef struct _hg_bs_mark_t	hg_bs_mark_t;
 
@@ -43,6 +43,6 @@ struct _hg_bs_mark_t {
 	(hg_quark_get_type(_v_) == HG_TYPE_MARK)
 
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HG_MARK_H__ */

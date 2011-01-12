@@ -27,7 +27,7 @@
 #include <gmodule.h>
 #include <hieroglyph/hgtypes.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 #define HG_PLUGIN_VERSION	0x0001
 
@@ -81,6 +81,6 @@ gboolean     hg_plugin_unload (hg_plugin_t       *plugin,
 			       gpointer           vm,
 			       GError           **error);
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGPLUGIN_H__ */

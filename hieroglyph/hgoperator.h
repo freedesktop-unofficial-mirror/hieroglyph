@@ -26,7 +26,7 @@
 
 #include <hieroglyph/hgtypes.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 #define HG_QOPER(_v_)				\
 	(hg_operator_new(_v_))
@@ -214,6 +214,6 @@ gboolean     hg_operator_register      (hg_vm_t             *vm,
                                         hg_name_t           *name,
                                         hg_vm_langlevel_t    lang_level);
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGOPERATOR_H__ */

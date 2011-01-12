@@ -28,7 +28,7 @@
 #include <errno.h>
 #include <hieroglyph/hgmacros.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 #define HG_ERROR	hg_error_quark()
 
@@ -157,6 +157,6 @@ gboolean  hg_is_stacktrace_enabled(void);
 GQuark    hg_error_quark          (void);
 
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGERROR_H__ */

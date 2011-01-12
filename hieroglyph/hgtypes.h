@@ -26,7 +26,7 @@
 
 #include <hieroglyph/hgmacros.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 #define Qnil	(hg_quark_t)((guint32)-1)
 
@@ -822,6 +822,6 @@ enum _hg_system_encoding_t {
 };
 
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGTYPES_H__ */

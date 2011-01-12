@@ -27,7 +27,7 @@
 #include <string.h>
 #include <hieroglyph/hgobject.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 #define HG_STRING_INIT						\
 	(hg_object_register(HG_TYPE_STRING,			\
@@ -113,6 +113,6 @@ gboolean            hg_string_copy_as_substring (hg_string_t        *src,
                                                  gssize              end_index,
                                                  GError            **error);
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGSTRING_H__ */

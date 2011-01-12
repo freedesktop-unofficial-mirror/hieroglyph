@@ -28,7 +28,7 @@
 #include <hieroglyph/hgerror.h>
 
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 #define HG_QUARK_TYPE_BIT_SHIFT		32
 
@@ -693,6 +693,6 @@ hg_quark_compare(hg_quark_t              qdata1,
 	return func(qdata1, qdata2, user_data);
 }
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGQUARK_H__ */

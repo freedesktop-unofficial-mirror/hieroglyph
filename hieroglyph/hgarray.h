@@ -26,7 +26,7 @@
 
 #include <hieroglyph/hgobject.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 #define HG_ARRAY_INIT						\
 	(hg_object_register(HG_TYPE_ARRAY,			\
@@ -109,6 +109,6 @@ gboolean            hg_array_matrix_translate (hg_array_t                *matrix
 					       gdouble                    ty);
 
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGARRAY_H__ */

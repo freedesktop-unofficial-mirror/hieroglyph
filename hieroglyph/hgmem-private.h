@@ -26,7 +26,7 @@
 
 #include <hieroglyph/hgtypes.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 struct _hg_mem_t {
 	hg_mem_vtable_t     *allocator;
@@ -44,6 +44,6 @@ struct _hg_mem_t {
 	gboolean             enable_gc:1;
 };
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGMEM_PRIVATE_H__ */

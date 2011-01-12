@@ -28,7 +28,7 @@
 #include <hieroglyph/hgfile.h>
 #include <hieroglyph/hgname.h>
 
-G_BEGIN_DECLS
+HG_BEGIN_DECLS
 
 
 hg_scanner_t *hg_scanner_new        (hg_mem_t      *mem,
@@ -42,6 +42,6 @@ gboolean      hg_scanner_scan       (hg_scanner_t  *scanner,
 hg_quark_t    hg_scanner_get_token  (hg_scanner_t  *scanner);
 hg_file_t    *hg_scanner_get_infile (hg_scanner_t  *scanner);
 
-G_END_DECLS
+HG_END_DECLS
 
 #endif /* __HIEROGLYPH_HGSCANNER_H__ */
