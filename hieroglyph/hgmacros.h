@@ -48,8 +48,12 @@
 #endif
 
 /* boolean */
-#define HG_FALSE	(0)
-#define HG_TRUE		(!HG_FALSE)
+#ifndef FALSE
+#define FALSE	(0)
+#endif
+#ifndef TRUE
+#define TRUE	(!FALSE)
+#endif
 
 /* interconversion between hg_quark_t and hg_pointer_t */
 #define HGPOINTER_TO_QUARK(_p_)	((hg_quark_t)(_p_))
