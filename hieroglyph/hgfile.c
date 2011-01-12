@@ -32,6 +32,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <glib.h>
 #include "hglineedit.h"
 #include "hgmem.h"
 #include "hgfile.h"
@@ -112,7 +113,7 @@ HG_DEFINE_VTABLE (file);
 static gsize
 _hg_object_file_get_capsulated_size(void)
 {
-	return hg_mem_aligned_size (sizeof (hg_file_t));
+	return HG_ALIGNED_TO_POINTER (sizeof (hg_file_t));
 }
 
 static guint

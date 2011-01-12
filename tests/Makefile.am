@@ -8,6 +8,7 @@ INCLUDES =						\
 	$(CHECK_CFLAGS)					\
 	-I$(top_srcdir)					\
 	-I$(top_srcdir)/hieroglyph			\
+	-DHG_COMPILATION				\
 	$(NULL)
 DEPS =							\
 	$(top_builddir)/hieroglyph/libhieroglyph.la	\

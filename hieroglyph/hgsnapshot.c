@@ -25,6 +25,7 @@
 #include "config.h"
 #endif
 
+#include <glib.h>
 #include "hgmem.h"
 #include "hgsnapshot.h"
 
@@ -42,7 +43,7 @@ HG_DEFINE_VTABLE (snapshot);
 static gsize
 _hg_object_snapshot_get_capsulated_size(void)
 {
-	return hg_mem_aligned_size (sizeof (hg_snapshot_t));
+	return HG_ALIGNED_TO_POINTER (sizeof (hg_snapshot_t));
 }
 
 static guint

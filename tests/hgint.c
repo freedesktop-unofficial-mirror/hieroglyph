@@ -25,8 +25,8 @@
 #include "config.h"
 #endif
 
-#include "hgint.h"
 #include "main.h"
+#include "hgint.h"
 
 
 /** common **/

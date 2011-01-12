@@ -25,11 +25,11 @@
 #include "config.h"
 #endif
 
+#include "main.h"
 #include "hgint.h"
 #include "hgstack-private.h"
 #include "hgstack.h"
 #include "hgmem.h"
-#include "main.h"
 
 
 hg_mem_t *mem = NULL;

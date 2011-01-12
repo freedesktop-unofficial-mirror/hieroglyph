@@ -27,6 +27,7 @@
 
 #include <ctype.h>
 #include <string.h>
+#include <glib.h>
 #include "hgerror.h"
 #include "hgmem.h"
 #include "hgquark.h"
@@ -44,7 +45,7 @@ HG_DEFINE_VTABLE_WITH (string, NULL, NULL, NULL);
 static gsize
 _hg_object_string_get_capsulated_size(void)
 {
-	return hg_mem_aligned_size (sizeof (hg_string_t));
+	return HG_ALIGNED_TO_POINTER (sizeof (hg_string_t));
 }
 
 static guint

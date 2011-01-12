@@ -122,9 +122,10 @@ LEX_OUTPUT_ROOT=lex.$(basename $<)
 
 ##
 # Local Rules
-$(hg_proto_files): $(hg_lex_sources) $(hg_sources) $(top_srcdir)/build_tools/genfuncdecls.sh Makefile
 .c.proto:
-	$(AM_V_GEN)[[ ! -f $(<:.c=.l) ]] && $(top_srcdir)/build_tools/genfuncdecls.sh $< > $@ || $(top_srcdir)/build_tools/genfuncdecls.sh $(<:.c=.l) > $@
+	$(AM_V_GEN)[[ ! -f $(<:.c=.l) ]] && $(top_srcdir)/build_tools/genfuncdecls.sh $< > gfp || $(top_srcdir)/build_tools/genfuncdecls.sh $(<:.c=.l) > gfp;	\
+	(cmp -s gfp $@ || cp gfp $@)	\
+	&& rm -f gfp
 
 ##
 # Target platform

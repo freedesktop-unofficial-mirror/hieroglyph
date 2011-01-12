@@ -26,6 +26,7 @@
 #endif
 
 #include <string.h>
+#include <glib.h>
 #include "hgerror.h"
 #include "hgmark.h"
 #include "hgmem.h"
@@ -161,7 +162,7 @@ hg_object_new(hg_mem_t  *mem,
 
 	v = __hg_object_vtables[type];
 	size = v->get_capsulated_size();
-	index = _hg_object_new(mem, type, size + hg_mem_aligned_size (preallocated_size), &retval);
+	index = _hg_object_new(mem, type, size + HG_ALIGNED_TO_POINTER (preallocated_size), &retval);
 	if (index == Qnil)
 		return Qnil;
 

@@ -26,6 +26,7 @@
 #endif
 
 #include <string.h>
+#include <glib.h>
 #include "hgerror.h"
 #include "hgquark.h"
 #include "hgname.h"

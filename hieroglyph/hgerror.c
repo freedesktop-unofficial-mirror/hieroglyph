@@ -27,6 +27,7 @@
 
 #include <execinfo.h>
 #include <stdlib.h>
+#include <glib.h>
 #include "hgerror.h"
 
 

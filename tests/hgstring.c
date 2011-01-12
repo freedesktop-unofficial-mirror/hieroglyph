@@ -25,9 +25,9 @@
 #include "config.h"
 #endif
 
+#include "main.h"
 #include "hgstring.h"
 #include "hgmem.h"
-#include "main.h"
 
 
 hg_mem_t *mem = NULL;

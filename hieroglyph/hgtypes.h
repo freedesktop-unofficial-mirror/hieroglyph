@@ -32,6 +32,7 @@ G_BEGIN_DECLS
 
 /* hgquark.h */
 typedef gint64				hg_quark_t;
+typedef gpointer			hg_pointer_t;
 
 /* hgmem.h */
 typedef struct _hg_mem_t		hg_mem_t;

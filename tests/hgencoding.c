@@ -26,8 +26,8 @@
 #endif
 
 #include <string.h>
-#include "hgencoding.h"
 #include "main.h"
+#include "hgencoding.h"
 
 
 /** common **/

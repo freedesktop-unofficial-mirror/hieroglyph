@@ -25,6 +25,7 @@
 #include "config.h"
 #endif
 
+#include <glib.h>
 #include "hgerror.h"
 #include "hgencoding.h"
 

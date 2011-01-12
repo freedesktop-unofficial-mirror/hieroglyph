@@ -25,10 +25,10 @@
 #include "config.h"
 #endif
 
+#include "main.h"
 #include "hgmem.h"
 #include "hgdict-private.h"
 #include "hgdict.h"
-#include "main.h"
 
 
 void tree2string(hg_mem_t   *mem,

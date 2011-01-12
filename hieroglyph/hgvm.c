@@ -26,6 +26,7 @@
 #endif
 
 #include <stdlib.h>
+#include <glib.h>
 #include "hgbool.h"
 #include "hgdevice.h"
 #include "hgdict.h"

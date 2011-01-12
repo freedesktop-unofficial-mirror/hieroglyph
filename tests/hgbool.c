@@ -25,8 +25,8 @@
 #include "config.h"
 #endif
 
-#include "hgbool.h"
 #include "main.h"
+#include "hgbool.h"
 
 
 /** common **/

@@ -4,6 +4,7 @@ NULL =
 INCLUDES =							\
 	$(GLIB_CFLAGS)						\
 	-I$(top_srcdir)						\
+	-DHG_COMPILATION					\
 	$(NULL)
 LIBS =								\
 	@LDFLAGS@						\

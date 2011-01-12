@@ -25,6 +25,7 @@
 #include "config.h"
 #endif
 
+#include <glib.h>
 #include "hgarray.h"
 #include "hgint.h"
 #include "hgmem.h"
@@ -39,7 +40,7 @@ HG_DEFINE_VTABLE_WITH (gstate, NULL, NULL, NULL);
 static gsize
 _hg_object_gstate_get_capsulated_size(void)
 {
-	return hg_mem_aligned_size (sizeof (hg_gstate_t));
+	return HG_ALIGNED_TO_POINTER (sizeof (hg_gstate_t));
 }
 
 static guint

@@ -25,8 +25,8 @@
 #include "config.h"
 #endif
 
-#include "hgquark.h"
 #include "main.h"
+#include "hgquark.h"
 
 /** common **/
 void

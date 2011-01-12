@@ -25,8 +25,8 @@
 #include "config.h"
 #endif
 
-#include "hgmark.h"
 #include "main.h"
+#include "hgmark.h"
 
 
 /** common **/

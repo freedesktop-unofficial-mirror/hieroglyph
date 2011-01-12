@@ -26,6 +26,7 @@
 #include "config.h"
 #endif
 
+#include <glib.h>
 #include "hgerror.h"
 #include "hgmem.h"
 #include "hglineedit.h"

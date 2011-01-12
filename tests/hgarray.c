@@ -25,11 +25,11 @@
 #include "config.h"
 #endif
 
+#include "main.h"
 #include "hgarray.h"
 #include "hgint.h"
 #include "hgmem.h"
 #include "hgnull.h"
-#include "main.h"
 
 
 hg_mem_t *mem = NULL;

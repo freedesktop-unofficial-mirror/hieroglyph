@@ -25,8 +25,8 @@
 #include "config.h"
 #endif
 
-#include "hgname.h"
 #include "main.h"
+#include "hgname.h"
 
 
 hg_name_t *name = NULL;

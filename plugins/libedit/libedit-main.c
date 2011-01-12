@@ -30,6 +30,7 @@
 #endif
 
 #include <readline.h>
+#include <glib.h>
 #define PLUGIN
 #include "hgdict.h"
 #include "hgplugin.h"

@@ -26,6 +26,7 @@
 #endif /* HAVE_CONFIG_H */
 
 #include <math.h>
+#include <glib.h>
 #include "hgallocator.h"
 #include "hgerror.h"
 #include "hgquark.h"

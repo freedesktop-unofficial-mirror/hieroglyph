@@ -74,12 +74,6 @@ enum _hg_allocator_type_bit_t {
 	HG_ALLOC_TYPE_BIT_END
 };
 
-#define hg_get_allocated_object(x)		\
-	(gpointer)((gchar *)(x) + hg_mem_aligned_size(sizeof (hg_allocator_block_t)))
-#define hg_get_allocator_block(x)		\
-	(hg_allocator_block_t *)((gchar *)(x) - hg_mem_aligned_size(sizeof (hg_allocator_block_t)))
-
-
 struct _hg_allocator_bitmap_t {
 	guint32    **bitmaps;
 	gsize       *size;
@@ -108,11 +102,18 @@ struct _hg_allocator_snapshot_private_t {
 };
 
 
-G_INLINE_FUNC hg_quark_t             _hg_allocator_quark_build                           (gint32                   page,
-                                                                                          guint32                  idx);
-G_INLINE_FUNC guint32                _hg_allocator_quark_get_page                        (hg_quark_t               qdata);
-G_INLINE_FUNC guint32                _hg_allocator_quark_get_index                       (hg_quark_t               qdata);
+G_INLINE_FUNC hg_allocator_block_t  *_hg_allocator_get_block      (hg_pointer_t *p);
+G_INLINE_FUNC hg_quark_t             _hg_allocator_quark_build    (gint32        page,
+								   guint32       idx);
+G_INLINE_FUNC guint32                _hg_allocator_quark_get_page (hg_quark_t    qdata);
+G_INLINE_FUNC guint32                _hg_allocator_quark_get_index(hg_quark_t    qdata);
 
+
+G_INLINE_FUNC hg_allocator_block_t *
+_hg_allocator_get_block(hg_pointer_t *p)
+{
+	return (hg_allocator_block_t *)((gchar *)(p) - HG_ALIGNED_TO_POINTER (sizeof (hg_allocator_block_t)));
+}
 
 G_INLINE_FUNC hg_quark_t
 _hg_allocator_quark_build(gint32  page,

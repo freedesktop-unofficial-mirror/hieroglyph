@@ -27,6 +27,7 @@
 
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <glib.h>
 #include "hgerror.h"
 #include "hgbool.h"
 #include "hgdevice.h"

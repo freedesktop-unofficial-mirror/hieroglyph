@@ -26,6 +26,7 @@
 #endif
 
 #include <string.h>
+#include <glib.h>
 #include "hgarray.h"
 #include "hgbool.h"
 #include "hgdict.h"

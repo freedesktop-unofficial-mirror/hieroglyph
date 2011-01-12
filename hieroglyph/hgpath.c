@@ -25,6 +25,7 @@
 #include "config.h"
 #endif
 
+#include <glib.h>
 #include "hgmem.h"
 #include "hgpath.h"
 
@@ -46,7 +47,7 @@ HG_DEFINE_VTABLE_WITH (path, NULL, NULL, NULL);
 static gsize
 _hg_object_path_get_capsulated_size(void)
 {
-	return hg_mem_aligned_size (sizeof (hg_path_t));
+	return HG_ALIGNED_TO_POINTER (sizeof (hg_path_t));
 }
 
 static guint

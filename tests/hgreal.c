@@ -25,8 +25,8 @@
 #include "config.h"
 #endif
 
-#include "hgreal.h"
 #include "main.h"
+#include "hgreal.h"
 
 
 /** common **/

@@ -25,8 +25,8 @@
 #include "config.h"
 #endif
 
-#include "hgnull.h"
 #include "main.h"
+#include "hgnull.h"
 
 
 /** common **/

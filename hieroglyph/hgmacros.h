@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
  * hgmacros.h
- * Copyright (C) 2006-2010 Akira TAGOH
+ * Copyright (C) 2006-2011 Akira TAGOH
  * 
  * Authors:
  *   Akira TAGOH  <akira@tagoh.org>
@@ -21,26 +21,45 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#if !defined (__HG_H_INSIDE__) && !defined (HG_COMPILATION)
+#error "Only <hieroglyph/hg.h> can be included directly."
+#endif
+
+#include <stddef.h>
+
 #ifndef __HIEROGLYPH_HGMACROS_H__
 #define __HIEROGLYPH_HGMACROS_H__
 
-#include <glib.h>
-
-G_BEGIN_DECLS
-
+/* enable a debugging code */
 #if defined(GNOME_ENABLE_DEBUG) || defined(DEBUG)
 #define HG_DEBUG
+#define hg_d(x)		x
+#else
+#define hg_d(x)
 #endif /* GNOME_ENABLE_DEBUG || DEBUG */
 
-#define HGPOINTER_TO_QUARK(p)	((hg_quark_t)(gulong)(p))
-#define HGQUARK_TO_POINTER(q)	((gpointer)(gulong)(q))
+/* Guard C code in headers, while including them from C++ */
+#ifdef __cplusplus
+#define HG_BEGIN_DECLS	extern "C" {
+#define HG_END_DECLS	}
+#else
+#define HG_BEGIN_DECLS
+#define HG_END_DECLS
+#endif
 
-#define hg_mem_aligned_to(x,y)			\
-	(((x) + (y) - 1) & ~((y) - 1))
-#define hg_mem_aligned_size(x)			\
-	hg_mem_aligned_to(x, ALIGNOF_VOID_P)
+/* boolean */
+#define HG_FALSE	(0)
+#define HG_TRUE		(!HG_FALSE)
 
+/* interconversion between hg_quark_t and hg_pointer_t */
+#define HGPOINTER_TO_QUARK(_p_)	((hg_quark_t)(_p_))
+#define HGQUARK_TO_POINTER(_q_)	((hg_pointer_t)(hg_quark_t)(_q_))
 
-G_END_DECLS
+/* Macros to adjust an alignment */
+#define HG_ALIGNED_TO(_x_,_y_)			\
+	(((_x_) + (_y_) - 1) & ~((_y_) - 1))
+#define HG_ALIGNED_TO_POINTER(_x_)		\
+	HG_ALIGNED_TO ((_x_), ALIGNOF_VOID_P)
+
 
 #endif /* __HIEROGLYPH_HGMACROS_H__ */

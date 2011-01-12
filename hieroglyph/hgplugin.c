@@ -26,6 +26,7 @@
 #endif
 
 #include <string.h>
+#include <glib.h>
 #include "hgmem.h"
 #include "hgplugin.h"
 

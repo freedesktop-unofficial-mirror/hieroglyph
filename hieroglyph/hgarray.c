@@ -26,6 +26,7 @@
 #endif
 
 #include <string.h>
+#include <glib.h>
 #include "hgerror.h"
 #include "hgmatrix.h"
 #include "hgmem.h"
@@ -47,7 +48,7 @@ HG_DEFINE_VTABLE_WITH (array, NULL, NULL, NULL);
 static gsize
 _hg_object_array_get_capsulated_size(void)
 {
-	return hg_mem_aligned_size (sizeof (hg_array_t));
+	return HG_ALIGNED_TO_POINTER (sizeof (hg_array_t));
 }
 
 static guint

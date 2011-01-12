@@ -25,6 +25,7 @@
 #include "config.h"
 #endif
 
+#include <glib.h>
 #include "hgerror.h"
 #include "hgmem.h"
 #include "hgstring.h"
@@ -60,7 +61,7 @@ static gsize __hg_dict_node_size = HG_DICT_NODE_SIZE;
 static gsize
 _hg_object_dict_get_capsulated_size(void)
 {
-	return hg_mem_aligned_size (sizeof (hg_dict_t));
+	return HG_ALIGNED_TO_POINTER (sizeof (hg_dict_t));
 }
 
 static guint
@@ -214,7 +215,7 @@ _hg_object_dict_get_attributes(hg_object_t *object)
 static gsize
 _hg_object_dict_node_get_capsulated_size(void)
 {
-	return hg_mem_aligned_size (sizeof (hg_dict_node_t));
+	return HG_ALIGNED_TO_POINTER (sizeof (hg_dict_node_t));
 }
 
 static guint

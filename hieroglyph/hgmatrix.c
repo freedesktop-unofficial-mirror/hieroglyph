@@ -27,6 +27,7 @@
 
 #include <math.h>
 #include <string.h>
+#include <glib.h>
 #include "hgerror.h"
 #include "hgmatrix.h"
 

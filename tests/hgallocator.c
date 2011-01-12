@@ -25,10 +25,10 @@
 #include "config.h"
 #endif
 
+#include "main.h"
 #include "hgallocator.h"
 #include "hgallocator-private.h"
 #include "hgquark.h"
-#include "main.h"
 
 
 hg_mem_vtable_t *vtable = NULL;
@@ -209,17 +209,17 @@ TDEF (lock_object)
 
 	t = vtable->alloc(retval, 128, 0, &p2);
 	fail_unless(t != Qnil, "Unable to allocate the memory.");
-	b = hg_get_allocator_block (p2);
+	b = _hg_allocator_get_block(p2);
 	fail_unless(b->lock_count == 1, "Detected inconsistency in the lock count");
 
 	p = vtable->lock_object(retval, t);
-	b = hg_get_allocator_block (p);
+	b = _hg_allocator_get_block(p);
 	fail_unless(p != NULL, "Unable to obtain the object address.");
 	fail_unless(p == p2, "Obtaining the different object address.");
 	fail_unless(b->lock_count == 2, "Failed to lock the object.");
 
 	p = vtable->lock_object(retval, t);
-	b = hg_get_allocator_block (p);
+	b = _hg_allocator_get_block(p);
 	fail_unless(p != NULL, "Unable to obtain the object address.");
 	fail_unless(b->lock_count == 3, "Failed to lock the object.");
 
