@@ -31,12 +31,7 @@
 #include "hgmem.h"
 #include "hgobject.h"
 
-
-static hg_quark_t _hg_object_new(hg_mem_t    *mem,
-                                 hg_type_t    type,
-                                 gsize        size,
-                                 hg_object_t **ret);
-
+#include "hgobject.proto"
 
 static hg_object_vtable_t *__hg_object_vtables[HG_TYPE_END];
 static gboolean __hg_object_is_initialized = FALSE;

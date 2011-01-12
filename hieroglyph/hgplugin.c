@@ -29,6 +29,8 @@
 #include "hgmem.h"
 #include "hgplugin.h"
 
+#include "hgplugin.proto"
+
 #define CHECK_SYMBOL(_mod_,_sym_,_err_)					\
 	G_STMT_START {							\
 		g_module_symbol(_mod_, #_sym_, &(_sym_));		\

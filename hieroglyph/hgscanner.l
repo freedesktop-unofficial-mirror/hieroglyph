@@ -36,6 +36,7 @@
 #include "hgvm.h"
 #include "hgscanner.h"
 
+#include "hgscanner.proto"
 
 #define HG_SCANNER_MEM_SIZE	100000
 #define YY_DECL			static gboolean _hg_scanner_yylex(hg_scanner_t *scanner, yyscan_t yyscanner, hg_vm_t *vm, GError **error)
@@ -74,10 +75,6 @@ struct _hg_scanner_t {
 	hg_file_t  *infile;
 };
 
-static gboolean _hg_scanner_yylex(hg_scanner_t  *scanner,
-				  yyscan_t       yyscanner,
-				  hg_vm_t       *vm,
-				  GError       **error);
 #ifndef yyget_column
 int yyget_column(yyscan_t yyscanner);
 #endif

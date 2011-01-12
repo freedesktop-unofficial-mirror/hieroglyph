@@ -43,6 +43,8 @@
 #include "hgsnapshot.h"
 #include "hgvm.h"
 
+#include "hgvm.proto"
+
 #define HG_VM_MEM_SIZE		128000
 #define HG_VM_GLOBAL_MEM_SIZE	24000000
 #define HG_VM_LOCAL_MEM_SIZE	1000000
@@ -76,9 +78,6 @@ typedef struct _hg_vm_rs_dump_data_t {
 	hg_file_t *ofile;
 } hg_vm_rs_dump_data_t;
 
-
-static hg_quark_t hg_vm_step_in_exec_array(hg_vm_t    *vm,
-					   hg_quark_t  qparent);
 
 hg_mem_t *__hg_vm_mem = NULL;
 gboolean __hg_vm_is_initialized = FALSE;

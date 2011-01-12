@@ -8,6 +8,7 @@ INCLUDES =							\
 	-DHIEROGLYPH_LIBDIR="\"$(HIEROGLYPH_LIBDIR)\""		\
 	-DHIEROGLYPH_PLUGINDIR="\"$(HIEROGLYPH_PLUGINDIR)\""	\
 	-DHIEROGLYPH_DEVICEDIR="\"$(HIEROGLYPH_DEVICEDIR)\""	\
+	-DHG_COMPILATION					\
 	$(NULL)
 LIBS =								\
 	@LDFLAGS@						\
@@ -21,9 +22,16 @@ EXTRA_DIST =							\
 MAINTAINERCLEANFILES =						\
 	$(NULL)
 CLEANFILES =							\
+	$(hg_proto_files)					\
 	hglineedit.c						\
 	hgscanner.c						\
 	$(NULL)
+BUILT_SOURCES =							\
+	$(hg_built_headers)					\
+	$(hg_built_sources)					\
+	$(hg_proto_files)					\
+	$(NULL)
+SUFFIXES=.proto
 
 ##
 # Local definitions
@@ -75,6 +83,10 @@ hg_built_headers =						\
 #
 hg_built_sources =						\
 	$(NULL)
+hg_lex_sources =						\
+	hglineedit.l						\
+	hgscanner.l						\
+	$(NULL)
 hg_sources =							\
 	$(hg_built_sources)					\
 	hgallocator.c						\
@@ -85,7 +97,6 @@ hg_sources =							\
 	hgerror.c						\
 	hgfile.c						\
 	hggstate.c						\
-	hglineedit.l						\
 	hgmatrix.c						\
 	hgmem.c							\
 	hgname.c						\
@@ -93,11 +104,15 @@ hg_sources =							\
 	hgobject.c						\
 	hgoperator.c						\
 	hgplugin.c						\
-	hgscanner.l						\
 	hgsnapshot.c						\
 	hgstack.c						\
 	hgstring.c						\
 	hgvm.c							\
+	$(NULL)
+#
+hg_proto_files =						\
+	$(hg_lex_sources:.l=.proto)				\
+	$(hg_sources:.c=.proto)					\
 	$(NULL)
 #
 stamp_files =							\
@@ -107,6 +122,9 @@ LEX_OUTPUT_ROOT=lex.$(basename $<)
 
 ##
 # Local Rules
+$(hg_proto_files): $(hg_lex_sources) $(hg_sources) $(top_srcdir)/build_tools/genfuncdecls.sh Makefile
+.c.proto:
+	$(AM_V_GEN)[[ ! -f $(<:.c=.l) ]] && $(top_srcdir)/build_tools/genfuncdecls.sh $< > $@ || $(top_srcdir)/build_tools/genfuncdecls.sh $(<:.c=.l) > $@
 
 ##
 # Target platform
@@ -127,6 +145,7 @@ noinst_HEADERS =						\
 #
 libhieroglyph_la_SOURCES =					\
 	$(hg_sources)						\
+	$(hg_lex_sources)					\
 	$(NULL)
 libhieroglyph_la_CFLAGS =					\
 	-DG_LOG_DOMAIN="\"Hieroglyph\""				\

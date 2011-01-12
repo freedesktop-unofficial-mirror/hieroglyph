@@ -36,95 +36,13 @@
 #include "hgmem.h"
 #include "hgfile.h"
 
+#include "hgfile.proto"
 
 typedef struct _hg_file_io_buffered_data_t {
 	hg_file_io_data_t  data;
 	hg_string_t       *in;
 	hg_string_t       *out;
 } hg_file_io_buffered_data_t;
-
-
-static gboolean     _hg_file_io_data_gc_mark           (hg_quark_t     qdata,
-							gpointer       user_data,
-							GError       **error);
-static gboolean     _hg_file_io_buffered_data_gc_mark  (hg_quark_t     qdata,
-							gpointer       user_data,
-							GError       **error);
-static gboolean     _hg_file_io_real_stdin_open        (hg_file_t     *file,
-							gpointer       user_data,
-							GError       **error);
-static gboolean     _hg_file_io_real_stdout_open       (hg_file_t     *file,
-							gpointer       user_data,
-							GError       **error);
-static gboolean     _hg_file_io_real_stderr_open       (hg_file_t     *file,
-							gpointer       user_data,
-							GError       **error);
-static void         _hg_file_io_real_no_close          (hg_file_t     *file,
-							gpointer       user_data,
-							GError       **error);
-static gboolean     _hg_file_io_real_file_open         (hg_file_t     *file,
-							gpointer       user_data,
-							GError        **error);
-static void         _hg_file_io_real_file_close        (hg_file_t     *file,
-							gpointer       user_data,
-							GError        **error);
-static gssize       _hg_file_io_real_file_read         (hg_file_t     *file,
-							gpointer       user_data,
-							gpointer       buffer,
-							gsize          size,
-							gsize          n,
-							GError        **error);
-static gssize       _hg_file_io_real_file_write        (hg_file_t     *file,
-							gpointer       user_data,
-							gconstpointer  buffer,
-							gsize          size,
-							gsize          n,
-							GError        **error);
-static gboolean     _hg_file_io_real_file_flush        (hg_file_t     *file,
-							gpointer       user_data,
-							GError        **error);
-static gssize       _hg_file_io_real_file_seek         (hg_file_t     *file,
-							gpointer       user_data,
-							gssize         offset,
-							hg_file_pos_t  whence,
-							GError        **error);
-static gboolean     _hg_file_io_real_file_is_eof       (hg_file_t     *file,
-							gpointer       user_data);
-static void         _hg_file_io_real_file_clear_eof    (hg_file_t     *file,
-							gpointer       user_data);
-static gboolean     _hg_file_io_real_buffered_open     (hg_file_t     *file,
-							gpointer       user_data,
-							GError        **error);
-static void         _hg_file_io_real_buffered_close    (hg_file_t     *file,
-							gpointer       user_data,
-							GError        **error);
-static gssize       _hg_file_io_real_buffered_read     (hg_file_t     *file,
-							gpointer       user_data,
-							gpointer       buffer,
-							gsize          size,
-							gsize          n,
-							GError        **error);
-static gssize       _hg_file_io_real_buffered_write    (hg_file_t     *file,
-							gpointer       user_data,
-							gconstpointer  buffer,
-							gsize          size,
-							gsize          n,
-							GError        **error);
-static gboolean     _hg_file_io_real_buffered_flush    (hg_file_t     *file,
-							gpointer       user_data,
-							GError        **error);
-static gssize       _hg_file_io_real_buffered_seek     (hg_file_t     *file,
-							gpointer       user_data,
-							gssize         offset,
-							hg_file_pos_t  whence,
-							GError        **error);
-static gboolean     _hg_file_io_real_buffered_is_eof   (hg_file_t     *file,
-							gpointer       user_data);
-static void         _hg_file_io_real_buffered_clear_eof(hg_file_t     *file,
-							gpointer       user_data);
-static gboolean     _hg_file_io_real_lineedit_open     (hg_file_t     *file,
-							gpointer       user_data,
-							GError       **error);
 
 
 static hg_file_vtable_t __hg_file_io_stdin_vtable = {

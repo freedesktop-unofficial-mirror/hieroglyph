@@ -32,12 +32,7 @@
 #include "hgstack.h"
 #include "hgvm.h"
 
-
-static hg_slist_t *_hg_slist_new  (hg_mem_t   *mem);
-static void        _hg_slist_free (hg_mem_t   *mem,
-				   hg_slist_t  *list);
-static gboolean    _hg_stack_push (hg_stack_t *stack,
-				   hg_quark_t  quark);
+#include "hgstack.proto"
 
 
 HG_DEFINE_VTABLE_WITH (stack, NULL, NULL, NULL);

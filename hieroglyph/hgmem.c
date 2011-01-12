@@ -32,6 +32,8 @@
 #include "hgmem.h"
 #include "hgmem-private.h"
 
+#include "hgmem.proto"
+
 #define HG_MAX_MEM	256
 
 static gint __hg_mem_id = 0;

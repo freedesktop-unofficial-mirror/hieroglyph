@@ -30,6 +30,7 @@
 #include "hgmem.h"
 #include "hglineedit.h"
 
+#include "hglineedit.proto"
 
 #define YY_DECL			static gchar *_hg_lineedit_yylex(hg_lineedit_t *scanner, yyscan_t yyscanner)
 #define yyterminate()		{BEGIN(INITIAL);g_string_free(string, TRUE);return NULL;}
@@ -52,20 +53,6 @@ struct _hg_lineedit_t {
 };
 
 
-static gchar    *_hg_lineedit_real_get_line    (hg_lineedit_t *lineedit,
-                                                const gchar   *prompt,
-                                                gpointer       user_data);
-static void      _hg_lineedit_real_add_history (hg_lineedit_t *lineedit,
-                                                const gchar   *history,
-                                                gpointer       user_data);
-static gboolean  _hg_lineedit_real_load_history(hg_lineedit_t *lineedit,
-                                                const gchar   *historyfile,
-                                                gpointer       user_data);
-static gboolean  _hg_lineedit_real_save_history(hg_lineedit_t *lineedit,
-                                                const gchar   *historyfile,
-                                                gpointer       user_data);
-static gchar    *_hg_lineedit_yylex            (hg_lineedit_t *lineedit,
-						yyscan_t       yyscanner);
 #ifndef yyget_column
 int yyget_column(yyscan_t yyscanner);
 #endif

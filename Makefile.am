@@ -1,6 +1,6 @@
 NULL =
 AUTOMAKE_OPTIONS = dist-bzip2
-SUBDIRS = hieroglyph devices src lib tests
+SUBDIRS = build_tools hieroglyph devices src lib tests
 
 if ENABLE_PLUGINS
 SUBDIRS += plugins

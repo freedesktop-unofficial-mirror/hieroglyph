@@ -199,6 +199,7 @@ dnl output
 dnl ======================================================================
 AC_CONFIG_FILES([
 	Makefile
+	build_tools/Makefile
 	devices/Makefile
 	devices/cairo/Makefile
 	hieroglyph/Makefile

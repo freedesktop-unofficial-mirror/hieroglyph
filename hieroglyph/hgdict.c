@@ -31,6 +31,8 @@
 #include "hgdict-private.h"
 #include "hgdict.h"
 
+#include "hgdict.proto"
+
 #define HG_DICT_NODE_SIZE	5
 
 
@@ -45,77 +47,6 @@ typedef struct _hg_dict_compare_data_t {
 	gboolean                 result;
 } hg_dict_compare_data_t;
 
-G_INLINE_FUNC hg_quark_t _hg_dict_node_new                  (hg_mem_t                 *mem,
-							     gpointer                 *ret,
-							     gpointer                 *ret_key,
-							     gpointer                 *ret_val,
-							     gpointer                 *ret_nodes);
-G_INLINE_FUNC void       _hg_dict_node_free                 (hg_mem_t                 *mem,
-							     hg_quark_t                qnode);
-G_INLINE_FUNC gboolean   _hg_dict_node_insert               (hg_mem_t                 *mem,
-							     hg_quark_t                qnode,
-							     hg_quark_t               *qkey,
-							     hg_quark_t               *qval,
-							     hg_quark_t               *qright_node,
-							     GError                  **error);
-G_INLINE_FUNC void       _hg_dict_node_insert_data          (hg_dict_node_t           *node,
-							     hg_quark_t               *qkeys,
-							     hg_quark_t               *qvals,
-							     hg_quark_t               *qnodes,
-							     hg_quark_t                key,
-							     hg_quark_t                val,
-							     gsize                     pos,
-							     hg_quark_t               *qright_node);
-G_INLINE_FUNC void       _hg_dict_node_balance              (hg_dict_node_t           *node,
-							     hg_quark_t               *qnode_keys,
-							     hg_quark_t               *qnode_vals,
-							     hg_quark_t               *qnode_nodes,
-							     hg_quark_t               *qkey,
-							     hg_quark_t               *qval,
-							     gsize                     pos,
-							     hg_quark_t               *qright_node,
-							     GError                  **error);
-G_INLINE_FUNC gboolean   _hg_dict_node_remove               (hg_mem_t                 *mem,
-							     hg_quark_t                qnode,
-							     hg_quark_t               *qkey,
-							     hg_quark_t               *qval,
-							     gboolean                 *need_restore,
-							     GError                  **error);
-G_INLINE_FUNC gboolean   _hg_dict_node_remove_data          (hg_dict_node_t           *node,
-							     hg_quark_t               *qkeys,
-							     hg_quark_t               *qvals,
-							     hg_quark_t               *qnodes,
-							     gsize                     pos,
-							     GError                  **error);
-G_INLINE_FUNC gboolean   _hg_dict_node_restore              (hg_dict_node_t           *node,
-							     hg_quark_t               *qkeys,
-							     hg_quark_t               *qvals,
-							     hg_quark_t               *qnodes,
-							     gsize                     pos,
-							     GError                  **error);
-G_INLINE_FUNC void       _hg_dict_node_restore_right_balance(hg_dict_node_t           *node,
-							     hg_quark_t               *qkeys,
-							     hg_quark_t               *qvals,
-							     hg_quark_t               *qnodes,
-							     gsize                     pos,
-							     GError                  **error);
-G_INLINE_FUNC void       _hg_dict_node_restore_left_balance (hg_dict_node_t           *node,
-							     hg_quark_t               *qkeys,
-							     hg_quark_t               *qvals,
-							     hg_quark_t               *qnodes,
-							     gsize                     pos,
-							     GError                  **error);
-G_INLINE_FUNC gboolean   _hg_dict_node_combine              (hg_dict_node_t           *node,
-							     hg_quark_t               *qkeys,
-							     hg_quark_t               *qvals,
-							     hg_quark_t               *qnodes,
-							     gsize                     pos,
-							     GError                  **error);
-G_INLINE_FUNC void       _hg_dict_node_foreach              (hg_mem_t                 *mem,
-							     hg_quark_t                qnode,
-							     hg_dict_traverse_func_t   func,
-							     gpointer                  data,
-							     GError                  **error);
 
 HG_PROTO_VTABLE_ATTRIBUTES (dict);
 HG_DEFINE_VTABLE_WITH (dict, NULL,

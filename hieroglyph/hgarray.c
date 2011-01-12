@@ -35,12 +35,11 @@
 #include "hgreal.h"
 #include "hgarray.h"
 
+#include "hgarray.proto"
+
 #define HG_ARRAY_ALLOC_SIZE	65535
 #define HG_ARRAY_MAX_SIZE	65535 /* defined as PostScript spec */
 
-
-static gboolean _hg_array_maybe_expand(hg_array_t *array,
-				       gsize       length);
 
 HG_DEFINE_VTABLE_WITH (array, NULL, NULL, NULL);
 

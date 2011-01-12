@@ -39,6 +39,8 @@
 #include "hgpath.h"
 #include "hgdevice.h"
 
+#include "hgdevice.proto"
+
 /*< private >*/
 static gboolean
 _hg_device_init_page_params(hg_device_t *device,

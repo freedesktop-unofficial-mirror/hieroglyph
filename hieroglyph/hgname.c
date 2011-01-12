@@ -30,6 +30,7 @@
 #include "hgquark.h"
 #include "hgname.h"
 
+#include "hgname.proto"
 
 #define HG_NAME_BLOCK_SIZE	512
 
@@ -38,10 +39,6 @@ struct _hg_name_t {
 	gchar      **quarks;
 	hg_quark_t   seq_id;
 };
-
-G_INLINE_FUNC hg_quark_t _hg_name_new(hg_name_t   *name,
-                                      const gchar *string);
-
 
 /*< private >*/
 G_INLINE_FUNC hg_quark_t

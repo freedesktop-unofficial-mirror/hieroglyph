@@ -28,6 +28,8 @@
 #include "hgmem.h"
 #include "hgpath.h"
 
+#include "hgpath.proto"
+
 #define HG_PATH_MAX	1500
 
 typedef struct _hg_path_bbox_private_t {
