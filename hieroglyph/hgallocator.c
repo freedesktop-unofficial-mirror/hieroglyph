@@ -77,7 +77,7 @@ hg_allocator_get_max_page(void)
 G_INLINE_FUNC hg_pointer_t
 hg_allocator_get_allocated_object(hg_allocator_block_t *block)
 {
-	return (hg_pointer_t)((gchar *)(block) - HG_ALIGNED_TO_POINTER (sizeof (hg_allocator_block_t)));
+	return (hg_pointer_t)((gchar *)(block) + HG_ALIGNED_TO_POINTER (sizeof (hg_allocator_block_t)));
 }
 
 /** bitmap operation **/
