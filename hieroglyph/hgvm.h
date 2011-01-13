@@ -88,6 +88,7 @@ struct _hg_vm_t {
 	hg_mem_t            *mem[HG_VM_MEM_END];
 	gint                 mem_id[HG_VM_MEM_END];
 	hg_quark_t           qio[HG_FILE_IO_END];
+	hg_stack_spool_t    *stack_spooler;
 	hg_stack_t          *stacks[HG_VM_STACK_END];
 	GPtrArray           *stacks_stack;
 	hg_quark_t           qerror_name[HG_VM_e_END];

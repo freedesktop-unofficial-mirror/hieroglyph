@@ -30,20 +30,15 @@ HG_BEGIN_DECLS
 
 typedef struct _hg_slist_t	hg_slist_t;
 
-struct _hg_slist_t {
-	hg_quark_t  self;
-	hg_quark_t  data;
-	hg_slist_t *next;
-};
 struct _hg_stack_t {
-	hg_object_t  o;
-	hg_quark_t   self;
-	hg_vm_t     *vm;
-	hg_slist_t  *last_stack;
-	hg_slist_t  *free_node;
-	gsize        max_depth;
-	gsize        depth;
-	gboolean     validate_depth;
+	hg_object_t       o;
+	hg_quark_t        self;
+	hg_stack_spool_t *spool;
+	hg_vm_t          *vm;
+	hg_slist_t       *last_stack;
+	gsize             max_depth;
+	gsize             depth;
+	gboolean          validate_depth;
 };
 
 HG_END_DECLS

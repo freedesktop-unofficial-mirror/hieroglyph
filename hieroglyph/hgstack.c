@@ -29,16 +29,71 @@
 #include <glib.h>
 #include "hgerror.h"
 #include "hgmem.h"
-#include "hgstack-private.h"
 #include "hgstack.h"
+#include "hgstack-private.h"
 #include "hgvm.h"
 
 #include "hgstack.proto"
 
+struct _hg_slist_t {
+	hg_quark_t  self;
+	hg_quark_t  data;
+	hg_slist_t *next;
+};
+struct _hg_stack_spool_t {
+	hg_mem_t   *mem;
+	hg_quark_t  self;
+	hg_slist_t *spool;
+};
 
 HG_DEFINE_VTABLE_WITH (stack, NULL, NULL, NULL);
 
 /*< private >*/
+static hg_slist_t *
+_hg_stack_spooler_new_node(hg_stack_spool_t *spool)
+{
+	hg_slist_t *retval;
+
+	if (spool->spool) {
+		retval = spool->spool;
+		spool->spool = retval->next;
+
+		hg_mem_reserved_spool_add(spool->mem, retval->self);
+	} else {
+		retval = _hg_slist_new(spool->mem);
+	}
+
+	return retval;
+}
+
+static void
+_hg_stack_spooler_free_node(hg_stack_spool_t *spool,
+			    hg_slist_t       *node)
+{
+	node->next = spool->spool;
+	spool->spool = node;
+
+	hg_mem_reserved_spool_remove(spool->mem, node->self);
+}
+
+static gboolean
+_hg_stack_spooler_gc_mark(hg_stack_spool_t  *spool,
+			  GError           **error)
+{
+	hg_slist_t *l;
+
+	if (spool) {
+		if (!hg_mem_gc_mark(spool->mem, spool->self, error))
+			return FALSE;
+		for (l = spool->spool; l != NULL; l = l->next) {
+			if (!hg_mem_gc_mark(spool->mem, l->self, error))
+				return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
 static gsize
 _hg_object_stack_get_capsulated_size(void)
 {
@@ -59,7 +114,6 @@ _hg_object_stack_initialize(hg_object_t *object,
 
 	stack->max_depth = va_arg(args, gsize);
 	stack->last_stack = NULL;
-	stack->free_node = NULL;
 	stack->depth = 0;
 	stack->validate_depth = TRUE;
 	stack->vm = va_arg(args, hg_vm_t *);
@@ -106,10 +160,8 @@ _hg_object_stack_gc_mark(hg_object_t           *object,
 			break;
 		}
 	}
-	if (stack->free_node) {
-		_hg_slist_free(object->mem, stack->free_node);
-		stack->free_node = NULL;
-	}
+	if (!_hg_stack_spooler_gc_mark(stack->spool, error))
+		retval = FALSE;
 
 	return retval;
 }
@@ -171,12 +223,10 @@ _hg_stack_push(hg_stack_t *stack,
 	hg_slist_t *l;
 	hg_mem_t *m;
 
-	if (stack->free_node) {
-		l = stack->free_node;
-		stack->free_node = l->next;
-	} else {
+	if (stack->spool)
+		l = _hg_stack_spooler_new_node(stack->spool);
+	else
 		l = _hg_slist_new(stack->o.mem);
-	}
 	if (l == NULL)
 		return FALSE;
 
@@ -208,14 +258,63 @@ _hg_stack_pop(hg_stack_t  *stack,
 	l = stack->last_stack;
 	stack->last_stack = l->next;
 	retval = l->data;
-	l->next = stack->free_node;
-	stack->free_node = l;
+	if (stack->spool)
+		_hg_stack_spooler_free_node(stack->spool, l);
+	else
+		_hg_slist_free1(stack->o.mem, l);
 	stack->depth--;
 
 	return retval;
 }
 
 /*< public >*/
+
+/**
+ * hg_stack_spooler_new:
+ * @mem:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_stack_spool_t *
+hg_stack_spooler_new(hg_mem_t *mem)
+{
+	hg_stack_spool_t *retval;
+	hg_quark_t q;
+
+	hg_return_val_if_fail (mem != NULL, NULL);
+
+	q = hg_mem_alloc(mem, sizeof (hg_stack_spool_t),
+			 (gpointer)&retval);
+	if (q == Qnil)
+		return NULL;
+
+	retval->self = q;
+	retval->mem = mem;
+	retval->spool = NULL;
+
+	hg_mem_reserved_spool_add(mem, q);
+
+	return retval;
+}
+
+/**
+ * hg_stack_spooler_destroy:
+ * @spool:
+ *
+ * FIXME
+ */
+void
+hg_stack_spooler_destroy(hg_stack_spool_t *spool)
+{
+	hg_return_if_fail (spool != NULL);
+
+	_hg_slist_free(spool->mem, spool->spool);
+	hg_mem_reserved_spool_remove(spool->mem, spool->self);
+	hg_mem_free(spool->mem, spool->self);
+}
+
 /**
  * hg_stack_new:
  * @mem:
@@ -257,6 +356,22 @@ hg_stack_free(hg_stack_t *stack)
 		return;
 
 	hg_object_free(stack->o.mem, stack->self);
+}
+
+/**
+ * hg_stack_set_spooler:
+ * @stack:
+ * @spool:
+ *
+ * FIXME
+ */
+void
+hg_stack_set_spooler(hg_stack_t       *stack,
+		     hg_stack_spool_t *spool)
+{
+	hg_return_if_fail (stack != NULL);
+
+	stack->spool = spool;
 }
 
 /**

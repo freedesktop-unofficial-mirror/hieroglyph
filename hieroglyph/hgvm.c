@@ -994,6 +994,7 @@ hg_vm_new(void)
 					 retval->name);
 	if (retval->scanner == NULL)
 		goto error;
+	retval->stack_spooler = hg_stack_spooler_new(__hg_vm_mem);
 	retval->stacks[HG_VM_STACK_OSTACK] = hg_vm_stack_new(retval,
 							     retval->user_params.max_op_stack);
 	retval->stacks[HG_VM_STACK_ESTACK] = hg_vm_stack_new(retval,
@@ -1121,6 +1122,7 @@ hg_vm_destroy(hg_vm_t *vm)
 		if (vm->stacks[i])
 			hg_stack_free(vm->stacks[i]);
 	}
+	hg_stack_spooler_destroy(vm->stack_spooler);
 	for (i = 0; i < HG_FILE_IO_END; i++) {
 		if (vm->qio[i] != Qnil)
 			hg_vm_mfree(vm, vm->qio[i]);
@@ -4424,7 +4426,11 @@ hg_stack_t *
 hg_vm_stack_new(hg_vm_t *vm,
 		gsize    size)
 {
-	return hg_stack_new(__hg_vm_mem, size, vm);
+	hg_stack_t *retval = hg_stack_new(__hg_vm_mem, size, vm);
+
+	hg_stack_set_spooler(retval, vm->stack_spooler);
+
+	return retval;
 }
 
 /**

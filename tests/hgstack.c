@@ -27,8 +27,8 @@
 
 #include "main.h"
 #include "hgint.h"
-#include "hgstack-private.h"
 #include "hgstack.h"
+#include "hgstack-private.h"
 #include "hgmem.h"
 
 

@@ -33,15 +33,19 @@ HG_BEGIN_DECLS
 	(hg_object_register(HG_TYPE_STACK,			\
 			    hg_object_stack_get_vtable()))
 
-typedef struct _hg_stack_t	hg_stack_t;
-
+typedef struct _hg_stack_spool_t	hg_stack_spool_t;
+typedef struct _hg_stack_t		hg_stack_t;
 
 
 hg_object_vtable_t *hg_object_stack_get_vtable(void) G_GNUC_CONST;
+hg_stack_spool_t   *hg_stack_spooler_new      (hg_mem_t                  *mem);
+void                hg_stack_spooler_destroy  (hg_stack_spool_t          *spool);
 hg_stack_t         *hg_stack_new              (hg_mem_t                  *mem,
                                                gsize                      max_depth,
 					       hg_vm_t                   *vm);
 void                hg_stack_free             (hg_stack_t                *stack);
+void                hg_stack_set_spooler      (hg_stack_t                *stack,
+					       hg_stack_spool_t          *spool);
 void                hg_stack_set_validation   (hg_stack_t                *stack,
                                                gboolean                   flag);
 gsize               hg_stack_depth            (hg_stack_t                *stack);
