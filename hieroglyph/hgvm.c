@@ -44,7 +44,7 @@
 #include "hgsnapshot.h"
 #include "hgvm.h"
 
-#include "hgvm.proto"
+#include "hgvm.proto.h"
 
 #define HG_VM_MEM_SIZE		128000
 #define HG_VM_GLOBAL_MEM_SIZE	24000000

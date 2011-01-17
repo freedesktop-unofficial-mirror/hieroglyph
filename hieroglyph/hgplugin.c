@@ -30,7 +30,7 @@
 #include "hgmem.h"
 #include "hgplugin.h"
 
-#include "hgplugin.proto"
+#include "hgplugin.proto.h"
 
 #define CHECK_SYMBOL(_mod_,_sym_,_err_)					\
 	G_STMT_START {							\

@@ -31,6 +31,8 @@
 #include "hgerror.h"
 #include "hgmatrix.h"
 
+#include "hgmatrix.proto.h"
+
 /*< private >*/
 
 /*< public >*/

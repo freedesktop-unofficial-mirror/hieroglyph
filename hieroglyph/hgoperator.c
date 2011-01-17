@@ -46,7 +46,7 @@
 #include "hgvm.h"
 #include "hgoperator.h"
 
-#include "hgoperator.proto"
+#include "hgoperator.proto.h"
 
 static hg_operator_func_t __hg_operator_func_table[HG_enc_END];
 static gchar *__hg_operator_name_table[HG_enc_END];

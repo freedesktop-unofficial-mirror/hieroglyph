@@ -32,7 +32,7 @@
 #include "hgdict-private.h"
 #include "hgdict.h"
 
-#include "hgdict.proto"
+#include "hgdict.proto.h"
 
 #define HG_DICT_NODE_SIZE	5
 

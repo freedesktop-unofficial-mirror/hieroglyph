@@ -29,7 +29,7 @@
 #include "hgmem.h"
 #include "hgsnapshot.h"
 
-#include "hgsnapshot.proto"
+#include "hgsnapshot.proto.h"
 
 struct _hg_snapshot_t {
 	hg_object_t             o;

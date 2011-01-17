@@ -29,7 +29,7 @@
 #include "hgmem.h"
 #include "hgpath.h"
 
-#include "hgpath.proto"
+#include "hgpath.proto.h"
 
 #define HG_PATH_MAX	1500
 

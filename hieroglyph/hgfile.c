@@ -37,7 +37,7 @@
 #include "hgmem.h"
 #include "hgfile.h"
 
-#include "hgfile.proto"
+#include "hgfile.proto.h"
 
 typedef struct _hg_file_io_buffered_data_t {
 	hg_file_io_data_t  data;

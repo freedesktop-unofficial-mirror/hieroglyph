@@ -29,9 +29,7 @@ CLEANFILES =							\
 BUILT_SOURCES =							\
 	$(hg_built_headers)					\
 	$(hg_built_sources)					\
-	$(hg_proto_files)					\
 	$(NULL)
-SUFFIXES=.proto
 
 ##
 # Local definitions
@@ -75,6 +73,7 @@ hg_built_public_headers =					\
 	hgversion.h						\
 	$(NULL)
 hg_built_private_headers =					\
+	$(hg_proto_files)					\
 	$(NULL)
 hg_built_headers =						\
 	$(hg_built_public_headers)				\
@@ -111,8 +110,8 @@ hg_sources =							\
 	$(NULL)
 #
 hg_proto_files =						\
-	$(hg_lex_sources:.l=.proto)				\
-	$(hg_sources:.c=.proto)					\
+	$(hg_lex_sources:.l=.proto.h)				\
+	$(hg_sources:.c=.proto.h)				\
 	$(NULL)
 #
 stamp_files =							\
@@ -122,7 +121,7 @@ LEX_OUTPUT_ROOT=lex.$(basename $<)
 
 ##
 # Local Rules
-.c.proto:
+%.proto.h: %.c
 	$(AM_V_GEN)[[ ! -f $(<:.c=.l) ]] && $(top_srcdir)/build_tools/genfuncdecls.sh $< > gfp || $(top_srcdir)/build_tools/genfuncdecls.sh $(<:.c=.l) > gfp;	\
 	(cmp -s gfp $@ || cp gfp $@)	\
 	&& rm -f gfp

@@ -40,7 +40,7 @@
 #include "hgpath.h"
 #include "hgdevice.h"
 
-#include "hgdevice.proto"
+#include "hgdevice.proto.h"
 
 /*< private >*/
 static gboolean

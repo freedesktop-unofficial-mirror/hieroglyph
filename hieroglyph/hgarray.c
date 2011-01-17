@@ -36,7 +36,7 @@
 #include "hgreal.h"
 #include "hgarray.h"
 
-#include "hgarray.proto"
+#include "hgarray.proto.h"
 
 #define HG_ARRAY_ALLOC_SIZE	65535
 #define HG_ARRAY_MAX_SIZE	65535 /* defined as PostScript spec */

@@ -36,7 +36,7 @@
 #include "hgvm.h"
 #include "hgscanner.h"
 
-#include "hgscanner.proto"
+#include "hgscanner.proto.h"
 
 #define HG_SCANNER_MEM_SIZE	100000
 #define YY_DECL			static gboolean _hg_scanner_yylex(hg_scanner_t *scanner, yyscan_t yyscanner, hg_vm_t *vm, GError **error)

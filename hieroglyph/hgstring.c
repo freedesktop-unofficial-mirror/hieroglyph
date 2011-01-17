@@ -33,7 +33,7 @@
 #include "hgquark.h"
 #include "hgstring.h"
 
-#include "hgstring.proto"
+#include "hgstring.proto.h"
 
 #define HG_STRING_ALLOC_SIZE	256
 #define HG_STRING_MAX_SIZE	65535 /* defined as PostScript spec */

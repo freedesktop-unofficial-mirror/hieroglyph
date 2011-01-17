@@ -33,7 +33,7 @@
 #include "hgmem.h"
 #include "hgmem-private.h"
 
-#include "hgmem.proto"
+#include "hgmem.proto.h"
 
 #define HG_MAX_MEM	256
 

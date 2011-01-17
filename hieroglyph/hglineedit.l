@@ -31,7 +31,7 @@
 #include "hgmem.h"
 #include "hglineedit.h"
 
-#include "hglineedit.proto"
+#include "hglineedit.proto.h"
 
 #define YY_DECL			static gchar *_hg_lineedit_yylex(hg_lineedit_t *scanner, yyscan_t yyscanner)
 #define yyterminate()		{BEGIN(INITIAL);g_string_free(string, TRUE);return NULL;}

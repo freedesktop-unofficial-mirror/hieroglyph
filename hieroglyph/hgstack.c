@@ -33,7 +33,7 @@
 #include "hgstack-private.h"
 #include "hgvm.h"
 
-#include "hgstack.proto"
+#include "hgstack.proto.h"
 
 struct _hg_slist_t {
 	hg_quark_t  self;

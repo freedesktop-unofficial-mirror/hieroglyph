@@ -31,7 +31,7 @@
 #include "hgmem.h"
 #include "hggstate.h"
 
-#include "hggstate.proto"
+#include "hggstate.proto.h"
 
 
 HG_DEFINE_VTABLE_WITH (gstate, NULL, NULL, NULL);

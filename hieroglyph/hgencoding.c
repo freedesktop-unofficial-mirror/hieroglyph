@@ -29,6 +29,8 @@
 #include "hgerror.h"
 #include "hgencoding.h"
 
+#include "hgencoding.proto.h"
+
 
 static GHashTable *__hg_encoding_index_table = NULL;
 static const gchar *__hg_system_encodings =

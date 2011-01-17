@@ -30,6 +30,8 @@
 #include <glib.h>
 #include "hgerror.h"
 
+#include "hgerror.proto.h"
+
 
 static gboolean __hg_stacktrace_feature = TRUE;
 

@@ -32,7 +32,7 @@
 #include "hgmem.h"
 #include "hgobject.h"
 
-#include "hgobject.proto"
+#include "hgobject.proto.h"
 
 static hg_object_vtable_t *__hg_object_vtables[HG_TYPE_END];
 static gboolean __hg_object_is_initialized = FALSE;

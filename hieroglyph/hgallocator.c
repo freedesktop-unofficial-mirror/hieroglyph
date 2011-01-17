@@ -34,7 +34,7 @@
 #include "hgallocator.h"
 #include "hgallocator-private.h"
 
-#include "hgallocator.proto"
+#include "hgallocator.proto.h"
 
 static hg_mem_vtable_t __hg_allocator_vtable = {
 	.initialize        = _hg_allocator_initialize,

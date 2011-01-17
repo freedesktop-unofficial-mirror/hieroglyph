@@ -31,7 +31,7 @@
 #include "hgquark.h"
 #include "hgname.h"
 
-#include "hgname.proto"
+#include "hgname.proto.h"
 
 #define HG_NAME_BLOCK_SIZE	512
 
