@@ -135,8 +135,8 @@ gboolean     hg_device_stroke         (hg_device_t                 *device,
 hg_device_t *hg_device_null_new(hg_mem_t *mem);
 
 /* modules */
-hg_device_t *hg_init    (void);
-void         hg_finalize(hg_device_t *device);
+hg_device_t *hg_module_init    (void);
+void         hg_module_finalize(hg_device_t *device);
 
 HG_END_DECLS
 

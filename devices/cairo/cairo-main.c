@@ -627,7 +627,7 @@ _hg_cairo_device_stroke(hg_device_t  *device,
 
 /*< public >*/
 hg_device_t *
-hg_init(void)
+hg_module_init(void)
 {
 	hg_cairo_device_t *retval = g_new0(hg_cairo_device_t, 1);
 	hg_device_t *dev = (hg_device_t *)retval;
@@ -644,7 +644,7 @@ hg_init(void)
 }
 
 void
-hg_finalize(hg_device_t *device)
+hg_module_finalize(hg_device_t *device)
 {
 	g_free(device);
 }

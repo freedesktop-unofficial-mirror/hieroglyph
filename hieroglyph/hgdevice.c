@@ -136,8 +136,8 @@ _hg_device_open(hg_mem_t    *mem,
 	gpointer dev_init = NULL, dev_fini = NULL;
 
 	if ((module = g_module_open(modulename, G_MODULE_BIND_LAZY|G_MODULE_BIND_LOCAL)) != NULL) {
-		g_module_symbol(module, "hg_init", &dev_init);
-		g_module_symbol(module, "hg_finalize", &dev_fini);
+		g_module_symbol(module, "hg_module_init", &dev_init);
+		g_module_symbol(module, "hg_module_finalize", &dev_fini);
 
 		if (!dev_init || !dev_fini) {
 			g_warning(g_module_error());
