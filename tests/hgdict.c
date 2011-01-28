@@ -259,7 +259,7 @@ TDEF (hg_dict_lookup)
 	q = hg_dict_new(mem, 2, TRUE, (gpointer *)&dict);
 	fail_unless(q != Qnil, "Unable to create a dict object.");
 	t = hg_quark_new(HG_TYPE_BOOL, TRUE);
-	hg_quark_set_access_bits(&t, TRUE, TRUE, TRUE, TRUE);
+	hg_quark_set_acl(&t, HG_ACL_READABLE|HG_ACL_WRITABLE|HG_ACL_EXECUTABLE|HG_ACL_ACCESSIBLE);
 	fail_unless(hg_quark_is_readable(t), "Failed for prechecking read permission");
 	fail_unless(hg_quark_is_writable(t), "Failed for prechecking write permission");
 	fail_unless(hg_quark_is_executable(t), "Failed for prechecking execute permission");

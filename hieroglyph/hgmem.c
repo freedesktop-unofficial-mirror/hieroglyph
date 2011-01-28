@@ -30,6 +30,7 @@
 #include "hgallocator.h"
 #include "hgerror.h"
 #include "hgquark.h"
+#include "hgtypebit-private.h"
 #include "hgmem.h"
 #include "hgmem-private.h"
 
@@ -167,9 +168,9 @@ hg_mem_new_with_allocator(hg_mem_vtable_t *allocator,
 	retval->allocator = allocator;
 	retval->type = type;
 	id = retval->id = __hg_mem_id++;
-	if (_hg_quark_type_bit_validate_bits(retval->id,
-					     HG_QUARK_TYPE_BIT_MEM_ID,
-					     HG_QUARK_TYPE_BIT_MEM_ID_END) != retval->id) {
+	if (_hg_typebit_round_value(retval->id,
+				    HG_TYPEBIT_MEM_ID,
+				    HG_TYPEBIT_MEM_ID_END) != retval->id) {
 		g_warning("too many memory spooler being created.");
 		g_free(retval);
 
@@ -407,7 +408,7 @@ hg_mem_realloc(hg_mem_t   *mem,
 	hg_return_val_if_fail (mem->allocator->realloc != NULL, Qnil);
 	hg_return_val_if_fail (mem->data != NULL, Qnil);
 	hg_return_val_if_fail (size > 0, Qnil);
-	hg_return_val_if_fail (hg_quark_has_same_mem_id(qdata, mem->id), Qnil);
+	hg_return_val_if_fail (hg_quark_has_mem_id(qdata, mem->id), Qnil);
 
   retry:
 	retval = mem->allocator->realloc(mem->data,
@@ -415,7 +416,7 @@ hg_mem_realloc(hg_mem_t   *mem,
 					 size,
 					 ret);
 	if (retval != Qnil) {
-		retval = _hg_quark_type_bit_shift(_hg_quark_type_bit_get(qdata)) | retval;
+		retval = _hg_typebit_get_value_(qdata, HG_TYPEBIT_BIT0, HG_TYPEBIT_END) | retval;
 	} else {
 		if (!fgc) {
 			if (hg_mem_collect_garbage(mem) > 0) {
@@ -457,7 +458,7 @@ hg_mem_free(hg_mem_t   *mem,
 	if (qdata == Qnil)
 		return;
 
-	hg_return_if_fail (hg_quark_has_same_mem_id(qdata, mem->id));
+	hg_return_if_fail (hg_quark_has_mem_id(qdata, mem->id));
 
 	mem->allocator->free(mem->data,
 			     hg_quark_get_value (qdata));
@@ -484,7 +485,7 @@ hg_mem_lock_object(hg_mem_t   *mem,
 	if (qdata == Qnil)
 		return NULL;
 
-	hg_return_val_if_fail (hg_quark_has_same_mem_id(qdata, mem->id), NULL);
+	hg_return_val_if_fail (hg_quark_has_mem_id(qdata, mem->id), NULL);
 
 	return mem->allocator->lock_object(mem->data,
 					   hg_quark_get_value(qdata));
@@ -509,7 +510,7 @@ hg_mem_unlock_object(hg_mem_t   *mem,
 	if (qdata == Qnil)
 		return;
 
-	hg_return_if_fail (hg_quark_has_same_mem_id(qdata, mem->id));
+	hg_return_if_fail (hg_quark_has_mem_id(qdata, mem->id));
 
 	return mem->allocator->unlock_object(mem->data,
 					     hg_quark_get_value (qdata));
@@ -621,7 +622,7 @@ hg_mem_gc_mark(hg_mem_t    *mem,
 	if (qdata == Qnil)
 		return TRUE;
 
-	hg_return_val_if_fail (hg_quark_has_same_mem_id(qdata, mem->id), FALSE);
+	hg_return_val_if_fail (hg_quark_has_mem_id(qdata, mem->id), FALSE);
 
 	if (mem->slave_finalizer_table &&
 	    (func = g_hash_table_lookup(mem->finalizer_table,
@@ -727,7 +728,7 @@ hg_mem_restore_mark(hg_mem_t    *mem,
 	if (mem->reference_table == NULL)
 		return;
 
-	hg_return_if_fail (hg_quark_has_same_mem_id(qdata, mem->id));
+	hg_return_if_fail (hg_quark_has_mem_id(qdata, mem->id));
 
 	g_hash_table_insert(mem->reference_table,
 			    HGQUARK_TO_POINTER (hg_quark_get_value(qdata)),
@@ -819,7 +820,7 @@ hg_mem_reserved_spool_add(hg_mem_t     *mem,
 
 	hg_return_if_fail (mem != NULL);
 	hg_return_if_fail (qdata != Qnil);
-	hg_return_if_fail (hg_quark_has_same_mem_id(qdata, mem->id));
+	hg_return_if_fail (hg_quark_has_mem_id(qdata, mem->id));
 
 	p = HGQUARK_TO_POINTER (hg_quark_get_hash(qdata));
 	count = GPOINTER_TO_INT (g_hash_table_lookup(mem->reserved_spool, p));

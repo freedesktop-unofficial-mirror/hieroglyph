@@ -639,7 +639,7 @@ hg_stack_roll(hg_stack_t  *stack,
  */
 void
 hg_stack_foreach(hg_stack_t                *stack,
-		 hg_array_traverse_func_t   func,
+		 hg_stack_traverse_func_t   func,
 		 gpointer                   data,
 		 gboolean                   is_forwarded,
 		 GError                   **error)

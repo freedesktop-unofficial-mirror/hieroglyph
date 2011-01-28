@@ -21,6 +21,10 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#if !defined (__HG_H_INSIDE__) && !defined (HG_COMPILATION)
+#error "Only <hieroglyph/hg.h> can be included directly."
+#endif
+
 #ifndef __HIEROGLYPH_HGINT_H__
 #define __HIEROGLYPH_HGINT_H__
 
@@ -28,21 +32,36 @@
 
 HG_BEGIN_DECLS
 
-typedef struct _hg_bs_int_t	hg_bs_int_t;
-
-struct _hg_bs_int_t {
-	hg_bs_template_t t;
-	guint16          unused1;
-	guint32          value;
-};
-
-
-#define HG_QINT(_v_)				\
-	hg_quark_new(HG_TYPE_INT, (guint32)(_v_))
+/**
+ * HG_QINT:
+ * @value:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+#define HG_QINT(_v_)					\
+	(hg_quark_new(HG_TYPE_INT, (hg_uint_t)(_v_)))
+/**
+ * HG_INT:
+ * @quark:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
 #define HG_INT(_q_)				\
-	((gint32)hg_quark_get_value((_q_)))
-#define HG_IS_QINT(_v_)				\
-	(hg_quark_get_type(_v_) == HG_TYPE_INT)
+	((hg_int_t)(hg_quark_get_value((_q_))))
+/**
+ * HG_IS_QINT:
+ * @quark:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+#define HG_IS_QINT(_q_)				\
+	(hg_quark_get_type(_q_) == HG_TYPE_INT)
 
 
 HG_END_DECLS

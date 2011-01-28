@@ -21,6 +21,10 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#if !defined (__HG_H_INSIDE__) && !defined (HG_COMPILATION)
+#error "Only <hieroglyph/hg.h> can be included directly."
+#endif
+
 #ifndef __HIEROGLYPH_HGNAME_H__
 #define __HIEROGLYPH_HGNAME_H__
 
@@ -39,33 +43,18 @@ HG_BEGIN_DECLS
 #define HG_IS_QEVALNAME(_v_)				\
 	(hg_quark_get_type(_v_) == HG_TYPE_EVAL_NAME)
 
-typedef struct _hg_bs_name_t	hg_bs_name_t;
-typedef enum _hg_bs_name_type_t	hg_bs_name_type_t;
-
-enum _hg_bs_name_type_t {
-	HG_name_offset = 1,
-	HG_name_DPS = 0,
-	HG_name_index = -1,
-};
-struct _hg_bs_name_t {
-	hg_bs_template_t t;
-	gint16           representation;
-	union {
-		guint32      index;
-		guint32      offset;
-	} v;
-};
+typedef struct _hg_name_t		hg_name_t;
 
 
-hg_name_t   *hg_name_init             (void);
-void         hg_name_tini             (hg_name_t            *name);
-hg_quark_t   hg_name_new_with_encoding(hg_name_t            *name,
-                                       hg_system_encoding_t  encoding);
-hg_quark_t   hg_name_new_with_string  (hg_name_t            *name,
-                                       const gchar          *string,
-                                       gssize                len);
-const gchar *hg_name_lookup           (hg_name_t            *name,
-                                       hg_quark_t            quark);
+hg_name_t       *hg_name_init             (void);
+void             hg_name_tini             (hg_name_t            *name);
+hg_quark_t       hg_name_new_with_encoding(hg_name_t            *name,
+					   hg_system_encoding_t  encoding);
+hg_quark_t       hg_name_new_with_string  (hg_name_t            *name,
+					   const hg_char_t      *string,
+					   hg_size_t             len);
+const hg_char_t *hg_name_lookup           (hg_name_t            *name,
+					   hg_quark_t            quark);
 
 HG_END_DECLS
 

@@ -27,6 +27,7 @@
 
 #include <glib.h>
 #define PLUGIN
+#include "hgarray.h"
 #include "hgbool.h"
 #include "hgdict.h"
 #include "hgint.h"
@@ -45,7 +46,7 @@ static hg_quark_t __unittest_enc_list[HG_unittest_enc_END];
 
 /*< private >*/
 DEFUNC_OPER (private_validatetestresult)
-G_STMT_START {
+{
 	hg_quark_t arg0, qverbose, qattrs, qexp, qaerror, qeerror, qerrorat, q;
 	hg_quark_t qastack, qestack;
 	hg_string_t *sexp;
@@ -184,9 +185,7 @@ G_STMT_START {
 
 	hg_stack_drop(ostack, error);
 	STACK_PUSH (ostack, HG_QBOOL (result && retval));
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 static gboolean
 _unittest_init(void)

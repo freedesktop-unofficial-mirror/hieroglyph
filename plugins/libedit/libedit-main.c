@@ -125,7 +125,7 @@ _libedit_save_history(hg_lineedit_t *lineedit,
 
 /* -filename- .loadhistory - */
 DEFUNC_OPER (private_loadhistory)
-G_STMT_START {
+{
 	hg_quark_t arg0;
 	hg_string_t *s;
 	gchar *cstr, *filename, *histfile;
@@ -160,13 +160,12 @@ G_STMT_START {
 	g_free(cstr);
 
 	hg_stack_drop(ostack, error);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* -filename- .savehistory - */
 DEFUNC_OPER (private_savehistory)
-G_STMT_START {
+{
 	hg_quark_t arg0;
 	hg_string_t *s;
 	gchar *cstr, *filename, *histfile;
@@ -201,9 +200,8 @@ G_STMT_START {
 	g_free(cstr);
 
 	hg_stack_drop(ostack, error);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 static gboolean
 _libedit_init(void)

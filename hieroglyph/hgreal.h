@@ -21,42 +21,117 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#include <hieroglyph/hgquark.h>
+#if !defined (__HG_H_INSIDE__) && !defined (HG_COMPILATION)
+#error "Only <hieroglyph/hg.h> can be included directly."
+#endif
 
 #ifndef __HIEROGLYPH_HGREAL_H__
 #define __HIEROGLYPH_HGREAL_H__
 
 #include <math.h>
 #include <string.h>
+#include <hieroglyph/hgquark.h>
 
 HG_BEGIN_DECLS
 
-typedef struct _hg_bs_real_t	hg_bs_real_t;
-
-struct _hg_bs_real_t {
-	hg_bs_template_t t;
-	guint16          representation;
-	GFloatIEEE754    v;
-};
-
-
+/**
+ * HG_QREAL:
+ * @value:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
 #define HG_QREAL(_v_)				\
-	hg_real_convert_from_native((_v_))
+	(hg_real_convert_from_native((_v_)))
+/**
+ * HG_REAL:
+ * @quark:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
 #define HG_REAL(_q_)				\
-	hg_real_convert_to_native((_q_))
-#define HG_IS_QREAL(_v_)				\
-	(hg_quark_get_type(_v_) == HG_TYPE_REAL)
+	(hg_real_convert_to_native((_q_)))
+/**
+ * HG_IS_QREAL:
+ * @quark:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+#define HG_IS_QREAL(_q_)				\
+	(hg_quark_get_type(_q_) == HG_TYPE_REAL)
+/**
+ * HG_REAL_EQUAL:
+ * @real1:
+ * @real2:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
 #define HG_REAL_EQUAL(_f1_,_f2_)		\
 	(fabsf((_f1_) - (_f2_)) <= FLT_EPSILON)
+/**
+ * HG_REAL_IS_ZERO:
+ * @real:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
 #define HG_REAL_IS_ZERO(_f_)			\
 	(fabsf((_f_)) <= FLT_EPSILON)
+/**
+ * HG_REAL_GE:
+ * @real1:
+ * @real2:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
 #define HG_REAL_GE(_f1_,_f2_)				\
 	(HG_REAL_EQUAL (_f1_,_f2_) || _f1_ > _f2_)
+/**
+ * HG_REAL_LE:
+ * @real1:
+ * @real2:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
 #define HG_REAL_LE(_f1_,_f2_)				\
 	(HG_REAL_EQUAL (_f1_,_f2_) || _f1_ < _f2_)
 
-G_INLINE_FUNC hg_quark_t hg_real_convert_from_native(gdouble    vdouble);
-G_INLINE_FUNC gdouble    hg_real_convert_to_native  (hg_quark_t qreal);
+
+typedef union _hg_real_ieee754_t	hg_real_ieee754_t;
+
+/*
+ * IEEE Standard 754 Double Precision Storage Format:
+ *
+ *        63 62            52 51            32   31            0
+ * +--------+----------------+----------------+ +---------------+
+ * | s 1bit | e[62:52] 11bit | f[51:32] 20bit | | f[31:0] 32bit |
+ * +--------+----------------+----------------+ +---------------+
+ * B0--------------->B1---------->B2--->B3---->  B4->B5->B6->B7->
+ */
+union _hg_real_ieee754_t {
+	hg_real_t v_real;
+	struct {
+		hg_uint_t mantissa_low:32;
+		hg_uint_t mantissa_high:20;
+		hg_uint_t biased_exponent:11;
+		hg_uint_t sign:1;
+	} mpn;
+};
+
+G_INLINE_FUNC hg_quark_t hg_real_convert_from_native(hg_real_t  vreal);
+G_INLINE_FUNC hg_real_t  hg_real_convert_to_native  (hg_quark_t qreal);
 
 /**
  * hg_real_convert_from_native:
@@ -67,13 +142,13 @@ G_INLINE_FUNC gdouble    hg_real_convert_to_native  (hg_quark_t qreal);
  * Returns:
  */
 G_INLINE_FUNC hg_quark_t
-hg_real_convert_from_native(gdouble vdouble)
+hg_real_convert_from_native(hg_real_t vreal)
 {
-	GDoubleIEEE754 v;
-	gpointer x = &v;
-	gchar *p = x;
+	hg_real_ieee754_t v;
+	hg_pointer_t x = &v;
+	hg_char_t *p = x;
 
-	v.v_double = vdouble;
+	v.v_real = vreal;
 	if (v.mpn.biased_exponent == 0 &&
 	    (v.mpn.mantissa_low != 0 ||
 	     v.mpn.mantissa_high != 0)) {
@@ -87,7 +162,7 @@ hg_real_convert_from_native(gdouble vdouble)
 		v.mpn.mantissa_high = 0;
 	}
 
-	return hg_quark_new(HG_TYPE_REAL, (hg_quark_t)*(guint64 *)p);
+	return hg_quark_new(HG_TYPE_REAL, *(hg_quark_t *)p);
 }
 
 /**
@@ -98,19 +173,19 @@ hg_real_convert_from_native(gdouble vdouble)
  *
  * Returns:
  */
-G_INLINE_FUNC gdouble
+G_INLINE_FUNC hg_real_t
 hg_real_convert_to_native(hg_quark_t qreal)
 {
-	GDoubleIEEE754 v;
-	gpointer x = &v;
-	gint64 i;
-	gchar *p;
+	hg_real_ieee754_t v;
+	hg_pointer_t x = &v;
+	hg_quark_t i;
+	hg_char_t *p;
 
 	i = hg_quark_get_value(qreal);
-	p = (gchar *)&i;
-	memcpy(x, p, sizeof (gint64));
+	p = (hg_char_t *)&i;
+	memcpy(x, p, sizeof (hg_quark_t));
 
-	return v.v_double;
+	return v.v_real;
 }
 
 HG_END_DECLS

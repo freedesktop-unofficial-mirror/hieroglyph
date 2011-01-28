@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 #include <glib.h>
 #include "hgerror.h"
+#include "hgarray.h"
 #include "hgbool.h"
 #include "hgdevice.h"
 #include "hgdict.h"
@@ -467,7 +468,7 @@ PROTO_OPER (yshow);
 
 /* - .abort - */
 DEFUNC_OPER (private_abort)
-G_STMT_START {
+{
 	hg_quark_t q;
 	hg_file_t *file;
 
@@ -492,13 +493,11 @@ G_STMT_START {
 		HG_VM_UNLOCK (vm, q);
 	}
 	abort();
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <dict> .applyparams - */
 DEFUNC_OPER (private_applyparams)
-G_STMT_START {
+{
 	hg_quark_t arg0;
 	hg_dict_t *d;
 	GList *l, *keys;
@@ -556,32 +555,27 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* - .clearerror - */
 DEFUNC_OPER (private_clearerror)
-G_STMT_START {
+{
 	hg_vm_reset_error(vm);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (private_callbeginpage);
 DEFUNC_UNIMPLEMENTED_OPER (private_callendpage);
 
 /* - .callinstall - */
 DEFUNC_OPER (private_callinstall)
-G_STMT_START {
+{
 	hg_device_install(vm->device, vm, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 static hg_quark_t
 _hg_operator_pdev_name_lookup(hg_pdev_params_name_t param,
@@ -594,7 +588,7 @@ _hg_operator_pdev_name_lookup(hg_pdev_params_name_t param,
 
 /* - .currentpagedevice <dict> */
 DEFUNC_OPER (private_currentpagedevice)
-G_STMT_START {
+{
 	hg_quark_t q;
 
 	q = hg_device_get_page_params(vm->device,
@@ -607,19 +601,17 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	hg_vm_quark_set_default_attributes(vm, &q);
+	hg_vm_quark_set_default_acl(vm, &q);
 
 	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (1);
+} DEFUNC_OPER_END
 
 /* - .exit - */
 DEFUNC_OPER (private_exit)
-gssize __n G_GNUC_UNUSED = 0;
-G_STMT_START {
+{
 	gsize i, j, edepth = hg_stack_depth(estack);
 	hg_quark_t q;
 
@@ -635,21 +627,21 @@ G_STMT_START {
 				hg_stack_drop(estack, error);
 				hg_stack_drop(estack, error);
 				hg_stack_drop(estack, error);
-				__n = i + 4;
+				SET_EXPECTED_ESTACK_SIZE (-(i + 4));
 			} else if (HG_OPER (q) == HG_enc_protected_loop_continue) {
 				hg_stack_drop(estack, error);
-				__n = i + 1;
+				SET_EXPECTED_ESTACK_SIZE (-(i + 1));
 			} else if (HG_OPER (q) == HG_enc_protected_repeat_continue) {
 				hg_stack_drop(estack, error);
 				hg_stack_drop(estack, error);
-				__n = i + 2;
+				SET_EXPECTED_ESTACK_SIZE (-(i + 2));
 			} else if (HG_OPER (q) == HG_enc_protected_forall_array_continue ||
 				   HG_OPER (q) == HG_enc_protected_forall_dict_continue ||
 				   HG_OPER (q) == HG_enc_protected_forall_string_continue) {
 				hg_stack_drop(estack, error);
 				hg_stack_drop(estack, error);
 				hg_stack_drop(estack, error);
-				__n = i + 3;
+				SET_EXPECTED_ESTACK_SIZE (-(i + 3));
 			} else {
 				continue;
 			}
@@ -666,16 +658,13 @@ G_STMT_START {
 	} else {
 		retval = TRUE;
 	}
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, -__n, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <filename> .findlibfile <filename> <true>
  * <filename> .findlibfile <false>
  */
 DEFUNC_OPER (private_findlibfile)
-gboolean __flag G_GNUC_UNUSED = FALSE;
-G_STMT_START {
+{
 	hg_quark_t arg0, q = Qnil;
 	gchar *filename, *cstr;
 	gboolean ret = FALSE;
@@ -701,7 +690,7 @@ G_STMT_START {
 			return FALSE;
 		}
 		ret = TRUE;
-		__flag = TRUE;
+		SET_EXPECTED_OSTACK_SIZE (1);
 	}
 	hg_stack_drop(ostack, error);
 	if (q != Qnil)
@@ -709,16 +698,14 @@ G_STMT_START {
 	STACK_PUSH (ostack, HG_QBOOL (ret));
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (__flag ? 1 : 0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <array> <index> <any> .forceput -
  * <dict> <key> <any> .forceput -
  * <string> <index> <int> .forceput -
  */
 DEFUNC_OPER (private_forceput)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, arg2;
 
 	CHECK_STACK (ostack, 3);
@@ -775,13 +762,13 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-3, 0, 0);
-DEFUNC_OPER_END
+
+	SET_EXPECTED_OSTACK_SIZE (-3);
+} DEFUNC_OPER_END
 
 /* - .hgrevision <int> */
 DEFUNC_OPER (private_hgrevision)
-G_STMT_START {
+{
 	gint revision = 0;
 
 	sscanf(__hg_rcsid, "$Rev: %d $", &revision);
@@ -789,13 +776,12 @@ G_STMT_START {
 	STACK_PUSH (ostack, HG_QINT (revision));
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (1);
+} DEFUNC_OPER_END
 
 /* <key> <proc> .odef - */
 DEFUNC_OPER (private_odef)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1;
 
 	CHECK_STACK (ostack, 2);
@@ -814,19 +800,18 @@ G_STMT_START {
 		hg_array_set_name(a, name);
 		HG_VM_UNLOCK (vm, arg1);
 
-		hg_vm_quark_set_attributes(vm, &arg1, FALSE, FALSE, TRUE, TRUE);
+		hg_vm_quark_set_acl(vm, &arg1, HG_ACL_EXECUTABLE|HG_ACL_ACCESSIBLE);
 	}
 	hg_stack_pop(ostack, error);
 
 	STACK_PUSH (ostack, arg1);
 	retval = _hg_operator_real_def(vm, error);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-2, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-2);
+} DEFUNC_OPER_END
 
 /* - .product <string> */
 DEFUNC_OPER (private_product)
-G_STMT_START {
+{
 	hg_quark_t q;
 
 	q = HG_QSTRING (hg_vm_get_mem(vm),
@@ -835,18 +820,17 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	hg_vm_quark_set_attributes(vm, &q, TRUE, FALSE, FALSE, TRUE);
+	hg_vm_quark_set_acl(vm, &q, HG_ACL_READABLE|HG_ACL_ACCESSIBLE);
 
 	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (1);
+} DEFUNC_OPER_END
 
 /* <int> .quit - */
 DEFUNC_OPER (private_quit)
-G_STMT_START {
+{
 	hg_quark_t arg0;
 
 	CHECK_STACK (ostack, 1);
@@ -861,13 +845,12 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* - .revision <int> */
 DEFUNC_OPER (private_revision)
-G_STMT_START {
+{
 	gint major = HIEROGLYPH_MAJOR_VERSION;
 	gint minor = HIEROGLYPH_MINOR_VERSION;
 	gint release = HIEROGLYPH_RELEASE_VERSION;
@@ -876,13 +859,12 @@ G_STMT_START {
 		    HG_QINT (major * 1000000 + minor * 1000 + release));
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (1);
+} DEFUNC_OPER_END
 
 /* <bool> .setglobal - */
 DEFUNC_OPER (private_setglobal)
-G_STMT_START {
+{
 	hg_quark_t arg0;
 
 	CHECK_STACK (ostack, 1);
@@ -897,13 +879,12 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* <any> .stringcvs <string> */
 DEFUNC_OPER (private_stringcvs)
-G_STMT_START {
+{
 	hg_quark_t arg0, q;
 
 	CHECK_STACK (ostack, 1);
@@ -929,13 +910,11 @@ G_STMT_START {
 	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <dict> <key> .undef - */
 DEFUNC_OPER (private_undef)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1;
 
 	CHECK_STACK (ostack, 2);
@@ -952,13 +931,12 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-2, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-2);
+} DEFUNC_OPER_END
 
 /* <file> <any> .write==only - */
 DEFUNC_OPER (private_write_eqeq_only)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, q;
 	hg_string_t *s = NULL;
 	hg_file_t *f;
@@ -999,13 +977,12 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-2, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-2);
+} DEFUNC_OPER_END
 
 /* <mark> ... %arraytomark <array> */
 DEFUNC_OPER (protected_arraytomark)
-G_STMT_START {
+{
 	/* %arraytomark is the same to {counttomark array astore exch pop} */
 	if (!hg_operator_invoke(HG_QOPER (HG_enc_counttomark), vm, error))
 		return FALSE;
@@ -1019,19 +996,17 @@ G_STMT_START {
 		return FALSE;
 
 	retval = TRUE;
-} G_STMT_END;
-/* no need to validate the stack size.
- * if the result in all above is ok, everything would be fine then.
- */
-/* VALIDATE_STACK_SIZE (0, 0, 0); */
-DEFUNC_OPER_END
+	/* no need to validate the stack size.
+	 * if the result in all above is ok, everything would be fine then.
+	 */
+	NO_STACK_VALIDATION;
+} DEFUNC_OPER_END
 
 /* <mark> ... %dicttomark <dict> */
 DEFUNC_OPER (protected_dicttomark)
-gint __n G_GNUC_UNUSED = 0;
-G_STMT_START {
+{
 	hg_quark_t qk, qv, qd, arg0;
-	gsize i;
+	gsize i, j;
 	hg_dict_t *dict;
 
 	/* %dicttomark is the same to {counttomark dup 2 mod 0 ne {pop errordict /rangecheck get />> exch exec} if 2 idiv dup dict begin {def} repeat pop currentdict end} */
@@ -1043,14 +1018,14 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-	__n = HG_INT (arg0);
-	if ((__n % 2) != 0) {
+	j = HG_INT (arg0);
+	if ((j % 2) != 0) {
 		hg_stack_drop(ostack, error);
 		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 		return FALSE;
 	}
 	qd = hg_dict_new(hg_vm_get_mem(vm),
-			 __n / 2,
+			 j / 2,
 			 hg_vm_get_language_level(vm) == HG_LANG_LEVEL_1,
 			 (gpointer *)&dict);
 	if (qd == Qnil) {
@@ -1058,13 +1033,13 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	hg_vm_quark_set_default_attributes(vm, &qd);
-	for (i = __n; i > 0; i -= 2) {
+	hg_vm_quark_set_default_acl(vm, &qd);
+	for (i = j; i > 0; i -= 2) {
 		qk = hg_stack_index(ostack, i, error);
 		qv = hg_stack_index(ostack, i - 1, error);
 		hg_dict_add(dict, qk, qv, FALSE, error);
 	}
-	for (i = 0; i <= (__n + 1); i++)
+	for (i = 0; i <= (j + 1); i++)
 		hg_stack_drop(ostack, error);
 
 	HG_VM_UNLOCK (vm, qd);
@@ -1072,14 +1047,12 @@ G_STMT_START {
 	STACK_PUSH (ostack, qd);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-__n, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-j);
+} DEFUNC_OPER_END
 
 /* <initial> <increment> <limit> <proc> %for_yield_int_continue - */
 DEFUNC_OPER (protected_for_yield_int_continue)
-gboolean __flag G_GNUC_UNUSED = FALSE;
-G_STMT_START {
+{
 	hg_quark_t self, proc, limit, inc, qq;
 	hg_quark_t *init = NULL;
 	gint iinit, iinc, ilimit;
@@ -1101,10 +1074,12 @@ G_STMT_START {
 		hg_stack_drop(estack, error);
 		hg_stack_drop(estack, error);
 		hg_stack_drop(estack, error);
-		__flag = TRUE;
+		SET_EXPECTED_STACK_SIZE (0, -4, 0);
 		retval = TRUE;
 
 		break;
+	} else {
+		SET_EXPECTED_STACK_SIZE (1, 2, 0);
 	}
 
 	qq = hg_vm_quark_copy(vm, proc, NULL, error);
@@ -1120,14 +1095,11 @@ G_STMT_START {
 	*init = HG_QINT (iinit + iinc);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (__flag ? 0 : 1, __flag ? -4 : 2, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <initial> <increment> <limit> <proc> %for_yield_real_continue - */
 DEFUNC_OPER (protected_for_yield_real_continue)
-gboolean __flag G_GNUC_UNUSED = FALSE;
-G_STMT_START {
+{
 	hg_quark_t self, proc, limit, inc, qq;
 	hg_quark_t *init = NULL;
 	gdouble dinit, dinc, dlimit;
@@ -1149,10 +1121,12 @@ G_STMT_START {
 		hg_stack_drop(estack, error);
 		hg_stack_drop(estack, error);
 		hg_stack_drop(estack, error);
-		__flag = TRUE;
+		SET_EXPECTED_STACK_SIZE (0, -4, 0);
 		retval = TRUE;
 
 		break;
+	} else {
+		SET_EXPECTED_STACK_SIZE (1, 2, 0);
 	}
 
 	qq = hg_vm_quark_copy(vm, proc, NULL, error);
@@ -1168,14 +1142,11 @@ G_STMT_START {
 	*init = HG_QREAL (dinit + dinc);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (__flag ? 0 : 1, __flag ? -4 : 2, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <int> <array> <proc> %forall_array_continue - */
 DEFUNC_OPER (protected_forall_array_continue)
-gint __n G_GNUC_UNUSED = 0;
-G_STMT_START {
+{
 	hg_quark_t self, proc, val, q, qq;
 	hg_quark_t *n = NULL;
 	hg_array_t *a;
@@ -1200,8 +1171,10 @@ G_STMT_START {
 		hg_stack_drop(estack, error);
 
 		retval = TRUE;
-		__n = 3;
+		SET_EXPECTED_STACK_SIZE (0, -3, 0);
 		break;
+	} else {
+		SET_EXPECTED_STACK_SIZE (1, 2, 0);
 	}
 	*n = HG_QINT (i + 1);
 
@@ -1220,14 +1193,11 @@ G_STMT_START {
 	STACK_PUSH (estack, self);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (__n != 0 ? 0 : 1, __n != 0 ? -__n : 2, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <int> <dict> <proc> %forall_dict_continue - */
 DEFUNC_OPER (protected_forall_dict_continue)
-gint __n G_GNUC_UNUSED = 0;
-G_STMT_START {
+{
 	hg_quark_t self, proc, val, q, qk, qv;
 	hg_quark_t *n = NULL;
 	hg_dict_t *d;
@@ -1252,8 +1222,10 @@ G_STMT_START {
 		hg_stack_drop(estack, error);
 
 		retval = TRUE;
-		__n = 3;
+		SET_EXPECTED_STACK_SIZE (0, -3, 0);
 		break;
+	} else {
+		SET_EXPECTED_STACK_SIZE (2, 2, 0);
 	}
 	*n = HG_QINT (i + 1);
 
@@ -1279,14 +1251,11 @@ G_STMT_START {
 	STACK_PUSH (estack, self);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (__n != 0 ? 0 : 2, __n != 0 ? -__n : 2, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <int> <string> <proc> %forall_string_continue - */
 DEFUNC_OPER (protected_forall_string_continue)
-gboolean __flag G_GNUC_UNUSED = FALSE;
-G_STMT_START {
+{
 	hg_quark_t self, proc, val, q, qq;
 	hg_quark_t *n = NULL;
 	hg_string_t *s;
@@ -1310,8 +1279,11 @@ G_STMT_START {
 		hg_stack_drop(estack, error);
 		hg_stack_drop(estack, error);
 
-		__flag = retval = TRUE;
+		retval = TRUE;
+		SET_EXPECTED_STACK_SIZE (0, -3, 0);
 		break;
+	} else {
+		SET_EXPECTED_STACK_SIZE (1, 2, 0);
 	}
 	*n = HG_QINT (i + 1);
 
@@ -1330,13 +1302,11 @@ G_STMT_START {
 	STACK_PUSH (estack, self);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (__flag ? 0 : 1, __flag ? -3 : 2, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* %loop_continue */
 DEFUNC_OPER (protected_loop_continue)
-G_STMT_START {
+{
 	hg_quark_t self, qproc, q;
 
 	self = hg_stack_index(estack, 0, error);
@@ -1353,14 +1323,12 @@ G_STMT_START {
 	STACK_PUSH (estack, self);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 2, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_ESTACK_SIZE (2);
+} DEFUNC_OPER_END
 
 /* <n> <proc> %repeat_continue - */
 DEFUNC_OPER (protected_repeat_continue)
-gboolean __flag G_GNUC_UNUSED = FALSE;
-G_STMT_START {
+{
 	hg_quark_t *arg0 = NULL;
 	hg_quark_t arg1, self, q;
 
@@ -1377,24 +1345,23 @@ G_STMT_START {
 			return FALSE;
 		}
 		STACK_PUSH (estack, q);
-		__flag = TRUE;
+		SET_EXPECTED_ESTACK_SIZE (2);
 	} else {
 		hg_stack_drop(estack, error);
 		hg_stack_drop(estack, error);
 		hg_stack_drop(estack, error);
+		SET_EXPECTED_ESTACK_SIZE (-2);
 	}
 
 	/* dummy */
 	STACK_PUSH (estack, self);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, __flag ? 2 : -2, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* %stopped_continue */
 DEFUNC_OPER (protected_stopped_continue)
-G_STMT_START {
+{
 	hg_dict_t *dict;
 	hg_quark_t q, qn;
 	gboolean ret = FALSE;
@@ -1419,9 +1386,8 @@ G_STMT_START {
 	STACK_PUSH (ostack, HG_QBOOL (ret));
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (1);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (ASCII85Decode);
 DEFUNC_UNIMPLEMENTED_OPER (ASCII85Encode);
@@ -1456,7 +1422,7 @@ DEFUNC_UNIMPLEMENTED_OPER (UserObjects);
 
 /* <num1> abs <num2> */
 DEFUNC_OPER (abs)
-G_STMT_START {
+{
 	hg_quark_t arg0, *ret;
 
 	CHECK_STACK (ostack, 1);
@@ -1472,13 +1438,11 @@ G_STMT_START {
 	}
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <num1> <num2> add <sum> */
 DEFUNC_OPER (add)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, *ret;
 	gdouble d1, d2, dr;
 	gboolean is_int = TRUE;
@@ -1518,14 +1482,12 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* <array> aload <any> ... <array> */
 DEFUNC_OPER (aload)
-gssize __n G_GNUC_UNUSED = 0;
-G_STMT_START {
+{
 	hg_quark_t arg0, q;
 	hg_array_t *a;
 	gsize len, i;
@@ -1547,7 +1509,8 @@ G_STMT_START {
 		return FALSE;
 	}
 	hg_stack_pop(ostack, error);
-	__n = len = hg_array_maxlength(a);
+	len = hg_array_maxlength(a);
+	SET_EXPECTED_OSTACK_SIZE (len);
 	for (i = 0; i < len; i++) {
 		q = hg_array_get(a, i, error);
 		if (error && *error) {
@@ -1561,15 +1524,13 @@ G_STMT_START {
 	retval = TRUE;
   error:
 	HG_VM_UNLOCK (vm, arg0);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (__n, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <bool1> <bool2> and <bool3>
  * <int1> <int2> and <int3>
  */
 DEFUNC_OPER (and)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, *ret;
 
 	CHECK_STACK (ostack, 2);
@@ -1591,13 +1552,12 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* <x> <y> <r> <angle1> <angle2> arc - */
 DEFUNC_OPER (arc)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, arg2, arg3, arg4, q, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 	hg_path_t *path;
@@ -1683,17 +1643,16 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
+	SET_EXPECTED_OSTACK_SIZE (-5);
   error2:
 	HG_VM_UNLOCK (vm, q);
   error:
 	HG_VM_UNLOCK (vm, qg);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-5, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <x> <y> <r> <angle1> <angle2> arcn - */
 DEFUNC_OPER (arcn)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, arg2, arg3, arg4, q, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 	hg_path_t *path;
@@ -1779,17 +1738,16 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
+	SET_EXPECTED_OSTACK_SIZE (-5);
   error2:
 	HG_VM_UNLOCK (vm, q);
   error:
 	HG_VM_UNLOCK (vm, qg);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-5, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <x1> <y1> <x2> <y2> <r> arct - */
 DEFUNC_OPER (arct)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, arg2, arg3, arg4, q, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 	hg_path_t *path;
@@ -1870,17 +1828,16 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
+	SET_EXPECTED_OSTACK_SIZE (-5);
   error2:
 	HG_VM_UNLOCK (vm, q);
   error:
 	HG_VM_UNLOCK (vm, qg);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-5, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <x1> <y1> <x2> <y2> <r> arcto <xt1> <yt1> <xt2> <yt2> */
 DEFUNC_OPER (arcto)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, arg2, arg3, arg4, q, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 	hg_path_t *path;
@@ -1966,17 +1923,16 @@ G_STMT_START {
 	STACK_PUSH (ostack, HG_QREAL (dt[1]));
 	STACK_PUSH (ostack, HG_QREAL (dt[2]));
 	STACK_PUSH (ostack, HG_QREAL (dt[3]));
+	SET_EXPECTED_OSTACK_SIZE (-1);
   error2:
 	HG_VM_UNLOCK (vm, q);
   error:
 	HG_VM_UNLOCK (vm, qg);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <int> array <array> */
 DEFUNC_OPER (array)
-G_STMT_START {
+{
 	hg_quark_t arg0, q, *ret;
 	hg_mem_t *m;
 
@@ -2003,16 +1959,13 @@ G_STMT_START {
 	hg_mem_reserved_spool_remove(m, q);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (ashow);
 
 /* <any> ... <array> astore <array> */
 DEFUNC_OPER (astore)
-gssize __n G_GNUC_UNUSED = 0;
-G_STMT_START {
+{
 	hg_quark_t arg0, q;
 	hg_array_t *a;
 	gsize len, i;
@@ -2034,7 +1987,7 @@ G_STMT_START {
 		return FALSE;
 	}
 	len = hg_array_maxlength(a);
-	__n = len;
+	SET_EXPECTED_OSTACK_SIZE (-len);
 	if (hg_stack_depth(ostack) < (len + 1)) {
 		hg_vm_set_error(vm, qself, HG_VM_e_stackunderflow);
 		goto error;
@@ -2056,13 +2009,11 @@ G_STMT_START {
 	retval = TRUE;
   error:
 	HG_VM_UNLOCK (vm, arg0);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-__n, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <num> <den> atan <angle> */
 DEFUNC_OPER (atan)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, *ret;
 	double num, den, angle;
 
@@ -2098,16 +2049,15 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (awidthshow);
 DEFUNC_UNIMPLEMENTED_OPER (banddevice);
 
 /* <dict> begin - */
 DEFUNC_OPER (begin)
-G_STMT_START {
+{
 	hg_quark_t arg0;
 
 	CHECK_STACK (ostack, 1);
@@ -2126,13 +2076,12 @@ G_STMT_START {
 	STACK_PUSH (dstack, arg0);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 1);
-DEFUNC_OPER_END
+	SET_EXPECTED_STACK_SIZE (-1, 0, 1);
+} DEFUNC_OPER_END
 
 /* <proc> bind <proc> */
 DEFUNC_OPER (bind)
-G_STMT_START {
+{
 	hg_quark_t arg0, q;
 	hg_array_t *a;
 	gsize len, i;
@@ -2178,13 +2127,11 @@ G_STMT_START {
 	retval = TRUE;
   error:
 	HG_VM_UNLOCK (vm, arg0);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <int1> <shiftt> bitshift <int2> */
 DEFUNC_OPER (bitshift)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, *ret;
 
 	CHECK_STACK (ostack, 2);
@@ -2205,13 +2152,12 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* <file> bytesavailable <int> */
 DEFUNC_OPER (bytesavailable)
-G_STMT_START {
+{
 	hg_quark_t arg0, *ret;
 	hg_file_t *f;
 	gssize cur_pos;
@@ -2237,15 +2183,13 @@ G_STMT_START {
 	HG_VM_UNLOCK (vm, arg0);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (cachestatus);
 
 /* <num1> ceiling <num2> */
 DEFUNC_OPER (ceiling)
-G_STMT_START {
+{
 	hg_quark_t arg0, *ret;
 
 	CHECK_STACK (ostack, 1);
@@ -2261,47 +2205,41 @@ G_STMT_START {
 		return FALSE;
 	}
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (charpath);
 
 /* - clear - */
 DEFUNC_OPER (clear)
-G_STMT_START {
+{
 	hg_stack_clear(ostack);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-__hg_stack_odepth, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-__hg_stack_odepth);
+} DEFUNC_OPER_END
 
 /* - cleardictstack - */
 DEFUNC_OPER (cleardictstack)
-gssize __n G_GNUC_UNUSED = 0;
-G_STMT_START {
+{
 	gsize ddepth = hg_stack_depth(dstack);
-	gint i;
+	gint i, j;
 
 	if (hg_vm_get_language_level(vm) == HG_LANG_LEVEL_1) {
-		__n = ddepth - 2;
+		j = ddepth - 2;
 	} else {
-		__n = ddepth - 3;
+		j = ddepth - 3;
 	}
-	for (i = 0; i < __n; i++) {
+	for (i = 0; i < j; i++) {
 		hg_stack_drop(dstack, error);
 	}
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, -__n);
-DEFUNC_OPER_END
+	SET_EXPECTED_DSTACK_SIZE (-j);
+} DEFUNC_OPER_END
 
 /* <mark> ... cleartomark - */
 DEFUNC_OPER (cleartomark)
-gssize __n G_GNUC_UNUSED = 0;
-G_STMT_START {
+{
 	gsize depth = hg_stack_depth(ostack), i, j;
 	hg_quark_t q;
 
@@ -2312,21 +2250,19 @@ G_STMT_START {
 				hg_stack_drop(ostack, error);
 			}
 			retval = TRUE;
-			__n = i + 1;
+			SET_EXPECTED_OSTACK_SIZE (-(i + 1));
 			break;
 		}
 	}
 	if (i == depth)
 		hg_vm_set_error(vm, qself, HG_VM_e_unmatchedmark);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-__n, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (clip);
 
 /* - clippath - */
 DEFUNC_OPER (clippath)
-G_STMT_START {
+{
 	hg_quark_t q, qq, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate = HG_VM_LOCK (vm, qg, error);
 
@@ -2344,13 +2280,11 @@ G_STMT_START {
 	retval = TRUE;
   finalize:
 	HG_VM_UNLOCK (vm, qg);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <file> closefile - */
 DEFUNC_OPER (closefile)
-G_STMT_START {
+{
 	hg_quark_t arg0;
 	hg_file_t *f;
 
@@ -2378,13 +2312,12 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* - closepath - */
 DEFUNC_OPER (closepath)
-G_STMT_START {
+{
 	hg_quark_t q = Qnil, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 	hg_path_t *path;
@@ -2409,15 +2342,13 @@ G_STMT_START {
 	if (q != Qnil)
 		HG_VM_UNLOCK (vm, q);
 	HG_VM_UNLOCK (vm, qg);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (colorimage);
 
 /* <matrix> concat - */
 DEFUNC_OPER (concat)
-G_STMT_START {
+{
 	hg_quark_t arg0, qg = hg_vm_get_gstate(vm);
 	hg_array_t *a = NULL;
 	hg_gstate_t *gstate = NULL;
@@ -2451,20 +2382,20 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
+	SET_EXPECTED_OSTACK_SIZE (-1);
   finalize:
 	if (gstate)
 		HG_VM_UNLOCK (vm, qg);
 	if (a)
 		HG_VM_UNLOCK (vm, arg0);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <matrix1> <matrix2> <matrix3> concatmatrix <matrix3> */
 DEFUNC_OPER (concatmatrix)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, arg2;
 	hg_array_t *a1, *a2, *a3;
+	hg_matrix_t m1, m2, m3;
 
 	CHECK_STACK (ostack, 3);
 
@@ -2500,22 +2431,22 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		goto error;
 	}
-	if (!hg_array_matrix_multiply(a1, a2, a3)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
-		goto error;
-	}
+	hg_array_to_matrix(a1, &m1);
+	hg_array_to_matrix(a2, &m2);
+	hg_matrix_multiply(&m1, &m2, &m3);
+	hg_array_from_matrix(a3, &m3);
+
 	hg_stack_roll(ostack, 3, 1, error);
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
+	SET_EXPECTED_OSTACK_SIZE (-2);
   error:
 	HG_VM_UNLOCK (vm, arg2);
 	HG_VM_UNLOCK (vm, arg1);
 	HG_VM_UNLOCK (vm, arg0);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-2, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (condition);
 
@@ -2539,8 +2470,7 @@ _hg_operator_copy_real_traverse_dict(hg_mem_t    *mem,
  * <gstate1> <gstate2> copy <gstate2>
  */
 DEFUNC_OPER (copy)
-gssize __n G_GNUC_UNUSED = 0;
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, q = Qnil;
 	gsize i;
 
@@ -2562,7 +2492,7 @@ G_STMT_START {
 			}
 		}
 		retval = TRUE;
-		__n = n;
+		SET_EXPECTED_OSTACK_SIZE (n != 0 ? n - 1 : -1);
 	} else {
 		CHECK_STACK (ostack, 2);
 
@@ -2599,16 +2529,22 @@ G_STMT_START {
 					goto a_error;
 			}
 			if (len2 > len1) {
+				hg_quark_acl_t acl = 0;
+
 				q = hg_array_make_subarray(a2, 0, len1 - 1, NULL, error);
 				if (q == Qnil) {
 					hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 					goto a_error;
 				}
-				hg_vm_quark_set_attributes(vm, &q,
-							   hg_vm_quark_is_readable(vm, &arg1),
-							   hg_vm_quark_is_writable(vm, &arg1),
-							   hg_vm_quark_is_executable(vm, &arg1),
-							   hg_vm_quark_is_editable(vm, &arg1));
+				if (hg_vm_quark_is_readable(vm, &arg1))
+					acl |= HG_ACL_READABLE;
+				if (hg_vm_quark_is_writable(vm, &arg1))
+					acl |= HG_ACL_WRITABLE;
+				if (hg_vm_quark_is_executable(vm, &arg1))
+					acl |= HG_ACL_EXECUTABLE;
+				if (hg_vm_quark_is_accessible(vm, &arg1))
+					acl |= HG_ACL_ACCESSIBLE;
+				hg_vm_quark_set_acl(vm, &q, acl);
 			} else {
 				q = arg1;
 			}
@@ -2680,16 +2616,22 @@ G_STMT_START {
 				hg_string_overwrite_c(s2, c, i, error);
 			}
 			if (mlen2 > mlen1) {
+				hg_quark_acl_t acl = 0;
+
 				q = hg_string_make_substring(s2, 0, len1 - 1, NULL, error);
 				if (q == Qnil) {
 					hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 					goto s_error;
 				}
-				hg_vm_quark_set_attributes(vm, &q,
-							   hg_vm_quark_is_readable(vm, &arg1),
-							   hg_vm_quark_is_writable(vm, &arg1),
-							   hg_vm_quark_is_executable(vm, &arg1),
-							   hg_vm_quark_is_editable(vm, &arg1));
+				if (hg_vm_quark_is_readable(vm, &arg1))
+					acl |= HG_ACL_READABLE;
+				if (hg_vm_quark_is_writable(vm, &arg1))
+					acl |= HG_ACL_WRITABLE;
+				if (hg_vm_quark_is_executable(vm, &arg1))
+					acl |= HG_ACL_EXECUTABLE;
+				if (hg_vm_quark_is_accessible(vm, &arg1))
+					acl |= HG_ACL_ACCESSIBLE;
+				hg_vm_quark_set_acl(vm, &q, acl);
 			} else {
 				q = arg1;
 			}
@@ -2709,17 +2651,16 @@ G_STMT_START {
 			hg_stack_drop(ostack, error);
 
 			STACK_PUSH (ostack, q);
+			SET_EXPECTED_OSTACK_SIZE (-1);
 		}
 	}
-} G_STMT_END;
-VALIDATE_STACK_SIZE (__n != 0 ? __n - 1 : -1, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (copypage);
 
 /* <angle> cos <real> */
 DEFUNC_OPER (cos)
-G_STMT_START {
+{
 	hg_quark_t arg0, *ret;
 	gdouble angle;
 
@@ -2738,43 +2679,38 @@ G_STMT_START {
 	*ret = HG_QREAL (cos(angle / 180 * M_PI));
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* - count <int> */
 DEFUNC_OPER (count)
-G_STMT_START {
+{
 	STACK_PUSH (ostack, HG_QINT (hg_stack_depth(ostack)));
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (1);
+} DEFUNC_OPER_END
 
 /* - countdictstack <int> */
 DEFUNC_OPER (countdictstack)
-G_STMT_START {
+{
 	STACK_PUSH (ostack, HG_QINT (hg_stack_depth(dstack)));
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (1);
+} DEFUNC_OPER_END
 
 /* - countexecstack <int> */
 DEFUNC_OPER (countexecstack)
-G_STMT_START {
+{
 	STACK_PUSH (ostack, HG_QINT (hg_stack_depth(estack)));
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (1);
+} DEFUNC_OPER_END
 
 /* <mark> ... counttomark <int> */
 DEFUNC_OPER (counttomark)
-G_STMT_START {
+{
 	gsize i, depth = hg_stack_depth(ostack);
 	hg_quark_t q = Qnil;
 
@@ -2794,9 +2730,8 @@ G_STMT_START {
 	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (1);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (cshow);
 DEFUNC_UNIMPLEMENTED_OPER (currentblackgeneration);
@@ -2812,20 +2747,19 @@ DEFUNC_UNIMPLEMENTED_OPER (currentdevparams);
 
 /* - currentdict <dict> */
 DEFUNC_OPER (currentdict)
-G_STMT_START {
+{
 	hg_quark_t q;
 
 	q = hg_stack_index(dstack, 0, error);
 	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (1);
+} DEFUNC_OPER_END
 
 /* - currentfile <file> */
 DEFUNC_OPER (currentfile)
-G_STMT_START {
+{
 	hg_quark_t q = Qnil;
 	gsize i, edepth = hg_stack_depth(estack);
 
@@ -2848,9 +2782,8 @@ G_STMT_START {
 	}
 	STACK_PUSH (ostack, q);
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (1);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (currentflat);
 DEFUNC_UNIMPLEMENTED_OPER (currentfont);
@@ -2866,7 +2799,7 @@ DEFUNC_UNIMPLEMENTED_OPER (currentlinewidth);
 
 /* <matrix> currentmatrix <matrix> */
 DEFUNC_OPER (currentmatrix)
-G_STMT_START {
+{
 	hg_quark_t arg0, qg = hg_vm_get_gstate(vm);
 	hg_array_t *a = NULL;
 	hg_matrix_t m;
@@ -2901,9 +2834,7 @@ G_STMT_START {
 		HG_VM_UNLOCK (vm, qg);
 	if (a)
 		HG_VM_UNLOCK (vm, arg0);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (currentmiterlimit);
 DEFUNC_UNIMPLEMENTED_OPER (currentobjectformat);
@@ -2913,7 +2844,7 @@ DEFUNC_UNIMPLEMENTED_OPER (currentpagedevice);
 
 /* - currentpoint <x> <y> */
 DEFUNC_OPER (currentpoint)
-G_STMT_START {
+{
 	hg_quark_t qg = hg_vm_get_gstate(vm), qpath;
 	hg_gstate_t *gstate = HG_VM_LOCK (vm, qg, error);
 	hg_path_t *path = NULL;
@@ -2934,14 +2865,13 @@ G_STMT_START {
 	STACK_PUSH (ostack, HG_QREAL (y));
 
 	retval = TRUE;
+	SET_EXPECTED_OSTACK_SIZE (2);
   finalize:
 	if (path)
 		HG_VM_UNLOCK (vm, qpath);
 	if (gstate)
 		HG_VM_UNLOCK (vm, qg);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (2, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (currentrgbcolor);
 DEFUNC_UNIMPLEMENTED_OPER (currentscreen);
@@ -2954,7 +2884,7 @@ DEFUNC_UNIMPLEMENTED_OPER (currentundercolorremoval);
 
 /* - currentuserparams <dict> */
 DEFUNC_OPER (currentuserparams)
-G_STMT_START {
+{
 	hg_quark_t q;
 
 	q = hg_vm_get_user_params(vm, NULL, error);
@@ -2966,13 +2896,12 @@ G_STMT_START {
 	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (1);
+} DEFUNC_OPER_END
 
 /* <x1> <y1> <x2> <y2> <x3> <y3> curveto - */
 DEFUNC_OPER (curveto)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, arg2, arg3, arg4, arg5, q, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 	hg_path_t *path;
@@ -3063,19 +2992,18 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
+	SET_EXPECTED_OSTACK_SIZE (-6);
   error2:
 	HG_VM_UNLOCK (vm, q);
   error:
 	HG_VM_UNLOCK (vm, qg);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-6, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <num> cvi <int>
  * <string> cvi <int>
  */
 DEFUNC_OPER (cvi)
-G_STMT_START {
+{
 	hg_quark_t arg0, q, *ret;
 
 	CHECK_STACK (ostack, 1);
@@ -3156,13 +3084,11 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <any> cvlit <any> */
 DEFUNC_OPER (cvlit)
-G_STMT_START {
+{
 	hg_quark_t *ret;
 
 	CHECK_STACK (ostack, 1);
@@ -3171,13 +3097,11 @@ G_STMT_START {
 	hg_vm_quark_set_executable(vm, ret, FALSE);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <string> cvn <name> */
 DEFUNC_OPER (cvn)
-G_STMT_START {
+{
 	hg_quark_t arg0, *ret;
 	gchar *cstr;
 
@@ -3206,15 +3130,13 @@ G_STMT_START {
 	g_free(cstr);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <num> cvr <real>
  * <string> cvr <real>
  */
 DEFUNC_OPER (cvr)
-G_STMT_START {
+{
 	hg_quark_t arg0, q, *ret;
 
 	CHECK_STACK (ostack, 1);
@@ -3282,13 +3204,11 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <num> <radix> <string> cvrs <substring> */
 DEFUNC_OPER (cvrs)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, arg2, q;
 	gdouble d1;
 	gint radix;
@@ -3359,16 +3279,22 @@ G_STMT_START {
 	}
 	hg_string_append(s, cstr, -1, error);
 	if (hg_string_maxlength(s) > hg_string_length(s)) {
+		hg_quark_acl_t acl = 0;
+
 		q = hg_string_make_substring(s, 0, hg_string_length(s) - 1, NULL, error);
 		if (q == Qnil) {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			goto error;
 		}
-		hg_vm_quark_set_attributes(vm, &q,
-					   hg_vm_quark_is_readable(vm, &arg2),
-					   hg_vm_quark_is_writable(vm, &arg2),
-					   hg_vm_quark_is_executable(vm, &arg2),
-					   hg_vm_quark_is_editable(vm, &arg2));
+		if (hg_vm_quark_is_readable(vm, &arg2))
+			acl |= HG_ACL_READABLE;
+		if (hg_vm_quark_is_writable(vm, &arg2))
+			acl |= HG_ACL_WRITABLE;
+		if (hg_vm_quark_is_executable(vm, &arg2))
+			acl |= HG_ACL_EXECUTABLE;
+		if (hg_vm_quark_is_accessible(vm, &arg2))
+			acl |= HG_ACL_ACCESSIBLE;
+		hg_vm_quark_set_acl(vm, &q, acl);
 	} else {
 		q = arg2;
 	}
@@ -3382,17 +3308,16 @@ G_STMT_START {
 	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
+	SET_EXPECTED_OSTACK_SIZE (-2);
   error:
 	if (s)
 		HG_VM_UNLOCK (vm, arg2);
 	g_free(cstr);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-2, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <any> cvx <any> */
 DEFUNC_OPER (cvx)
-G_STMT_START {
+{
 	hg_quark_t *ret;
 
 	CHECK_STACK (ostack, 1);
@@ -3401,13 +3326,11 @@ G_STMT_START {
 	hg_vm_quark_set_executable(vm, ret, TRUE);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <key> <value> def - */
 DEFUNC_OPER (def)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, qd;
 
 	CHECK_STACK (ostack, 2);
@@ -3424,13 +3347,12 @@ G_STMT_START {
 
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-2, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-2);
+} DEFUNC_OPER_END
 
 /* <matrix> defaultmatrix <matrix> */
 DEFUNC_OPER (defaultmatrix)
-G_STMT_START {
+{
 	hg_quark_t arg0;
 	hg_array_t *a;
 	hg_matrix_t m;
@@ -3461,9 +3383,7 @@ G_STMT_START {
 	retval = TRUE;
   finalize:
 	HG_VM_UNLOCK (vm, arg0);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (defineresource);
 DEFUNC_UNIMPLEMENTED_OPER (defineusername);
@@ -3474,7 +3394,7 @@ DEFUNC_UNIMPLEMENTED_OPER (deviceinfo);
 
 /* <int> dict <dict> */
 DEFUNC_OPER (dict)
-G_STMT_START {
+{
 	hg_quark_t arg0, ret;
 
 	CHECK_STACK (ostack, 1);
@@ -3500,19 +3420,17 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	hg_vm_quark_set_default_attributes(vm, &ret);
+	hg_vm_quark_set_default_acl(vm, &ret);
 	hg_stack_drop(ostack, error);
 
 	STACK_PUSH (ostack, ret);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <array> dictstack <subarray> */
 DEFUNC_OPER (dictstack)
-G_STMT_START {
+{
 	hg_quark_t arg0, q;
 	hg_array_t *a;
 	gssize i, len, ddepth;
@@ -3545,16 +3463,22 @@ G_STMT_START {
 			goto error;
 	}
 	if (ddepth != len) {
+		hg_quark_acl_t acl = 0;
+
 		q = hg_array_make_subarray(a, 0, ddepth - 1, NULL, error);
 		if (q == Qnil) {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			goto error;
 		}
-		hg_vm_quark_set_attributes(vm, &q,
-					   hg_vm_quark_is_readable(vm, &arg0),
-					   hg_vm_quark_is_writable(vm, &arg0),
-					   hg_vm_quark_is_executable(vm, &arg0),
-					   hg_vm_quark_is_editable(vm, &arg0));
+		if (hg_vm_quark_is_readable(vm, &arg0))
+			acl |= HG_ACL_READABLE;
+		if (hg_vm_quark_is_writable(vm, &arg0))
+			acl |= HG_ACL_WRITABLE;
+		if (hg_vm_quark_is_executable(vm, &arg0))
+			acl |= HG_ACL_EXECUTABLE;
+		if (hg_vm_quark_is_accessible(vm, &arg0))
+			acl |= HG_ACL_ACCESSIBLE;
+		hg_vm_quark_set_acl(vm, &q, acl);
 	} else {
 		q = arg0;
 	}
@@ -3568,13 +3492,11 @@ G_STMT_START {
 	retval = TRUE;
   error:
 	HG_VM_UNLOCK (vm, arg0);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <num1> <num2> div <quotient> */
 DEFUNC_OPER (div)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, *ret;
 	gdouble d1, d2;
 
@@ -3608,15 +3530,14 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (dtransform);
 
 /* <any> dup <any> <any> */
 DEFUNC_OPER (dup)
-G_STMT_START {
+{
 	hg_quark_t arg0;
 
 	CHECK_STACK (ostack, 1);
@@ -3626,16 +3547,15 @@ G_STMT_START {
 	STACK_PUSH (ostack, arg0);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (1);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (echo);
 DEFUNC_UNIMPLEMENTED_OPER (eexec);
 
 /* - end - */
 DEFUNC_OPER (end)
-G_STMT_START {
+{
 	gsize ddepth = hg_stack_depth(dstack);
 	hg_vm_langlevel_t lang = hg_vm_get_language_level(vm);
 
@@ -3647,15 +3567,14 @@ G_STMT_START {
 	hg_stack_drop(dstack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, -1);
-DEFUNC_OPER_END
+	SET_EXPECTED_DSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (eoclip);
 
 /* - eofill - */
 DEFUNC_OPER (eofill)
-G_STMT_START {
+{
 	hg_quark_t qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate = HG_VM_LOCK (vm, qg, error);
 
@@ -3674,15 +3593,13 @@ G_STMT_START {
 	retval = TRUE;
   finalize:
 	HG_VM_UNLOCK (vm, qg);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (eoviewclip);
 
 /* <any1> <any2> eq <bool> */
 DEFUNC_OPER (eq)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, *qret;
 	gboolean ret = FALSE;
 
@@ -3759,28 +3676,24 @@ G_STMT_START {
 
 		retval = TRUE;
 	}
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (erasepage);
 
 /* <any1> <any2> exch <any2> <any1> */
 DEFUNC_OPER (exch)
-G_STMT_START {
+{
 	CHECK_STACK (ostack, 2);
 
 	hg_stack_exch(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <any> exec - */
 DEFUNC_OPER (exec)
-gboolean __flag G_GNUC_UNUSED = FALSE;
-G_STMT_START {
+{
 	hg_quark_t arg0, q;
 
 	CHECK_STACK (ostack, 1);
@@ -3803,19 +3716,17 @@ G_STMT_START {
 		STACK_PUSH (estack, q);
 
 		hg_stack_exch(estack, error);
-		__flag = TRUE;
+		SET_EXPECTED_STACK_SIZE (-1, 1, 0);
 	}
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (__flag ? -1 : 0, __flag ? 1 : 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (execform);
 
 /* <array> execstack <subarray> */
 DEFUNC_OPER (execstack)
-G_STMT_START {
+{
 	hg_quark_t arg0, q;
 	hg_array_t *a;
 	gssize i, len, edepth;
@@ -3849,16 +3760,22 @@ G_STMT_START {
 			goto error;
 	}
 	if (edepth != (len + 1)) {
+		hg_quark_acl_t acl = 0;
+
 		q = hg_array_make_subarray(a, 0, edepth - 2, NULL, error);
 		if (q == Qnil) {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			goto error;
 		}
-		hg_vm_quark_set_attributes(vm, &q,
-					   hg_vm_quark_is_readable(vm, &arg0),
-					   hg_vm_quark_is_writable(vm, &arg0),
-					   hg_vm_quark_is_executable(vm, &arg0),
-					   hg_vm_quark_is_editable(vm, &arg0));
+		if (hg_vm_quark_is_readable(vm, &arg0))
+			acl |= HG_ACL_READABLE;
+		if (hg_vm_quark_is_writable(vm, &arg0))
+			acl |= HG_ACL_WRITABLE;
+		if (hg_vm_quark_is_executable(vm, &arg0))
+			acl |= HG_ACL_EXECUTABLE;
+		if (hg_vm_quark_is_accessible(vm, &arg0))
+			acl |= HG_ACL_ACCESSIBLE;
+		hg_vm_quark_set_acl(vm, &q, acl);
 	} else {
 		q = arg0;
 	}
@@ -3872,9 +3789,7 @@ G_STMT_START {
 	retval = TRUE;
   error:
 	HG_VM_UNLOCK (vm, arg0);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (execuserobject);
 
@@ -3884,7 +3799,7 @@ DEFUNC_UNIMPLEMENTED_OPER (execuserobject);
  * <string> executeonly <string>
  */
 DEFUNC_OPER (executeonly)
-G_STMT_START {
+{
 	hg_quark_t *arg0;
 
 	CHECK_STACK (ostack, 1);
@@ -3893,27 +3808,24 @@ G_STMT_START {
 	if (HG_IS_QARRAY (*arg0) ||
 	    HG_IS_QFILE (*arg0) ||
 	    HG_IS_QSTRING (*arg0)) {
-		if (!hg_vm_quark_is_editable(vm, arg0)) {
+		if (!hg_vm_quark_is_accessible(vm, arg0)) {
 			hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
 			return FALSE;
 		}
 		hg_vm_quark_set_readable(vm, arg0, FALSE);
 		hg_vm_quark_set_writable(vm, arg0, FALSE);
-		hg_vm_quark_set_editable(vm, arg0, TRUE);
+		hg_vm_quark_set_accessible(vm, arg0, TRUE);
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* - exit - */
 DEFUNC_OPER (exit)
-gssize __n G_GNUC_UNUSED = 0;
-G_STMT_START {
+{
 	gsize i, j, edepth = hg_stack_depth(estack);
 	hg_quark_t q;
 
@@ -3929,21 +3841,21 @@ G_STMT_START {
 				hg_stack_drop(estack, error);
 				hg_stack_drop(estack, error);
 				hg_stack_drop(estack, error);
-				__n = i + 4;
+				SET_EXPECTED_ESTACK_SIZE (-(i + 4));
 			} else if (HG_OPER (q) == HG_enc_protected_loop_continue) {
 				hg_stack_drop(estack, error);
-				__n = i + 1;
+				SET_EXPECTED_ESTACK_SIZE (-(i + 1));
 			} else if (HG_OPER (q) == HG_enc_protected_repeat_continue) {
 				hg_stack_drop(estack, error);
 				hg_stack_drop(estack, error);
-				__n = i + 2;
+				SET_EXPECTED_ESTACK_SIZE (-(i + 2));
 			} else if (HG_OPER (q) == HG_enc_protected_forall_array_continue ||
 				   HG_OPER (q) == HG_enc_protected_forall_dict_continue ||
 				   HG_OPER (q) == HG_enc_protected_forall_string_continue) {
 				hg_stack_drop(estack, error);
 				hg_stack_drop(estack, error);
 				hg_stack_drop(estack, error);
-				__n = i + 3;
+				SET_EXPECTED_ESTACK_SIZE (-(i + 3));
 			} else if (HG_OPER (q) == HG_enc_protected_stopped_continue) {
 				hg_vm_set_error(vm, qself, HG_VM_e_invalidexit);
 				return FALSE;
@@ -3963,13 +3875,11 @@ G_STMT_START {
 	} else {
 		retval = TRUE;
 	}
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, -__n, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <base> <exponent> exp <real> */
 DEFUNC_OPER (exp)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, *ret;
 	gdouble base, exponent;
 
@@ -4005,13 +3915,12 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* <filename> <access> file -file- */
 DEFUNC_OPER (file)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, q;
 	hg_file_io_t iotype;
 	hg_file_mode_t iomode;
@@ -4079,35 +3988,37 @@ G_STMT_START {
 			goto error;
 		}
 	} else {
+		hg_quark_acl_t acl = HG_ACL_ACCESSIBLE;
+
 		q = hg_file_new(hg_vm_get_mem(vm),
 				filename, iomode, error, NULL);
 		if (q == Qnil) {
 			hg_vm_set_error_from_gerror(vm, qself, *error);
 			goto error;
 		}
-		hg_vm_quark_set_attributes(vm, &q,
-					   iomode & (HG_FILE_IO_MODE_READ|HG_FILE_IO_MODE_APPEND) ? TRUE : FALSE,
-					   iomode & (HG_FILE_IO_MODE_WRITE|HG_FILE_IO_MODE_APPEND) ? TRUE : FALSE,
-					   FALSE, TRUE);
+		if (iomode & (HG_FILE_IO_MODE_READ|HG_FILE_IO_MODE_APPEND))
+			acl |= HG_ACL_READABLE;
+		if (iomode & (HG_FILE_IO_MODE_WRITE|HG_FILE_IO_MODE_APPEND))
+			acl |= HG_ACL_WRITABLE;
+		hg_vm_quark_set_acl(vm, &q, acl);
 	}
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
 	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
+	SET_EXPECTED_OSTACK_SIZE (-1);
   error:
 	g_free(filename);
 	g_free(fmode);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (filenameforall);
 DEFUNC_UNIMPLEMENTED_OPER (fileposition);
 
 /* - fill - */
 DEFUNC_OPER (fill)
-G_STMT_START {
+{
 	hg_quark_t qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate = HG_VM_LOCK (vm, qg, error);
 
@@ -4126,9 +4037,7 @@ G_STMT_START {
 	retval = TRUE;
   finalize:
 	HG_VM_UNLOCK (vm, qg);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (filter);
 DEFUNC_UNIMPLEMENTED_OPER (findencoding);
@@ -4137,7 +4046,7 @@ DEFUNC_UNIMPLEMENTED_OPER (flattenpath);
 
 /* - flush - */
 DEFUNC_OPER (flush)
-G_STMT_START {
+{
 	hg_quark_t q;
 	hg_file_t *stdout_;
 
@@ -4156,13 +4065,11 @@ G_STMT_START {
 	retval = TRUE;
 
 	HG_VM_UNLOCK (vm, q);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <file> flushfile - */
 DEFUNC_OPER (flushfile)
-G_STMT_START {
+{
 	hg_quark_t arg0;
 	hg_file_t *f;
 
@@ -4183,15 +4090,14 @@ G_STMT_START {
 	retval = TRUE;
 
 	hg_stack_drop(ostack, error);
+	SET_EXPECTED_OSTACK_SIZE (-1);
   error:
 	HG_VM_UNLOCK (vm, arg0);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <initial> <increment> <limit> <proc> for - */
 DEFUNC_OPER (for)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, arg2, arg3, q;
 	gdouble dinit, dinc, dlimit;
 	gboolean fint = TRUE;
@@ -4261,9 +4167,8 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-4, 5, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_STACK_SIZE (-4, 5, 0);
+} DEFUNC_OPER_END
 
 static gboolean
 _hg_operator_dup_dict(hg_mem_t    *mem,
@@ -4283,7 +4188,7 @@ _hg_operator_dup_dict(hg_mem_t    *mem,
  * <string> <proc> forall -
  */
 DEFUNC_OPER (forall)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, q = Qnil, qd;
 	hg_dict_t *dict, *new_dict;
 
@@ -4310,6 +4215,8 @@ G_STMT_START {
 			return FALSE;
 		}
 	} else if (HG_IS_QDICT (arg0)) {
+		hg_quark_acl_t acl = 0;
+
 		dict = HG_VM_LOCK (vm, arg0, error);
 		if (dict == NULL) {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
@@ -4324,11 +4231,15 @@ G_STMT_START {
 			HG_VM_UNLOCK (vm, arg0);
 			goto d_error;
 		}
-		hg_vm_quark_set_attributes(vm, &qd,
-					   hg_vm_quark_is_readable(vm, &arg0),
-					   hg_vm_quark_is_writable(vm, &arg0),
-					   hg_vm_quark_is_executable(vm, &arg0),
-					   hg_vm_quark_is_editable(vm, &arg0));
+		if (hg_vm_quark_is_readable(vm, &arg0))
+			acl |= HG_ACL_READABLE;
+		if (hg_vm_quark_is_writable(vm, &arg0))
+			acl |= HG_ACL_WRITABLE;
+		if (hg_vm_quark_is_executable(vm, &arg0))
+			acl |= HG_ACL_EXECUTABLE;
+		if (hg_vm_quark_is_accessible(vm, &arg0))
+			acl |= HG_ACL_ACCESSIBLE;
+		hg_vm_quark_set_acl(vm, &qd, acl);
 		hg_dict_foreach(dict, _hg_operator_dup_dict, new_dict, error);
 		HG_VM_UNLOCK (vm, arg0);
 
@@ -4371,16 +4282,15 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-2, 4, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_STACK_SIZE (-2, 4, 0);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (fork);
 DEFUNC_UNIMPLEMENTED_OPER (framedevice);
 
 /* <any> gcheck <bool> */
 DEFUNC_OPER (gcheck)
-G_STMT_START {
+{
 	hg_quark_t arg0, *qret;
 	gboolean ret;
 
@@ -4392,20 +4302,18 @@ G_STMT_START {
 	    HG_IS_QOPER (arg0)) {
 		ret = TRUE;
 	} else {
-		ret = hg_quark_has_same_mem_id(arg0, vm->mem_id[HG_VM_MEM_GLOBAL]);
+		ret = hg_quark_has_mem_id(arg0, vm->mem_id[HG_VM_MEM_GLOBAL]);
 	}
 	*qret = HG_QBOOL (ret);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <num1> <num2> ge <bool>
  * <string1> <string2> ge <bool>
  */
 DEFUNC_OPER (ge)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, q = Qnil, *ret;
 
 	CHECK_STACK (ostack, 2);
@@ -4456,9 +4364,8 @@ G_STMT_START {
 
 		retval = TRUE;
 	}
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* <array> <index> get <any>
  * <packedarray> <index> get <any>
@@ -4466,7 +4373,7 @@ DEFUNC_OPER_END
  * <string> <index> get <int>
  */
 DEFUNC_OPER (get)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, q = Qnil;
 
 	CHECK_STACK (ostack, 2);
@@ -4549,18 +4456,18 @@ G_STMT_START {
 
 		STACK_PUSH (ostack, q);
 	}
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* <array> <index> <count> getinterval <subarray>
  * <packedarray> <index> <count> getinterval <subarray>
  * <string> <index> <count> getinterval <substring>
  */
 DEFUNC_OPER (getinterval)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, arg2, q = Qnil;
 	gssize len, index, count;
+	hg_quark_acl_t acl = 0;
 
 	CHECK_STACK (ostack, 3);
 
@@ -4616,11 +4523,15 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		goto error;
 	}
-	hg_vm_quark_set_attributes(vm, &q,
-				   hg_vm_quark_is_readable(vm, &arg0),
-				   hg_vm_quark_is_writable(vm, &arg0),
-				   hg_vm_quark_is_executable(vm, &arg0),
-				   hg_vm_quark_is_editable(vm, &arg0));
+	if (hg_vm_quark_is_readable(vm, &arg0))
+		acl |= HG_ACL_READABLE;
+	if (hg_vm_quark_is_writable(vm, &arg0))
+		acl |= HG_ACL_WRITABLE;
+	if (hg_vm_quark_is_executable(vm, &arg0))
+		acl |= HG_ACL_EXECUTABLE;
+	if (hg_vm_quark_is_accessible(vm, &arg0))
+		acl |= HG_ACL_ACCESSIBLE;
+	hg_vm_quark_set_acl(vm, &q, acl);
 
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
@@ -4629,17 +4540,16 @@ G_STMT_START {
 	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
+	SET_EXPECTED_OSTACK_SIZE (-2);
   error:
 	HG_VM_UNLOCK (vm, arg0);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-2, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (glyphshow);
 
 /* - grestore - */
 DEFUNC_OPER (grestore)
-G_STMT_START {
+{
 	hg_quark_t q;
 	hg_gstate_t *g;
 
@@ -4658,13 +4568,11 @@ G_STMT_START {
 		HG_VM_UNLOCK (vm, q);
 	}
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* - grestoreall - */
 DEFUNC_OPER (grestoreall)
-G_STMT_START {
+{
 	hg_quark_t q, qq = Qnil;
 	hg_gstate_t *g;
 
@@ -4684,13 +4592,11 @@ G_STMT_START {
 		HG_VM_UNLOCK (vm, q);
 	}
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* - gsave - */
 DEFUNC_OPER (gsave)
-G_STMT_START {
+{
 	hg_quark_t q, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 
@@ -4707,9 +4613,7 @@ G_STMT_START {
 	hg_vm_set_gstate(vm, q);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (gstate);
 
@@ -4717,7 +4621,7 @@ DEFUNC_UNIMPLEMENTED_OPER (gstate);
  * <string1> <string2> gt <bool>
  */
 DEFUNC_OPER (gt)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, q = Qnil, *ret;
 
 	CHECK_STACK (ostack, 2);
@@ -4768,15 +4672,15 @@ G_STMT_START {
 
 		retval = TRUE;
 	}
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* <matrix> identmatrix <matrix> */
 DEFUNC_OPER (identmatrix)
-G_STMT_START {
+{
 	hg_quark_t arg0;
 	hg_array_t *a = NULL;
+	hg_matrix_t m;
 
 	CHECK_STACK (ostack, 1);
 
@@ -4796,17 +4700,18 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 		goto error;
 	}
-	retval = hg_array_matrix_ident(a);
+	hg_matrix_init_identity(&m);
+	hg_array_from_matrix(a, &m);
+
+	retval = TRUE;
   error:
 	if (a)
 		HG_VM_UNLOCK (vm, arg0);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <int1> <int2> idiv <quotient> */
 DEFUNC_OPER (idiv)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, *ret;
 
 	CHECK_STACK (ostack, 2);
@@ -4824,16 +4729,14 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (idtransform);
 
 /* <bool> <proc> if - */
 DEFUNC_OPER (if)
-gboolean __flag G_GNUC_UNUSED = FALSE;
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, q;
 
 	CHECK_STACK (ostack, 2);
@@ -4861,19 +4764,18 @@ G_STMT_START {
 		}
 		STACK_PUSH (estack, q);
 		hg_stack_exch(estack, error);
-		__flag = TRUE;
+		SET_EXPECTED_ESTACK_SIZE (1);
 	}
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-2, __flag ? 1 : 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-2);
+} DEFUNC_OPER_END
 
 /* <bool> <proc1> <proc2> ifelse - */
 DEFUNC_OPER (ifelse)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, arg2, q;
 
 	CHECK_STACK (ostack, 3);
@@ -4920,16 +4822,15 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-3, 1, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_STACK_SIZE (-3, 1, 0);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (image);
 DEFUNC_UNIMPLEMENTED_OPER (imagemask);
 
 /* <any> ... <n> index <any> ... */
 DEFUNC_OPER (index)
-G_STMT_START {
+{
 	hg_quark_t arg0, q;
 	gsize n;
 
@@ -4952,16 +4853,14 @@ G_STMT_START {
 	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (ineofill);
 DEFUNC_UNIMPLEMENTED_OPER (infill);
 
 /* - initclip - */
 DEFUNC_OPER (initclip)
-G_STMT_START {
+{
 	hg_stack_t *es = hg_vm_stack_new(vm, 256);
 
 	if (hg_vm_eval_from_cstring(vm, ".currentpagedevice /PageSize get 0 0 moveto dup 0 get 0 lineto dup aload pop lineto 1 get 0 exch lineto closepath", -1,
@@ -4988,9 +4887,7 @@ G_STMT_START {
 	}
   finalize:
 	hg_stack_free(es);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (initviewclip);
 DEFUNC_UNIMPLEMENTED_OPER (instroke);
@@ -5000,9 +4897,10 @@ DEFUNC_UNIMPLEMENTED_OPER (inustroke);
 
 /* <matrix1> <matrix2> invertmatrix <matrix3> */
 DEFUNC_OPER (invertmatrix)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1;
 	hg_array_t *a1 = NULL, *a2 = NULL;
+	hg_matrix_t m1, m2;
 
 	CHECK_STACK (ostack, 2);
 
@@ -5030,32 +4928,31 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_rangecheck);
 		goto error;
 	}
-
-	if (!hg_array_matrix_invert(a1, a2)) {
+	hg_array_to_matrix(a1, &m1);
+	if (!hg_matrix_invert(&m1, &m2)) {
 		hg_vm_set_error(vm, qself, HG_VM_e_undefinedresult);
 		goto error;
 	}
+	hg_array_from_matrix(a2, &m2);
 
 	hg_stack_exch(ostack, error);
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-
+	SET_EXPECTED_OSTACK_SIZE (-1);
   error:
 	if (a1)
 		HG_VM_UNLOCK (vm, arg0);
 	if (a2)
 		HG_VM_UNLOCK (vm, arg1);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (itransform);
 DEFUNC_UNIMPLEMENTED_OPER (join);
 
 /* <dict> <key> known <bool> */
 DEFUNC_OPER (known)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, q, *ret;
 
 	CHECK_STACK (ostack, 2);
@@ -5082,27 +4979,25 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (kshow);
 
 /* - languagelevel <int> */
 DEFUNC_OPER (languagelevel)
-G_STMT_START {
+{
 	STACK_PUSH (ostack, HG_QINT (hg_vm_get_language_level(vm) + 1));
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (1);
+} DEFUNC_OPER_END
 
 /* <num1> <num2> le <bool>
  * <string1> <string2> le <bool>
  */
 DEFUNC_OPER (le)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, q = Qnil, *ret;
 
 	CHECK_STACK (ostack, 2);
@@ -5153,9 +5048,8 @@ G_STMT_START {
 
 		retval = TRUE;
 	}
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* <array> length <int>
  * <packedarray> length <int>
@@ -5164,7 +5058,7 @@ DEFUNC_OPER_END
  * <name> length <int>
  */
 DEFUNC_OPER (length)
-G_STMT_START {
+{
 	hg_quark_t arg0, *ret;
 
 	CHECK_STACK (ostack, 1);
@@ -5217,13 +5111,11 @@ G_STMT_START {
 	}
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <x> <y> lineto - */
 DEFUNC_OPER (lineto)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, q, qg = hg_vm_get_gstate(vm);
 	gdouble dx, dy;
 	hg_gstate_t *gstate;
@@ -5274,17 +5166,16 @@ G_STMT_START {
 
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
+	SET_EXPECTED_OSTACK_SIZE (-2);
   error2:
 	HG_VM_UNLOCK (vm, q);
   error:
 	HG_VM_UNLOCK (vm, qg);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-2, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <num> ln <real> */
 DEFUNC_OPER (ln)
-G_STMT_START {
+{
 	hg_quark_t arg0, *ret;
 	gdouble d;
 
@@ -5308,15 +5199,13 @@ G_STMT_START {
 	*ret = HG_QREAL (log(d));
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (lock);
 
 /* <num> log <real> */
 DEFUNC_OPER (log)
-G_STMT_START {
+{
 	hg_quark_t arg0, *ret;
 	gdouble d;
 
@@ -5340,13 +5229,11 @@ G_STMT_START {
 	*ret = HG_QREAL (log10(d));
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <proc> loop - */
 DEFUNC_OPER (loop)
-G_STMT_START {
+{
 	hg_quark_t arg0, q;
 
 	CHECK_STACK (ostack, 1);
@@ -5380,15 +5267,14 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 2, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_STACK_SIZE (-1, 2, 0);
+} DEFUNC_OPER_END
 
 /* <num1> <num2> lt <bool>
  * <string1> <string2> lt <bool>
  */
 DEFUNC_OPER (lt)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, q = Qnil, *ret;
 
 	CHECK_STACK (ostack, 2);
@@ -5439,16 +5325,15 @@ G_STMT_START {
 
 		retval = TRUE;
 	}
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (makefont);
 DEFUNC_UNIMPLEMENTED_OPER (makepattern);
 
 /* <dict> maxlength <int> */
 DEFUNC_OPER (maxlength)
-G_STMT_START {
+{
 	hg_quark_t arg0, *ret;
 	hg_dict_t *dict;
 
@@ -5469,13 +5354,11 @@ G_STMT_START {
 	HG_VM_UNLOCK (vm, arg0);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <int1> <int2> mod <remainder> */
 DEFUNC_OPER (mod)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, *ret;
 
 	CHECK_STACK (ostack, 2);
@@ -5497,15 +5380,14 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (monitor);
 
 /* <x> <y> moveto - */
 DEFUNC_OPER (moveto)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, q, qg = hg_vm_get_gstate(vm);
 	gdouble dx, dy;
 	hg_gstate_t *gstate;
@@ -5559,17 +5441,16 @@ G_STMT_START {
 
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
+	SET_EXPECTED_OSTACK_SIZE (-2);
   error2:
 	HG_VM_UNLOCK (vm, q);
   error:
 	HG_VM_UNLOCK (vm, qg);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-2, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <num1> <num2> mul <product> */
 DEFUNC_OPER (mul)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, *ret;
 	gdouble d1, d2, dr;
 	gboolean is_int = TRUE;
@@ -5609,13 +5490,12 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* <any1> <any2> ne <bool> */
 DEFUNC_OPER (ne)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, *qret;
 	gboolean ret = FALSE;
 
@@ -5688,13 +5568,12 @@ G_STMT_START {
 
 		retval = TRUE;
 	}
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* <num1> neg <num2> */
 DEFUNC_OPER (neg)
-G_STMT_START {
+{
 	hg_quark_t arg0, *ret;
 	gdouble d;
 	gboolean is_int = TRUE;
@@ -5722,13 +5601,11 @@ G_STMT_START {
 	}
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* - newpath - */
 DEFUNC_OPER (newpath)
-G_STMT_START {
+{
 	hg_quark_t q, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 
@@ -5747,9 +5624,7 @@ G_STMT_START {
 	HG_VM_UNLOCK (vm, qg);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <array> noaccess <array>
  * <packedarray> noaccess <packedarray>
@@ -5758,7 +5633,7 @@ DEFUNC_OPER_END
  * <string> noaccess <string>
  */
 DEFUNC_OPER (noaccess)
-G_STMT_START {
+{
 	hg_quark_t *arg0;
 
 	CHECK_STACK (ostack, 1);
@@ -5768,23 +5643,20 @@ G_STMT_START {
 	    HG_IS_QFILE (*arg0) ||
 	    HG_IS_QSTRING (*arg0) ||
 	    HG_IS_QDICT (*arg0)) {
-		hg_vm_quark_set_attributes(vm, arg0,
-					   FALSE, FALSE, FALSE, FALSE);
+		hg_vm_quark_set_acl(vm, arg0, 0);
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <bool> not <bool>
  * <int> not <int>
  */
 DEFUNC_OPER (not)
-G_STMT_START {
+{
 	hg_quark_t arg0, *ret;
 
 	CHECK_STACK (ostack, 1);
@@ -5801,9 +5673,7 @@ G_STMT_START {
 	}
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (notify);
 DEFUNC_UNIMPLEMENTED_OPER (nulldevice);
@@ -5812,7 +5682,7 @@ DEFUNC_UNIMPLEMENTED_OPER (nulldevice);
  * <int1> <int2> or <int3>
  */
 DEFUNC_OPER (or)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, *ret;
 
 	CHECK_STACK (ostack, 2);
@@ -5834,15 +5704,14 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (packedarray);
 
 /* - pathbbox <llx> <lly> <urx> <ury> */
 DEFUNC_OPER (pathbbox)
-G_STMT_START {
+{
 	hg_quark_t q, qg = hg_vm_get_gstate(vm);
 	hg_path_t *path = NULL;
 	hg_path_bbox_t bbox;
@@ -5874,31 +5743,29 @@ G_STMT_START {
 	STACK_PUSH (ostack, HG_QREAL (bbox.ury));
 
 	retval = TRUE;
+	SET_EXPECTED_OSTACK_SIZE (4);
   finalize:
 	if (path)
 		HG_VM_UNLOCK (vm, q);
 	HG_VM_UNLOCK (vm, qg);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (4, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <move> <line> <curve> <close> pathforall - */
 DEFUNC_UNIMPLEMENTED_OPER (pathforall);
 
 DEFUNC_OPER (pop)
-G_STMT_START {
+{
 	CHECK_STACK (ostack, 1);
 
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* <string> print - */
 DEFUNC_OPER (print)
-G_STMT_START {
+{
 	hg_quark_t arg0, qstdout;
 	hg_file_t *stdout;
 	gchar *cstr;
@@ -5930,11 +5797,10 @@ G_STMT_START {
 		retval = TRUE;
 	}
 	HG_VM_UNLOCK (vm, qstdout);
+	SET_EXPECTED_OSTACK_SIZE (-1);
   error:
 	g_free(cstr);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (printobject);
 DEFUNC_UNIMPLEMENTED_OPER (product);
@@ -5944,7 +5810,7 @@ DEFUNC_UNIMPLEMENTED_OPER (product);
  * <string> <index> <int> put -
  */
 DEFUNC_OPER (put)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, arg2;
 	gboolean is_in_global;
 
@@ -5957,10 +5823,10 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
 		return FALSE;
 	}
-	is_in_global = hg_quark_has_same_mem_id(arg0, vm->mem_id[HG_VM_MEM_GLOBAL]);
+	is_in_global = hg_quark_has_mem_id(arg0, vm->mem_id[HG_VM_MEM_GLOBAL]);
 	if (is_in_global &&
 	    !hg_quark_is_simple_object(arg2) &&
-	    hg_quark_has_same_mem_id(arg2, vm->mem_id[HG_VM_MEM_LOCAL])) {
+	    hg_quark_has_mem_id(arg2, vm->mem_id[HG_VM_MEM_LOCAL])) {
 		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
 		return FALSE;
 	}
@@ -6008,14 +5874,13 @@ G_STMT_START {
 		hg_stack_drop(ostack, error);
 		hg_stack_drop(ostack, error);
 		hg_stack_drop(ostack, error);
+		SET_EXPECTED_OSTACK_SIZE (-3);
 	}
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-3, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* - rand <int> */
 DEFUNC_OPER (rand)
-G_STMT_START {
+{
 	hg_quark_t ret;
 
 	ret = HG_QINT (hg_vm_rand_int(vm));
@@ -6023,9 +5888,8 @@ G_STMT_START {
 	STACK_PUSH (ostack, ret);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (1);
+} DEFUNC_OPER_END
 
 /* <array> rcheck <bool>
  * <packedarray> rcheck <bool>
@@ -6034,7 +5898,7 @@ DEFUNC_OPER_END
  * <string> rcheck <bool>
  */
 DEFUNC_OPER (rcheck)
-G_STMT_START {
+{
 	hg_quark_t arg0, *ret;
 
 	CHECK_STACK (ostack, 1);
@@ -6051,13 +5915,11 @@ G_STMT_START {
 	*ret = HG_QBOOL (hg_vm_quark_is_readable(vm, &arg0));
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <dx1> <dy1> <dx2> <dy2> <dx3> <dy3> rcurveto - */
 DEFUNC_OPER (rcurveto)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, arg2, arg3, arg4, arg5, q, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 	hg_path_t *path;
@@ -6148,20 +6010,18 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
+	SET_EXPECTED_OSTACK_SIZE (-6);
   error2:
 	HG_VM_UNLOCK (vm, q);
   error:
 	HG_VM_UNLOCK (vm, qg);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-6, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <file> read <int> <true>
  * <file> read <false>
  */
 DEFUNC_OPER (read)
-gboolean __flag G_GNUC_UNUSED = FALSE;
-G_STMT_START {
+{
 	hg_quark_t arg0;
 	hg_file_t *f;
 	gchar c[2];
@@ -6199,16 +6059,14 @@ G_STMT_START {
 
 		STACK_PUSH (ostack, HG_QINT ((guchar)c[0]));
 		STACK_PUSH (ostack, HG_QBOOL (TRUE));
-		__flag = TRUE;
+		SET_EXPECTED_OSTACK_SIZE (1);
 		retval = TRUE;
 	}
-} G_STMT_END;
-VALIDATE_STACK_SIZE (__flag ? 1 : 0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <file> <string> readhexstring <substring> <bool> */
 DEFUNC_OPER (readhexstring)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, q, qs;
 	hg_file_t *f = NULL;
 	hg_string_t *s = NULL;
@@ -6276,17 +6134,23 @@ G_STMT_START {
 		}
 	}
 	if (hg_file_is_eof(f)) {
+		hg_quark_acl_t acl = 0;
+
 		q = HG_QBOOL (FALSE);
 		qs = hg_string_make_substring(s, 0, hg_string_length(s) - 1, NULL, error);
 		if (qs == Qnil) {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			goto finalize;
 		}
-		hg_vm_quark_set_attributes(vm, &qs,
-					   hg_vm_quark_is_readable(vm, &arg1),
-					   hg_vm_quark_is_writable(vm, &arg1),
-					   hg_vm_quark_is_executable(vm, &arg1),
-					   hg_vm_quark_is_editable(vm, &arg1));
+		if (hg_vm_quark_is_readable(vm, &arg1))
+			acl |= HG_ACL_READABLE;
+		if (hg_vm_quark_is_writable(vm, &arg1))
+			acl |= HG_ACL_WRITABLE;
+		if (hg_vm_quark_is_executable(vm, &arg1))
+			acl |= HG_ACL_EXECUTABLE;
+		if (hg_vm_quark_is_accessible(vm, &arg1))
+			acl |= HG_ACL_ACCESSIBLE;
+		hg_vm_quark_set_acl(vm, &qs, acl);
 	} else {
 		q = HG_QBOOL (TRUE);
 		qs = arg1;
@@ -6306,19 +6170,18 @@ G_STMT_START {
 		HG_VM_UNLOCK (vm, arg0);
 	if (s)
 		HG_VM_UNLOCK (vm, arg1);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <file> <string> readline <substring> <bool> */
 DEFUNC_OPER (readline)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, q, qs;
 	hg_file_t *f = NULL;
 	hg_string_t *s = NULL;
 	gchar c[2];
 	gboolean eol = FALSE;
 	gssize ret;
+	hg_quark_acl_t acl = 0;
 
 	CHECK_STACK (ostack, 2);
 
@@ -6390,11 +6253,15 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		goto finalize;
 	}
-	hg_vm_quark_set_attributes(vm, &qs,
-				   hg_vm_quark_is_readable(vm, &arg1),
-				   hg_vm_quark_is_writable(vm, &arg1),
-				   hg_vm_quark_is_executable(vm, &arg1),
-				   hg_vm_quark_is_editable(vm, &arg1));
+	if (hg_vm_quark_is_readable(vm, &arg1))
+		acl |= HG_ACL_READABLE;
+	if (hg_vm_quark_is_writable(vm, &arg1))
+		acl |= HG_ACL_WRITABLE;
+	if (hg_vm_quark_is_executable(vm, &arg1))
+		acl |= HG_ACL_EXECUTABLE;
+	if (hg_vm_quark_is_accessible(vm, &arg1))
+		acl |= HG_ACL_ACCESSIBLE;
+	hg_vm_quark_set_acl(vm, &qs, acl);
 
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
@@ -6408,9 +6275,7 @@ G_STMT_START {
 		HG_VM_UNLOCK (vm, arg0);
 	if (s)
 		HG_VM_UNLOCK (vm, arg1);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* -array- readonly -array-
  * -packedarray- readonly -packedarray-
@@ -6419,7 +6284,7 @@ DEFUNC_OPER_END
  * -string- readonly -string-
  */
 DEFUNC_OPER (readonly)
-G_STMT_START {
+{
 	hg_quark_t *arg0;
 
 	CHECK_STACK (ostack, 1);
@@ -6435,13 +6300,11 @@ G_STMT_START {
 	hg_vm_quark_set_writable(vm, arg0, FALSE);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <file> <string> readstring <substring> <bool> */
 DEFUNC_OPER (readstring)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, q, qs;
 	hg_file_t *f = NULL;
 	hg_string_t *s = NULL;
@@ -6495,17 +6358,23 @@ G_STMT_START {
 		hg_string_append_c(s, c[0], error);
 	}
 	if (hg_file_is_eof(f)) {
+		hg_quark_acl_t acl = 0;
+
 		q = HG_QBOOL (FALSE);
 		qs = hg_string_make_substring(s, 0, hg_string_length(s) - 1, NULL, error);
 		if (qs == Qnil) {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			goto finalize;
 		}
-		hg_vm_quark_set_attributes(vm, &qs,
-					   hg_vm_quark_is_readable(vm, &arg1),
-					   hg_vm_quark_is_writable(vm, &arg1),
-					   hg_vm_quark_is_executable(vm, &arg1),
-					   hg_vm_quark_is_editable(vm, &arg1));
+		if (hg_vm_quark_is_readable(vm, &arg1))
+			acl |= HG_ACL_READABLE;
+		if (hg_vm_quark_is_writable(vm, &arg1))
+			acl |= HG_ACL_WRITABLE;
+		if (hg_vm_quark_is_executable(vm, &arg1))
+			acl |= HG_ACL_EXECUTABLE;
+		if (hg_vm_quark_is_accessible(vm, &arg1))
+			acl |= HG_ACL_ACCESSIBLE;
+		hg_vm_quark_set_acl(vm, &qs, acl);
 	} else {
 		q = HG_QBOOL (TRUE);
 		qs = arg1;
@@ -6525,9 +6394,7 @@ G_STMT_START {
 		HG_VM_UNLOCK (vm, arg0);
 	if (s)
 		HG_VM_UNLOCK (vm, arg1);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (realtime);
 DEFUNC_UNIMPLEMENTED_OPER (rectclip);
@@ -6539,7 +6406,7 @@ DEFUNC_UNIMPLEMENTED_OPER (renderbands);
 
 /* <int> <proc> repeat - */
 DEFUNC_OPER (repeat)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, q;
 
 	CHECK_STACK (ostack, 2);
@@ -6584,9 +6451,8 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-2, 3, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_STACK_SIZE (-2, 3, 0);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (resetfile);
 DEFUNC_UNIMPLEMENTED_OPER (resourceforall);
@@ -6634,7 +6500,7 @@ _hg_operator_restore_mark(hg_mem_t *mem,
 
 /* <save> restore - */
 DEFUNC_OPER (restore)
-G_STMT_START {
+{
 	hg_quark_t arg0, q, qq = Qnil;
 	hg_snapshot_t *sn;
 	hg_gstate_t *g;
@@ -6679,17 +6545,16 @@ G_STMT_START {
 	}
 	retval = TRUE;
 	hg_stack_drop(ostack, error);
+	SET_EXPECTED_OSTACK_SIZE (-1);
   error:
 	HG_VM_UNLOCK (vm, arg0);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (reversepath);
 
 /* <dx> <dy> rlineto - */
 DEFUNC_OPER (rlineto)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, q, qg = hg_vm_get_gstate(vm);
 	gdouble dx, dy;
 	hg_gstate_t *gstate;
@@ -6740,17 +6605,16 @@ G_STMT_START {
 
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
+	SET_EXPECTED_OSTACK_SIZE (-2);
   error2:
 	HG_VM_UNLOCK (vm, q);
   error:
 	HG_VM_UNLOCK (vm, qg);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-2, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <dx> <dy> rmoveto - */
 DEFUNC_OPER (rmoveto)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, q, qg = hg_vm_get_gstate(vm);
 	gdouble dx, dy;
 	hg_gstate_t *gstate;
@@ -6801,17 +6665,16 @@ G_STMT_START {
 
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
+	SET_EXPECTED_OSTACK_SIZE (-2);
   error2:
 	HG_VM_UNLOCK (vm, q);
   error:
 	HG_VM_UNLOCK (vm, qg);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-2, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <any> ... <n> <j> roll <any> ... */
 DEFUNC_OPER (roll)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1;
 
 	CHECK_STACK (ostack, 2);
@@ -6836,9 +6699,8 @@ G_STMT_START {
 	hg_stack_roll(ostack, HG_INT (arg0), HG_INT (arg1), error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-2, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-2);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (rootfont);
 
@@ -6846,7 +6708,7 @@ DEFUNC_UNIMPLEMENTED_OPER (rootfont);
  * <angle> <matrix> rotate <matrix>
  */
 DEFUNC_OPER (rotate)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1 = Qnil, qg = hg_vm_get_gstate(vm);
 	gdouble angle;
 	hg_matrix_t ctm;
@@ -6913,13 +6775,12 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* <num> round <num> */
 DEFUNC_OPER (round)
-G_STMT_START {
+{
 	hg_quark_t arg0, *ret;
 
 	CHECK_STACK (ostack, 1);
@@ -6953,23 +6814,20 @@ G_STMT_START {
 	}
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* - rrand <int> */
 DEFUNC_OPER (rrand)
-G_STMT_START {
+{
 	STACK_PUSH (ostack, HG_QINT (hg_vm_get_rand_seed(vm)));
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (1);
+} DEFUNC_OPER_END
 
 /* - save <save> */
 DEFUNC_OPER (save)
-G_STMT_START {
+{
 	hg_quark_t q, qgg = hg_vm_get_gstate(vm), qg;
 	hg_snapshot_t *sn;
 	hg_gstate_t *gstate;
@@ -7001,9 +6859,8 @@ G_STMT_START {
 	vm->vm_state.n_save_objects++;
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (1);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (scale);
 DEFUNC_UNIMPLEMENTED_OPER (scalefont);
@@ -7012,8 +6869,7 @@ DEFUNC_UNIMPLEMENTED_OPER (scalefont);
  *                               <string> false
  */
 DEFUNC_OPER (search)
-gint __n G_GNUC_UNUSED = 0;
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, qpost, qmatch, qpre;
 	hg_string_t *s = NULL, *seek = NULL;
 	gsize len0, len1;
@@ -7071,13 +6927,13 @@ G_STMT_START {
 		STACK_PUSH (ostack, qpre);
 		STACK_PUSH (ostack, HG_QBOOL (TRUE));
 
-		__n = 4 - 2;
+		SET_EXPECTED_OSTACK_SIZE (4 - 2);
 	} else {
 		hg_stack_drop(ostack, error);
 
 		STACK_PUSH (ostack, HG_QBOOL (FALSE));
 
-		__n = 2 - 2;
+		SET_EXPECTED_OSTACK_SIZE (2 - 2);
 	}
 
 	retval = TRUE;
@@ -7088,9 +6944,7 @@ G_STMT_START {
 		HG_VM_UNLOCK (vm, arg0);
 	if (seek)
 		HG_VM_UNLOCK (vm, arg1);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (__n, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (selectfont);
 DEFUNC_UNIMPLEMENTED_OPER (serialnumber);
@@ -7110,7 +6964,7 @@ DEFUNC_UNIMPLEMENTED_OPER (setcolortransfer);
 
 /* <array> <offset> setdash - */
 DEFUNC_OPER (setdash)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate = NULL;
 	gdouble offset;
@@ -7147,11 +7001,10 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
+	SET_EXPECTED_OSTACK_SIZE (-2);
   finalize:
 	HG_VM_UNLOCK (vm, qg);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-2, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (setdevparams);
 DEFUNC_UNIMPLEMENTED_OPER (setfileposition);
@@ -7160,7 +7013,7 @@ DEFUNC_UNIMPLEMENTED_OPER (setfont);
 
 /* <num> setgray - */
 DEFUNC_OPER (setgray)
-G_STMT_START {
+{
 	hg_quark_t arg0, qg = hg_vm_get_gstate(vm);
 	gdouble d;
 	hg_gstate_t *gstate;
@@ -7192,9 +7045,8 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (setgstate);
 DEFUNC_UNIMPLEMENTED_OPER (sethalftone);
@@ -7202,7 +7054,7 @@ DEFUNC_UNIMPLEMENTED_OPER (sethalftonephase);
 
 /* <hue> <saturation> <brightness> sethsbcolor - */
 DEFUNC_OPER (sethsbcolor)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, arg2, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 	gdouble h, s, b;
@@ -7250,13 +7102,12 @@ G_STMT_START {
 	HG_VM_UNLOCK (vm, qg);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-3, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-3);
+} DEFUNC_OPER_END
 
 /* <int> setlinecap - */
 DEFUNC_OPER (setlinecap)
-G_STMT_START {
+{
 	hg_quark_t arg0, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 	gint32 i;
@@ -7285,13 +7136,12 @@ G_STMT_START {
 	HG_VM_UNLOCK (vm, qg);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* <int> setlinejoin - */
 DEFUNC_OPER (setlinejoin)
-G_STMT_START {
+{
 	hg_quark_t arg0, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 	gint32 i;
@@ -7320,13 +7170,12 @@ G_STMT_START {
 	HG_VM_UNLOCK (vm, qg);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* <num> setlinewidth - */
 DEFUNC_OPER (setlinewidth)
-G_STMT_START {
+{
 	hg_quark_t arg0, qg = hg_vm_get_gstate(vm);
 	gdouble d;
 	hg_gstate_t *gstate;
@@ -7355,13 +7204,12 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* <matrix> setmatrix - */
 DEFUNC_OPER (setmatrix)
-G_STMT_START {
+{
 	hg_quark_t arg0, qg = hg_vm_get_gstate(vm);
 	hg_array_t *a;
 	hg_matrix_t m;
@@ -7395,17 +7243,16 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
+	SET_EXPECTED_OSTACK_SIZE (-1);
   finalize:
 	if (gstate)
 		HG_VM_UNLOCK (vm, qg);
 	HG_VM_UNLOCK (vm, arg0);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <num> setmiterlimit - */
 DEFUNC_OPER (setmiterlimit)
-G_STMT_START {
+{
 	hg_quark_t arg0, qg = hg_vm_get_gstate(vm);
 	gdouble miterlen;
 	hg_gstate_t *gstate;
@@ -7435,11 +7282,10 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
+	SET_EXPECTED_OSTACK_SIZE (-1);
   finalize:
 	HG_VM_UNLOCK (vm, qg);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (setobjectformat);
 DEFUNC_UNIMPLEMENTED_OPER (setoverprint);
@@ -7449,7 +7295,7 @@ DEFUNC_UNIMPLEMENTED_OPER (setpattern);
 
 /* <red> <green> <blue> setrgbcolor - */
 DEFUNC_OPER (setrgbcolor)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, arg2, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 	gdouble r, g, b;
@@ -7497,9 +7343,8 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-3, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-3);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (setscreen);
 DEFUNC_UNIMPLEMENTED_OPER (setshared);
@@ -7511,7 +7356,7 @@ DEFUNC_UNIMPLEMENTED_OPER (setundercolorremoval);
 
 /* <dict> setuserparams - */
 DEFUNC_OPER (setuserparams)
-G_STMT_START {
+{
 	hg_quark_t arg0;
 
 	CHECK_STACK (ostack, 1);
@@ -7527,9 +7372,8 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (setvmthreshold);
 DEFUNC_UNIMPLEMENTED_OPER (shareddict);
@@ -7538,7 +7382,7 @@ DEFUNC_UNIMPLEMENTED_OPER (showpage);
 
 /* <angle> sin <real> */
 DEFUNC_OPER (sin)
-G_STMT_START {
+{
 	hg_quark_t arg0, *ret;
 	gdouble angle;
 
@@ -7557,13 +7401,11 @@ G_STMT_START {
 	*ret = HG_QREAL (sin(angle / 180 * M_PI));
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <num> sqrt <real> */
 DEFUNC_OPER (sqrt)
-G_STMT_START {
+{
 	hg_quark_t arg0, *ret;
 	gdouble d;
 
@@ -7582,13 +7424,11 @@ G_STMT_START {
 	*ret = HG_QREAL (sqrt(d));
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <int> srand - */
 DEFUNC_OPER (srand)
-G_STMT_START {
+{
 	hg_quark_t arg0;
 
 	CHECK_STACK (ostack, 1);
@@ -7605,9 +7445,8 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (startjob);
 
@@ -7616,8 +7455,7 @@ DEFUNC_UNIMPLEMENTED_OPER (startjob);
  * <filename> status false
  */
 DEFUNC_OPER (status)
-gint __n G_GNUC_UNUSED = 0;
-G_STMT_START {
+{
 	hg_quark_t arg0, q;
 
 	CHECK_STACK (ostack, 1);
@@ -7639,7 +7477,7 @@ G_STMT_START {
 
 		STACK_PUSH (ostack, q);
 
-		__n = 1 - 1;
+		SET_EXPECTED_OSTACK_SIZE (1 - 1);
 	} else if (HG_IS_QSTRING (arg0)) {
 		gchar *filename;
 		struct stat st;
@@ -7655,7 +7493,7 @@ G_STMT_START {
 		if (lstat(filename, &st) == -1) {
 			STACK_PUSH (ostack, HG_QBOOL (FALSE));
 
-			__n = 1 - 1;
+			SET_EXPECTED_OSTACK_SIZE (1 - 1);
 		} else {
 			STACK_PUSH (ostack, HG_QINT (st.st_blocks));
 			STACK_PUSH (ostack, HG_QINT (st.st_size));
@@ -7663,7 +7501,7 @@ G_STMT_START {
 			STACK_PUSH (ostack, HG_QINT (st.st_mtime));
 			STACK_PUSH (ostack, HG_QBOOL (TRUE));
 
-			__n = 5 - 1;
+			SET_EXPECTED_OSTACK_SIZE (5 - 1);
 		}
 	} else {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
@@ -7671,16 +7509,14 @@ G_STMT_START {
 	}
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (__n, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* - stop - */
 DEFUNC_OPER (stop)
-gssize __n G_GNUC_UNUSED = 0;
-G_STMT_START {
+{
 	hg_quark_t q;
 	gsize edepth = hg_stack_depth(estack), i;
+	gssize n = 0;
 
 	for (i = 0; i < edepth; i++) {
 		q = hg_stack_index(estack, i, error);
@@ -7693,7 +7529,7 @@ G_STMT_START {
 		q = hg_stack_pop(estack, error);
 		STACK_PUSH (estack, HG_QOPER (HG_enc_private_abort));
 		STACK_PUSH (estack, q);
-		__n++;
+		n++;
 	} else {
 		if (!hg_vm_dict_add(vm, vm->qerror,
 				    HG_QNAME (vm->name, ".stopped"),
@@ -7703,18 +7539,17 @@ G_STMT_START {
 			return FALSE;
 		}
 		for (; i > 1; i--) {
-			__n--;
+			n--;
 			hg_stack_drop(estack, error);
 		}
 	}
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, __n, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_ESTACK_SIZE (n);
+} DEFUNC_OPER_END
 
 /* <any> stopped <bool> */
 DEFUNC_OPER (stopped)
-G_STMT_START {
+{
 	hg_quark_t arg0, q;
 
 	CHECK_STACK (ostack, 1);
@@ -7752,13 +7587,12 @@ G_STMT_START {
 	}
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 2, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_STACK_SIZE (-1, 2, 0);
+} DEFUNC_OPER_END
 
 /* <int> string <string> */
 DEFUNC_OPER (string)
-G_STMT_START {
+{
 	hg_quark_t arg0, q;
 	gssize len;
 
@@ -7785,15 +7619,13 @@ G_STMT_START {
 	STACK_PUSH (ostack, q);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (stringwidth);
 
 /* - stroke - */
 DEFUNC_OPER (stroke)
-G_STMT_START {
+{
 	hg_quark_t qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate = HG_VM_LOCK (vm, qg, error);
 
@@ -7812,15 +7644,13 @@ G_STMT_START {
 	retval = TRUE;
   finalize:
 	HG_VM_UNLOCK (vm, qg);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (strokepath);
 
 /* <num1> <num2> sub <diff> */
 DEFUNC_OPER (sub)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, *ret;
 	gdouble d1, d2;
 	gboolean is_int = TRUE;
@@ -7857,9 +7687,8 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* <file> token <any> true
  *              false
@@ -7867,8 +7696,7 @@ DEFUNC_OPER_END
  *                false
  */
 DEFUNC_OPER (token)
-gint __n G_GNUC_UNUSED = 0;
-G_STMT_START {
+{
 	hg_quark_t arg0, qt;
 	gboolean is_proceeded = FALSE;
 
@@ -7903,7 +7731,7 @@ G_STMT_START {
 
 				STACK_PUSH (ostack, HG_QBOOL (FALSE));
 
-				__n = 0;
+				SET_EXPECTED_OSTACK_SIZE (0);
 			} else {
 				qt = hg_stack_index(estack, 0, error);
 				if (HG_IS_QFILE (qt)) {
@@ -7921,7 +7749,7 @@ G_STMT_START {
 				STACK_PUSH (ostack, q);
 				STACK_PUSH (ostack, HG_QBOOL (TRUE));
 
-				__n = 1;
+				SET_EXPECTED_OSTACK_SIZE (1);
 			}
 		}
 
@@ -7978,7 +7806,7 @@ G_STMT_START {
 				STACK_PUSH (ostack, HG_QBOOL (FALSE));
 
 				retval = TRUE;
-				__n = 0;
+				SET_EXPECTED_OSTACK_SIZE (0);
 			} else {
 				qt = hg_stack_index(estack, 0, error);
 				if (HG_IS_QFILE (qt)) {
@@ -8023,7 +7851,7 @@ G_STMT_START {
 				STACK_PUSH (ostack, HG_QBOOL (TRUE));
 
 				retval = TRUE;
-				__n = 2;
+				SET_EXPECTED_OSTACK_SIZE (2);
 			  s_finalize:
 				HG_VM_UNLOCK (vm, arg0);
 			}
@@ -8032,9 +7860,7 @@ G_STMT_START {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		return FALSE;
 	}
-} G_STMT_END;
-VALIDATE_STACK_SIZE (__n, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (transform);
 
@@ -8042,7 +7868,7 @@ DEFUNC_UNIMPLEMENTED_OPER (transform);
  * <tx> <ty> <matrix> translate <matrix>
  */
 DEFUNC_OPER (translate)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, arg2 = Qnil, qg = hg_vm_get_gstate(vm);
 	gdouble tx, ty;
 	hg_matrix_t ctm;
@@ -8120,13 +7946,12 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-2, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-2);
+} DEFUNC_OPER_END
 
 /* <any> type <name> */
 DEFUNC_OPER (type)
-G_STMT_START {
+{
 	hg_quark_t arg0, q, *ret;
 
 	CHECK_STACK (ostack, 1);
@@ -8139,9 +7964,7 @@ G_STMT_START {
 	*ret = q;
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (uappend);
 DEFUNC_UNIMPLEMENTED_OPER (ucache);
@@ -8154,15 +7977,14 @@ DEFUNC_UNIMPLEMENTED_OPER (upath);
 
 /* - usertime <int> */
 DEFUNC_OPER (usertime)
-G_STMT_START {
+{
 	gint32 i = hg_vm_get_current_time(vm);
 
 	STACK_PUSH (ostack, HG_QINT (i));
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (1);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (ustroke);
 DEFUNC_UNIMPLEMENTED_OPER (ustrokepath);
@@ -8171,7 +7993,7 @@ DEFUNC_UNIMPLEMENTED_OPER (viewclippath);
 
 /* <int> vmreclaim - */
 DEFUNC_OPER (vmreclaim)
-G_STMT_START {
+{
 	hg_quark_t arg0;
 
 	CHECK_STACK (ostack, 1);
@@ -8205,13 +8027,12 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 /* - vmstatus <level> <used> <maximum> */
 DEFUNC_OPER (vmstatus)
-G_STMT_START {
+{
 	hg_mem_t *mem = hg_vm_get_mem(vm);
 
 	STACK_PUSH (ostack, HG_QINT (vm->vm_state.n_save_objects));
@@ -8219,9 +8040,8 @@ G_STMT_START {
 	STACK_PUSH (ostack, HG_QINT (hg_mem_get_total_size(mem) - hg_mem_get_used_size(mem)));
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (3, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (3);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (wait);
 
@@ -8232,7 +8052,7 @@ DEFUNC_UNIMPLEMENTED_OPER (wait);
  * <string> wcheck <bool>
  */
 DEFUNC_OPER (wcheck)
-G_STMT_START {
+{
 	hg_quark_t arg0, *ret;
 
 	CHECK_STACK (ostack, 1);
@@ -8249,16 +8069,13 @@ G_STMT_START {
 	*ret = HG_QBOOL (hg_vm_quark_is_writable(vm, &arg0));
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <key> where <dict> <true>
  * <key> where <false>
  */
 DEFUNC_OPER (where)
-gboolean __flag G_GNUC_UNUSED = FALSE;
-G_STMT_START {
+{
 	hg_quark_t arg0, q = Qnil, qq = Qnil;
 	gsize ddepth = hg_stack_depth(dstack), i;
 
@@ -8281,21 +8098,19 @@ G_STMT_START {
 	if (qq == Qnil) {
 		STACK_PUSH (ostack, HG_QBOOL (FALSE));
 	} else {
-		__flag = TRUE;
 		STACK_PUSH (ostack, q);
 		STACK_PUSH (ostack, HG_QBOOL (TRUE));
+		SET_EXPECTED_OSTACK_SIZE (1);
 	}
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (__flag ? 1 : 0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (widthshow);
 
 /* <file> <int> write - */
 DEFUNC_OPER (write)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1;
 	hg_file_t *f;
 	gchar c[2];
@@ -8328,13 +8143,12 @@ G_STMT_START {
 
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-2, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-2);
+} DEFUNC_OPER_END
 
 /* <file> <string> writehexstring - */
 DEFUNC_OPER (writehexstring)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1;
 	hg_file_t *f;
 	hg_string_t *s;
@@ -8374,18 +8188,17 @@ G_STMT_START {
 	retval = TRUE;
 	hg_stack_drop(ostack, error);
 	hg_stack_drop(ostack, error);
+	SET_EXPECTED_OSTACK_SIZE (-2);
   error:
 	HG_VM_UNLOCK (vm, arg0);
 	HG_VM_UNLOCK (vm, arg1);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-2, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (writeobject);
 
 /* <file> <string> writestring - */
 DEFUNC_OPER (writestring)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1;
 	hg_file_t *f;
 	hg_string_t *s;
@@ -8422,18 +8235,17 @@ G_STMT_START {
 		hg_stack_drop(ostack, error);
 		hg_stack_drop(ostack, error);
 	}
+	SET_EXPECTED_OSTACK_SIZE (-2);
   error:
 	HG_VM_UNLOCK (vm, arg0);
 	HG_VM_UNLOCK (vm, arg1);
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-2, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (wtranslation);
 
 /* <any> xcheck <bool> */
 DEFUNC_OPER (xcheck)
-G_STMT_START {
+{
 	hg_quark_t arg0, *ret;
 
 	CHECK_STACK (ostack, 1);
@@ -8444,15 +8256,13 @@ G_STMT_START {
 	*ret = HG_QBOOL (hg_vm_quark_is_executable(vm, &arg0));
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (0, 0, 0);
-DEFUNC_OPER_END
+} DEFUNC_OPER_END
 
 /* <bool1> <bool2> xor <bool3>
  * <int1> <int2> xor <int3>
  */
 DEFUNC_OPER (xor)
-G_STMT_START {
+{
 	hg_quark_t arg0, arg1, *ret;
 
 	CHECK_STACK (ostack, 2);
@@ -8474,9 +8284,8 @@ G_STMT_START {
 	hg_stack_drop(ostack, error);
 
 	retval = TRUE;
-} G_STMT_END;
-VALIDATE_STACK_SIZE (-1, 0, 0);
-DEFUNC_OPER_END
+	SET_EXPECTED_OSTACK_SIZE (-1);
+} DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (xshow);
 DEFUNC_UNIMPLEMENTED_OPER (xyshow);
@@ -8485,7 +8294,7 @@ DEFUNC_UNIMPLEMENTED_OPER (yshow);
 
 
 #define REG_OPER(_d_,_n_,_o_)						\
-	G_STMT_START {							\
+	HG_STMT_START {							\
 		hg_quark_t __o_name__ = hg_name_new_with_encoding((_n_),	\
 								  HG_enc_ ## _o_); \
 		hg_quark_t __op__ = HG_QOPER (HG_enc_ ## _o_);		\
@@ -8496,9 +8305,9 @@ DEFUNC_UNIMPLEMENTED_OPER (yshow);
 				 FALSE,					\
 				 NULL))					\
 			return FALSE;					\
-	} G_STMT_END
+	} HG_STMT_END
 #define REG_PRIV_OPER(_d_,_n_,_k_,_o_)					\
-	G_STMT_START {							\
+	HG_STMT_START {							\
 		hg_quark_t __o_name__ = HG_QNAME ((_n_),#_k_);		\
 		hg_quark_t __op__ = HG_QOPER (HG_enc_ ## _o_);		\
 									\
@@ -8508,9 +8317,9 @@ DEFUNC_UNIMPLEMENTED_OPER (yshow);
 				 FALSE,					\
 				 NULL))					\
 			return FALSE;					\
-	} G_STMT_END
+	} HG_STMT_END
 #define REG_VALUE(_d_,_n_,_k_,_v_)				\
-	G_STMT_START {						\
+	HG_STMT_START {						\
 		hg_quark_t __o_name__ = HG_QNAME ((_n_),#_k_);	\
 		hg_quark_t __v__ = (_v_);			\
 								\
@@ -8521,7 +8330,7 @@ DEFUNC_UNIMPLEMENTED_OPER (yshow);
 				 FALSE,				\
 				 NULL))				\
 			return FALSE;				\
-	} G_STMT_END
+	} HG_STMT_END
 
 static gboolean
 _hg_operator_level1_register(hg_vm_t   *vm,
@@ -8983,19 +8792,19 @@ gboolean
 hg_operator_init(void)
 {
 #define DECL_OPER(_n_)							\
-	G_STMT_START {							\
+	HG_STMT_START {							\
 		__hg_operator_name_table[HG_enc_ ## _n_] = g_strdup("--" #_n_ "--"); \
 		if (__hg_operator_name_table[HG_enc_ ## _n_] == NULL)	\
 			return FALSE;					\
 		__hg_operator_func_table[HG_enc_ ## _n_] = OPER_FUNC_NAME (_n_); \
-	} G_STMT_END
+	} HG_STMT_END
 #define DECL_PRIV_OPER(_on_,_n_)						\
-	G_STMT_START {							\
+	HG_STMT_START {							\
 		__hg_operator_name_table[HG_enc_ ## _n_] = g_strdup("--" #_on_ "--"); \
 		if (__hg_operator_name_table[HG_enc_ ## _n_] == NULL)	\
 			return FALSE;					\
 		__hg_operator_func_table[HG_enc_ ## _n_] = OPER_FUNC_NAME (_n_); \
-	} G_STMT_END
+	} HG_STMT_END
 
 	DECL_PRIV_OPER (.abort, private_abort);
 	DECL_PRIV_OPER (.applyparams, private_applyparams);
@@ -9394,11 +9203,11 @@ void
 hg_operator_tini(void)
 {
 #define UNDECL_OPER(_n_)					\
-	G_STMT_START {						\
+	HG_STMT_START {						\
 		g_free(__hg_operator_name_table[HG_enc_ ## _n_]);	\
 		__hg_operator_name_table[HG_enc_ ## _n_] = NULL;		\
 		__hg_operator_func_table[HG_enc_ ## _n_] = NULL;		\
-	} G_STMT_END
+	} HG_STMT_END
 
 	UNDECL_OPER (private_abort);
 	UNDECL_OPER (private_applyparams);

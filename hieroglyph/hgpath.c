@@ -27,6 +27,7 @@
 
 #include <glib.h>
 #include "hgmem.h"
+#include "hgreal.h"
 #include "hgpath.h"
 
 #include "hgpath.proto.h"

@@ -68,6 +68,7 @@ hg_private_headers =						\
 	hgdict-private.h					\
 	hgmem-private.h						\
 	hgstack-private.h					\
+	hgtypebit-private.h					\
 	$(NULL)
 hg_built_public_headers =					\
 	hgversion.h						\
@@ -103,6 +104,7 @@ hg_sources =							\
 	hgobject.c						\
 	hgoperator.c						\
 	hgplugin.c						\
+	hgquark.c						\
 	hgsnapshot.c						\
 	hgstack.c						\
 	hgstring.c						\

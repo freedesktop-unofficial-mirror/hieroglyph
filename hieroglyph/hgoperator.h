@@ -21,10 +21,17 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#if !defined (__HG_H_INSIDE__) && !defined (HG_COMPILATION)
+#error "Only <hieroglyph/hg.h> can be included directly."
+#endif
+
 #ifndef __HIEROGLYPH_HGOPERATOR_H__
 #define __HIEROGLYPH_HGOPERATOR_H__
 
-#include <hieroglyph/hgtypes.h>
+#include <hieroglyph/hgquark.h>
+#include <hieroglyph/hgencoding.h>
+#include <hieroglyph/hgname.h>
+#include <hieroglyph/hgvm.h>
 
 HG_BEGIN_DECLS
 
@@ -35,39 +42,61 @@ HG_BEGIN_DECLS
 #define HG_IS_QOPER(_v_)				\
 	(hg_quark_get_type((_v_)) == HG_TYPE_OPER)
 
-typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
-					 GError  **error);
+typedef hg_bool_t (* hg_operator_func_t) (hg_vm_t  *vm,
+					  GError  **error);
 
 #ifdef HG_DEBUG
-#define hg_operator_assert(_vm_,_e_)					\
-	G_STMT_START {							\
-		if (!(_e_)) {						\
-			g_printerr("%s: assertion failed: %s\n",	\
-				   __PRETTY_FUNCTION__, #_e_);		\
+#define hg_operator_assert(_vm_,_le_,_re_)				\
+	HG_STMT_START {							\
+		if ((_le_) != (_re_)) {					\
+			g_printerr("%s: assertion failed: %s(%ld) == %s(%ld)\n", \
+				   __PRETTY_FUNCTION__, #_le_, (_le_), #_re_, (_re_)); \
 			hg_operator_invoke(HG_QOPER (HG_enc_private_abort), \
 					   (_vm_),			\
 					   NULL);			\
 		}							\
-	} G_STMT_END
+	} HG_STMT_END
 
 #define INIT_STACK_VALIDATOR						\
-	gsize __hg_stack_odepth G_GNUC_UNUSED = hg_stack_depth(ostack);	\
-	gsize __hg_stack_edepth G_GNUC_UNUSED = hg_stack_depth(estack);	\
-	gsize __hg_stack_ddepth G_GNUC_UNUSED = hg_stack_depth(dstack)
-#define VALIDATE_STACK_SIZE(_o_,_e_,_d_)				\
+	hg_usize_t __hg_stack_odepth G_GNUC_UNUSED = hg_stack_depth(ostack); \
+	hg_usize_t __hg_stack_edepth G_GNUC_UNUSED = hg_stack_depth(estack); \
+	hg_usize_t __hg_stack_ddepth G_GNUC_UNUSED = hg_stack_depth(dstack); \
+	gssize __hg_stack_expected_odepth G_GNUC_UNUSED = 0;		\
+	gssize __hg_stack_expected_edepth G_GNUC_UNUSED = 0;		\
+	gssize __hg_stack_expected_ddepth G_GNUC_UNUSED = 0
+#define SET_EXPECTED_OSTACK_SIZE(_o_)		\
+	__hg_stack_expected_odepth = (_o_)
+#define SET_EXPECTED_ESTACK_SIZE(_e_)		\
+	__hg_stack_expected_edepth = (_e_)
+#define SET_EXPECTED_DSTACK_SIZE(_d_)		\
+	__hg_stack_expected_ddepth = (_d_)
+#define SET_EXPECTED_STACK_SIZE(_o_, _e_, _d_)				\
+	HG_STMT_START {							\
+		SET_EXPECTED_OSTACK_SIZE (_o_);				\
+		SET_EXPECTED_ESTACK_SIZE (_e_);				\
+		SET_EXPECTED_DSTACK_SIZE (_d_);				\
+	} HG_STMT_END
+#define NO_STACK_VALIDATION						\
+	return retval
+#define VALIDATE_STACK_SIZE						\
 	if (retval) {							\
-		gsize __hg_stack_after_odepth = hg_stack_depth(ostack);	\
-		gsize __hg_stack_after_edepth = hg_stack_depth(estack);	\
-		gsize __hg_stack_after_ddepth = hg_stack_depth(dstack);	\
+		hg_usize_t __hg_stack_after_odepth = hg_stack_depth(ostack); \
+		hg_usize_t __hg_stack_after_edepth = hg_stack_depth(estack); \
+		hg_usize_t __hg_stack_after_ddepth = hg_stack_depth(dstack); \
 									\
-		hg_operator_assert(vm, (__hg_stack_after_odepth - __hg_stack_odepth) == (_o_)); \
-		hg_operator_assert(vm, (__hg_stack_after_edepth - __hg_stack_edepth) == (_e_)); \
-		hg_operator_assert(vm, (__hg_stack_after_ddepth - __hg_stack_ddepth) == (_d_)); \
+		hg_operator_assert(vm, (__hg_stack_after_odepth - __hg_stack_odepth), __hg_stack_expected_odepth); \
+		hg_operator_assert(vm, (__hg_stack_after_edepth - __hg_stack_edepth), __hg_stack_expected_edepth); \
+		hg_operator_assert(vm, (__hg_stack_after_ddepth - __hg_stack_ddepth), __hg_stack_expected_ddepth); \
 	}
 #else
 #define hg_operator_assert(_vm_,_e_)
 #define INIT_STACK_VALIDATOR
-#define VALIDATE_STACK_SIZE(_o_,_e_,_d_)
+#define SET_EXPECTED_OSTACK_SIZE(_o_)
+#define SET_EXPECTED_ESTACK_SIZE(_e_)
+#define SET_EXPECTED_DSTACK_SIZE(_d_)
+#define SET_EXPECTED_STACK_SIZE(_o_, _e_, _d_)
+#define NO_STACK_VALIDATION
+#define VALIDATE_STACK_SIZE
 #endif
 #ifndef PLUGIN
 #define OPER_FUNC_NAME(_n_)			\
@@ -78,7 +107,7 @@ typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
 #define REG_ENC(_n_,_k_,_f_)						\
 	(hg_operator_add_dynamic((_n_), #_k_, OPER_FUNC_NAME (_f_)))
 #define REG_OPER(_d_,_k_)						\
-	G_STMT_START {							\
+	HG_STMT_START {							\
 		hg_quark_t __o_name__ = (_k_);				\
 		hg_quark_t __op__ = HG_QOPER (__o_name__);		\
 									\
@@ -88,9 +117,9 @@ typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
 				 FALSE,					\
 				 NULL))					\
 			return FALSE;					\
-	} G_STMT_END
+	} HG_STMT_END
 #define REG_VALUE(_d_,_n_,_k_,_v_)				\
-	G_STMT_START {						\
+	HG_STMT_START {						\
 		hg_quark_t __o_name__ = HG_QNAME ((_n_),#_k_);	\
 		hg_quark_t __v__ = (_v_);			\
 								\
@@ -101,17 +130,17 @@ typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
 				 FALSE,				\
 				 NULL))				\
 			return FALSE;				\
-	} G_STMT_END
+	} HG_STMT_END
 #define PROTO_PLUGIN(_n_)						\
-	static gboolean  _ ## _n_ ## _init    (void);			\
-	static gboolean  _ ## _n_ ## _finalize(void);			\
-	static gboolean  _ ## _n_ ## _load    (hg_plugin_t *plugin,	\
-					       gpointer     vm_,	\
-					       GError      **error);	\
-	static gboolean  _ ## _n_ ## _unload  (hg_plugin_t *plugin,	\
-					       gpointer     vm_,	\
-					       GError      **error);	\
-	hg_plugin_t     *plugin_new        (hg_mem_t    *mem,		\
+	static hg_bool_t _ ## _n_ ## _init    (void);			\
+	static hg_bool_t _ ## _n_ ## _finalize(void);			\
+	static hg_bool_t _ ## _n_ ## _load    (hg_plugin_t   *plugin,	\
+					       hg_pointer_t   vm_,	\
+					       GError       **error);	\
+	static hg_bool_t _ ## _n_ ## _unload  (hg_plugin_t   *plugin,	\
+					       hg_pointer_t   vm_,	\
+					       GError       **error);	\
+	hg_plugin_t     *plugin_new        (hg_mem_t     *mem,		\
 					    GError      **error);	\
 									\
 	static hg_plugin_vtable_t __ ## _n_ ## _plugin_vtable = {	\
@@ -127,10 +156,10 @@ typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
 #endif
 
 #define PROTO_OPER(_n_)						\
-	static gboolean OPER_FUNC_NAME (_n_) (hg_vm_t  *vm,	\
-					      GError  **error);
+	static hg_bool_t OPER_FUNC_NAME (_n_) (hg_vm_t  *vm,	\
+					       GError  **error);
 #define DEFUNC_OPER(_n_)						\
-	static gboolean							\
+	static hg_bool_t						\
 	OPER_FUNC_NAME (_n_) (hg_vm_t  *vm,				\
 			      GError  **error)				\
 	{								\
@@ -138,10 +167,11 @@ typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
 		hg_stack_t *estack G_GNUC_UNUSED = vm->stacks[HG_VM_STACK_ESTACK]; \
 		hg_stack_t *dstack G_GNUC_UNUSED = vm->stacks[HG_VM_STACK_DSTACK]; \
 		hg_quark_t qself G_GNUC_UNUSED = hg_stack_index(estack, 0, error); \
-		gboolean retval = FALSE;				\
-		INIT_STACK_VALIDATOR;
+		hg_bool_t retval = FALSE;				\
+		INIT_STACK_VALIDATOR;					\
+		HG_STMT_START
 #define DEFUNC_UNIMPLEMENTED_OPER(_n_)					\
-	static gboolean							\
+	static hg_bool_t						\
 	OPER_FUNC_NAME (_n_) (hg_vm_t  *vm,				\
 			      GError  **error)				\
 	{								\
@@ -152,18 +182,21 @@ typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
 		return FALSE;						\
 	}
 #define DEFUNC_OPER_END					\
+		HG_STMT_END;				\
+		VALIDATE_STACK_SIZE;			\
+							\
 		return retval;				\
 	}
 
 #define CHECK_STACK(_s_,_n_)						\
-	G_STMT_START {							\
+	HG_STMT_START {							\
 		if (hg_stack_depth((_s_)) < (_n_)) {			\
 			hg_vm_set_error(vm, qself, HG_VM_e_stackunderflow); \
 			return FALSE;					\
 		}							\
-	} G_STMT_END
+	} HG_STMT_END
 #define STACK_PUSH(_s_,_q_)						\
-	G_STMT_START {							\
+	HG_STMT_START {							\
 		if (!hg_stack_push((_s_), (_q_))) {			\
 			if ((_s_) == ostack) {				\
 				hg_vm_set_error(vm, qself, HG_VM_e_stackoverflow); \
@@ -176,7 +209,7 @@ typedef gboolean (* hg_operator_func_t) (hg_vm_t  *vm,
 			}						\
 			return FALSE;					\
 		}							\
-	} G_STMT_END
+	} HG_STMT_END
 
 
 G_INLINE_FUNC hg_quark_t hg_operator_new(guint encoding);
@@ -199,20 +232,20 @@ hg_operator_new(guint encoding)
 	return retval;
 }
 
-gboolean     hg_operator_init          (void);
-void         hg_operator_tini          (void);
-hg_quark_t   hg_operator_add_dynamic   (hg_name_t           *name,
-                                        const gchar         *string,
-                                        hg_operator_func_t   func);
-void         hg_operator_remove_dynamic(guint                encoding);
-gboolean     hg_operator_invoke        (hg_quark_t           qoper,
-                                        hg_vm_t             *vm,
-                                        GError             **error);
-const gchar *hg_operator_get_name      (hg_quark_t           qoper);
-gboolean     hg_operator_register      (hg_vm_t             *vm,
-					hg_dict_t           *dict,
-                                        hg_name_t           *name,
-                                        hg_vm_langlevel_t    lang_level);
+hg_bool_t        hg_operator_init          (void);
+void             hg_operator_tini          (void);
+hg_quark_t       hg_operator_add_dynamic   (hg_name_t           *name,
+					    const hg_char_t     *string,
+					    hg_operator_func_t   func);
+void             hg_operator_remove_dynamic(hg_uint_t            encoding);
+hg_bool_t        hg_operator_invoke        (hg_quark_t           qoper,
+					    hg_vm_t             *vm,
+					    GError             **error);
+const hg_char_t *hg_operator_get_name      (hg_quark_t           qoper);
+hg_bool_t        hg_operator_register      (hg_vm_t             *vm,
+					    hg_dict_t           *dict,
+					    hg_name_t           *name,
+					    hg_vm_langlevel_t    lang_level);
 
 HG_END_DECLS
 

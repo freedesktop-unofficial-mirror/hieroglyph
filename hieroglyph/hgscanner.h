@@ -21,6 +21,10 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#if !defined (__HG_H_INSIDE__) && !defined (HG_COMPILATION)
+#error "Only <hieroglyph/hg.h> can be included directly."
+#endif
+
 #ifndef __HIEROGLYPH_HGSCANNER_H__
 #define __HIEROGLYPH_HGSCANNER_H__
 
@@ -30,6 +34,7 @@
 
 HG_BEGIN_DECLS
 
+typedef struct _hg_scanner_t		hg_scanner_t;
 
 hg_scanner_t *hg_scanner_new        (hg_mem_t      *mem,
 				     hg_name_t     *name);

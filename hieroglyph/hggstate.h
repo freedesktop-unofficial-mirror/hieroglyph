@@ -21,6 +21,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#if !defined (__HG_H_INSIDE__) && !defined (HG_COMPILATION)
+#error "Only <hieroglyph/hg.h> can be included directly."
+#endif
+
 #ifndef __HIEROGLYPH_HGGSTATE_H__
 #define __HIEROGLYPH_HGGSTATE_H__
 
@@ -36,6 +40,7 @@ HG_BEGIN_DECLS
 #define HG_IS_QGSTATE(_q_)				\
 	(hg_quark_get_type((_q_)) == HG_TYPE_GSTATE)
 
+typedef struct _hg_gstate_t	hg_gstate_t;
 typedef struct _hg_color_t	hg_color_t;
 typedef enum _hg_color_mode_t	hg_color_mode_t;
 typedef enum _hg_linecap_t	hg_linecap_t;

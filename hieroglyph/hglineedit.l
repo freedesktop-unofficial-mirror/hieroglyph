@@ -33,7 +33,7 @@
 
 #include "hglineedit.proto.h"
 
-#define YY_DECL			static gchar *_hg_lineedit_yylex(hg_lineedit_t *scanner, yyscan_t yyscanner)
+#define YY_DECL			static hg_char_t *_hg_lineedit_yylex(hg_lineedit_t *scanner, yyscan_t yyscanner)
 #define yyterminate()		{BEGIN(INITIAL);g_string_free(string, TRUE);return NULL;}
 #define YY_NO_INPUT
 #define YY_INPUT(_buf_,_result_,_max_size_)			\
@@ -50,7 +50,7 @@ struct _hg_lineedit_t {
 	hg_file_t                  *infile;
 	hg_file_t                  *outfile;
 	yyscan_t                    yyscanner;
-	gpointer                    user_data;
+	hg_pointer_t                user_data;
 };
 
 
@@ -155,26 +155,26 @@ HEXDIGITS	[0-9a-fA-F]
 	}
 %%
 /*< private >*/
-static gchar *
-_hg_lineedit_real_get_line(hg_lineedit_t *lineedit,
-			   const gchar   *prompt,
-			   gpointer       user_data)
+static hg_char_t *
+_hg_lineedit_real_get_line(hg_lineedit_t   *lineedit,
+			   const hg_char_t *prompt,
+			   gpointer         user_data)
 {
 	GString *buf = g_string_new(NULL);
-	gchar c;
+	hg_char_t c;
 	GError *err = NULL;
 
 	hg_return_val_if_fail (lineedit->infile != NULL, NULL);
 	hg_return_val_if_fail (lineedit->outfile != NULL, NULL);
 
 	if (prompt) {
-		hg_file_write(lineedit->outfile, (gchar *)prompt,
-			      sizeof (gchar), strlen(prompt), &err);
+		hg_file_write(lineedit->outfile, (hg_char_t *)prompt,
+			      sizeof (hg_char_t), strlen(prompt), &err);
 		hg_file_flush(lineedit->outfile, &err);
 	}
 	while (1) {
 		hg_file_read(lineedit->infile, &c,
-			     sizeof (gchar), 1, &err);
+			     sizeof (hg_char_t), 1, &err);
 		if (err) {
 			if (err->code == EAGAIN) {
 				sleep(1);
@@ -207,24 +207,24 @@ _hg_lineedit_real_get_line(hg_lineedit_t *lineedit,
 }
 
 static void
-_hg_lineedit_real_add_history(hg_lineedit_t *lineedit,
-			      const gchar   *history,
-			      gpointer       user_data)
+_hg_lineedit_real_add_history(hg_lineedit_t   *lineedit,
+			      const hg_char_t *history,
+			      gpointer         user_data)
 {
 }
 
-static gboolean
-_hg_lineedit_real_load_history(hg_lineedit_t *lineedit,
-			       const gchar   *historyfile,
-			       gpointer       user_data)
+static hg_bool_t
+_hg_lineedit_real_load_history(hg_lineedit_t   *lineedit,
+			       const hg_char_t *historyfile,
+			       gpointer         user_data)
 {
 	return TRUE;
 }
 
-static gboolean
-_hg_lineedit_real_save_history(hg_lineedit_t *lineedit,
-			       const gchar   *historyfile,
-			       gpointer       user_data)
+static hg_bool_t
+_hg_lineedit_real_save_history(hg_lineedit_t   *lineedit,
+			       const hg_char_t *historyfile,
+			       gpointer         user_data)
 {
 	return TRUE;
 }
@@ -319,12 +319,12 @@ hg_lineedit_destroy(hg_lineedit_t *lineedit)
  *
  * Returns:
  */
-gchar *
-hg_lineedit_get_line(hg_lineedit_t *lineedit,
-		     const gchar   *prompt,
-		     gboolean       enable_history)
+hg_char_t *
+hg_lineedit_get_line(hg_lineedit_t   *lineedit,
+		     const hg_char_t *prompt,
+		     hg_bool_t        enable_history)
 {
-	gchar *retval;
+	hg_char_t *retval;
 
 	hg_return_val_if_fail (lineedit != NULL, NULL);
 	hg_return_val_if_fail (lineedit->vtable != NULL, NULL);
@@ -353,13 +353,13 @@ hg_lineedit_get_line(hg_lineedit_t *lineedit,
  *
  * Returns:
  */
-gchar *
-hg_lineedit_get_statement(hg_lineedit_t *lineedit,
-			  const gchar   *prompt,
-			  gboolean       enable_history)
+hg_char_t *
+hg_lineedit_get_statement(hg_lineedit_t   *lineedit,
+			  const hg_char_t *prompt,
+			  hg_bool_t        enable_history)
 {
 	GString *string = g_string_new(NULL);
-	gchar *ret, *retval;
+	hg_char_t *ret, *retval;
 	YY_BUFFER_STATE yystate;
 	struct yyguts_t *yyg;
 
@@ -402,9 +402,9 @@ hg_lineedit_get_statement(hg_lineedit_t *lineedit,
  *
  * Returns:
  */
-gboolean
-hg_lineedit_load_history(hg_lineedit_t *lineedit,
-			 const gchar   *historyfile)
+hg_bool_t
+hg_lineedit_load_history(hg_lineedit_t   *lineedit,
+			 const hg_char_t *historyfile)
 {
 	hg_return_val_if_fail (lineedit != NULL, FALSE);
 	hg_return_val_if_fail (historyfile != NULL, FALSE);
@@ -427,9 +427,9 @@ hg_lineedit_load_history(hg_lineedit_t *lineedit,
  *
  * Returns:
  */
-gboolean
-hg_lineedit_save_history(hg_lineedit_t *lineedit,
-			 const gchar   *historyfile)
+hg_bool_t
+hg_lineedit_save_history(hg_lineedit_t   *lineedit,
+			 const hg_char_t *historyfile)
 {
 	hg_return_val_if_fail (lineedit != NULL, FALSE);
 	hg_return_val_if_fail (historyfile != NULL, FALSE);
@@ -494,7 +494,7 @@ hg_lineedit_set_outfile(hg_lineedit_t *lineedit,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_lineedit_gc_mark(hg_lineedit_t  *lineedit,
 		    GError        **error)
 {

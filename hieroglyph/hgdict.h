@@ -21,6 +21,10 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#if !defined (__HG_H_INSIDE__) && !defined (HG_COMPILATION)
+#error "Only <hieroglyph/hg.h> can be included directly."
+#endif
+
 #ifndef __HIEROGLYPH_HGDICT_H__
 #define __HIEROGLYPH_HGDICT_H__
 
@@ -41,16 +45,16 @@ HG_BEGIN_DECLS
 #define HG_IS_QDICT_NODE(_v_)				\
 	(hg_quark_get_type(_v_) == HG_TYPE_DICT_NODE)
 
-typedef struct _hg_bs_dict_t	hg_bs_dict_t;
+typedef struct _hg_dict_t		hg_dict_t;
+typedef struct _hg_dict_node_t		hg_dict_node_t;
+typedef hg_cb_BOOL__QUARK_QUARK_t	hg_dict_traverse_func_t;
 
-struct _hg_bs_dict_t {
-};
 struct _hg_dict_t {
 	hg_object_t o;
 	hg_quark_t  qroot;
-	gsize       length;
-	gsize       allocated_size;
-	gboolean    raise_dictfull:1;
+	hg_usize_t  length;
+	hg_usize_t  allocated_size;
+	hg_bool_t   raise_dictfull:1;
 };
 
 

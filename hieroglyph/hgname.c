@@ -29,6 +29,7 @@
 #include <glib.h>
 #include "hgerror.h"
 #include "hgquark.h"
+#include "hgtypebit-private.h"
 #include "hgname.h"
 
 #include "hgname.proto.h"
@@ -49,7 +50,7 @@ _hg_name_new(hg_name_t   *name,
 	hg_quark_t retval;
 	gchar *s;
 
-	hg_return_val_if_fail (name->seq_id < (1LL << HG_QUARK_TYPE_BIT_SHIFT), Qnil);
+	hg_return_val_if_fail (name->seq_id < (1LL << HG_TYPEBIT_SHIFT), Qnil);
 	hg_return_val_if_fail (name->seq_id != 0, Qnil);
 
 	if ((name->seq_id - HG_enc_POSTSCRIPT_RESERVED_END) % HG_NAME_BLOCK_SIZE == 0)

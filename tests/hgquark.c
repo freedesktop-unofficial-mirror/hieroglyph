@@ -26,6 +26,7 @@
 #endif
 
 #include "main.h"
+#include "hgtypebit-private.h"
 #include "hgquark.h"
 
 /** common **/
@@ -48,27 +49,27 @@ teardown(void)
 /** test cases **/
 TDEF (bits)
 {
-	fail_unless(HG_QUARK_TYPE_BIT_TYPE == 0, "not matching a bit type");
-	fail_unless(HG_QUARK_TYPE_BIT_TYPE0 == 0, "not matching a bit type0");
-	fail_unless(HG_QUARK_TYPE_BIT_TYPE1 == 1, "not matching a bit type1");
-	fail_unless(HG_QUARK_TYPE_BIT_TYPE2 == 2, "not matching a bit type2");
-	fail_unless(HG_QUARK_TYPE_BIT_TYPE3 == 3, "not matching a bit type3");
-	fail_unless(HG_QUARK_TYPE_BIT_TYPE4 == 4, "not matching a bit type4");
-	fail_unless(HG_QUARK_TYPE_BIT_TYPE_END == 4, "not matching a bit type end");
-	fail_unless(HG_QUARK_TYPE_BIT_ACCESS == 5, "not matching a bit access");
-	fail_unless(HG_QUARK_TYPE_BIT_ACCESS0 == 5, "not matching a bit access0");
-	fail_unless(HG_QUARK_TYPE_BIT_ACCESS1 == 6, "not matching a bit access1");
-	fail_unless(HG_QUARK_TYPE_BIT_ACCESS2 == 7, "not matching a bit access2");
-	fail_unless(HG_QUARK_TYPE_BIT_ACCESS3 == 8, "not matching a bit access3");
-	fail_unless(HG_QUARK_TYPE_BIT_ACCESS_END == 8, "not matching a bit access end");
-	fail_unless(HG_QUARK_TYPE_BIT_EXECUTABLE == 5, "not matching a bit exec");
-	fail_unless(HG_QUARK_TYPE_BIT_READABLE == 6, "not matching a bit read");
-	fail_unless(HG_QUARK_TYPE_BIT_WRITABLE == 7, "not matching a bit write");
-	fail_unless(HG_QUARK_TYPE_BIT_EDITABLE == 8, "not matching a bit editable");
-	fail_unless(HG_QUARK_TYPE_BIT_MEM_ID == 9, "not matching a bit mem id");
-	fail_unless(HG_QUARK_TYPE_BIT_MEM_ID0 == 9, "not matching a bit mem id0");
-	fail_unless(HG_QUARK_TYPE_BIT_MEM_ID1 == 10, "not matching a bit mem id1");
-	fail_unless(HG_QUARK_TYPE_BIT_MEM_ID_END == 10, "not matching a bit mem id end");
+	fail_unless(HG_TYPEBIT_TYPE == 0, "not matching a bit type");
+	fail_unless(HG_TYPEBIT_TYPE0 == 0, "not matching a bit type0");
+	fail_unless(HG_TYPEBIT_TYPE1 == 1, "not matching a bit type1");
+	fail_unless(HG_TYPEBIT_TYPE2 == 2, "not matching a bit type2");
+	fail_unless(HG_TYPEBIT_TYPE3 == 3, "not matching a bit type3");
+	fail_unless(HG_TYPEBIT_TYPE4 == 4, "not matching a bit type4");
+	fail_unless(HG_TYPEBIT_TYPE_END == 4, "not matching a bit type end");
+	fail_unless(HG_TYPEBIT_ACCESS == 5, "not matching a bit access");
+	fail_unless(HG_TYPEBIT_ACCESS0 == 5, "not matching a bit access0");
+	fail_unless(HG_TYPEBIT_ACCESS1 == 6, "not matching a bit access1");
+	fail_unless(HG_TYPEBIT_ACCESS2 == 7, "not matching a bit access2");
+	fail_unless(HG_TYPEBIT_ACCESS3 == 8, "not matching a bit access3");
+	fail_unless(HG_TYPEBIT_ACCESS_END == 8, "not matching a bit access end");
+	fail_unless(HG_TYPEBIT_EXECUTABLE == 5, "not matching a bit exec");
+	fail_unless(HG_TYPEBIT_READABLE == 6, "not matching a bit read");
+	fail_unless(HG_TYPEBIT_WRITABLE == 7, "not matching a bit write");
+	fail_unless(HG_TYPEBIT_ACCESSIBLE == 8, "not matching a bit editable");
+	fail_unless(HG_TYPEBIT_MEM_ID == 9, "not matching a bit mem id");
+	fail_unless(HG_TYPEBIT_MEM_ID0 == 9, "not matching a bit mem id0");
+	fail_unless(HG_TYPEBIT_MEM_ID1 == 10, "not matching a bit mem id1");
+	fail_unless(HG_TYPEBIT_MEM_ID_END == 10, "not matching a bit mem id end");
 } TEND
 
 TDEF (hg_quark_new)
@@ -177,6 +178,31 @@ TDEF (hg_quark_is_writable)
 	fail_unless(!hg_quark_is_writable(q), "Unexpected result to check if one isn't writable [take 2]");
 } TEND
 
+TDEF (hg_quark_has_mem_id)
+{
+	/* can be done in hg_quark_get_mem_id */
+} TEND
+
+TDEF (hg_quark_set_mem_id)
+{
+	/* can be done in hg_quark_get_mem_id */
+} TEND
+
+TDEF (hg_quark_get_mem_id)
+{
+	hg_quark_t q;
+	hg_uint_t i = -1;
+
+	q = hg_quark_new(HG_TYPE_INT, 10);
+	hg_quark_set_mem_id(&q, 1);
+	i = hg_quark_get_mem_id(q);
+	fail_unless(i == 1, "Unexpected result to obtain the mem id: %d");
+	hg_quark_set_mem_id(&q, 3);
+	i = hg_quark_get_mem_id(q);
+	fail_unless(i == 3, "Unexpected result to obtain the mem id: %d");
+	fail_unless(hg_quark_has_mem_id(q, 3), "Unexpected result to compare the mem id");
+} TEND
+
 /****/
 Suite *
 hieroglyph_suite(void)
@@ -197,6 +223,9 @@ hieroglyph_suite(void)
 	T (hg_quark_is_readable);
 	T (hg_quark_set_writable);
 	T (hg_quark_is_writable);
+	T (hg_quark_has_mem_id);
+	T (hg_quark_set_mem_id);
+	T (hg_quark_get_mem_id);
 
 	suite_add_tcase(s, tc);
 

@@ -49,10 +49,10 @@ typedef struct _hg_dict_compare_data_t {
 } hg_dict_compare_data_t;
 
 
-HG_PROTO_VTABLE_ATTRIBUTES (dict);
+HG_PROTO_VTABLE_ACL (dict);
 HG_DEFINE_VTABLE_WITH (dict, NULL,
-		       _hg_object_dict_set_attributes,
-		       _hg_object_dict_get_attributes);
+		       _hg_object_dict_set_acl,
+		       _hg_object_dict_get_acl);
 HG_DEFINE_VTABLE_WITH (dict_node, NULL, NULL, NULL);
 
 static gsize __hg_dict_node_size = HG_DICT_NODE_SIZE;
@@ -174,42 +174,42 @@ _hg_object_dict_compare(hg_object_t             *o1,
 }
 
 static void
-_hg_object_dict_set_attributes(hg_object_t *object,
-			       gint         readable,
-			       gint         writable,
-			       gint         executable,
-			       gint         editable)
+_hg_object_dict_set_acl(hg_object_t *object,
+			gint         readable,
+			gint         writable,
+			gint         executable,
+			gint         editable)
 {
 	if (readable != 0) {
 		if (readable > 0)
-			object->attributes |= HG_ACCESS_READABLE;
+			object->acl |= HG_ACL_READABLE;
 		else
-			object->attributes &= ~HG_ACCESS_READABLE;
+			object->acl &= ~HG_ACL_READABLE;
 	}
 	if (writable != 0) {
 		if (writable > 0)
-			object->attributes |= HG_ACCESS_WRITABLE;
+			object->acl |= HG_ACL_WRITABLE;
 		else
-			object->attributes &= ~HG_ACCESS_WRITABLE;
+			object->acl &= ~HG_ACL_WRITABLE;
 	}
 	if (executable != 0) {
 		if (executable > 0)
-			object->attributes |= HG_ACCESS_EXECUTABLE;
+			object->acl |= HG_ACL_EXECUTABLE;
 		else
-			object->attributes &= ~HG_ACCESS_EXECUTABLE;
+			object->acl &= ~HG_ACL_EXECUTABLE;
 	}
 	if (editable != 0) {
 		if (editable > 0)
-			object->attributes |= HG_ACCESS_EDITABLE;
+			object->acl |= HG_ACL_ACCESSIBLE;
 		else
-			object->attributes &= ~HG_ACCESS_EDITABLE;
+			object->acl &= ~HG_ACL_ACCESSIBLE;
 	}
 }
 
-static gint
-_hg_object_dict_get_attributes(hg_object_t *object)
+static hg_quark_acl_t
+_hg_object_dict_get_acl(hg_object_t *object)
 {
-	return object->attributes;
+	return object->acl;
 }
 
 static gsize

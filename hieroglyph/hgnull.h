@@ -21,6 +21,10 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#if !defined (__HG_H_INSIDE__) && !defined (HG_COMPILATION)
+#error "Only <hieroglyph/hg.h> can be included directly."
+#endif
+
 #ifndef __HIEROGLYPH_HGNULL_H__
 #define __HIEROGLYPH_HGNULL_H__
 
@@ -28,19 +32,25 @@
 
 HG_BEGIN_DECLS
 
-typedef struct _hg_bs_null_t	hg_bs_null_t;
-
-struct _hg_bs_null_t {
-	hg_bs_template_t t;
-	guint16          unused1;
-	guint32          unused2;
-};
-
-
-#define HG_QNULL				\
-	hg_quark_new(HG_TYPE_NULL, ((guint32)0xdeadbeef))
-#define HG_IS_QNULL(_v_)				\
-	(hg_quark_get_type(_v_) == HG_TYPE_NULL)
+/**
+ * HG_QNULL:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+#define HG_QNULL						\
+	(hg_quark_new(HG_TYPE_NULL, ((hg_uint_t)0xdeadbeef)))
+/**
+ * HG_IS_QNULL:
+ * @quark:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+#define HG_IS_QNULL(_q_)				\
+	(hg_quark_get_type(_q_) == HG_TYPE_NULL)
 
 
 HG_END_DECLS

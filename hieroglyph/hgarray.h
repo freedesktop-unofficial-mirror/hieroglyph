@@ -21,10 +21,15 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#if !defined (__HG_H_INSIDE__) && !defined (HG_COMPILATION)
+#error "Only <hieroglyph/hg.h> can be included directly."
+#endif
+
 #ifndef __HIEROGLYPH_HGARRAY_H__
 #define __HIEROGLYPH_HGARRAY_H__
 
 #include <hieroglyph/hgobject.h>
+#include <hieroglyph/hgmatrix.h>
 
 HG_BEGIN_DECLS
 
@@ -34,23 +39,18 @@ HG_BEGIN_DECLS
 #define HG_IS_QARRAY(_q_)				\
 	(hg_quark_get_type((_q_)) == HG_TYPE_ARRAY)
 
-typedef struct _hg_bs_array_t	hg_bs_array_t;
 typedef struct _hg_array_t	hg_array_t;
+typedef hg_cb_BOOL__QUARK_t	hg_array_traverse_func_t;
 
-struct _hg_bs_array_t {
-	hg_bs_template_t t;
-	guint16          length;
-	guint32          offset;
-};
 struct _hg_array_t {
 	hg_object_t o;
 	hg_quark_t  qcontainer;
 	hg_quark_t  qname;
-	guint16     offset;
-	guint16     length;
-	gsize       allocated_size;
-	gboolean    is_fixed_size:1;
-	gboolean    is_subarray:1;
+	hg_uint16_t offset;
+	hg_uint16_t length;
+	hg_usize_t  allocated_size;
+	hg_bool_t   is_fixed_size:1;
+	hg_bool_t   is_subarray:1;
 };
 
 
@@ -91,22 +91,11 @@ gboolean            hg_array_copy_as_subarray (hg_array_t                *src,
 					       gsize                      start_index,
 					       gsize                      end_index,
 					       GError                   **error);
-hg_quark_t          hg_array_matrix_new       (hg_mem_t                  *mem,
-					       gpointer                  *ret);
 gboolean            hg_array_is_matrix        (hg_array_t                *array);
 gboolean            hg_array_from_matrix      (hg_array_t                *array,
 					       hg_matrix_t               *matrix);
 gboolean            hg_array_to_matrix        (hg_array_t                *array,
 					       hg_matrix_t               *matrix);
-gboolean            hg_array_matrix_ident     (hg_array_t                *matrix);
-gboolean            hg_array_matrix_multiply  (hg_array_t                *matrix1,
-					       hg_array_t                *matrix2,
-					       hg_array_t                *ret);
-gboolean            hg_array_matrix_invert    (hg_array_t                *matrix,
-					       hg_array_t                *ret);
-gboolean            hg_array_matrix_translate (hg_array_t                *matrix,
-					       gdouble                    tx,
-					       gdouble                    ty);
 
 
 HG_END_DECLS

@@ -21,23 +21,62 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#if !defined (__HG_H_INSIDE__) && !defined (HG_COMPILATION)
+#error "Only <hieroglyph/hg.h> can be included directly."
+#endif
+
 #ifndef __HIEROGLYPH_HGERROR_H__
 #define __HIEROGLYPH_HGERROR_H__
 
 #include <stdio.h>
 #include <errno.h>
+#include <glib.h>
 #include <hieroglyph/hgmacros.h>
 
 HG_BEGIN_DECLS
 
 #define HG_ERROR	hg_error_quark()
 
+typedef enum _hg_vm_error_t		hg_vm_error_t;
+
+enum _hg_vm_error_t {
+	HG_VM_e_dictfull = 1,
+	HG_VM_e_dictstackoverflow,
+	HG_VM_e_dictstackunderflow,
+	HG_VM_e_execstackoverflow,
+	HG_VM_e_handleerror,
+	HG_VM_e_interrupt,
+	HG_VM_e_invalidaccess,
+	HG_VM_e_invalidexit,
+	HG_VM_e_invalidfileaccess,
+	HG_VM_e_invalidfont,
+	HG_VM_e_invalidrestore,
+	HG_VM_e_ioerror,
+	HG_VM_e_limitcheck,
+	HG_VM_e_nocurrentpoint,
+	HG_VM_e_rangecheck,
+	HG_VM_e_stackoverflow,
+	HG_VM_e_stackunderflow,
+	HG_VM_e_syntaxerror,
+	HG_VM_e_timeout,
+	HG_VM_e_typecheck,
+	HG_VM_e_undefined,
+	HG_VM_e_undefinedfilename,
+	HG_VM_e_undefinedresult,
+	HG_VM_e_unmatchedmark,
+	HG_VM_e_unregistered,
+	HG_VM_e_VMerror,
+	HG_VM_e_configurationerror,
+	HG_VM_e_undefinedresource,
+	HG_VM_e_END
+};
+
 #ifdef HG_DEBUG
 /* evaluate x if the debugging build */
 #define d(x)	x
 
 #define hg_stacktrace()							\
-	G_STMT_START {							\
+	HG_STMT_START {							\
 		if (hg_is_stacktrace_enabled()) {			\
 			gchar *__stacktrace__ = hg_get_stacktrace();	\
 									\
@@ -45,7 +84,7 @@ HG_BEGIN_DECLS
 			      "Stacktrace:\n%s\n", __stacktrace__);	\
 			g_free(__stacktrace__);				\
 		}							\
-	} G_STMT_END
+	} HG_STMT_END
 #else /* !HG_DEBUG */
 /* ignore x if not in the debugging build */
 #define d(x)
@@ -56,13 +95,13 @@ HG_BEGIN_DECLS
 
 #ifdef __GNUC__
 #define _hg_return_if_fail_warning(__domain__,__func__,__expr__)	\
-	G_STMT_START {							\
+	HG_STMT_START {							\
 		g_return_if_fail_warning(__domain__,			\
 					 __func__,			\
 					 __expr__);			\
-	} G_STMT_END
+	} HG_STMT_END
 #define _hg_return_after_eval_if_fail(__expr__,__eval__)		\
-	G_STMT_START {							\
+	HG_STMT_START {							\
 		if (G_LIKELY(__expr__)) {				\
 		} else {						\
 			_hg_return_if_fail_warning(G_LOG_DOMAIN,	\
@@ -71,9 +110,9 @@ HG_BEGIN_DECLS
 			__eval__;					\
 			return;						\
 		}							\
-	} G_STMT_END
+	} HG_STMT_END
 #define _hg_return_val_after_eval_if_fail(__expr__,__val__,__eval__)	\
-	G_STMT_START {							\
+	HG_STMT_START {							\
 		if (G_LIKELY(__expr__)) {				\
 		} else {						\
 			_hg_return_if_fail_warning(G_LOG_DOMAIN,	\
@@ -82,9 +121,9 @@ HG_BEGIN_DECLS
 			__eval__;					\
 			return (__val__);				\
 		}							\
-	} G_STMT_END
+	} HG_STMT_END
 #define _hg_gerror_on_fail(__expr__,__err__,__code__)			\
-	G_STMT_START {							\
+	HG_STMT_START {							\
 		hg_stacktrace();					\
 		if ((__err__)) {					\
 			g_set_error((__err__), HG_ERROR, __code__,	\
@@ -92,10 +131,10 @@ HG_BEGIN_DECLS
 				    __PRETTY_FUNCTION__,		\
 				    #__expr__);				\
 		}							\
-	} G_STMT_END
+	} HG_STMT_END
 #else /* !__GNUC__ */
 #define _hg_return_after_eval_if_fail(__expr__,__eval__)		\
-	G_STMT_START {							\
+	HG_STMT_START {							\
 		if (__expr__) {						\
 		} else {						\
 			g_log(G_LOG_DOMAIN,				\
@@ -107,9 +146,9 @@ HG_BEGIN_DECLS
 			__eval__;					\
 			return;						\
 		}							\
-	} G_STMT_END
+	} HG_STMT_END
 #define _hg_return_val_after_eval_if_fail(__expr__,__val__,__eval__)	\
-	G_STMT_START {							\
+	HG_STMT_START {							\
 		if (__expr__) {						\
 		} else {						\
 			g_log(G_LOG_DOMAIN,				\
@@ -121,9 +160,9 @@ HG_BEGIN_DECLS
 			__eval__;					\
 			return (__val__);				\
 		}							\
-	} G_STMT_END
+	} HG_STMT_END
 #define _hg_error_if_fail(__expr__,__err__)				\
-	G_STMT_START {							\
+	HG_STMT_START {							\
 		hg_stacktrace();					\
 		if ((__err__)) {					\
 			g_set_error((__err__), HG_ERROR, HG_VM_e_VMerror, \
@@ -132,7 +171,7 @@ HG_BEGIN_DECLS
 				    __LINE__,				\
 				    #__expr__);				\
 		}							\
-	} G_STMT_END
+	} HG_STMT_END
 #endif /* __GNUC__ */
 
 #define hg_return_if_fail(__expr__)					\

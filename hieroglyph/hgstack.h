@@ -21,11 +21,14 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#if !defined (__HG_H_INSIDE__) && !defined (HG_COMPILATION)
+#error "Only <hieroglyph/hg.h> can be included directly."
+#endif
+
 #ifndef __HIEROGLYPH_HGSTACK_H__
 #define __HIEROGLYPH_HGSTACK_H__
 
 #include <hieroglyph/hgobject.h>
-#include <hieroglyph/hgarray.h>
 
 HG_BEGIN_DECLS
 
@@ -33,6 +36,7 @@ HG_BEGIN_DECLS
 	(hg_object_register(HG_TYPE_STACK,			\
 			    hg_object_stack_get_vtable()))
 
+typedef hg_cb_BOOL__QUARK_t		hg_stack_traverse_func_t;
 typedef struct _hg_stack_spool_t	hg_stack_spool_t;
 typedef struct _hg_stack_t		hg_stack_t;
 
@@ -71,7 +75,7 @@ void                hg_stack_roll             (hg_stack_t                *stack,
                                                gssize                     n_times,
                                                GError                   **error);
 void                hg_stack_foreach          (hg_stack_t                *stack,
-                                               hg_array_traverse_func_t   func,
+                                               hg_stack_traverse_func_t   func,
                                                gpointer                   data,
 					       gboolean                   is_forwarded,
                                                GError                   **error);

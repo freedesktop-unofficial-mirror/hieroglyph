@@ -21,6 +21,10 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#if !defined (__HG_H_INSIDE__) && !defined (HG_COMPILATION)
+#error "Only <hieroglyph/hg.h> can be included directly."
+#endif
+
 #ifndef __HIEROGLYPH_HGBOOL_H__
 #define __HIEROGLYPH_HGBOOL_H__
 
@@ -28,21 +32,36 @@
 
 HG_BEGIN_DECLS
 
-typedef struct _hg_bs_bool_t	hg_bs_bool_t;
-
-struct _hg_bs_bool_t {
-	hg_bs_template_t t;
-	guint16          unused1;
-	guint32          value;
-};
-
-
+/**
+ * HG_QBOOL:
+ * @bool:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
 #define HG_QBOOL(_v_)					\
-	hg_quark_new(HG_TYPE_BOOL, (_v_) == TRUE)
-#define HG_BOOL(_q_)				\
-	(hg_quark_get_value(_q_) == TRUE)
-#define HG_IS_QBOOL(_v_)				\
-	(hg_quark_get_type(_v_) == HG_TYPE_BOOL)
+	(hg_quark_new(HG_TYPE_BOOL, (_v_) == TRUE))
+/**
+ * HG_BOOL:
+ * @quark:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+#define HG_BOOL(_q_)					\
+	((hg_bool_t)(hg_quark_get_value(_q_) == TRUE))
+/**
+ * HG_IS_QBOOL:
+ * @quark:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+#define HG_IS_QBOOL(_q_)				\
+	(hg_quark_get_type(_q_) == HG_TYPE_BOOL)
 
 
 HG_END_DECLS

@@ -381,7 +381,7 @@ hg_object_compare(hg_object_t             *o1,
 }
 
 /**
- * hg_object_set_attributes:
+ * hg_object_set_acl:
  * @object:
  * @readable:
  * @writable:
@@ -391,11 +391,11 @@ hg_object_compare(hg_object_t             *o1,
  * FIXME
  */
 void
-hg_object_set_attributes(hg_object_t *object,
-			 gint         readable,
-			 gint         writable,
-			 gint         executable,
-			 gint         editable)
+hg_object_set_acl(hg_object_t *object,
+		  gint         readable,
+		  gint         writable,
+		  gint         executable,
+		  gint         editable)
 {
 	hg_object_vtable_t *v;
 
@@ -406,23 +406,23 @@ hg_object_set_attributes(hg_object_t *object,
 
 	v = __hg_object_vtables[object->type];
 
-	if (v->set_attributes)
-		v->set_attributes(object, readable, writable, executable, editable);
+	if (v->set_acl)
+		v->set_acl(object, readable, writable, executable, editable);
 }
 
 /**
- * hg_object_get_attributes:
+ * hg_object_get_acl:
  * @object:
  *
  * FIXME
  *
  * Returns:
  */
-gint
-hg_object_get_attributes(hg_object_t *object)
+hg_quark_acl_t
+hg_object_get_acl(hg_object_t *object)
 {
 	hg_object_vtable_t *v;
-	gint retval = -1;
+	hg_quark_acl_t retval = -1;
 
 	hg_return_val_if_fail (__hg_object_is_initialized, -1);
 	hg_return_val_if_fail (object != NULL, -1);
@@ -431,8 +431,8 @@ hg_object_get_attributes(hg_object_t *object)
 
 	v = __hg_object_vtables[object->type];
 
-	if (v->get_attributes)
-		retval = v->get_attributes(object);
+	if (v->get_acl)
+		retval = v->get_acl(object);
 
 	return retval;
 }
@@ -468,13 +468,19 @@ hg_object_quark_copy(hg_mem_t    *mem,
 
 	o = HG_MEM_LOCK (mem, qdata, &err);
 	if (o) {
+		hg_quark_acl_t acl = 0;
+
 		retval = hg_object_copy(o, _hg_object_quark_iterate_copy, mem, ret, &err);
 		hg_mem_unlock_object(mem, qdata);
-		hg_quark_set_access_bits(&retval,
-					 hg_quark_is_readable(qdata) ? TRUE : FALSE,
-					 hg_quark_is_writable(qdata) ? TRUE : FALSE,
-					 hg_quark_is_executable(qdata) ? TRUE : FALSE,
-					 hg_quark_is_editable(qdata) ? TRUE : FALSE);
+		if (hg_quark_is_readable(qdata))
+			acl |= HG_ACL_READABLE;
+		if (hg_quark_is_writable(qdata))
+			acl |= HG_ACL_WRITABLE;
+		if (hg_quark_is_executable(qdata))
+			acl |= HG_ACL_EXECUTABLE;
+		if (hg_quark_is_accessible(qdata))
+			acl |= HG_ACL_ACCESSIBLE;
+		hg_quark_set_acl(&retval, acl);
 	}
 	if (err) {
 		if (error) {

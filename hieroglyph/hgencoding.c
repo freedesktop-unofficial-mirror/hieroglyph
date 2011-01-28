@@ -33,7 +33,7 @@
 
 
 static GHashTable *__hg_encoding_index_table = NULL;
-static const gchar *__hg_system_encodings =
+static const hg_char_t *__hg_system_encodings =
 	"\0"
 	"abs\0"
 	"add\0"
@@ -486,7 +486,7 @@ static const gchar *__hg_system_encodings =
 	"CIEBasedDEF\0"
 	"CIEBasedDEFG\0"
 	"DeviceN\0";
-static gint __hg_system_encodings_offset_indexes[] = {
+static hg_int_t __hg_system_encodings_offset_indexes[] = {
 	1,	/* abs */
 	5,	/* add */
 	9,	/* aload */
@@ -980,7 +980,7 @@ static gint __hg_system_encodings_offset_indexes[] = {
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_encoding_init(void)
 {
 	hg_system_encoding_t i;
@@ -993,11 +993,11 @@ hg_encoding_init(void)
 	if (!__hg_encoding_index_table)
 		return FALSE;
 	for (i = 0; i < HG_enc_POSTSCRIPT_RESERVED_END; i++) {
-		const gchar *n = hg_encoding_get_system_encoding_name(i);
+		const hg_char_t *n = hg_encoding_get_system_encoding_name(i);
 
 		if (n && *n != '\0') {
 			g_hash_table_insert(__hg_encoding_index_table,
-					    (gpointer)n, GINT_TO_POINTER (i+1));
+					    (hg_pointer_t)n, GINT_TO_POINTER (i+1));
 		}
 	}
 
@@ -1026,7 +1026,7 @@ hg_encoding_tini(void)
  *
  * Returns:
  */
-const gchar *
+const hg_char_t *
 hg_encoding_get_system_encoding_name(hg_system_encoding_t encoding)
 {
 	hg_return_val_if_fail (encoding < HG_enc_POSTSCRIPT_RESERVED_END, NULL);
@@ -1043,9 +1043,9 @@ hg_encoding_get_system_encoding_name(hg_system_encoding_t encoding)
  * Returns:
  */
 hg_system_encoding_t
-hg_encoding_lookup_system_encoding(const gchar *name)
+hg_encoding_lookup_system_encoding(const hg_char_t *name)
 {
-	gpointer result;
+	hg_pointer_t result;
 
 	hg_return_val_if_fail (name != NULL, HG_enc_END);
 	hg_return_val_if_fail (__hg_encoding_index_table != NULL, HG_enc_END);

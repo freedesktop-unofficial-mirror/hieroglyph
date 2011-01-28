@@ -21,10 +21,14 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#if !defined (__HG_H_INSIDE__) && !defined (HG_COMPILATION)
+#error "Only <hieroglyph/hg.h> can be included directly."
+#endif
+
 #ifndef __HIEROGLYPH__VERSION_H__
 #define __HIEROGLYPH__VERSION_H__
 
-#include <glib/gmacros.h>
+#include <hieroglyph/hgmacros.h>
 
 
 HG_BEGIN_DECLS
@@ -34,7 +38,7 @@ HG_BEGIN_DECLS
 #define HIEROGLYPH_MINOR_VERSION	@HIEROGLYPH_MINOR_VERSION@
 #define HIEROGLYPH_RELEASE_VERSION	@HIEROGLYPH_RELEASE_VERSION@
 
-const char *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
+const hg_char_t *__hg_rcsid G_GNUC_UNUSED = "$Rev$";
 
 HG_END_DECLS
 

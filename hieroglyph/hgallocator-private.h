@@ -25,15 +25,18 @@
 #define __HIEROGLYPH_HGALLOCATOR_PRIVATE_H__
 
 #include <hieroglyph/hgtypes.h>
+#include <hieroglyph/hgerror.h>
 #include <hieroglyph/hgquark.h>
 
 HG_BEGIN_DECLS
 
-#define BLOCK_SIZE		32
+typedef enum _hg_allocator_typebit_t		hg_allocator_typebit_t;
+typedef struct _hg_allocator_bitmap_t		hg_allocator_bitmap_t;
+typedef struct _hg_allocator_block_t		hg_allocator_block_t;
+typedef struct _hg_allocator_private_t		hg_allocator_private_t;
+typedef struct _hg_allocator_snapshot_private_t	hg_allocator_snapshot_private_t;
 
-typedef enum _hg_allocator_type_bit_t	hg_allocator_type_bit_t;
-
-enum _hg_allocator_type_bit_t {
+enum _hg_allocator_typebit_t {
 	HG_ALLOC_TYPE_BIT_BIT0 = 0,
 	HG_ALLOC_TYPE_BIT_INDEX = HG_ALLOC_TYPE_BIT_BIT0,
 	HG_ALLOC_TYPE_BIT_INDEX00 = HG_ALLOC_TYPE_BIT_INDEX +  0,
@@ -75,74 +78,99 @@ enum _hg_allocator_type_bit_t {
 };
 
 struct _hg_allocator_bitmap_t {
-	guint32    **bitmaps;
-	gsize       *size;
+	hg_uint_t  **bitmaps;
+	hg_usize_t  *size;
 	hg_quark_t  *last_index;
-	guint32      last_page;
+	hg_uint_t    last_page;
 };
 struct _hg_allocator_block_t {
-	gsize          size;
-	volatile guint lock_count;
-	gint           age;
-	gboolean       is_restorable:1;
+	hg_usize_t         size;
+	volatile hg_uint_t lock_count;
+	hg_int_t           age;
+	hg_bool_t          is_restorable:1;
 };
 struct _hg_allocator_private_t {
 	hg_allocator_data_t    parent;
 	hg_allocator_data_t    slave;
 	hg_allocator_bitmap_t *bitmap;
 	hg_allocator_bitmap_t *slave_bitmap;
-	gpointer              *heaps;
-	gint                   snapshot_age;
+	hg_pointer_t          *heaps;
+	hg_int_t               snapshot_age;
 };
 struct _hg_allocator_snapshot_private_t {
-	hg_mem_snapshot_data_t  parent;
-	hg_allocator_bitmap_t  *bitmap;
-	gpointer               *heaps;
-	gint                    age;
+	hg_allocator_snapshot_data_t  parent;
+	hg_allocator_bitmap_t        *bitmap;
+	hg_pointer_t                 *heaps;
+	hg_int_t                      age;
 };
 
 
-G_INLINE_FUNC hg_allocator_block_t  *_hg_allocator_get_block      (hg_pointer_t *p);
-G_INLINE_FUNC hg_quark_t             _hg_allocator_quark_build    (gint32        page,
-								   guint32       idx);
-G_INLINE_FUNC guint32                _hg_allocator_quark_get_page (hg_quark_t    qdata);
-G_INLINE_FUNC guint32                _hg_allocator_quark_get_index(hg_quark_t    qdata);
+G_INLINE_FUNC hg_quark_t _hg_allocator_typebit_get_mask   (hg_allocator_typebit_t begin,
+							   hg_allocator_typebit_t end);
+G_INLINE_FUNC hg_quark_t _hg_allocator_typebit_round_value(hg_quark_t             q,
+							   hg_allocator_typebit_t begin,
+							   hg_allocator_typebit_t end);
 
+G_INLINE_FUNC hg_allocator_block_t  *_hg_allocator_get_block      (hg_pointer_t *p);
+G_INLINE_FUNC hg_quark_t             _hg_allocator_quark_build    (hg_int_t      page,
+								   hg_uint_t     idx);
+G_INLINE_FUNC hg_uint_t              _hg_allocator_quark_get_page (hg_quark_t    qdata);
+G_INLINE_FUNC hg_uint_t              _hg_allocator_quark_get_index(hg_quark_t    qdata);
+
+
+/** copied from hgquark.c **/
+G_INLINE_FUNC hg_quark_t
+_hg_allocator_typebit_get_mask(hg_allocator_typebit_t begin,
+			       hg_allocator_typebit_t end)
+{
+	hg_return_val_if_fail (begin <= end, Qnil);
+
+	return (((1LL << (end - begin + 1)) - 1) << begin);
+}
+
+/** copied from hgquark.c **/
+G_INLINE_FUNC hg_quark_t
+_hg_allocator_typebit_round_value(hg_quark_t             q,
+				  hg_allocator_typebit_t begin,
+				  hg_allocator_typebit_t end)
+{
+	return q & ((1LL << (end - begin + 1)) - 1);
+}
 
 G_INLINE_FUNC hg_allocator_block_t *
 _hg_allocator_get_block(hg_pointer_t *p)
 {
-	return (hg_allocator_block_t *)((gchar *)(p) - HG_ALIGNED_TO_POINTER (sizeof (hg_allocator_block_t)));
+	return (hg_allocator_block_t *)((hg_char_t *)(p) - HG_ALIGNED_TO_POINTER (sizeof (hg_allocator_block_t)));
 }
 
 G_INLINE_FUNC hg_quark_t
-_hg_allocator_quark_build(gint32  page,
-			  guint32 idx)
+_hg_allocator_quark_build(hg_int_t  page,
+			  hg_uint_t idx)
 {
 	hg_quark_t retval;
 
-	retval = (_hg_quark_type_bit_validate_bits(page, 
+	retval = (_hg_allocator_typebit_round_value(page,
 						   HG_ALLOC_TYPE_BIT_PAGE,
 						   HG_ALLOC_TYPE_BIT_PAGE_END) << HG_ALLOC_TYPE_BIT_PAGE) |
-		(_hg_quark_type_bit_validate_bits(idx,
-						  HG_ALLOC_TYPE_BIT_INDEX,
-						  HG_ALLOC_TYPE_BIT_INDEX_END) << HG_ALLOC_TYPE_BIT_INDEX);
+		(_hg_allocator_typebit_round_value(idx,
+						   HG_ALLOC_TYPE_BIT_INDEX,
+						   HG_ALLOC_TYPE_BIT_INDEX_END) << HG_ALLOC_TYPE_BIT_INDEX);
 
 	return retval;
 }
 
-G_INLINE_FUNC guint32
+G_INLINE_FUNC hg_uint_t
 _hg_allocator_quark_get_page(hg_quark_t qdata)
 {
-	return (qdata & _hg_quark_type_bit_mask_bits(HG_ALLOC_TYPE_BIT_PAGE,
-						     HG_ALLOC_TYPE_BIT_PAGE_END)) >> HG_ALLOC_TYPE_BIT_PAGE;
+	return (qdata & _hg_allocator_typebit_get_mask(HG_ALLOC_TYPE_BIT_PAGE,
+						       HG_ALLOC_TYPE_BIT_PAGE_END)) >> HG_ALLOC_TYPE_BIT_PAGE;
 }
 
-G_INLINE_FUNC guint32
+G_INLINE_FUNC hg_uint_t
 _hg_allocator_quark_get_index(hg_quark_t qdata)
 {
-	return (qdata & _hg_quark_type_bit_mask_bits(HG_ALLOC_TYPE_BIT_INDEX,
-						     HG_ALLOC_TYPE_BIT_INDEX_END)) >> HG_ALLOC_TYPE_BIT_INDEX;
+	return (qdata & _hg_allocator_typebit_get_mask(HG_ALLOC_TYPE_BIT_INDEX,
+						       HG_ALLOC_TYPE_BIT_INDEX_END)) >> HG_ALLOC_TYPE_BIT_INDEX;
 }
 
 HG_END_DECLS

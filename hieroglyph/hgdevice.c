@@ -38,6 +38,7 @@
 #include "hgnull.h"
 #include "hgoperator.h"
 #include "hgpath.h"
+#include "hgreal.h"
 #include "hgdevice.h"
 
 #include "hgdevice.proto.h"

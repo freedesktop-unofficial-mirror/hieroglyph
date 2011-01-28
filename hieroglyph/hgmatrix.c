@@ -27,7 +27,6 @@
 
 #include <math.h>
 #include <string.h>
-#include <glib.h>
 #include "hgerror.h"
 #include "hgmatrix.h"
 
@@ -51,12 +50,12 @@
  */
 void
 hg_matrix_init(hg_matrix_t *matrix,
-	       gdouble      xx,
-	       gdouble      xy,
-	       gdouble      yx,
-	       gdouble      yy,
-	       gdouble      x0,
-	       gdouble      y0)
+	       hg_real_t    xx,
+	       hg_real_t    xy,
+	       hg_real_t    yx,
+	       hg_real_t    yy,
+	       hg_real_t    x0,
+	       hg_real_t    y0)
 {
 	hg_return_if_fail (matrix != NULL);
 
@@ -91,7 +90,7 @@ gboolean
 hg_matrix_invert(hg_matrix_t *matrix1,
 		 hg_matrix_t *matrix2)
 {
-	gdouble det;
+	hg_real_t det;
 
 	hg_return_val_if_fail (matrix1 != NULL, FALSE);
 	hg_return_val_if_fail (matrix2 != NULL, FALSE);
@@ -164,8 +163,8 @@ hg_matrix_multiply(hg_matrix_t *matrix1,
  */
 void
 hg_matrix_translate(hg_matrix_t *matrix,
-		    gdouble      tx,
-		    gdouble      ty)
+		    hg_real_t    tx,
+		    hg_real_t    ty)
 {
 	hg_matrix_t t;
 
@@ -185,11 +184,11 @@ hg_matrix_translate(hg_matrix_t *matrix,
  */
 void
 hg_matrix_rotate(hg_matrix_t *matrix,
-		 gdouble      angle)
+		 hg_real_t    angle)
 {
 	hg_matrix_t t;
-	gdouble cos_a = cos(angle / 180 * M_PI);
-	gdouble sin_a = sin(angle / 180 * M_PI);
+	hg_real_t cos_a = cos(angle / 180 * M_PI);
+	hg_real_t sin_a = sin(angle / 180 * M_PI);
 
 	hg_return_if_fail (matrix != NULL);
 
@@ -212,12 +211,12 @@ hg_matrix_rotate(hg_matrix_t *matrix,
  */
 void
 hg_matrix_get_affine(hg_matrix_t *matrix,
-		     gdouble     *xx,
-		     gdouble     *xy,
-		     gdouble     *yx,
-		     gdouble     *yy,
-		     gdouble     *x0,
-		     gdouble     *y0)
+		     hg_real_t   *xx,
+		     hg_real_t   *xy,
+		     hg_real_t   *yx,
+		     hg_real_t   *yy,
+		     hg_real_t   *x0,
+		     hg_real_t   *y0)
 {
 	hg_return_if_fail (matrix != NULL);
 

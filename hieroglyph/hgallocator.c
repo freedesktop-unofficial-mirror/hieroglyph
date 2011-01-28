@@ -36,6 +36,12 @@
 
 #include "hgallocator.proto.h"
 
+/* memory block size per 1 bit in the bitmap */
+#define BLOCK_SIZE		32
+
+/* memory block size per 1 bit in the bitmap */
+#define BLOCK_SIZE		32
+
 static hg_mem_vtable_t __hg_allocator_vtable = {
 	.initialize        = _hg_allocator_initialize,
 	.finalize          = _hg_allocator_finalize,
@@ -257,7 +263,7 @@ _hg_allocator_bitmap_realloc(hg_allocator_bitmap_t *bitmap,
 	page = _hg_allocator_quark_get_page(index_);
 	idx = _hg_allocator_quark_get_index(index_);
 #if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
-	g_print("ALLOC: %" G_GSIZE_FORMAT " blocks to be grown from %" G_GSIZE_FORMAT " blocks at index %" G_GSIZE_FORMAT "(page:%" G_GSIZE_FORMAT ", idx:%lx)\n", aligned_size, old_aligned_size, index_, page, idx);
+	g_print("ALLOC: %" G_GSIZE_FORMAT " blocks to be grown from %" G_GSIZE_FORMAT " blocks at index %" G_GSIZE_FORMAT "(page:%d, idx:%u)\n", aligned_size, old_aligned_size, index_, page, idx);
 	_hg_allocator_bitmap_dump(bitmap, page);
 #endif
 	required_size = aligned_size - old_aligned_size;
@@ -912,7 +918,7 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 	return !was_error;
 }
 
-static hg_mem_snapshot_data_t *
+static hg_allocator_snapshot_data_t *
 _hg_allocator_save_snapshot(hg_allocator_data_t *data)
 {
 	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
@@ -936,13 +942,13 @@ _hg_allocator_save_snapshot(hg_allocator_data_t *data)
 
 	G_UNLOCK (allocator);
 
-	return (hg_mem_snapshot_data_t *)snapshot;
+	return (hg_allocator_snapshot_data_t *)snapshot;
 }
 
 static gboolean
-_hg_allocator_restore_snapshot(hg_allocator_data_t    *data,
-			       hg_mem_snapshot_data_t *snapshot,
-			       GHashTable             *references)
+_hg_allocator_restore_snapshot(hg_allocator_data_t          *data,
+			       hg_allocator_snapshot_data_t *snapshot,
+			       GHashTable                   *references)
 {
 	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
 	hg_allocator_snapshot_private_t *spriv = (hg_allocator_snapshot_private_t *)snapshot;
@@ -1064,7 +1070,7 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t    *data,
 
 static void
 _hg_allocator_destroy_snapshot(hg_allocator_data_t    *data,
-			       hg_mem_snapshot_data_t *snapshot)
+			       hg_allocator_snapshot_data_t *snapshot)
 {
 	hg_allocator_snapshot_private_t *spriv = (hg_allocator_snapshot_private_t *)snapshot;
 	gsize i, max_page = hg_allocator_get_max_page();

@@ -21,10 +21,16 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#if !defined (__HG_H_INSIDE__) && !defined (HG_COMPILATION)
+#error "Only <hieroglyph/hg.h> can be included directly."
+#endif
+
 #ifndef __HIEROGLYPH_HGVM_H__
 #define __HIEROGLYPH_HGVM_H__
 
 #include <hieroglyph/hgtypes.h>
+#include <hieroglyph/hgdevice.h>
+#include <hieroglyph/hgerror.h>
 #include <hieroglyph/hgfile.h>
 #include <hieroglyph/hglineedit.h>
 #include <hieroglyph/hgscanner.h>
@@ -36,23 +42,17 @@ HG_BEGIN_DECLS
 	(hg_vm_lock_object((_v_),(_q_),__PRETTY_FUNCTION__,(_e_)))
 #define HG_VM_UNLOCK(_v_,_q_)			\
 	(hg_vm_unlock_object((_v_),(_q_)))
-#define HG_VM_ATTRIBUTE(_a_)			\
-	((_a_) << HG_QUARK_TYPE_BIT_ACCESS1)
-#define HG_VM_ATTRIBUTE1(_a_)			\
-	((_a_) >> 1)
 
-typedef enum _hg_vm_access_t		hg_vm_access_t;
+typedef enum _hg_vm_mem_type_t		hg_vm_mem_type_t;
+typedef struct _hg_vm_state_t		hg_vm_state_t;
+typedef enum _hg_vm_langlevel_t		hg_vm_langlevel_t;
+typedef struct _hg_vm_user_params_t	hg_vm_user_params_t;
+typedef struct _hg_vm_sys_params_t	hg_vm_sys_params_t;
+typedef struct _hg_vm_value_t		hg_vm_value_t;
 typedef enum _hg_vm_stack_type_t	hg_vm_stack_type_t;
 typedef enum _hg_vm_user_params_name_t	hg_vm_user_params_name_t;
 typedef enum _hg_vm_sys_params_name_t	hg_vm_sys_params_name_t;
 
-enum _hg_vm_access_t {
-	HG_VM_ACCESS_EXECUTABLE = HG_ACCESS_EXECUTABLE,
-	HG_VM_ACCESS_READABLE   = HG_ACCESS_READABLE,
-	HG_VM_ACCESS_WRITABLE   = HG_ACCESS_WRITABLE,
-	HG_VM_ACCESS_EDITABLE   = HG_ACCESS_EDITABLE,
-	HG_VM_ACCESS_END
-};
 enum _hg_vm_stack_type_t {
 	HG_VM_STACK_OSTACK = 0,
 	HG_VM_STACK_ESTACK,
@@ -72,6 +72,17 @@ enum _hg_vm_sys_params_name_t {
 	HG_VM_sys_BEGIN = 0,
 	HG_VM_sys_END
 };
+enum _hg_vm_mem_type_t {
+	HG_VM_MEM_GLOBAL = 0,
+	HG_VM_MEM_LOCAL = 1,
+	HG_VM_MEM_END
+};
+enum _hg_vm_langlevel_t {
+	HG_LANG_LEVEL_1 = 0,
+	HG_LANG_LEVEL_2,
+	HG_LANG_LEVEL_3,
+	HG_LANG_LEVEL_END
+};
 struct _hg_vm_user_params_t {
 	gsize max_op_stack;
 	gsize max_exec_stack;
@@ -79,6 +90,10 @@ struct _hg_vm_user_params_t {
 	gsize max_gstate_stack;
 };
 struct _hg_vm_sys_params_t {
+};
+struct _hg_vm_state_t {
+	hg_vm_mem_type_t current_mem_index;
+	gint             n_save_objects;
 };
 struct _hg_vm_t {
 	hg_quark_t           self;
@@ -108,8 +123,8 @@ struct _hg_vm_t {
 	gboolean             shutdown:1;
 	gboolean             has_error:1;
 	gint                 error_code;
-	guint                qattributes;
 	guint                n_nest_scan;
+	hg_quark_acl_t       default_acl;
 	GHashTable          *params;
 	GHashTable          *plugin_table;
 	GList               *plugin_list;
@@ -118,6 +133,16 @@ struct _hg_vm_t {
 	GTimeVal             initiation_time;
 	hg_device_t         *device;
 };
+struct _hg_vm_value_t {
+	gint type;
+	union {
+		gboolean  bool;
+		gint32    integer;
+		gdouble   real;
+		gchar    *string;
+	} u;
+};
+
 
 
 /* hg_vm_t */
@@ -140,8 +165,8 @@ gpointer           hg_vm_lock_object           (hg_vm_t            *vm,
                                                 GError            **error);
 void               hg_vm_unlock_object         (hg_vm_t            *vm,
                                                 hg_quark_t          qdata);
-void               hg_vm_set_default_attributes(hg_vm_t            *vm,
-                                                guint               qattributes);
+void               hg_vm_set_default_acl       (hg_vm_t            *vm,
+						hg_quark_acl_t      acl);
 hg_mem_t          *hg_vm_get_mem               (hg_vm_t            *vm);
 hg_mem_t          *hg_vm_get_mem_from_quark    (hg_vm_t            *vm,
                                                 hg_quark_t          qdata);
@@ -298,14 +323,11 @@ gboolean   hg_vm_quark_compare               (hg_vm_t     *vm,
 gboolean   hg_vm_quark_compare_content       (hg_vm_t     *vm,
                                               hg_quark_t   qdata1,
                                               hg_quark_t   qdata2);
-void       hg_vm_quark_set_default_attributes(hg_vm_t     *vm,
+void       hg_vm_quark_set_default_acl       (hg_vm_t     *vm,
                                               hg_quark_t  *qdata);
-void       hg_vm_quark_set_attributes        (hg_vm_t     *vm,
+void       hg_vm_quark_set_acl               (hg_vm_t     *vm,
                                               hg_quark_t  *qdata,
-                                              gboolean     readable,
-                                              gboolean     writable,
-                                              gboolean     executable,
-                                              gboolean     editable);
+					      hg_quark_acl_t  acl);
 void       hg_vm_quark_set_readable          (hg_vm_t     *vm,
                                               hg_quark_t  *qdata,
                                               gboolean     flag);
@@ -321,10 +343,10 @@ void       hg_vm_quark_set_executable        (hg_vm_t     *vm,
                                               gboolean     flag);
 gboolean   hg_vm_quark_is_executable         (hg_vm_t     *vm,
                                               hg_quark_t  *qdata);
-void       hg_vm_quark_set_editable          (hg_vm_t     *vm,
+void       hg_vm_quark_set_accessible        (hg_vm_t     *vm,
                                               hg_quark_t  *qdata,
                                               gboolean     flag);
-gboolean   hg_vm_quark_is_editable           (hg_vm_t     *vm,
+gboolean   hg_vm_quark_is_accessible         (hg_vm_t     *vm,
                                               hg_quark_t  *qdata);
 
 /* hg_stack_t */

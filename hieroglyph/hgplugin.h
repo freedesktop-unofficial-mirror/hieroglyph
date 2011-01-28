@@ -21,6 +21,10 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#if !defined (__HG_H_INSIDE__) && !defined (HG_COMPILATION)
+#error "Only <hieroglyph/hg.h> can be included directly."
+#endif
+
 #ifndef __HIEROGLYPH_HGPLUGIN_H__
 #define __HIEROGLYPH_HGPLUGIN_H__
 
@@ -39,25 +43,25 @@ typedef hg_plugin_t * (* hg_plugin_new_func_t) (hg_mem_t  *mem,
 						GError   **error);
 
 struct _hg_plugin_vtable_t {
-	gboolean (* init)     (void);
-	gboolean (* finalize) (void);
-	gboolean (* load)     (hg_plugin_t  *plugin,
-			       gpointer      vm,
-			       GError      **error);
-	gboolean (* unload)   (hg_plugin_t  *plugin,
-			       gpointer      vm,
-			       GError      **error);
+	hg_bool_t (* init)     (void);
+	hg_bool_t (* finalize) (void);
+	hg_bool_t (* load)     (hg_plugin_t   *plugin,
+				hg_pointer_t   vm,
+				GError       **error);
+	hg_bool_t (* unload)   (hg_plugin_t   *plugin,
+				hg_pointer_t   vm,
+				GError       **error);
 };
 struct _hg_plugin_t {
 	hg_mem_t           *mem;
 	hg_quark_t          self;
 	hg_plugin_vtable_t *vtable;
 	GModule            *module;
-	gboolean            is_loaded;
-	gpointer            user_data;
+	hg_bool_t           is_loaded;
+	hg_pointer_t        user_data;
 };
 struct _hg_plugin_info_t {
-	guint               version;
+	hg_uint_t           version;
 	hg_plugin_vtable_t *vtable;
 };
 enum _hg_plugin_type_t {
@@ -68,17 +72,17 @@ enum _hg_plugin_type_t {
 
 
 hg_plugin_t *hg_plugin_open   (hg_mem_t          *mem,
-			       const gchar       *name,
+			       const hg_char_t   *name,
 			       hg_plugin_type_t   type,
 			       GError           **error);
 hg_plugin_t *hg_plugin_new    (hg_mem_t          *mem,
 			       hg_plugin_info_t  *info);
 void         hg_plugin_destroy(hg_plugin_t       *plugin);
-gboolean     hg_plugin_load   (hg_plugin_t       *plugin,
-			       gpointer           vm,
+hg_bool_t    hg_plugin_load   (hg_plugin_t       *plugin,
+			       hg_pointer_t       vm,
 			       GError           **error);
-gboolean     hg_plugin_unload (hg_plugin_t       *plugin,
-			       gpointer           vm,
+hg_bool_t    hg_plugin_unload (hg_plugin_t       *plugin,
+			       hg_pointer_t       vm,
 			       GError           **error);
 
 HG_END_DECLS

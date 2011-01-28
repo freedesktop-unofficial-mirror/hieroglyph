@@ -21,6 +21,10 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#if !defined (__HG_H_INSIDE__) && !defined (HG_COMPILATION)
+#error "Only <hieroglyph/hg.h> can be included directly."
+#endif
+
 #ifndef __HIEROGLYPH_HGSTRING_H__
 #define __HIEROGLYPH_HGSTRING_H__
 
@@ -41,21 +45,15 @@ HG_BEGIN_DECLS
 	(hg_quark_get_type(_v_) == HG_TYPE_STRING)
 
 
-typedef struct _hg_bs_string_t		hg_bs_string_t;
-typedef struct _hg_string_t		hg_string_t;
+typedef struct _hg_string_t	hg_string_t;
 
-struct _hg_bs_string_t {
-	hg_bs_template_t t;
-	guint16          length;
-	guint32          offset;
-};
 struct _hg_string_t {
 	hg_object_t o;
 	hg_quark_t  qstring;
-	guint16     offset;
-	guint16     length;
-	gsize       allocated_size;
-	gboolean    is_fixed_size;
+	hg_uint16_t offset;
+	hg_uint16_t length;
+	hg_usize_t  allocated_size;
+	hg_bool_t   is_fixed_size:1;
 };
 
 hg_object_vtable_t *hg_object_string_get_vtable (void) G_GNUC_CONST;

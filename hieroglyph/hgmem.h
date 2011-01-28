@@ -21,19 +21,32 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#if !defined (__HG_H_INSIDE__) && !defined (HG_COMPILATION)
+#error "Only <hieroglyph/hg.h> can be included directly."
+#endif
+
 #ifndef __HIEROGLYPH_HGMEM_H__
 #define __HIEROGLYPH_HGMEM_H__
 
 #include <hieroglyph/hgtypes.h>
 #include <hieroglyph/hgerror.h>
+#include <hieroglyph/hgallocator.h>
 
 HG_BEGIN_DECLS
 
 #define HG_MEM_FLAGS_DEFAULT			HG_MEM_RESTORABLE
 #define HG_MEM_FLAGS_DEFAULT_WITHOUT_RESTORABLE	(HG_MEM_FLAGS_DEFAULT & ~HG_MEM_RESTORABLE)
 
-typedef enum _hg_mem_type_t	hg_mem_type_t;
+typedef enum _hg_mem_type_t		hg_mem_type_t;
+typedef hg_cb_BOOL__QUARK_QUARK_t	hg_rs_gc_func_t;
+typedef hg_allocator_snapshot_data_t	hg_mem_snapshot_data_t;
 
+typedef void (* hg_mem_finalizer_func_t) (hg_mem_t    *mem,
+					  hg_quark_t  index);
+typedef gboolean (* hg_gc_func_t)	(hg_mem_t *mem,
+					 gpointer  user_data);
+
+/* hgmem.h */
 enum _hg_mem_type_t {
 	HG_MEM_TYPE_MASTER = 0,
 	HG_MEM_TYPE_GLOBAL,
@@ -42,72 +55,72 @@ enum _hg_mem_type_t {
 };
 
 
-hg_mem_t               *hg_mem_get                                 (gint                     id);
-hg_mem_t               *hg_mem_new                                 (hg_mem_type_t            type,
-								    gsize                    size);
-hg_mem_t               *hg_mem_new_with_allocator                  (hg_mem_vtable_t         *allocator,
-								    hg_mem_type_t            type,
-                                                                    gsize                    size);
-void                    hg_mem_destroy                             (gpointer                 data);
-gboolean                hg_mem_expand_heap                         (hg_mem_t                *mem,
-                                                                    gsize                    size);
-void                    hg_mem_set_resizable                       (hg_mem_t                *mem,
-                                                                    gboolean                 flag);
-void                    hg_mem_add_gc_finalizer                    (hg_mem_t                *mem,
-                                                                    hg_quark_t               index,
-                                                                    hg_mem_finalizer_func_t  func);
-void                    hg_mem_remove_gc_finalizer                 (hg_mem_t                *mem,
-                                                                    hg_quark_t               index);
-hg_mem_type_t           hg_mem_get_type                            (hg_mem_t                *mem);
-hg_quark_t              hg_mem_alloc                               (hg_mem_t                *mem,
-                                                                    gsize                    size,
-                                                                    gpointer                *ret);
-hg_quark_t              hg_mem_alloc_with_flags                    (hg_mem_t                *mem,
-								    gsize                    size,
-								    guint                    flags,
-								    gpointer                *ret);
-hg_quark_t              hg_mem_realloc                             (hg_mem_t                *mem,
-                                                                    hg_quark_t               qdata,
-                                                                    gsize                    size,
-                                                                    gpointer                *ret);
-void                    hg_mem_free                                (hg_mem_t                *mem,
-                                                                    hg_quark_t               qdata);
-gpointer                hg_mem_lock_object                         (hg_mem_t                *mem,
-                                                                    hg_quark_t               qdata);
-void                    hg_mem_unlock_object                       (hg_mem_t                *mem,
-                                                                    hg_quark_t               qdata);
-void                    hg_mem_enable_garbage_collector            (hg_mem_t                *mem,
-								    gboolean                 flag);
-void                    hg_mem_set_garbage_collector               (hg_mem_t                *mem,
-                                                                    hg_gc_func_t             func,
-                                                                    gpointer                 user_data);
-gssize                  hg_mem_collect_garbage                     (hg_mem_t                *mem);
-gboolean                hg_mem_gc_mark                             (hg_mem_t                *mem,
-                                                                    hg_quark_t               qdata,
-                                                                    GError                  **error);
-hg_mem_snapshot_data_t *hg_mem_save_snapshot                       (hg_mem_t                *mem);
-gboolean                hg_mem_restore_snapshot                    (hg_mem_t                *mem,
-                                                                    hg_mem_snapshot_data_t  *snapshot,
-								    hg_gc_func_t             func,
-								    gpointer                 data);
-void                    hg_mem_restore_mark                        (hg_mem_t                *mem,
-								    hg_quark_t               qdata);
-void                    hg_mem_snapshot_free                       (hg_mem_t                *mem,
-                                                                    hg_mem_snapshot_data_t  *snapshot);
-gint                    hg_mem_get_id                              (hg_mem_t                *mem);
-gsize                   hg_mem_get_total_size                      (hg_mem_t                *mem);
-gsize                   hg_mem_get_used_size                       (hg_mem_t                *mem);
-void                    hg_mem_reserved_spool_add                  (hg_mem_t                *mem,
-                                                                    hg_quark_t               qdata);
-void                    hg_mem_reserved_spool_remove               (hg_mem_t                *mem,
-                                                                    hg_quark_t               qdata);
-void                    hg_mem_reserved_spool_set_garbage_collector(hg_mem_t                *mem,
-                                                                    hg_rs_gc_func_t          func,
-                                                                    gpointer                 user_data);
-gboolean                hg_mem_reserved_spool_foreach              (hg_mem_t                *mem,
-                                                                    hg_rs_gc_func_t          func,
-                                                                    gpointer                 user_data,
-                                                                    GError                  **error);
+hg_mem_t                     *hg_mem_get                                 (gint                          id);
+hg_mem_t                     *hg_mem_new                                 (hg_mem_type_t                 type,
+                                                                          gsize                         size);
+hg_mem_t                     *hg_mem_new_with_allocator                  (hg_mem_vtable_t              *allocator,
+                                                                          hg_mem_type_t                 type,
+                                                                          gsize                         size);
+void                          hg_mem_destroy                             (gpointer                      data);
+gboolean                      hg_mem_expand_heap                         (hg_mem_t                     *mem,
+                                                                          gsize                         size);
+void                          hg_mem_set_resizable                       (hg_mem_t                     *mem,
+                                                                          gboolean                      flag);
+void                          hg_mem_add_gc_finalizer                    (hg_mem_t                     *mem,
+                                                                          hg_quark_t                    index,
+                                                                          hg_mem_finalizer_func_t       func);
+void                          hg_mem_remove_gc_finalizer                 (hg_mem_t                     *mem,
+                                                                          hg_quark_t                    index);
+hg_mem_type_t                 hg_mem_get_type                            (hg_mem_t                     *mem);
+hg_quark_t                    hg_mem_alloc                               (hg_mem_t                     *mem,
+                                                                          gsize                         size,
+                                                                          gpointer                     *ret);
+hg_quark_t                    hg_mem_alloc_with_flags                    (hg_mem_t                     *mem,
+                                                                          gsize                         size,
+                                                                          guint                         flags,
+                                                                          gpointer                     *ret);
+hg_quark_t                    hg_mem_realloc                             (hg_mem_t                     *mem,
+                                                                          hg_quark_t                    qdata,
+                                                                          gsize                         size,
+                                                                          gpointer                     *ret);
+void                          hg_mem_free                                (hg_mem_t                     *mem,
+                                                                          hg_quark_t                    qdata);
+gpointer                      hg_mem_lock_object                         (hg_mem_t                     *mem,
+                                                                          hg_quark_t                    qdata);
+void                          hg_mem_unlock_object                       (hg_mem_t                     *mem,
+                                                                          hg_quark_t                    qdata);
+void                          hg_mem_enable_garbage_collector            (hg_mem_t                     *mem,
+                                                                          gboolean                      flag);
+void                          hg_mem_set_garbage_collector               (hg_mem_t                     *mem,
+                                                                          hg_gc_func_t                  func,
+                                                                          gpointer                      user_data);
+gssize                        hg_mem_collect_garbage                     (hg_mem_t                     *mem);
+gboolean                      hg_mem_gc_mark                             (hg_mem_t                     *mem,
+                                                                          hg_quark_t                    qdata,
+                                                                          GError                       **error);
+hg_allocator_snapshot_data_t *hg_mem_save_snapshot                       (hg_mem_t                     *mem);
+gboolean                      hg_mem_restore_snapshot                    (hg_mem_t                     *mem,
+                                                                          hg_allocator_snapshot_data_t *snapshot,
+                                                                          hg_gc_func_t                  func,
+                                                                          gpointer                      data);
+void                          hg_mem_restore_mark                        (hg_mem_t                     *mem,
+                                                                          hg_quark_t                    qdata);
+void                          hg_mem_snapshot_free                       (hg_mem_t                     *mem,
+                                                                          hg_allocator_snapshot_data_t *snapshot);
+gint                          hg_mem_get_id                              (hg_mem_t                     *mem);
+gsize                         hg_mem_get_total_size                      (hg_mem_t                     *mem);
+gsize                         hg_mem_get_used_size                       (hg_mem_t                     *mem);
+void                          hg_mem_reserved_spool_add                  (hg_mem_t                     *mem,
+                                                                          hg_quark_t                    qdata);
+void                          hg_mem_reserved_spool_remove               (hg_mem_t                     *mem,
+                                                                          hg_quark_t                    qdata);
+void                          hg_mem_reserved_spool_set_garbage_collector(hg_mem_t                     *mem,
+                                                                          hg_rs_gc_func_t               func,
+                                                                          gpointer                      user_data);
+gboolean                      hg_mem_reserved_spool_foreach              (hg_mem_t                     *mem,
+                                                                          hg_rs_gc_func_t               func,
+                                                                          gpointer                      user_data,
+                                                                          GError                       **error);
 
 G_INLINE_FUNC gpointer hg_mem_lock_object_with_gerror(hg_mem_t     *mem,
 						      hg_quark_t    quark,

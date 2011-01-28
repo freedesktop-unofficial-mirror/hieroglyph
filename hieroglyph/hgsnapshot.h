@@ -21,10 +21,15 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#if !defined (__HG_H_INSIDE__) && !defined (HG_COMPILATION)
+#error "Only <hieroglyph/hg.h> can be included directly."
+#endif
+
 #ifndef __HIEROGLYPH_HGSNAPSHOT_H__
 #define __HIEROGLYPH_HGSNAPSHOT_H__
 
 #include <hieroglyph/hgobject.h>
+#include <hieroglyph/hgvm.h>
 
 HG_BEGIN_DECLS
 
@@ -39,13 +44,13 @@ typedef struct _hg_snapshot_t		hg_snapshot_t;
 
 hg_object_vtable_t *hg_object_snapshot_get_vtable(void) G_GNUC_CONST;
 hg_quark_t          hg_snapshot_new              (hg_mem_t      *mem,
-						  gpointer      *ret);
-gboolean            hg_snapshot_save             (hg_snapshot_t *snapshot,
+						  hg_pointer_t  *ret);
+hg_bool_t           hg_snapshot_save             (hg_snapshot_t *snapshot,
 						  hg_vm_state_t *vm_state);
-gboolean            hg_snapshot_restore          (hg_snapshot_t *snapshot,
+hg_bool_t           hg_snapshot_restore          (hg_snapshot_t *snapshot,
 						  hg_vm_state_t *vm_state,
 						  hg_gc_func_t   func,
-						  gpointer       data);
+						  hg_pointer_t   data);
 
 
 HG_END_DECLS

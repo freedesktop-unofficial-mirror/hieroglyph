@@ -21,6 +21,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+#if !defined (__HG_H_INSIDE__) && !defined (HG_COMPILATION)
+#error "Only <hieroglyph/hg.h> can be included directly."
+#endif
+
 #ifndef __HIEROGLYPH_HGPATH_H__
 #define __HIEROGLYPH_HGPATH_H__
 
@@ -34,6 +38,8 @@ HG_BEGIN_DECLS
 #define HG_IS_QPATH(_q_)				\
 	(hg_quark_get_type((_q_)) == HG_TYPE_PATH)
 
+typedef struct _hg_path_t			hg_path_t;
+typedef struct _hg_path_bbox_t			hg_path_bbox_t;
 typedef enum _hg_path_type_t			hg_path_type_t;
 typedef struct _hg_path_node_t			hg_path_node_t;
 typedef struct _hg_path_operate_vtable_t	hg_path_operate_vtable_t;
@@ -59,111 +65,111 @@ enum _hg_path_type_t {
 struct _hg_path_t {
 	hg_object_t o;
 	hg_quark_t  qnode;
-	gsize       length;
+	hg_usize_t  length;
 };
 struct _hg_path_node_t {
 	hg_path_type_t type;
-	gdouble        dx;
-	gdouble        dy;
-	gdouble        cx;
-	gdouble        cy;
+	hg_real_t      dx;
+	hg_real_t      dy;
+	hg_real_t      cx;
+	hg_real_t      cy;
 };
 struct _hg_path_bbox_t {
-	gdouble llx;
-	gdouble lly;
-	gdouble urx;
-	gdouble ury;
+	hg_real_t llx;
+	hg_real_t lly;
+	hg_real_t urx;
+	hg_real_t ury;
 };
 struct _hg_path_operate_vtable_t {
-	void (* new_path)   (gpointer user_data);
-	void (* close_path) (gpointer user_data);
-	void (* moveto)     (gpointer user_data,
-			     gdouble  x,
-			     gdouble  y);
-	void (* rmoveto)    (gpointer user_data,
-			     gdouble  rx,
-			     gdouble  ry);
-	void (* lineto)     (gpointer user_data,
-			     gdouble  x,
-			     gdouble  y);
-	void (* rlineto)    (gpointer user_data,
-			     gdouble  rx,
-			     gdouble  ry);
-	void (* curveto)    (gpointer user_data,
-			     gdouble  x1,
-			     gdouble  y1,
-			     gdouble  x2,
-			     gdouble  y2,
-			     gdouble  x3,
-			     gdouble  y3);
-	void (* rcurveto)   (gpointer user_data,
-			     gdouble  rx1,
-			     gdouble  ry1,
-			     gdouble  rx2,
-			     gdouble  ry2,
-			     gdouble  rx3,
-			     gdouble  ry3);
+	void (* new_path)   (hg_pointer_t user_data);
+	void (* close_path) (hg_pointer_t user_data);
+	void (* moveto)     (hg_pointer_t user_data,
+			     hg_real_t    x,
+			     hg_real_t    y);
+	void (* rmoveto)    (hg_pointer_t user_data,
+			     hg_real_t    rx,
+			     hg_real_t    ry);
+	void (* lineto)     (hg_pointer_t user_data,
+			     hg_real_t    x,
+			     hg_real_t    y);
+	void (* rlineto)    (hg_pointer_t user_data,
+			     hg_real_t    rx,
+			     hg_real_t    ry);
+	void (* curveto)    (hg_pointer_t user_data,
+			     hg_real_t    x1,
+			     hg_real_t    y1,
+			     hg_real_t    x2,
+			     hg_real_t    y2,
+			     hg_real_t    x3,
+			     hg_real_t    y3);
+	void (* rcurveto)   (hg_pointer_t user_data,
+			     hg_real_t    rx1,
+			     hg_real_t    ry1,
+			     hg_real_t    rx2,
+			     hg_real_t    ry2,
+			     hg_real_t    rx3,
+			     hg_real_t    ry3);
 };
 
 
 hg_object_vtable_t *hg_object_path_get_vtable(void) G_GNUC_CONST;
 hg_quark_t          hg_path_new              (hg_mem_t       *mem,
-                                              gpointer       *ret);
-gboolean            hg_path_get_current_point(hg_path_t      *path,
-                                              gdouble        *x,
-                                              gdouble        *y);
-gboolean            hg_path_close            (hg_path_t      *path);
-gboolean            hg_path_moveto           (hg_path_t      *path,
-                                              gdouble         x,
-                                              gdouble         y);
-gboolean            hg_path_rmoveto          (hg_path_t      *path,
-                                              gdouble         x,
-                                              gdouble         y);
-gboolean            hg_path_lineto           (hg_path_t      *path,
-                                              gdouble         x,
-                                              gdouble         y);
-gboolean            hg_path_rlineto          (hg_path_t      *path,
-                                              gdouble         x,
-                                              gdouble         y);
-gboolean            hg_path_curveto          (hg_path_t      *path,
-                                              gdouble         x1,
-                                              gdouble         y1,
-                                              gdouble         x2,
-                                              gdouble         y2,
-                                              gdouble         x3,
-                                              gdouble         y3);
-gboolean            hg_path_rcurveto         (hg_path_t      *path,
-                                              gdouble         x1,
-                                              gdouble         y1,
-                                              gdouble         x2,
-                                              gdouble         y2,
-                                              gdouble         x3,
-                                              gdouble         y3);
-gboolean            hg_path_arc              (hg_path_t      *path,
-                                              gdouble         x,
-                                              gdouble         y,
-                                              gdouble         r,
-                                              gdouble         angle1,
-                                              gdouble         angle2);
-gboolean            hg_path_arcn             (hg_path_t      *path,
-                                              gdouble         x,
-                                              gdouble         y,
-                                              gdouble         r,
-                                              gdouble         angle1,
-                                              gdouble         angle2);
-gboolean            hg_path_arcto            (hg_path_t      *path,
-					      gdouble         x1,
-					      gdouble         y1,
-					      gdouble         x2,
-					      gdouble         y2,
-					      gdouble         r,
-					      gdouble         tp[4]);
-gboolean            hg_path_operate          (hg_path_t                 *path,
+                                              hg_pointer_t   *ret);
+hg_bool_t           hg_path_get_current_point(hg_path_t      *path,
+                                              hg_real_t      *x,
+                                              hg_real_t      *y);
+hg_bool_t           hg_path_close            (hg_path_t      *path);
+hg_bool_t           hg_path_moveto           (hg_path_t      *path,
+                                              hg_real_t       x,
+                                              hg_real_t       y);
+hg_bool_t           hg_path_rmoveto          (hg_path_t      *path,
+                                              hg_real_t       x,
+                                              hg_real_t       y);
+hg_bool_t           hg_path_lineto           (hg_path_t      *path,
+                                              hg_real_t       x,
+                                              hg_real_t       y);
+hg_bool_t           hg_path_rlineto          (hg_path_t      *path,
+                                              hg_real_t       x,
+                                              hg_real_t       y);
+hg_bool_t           hg_path_curveto          (hg_path_t      *path,
+                                              hg_real_t       x1,
+                                              hg_real_t       y1,
+                                              hg_real_t       x2,
+                                              hg_real_t       y2,
+                                              hg_real_t       x3,
+                                              hg_real_t       y3);
+hg_bool_t           hg_path_rcurveto         (hg_path_t      *path,
+                                              hg_real_t       x1,
+                                              hg_real_t       y1,
+                                              hg_real_t       x2,
+                                              hg_real_t       y2,
+                                              hg_real_t       x3,
+                                              hg_real_t       y3);
+hg_bool_t           hg_path_arc              (hg_path_t      *path,
+                                              hg_real_t       x,
+                                              hg_real_t       y,
+                                              hg_real_t       r,
+                                              hg_real_t       angle1,
+                                              hg_real_t       angle2);
+hg_bool_t           hg_path_arcn             (hg_path_t      *path,
+                                              hg_real_t       x,
+                                              hg_real_t       y,
+                                              hg_real_t       r,
+                                              hg_real_t       angle1,
+                                              hg_real_t       angle2);
+hg_bool_t           hg_path_arcto            (hg_path_t      *path,
+					      hg_real_t       x1,
+					      hg_real_t       y1,
+					      hg_real_t       x2,
+					      hg_real_t       y2,
+					      hg_real_t       r,
+					      hg_real_t       tp[4]);
+hg_bool_t           hg_path_operate          (hg_path_t                 *path,
 					      hg_path_operate_vtable_t  *vtable,
-					      gpointer                   user_data,
+					      hg_pointer_t               user_data,
 					      GError                   **error);
-gboolean            hg_path_get_bbox         (hg_path_t                 *path,
-					      gboolean                   ignore_last_moveto,
+hg_bool_t           hg_path_get_bbox         (hg_path_t                 *path,
+					      hg_bool_t                  ignore_last_moveto,
 					      hg_path_bbox_t            *ret,
 					      GError                   **error);
 

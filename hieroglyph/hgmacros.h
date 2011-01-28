@@ -25,10 +25,10 @@
 #error "Only <hieroglyph/hg.h> can be included directly."
 #endif
 
-#include <stddef.h>
-
 #ifndef __HIEROGLYPH_HGMACROS_H__
 #define __HIEROGLYPH_HGMACROS_H__
+
+#include <stddef.h>
 
 /* enable a debugging code */
 #if defined(GNOME_ENABLE_DEBUG) || defined(DEBUG)
@@ -45,6 +45,12 @@
 #else
 #define HG_BEGIN_DECLS
 #define HG_END_DECLS
+#endif
+
+/* statement wrappers */
+#if !(defined (HG_STMT_START) && defined (HG_STMT_END))
+#define HG_STMT_START	do
+#define HG_STMT_END	while (0)
 #endif
 
 /* boolean */
