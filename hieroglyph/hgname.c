@@ -36,29 +36,35 @@
 
 #define HG_NAME_BLOCK_SIZE	512
 
+typedef struct _hg_name_t	hg_name_t;
+
 struct _hg_name_t {
-	GHashTable  *name_spool;
-	gchar      **quarks;
-	hg_quark_t   seq_id;
+	volatile hg_int_t     ref_count;
+	volatile hg_int_t     seq_id;
+	GHashTable           *name_spool;
+	gchar               **quarks;
 };
+
+static hg_name_t __hg_name_pool = {0, 0, NULL, NULL};
 
 /*< private >*/
 G_INLINE_FUNC hg_quark_t
-_hg_name_new(hg_name_t   *name,
-	     const gchar *string)
+_hg_name_new(const gchar *string)
 {
 	hg_quark_t retval;
 	gchar *s;
 
-	hg_return_val_if_fail (name->seq_id < (1LL << HG_TYPEBIT_SHIFT), Qnil);
-	hg_return_val_if_fail (name->seq_id != 0, Qnil);
+	hg_return_val_if_fail (__hg_name_pool.seq_id < (1LL << HG_TYPEBIT_SHIFT), Qnil);
+	hg_return_val_if_fail (__hg_name_pool.seq_id != 0, Qnil);
 
-	if ((name->seq_id - HG_enc_POSTSCRIPT_RESERVED_END) % HG_NAME_BLOCK_SIZE == 0)
-		name->quarks = g_renew(gchar *, name->quarks, name->seq_id - HG_enc_POSTSCRIPT_RESERVED_END + HG_NAME_BLOCK_SIZE);
+	if ((__hg_name_pool.seq_id - HG_enc_POSTSCRIPT_RESERVED_END) % HG_NAME_BLOCK_SIZE == 0)
+		__hg_name_pool.quarks = g_renew(gchar *,
+						 __hg_name_pool.quarks,
+						 __hg_name_pool.seq_id - HG_enc_POSTSCRIPT_RESERVED_END + HG_NAME_BLOCK_SIZE);
 	s = g_strdup(string);
-	retval = name->seq_id++;
-	name->quarks[retval - HG_enc_POSTSCRIPT_RESERVED_END] = s;
-	g_hash_table_insert(name->name_spool,
+	retval = g_atomic_int_exchange_and_add(&__hg_name_pool.seq_id, 1);
+	__hg_name_pool.quarks[retval - HG_enc_POSTSCRIPT_RESERVED_END] = s;
+	g_hash_table_insert(__hg_name_pool.name_spool,
 			    s, HGQUARK_TO_POINTER (retval));
 
 	return retval;
@@ -69,44 +75,40 @@ _hg_name_new(hg_name_t   *name,
  * hg_name_init:
  *
  * FIXME
- *
- * Returns:
  */
-hg_name_t *
+void
 hg_name_init(void)
 {
-	hg_name_t *retval = g_new0(hg_name_t, 1);
-
-	hg_return_val_if_fail(retval != NULL, NULL);
-	retval->name_spool = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
-	retval->seq_id = HG_enc_POSTSCRIPT_RESERVED_END + 1;
-	retval->quarks = g_new0(gchar *, HG_NAME_BLOCK_SIZE);
-
-	if (!hg_encoding_init()) {
-		hg_name_tini(retval);
-
-		return NULL;
+	if (g_atomic_int_exchange_and_add(&__hg_name_pool.ref_count, 1) == 0) {
+		__hg_name_pool.name_spool = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+		__hg_name_pool.seq_id = HG_enc_POSTSCRIPT_RESERVED_END + 1;
+		__hg_name_pool.quarks = g_new0(gchar *, HG_NAME_BLOCK_SIZE);
 	}
-
-	return retval;
+	if (!hg_encoding_init()) {
+		hg_name_tini();
+	}
 }
 
 /**
  * hg_name_tini:
- * @name:
  *
  * FIXME
  */
 void
-hg_name_tini(hg_name_t *name)
+hg_name_tini(void)
 {
-	if (name == NULL)
-		return;
+	hg_int_t oldval;
 
-	g_hash_table_destroy(name->name_spool);
-	g_free(name->quarks);
-	g_free(name);
-	hg_encoding_tini();
+	hg_return_if_fail (__hg_name_pool.ref_count > 0);
+
+	oldval = g_atomic_int_exchange_and_add(&__hg_name_pool.ref_count, -1);
+	if (oldval == 1) {
+		g_hash_table_destroy(__hg_name_pool.name_spool);
+		__hg_name_pool.name_spool = NULL;
+		g_free(__hg_name_pool.quarks);
+		__hg_name_pool.quarks = NULL;
+		hg_encoding_tini();
+	}
 }
 
 /**
@@ -119,10 +121,9 @@ hg_name_tini(hg_name_t *name)
  * Returns:
  */
 hg_quark_t
-hg_name_new_with_encoding(hg_name_t            *name,
-			  hg_system_encoding_t  encoding)
+hg_name_new_with_encoding(hg_system_encoding_t  encoding)
 {
-	hg_return_val_if_fail (name != NULL, Qnil);
+	hg_return_val_if_fail (__hg_name_pool.ref_count > 0, Qnil);
 	hg_return_val_if_fail (encoding < HG_enc_POSTSCRIPT_RESERVED_END, Qnil);
 
 	return hg_quark_new(HG_TYPE_NAME, encoding);
@@ -139,15 +140,14 @@ hg_name_new_with_encoding(hg_name_t            *name,
  * Returns:
  */
 hg_quark_t
-hg_name_new_with_string(hg_name_t   *name,
-			const gchar *string,
+hg_name_new_with_string(const gchar *string,
 			gssize       len)
 {
 	hg_system_encoding_t enc;
 	hg_quark_t retval;
 	gchar *s;
 
-	hg_return_val_if_fail (name != NULL, Qnil);
+	hg_return_val_if_fail (__hg_name_pool.ref_count > 0, Qnil);
 	hg_return_val_if_fail (string != NULL, Qnil);
 
 	if (len < 0)
@@ -161,12 +161,12 @@ hg_name_new_with_string(hg_name_t   *name,
 		/* string isn't a system encoding.
 		 * try to look up on the name database.
 		 */
-		if (!g_hash_table_lookup_extended(name->name_spool,
+		if (!g_hash_table_lookup_extended(__hg_name_pool.name_spool,
 						  string,
 						  NULL,
 						  &p)) {
 			/* No name registered for string */
-			retval = _hg_name_new(name, s);
+			retval = _hg_name_new(s);
 		} else {
 			retval = HGPOINTER_TO_QUARK (p);
 		}
@@ -188,14 +188,13 @@ hg_name_new_with_string(hg_name_t   *name,
  * Returns:
  */
 const gchar *
-hg_name_lookup(hg_name_t  *name,
-	       hg_quark_t  quark)
+hg_name_lookup(hg_quark_t  quark)
 {
 	const gchar *retval;
 	hg_quark_t value;
 	hg_type_t type = hg_quark_get_type(quark);
 
-	hg_return_val_if_fail (name != NULL, NULL);
+	hg_return_val_if_fail (__hg_name_pool.ref_count > 0, NULL);
 	hg_return_val_if_fail (quark != Qnil, NULL);
 	hg_return_val_if_fail (type == HG_TYPE_NAME || type == HG_TYPE_EVAL_NAME, NULL);
 
@@ -203,7 +202,7 @@ hg_name_lookup(hg_name_t  *name,
 	if ((hg_system_encoding_t)value > HG_enc_POSTSCRIPT_RESERVED_END) {
 		hg_quark_t q = value - HG_enc_POSTSCRIPT_RESERVED_END;
 
-		retval = name->quarks[q];
+		retval = __hg_name_pool.quarks[q];
 	} else {
 		retval = hg_encoding_get_system_encoding_name(value);
 	}

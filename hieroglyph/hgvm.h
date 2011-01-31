@@ -97,7 +97,6 @@ struct _hg_vm_state_t {
 };
 struct _hg_vm_t {
 	hg_quark_t           self;
-	hg_name_t           *name;
 	hg_vm_state_t        vm_state;
 	hg_vm_user_params_t  user_params;
 	hg_mem_t            *mem[HG_VM_MEM_END];

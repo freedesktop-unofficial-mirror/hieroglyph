@@ -32,29 +32,24 @@
 
 HG_BEGIN_DECLS
 
-#define HG_QNAME(_n_,_s_)			\
-	hg_name_new_with_string(_n_,_s_, -1)
-#define HG_NAME(_n_,_q_)			\
-	(hg_name_lookup((_n_), (_q_)))
+#define HG_QNAME(_s_)				\
+	hg_name_new_with_string(_s_, -1)
+#define HG_NAME(_q_)				\
+	(hg_name_lookup((_q_)))
 #define HG_IS_QNAME(_v_)				\
 	(hg_quark_get_type(_v_) == HG_TYPE_NAME)
-#define HG_QEVALNAME(_n_,_s_)						\
-	(hg_quark_new(HG_TYPE_EVAL_NAME, HG_QNAME ((_n_),(_s_))))
+#define HG_QEVALNAME(_s_)					\
+	(hg_quark_new(HG_TYPE_EVAL_NAME, HG_QNAME ((_s_))))
 #define HG_IS_QEVALNAME(_v_)				\
 	(hg_quark_get_type(_v_) == HG_TYPE_EVAL_NAME)
 
-typedef struct _hg_name_t		hg_name_t;
 
-
-hg_name_t       *hg_name_init             (void);
-void             hg_name_tini             (hg_name_t            *name);
-hg_quark_t       hg_name_new_with_encoding(hg_name_t            *name,
-					   hg_system_encoding_t  encoding);
-hg_quark_t       hg_name_new_with_string  (hg_name_t            *name,
-					   const hg_char_t      *string,
+void             hg_name_init             (void);
+void             hg_name_tini             (void);
+hg_quark_t       hg_name_new_with_encoding(hg_system_encoding_t  encoding);
+hg_quark_t       hg_name_new_with_string  (const hg_char_t      *string,
 					   hg_size_t             len);
-const hg_char_t *hg_name_lookup           (hg_name_t            *name,
-					   hg_quark_t            quark);
+const hg_char_t *hg_name_lookup           (hg_quark_t            quark);
 
 HG_END_DECLS
 

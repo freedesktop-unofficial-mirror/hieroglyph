@@ -30,14 +30,12 @@
 
 #include <hieroglyph/hgtypes.h>
 #include <hieroglyph/hgfile.h>
-#include <hieroglyph/hgname.h>
 
 HG_BEGIN_DECLS
 
 typedef struct _hg_scanner_t		hg_scanner_t;
 
-hg_scanner_t *hg_scanner_new        (hg_mem_t      *mem,
-				     hg_name_t     *name);
+hg_scanner_t *hg_scanner_new        (hg_mem_t      *mem);
 void          hg_scanner_destroy    (hg_scanner_t  *scanner);
 gboolean      hg_scanner_attach_file(hg_scanner_t  *scanner,
 				     hg_file_t     *file);

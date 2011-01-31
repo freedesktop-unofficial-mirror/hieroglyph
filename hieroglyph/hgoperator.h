@@ -104,8 +104,8 @@ typedef hg_bool_t (* hg_operator_func_t) (hg_vm_t  *vm,
 #else
 #define OPER_FUNC_NAME(_n_)						\
 	_plugin_real_ ## _n_
-#define REG_ENC(_n_,_k_,_f_)						\
-	(hg_operator_add_dynamic((_n_), #_k_, OPER_FUNC_NAME (_f_)))
+#define REG_ENC(_k_,_f_)					\
+	(hg_operator_add_dynamic(#_k_, OPER_FUNC_NAME (_f_)))
 #define REG_OPER(_d_,_k_)						\
 	HG_STMT_START {							\
 		hg_quark_t __o_name__ = (_k_);				\
@@ -118,9 +118,9 @@ typedef hg_bool_t (* hg_operator_func_t) (hg_vm_t  *vm,
 				 NULL))					\
 			return FALSE;					\
 	} HG_STMT_END
-#define REG_VALUE(_d_,_n_,_k_,_v_)				\
+#define REG_VALUE(_d_,_k_,_v_)					\
 	HG_STMT_START {						\
-		hg_quark_t __o_name__ = HG_QNAME ((_n_),#_k_);	\
+		hg_quark_t __o_name__ = HG_QNAME (#_k_);	\
 		hg_quark_t __v__ = (_v_);			\
 								\
 		hg_quark_set_readable(&__v__, TRUE);		\
@@ -234,8 +234,7 @@ hg_operator_new(guint encoding)
 
 hg_bool_t        hg_operator_init          (void);
 void             hg_operator_tini          (void);
-hg_quark_t       hg_operator_add_dynamic   (hg_name_t           *name,
-					    const hg_char_t     *string,
+hg_quark_t       hg_operator_add_dynamic   (const hg_char_t     *string,
 					    hg_operator_func_t   func);
 void             hg_operator_remove_dynamic(hg_uint_t            encoding);
 hg_bool_t        hg_operator_invoke        (hg_quark_t           qoper,
@@ -244,7 +243,6 @@ hg_bool_t        hg_operator_invoke        (hg_quark_t           qoper,
 const hg_char_t *hg_operator_get_name      (hg_quark_t           qoper);
 hg_bool_t        hg_operator_register      (hg_vm_t             *vm,
 					    hg_dict_t           *dict,
-					    hg_name_t           *name,
 					    hg_vm_langlevel_t    lang_level);
 
 HG_END_DECLS

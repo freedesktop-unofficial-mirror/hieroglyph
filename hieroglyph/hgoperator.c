@@ -522,7 +522,7 @@ DEFUNC_OPER (private_applyparams)
 	keys = g_hash_table_get_keys(vm->params);
 	for (l = keys; l != NULL; l = g_list_next(l)) {
 		gchar *name = l->data;
-		hg_quark_t qn = HG_QNAME (vm->name, name);
+		hg_quark_t qn = HG_QNAME (name);
 
 		if (hg_dict_lookup(d, qn, error) == Qnil) {
 			/* only add the value not in the dictionary yet */
@@ -795,7 +795,7 @@ DEFUNC_OPER (private_odef)
 	}
 	if (hg_vm_quark_is_executable(vm, &arg1)) {
 		hg_array_t *a = HG_VM_LOCK (vm, arg1, error);
-		const gchar *name = hg_name_lookup(vm->name, arg0);
+		const gchar *name = hg_name_lookup(arg0);
 
 		hg_array_set_name(a, name);
 		HG_VM_UNLOCK (vm, arg1);
@@ -1371,7 +1371,7 @@ DEFUNC_OPER (protected_stopped_continue)
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	qn = HG_QNAME (vm->name, ".stopped");
+	qn = HG_QNAME (".stopped");
 	q = hg_dict_lookup(dict, qn, error);
 
 	if (q != Qnil &&
@@ -3124,7 +3124,7 @@ DEFUNC_OPER (cvn)
 		return FALSE;
 	}
 
-	*ret = HG_QNAME (vm->name, cstr);
+	*ret = HG_QNAME (cstr);
 	hg_vm_quark_set_executable(vm, ret,
 				   hg_vm_quark_is_executable(vm, &arg0));
 	g_free(cstr);
@@ -3629,7 +3629,7 @@ DEFUNC_OPER (eq)
 
 			if (HG_IS_QNAME (arg0) ||
 			    HG_IS_QEVALNAME (arg0)) {
-				s1 = g_strdup(HG_NAME (vm->name, arg0));
+				s1 = g_strdup(HG_NAME (arg0));
 			} else {
 				s1 = hg_vm_string_get_cstr(vm, arg0, error);
 				if (*error) {
@@ -3639,7 +3639,7 @@ DEFUNC_OPER (eq)
 			}
 			if (HG_IS_QNAME (arg1) ||
 			    HG_IS_QEVALNAME (arg1)) {
-				s2 = g_strdup(HG_NAME (vm->name, arg1));
+				s2 = g_strdup(HG_NAME (arg1));
 			} else {
 				s2 = hg_vm_string_get_cstr(vm, arg1, error);
 				if (*error) {
@@ -4128,7 +4128,7 @@ DEFUNC_OPER (for)
 	if (fint) {
 		q = hg_vm_dict_lookup(vm,
 				      vm->qsystemdict,
-				      HG_QNAME (vm->name, "%for_yield_int_continue"),
+				      HG_QNAME ("%for_yield_int_continue"),
 				      FALSE,
 				      error);
 		arg0 = HG_QINT ((gint32)dinit);
@@ -4137,7 +4137,7 @@ DEFUNC_OPER (for)
 	} else {
 		q = hg_vm_dict_lookup(vm,
 				      vm->qsystemdict,
-				      HG_QNAME (vm->name, "%for_yield_real_continue"),
+				      HG_QNAME ("%for_yield_real_continue"),
 				      FALSE,
 				      error);
 		arg0 = HG_QREAL (dinit);
@@ -4208,7 +4208,7 @@ DEFUNC_OPER (forall)
 	}
 	if (HG_IS_QARRAY (arg0)) {
 		q = hg_vm_dict_lookup(vm, vm->qsystemdict,
-				      HG_QNAME (vm->name, "%forall_array_continue"),
+				      HG_QNAME ("%forall_array_continue"),
 				      FALSE, error);
 		if (*error) {
 			hg_vm_set_error_from_gerror(vm, qself, *error);
@@ -4246,7 +4246,7 @@ DEFUNC_OPER (forall)
 		arg0 = qd;
 
 		q = hg_vm_dict_lookup(vm, vm->qsystemdict,
-				      HG_QNAME (vm->name, "%forall_dict_continue"),
+				      HG_QNAME ("%forall_dict_continue"),
 				      FALSE, error);
 		if (*error) {
 			hg_vm_set_error_from_gerror(vm, qself, *error);
@@ -4255,7 +4255,7 @@ DEFUNC_OPER (forall)
 		HG_VM_UNLOCK (vm, qd);
 	} else if (HG_IS_QSTRING (arg0)) {
 		q = hg_vm_dict_lookup(vm, vm->qsystemdict,
-				      HG_QNAME (vm->name, "%forall_string_continue"),
+				      HG_QNAME ("%forall_string_continue"),
 				      FALSE, error);
 		if (*error) {
 			hg_vm_set_error_from_gerror(vm, qself, *error);
@@ -5098,7 +5098,7 @@ DEFUNC_OPER (length)
 		*ret = HG_QINT (hg_string_maxlength(s));
 		HG_VM_UNLOCK (vm, arg0);
 	} else if (HG_IS_QNAME (arg0) || HG_IS_QEVALNAME (arg0)) {
-		const gchar *n = hg_name_lookup(vm->name, arg0);
+		const gchar *n = hg_name_lookup(arg0);
 
 		if (n == NULL) {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
@@ -5249,7 +5249,7 @@ DEFUNC_OPER (loop)
 		return FALSE;
 	}
 	q = hg_vm_dict_lookup(vm, vm->qsystemdict,
-			      HG_QNAME (vm->name, "%loop_continue"),
+			      HG_QNAME ("%loop_continue"),
 			      FALSE, error);
 	if (*error) {
 		hg_vm_set_error_from_gerror(vm, qself, *error);
@@ -5521,7 +5521,7 @@ DEFUNC_OPER (ne)
 
 			if (HG_IS_QNAME (arg0) ||
 			    HG_IS_QEVALNAME (arg0)) {
-				s1 = g_strdup(HG_NAME (vm->name, arg0));
+				s1 = g_strdup(HG_NAME (arg0));
 			} else {
 				s1 = hg_vm_string_get_cstr(vm, arg0, error);
 				if (*error) {
@@ -5531,7 +5531,7 @@ DEFUNC_OPER (ne)
 			}
 			if (HG_IS_QNAME (arg1) ||
 			    HG_IS_QEVALNAME (arg1)) {
-				s2 = g_strdup(HG_NAME (vm->name, arg1));
+				s2 = g_strdup(HG_NAME (arg1));
 			} else {
 				s2 = hg_vm_string_get_cstr(vm, arg1, error);
 				if (*error) {
@@ -6430,7 +6430,7 @@ DEFUNC_OPER (repeat)
 	}
 
 	q = hg_vm_dict_lookup(vm, vm->qsystemdict,
-			      HG_QNAME (vm->name, "%repeat_continue"),
+			      HG_QNAME ("%repeat_continue"),
 			      FALSE, error);
 	if (*error) {
 		hg_vm_set_error_from_gerror(vm, qself, *error);
@@ -7532,7 +7532,7 @@ DEFUNC_OPER (stop)
 		n++;
 	} else {
 		if (!hg_vm_dict_add(vm, vm->qerror,
-				    HG_QNAME (vm->name, ".stopped"),
+				    HG_QNAME (".stopped"),
 				    HG_QBOOL (TRUE),
 				    FALSE, error)) {
 			hg_vm_set_error_from_gerror(vm, qself, *error);
@@ -7563,7 +7563,7 @@ DEFUNC_OPER (stopped)
 	}
 	if (hg_vm_quark_is_executable(vm, &arg0)) {
 		q = hg_vm_dict_lookup(vm, vm->qsystemdict,
-				      HG_QNAME (vm->name, "%stopped_continue"),
+				      HG_QNAME ("%stopped_continue"),
 				      FALSE, error);
 		if (*error) {
 			hg_vm_set_error_from_gerror(vm, qself, *error);
@@ -7958,7 +7958,7 @@ DEFUNC_OPER (type)
 
 	ret = hg_stack_peek(ostack, 0, error);
 	arg0 = *ret;
-	q = HG_QNAME (vm->name, hg_quark_get_type_name(arg0));
+	q = HG_QNAME (hg_quark_get_type_name(arg0));
 	hg_vm_quark_set_executable(vm, &q, TRUE); /* ??? */
 
 	*ret = q;
@@ -8293,10 +8293,9 @@ DEFUNC_UNIMPLEMENTED_OPER (yield);
 DEFUNC_UNIMPLEMENTED_OPER (yshow);
 
 
-#define REG_OPER(_d_,_n_,_o_)						\
+#define REG_OPER(_d_,_o_)						\
 	HG_STMT_START {							\
-		hg_quark_t __o_name__ = hg_name_new_with_encoding((_n_),	\
-								  HG_enc_ ## _o_); \
+		hg_quark_t __o_name__ = hg_name_new_with_encoding(HG_enc_ ## _o_); \
 		hg_quark_t __op__ = HG_QOPER (HG_enc_ ## _o_);		\
 									\
 		if (!hg_dict_add((_d_),					\
@@ -8306,9 +8305,9 @@ DEFUNC_UNIMPLEMENTED_OPER (yshow);
 				 NULL))					\
 			return FALSE;					\
 	} HG_STMT_END
-#define REG_PRIV_OPER(_d_,_n_,_k_,_o_)					\
+#define REG_PRIV_OPER(_d_,_k_,_o_)					\
 	HG_STMT_START {							\
-		hg_quark_t __o_name__ = HG_QNAME ((_n_),#_k_);		\
+		hg_quark_t __o_name__ = HG_QNAME (#_k_);		\
 		hg_quark_t __op__ = HG_QOPER (HG_enc_ ## _o_);		\
 									\
 		if (!hg_dict_add((_d_),					\
@@ -8318,9 +8317,9 @@ DEFUNC_UNIMPLEMENTED_OPER (yshow);
 				 NULL))					\
 			return FALSE;					\
 	} HG_STMT_END
-#define REG_VALUE(_d_,_n_,_k_,_v_)				\
+#define REG_VALUE(_d_,_k_,_v_)					\
 	HG_STMT_START {						\
-		hg_quark_t __o_name__ = HG_QNAME ((_n_),#_k_);	\
+		hg_quark_t __o_name__ = HG_QNAME (#_k_);	\
 		hg_quark_t __v__ = (_v_);			\
 								\
 		hg_vm_quark_set_readable(vm, &__v__, TRUE);	\
@@ -8334,316 +8333,315 @@ DEFUNC_UNIMPLEMENTED_OPER (yshow);
 
 static gboolean
 _hg_operator_level1_register(hg_vm_t   *vm,
-			     hg_dict_t *dict,
-			     hg_name_t *name)
+			     hg_dict_t *dict)
 {
-	REG_VALUE (dict, name, false, HG_QBOOL (FALSE));
-	REG_VALUE (dict, name, mark, HG_QMARK);
-	REG_VALUE (dict, name, null, HG_QNULL);
-	REG_VALUE (dict, name, true, HG_QBOOL (TRUE));
-	REG_VALUE (dict, name, [, HG_QMARK);
-	REG_VALUE (dict, name, ], HG_QEVALNAME (name, "%arraytomark"));
+	REG_VALUE (dict, false, HG_QBOOL (FALSE));
+	REG_VALUE (dict, mark, HG_QMARK);
+	REG_VALUE (dict, null, HG_QNULL);
+	REG_VALUE (dict, true, HG_QBOOL (TRUE));
+	REG_VALUE (dict, [, HG_QMARK);
+	REG_VALUE (dict, ], HG_QEVALNAME ("%arraytomark"));
 
-	REG_PRIV_OPER (dict, name, .abort, private_abort);
-	REG_PRIV_OPER (dict, name, .applyparams, private_applyparams);
-	REG_PRIV_OPER (dict, name, .clearerror, private_clearerror);
-	REG_PRIV_OPER (dict, name, .callbeginpage, private_callbeginpage);
-	REG_PRIV_OPER (dict, name, .callendpage, private_callendpage);
-	REG_PRIV_OPER (dict, name, .callinstall, private_callinstall);
-	REG_PRIV_OPER (dict, name, .currentpagedevice, private_currentpagedevice);
-	REG_PRIV_OPER (dict, name, .dicttomark, protected_dicttomark);
-	REG_PRIV_OPER (dict, name, .exit, private_exit);
-	REG_PRIV_OPER (dict, name, .findlibfile, private_findlibfile);
-	REG_PRIV_OPER (dict, name, .forceput, private_forceput);
-	REG_PRIV_OPER (dict, name, .hgrevision, private_hgrevision);
-	REG_PRIV_OPER (dict, name, .odef, private_odef);
-	REG_PRIV_OPER (dict, name, .product, private_product);
-	REG_PRIV_OPER (dict, name, .quit, private_quit);
-	REG_PRIV_OPER (dict, name, .revision, private_revision);
-	REG_PRIV_OPER (dict, name, .setglobal, private_setglobal);
-	REG_PRIV_OPER (dict, name, .stringcvs, private_stringcvs);
-	REG_PRIV_OPER (dict, name, .undef, private_undef);
-	REG_PRIV_OPER (dict, name, .write==only, private_write_eqeq_only);
+	REG_PRIV_OPER (dict, .abort, private_abort);
+	REG_PRIV_OPER (dict, .applyparams, private_applyparams);
+	REG_PRIV_OPER (dict, .clearerror, private_clearerror);
+	REG_PRIV_OPER (dict, .callbeginpage, private_callbeginpage);
+	REG_PRIV_OPER (dict, .callendpage, private_callendpage);
+	REG_PRIV_OPER (dict, .callinstall, private_callinstall);
+	REG_PRIV_OPER (dict, .currentpagedevice, private_currentpagedevice);
+	REG_PRIV_OPER (dict, .dicttomark, protected_dicttomark);
+	REG_PRIV_OPER (dict, .exit, private_exit);
+	REG_PRIV_OPER (dict, .findlibfile, private_findlibfile);
+	REG_PRIV_OPER (dict, .forceput, private_forceput);
+	REG_PRIV_OPER (dict, .hgrevision, private_hgrevision);
+	REG_PRIV_OPER (dict, .odef, private_odef);
+	REG_PRIV_OPER (dict, .product, private_product);
+	REG_PRIV_OPER (dict, .quit, private_quit);
+	REG_PRIV_OPER (dict, .revision, private_revision);
+	REG_PRIV_OPER (dict, .setglobal, private_setglobal);
+	REG_PRIV_OPER (dict, .stringcvs, private_stringcvs);
+	REG_PRIV_OPER (dict, .undef, private_undef);
+	REG_PRIV_OPER (dict, .write==only, private_write_eqeq_only);
 
-	REG_PRIV_OPER (dict, name, %arraytomark, protected_arraytomark);
-	REG_PRIV_OPER (dict, name, %for_yield_int_continue, protected_for_yield_int_continue);
-	REG_PRIV_OPER (dict, name, %for_yield_real_continue, protected_for_yield_real_continue);
-	REG_PRIV_OPER (dict, name, %forall_array_continue, protected_forall_array_continue);
-	REG_PRIV_OPER (dict, name, %forall_dict_continue, protected_forall_dict_continue);
-	REG_PRIV_OPER (dict, name, %forall_string_continue, protected_forall_string_continue);
-	REG_PRIV_OPER (dict, name, %loop_continue, protected_loop_continue);
-	REG_PRIV_OPER (dict, name, %repeat_continue, protected_repeat_continue);
-	REG_PRIV_OPER (dict, name, %stopped_continue, protected_stopped_continue);
-	REG_PRIV_OPER (dict, name, eexec, eexec);
+	REG_PRIV_OPER (dict, %arraytomark, protected_arraytomark);
+	REG_PRIV_OPER (dict, %for_yield_int_continue, protected_for_yield_int_continue);
+	REG_PRIV_OPER (dict, %for_yield_real_continue, protected_for_yield_real_continue);
+	REG_PRIV_OPER (dict, %forall_array_continue, protected_forall_array_continue);
+	REG_PRIV_OPER (dict, %forall_dict_continue, protected_forall_dict_continue);
+	REG_PRIV_OPER (dict, %forall_string_continue, protected_forall_string_continue);
+	REG_PRIV_OPER (dict, %loop_continue, protected_loop_continue);
+	REG_PRIV_OPER (dict, %repeat_continue, protected_repeat_continue);
+	REG_PRIV_OPER (dict, %stopped_continue, protected_stopped_continue);
+	REG_PRIV_OPER (dict, eexec, eexec);
 
-	REG_OPER (dict, name, abs);
-	REG_OPER (dict, name, add);
-	REG_OPER (dict, name, aload);
-	REG_OPER (dict, name, and);
-	REG_OPER (dict, name, arc);
-	REG_OPER (dict, name, arcn);
-	REG_OPER (dict, name, arcto);
-	REG_OPER (dict, name, array);
-	REG_OPER (dict, name, ashow);
-	REG_OPER (dict, name, astore);
-	REG_OPER (dict, name, awidthshow);
-	REG_OPER (dict, name, begin);
-	REG_OPER (dict, name, bind);
-	REG_OPER (dict, name, bitshift);
-	REG_OPER (dict, name, ceiling);
-	REG_OPER (dict, name, charpath);
-	REG_OPER (dict, name, clear);
-	REG_OPER (dict, name, cleartomark);
-	REG_OPER (dict, name, clip);
-	REG_OPER (dict, name, clippath);
-	REG_OPER (dict, name, closepath);
-	REG_OPER (dict, name, concat);
-	REG_OPER (dict, name, concatmatrix);
-	REG_OPER (dict, name, copy);
-	REG_OPER (dict, name, count);
-	REG_OPER (dict, name, counttomark);
-	REG_OPER (dict, name, currentdash);
-	REG_OPER (dict, name, currentdict);
-	REG_OPER (dict, name, currentfile);
-	REG_OPER (dict, name, currentfont);
-	REG_OPER (dict, name, currentgray);
-	REG_OPER (dict, name, currenthsbcolor);
-	REG_OPER (dict, name, currentlinecap);
-	REG_OPER (dict, name, currentlinejoin);
-	REG_OPER (dict, name, currentlinewidth);
-	REG_OPER (dict, name, currentmatrix);
-	REG_OPER (dict, name, currentpoint);
-	REG_OPER (dict, name, currentrgbcolor);
-	REG_OPER (dict, name, curveto);
-	REG_OPER (dict, name, cvi);
-	REG_OPER (dict, name, cvlit);
-	REG_OPER (dict, name, cvn);
-	REG_OPER (dict, name, cvr);
-	REG_OPER (dict, name, cvrs);
-	REG_OPER (dict, name, cvx);
-	REG_OPER (dict, name, def);
-//	REG_OPER (dict, name, defineusername); /* ??? */
-	REG_OPER (dict, name, dict);
-	REG_OPER (dict, name, div);
-	REG_OPER (dict, name, dtransform);
-	REG_OPER (dict, name, dup);
-	REG_OPER (dict, name, end);
-	REG_OPER (dict, name, eoclip);
-	REG_OPER (dict, name, eofill);
-//	REG_OPER (dict, name, eoviewclip); /* ??? */
-	REG_OPER (dict, name, eq);
-	REG_OPER (dict, name, exch);
-	REG_OPER (dict, name, exec);
-	REG_OPER (dict, name, exit);
-	REG_OPER (dict, name, file);
-	REG_OPER (dict, name, fill);
-	REG_OPER (dict, name, flattenpath);
-	REG_OPER (dict, name, flush);
-	REG_OPER (dict, name, flushfile);
-	REG_OPER (dict, name, for);
-	REG_OPER (dict, name, forall);
-	REG_OPER (dict, name, ge);
-	REG_OPER (dict, name, get);
-	REG_OPER (dict, name, getinterval);
-	REG_OPER (dict, name, grestore);
-	REG_OPER (dict, name, gsave);
-	REG_OPER (dict, name, gt);
-	REG_OPER (dict, name, identmatrix);
-	REG_OPER (dict, name, idiv);
-	REG_OPER (dict, name, idtransform);
-	REG_OPER (dict, name, if);
-	REG_OPER (dict, name, ifelse);
-	REG_OPER (dict, name, image);
-	REG_OPER (dict, name, imagemask);
-	REG_OPER (dict, name, index);
-//	REG_OPER (dict, name, initviewclip); /* ??? */
-	REG_OPER (dict, name, invertmatrix);
-	REG_OPER (dict, name, itransform);
-	REG_OPER (dict, name, known);
-	REG_OPER (dict, name, le);
-	REG_OPER (dict, name, length);
-	REG_OPER (dict, name, lineto);
-	REG_OPER (dict, name, loop);
-	REG_OPER (dict, name, lt);
-	REG_OPER (dict, name, makefont);
-	REG_OPER (dict, name, maxlength);
-	REG_OPER (dict, name, mod);
-	REG_OPER (dict, name, moveto);
-	REG_OPER (dict, name, mul);
-	REG_OPER (dict, name, ne);
-	REG_OPER (dict, name, neg);
-	REG_OPER (dict, name, newpath);
-	REG_OPER (dict, name, not);
-	REG_OPER (dict, name, or);
-	REG_OPER (dict, name, pathbbox);
-	REG_OPER (dict, name, pathforall);
-	REG_OPER (dict, name, pop);
-	REG_OPER (dict, name, print);
-	REG_OPER (dict, name, put);
-	REG_OPER (dict, name, rcurveto);
-	REG_OPER (dict, name, read);
-	REG_OPER (dict, name, readhexstring);
-	REG_OPER (dict, name, readline);
-	REG_OPER (dict, name, readstring);
-//	REG_OPER (dict, name, rectviewclip); /* ??? */
-	REG_OPER (dict, name, repeat);
-	REG_OPER (dict, name, restore);
-	REG_OPER (dict, name, rlineto);
-	REG_OPER (dict, name, rmoveto);
-	REG_OPER (dict, name, roll);
-	REG_OPER (dict, name, rotate);
-	REG_OPER (dict, name, round);
-	REG_OPER (dict, name, save);
-	REG_OPER (dict, name, scale);
-	REG_OPER (dict, name, scalefont);
-	REG_OPER (dict, name, search);
-	REG_OPER (dict, name, setcachedevice);
-	REG_OPER (dict, name, setcharwidth);
-	REG_OPER (dict, name, setdash);
-	REG_OPER (dict, name, setfont);
-	REG_OPER (dict, name, setgray);
-	REG_OPER (dict, name, setgstate);
-	REG_OPER (dict, name, sethsbcolor);
-	REG_OPER (dict, name, setlinecap);
-	REG_OPER (dict, name, setlinejoin);
-	REG_OPER (dict, name, setlinewidth);
-	REG_OPER (dict, name, setmatrix);
-	REG_OPER (dict, name, setrgbcolor);
-	REG_OPER (dict, name, show);
-	REG_OPER (dict, name, showpage);
-	REG_OPER (dict, name, stop);
-	REG_OPER (dict, name, stopped);
-	REG_OPER (dict, name, store);
-	REG_OPER (dict, name, string);
-	REG_OPER (dict, name, stringwidth);
-	REG_OPER (dict, name, stroke);
-	REG_OPER (dict, name, strokepath);
-	REG_OPER (dict, name, sub);
-	REG_OPER (dict, name, token);
-	REG_OPER (dict, name, transform);
-	REG_OPER (dict, name, translate);
-	REG_OPER (dict, name, type);
-//	REG_OPER (dict, name, viewclip); /* ??? */
-//	REG_OPER (dict, name, viewclippath); /* ??? */
-	REG_OPER (dict, name, where);
-	REG_OPER (dict, name, widthshow);
-	REG_OPER (dict, name, write);
-	REG_OPER (dict, name, writehexstring);
-	REG_OPER (dict, name, writestring);
-//	REG_OPER (dict, name, wtranslation); /* ??? */
-	REG_OPER (dict, name, xor);
+	REG_OPER (dict, abs);
+	REG_OPER (dict, add);
+	REG_OPER (dict, aload);
+	REG_OPER (dict, and);
+	REG_OPER (dict, arc);
+	REG_OPER (dict, arcn);
+	REG_OPER (dict, arcto);
+	REG_OPER (dict, array);
+	REG_OPER (dict, ashow);
+	REG_OPER (dict, astore);
+	REG_OPER (dict, awidthshow);
+	REG_OPER (dict, begin);
+	REG_OPER (dict, bind);
+	REG_OPER (dict, bitshift);
+	REG_OPER (dict, ceiling);
+	REG_OPER (dict, charpath);
+	REG_OPER (dict, clear);
+	REG_OPER (dict, cleartomark);
+	REG_OPER (dict, clip);
+	REG_OPER (dict, clippath);
+	REG_OPER (dict, closepath);
+	REG_OPER (dict, concat);
+	REG_OPER (dict, concatmatrix);
+	REG_OPER (dict, copy);
+	REG_OPER (dict, count);
+	REG_OPER (dict, counttomark);
+	REG_OPER (dict, currentdash);
+	REG_OPER (dict, currentdict);
+	REG_OPER (dict, currentfile);
+	REG_OPER (dict, currentfont);
+	REG_OPER (dict, currentgray);
+	REG_OPER (dict, currenthsbcolor);
+	REG_OPER (dict, currentlinecap);
+	REG_OPER (dict, currentlinejoin);
+	REG_OPER (dict, currentlinewidth);
+	REG_OPER (dict, currentmatrix);
+	REG_OPER (dict, currentpoint);
+	REG_OPER (dict, currentrgbcolor);
+	REG_OPER (dict, curveto);
+	REG_OPER (dict, cvi);
+	REG_OPER (dict, cvlit);
+	REG_OPER (dict, cvn);
+	REG_OPER (dict, cvr);
+	REG_OPER (dict, cvrs);
+	REG_OPER (dict, cvx);
+	REG_OPER (dict, def);
+//	REG_OPER (dict, defineusername); /* ??? */
+	REG_OPER (dict, dict);
+	REG_OPER (dict, div);
+	REG_OPER (dict, dtransform);
+	REG_OPER (dict, dup);
+	REG_OPER (dict, end);
+	REG_OPER (dict, eoclip);
+	REG_OPER (dict, eofill);
+//	REG_OPER (dict, eoviewclip); /* ??? */
+	REG_OPER (dict, eq);
+	REG_OPER (dict, exch);
+	REG_OPER (dict, exec);
+	REG_OPER (dict, exit);
+	REG_OPER (dict, file);
+	REG_OPER (dict, fill);
+	REG_OPER (dict, flattenpath);
+	REG_OPER (dict, flush);
+	REG_OPER (dict, flushfile);
+	REG_OPER (dict, for);
+	REG_OPER (dict, forall);
+	REG_OPER (dict, ge);
+	REG_OPER (dict, get);
+	REG_OPER (dict, getinterval);
+	REG_OPER (dict, grestore);
+	REG_OPER (dict, gsave);
+	REG_OPER (dict, gt);
+	REG_OPER (dict, identmatrix);
+	REG_OPER (dict, idiv);
+	REG_OPER (dict, idtransform);
+	REG_OPER (dict, if);
+	REG_OPER (dict, ifelse);
+	REG_OPER (dict, image);
+	REG_OPER (dict, imagemask);
+	REG_OPER (dict, index);
+//	REG_OPER (dict, initviewclip); /* ??? */
+	REG_OPER (dict, invertmatrix);
+	REG_OPER (dict, itransform);
+	REG_OPER (dict, known);
+	REG_OPER (dict, le);
+	REG_OPER (dict, length);
+	REG_OPER (dict, lineto);
+	REG_OPER (dict, loop);
+	REG_OPER (dict, lt);
+	REG_OPER (dict, makefont);
+	REG_OPER (dict, maxlength);
+	REG_OPER (dict, mod);
+	REG_OPER (dict, moveto);
+	REG_OPER (dict, mul);
+	REG_OPER (dict, ne);
+	REG_OPER (dict, neg);
+	REG_OPER (dict, newpath);
+	REG_OPER (dict, not);
+	REG_OPER (dict, or);
+	REG_OPER (dict, pathbbox);
+	REG_OPER (dict, pathforall);
+	REG_OPER (dict, pop);
+	REG_OPER (dict, print);
+	REG_OPER (dict, put);
+	REG_OPER (dict, rcurveto);
+	REG_OPER (dict, read);
+	REG_OPER (dict, readhexstring);
+	REG_OPER (dict, readline);
+	REG_OPER (dict, readstring);
+//	REG_OPER (dict, rectviewclip); /* ??? */
+	REG_OPER (dict, repeat);
+	REG_OPER (dict, restore);
+	REG_OPER (dict, rlineto);
+	REG_OPER (dict, rmoveto);
+	REG_OPER (dict, roll);
+	REG_OPER (dict, rotate);
+	REG_OPER (dict, round);
+	REG_OPER (dict, save);
+	REG_OPER (dict, scale);
+	REG_OPER (dict, scalefont);
+	REG_OPER (dict, search);
+	REG_OPER (dict, setcachedevice);
+	REG_OPER (dict, setcharwidth);
+	REG_OPER (dict, setdash);
+	REG_OPER (dict, setfont);
+	REG_OPER (dict, setgray);
+	REG_OPER (dict, setgstate);
+	REG_OPER (dict, sethsbcolor);
+	REG_OPER (dict, setlinecap);
+	REG_OPER (dict, setlinejoin);
+	REG_OPER (dict, setlinewidth);
+	REG_OPER (dict, setmatrix);
+	REG_OPER (dict, setrgbcolor);
+	REG_OPER (dict, show);
+	REG_OPER (dict, showpage);
+	REG_OPER (dict, stop);
+	REG_OPER (dict, stopped);
+	REG_OPER (dict, store);
+	REG_OPER (dict, string);
+	REG_OPER (dict, stringwidth);
+	REG_OPER (dict, stroke);
+	REG_OPER (dict, strokepath);
+	REG_OPER (dict, sub);
+	REG_OPER (dict, token);
+	REG_OPER (dict, transform);
+	REG_OPER (dict, translate);
+	REG_OPER (dict, type);
+//	REG_OPER (dict, viewclip); /* ??? */
+//	REG_OPER (dict, viewclippath); /* ??? */
+	REG_OPER (dict, where);
+	REG_OPER (dict, widthshow);
+	REG_OPER (dict, write);
+	REG_OPER (dict, writehexstring);
+	REG_OPER (dict, writestring);
+//	REG_OPER (dict, wtranslation); /* ??? */
+	REG_OPER (dict, xor);
 
-	REG_OPER (dict, name, FontDirectory);
+	REG_OPER (dict, FontDirectory);
 
-	REG_OPER (dict, name, atan);
-//	REG_OPER (dict, name, banddevice); /* ??? */
-	REG_OPER (dict, name, bytesavailable);
-	REG_OPER (dict, name, cachestatus);
-	REG_OPER (dict, name, closefile);
-//	REG_OPER (dict, name, condition); /* ??? */
-	REG_OPER (dict, name, copypage);
+	REG_OPER (dict, atan);
+//	REG_OPER (dict, banddevice); /* ??? */
+	REG_OPER (dict, bytesavailable);
+	REG_OPER (dict, cachestatus);
+	REG_OPER (dict, closefile);
+//	REG_OPER (dict, condition); /* ??? */
+	REG_OPER (dict, copypage);
 
-	REG_OPER (dict, name, cos);
-	REG_OPER (dict, name, countdictstack);
-	REG_OPER (dict, name, countexecstack);
-//	REG_OPER (dict, name, currentcontext); /* ??? */
-	REG_OPER (dict, name, currentflat);
+	REG_OPER (dict, cos);
+	REG_OPER (dict, countdictstack);
+	REG_OPER (dict, countexecstack);
+//	REG_OPER (dict, currentcontext); /* ??? */
+	REG_OPER (dict, currentflat);
 
-//	REG_OPER (dict, name, currenthalftonephase); /* ??? */
-	REG_OPER (dict, name, currentmiterlimit);
-	REG_OPER (dict, name, currentscreen);
-	REG_OPER (dict, name, currenttransfer);
-	REG_OPER (dict, name, defaultmatrix);
+//	REG_OPER (dict, currenthalftonephase); /* ??? */
+	REG_OPER (dict, currentmiterlimit);
+	REG_OPER (dict, currentscreen);
+	REG_OPER (dict, currenttransfer);
+	REG_OPER (dict, defaultmatrix);
 
-//	REG_OPER (dict, name, detach); /* ??? */
-//	REG_OPER (dict, name, deviceinfo); /* ??? */
-	REG_OPER (dict, name, dictstack);
-	REG_OPER (dict, name, echo);
-	REG_OPER (dict, name, erasepage);
-	REG_OPER (dict, name, execstack);
-	REG_OPER (dict, name, executeonly);
+//	REG_OPER (dict, detach); /* ??? */
+//	REG_OPER (dict, deviceinfo); /* ??? */
+	REG_OPER (dict, dictstack);
+	REG_OPER (dict, echo);
+	REG_OPER (dict, erasepage);
+	REG_OPER (dict, execstack);
+	REG_OPER (dict, executeonly);
 
-	REG_OPER (dict, name, exp);
-//	REG_OPER (dict, name, fork); /* ??? */
-//	REG_OPER (dict, name, framedevice); /* ??? */
-	REG_OPER (dict, name, grestoreall);
-	REG_OPER (dict, name, initclip);
+	REG_OPER (dict, exp);
+//	REG_OPER (dict, fork); /* ??? */
+//	REG_OPER (dict, framedevice); /* ??? */
+	REG_OPER (dict, grestoreall);
+	REG_OPER (dict, initclip);
 
-//	REG_OPER (dict, name, join); /* ??? */
-	REG_OPER (dict, name, kshow);
-	REG_OPER (dict, name, ln);
-//	REG_OPER (dict, name, lock); /* ??? */
-	REG_OPER (dict, name, log);
-//	REG_OPER (dict, name, monitor); /* ??? */
+//	REG_OPER (dict, join); /* ??? */
+	REG_OPER (dict, kshow);
+	REG_OPER (dict, ln);
+//	REG_OPER (dict, lock); /* ??? */
+	REG_OPER (dict, log);
+//	REG_OPER (dict, monitor); /* ??? */
 
-	REG_OPER (dict, name, noaccess);
-//	REG_OPER (dict, name, notify); /* ??? */
-	REG_OPER (dict, name, nulldevice);
-	REG_OPER (dict, name, packedarray);
-	REG_OPER (dict, name, rand);
-	REG_OPER (dict, name, rcheck);
-	REG_OPER (dict, name, readonly);
+	REG_OPER (dict, noaccess);
+//	REG_OPER (dict, notify); /* ??? */
+	REG_OPER (dict, nulldevice);
+	REG_OPER (dict, packedarray);
+	REG_OPER (dict, rand);
+	REG_OPER (dict, rcheck);
+	REG_OPER (dict, readonly);
 
-//	REG_OPER (dict, name, renderbands); /* ??? */
-	REG_OPER (dict, name, resetfile);
-	REG_OPER (dict, name, reversepath);
-	REG_OPER (dict, name, rrand);
-	REG_OPER (dict, name, setcachelimit);
-	REG_OPER (dict, name, setflat);
-//	REG_OPER (dict, name, sethalftonephase); /* ??? */
-	REG_OPER (dict, name, setmiterlimit);
-	REG_OPER (dict, name, setscreen);
+//	REG_OPER (dict, renderbands); /* ??? */
+	REG_OPER (dict, resetfile);
+	REG_OPER (dict, reversepath);
+	REG_OPER (dict, rrand);
+	REG_OPER (dict, setcachelimit);
+	REG_OPER (dict, setflat);
+//	REG_OPER (dict, sethalftonephase); /* ??? */
+	REG_OPER (dict, setmiterlimit);
+	REG_OPER (dict, setscreen);
 
-	REG_OPER (dict, name, settransfer);
-	REG_OPER (dict, name, sin);
-	REG_OPER (dict, name, sqrt);
-	REG_OPER (dict, name, srand);
-	REG_OPER (dict, name, stack);
-	REG_OPER (dict, name, status);
+	REG_OPER (dict, settransfer);
+	REG_OPER (dict, sin);
+	REG_OPER (dict, sqrt);
+	REG_OPER (dict, srand);
+	REG_OPER (dict, stack);
+	REG_OPER (dict, status);
 
-	REG_OPER (dict, name, usertime);
-	REG_OPER (dict, name, vmstatus);
-//	REG_OPER (dict, name, wait); /* ??? */
-	REG_OPER (dict, name, wcheck);
+	REG_OPER (dict, usertime);
+	REG_OPER (dict, vmstatus);
+//	REG_OPER (dict, wait); /* ??? */
+	REG_OPER (dict, wcheck);
 
-	REG_OPER (dict, name, xcheck);
-//	REG_OPER (dict, name, yield); /* ??? */
-	REG_OPER (dict, name, cleardictstack);
+	REG_OPER (dict, xcheck);
+//	REG_OPER (dict, yield); /* ??? */
+	REG_OPER (dict, cleardictstack);
 
-	REG_OPER (dict, name, sym_begin_dict_mark);
+	REG_OPER (dict, sym_begin_dict_mark);
 
-	REG_OPER (dict, name, sym_end_dict_mark);
+	REG_OPER (dict, sym_end_dict_mark);
 
 
 #if 0
-	REG_OPER (dict, name, ASCII85Decode);
-	REG_OPER (dict, name, ASCII85Encode);
-	REG_OPER (dict, name, ASCIIHexDecode);
-	REG_OPER (dict, name, ASCIIHexEncode);
+	REG_OPER (dict, ASCII85Decode);
+	REG_OPER (dict, ASCII85Encode);
+	REG_OPER (dict, ASCIIHexDecode);
+	REG_OPER (dict, ASCIIHexEncode);
 
-	REG_OPER (dict, name, CCITTFaxDecode);
-	REG_OPER (dict, name, CCITTFaxEncode);
-	REG_OPER (dict, name, DCTDecode);
-	REG_OPER (dict, name, DCTEncode);
-	REG_OPER (dict, name, LZWDecode);
-	REG_OPER (dict, name, LZWEncode);
-	REG_OPER (dict, name, NullEncode);
-	REG_OPER (dict, name, RunLengthDecode);
-	REG_OPER (dict, name, RunLengthEncode);
-	REG_OPER (dict, name, SubFileDecode);
+	REG_OPER (dict, CCITTFaxDecode);
+	REG_OPER (dict, CCITTFaxEncode);
+	REG_OPER (dict, DCTDecode);
+	REG_OPER (dict, DCTEncode);
+	REG_OPER (dict, LZWDecode);
+	REG_OPER (dict, LZWEncode);
+	REG_OPER (dict, NullEncode);
+	REG_OPER (dict, RunLengthDecode);
+	REG_OPER (dict, RunLengthEncode);
+	REG_OPER (dict, SubFileDecode);
 
-	REG_OPER (dict, name, CIEBasedA);
-	REG_OPER (dict, name, CIEBasedABC);
-	REG_OPER (dict, name, DeviceCMYK);
-	REG_OPER (dict, name, DeviceGray);
-	REG_OPER (dict, name, DeviceRGB);
-	REG_OPER (dict, name, Indexed);
-	REG_OPER (dict, name, Pattern);
-	REG_OPER (dict, name, Separation);
-	REG_OPER (dict, name, CIEBasedDEF);
-	REG_OPER (dict, name, CIEBasedDEFG);
+	REG_OPER (dict, CIEBasedA);
+	REG_OPER (dict, CIEBasedABC);
+	REG_OPER (dict, DeviceCMYK);
+	REG_OPER (dict, DeviceGray);
+	REG_OPER (dict, DeviceRGB);
+	REG_OPER (dict, Indexed);
+	REG_OPER (dict, Pattern);
+	REG_OPER (dict, Separation);
+	REG_OPER (dict, CIEBasedDEF);
+	REG_OPER (dict, CIEBasedDEFG);
 
-	REG_OPER (dict, name, DeviceN);
+	REG_OPER (dict, DeviceN);
 #endif
 
 	return TRUE;
@@ -8651,129 +8649,127 @@ _hg_operator_level1_register(hg_vm_t   *vm,
 
 static gboolean
 _hg_operator_level2_register(hg_vm_t   *vm,
-			     hg_dict_t *dict,
-			     hg_name_t *name)
+			     hg_dict_t *dict)
 {
-	REG_VALUE (dict, name, <<, HG_QMARK);
-	REG_VALUE (dict, name, >>, HG_QEVALNAME (name, "%dicttomark"));
+	REG_VALUE (dict, <<, HG_QMARK);
+	REG_VALUE (dict, >>, HG_QEVALNAME ("%dicttomark"));
 
-	REG_PRIV_OPER (dict, name, %dicttomark, protected_dicttomark);
+	REG_PRIV_OPER (dict, %dicttomark, protected_dicttomark);
 
-	REG_OPER (dict, name, arct);
-	REG_OPER (dict, name, colorimage);
-	REG_OPER (dict, name, currentcmykcolor);
-	REG_OPER (dict, name, currentgstate);
-	REG_OPER (dict, name, currentshared);
-	REG_OPER (dict, name, gstate);
-	REG_OPER (dict, name, ineofill);
-	REG_OPER (dict, name, infill);
-	REG_OPER (dict, name, inueofill);
-	REG_OPER (dict, name, inufill);
-	REG_OPER (dict, name, printobject);
-	REG_OPER (dict, name, rectclip);
-	REG_OPER (dict, name, rectfill);
-	REG_OPER (dict, name, rectstroke);
-	REG_OPER (dict, name, selectfont);
-	REG_OPER (dict, name, setbbox);
-	REG_OPER (dict, name, setcachedevice2);
-	REG_OPER (dict, name, setcmykcolor);
-	REG_OPER (dict, name, setshared);
-	REG_OPER (dict, name, shareddict);
-	REG_OPER (dict, name, uappend);
-	REG_OPER (dict, name, ucache);
-	REG_OPER (dict, name, ueofill);
-	REG_OPER (dict, name, ufill);
-	REG_OPER (dict, name, upath);
-	REG_OPER (dict, name, ustroke);
-	REG_OPER (dict, name, writeobject);
-	REG_OPER (dict, name, xshow);
-	REG_OPER (dict, name, xyshow);
-	REG_OPER (dict, name, yshow);
-	REG_OPER (dict, name, SharedFontDirectory);
-	REG_OPER (dict, name, execuserobject);
-	REG_OPER (dict, name, currentcolor);
-	REG_OPER (dict, name, currentcolorspace);
-	REG_OPER (dict, name, currentglobal);
-	REG_OPER (dict, name, execform);
-	REG_OPER (dict, name, filter);
-	REG_OPER (dict, name, findresource);
+	REG_OPER (dict, arct);
+	REG_OPER (dict, colorimage);
+	REG_OPER (dict, currentcmykcolor);
+	REG_OPER (dict, currentgstate);
+	REG_OPER (dict, currentshared);
+	REG_OPER (dict, gstate);
+	REG_OPER (dict, ineofill);
+	REG_OPER (dict, infill);
+	REG_OPER (dict, inueofill);
+	REG_OPER (dict, inufill);
+	REG_OPER (dict, printobject);
+	REG_OPER (dict, rectclip);
+	REG_OPER (dict, rectfill);
+	REG_OPER (dict, rectstroke);
+	REG_OPER (dict, selectfont);
+	REG_OPER (dict, setbbox);
+	REG_OPER (dict, setcachedevice2);
+	REG_OPER (dict, setcmykcolor);
+	REG_OPER (dict, setshared);
+	REG_OPER (dict, shareddict);
+	REG_OPER (dict, uappend);
+	REG_OPER (dict, ucache);
+	REG_OPER (dict, ueofill);
+	REG_OPER (dict, ufill);
+	REG_OPER (dict, upath);
+	REG_OPER (dict, ustroke);
+	REG_OPER (dict, writeobject);
+	REG_OPER (dict, xshow);
+	REG_OPER (dict, xyshow);
+	REG_OPER (dict, yshow);
+	REG_OPER (dict, SharedFontDirectory);
+	REG_OPER (dict, execuserobject);
+	REG_OPER (dict, currentcolor);
+	REG_OPER (dict, currentcolorspace);
+	REG_OPER (dict, currentglobal);
+	REG_OPER (dict, execform);
+	REG_OPER (dict, filter);
+	REG_OPER (dict, findresource);
 
-	REG_OPER (dict, name, makepattern);
-	REG_OPER (dict, name, setcolor);
-	REG_OPER (dict, name, setcolorspace);
-	REG_OPER (dict, name, setglobal);
-	REG_OPER (dict, name, setpagedevice);
-	REG_OPER (dict, name, setpattern);
+	REG_OPER (dict, makepattern);
+	REG_OPER (dict, setcolor);
+	REG_OPER (dict, setcolorspace);
+	REG_OPER (dict, setglobal);
+	REG_OPER (dict, setpagedevice);
+	REG_OPER (dict, setpattern);
 
-	REG_OPER (dict, name, cshow);
-	REG_OPER (dict, name, currentblackgeneration);
-	REG_OPER (dict, name, currentcacheparams);
-	REG_OPER (dict, name, currentcolorscreen);
-	REG_OPER (dict, name, currentcolortransfer);
-	REG_OPER (dict, name, currenthalftone);
-	REG_OPER (dict, name, currentobjectformat);
-	REG_OPER (dict, name, currentpacking);
-	REG_OPER (dict, name, currentstrokeadjust);
-	REG_OPER (dict, name, currentundercolorremoval);
-	REG_OPER (dict, name, deletefile);
-	REG_OPER (dict, name, filenameforall);
-	REG_OPER (dict, name, fileposition);
-	REG_OPER (dict, name, instroke);
-	REG_OPER (dict, name, inustroke);
-	REG_OPER (dict, name, realtime);
-	REG_OPER (dict, name, renamefile);
-	REG_OPER (dict, name, rootfont);
-	REG_OPER (dict, name, setblackgeneration);
-	REG_OPER (dict, name, setcacheparams);
+	REG_OPER (dict, cshow);
+	REG_OPER (dict, currentblackgeneration);
+	REG_OPER (dict, currentcacheparams);
+	REG_OPER (dict, currentcolorscreen);
+	REG_OPER (dict, currentcolortransfer);
+	REG_OPER (dict, currenthalftone);
+	REG_OPER (dict, currentobjectformat);
+	REG_OPER (dict, currentpacking);
+	REG_OPER (dict, currentstrokeadjust);
+	REG_OPER (dict, currentundercolorremoval);
+	REG_OPER (dict, deletefile);
+	REG_OPER (dict, filenameforall);
+	REG_OPER (dict, fileposition);
+	REG_OPER (dict, instroke);
+	REG_OPER (dict, inustroke);
+	REG_OPER (dict, realtime);
+	REG_OPER (dict, renamefile);
+	REG_OPER (dict, rootfont);
+	REG_OPER (dict, setblackgeneration);
+	REG_OPER (dict, setcacheparams);
 
-	REG_OPER (dict, name, setcolorscreen);
-	REG_OPER (dict, name, setcolortransfer);
-	REG_OPER (dict, name, setfileposition);
-	REG_OPER (dict, name, sethalftone);
-	REG_OPER (dict, name, setobjectformat);
-	REG_OPER (dict, name, setpacking);
-	REG_OPER (dict, name, setstrokeadjust);
-	REG_OPER (dict, name, setucacheparams);
-	REG_OPER (dict, name, setundercolorremoval);
-	REG_OPER (dict, name, ucachestatus);
-	REG_OPER (dict, name, ustrokepath);
-	REG_OPER (dict, name, vmreclaim);
-	REG_OPER (dict, name, defineuserobject);
-	REG_OPER (dict, name, undefineuserobject);
-	REG_OPER (dict, name, UserObjects);
-	REG_OPER (dict, name, setvmthreshold);
-	REG_OPER (dict, name, currentcolorrendering);
-	REG_OPER (dict, name, currentdevparams);
-	REG_OPER (dict, name, currentoverprint);
-	REG_OPER (dict, name, currentpagedevice);
-	REG_OPER (dict, name, currentsystemparams);
-	REG_OPER (dict, name, currentuserparams);
-	REG_OPER (dict, name, defineresource);
-	REG_OPER (dict, name, findencoding);
-	REG_OPER (dict, name, gcheck);
-	REG_OPER (dict, name, glyphshow);
-	REG_OPER (dict, name, languagelevel);
-	REG_OPER (dict, name, product);
-	REG_OPER (dict, name, resourceforall);
-	REG_OPER (dict, name, resourcestatus);
-	REG_OPER (dict, name, serialnumber);
-	REG_OPER (dict, name, setcolorrendering);
-	REG_OPER (dict, name, setdevparams);
+	REG_OPER (dict, setcolorscreen);
+	REG_OPER (dict, setcolortransfer);
+	REG_OPER (dict, setfileposition);
+	REG_OPER (dict, sethalftone);
+	REG_OPER (dict, setobjectformat);
+	REG_OPER (dict, setpacking);
+	REG_OPER (dict, setstrokeadjust);
+	REG_OPER (dict, setucacheparams);
+	REG_OPER (dict, setundercolorremoval);
+	REG_OPER (dict, ucachestatus);
+	REG_OPER (dict, ustrokepath);
+	REG_OPER (dict, vmreclaim);
+	REG_OPER (dict, defineuserobject);
+	REG_OPER (dict, undefineuserobject);
+	REG_OPER (dict, UserObjects);
+	REG_OPER (dict, setvmthreshold);
+	REG_OPER (dict, currentcolorrendering);
+	REG_OPER (dict, currentdevparams);
+	REG_OPER (dict, currentoverprint);
+	REG_OPER (dict, currentpagedevice);
+	REG_OPER (dict, currentsystemparams);
+	REG_OPER (dict, currentuserparams);
+	REG_OPER (dict, defineresource);
+	REG_OPER (dict, findencoding);
+	REG_OPER (dict, gcheck);
+	REG_OPER (dict, glyphshow);
+	REG_OPER (dict, languagelevel);
+	REG_OPER (dict, product);
+	REG_OPER (dict, resourceforall);
+	REG_OPER (dict, resourcestatus);
+	REG_OPER (dict, serialnumber);
+	REG_OPER (dict, setcolorrendering);
+	REG_OPER (dict, setdevparams);
 
-	REG_OPER (dict, name, setoverprint);
-	REG_OPER (dict, name, setsystemparams);
-	REG_OPER (dict, name, setuserparams);
-	REG_OPER (dict, name, startjob);
-	REG_OPER (dict, name, undefineresource);
-	REG_OPER (dict, name, GlobalFontDirectory);
+	REG_OPER (dict, setoverprint);
+	REG_OPER (dict, setsystemparams);
+	REG_OPER (dict, setuserparams);
+	REG_OPER (dict, startjob);
+	REG_OPER (dict, undefineresource);
+	REG_OPER (dict, GlobalFontDirectory);
 
 	return TRUE;
 }
 
 static gboolean
 _hg_operator_level3_register(hg_vm_t   *vm,
-			     hg_dict_t *dict,
-			     hg_name_t *name)
+			     hg_dict_t *dict)
 {
 	return TRUE;
 }
@@ -9607,11 +9603,10 @@ hg_operator_tini(void)
  * Returns:
  */
 hg_quark_t
-hg_operator_add_dynamic(hg_name_t          *name,
-			const gchar        *string,
+hg_operator_add_dynamic(const gchar        *string,
 			hg_operator_func_t  func)
 {
-	hg_quark_t n = HG_QNAME (name, string);
+	hg_quark_t n = HG_QNAME (string);
 
 	if (hg_quark_get_value(n) < HG_enc_builtin_HIEROGLYPH_END)
 		return Qnil;
@@ -9716,24 +9711,23 @@ hg_operator_get_name(hg_quark_t qoper)
 gboolean
 hg_operator_register(hg_vm_t           *vm,
 		     hg_dict_t         *dict,
-		     hg_name_t         *name,
 		     hg_vm_langlevel_t  lang_level)
 {
 	hg_return_val_if_fail (dict != NULL, FALSE);
 	hg_return_val_if_fail (lang_level < HG_LANG_LEVEL_END, FALSE);
 
 	/* register level 1 built-in operators */
-	if (!_hg_operator_level1_register(vm, dict, name))
+	if (!_hg_operator_level1_register(vm, dict))
 		return FALSE;
 
 	/* register level 2 built-in operators */
 	if (lang_level >= HG_LANG_LEVEL_2 &&
-	    !_hg_operator_level2_register(vm, dict, name))
+	    !_hg_operator_level2_register(vm, dict))
 		return FALSE;
 
 	/* register level 3 built-in operators */
 	if (lang_level >= HG_LANG_LEVEL_3 &&
-	    !_hg_operator_level3_register(vm, dict, name))
+	    !_hg_operator_level3_register(vm, dict))
 		return FALSE;
 
 	return TRUE;

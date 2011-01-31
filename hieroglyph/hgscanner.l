@@ -32,6 +32,7 @@
 #include "hgerror.h"
 #include "hgmem.h"
 #include "hgint.h"
+#include "hgname.h"
 #include "hgreal.h"
 #include "hgvm.h"
 #include "hgscanner.h"
@@ -69,7 +70,6 @@
 struct _hg_scanner_t {
 	yyscan_t    yyscanner;
 	hg_mem_t   *mem;
-	hg_name_t  *name;
 	hg_quark_t  self;
 	hg_quark_t  result;
 	hg_file_t  *infile;
@@ -364,12 +364,12 @@ HEXDIGITS	[0-9a-fA-F]
 		string = g_string_new(NULL);
 	}
 \/\/[^\x04%\(\)/<>\[\]\{\}\t\f\r\n ]*/{CTRL_OR_SPACE}	{
-		scanner->result = HG_QEVALNAME (scanner->name, &yytext[2]);
+		scanner->result = HG_QEVALNAME (&yytext[2]);
 		hg_quark_set_executable(&scanner->result, TRUE);
 		return TRUE;
 	}
 \/[^\x04%\(\)\/<>\[\]\{\}\t\f\r\n ]*/{CTRL_OR_SPACE}	{
-		scanner->result = HG_QNAME (scanner->name, &yytext[1]);
+		scanner->result = HG_QNAME (&yytext[1]);
 		return TRUE;
 	}
 [\x80-\xa1]+		{
@@ -481,12 +481,12 @@ HEXDIGITS	[0-9a-fA-F]
 		return TRUE;
 	}
 \<\<|\>\>|\[|\]|\{|\}	{
-		scanner->result = HG_QNAME (scanner->name, yytext);
+		scanner->result = HG_QNAME (yytext);
 		hg_quark_set_executable(&scanner->result, TRUE);
 		return TRUE;
 	}
 [^\x04%\(\)/\<\>\[\]\{\}\t\f\r\n ]+/{CTRL_OR_SPACE}	{
-		scanner->result = HG_QNAME (scanner->name, yytext);
+		scanner->result = HG_QNAME (yytext);
 		hg_quark_set_executable(&scanner->result, TRUE);
 		return TRUE;
 	}
@@ -497,28 +497,24 @@ HEXDIGITS	[0-9a-fA-F]
 /**
  * hg_scanner_new:
  * @mem:
- * @name:
  *
  * FIXME
  *
  * Returns:
  */
 hg_scanner_t *
-hg_scanner_new(hg_mem_t  *mem,
-	       hg_name_t *name)
+hg_scanner_new(hg_mem_t  *mem)
 {
 	hg_scanner_t *retval;
 	hg_quark_t q;
 
 	hg_return_val_if_fail (mem != NULL, NULL);
-	hg_return_val_if_fail (name != NULL, NULL);
 
 	q = hg_mem_alloc(mem, sizeof (hg_scanner_t), (gpointer *)&retval);
 	if (q == Qnil)
 		return NULL;
 	memset(retval, 0, sizeof (hg_scanner_t));
 	retval->mem = mem;
-	retval->name = name;
 	retval->self = q;
 	retval->result = Qnil;
 

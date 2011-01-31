@@ -247,8 +247,8 @@ _libedit_load(hg_plugin_t  *plugin,
 				       &__libedit_lineedit_vtable,
 				       NULL, NULL);
 
-	__libedit_enc_list[HG_libedit_enc_loadhistory] = REG_ENC (vm->name, .loadhistory, private_loadhistory);
-	__libedit_enc_list[HG_libedit_enc_savehistory] = REG_ENC (vm->name, .savehistory, private_savehistory);
+	__libedit_enc_list[HG_libedit_enc_loadhistory] = REG_ENC (.loadhistory, private_loadhistory);
+	__libedit_enc_list[HG_libedit_enc_savehistory] = REG_ENC (.savehistory, private_savehistory);
 
 	for (i = 0; i < HG_libedit_enc_END; i++) {
 		if (__libedit_enc_list[i] == Qnil)

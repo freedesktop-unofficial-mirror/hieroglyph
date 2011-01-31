@@ -310,7 +310,7 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 			    }
 			    qexecobj = qresult;
 		    } else {
-			    g_warning("Immediately evaluated name object somehow doesn't have a exec bit turned on: %s", hg_name_lookup(vm->name, qexecobj));
+			    g_warning("Immediately evaluated name object somehow doesn't have a exec bit turned on: %s", hg_name_lookup(qexecobj));
 		    }
 	    case HG_TYPE_NULL:
 	    case HG_TYPE_INT:
@@ -387,7 +387,7 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 #endif
 			    /* exception for processing the executable array */
 			    if (HG_IS_QNAME (qresult) &&
-				(name = hg_name_lookup(vm->name, qresult)) != NULL) {
+				(name = hg_name_lookup(qresult)) != NULL) {
 				    if (!strcmp(name, "{")) {
 					    qresult = hg_vm_step_in_exec_array(vm, qparent);
 					    if (qresult == Qnil)
@@ -883,6 +883,7 @@ hg_vm_init(void)
 		HG_STRING_INIT;
 		HG_PATH_INIT;
 		HG_GSTATE_INIT;
+		hg_name_init();
 		if (!hg_encoding_init())
 			goto error;
 		if (!hg_operator_init())
@@ -907,6 +908,7 @@ hg_vm_tini(void)
 	if (__hg_vm_is_initialized) {
 		hg_operator_tini();
 		hg_encoding_tini();
+		hg_name_tini();
 		hg_object_tini();
 
 		if (__hg_vm_mem)
@@ -937,7 +939,6 @@ hg_vm_new(void)
 
 	memset(retval, 0, sizeof (hg_vm_t));
 	retval->self = q;
-	retval->name = hg_name_init();
 
 	retval->rand_ = g_rand_new();
 	retval->rand_seed = g_rand_int(retval->rand_);
@@ -991,8 +992,7 @@ hg_vm_new(void)
 	 * memory spool to postpone thinking of how to deal
 	 * with the yacc instance on GC.
 	 */
-	retval->scanner = hg_scanner_new(__hg_vm_mem,
-					 retval->name);
+	retval->scanner = hg_scanner_new(__hg_vm_mem);
 	if (retval->scanner == NULL)
 		goto error;
 	retval->stack_spooler = hg_stack_spooler_new(__hg_vm_mem);
@@ -1015,8 +1015,8 @@ hg_vm_new(void)
 
 	hg_vm_set_default_acl(retval, HG_ACL_READABLE|HG_ACL_WRITABLE|HG_ACL_ACCESSIBLE);
 
-#define DECL_ERROR(_v_,_n_)						\
-	(_v_)->qerror_name[HG_VM_e_ ## _n_] = HG_QNAME ((_v_)->name, #_n_);
+#define DECL_ERROR(_v_,_n_)					\
+	(_v_)->qerror_name[HG_VM_e_ ## _n_] = HG_QNAME (#_n_);
 
 	DECL_ERROR (retval, dictfull);
 	DECL_ERROR (retval, dictstackoverflow);
@@ -1050,7 +1050,7 @@ hg_vm_new(void)
 #undef DECL_ERROR
 
 #define DECL_UPARAM(_v_,_n_)						\
-	(_v_)->quparams_name[HG_VM_user_ ## _n_] = HG_QNAME ((_v_)->name, #_n_);
+	(_v_)->quparams_name[HG_VM_user_ ## _n_] = HG_QNAME (#_n_);
 
 	DECL_UPARAM (retval, MaxOpStack);
 	DECL_UPARAM (retval, MaxExecStack);
@@ -1060,12 +1060,12 @@ hg_vm_new(void)
 #undef DECL_UPARAM
 
 #define DECL_SPARAM(_v_,_n_)						\
-	(_v_)->qsparams_name[HG_VM_sys_ ## _n_] = HG_QNAME ((_v_)->name, #_n_);
+	(_v_)->qsparams_name[HG_VM_sys_ ## _n_] = HG_QNAME (#_n_);
 
 #undef DECL_SPARAM
 
 #define DECL_PDPARAM(_v_,_n_)						\
-	(_v_)->qpdevparams_name[HG_pdev_ ## _n_] = HG_QNAME ((_v_)->name, #_n_);
+	(_v_)->qpdevparams_name[HG_pdev_ ## _n_] = HG_QNAME (#_n_);
 
 	DECL_PDPARAM (retval, InputAttributes);
 	DECL_PDPARAM (retval, PageSize);
@@ -1139,8 +1139,6 @@ hg_vm_destroy(hg_vm_t *vm)
 		g_hash_table_destroy(vm->plugin_table);
 	if (vm->plugin_list)
 		g_list_free(vm->plugin_list);
-	if (vm->name)
-		hg_name_tini(vm->name);
 	if (vm->rand_)
 		g_rand_free(vm->rand_);
 	hg_mem_reserved_spool_remove(__hg_vm_mem, vm->self);
@@ -1539,19 +1537,19 @@ hg_vm_setup(hg_vm_t           *vm,
 
 	/* initialize $error */
 	if (!hg_dict_add(dict_error,
-			 HG_QNAME (vm->name, "newerror"),
+			 HG_QNAME ("newerror"),
 			 HG_QBOOL (FALSE),
 			 FALSE,
 			 &err))
 		goto error;
 	if (!hg_dict_add(dict_error,
-			 HG_QNAME (vm->name, "errorname"),
+			 HG_QNAME ("errorname"),
 			 HG_QNULL,
 			 FALSE,
 			 &err))
 		goto error;
 	if (!hg_dict_add(dict_error,
-			 HG_QNAME (vm->name, ".stopped"),
+			 HG_QNAME (".stopped"),
 			 HG_QBOOL (FALSE),
 			 FALSE,
 			 &err))
@@ -1563,26 +1561,26 @@ hg_vm_setup(hg_vm_t           *vm,
 		goto error;
 
 	if (!hg_dict_add(dict,
-			 HG_QNAME (vm->name, "systemdict"),
+			 HG_QNAME ("systemdict"),
 			 vm->qsystemdict,
 			 TRUE,
 			 &err))
 		goto error;
 	if (!hg_dict_add(dict,
-			 HG_QNAME (vm->name, "globaldict"),
+			 HG_QNAME ("globaldict"),
 			 vm->qglobaldict,
 			 TRUE,
 			 &err))
 		goto error;
 	if (!hg_dict_add(dict,
-			 HG_QNAME (vm->name, "$error"),
+			 HG_QNAME ("$error"),
 			 vm->qerror,
 			 TRUE,
 			 &err))
 		goto error;
 
 	/* initialize build-in operators */
-	if (!hg_operator_register(vm, dict, vm->name, lang_level))
+	if (!hg_operator_register(vm, dict, lang_level))
 		goto error;
 
 	_HG_VM_UNLOCK (vm, vm->qerror);
@@ -1811,7 +1809,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 			    qexecobj = qresult;
 			    goto evaluate;
 		    }
-		    g_warning("Immediately evaluated name object somehow doesn't have a exec bit turned on: %s", hg_name_lookup(vm->name, qexecobj));
+		    g_warning("Immediately evaluated name object somehow doesn't have a exec bit turned on: %s", hg_name_lookup(qexecobj));
 		    goto push_stack;
 	    case HG_TYPE_NAME:
 		    /* /foo  ... nope
@@ -1994,7 +1992,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 #endif
 			    /* exception for processing the executable array */
 			    if (HG_IS_QNAME (qresult) &&
-				(name = hg_name_lookup(vm->name, qresult)) != NULL) {
+				(name = hg_name_lookup(qresult)) != NULL) {
 				    if (!strcmp(name, "{")) {
 					    qresult = hg_vm_step_in_exec_array(vm, qexecobj);
 					    if (qresult == Qnil)
@@ -2201,7 +2199,7 @@ hg_vm_eval(hg_vm_t     *vm,
 		hg_dict_foreach(o, _hg_vm_dup_dict, d, error);
 		hg_vm_hold_language_level(vm, FALSE);
 		if (!hg_dict_add(d,
-				 HG_QNAME (vm->name, "systemdict"),
+				 HG_QNAME ("systemdict"),
 				 vm->qsystemdict,
 				 FALSE,
 				 error)) {
@@ -2508,7 +2506,7 @@ hg_vm_startjob(hg_vm_t           *vm,
 	}
 	hg_vm_quark_set_writable(vm, &vm->qsystemdict, FALSE);
 	hg_vm_quark_set_writable(vm, &vm->qinternaldict, FALSE);
-	if (!hg_dict_add(dict, HG_QNAME (vm->name, "systemdict"),
+	if (!hg_dict_add(dict, HG_QNAME ("systemdict"),
 			 vm->qsystemdict,
 			 FALSE,
 			 NULL)) {
@@ -2873,19 +2871,19 @@ hg_vm_reset_error(hg_vm_t *vm)
 		return;
 	}
 	if (!hg_dict_add(dict_error,
-			 HG_QNAME (vm->name, "newerror"),
+			 HG_QNAME ("newerror"),
 			 HG_QBOOL (FALSE),
 			 FALSE,
 			 NULL))
 		goto error;
 	if (!hg_dict_add(dict_error,
-			 HG_QNAME (vm->name, "errorname"),
+			 HG_QNAME ("errorname"),
 			 HG_QNULL,
 			 FALSE,
 			 NULL))
 		goto error;
 	if (!hg_dict_add(dict_error,
-			 HG_QNAME (vm->name, ".stopped"),
+			 HG_QNAME (".stopped"),
 			 HG_QBOOL (FALSE),
 			 FALSE,
 			 NULL))
@@ -2924,8 +2922,8 @@ hg_vm_set_error(hg_vm_t       *vm,
 	hg_return_val_if_fail (error < HG_VM_e_END, FALSE);
 
 	if (vm->has_error) {
-		hg_quark_t qerrorname = HG_QNAME (vm->name, "errorname");
-		hg_quark_t qcommand = HG_QNAME (vm->name, "command");
+		hg_quark_t qerrorname = HG_QNAME ("errorname");
+		hg_quark_t qcommand = HG_QNAME ("command");
 		hg_quark_t qresult_err, qresult_cmd, qwhere;
 		hg_dict_t *derror;
 		hg_string_t *where;
@@ -2974,15 +2972,15 @@ hg_vm_set_error(hg_vm_t       *vm,
 				   "  previous error: unknown or this happened at %s prior to set /errorname\n"
 				   "  current error: %s at %s\n",
 				   scommand,
-				   hg_name_lookup(vm->name, vm->qerror_name[error]),
+				   hg_name_lookup(vm->qerror_name[error]),
 				   swhere);
 		} else {
 			g_printerr("Multiple errors occurred.\n"
 				   "  previous error: %s at %s\n"
 				   "  current error: %s at %s\n",
-				   hg_name_lookup(vm->name, qresult_err),
+				   hg_name_lookup(qresult_err),
 				   scommand,
-				   hg_name_lookup(vm->name, vm->qerror_name[error]),
+				   hg_name_lookup(vm->qerror_name[error]),
 				   swhere);
 		}
 		g_free(swhere);
@@ -2993,7 +2991,7 @@ hg_vm_set_error(hg_vm_t       *vm,
 	for (i = 0; i < HG_VM_STACK_END; i++) {
 		hg_stack_set_validation(vm->stacks[i], FALSE);
 	}
-	qnerrordict = HG_QNAME (vm->name, "errordict");
+	qnerrordict = HG_QNAME ("errordict");
 	qerrordict = hg_vm_dstack_lookup(vm, qnerrordict);
 	if (qerrordict == Qnil) {
 		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
@@ -3006,7 +3004,7 @@ hg_vm_set_error(hg_vm_t       *vm,
 	if (qhandler == Qnil) {
 		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
 			    "Unale to obtain the error handler for %s",
-			    hg_name_lookup(vm->name, vm->qerror_name[error]));
+			    hg_name_lookup(vm->qerror_name[error]));
 		goto fatal_error;
 	}
 
@@ -3020,7 +3018,7 @@ hg_vm_set_error(hg_vm_t       *vm,
 	return TRUE;
   fatal_error:
 	G_STMT_START {
-		const gchar *errname = hg_name_lookup(vm->name, vm->qerror_name[error]);
+		const gchar *errname = hg_name_lookup(vm->qerror_name[error]);
 
 		if (errname) {
 			g_printerr("Fatal error during recovering from /%s: %s\n", errname, (err ? err->message : "no details"));
@@ -3428,7 +3426,7 @@ hg_vm_dstack_lookup(hg_vm_t    *vm,
 		if (s == NULL)
 			goto error;
 		str = hg_string_get_cstr(s);
-		quark = hg_name_new_with_string(vm->name, str, -1);
+		quark = hg_name_new_with_string(str, -1);
 
 		g_free(str);
 		_HG_VM_UNLOCK (vm, qname);
@@ -3486,7 +3484,7 @@ hg_vm_dstack_remove(hg_vm_t    *vm,
 		if (s == NULL)
 			goto error;
 		str = hg_string_get_cstr(s);
-		quark = hg_name_new_with_string(vm->name, str, -1);
+		quark = hg_name_new_with_string(str, -1);
 
 		g_free(str);
 		_HG_VM_UNLOCK (vm, qname);
@@ -3902,18 +3900,18 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 			    break;
 		    case HG_TYPE_EVAL_NAME:
 			    if (ps_like_syntax)
-				    hg_string_append_printf(s, "//%s", HG_NAME (vm->name, qdata));
+				    hg_string_append_printf(s, "//%s", HG_NAME (qdata));
 			    else
-				    hg_string_append(s, HG_NAME (vm->name, qdata), -1, &err);
+				    hg_string_append(s, HG_NAME (qdata), -1, &err);
 			    break;
 		    case HG_TYPE_NAME:
 			    if (ps_like_syntax) {
 				    if (hg_vm_quark_is_executable(vm, &qdata))
-					    hg_string_append_printf(s, "%s", HG_NAME (vm->name, qdata));
+					    hg_string_append_printf(s, "%s", HG_NAME (qdata));
 				    else
-					    hg_string_append_printf(s, "/%s", HG_NAME (vm->name, qdata));
+					    hg_string_append_printf(s, "/%s", HG_NAME (qdata));
 			    } else {
-				    hg_string_append(s, HG_NAME (vm->name, qdata), -1, &err);
+				    hg_string_append(s, HG_NAME (qdata), -1, &err);
 			    }
 			    break;
 		    case HG_TYPE_BOOL:

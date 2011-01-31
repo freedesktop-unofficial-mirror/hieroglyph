@@ -71,16 +71,16 @@ DEFUNC_OPER (private_validatetestresult)
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	qverbose = hg_dict_lookup(d, HG_QNAME (vm->name, "verbose"), error);
+	qverbose = hg_dict_lookup(d, HG_QNAME ("verbose"), error);
 	if (qverbose != Qnil && HG_IS_QBOOL (qverbose)) {
 		verbose = HG_BOOL (qverbose);
 	}
-	qattrs = hg_dict_lookup(d, HG_QNAME (vm->name, "attrsmask"), error);
+	qattrs = hg_dict_lookup(d, HG_QNAME ("attrsmask"), error);
 	if (qattrs != Qnil && HG_IS_QINT (qattrs)) {
 		attrs = HG_INT (qattrs);
 	}
 
-	qexp = hg_dict_lookup(d, HG_QNAME (vm->name, "expression"), error);
+	qexp = hg_dict_lookup(d, HG_QNAME ("expression"), error);
 	q = hg_vm_quark_to_string(vm, qexp, TRUE, (gpointer *)&sexp, error);
 	if (q == Qnil) {
 		cexp = g_strdup("--%unknown--");
@@ -89,9 +89,9 @@ DEFUNC_OPER (private_validatetestresult)
 	}
 	hg_string_free(sexp, TRUE);
 
-	qaerror = hg_dict_lookup(d, HG_QNAME (vm->name, "actualerror"), error);
-	qeerror = hg_dict_lookup(d, HG_QNAME (vm->name, "expectederror"), error);
-	qerrorat = hg_dict_lookup(d, HG_QNAME (vm->name, "errorat"), error);
+	qaerror = hg_dict_lookup(d, HG_QNAME ("actualerror"), error);
+	qeerror = hg_dict_lookup(d, HG_QNAME ("expectederror"), error);
+	qerrorat = hg_dict_lookup(d, HG_QNAME ("errorat"), error);
 	if (qaerror == Qnil || qeerror == Qnil || qerrorat == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
 		goto error;
@@ -136,8 +136,8 @@ DEFUNC_OPER (private_validatetestresult)
 		result = FALSE;
 	}
 
-	qastack = hg_dict_lookup(d, HG_QNAME (vm->name, "actualostack"), error);
-	qestack = hg_dict_lookup(d, HG_QNAME (vm->name, "expectedostack"), error);
+	qastack = hg_dict_lookup(d, HG_QNAME ("actualostack"), error);
+	qestack = hg_dict_lookup(d, HG_QNAME ("expectedostack"), error);
 	if (qastack == Qnil || qestack == Qnil ||
 	    !HG_IS_QARRAY (qastack) ||
 	    !HG_IS_QARRAY (qestack)) {
@@ -228,7 +228,7 @@ _unittest_load(hg_plugin_t  *plugin,
 		return FALSE;
 	hg_vm_use_global_mem(vm, TRUE);
 
-	__unittest_enc_list[HG_unittest_enc_validatetestresult] = REG_ENC (vm->name, .validatetestresult, private_validatetestresult);
+	__unittest_enc_list[HG_unittest_enc_validatetestresult] = REG_ENC (.validatetestresult, private_validatetestresult);
 
 	for (i = 0; i < HG_unittest_enc_END; i++) {
 		if (__unittest_enc_list[i] == Qnil)

@@ -29,13 +29,11 @@
 #include "hgname.h"
 
 
-hg_name_t *name = NULL;
-
 /** common **/
 void
 setup(void)
 {
-	name = hg_name_init();
+	hg_name_init();
 }
 
 void
@@ -47,16 +45,13 @@ teardown(void)
 		g_print("E: %s\n", e);
 		g_free(e);
 	}
-	hg_name_tini(name);
+	hg_name_tini();
 }
 
 /** test cases **/
 TDEF (hg_name_init)
 {
-	hg_name_t *n = hg_name_init();
-
-	fail_unless(n != NULL, "Unable to initialize the name database");
-	hg_name_tini(n);
+	/* nothing to test this time */
 } TEND
 
 TDEF (hg_name_tini)
@@ -70,9 +65,9 @@ TDEF (hg_name_new_with_encoding)
 	const gchar *p;
 
 #define TT(_n_)								\
-	q = hg_name_new_with_encoding(name, HG_enc_ ## _n_);		\
+	q = hg_name_new_with_encoding(HG_enc_ ## _n_);			\
 	fail_unless(q == (0x14300000000 | HG_enc_ ## _n_), "Unexpected result to create a quark for a name: expect: %lx, actual: %lx", (0x14300000000 | HG_enc_ ## _n_), q); \
-	p = hg_name_lookup(name, q);					\
+	p = hg_name_lookup(q);						\
 	fail_unless(strcmp(p, #_n_) == 0, "Unexpected result to look up the name for %s", #_n_);
 
 	TT (abs);
@@ -575,8 +570,8 @@ TDEF (hg_name_new_with_encoding)
 
 #undef TT
 
-	q = hg_name_new_with_encoding(name, 255);
-	p = hg_name_lookup(name, q);
+	q = hg_name_new_with_encoding(255);
+	p = hg_name_lookup(q);
 	fail_unless(p[0] == 0, "Unexpected result to look up with the unknown encoding id");
 	g_free(hieroglyph_test_pop_error());
 } TEND
@@ -587,9 +582,9 @@ TDEF (hg_name_new_with_string)
 	const gchar *p;
 
 #define TT(_n_)								\
-	q = hg_name_new_with_string(name, # _n_, -1);			\
+	q = hg_name_new_with_string(# _n_, -1);				\
 	fail_unless(q == (0x14300000000 | HG_enc_ ## _n_), "Unexpected result to create a quark for the string %s: expect: %lx, actual: %lx", #_n_, (0x14300000000 | HG_enc_ ## _n_), q); \
-	p = hg_name_lookup(name, q);					\
+	p = hg_name_lookup(q);						\
 	fail_unless(strcmp(p, #_n_) == 0, "Unexpected result to look up the name for %s", #_n_);
 
 	TT (abs);
@@ -1092,9 +1087,9 @@ TDEF (hg_name_new_with_string)
 
 #undef TT
 
-	q = hg_name_new_with_string(name, "foo", 3);
+	q = hg_name_new_with_string("foo", 3);
 	fail_unless(q != Qnil, "Unable to create a quark for string: %s", "foo");
-	p = hg_name_lookup(name, q);
+	p = hg_name_lookup(q);
 	fail_unless(p != NULL && strcmp(p, "foo") == 0, "Unexpected result to look up for the string %s with the quark %" G_GSIZE_FORMAT ": actual: %s", "foo", q, p);
 } TEND
 
