@@ -86,7 +86,7 @@ hg_matrix_init_identity(hg_matrix_t *matrix)
  *
  * FIXME
  */
-gboolean
+hg_bool_t
 hg_matrix_invert(hg_matrix_t *matrix1,
 		 hg_matrix_t *matrix2)
 {

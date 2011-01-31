@@ -46,31 +46,31 @@ union _hg_matrix_t {
 	hg_real_t d[6];
 };
 
-void     hg_matrix_init         (hg_matrix_t *matrix,
-                                 hg_real_t    xx,
-                                 hg_real_t    xy,
-                                 hg_real_t    yx,
-                                 hg_real_t    yy,
-                                 hg_real_t    x0,
-                                 hg_real_t    y0);
-void     hg_matrix_init_identity(hg_matrix_t *matrix);
-gboolean hg_matrix_invert       (hg_matrix_t *matrix1,
-                                 hg_matrix_t *matrix2);
-void     hg_matrix_multiply     (hg_matrix_t *matrix1,
-                                 hg_matrix_t *matrix2,
-                                 hg_matrix_t *matrix3);
-void     hg_matrix_translate    (hg_matrix_t *matrix,
-                                 hg_real_t    tx,
-                                 hg_real_t    ty);
-void     hg_matrix_rotate       (hg_matrix_t *matrix,
-                                 hg_real_t    angle);
-void     hg_matrix_get_affine   (hg_matrix_t *matrix,
-                                 hg_real_t   *xx,
-                                 hg_real_t   *xy,
-                                 hg_real_t   *yx,
-                                 hg_real_t   *yy,
-                                 hg_real_t   *x0,
-                                 hg_real_t   *y0);
+void      hg_matrix_init         (hg_matrix_t *matrix,
+                                  hg_real_t    xx,
+                                  hg_real_t    xy,
+                                  hg_real_t    yx,
+                                  hg_real_t    yy,
+                                  hg_real_t    x0,
+                                  hg_real_t    y0);
+void      hg_matrix_init_identity(hg_matrix_t *matrix);
+hg_bool_t hg_matrix_invert       (hg_matrix_t *matrix1,
+                                  hg_matrix_t *matrix2);
+void      hg_matrix_multiply     (hg_matrix_t *matrix1,
+                                  hg_matrix_t *matrix2,
+                                  hg_matrix_t *matrix3);
+void      hg_matrix_translate    (hg_matrix_t *matrix,
+                                  hg_real_t    tx,
+                                  hg_real_t    ty);
+void      hg_matrix_rotate       (hg_matrix_t *matrix,
+                                  hg_real_t    angle);
+void      hg_matrix_get_affine   (hg_matrix_t *matrix,
+                                  hg_real_t   *xx,
+                                  hg_real_t   *xy,
+                                  hg_real_t   *yx,
+                                  hg_real_t   *yy,
+                                  hg_real_t   *x0,
+                                  hg_real_t   *y0);
 
 HG_END_DECLS
 
