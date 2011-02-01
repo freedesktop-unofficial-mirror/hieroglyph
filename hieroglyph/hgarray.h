@@ -56,45 +56,45 @@ struct _hg_array_t {
 
 hg_object_vtable_t *hg_object_array_get_vtable(void) G_GNUC_CONST;
 hg_quark_t          hg_array_new              (hg_mem_t                  *mem,
-                                               gsize                      size,
-                                               gpointer                  *ret);
+                                               hg_usize_t                 size,
+                                               hg_pointer_t              *ret);
 void                hg_array_free             (hg_array_t                *array);
-gboolean            hg_array_set              (hg_array_t                *array,
+hg_bool_t           hg_array_set              (hg_array_t                *array,
                                                hg_quark_t                 quark,
-                                               gsize                      index,
-					       gboolean                   force,
+                                               hg_usize_t                 index,
+					       hg_bool_t                  force,
 					       GError                   **error);
 hg_quark_t          hg_array_get              (hg_array_t                *array,
-                                               gsize                      index,
+                                               hg_usize_t                 index,
                                                GError                   **error);
-gboolean            hg_array_insert           (hg_array_t                *array,
+hg_bool_t           hg_array_insert           (hg_array_t                *array,
                                                hg_quark_t                 quark,
                                                gssize                     pos,
 					       GError                   **error);
-gboolean            hg_array_remove           (hg_array_t                *array,
-                                               gsize                      pos);
-gsize               hg_array_length           (hg_array_t                *array);
-gsize               hg_array_maxlength        (hg_array_t                *array);
+hg_bool_t           hg_array_remove           (hg_array_t                *array,
+                                               hg_usize_t                 pos);
+hg_usize_t          hg_array_length           (hg_array_t                *array);
+hg_usize_t          hg_array_maxlength        (hg_array_t                *array);
 void                hg_array_foreach          (hg_array_t                *array,
                                                hg_array_traverse_func_t   func,
-                                               gpointer                   data,
+                                               hg_pointer_t               data,
                                                GError                   **error);
 void                hg_array_set_name         (hg_array_t                *array,
-					       const gchar               *name);
+					       const hg_char_t           *name);
 hg_quark_t          hg_array_make_subarray    (hg_array_t                *array,
-					       gsize                      start_index,
-					       gsize                      end_index,
-					       gpointer                  *ret,
+					       hg_usize_t                 start_index,
+					       hg_usize_t                 end_index,
+					       hg_pointer_t              *ret,
 					       GError                   **error);
-gboolean            hg_array_copy_as_subarray (hg_array_t                *src,
+hg_bool_t           hg_array_copy_as_subarray (hg_array_t                *src,
 					       hg_array_t                *dest,
-					       gsize                      start_index,
-					       gsize                      end_index,
+					       hg_usize_t                 start_index,
+					       hg_usize_t                 end_index,
 					       GError                   **error);
-gboolean            hg_array_is_matrix        (hg_array_t                *array);
-gboolean            hg_array_from_matrix      (hg_array_t                *array,
+hg_bool_t           hg_array_is_matrix        (hg_array_t                *array);
+hg_bool_t           hg_array_from_matrix      (hg_array_t                *array,
 					       hg_matrix_t               *matrix);
-gboolean            hg_array_to_matrix        (hg_array_t                *array,
+hg_bool_t           hg_array_to_matrix        (hg_array_t                *array,
 					       hg_matrix_t               *matrix);
 
 

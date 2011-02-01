@@ -45,24 +45,24 @@
 HG_DEFINE_VTABLE_WITH (array, NULL, NULL, NULL);
 
 /*< private >*/
-static gsize
+static hg_usize_t
 _hg_object_array_get_capsulated_size(void)
 {
 	return HG_ALIGNED_TO_POINTER (sizeof (hg_array_t));
 }
 
-static guint
+static hg_uint_t
 _hg_object_array_get_allocation_flags(void)
 {
 	return HG_MEM_FLAGS_DEFAULT;
 }
 
-static gboolean
+static hg_bool_t
 _hg_object_array_initialize(hg_object_t *object,
 			    va_list      args)
 {
 	hg_array_t *array = (hg_array_t *)object;
-	gsize offset, size;
+	hg_usize_t offset, size;
 	hg_quark_t qcontainer;
 
 	qcontainer = va_arg(args, hg_quark_t);
@@ -88,13 +88,13 @@ _hg_object_array_initialize(hg_object_t *object,
 static hg_quark_t
 _hg_object_array_copy(hg_object_t              *object,
 		      hg_quark_iterate_func_t   func,
-		      gpointer                  user_data,
-		      gpointer                 *ret,
+		      hg_pointer_t              user_data,
+		      hg_pointer_t             *ret,
 		      GError                  **error)
 {
 	hg_array_t *array = (hg_array_t *)object, *a;
 	hg_quark_t retval, q, qr;
-	gsize i, len;
+	hg_usize_t i, len;
 	GError *err = NULL;
 
 	hg_return_val_if_fail (object->type == HG_TYPE_ARRAY, Qnil);
@@ -150,18 +150,18 @@ _hg_object_array_copy(hg_object_t              *object,
 	return retval;
 }
 
-static gchar *
+static hg_char_t *
 _hg_object_array_to_cstr(hg_object_t              *object,
 			 hg_quark_iterate_func_t   func,
-			 gpointer                  user_data,
+			 hg_pointer_t              user_data,
 			 GError                  **error)
 {
 	hg_array_t *array = (hg_array_t *)object;
 	hg_quark_t q, qr;
-	gsize i, len;
+	hg_usize_t i, len;
 	GString *retval = g_string_new(NULL);
 	GError *err = NULL;
-	gchar *s;
+	hg_char_t *s;
 
 	hg_return_val_if_fail (object->type == HG_TYPE_ARRAY, NULL);
 
@@ -210,14 +210,14 @@ _hg_object_array_to_cstr(hg_object_t              *object,
 static gboolean
 _hg_object_array_gc_mark(hg_object_t           *object,
 			 hg_gc_iterate_func_t   func,
-			 gpointer               user_data,
+			 hg_pointer_t           user_data,
 			 GError               **error)
 {
 	hg_array_t *array = (hg_array_t *)object;
 	hg_quark_t q;
-	gsize i, len;
+	hg_usize_t i, len;
 	GError *err = NULL;
-	gboolean retval = TRUE;
+	hg_bool_t retval = TRUE;
 
 	hg_return_val_if_fail (object->type == HG_TYPE_ARRAY, FALSE);
 
@@ -258,15 +258,14 @@ _hg_object_array_gc_mark(hg_object_t           *object,
 	return retval;
 }
 
-static gboolean
+static hg_bool_t
 _hg_object_array_compare(hg_object_t             *o1,
 			 hg_object_t             *o2,
 			 hg_quark_compare_func_t  func,
-			 gpointer                 user_data)
+			 hg_pointer_t             user_data)
 {
-	gsize i;
-	gboolean retval = TRUE;
-	gsize len;
+	hg_usize_t i, len;
+	hg_bool_t retval = TRUE;
 	hg_array_t *a1 = (hg_array_t *)o1, *a2 = (hg_array_t *)o2;
 
 	hg_return_val_if_fail (o1 != NULL, FALSE);
@@ -289,11 +288,11 @@ _hg_object_array_compare(hg_object_t             *o1,
 	return retval;
 }
 
-static gboolean
+static hg_bool_t
 _hg_array_maybe_expand(hg_array_t *array,
-		       gsize       length)
+		       hg_usize_t  length)
 {
-	gsize i;
+	hg_usize_t i;
 	hg_quark_t *container;
 
 	if (array->is_fixed_size ||
@@ -500,7 +499,7 @@ hg_array_set(hg_array_t  *array,
  */
 hg_quark_t
 hg_array_get(hg_array_t  *array,
-	     gsize        index,
+	     hg_usize_t   index,
 	     GError     **error)
 {
 	hg_quark_t retval = Qnil;
@@ -568,10 +567,10 @@ hg_array_get(hg_array_t  *array,
 gboolean
 hg_array_insert(hg_array_t  *array,
 		hg_quark_t   quark,
-		gssize       pos,
+		hg_size_t    pos,
 		GError     **error)
 {
-	gssize i;
+	hg_size_t i;
 	hg_quark_t *container;
 
 	hg_return_val_with_gerror_if_fail (array != NULL, FALSE, error, HG_VM_e_VMerror);
@@ -618,11 +617,11 @@ hg_array_insert(hg_array_t  *array,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_array_remove(hg_array_t *array,
-		gsize       pos)
+		hg_usize_t  pos)
 {
-	gsize i;
+	hg_usize_t i;
 	hg_quark_t *container;
 
 	hg_return_val_if_fail (array != NULL, FALSE);
@@ -652,7 +651,7 @@ hg_array_remove(hg_array_t *array,
  *
  * Returns:
  */
-gsize
+hg_usize_t
 hg_array_length(hg_array_t *array)
 {
 	hg_return_val_if_fail (array != NULL, 0);
@@ -669,7 +668,7 @@ hg_array_length(hg_array_t *array)
  *
  * Returns:
  */
-gsize
+hg_usize_t
 hg_array_maxlength(hg_array_t *array)
 {
 	hg_return_val_if_fail (array != NULL, 0);
@@ -689,11 +688,11 @@ hg_array_maxlength(hg_array_t *array)
 void
 hg_array_foreach(hg_array_t                *array,
 		 hg_array_traverse_func_t   func,
-		 gpointer                   data,
+		 hg_pointer_t               data,
 		 GError                   **error)
 {
 	hg_quark_t *container;
-	gsize i;
+	hg_usize_t i;
 
 	hg_return_with_gerror_if_fail (array != NULL, error, HG_VM_e_VMerror);
 	hg_return_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, error, HG_VM_e_VMerror);
@@ -718,11 +717,11 @@ hg_array_foreach(hg_array_t                *array,
  * FIXME
  */
 void
-hg_array_set_name(hg_array_t  *array,
-		  const gchar *name)
+hg_array_set_name(hg_array_t      *array,
+		  const hg_char_t *name)
 {
-	gchar *p;
-	gsize len;
+	hg_char_t *p;
+	hg_usize_t len;
 
 	hg_return_if_fail (array != NULL);
 	hg_return_if_fail (array->o.type == HG_TYPE_ARRAY);
@@ -751,11 +750,11 @@ hg_array_set_name(hg_array_t  *array,
  * Returns:
  */
 hg_quark_t
-hg_array_make_subarray(hg_array_t  *array,
-		       gsize        start_index,
-		       gsize        end_index,
-		       gpointer    *ret,
-		       GError     **error)
+hg_array_make_subarray(hg_array_t    *array,
+		       hg_usize_t     start_index,
+		       hg_usize_t     end_index,
+		       hg_pointer_t  *ret,
+		       GError       **error)
 {
 	hg_quark_t retval;
 	GError *err = NULL;
@@ -813,11 +812,11 @@ hg_array_make_subarray(hg_array_t  *array,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_array_copy_as_subarray(hg_array_t  *src,
 			  hg_array_t  *dest,
-			  gsize        start_index,
-			  gsize        end_index,
+			  hg_usize_t   start_index,
+			  hg_usize_t   end_index,
 			  GError     **error)
 {
 	hg_return_val_with_gerror_if_fail (src != NULL, FALSE, error, HG_VM_e_VMerror);
@@ -848,10 +847,10 @@ hg_array_copy_as_subarray(hg_array_t  *src,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_array_is_matrix(hg_array_t *array)
 {
-	gsize i;
+	hg_usize_t i;
 	hg_quark_t q;
 
 	hg_return_val_if_fail (array != NULL, FALSE);
@@ -878,7 +877,7 @@ hg_array_is_matrix(hg_array_t *array)
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_array_from_matrix(hg_array_t  *array,
 		     hg_matrix_t *matrix)
 {
@@ -900,7 +899,7 @@ hg_array_from_matrix(hg_array_t  *array,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_array_to_matrix(hg_array_t  *array,
 		   hg_matrix_t *matrix)
 {
