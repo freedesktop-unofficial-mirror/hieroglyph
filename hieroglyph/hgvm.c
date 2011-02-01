@@ -733,6 +733,11 @@ _hg_vm_run_gc(hg_mem_t *mem,
 	}
 	/** marking miscellaneous **/
 #if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
+	g_print("GC: marking objects in vm state\n");
+#endif
+	if (!hg_mem_gc_mark(vm->mem[HG_VM_MEM_LOCAL], vm->vm_state->self, &err))
+		goto error;
+#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
 	g_print("GC: marking objects in $error\n");
 #endif
 	if (!hg_vm_quark_gc_mark(vm, vm->qerror, &err))
@@ -758,7 +763,7 @@ _hg_vm_run_gc(hg_mem_t *mem,
 	if (!hg_vm_quark_gc_mark(vm, vm->qgstate, &err))
 		goto error;
 #if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-	g_print("GC: marking objects in gstate\n");
+	g_print("GC: marking objects in device\n");
 #endif
 	if (vm->device &&
 	    !hg_device_gc_mark(vm->device,
@@ -963,8 +968,12 @@ hg_vm_new(void)
 	hg_mem_reserved_spool_set_garbage_collector(retval->mem[HG_VM_MEM_GLOBAL], _hg_vm_rs_gc, retval);
 	hg_mem_reserved_spool_set_garbage_collector(retval->mem[HG_VM_MEM_LOCAL], _hg_vm_rs_gc, retval);
 
-	retval->vm_state.current_mem_index = HG_VM_MEM_GLOBAL;
-	retval->vm_state.n_save_objects = 0;
+	q = hg_mem_alloc(retval->mem[HG_VM_MEM_LOCAL],
+			 sizeof (hg_vm_state_t),
+			 (hg_pointer_t *)&retval->vm_state);
+	retval->vm_state->self = q;
+	retval->vm_state->current_mem_index = HG_VM_MEM_GLOBAL;
+	retval->vm_state->n_save_objects = 0;
 
 	retval->user_params.max_op_stack = 500;
 	retval->user_params.max_exec_stack = 250;
@@ -1278,9 +1287,9 @@ hg_mem_t *
 hg_vm_get_mem(hg_vm_t *vm)
 {
 	hg_return_val_if_fail (vm != NULL, NULL);
-	hg_return_val_if_fail (vm->vm_state.current_mem_index < HG_VM_MEM_END, NULL);
+	hg_return_val_if_fail (vm->vm_state->current_mem_index < HG_VM_MEM_END, NULL);
 
-	return vm->mem[vm->vm_state.current_mem_index];
+	return vm->mem[vm->vm_state->current_mem_index];
 }
 
 /**
@@ -1313,9 +1322,9 @@ hg_vm_use_global_mem(hg_vm_t  *vm,
 	hg_return_if_fail (vm != NULL);
 
 	if (flag)
-		vm->vm_state.current_mem_index = HG_VM_MEM_GLOBAL;
+		vm->vm_state->current_mem_index = HG_VM_MEM_GLOBAL;
 	else
-		vm->vm_state.current_mem_index = HG_VM_MEM_LOCAL;
+		vm->vm_state->current_mem_index = HG_VM_MEM_LOCAL;
 }
 
 /**
@@ -1331,7 +1340,7 @@ hg_vm_is_global_mem_used(hg_vm_t *vm)
 {
 	hg_return_val_if_fail (vm != NULL, TRUE);
 
-	return vm->vm_state.current_mem_index == HG_VM_MEM_GLOBAL;
+	return vm->vm_state->current_mem_index == HG_VM_MEM_GLOBAL;
 }
 
 /**

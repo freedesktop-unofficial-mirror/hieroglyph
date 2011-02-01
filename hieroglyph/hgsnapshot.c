@@ -34,7 +34,6 @@
 struct _hg_snapshot_t {
 	hg_object_t             o;
 	hg_mem_snapshot_data_t *snapshot;
-	hg_vm_state_t           vm_state;
 };
 
 HG_DEFINE_VTABLE (snapshot);
@@ -149,23 +148,19 @@ hg_snapshot_new(hg_mem_t *mem,
 /**
  * hg_snapshot_save:
  * @snapshot:
- * @vm_state:
  *
  * FIXME
  *
  * Returns:
  */
 gboolean
-hg_snapshot_save(hg_snapshot_t *snapshot,
-		 hg_vm_state_t *vm_state)
+hg_snapshot_save(hg_snapshot_t *snapshot)
 {
 	hg_return_val_if_fail (snapshot != NULL, FALSE);
-	hg_return_val_if_fail (vm_state != NULL, FALSE);
 
 	snapshot->snapshot = hg_mem_save_snapshot(snapshot->o.mem);
 	if (snapshot->snapshot == NULL)
 		return FALSE;
-	memcpy(&snapshot->vm_state, vm_state, sizeof (hg_vm_state_t));
 
 	return TRUE;
 }
@@ -173,7 +168,6 @@ hg_snapshot_save(hg_snapshot_t *snapshot,
 /**
  * hg_snapshot_restore:
  * @snapshot:
- * @vm_state:
  * @func:
  * @data:
  *
@@ -183,7 +177,6 @@ hg_snapshot_save(hg_snapshot_t *snapshot,
  */
 gboolean
 hg_snapshot_restore(hg_snapshot_t *snapshot,
-		    hg_vm_state_t *vm_state,
 		    hg_gc_func_t   func,
 		    gpointer       data)
 {
@@ -199,7 +192,6 @@ hg_snapshot_restore(hg_snapshot_t *snapshot,
 					 data);
 	if (retval) {
 		snapshot->snapshot = NULL;
-		memcpy(vm_state, &snapshot->vm_state, sizeof (hg_vm_state_t));
 	}
 
 	return retval;

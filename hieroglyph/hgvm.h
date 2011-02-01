@@ -92,12 +92,13 @@ struct _hg_vm_user_params_t {
 struct _hg_vm_sys_params_t {
 };
 struct _hg_vm_state_t {
+	hg_quark_t       self;
 	hg_vm_mem_type_t current_mem_index;
 	gint             n_save_objects;
 };
 struct _hg_vm_t {
 	hg_quark_t           self;
-	hg_vm_state_t        vm_state;
+	hg_vm_state_t       *vm_state;
 	hg_vm_user_params_t  user_params;
 	hg_mem_t            *mem[HG_VM_MEM_END];
 	gint                 mem_id[HG_VM_MEM_END];

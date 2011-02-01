@@ -6537,7 +6537,6 @@ DEFUNC_OPER (restore)
 		return FALSE;
 	}
 	if (!hg_snapshot_restore(sn,
-				 &vm->vm_state,
 				 _hg_operator_restore_mark,
 				 vm)) {
 		hg_vm_set_error(vm, qself, HG_VM_e_invalidrestore);
@@ -6838,7 +6837,11 @@ DEFUNC_OPER (save)
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	hg_snapshot_save(sn, &vm->vm_state);
+	if (!hg_snapshot_save(sn)) {
+		HG_VM_UNLOCK (vm, q);
+		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		return FALSE;
+	}
 	HG_VM_UNLOCK (vm, q);
 
 	/* save the gstate too */
@@ -6856,7 +6859,7 @@ DEFUNC_OPER (save)
 
 	STACK_PUSH (ostack, q);
 
-	vm->vm_state.n_save_objects++;
+	vm->vm_state->n_save_objects++;
 
 	retval = TRUE;
 	SET_EXPECTED_OSTACK_SIZE (1);
@@ -8035,7 +8038,7 @@ DEFUNC_OPER (vmstatus)
 {
 	hg_mem_t *mem = hg_vm_get_mem(vm);
 
-	STACK_PUSH (ostack, HG_QINT (vm->vm_state.n_save_objects));
+	STACK_PUSH (ostack, HG_QINT (vm->vm_state->n_save_objects));
 	STACK_PUSH (ostack, HG_QINT (hg_mem_get_used_size(mem)));
 	STACK_PUSH (ostack, HG_QINT (hg_mem_get_total_size(mem) - hg_mem_get_used_size(mem)));
 
