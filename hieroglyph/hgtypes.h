@@ -30,6 +30,7 @@
 
 #include <stdint.h>
 #include <sys/types.h>
+#include <glib.h>
 #include <hieroglyph/hgmacros.h>
 
 HG_BEGIN_DECLS

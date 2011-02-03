@@ -49,6 +49,7 @@ hg_public_headers =						\
 	hgmark.h						\
 	hgmatrix.h						\
 	hgmem.h							\
+	hgmessage.h						\
 	hgname.h						\
 	hgnull.h						\
 	hgpath.h						\
@@ -99,6 +100,7 @@ hg_sources =							\
 	hggstate.c						\
 	hgmatrix.c						\
 	hgmem.c							\
+	hgmessage.c						\
 	hgname.c						\
 	hgpath.c						\
 	hgobject.c						\
