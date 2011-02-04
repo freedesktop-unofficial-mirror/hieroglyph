@@ -106,21 +106,21 @@ struct _hg_allocator_snapshot_private_t {
 };
 
 
-G_INLINE_FUNC hg_quark_t _hg_allocator_typebit_get_mask   (hg_allocator_typebit_t begin,
-							   hg_allocator_typebit_t end);
-G_INLINE_FUNC hg_quark_t _hg_allocator_typebit_round_value(hg_quark_t             q,
-							   hg_allocator_typebit_t begin,
-							   hg_allocator_typebit_t end);
+HG_INLINE_FUNC hg_quark_t _hg_allocator_typebit_get_mask   (hg_allocator_typebit_t begin,
+							    hg_allocator_typebit_t end);
+HG_INLINE_FUNC hg_quark_t _hg_allocator_typebit_round_value(hg_quark_t             q,
+							    hg_allocator_typebit_t begin,
+							    hg_allocator_typebit_t end);
 
-G_INLINE_FUNC hg_allocator_block_t  *_hg_allocator_get_block      (hg_pointer_t *p);
-G_INLINE_FUNC hg_quark_t             _hg_allocator_quark_build    (hg_int_t      page,
-								   hg_uint_t     idx);
-G_INLINE_FUNC hg_uint_t              _hg_allocator_quark_get_page (hg_quark_t    qdata);
-G_INLINE_FUNC hg_uint_t              _hg_allocator_quark_get_index(hg_quark_t    qdata);
+HG_INLINE_FUNC hg_allocator_block_t  *_hg_allocator_get_block      (hg_pointer_t *p);
+HG_INLINE_FUNC hg_quark_t             _hg_allocator_quark_build    (hg_int_t      page,
+								    hg_uint_t     idx);
+HG_INLINE_FUNC hg_uint_t              _hg_allocator_quark_get_page (hg_quark_t    qdata);
+HG_INLINE_FUNC hg_uint_t              _hg_allocator_quark_get_index(hg_quark_t    qdata);
 
 
 /** copied from hgquark.c **/
-G_INLINE_FUNC hg_quark_t
+HG_INLINE_FUNC hg_quark_t
 _hg_allocator_typebit_get_mask(hg_allocator_typebit_t begin,
 			       hg_allocator_typebit_t end)
 {
@@ -130,7 +130,7 @@ _hg_allocator_typebit_get_mask(hg_allocator_typebit_t begin,
 }
 
 /** copied from hgquark.c **/
-G_INLINE_FUNC hg_quark_t
+HG_INLINE_FUNC hg_quark_t
 _hg_allocator_typebit_round_value(hg_quark_t             q,
 				  hg_allocator_typebit_t begin,
 				  hg_allocator_typebit_t end)
@@ -138,13 +138,13 @@ _hg_allocator_typebit_round_value(hg_quark_t             q,
 	return q & ((1LL << (end - begin + 1)) - 1);
 }
 
-G_INLINE_FUNC hg_allocator_block_t *
+HG_INLINE_FUNC hg_allocator_block_t *
 _hg_allocator_get_block(hg_pointer_t *p)
 {
 	return (hg_allocator_block_t *)((hg_char_t *)(p) - HG_ALIGNED_TO_POINTER (sizeof (hg_allocator_block_t)));
 }
 
-G_INLINE_FUNC hg_quark_t
+HG_INLINE_FUNC hg_quark_t
 _hg_allocator_quark_build(hg_int_t  page,
 			  hg_uint_t idx)
 {
@@ -160,14 +160,14 @@ _hg_allocator_quark_build(hg_int_t  page,
 	return retval;
 }
 
-G_INLINE_FUNC hg_uint_t
+HG_INLINE_FUNC hg_uint_t
 _hg_allocator_quark_get_page(hg_quark_t qdata)
 {
 	return (qdata & _hg_allocator_typebit_get_mask(HG_ALLOC_TYPE_BIT_PAGE,
 						       HG_ALLOC_TYPE_BIT_PAGE_END)) >> HG_ALLOC_TYPE_BIT_PAGE;
 }
 
-G_INLINE_FUNC hg_uint_t
+HG_INLINE_FUNC hg_uint_t
 _hg_allocator_quark_get_index(hg_quark_t qdata)
 {
 	return (qdata & _hg_allocator_typebit_get_mask(HG_ALLOC_TYPE_BIT_INDEX,

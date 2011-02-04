@@ -127,6 +127,70 @@ call_a(2,3);
 CFLAGS=$_save_cflags
 AC_MSG_RESULT($have_gnuc_varargs)
 
+dnl inline
+AC_CACHE_CHECK([for __inline],hg_cv_has__inline,[
+	AC_COMPILE_IFELSE([
+	__inline int foo(void);
+	__inline int foo() {return 0;}
+	int main() {return foo();}
+	],
+	hg_cv_has__inline=yes,
+	hg_cv_has__inline=no,)
+])
+case x$hg_cv_has__inline in
+xyes)
+	AC_DEFINE(HG_HAVE___INLINE,1,[Have __inline keyword])
+esac
+AC_CACHE_CHECK([for __inline__],hg_cv_has__inline__,[
+	AC_COMPILE_IFELSE([
+	__inline__ int foo(void);
+	__inline__ int foo() {return 0;}
+	int main() {return foo();}
+	],
+	hg_cv_has__inline__=yes,
+	hg_cv_has__inline__=no,)
+])
+case x$hg_cv_has__inline__ in
+xyes)
+	AC_DEFINE(HG_HAVE___INLINE__,1,[Have __inline__ keyword])
+esac
+AC_CACHE_CHECK([for inline],hg_cv_hasinline,[
+	AC_COMPILE_IFELSE([
+	#undef inline
+	inline int foo(void);
+	inline int foo() {return 0;}
+	int main() {return foo();}
+	],
+	hg_cv_hasinline=yes,
+	hg_cv_hasinline=no,)
+])
+case x$hg_cv_hasinline in
+xyes)
+	AC_DEFINE(HG_HAVE_INLINE,1,[Have inline keyword])
+esac
+AC_MSG_CHECKING(if inline functions in headers work)
+AC_LINK_IFELSE([
+#if defined (HG_HAVE_INLINE) && defined (__GNUC__) && defined (__STRICT_ANSI__)
+#undef inline
+#define inline __inline__
+#elif !defined (HG_HAVE_INLINE)
+#undef inline
+#if defined (HG_HAVE___INLINE__)
+#define inline __inline__
+#elif defined (HG_HAVE___INLINE)
+#define inline __inline
+#endif
+#endif
+
+int hg_test_func2(int);
+
+static inline int
+hg_test_func1(void) {
+  return hg_test_func2(1);
+}
+int main(void) {int i = 1; return --i;}],[hg_can_inline=yes],[hg_can_inline=no])
+AC_MSG_RESULT($hg_can_inline)
+
 dnl ======================================================================
 dnl functions testing
 dnl ======================================================================
@@ -255,6 +319,26 @@ _______EOF
 
 HG_BEGIN_DECLS
 
+#ifdef __cplusplus
+#define HG_HAVE_INLINE		1
+#else /* !__cplusplus */
+$hg_inline
+#endif /* !__cplusplus */
+
+#ifdef __cplusplus
+#define HG_CAN_INLINE		1
+_______EOF
+
+	if test x$hg_can_inline = xyes; then
+		cat >>$outfile <<_______EOF
+#else /* !__cplusplus */
+#define HG_CAN_INLINE		1
+_______EOF
+	fi
+
+	cat >> $outfile <<_______EOF
+#endif
+
 _______EOF
 
 	if test x$hg_have_iso_c_varargs = xyes; then
@@ -303,6 +387,18 @@ _______EOF
 hg_have_gnuc_varargs=$have_gnuc_varargs
 hg_have_iso_c_varargs=$have_iso_c_varargs
 hg_have_iso_cxx_varargs=$have_iso_cxx_varargs
+if test x$hg_cv_hasinline = xyes; then
+	hg_inline='#define HG_HAVE_INLINE		1'
+fi
+if test x$hg_cv_has__inline = xyes; then
+	hg_inline="\$hg_inline
+#define HG_HAVE___INLINE	1"
+fi
+if test x$hg_cv_has__inline__ = xyes; then
+	hg_inline="\$hg_inline
+#define HG_HAVE___INLINE__	1"
+fi
+hg_can_inline=$hg_can_inline
 ])
 AC_CONFIG_FILES([
 	Makefile

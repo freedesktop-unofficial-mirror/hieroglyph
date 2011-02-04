@@ -43,7 +43,7 @@ static hg_mem_t *__hg_mem_spool[HG_MAX_MEM];
 static hg_mem_t *__hg_mem_master = NULL;
 
 /*< private >*/
-G_INLINE_FUNC void
+HG_INLINE_FUNC void
 _hg_mem_gc_init(hg_mem_t *mem)
 {
 	if (mem->slave_finalizer_table) {
@@ -68,7 +68,7 @@ _hg_mem_call_gc_finalizer(gpointer key,
 	func(mem, qdata);
 }
 
-G_INLINE_FUNC void
+HG_INLINE_FUNC void
 _hg_mem_gc_finish(hg_mem_t *mem,
 		  gboolean  was_error)
 {

@@ -331,7 +331,7 @@ _hg_array_maybe_expand(hg_array_t *array,
 	return TRUE;
 }
 
-G_INLINE_FUNC void
+HG_INLINE_FUNC void
 _hg_array_convert_to_matrix(hg_array_t  *array,
 			    hg_matrix_t *matrix)
 {
@@ -348,7 +348,7 @@ _hg_array_convert_to_matrix(hg_array_t  *array,
 	}
 }
 
-G_INLINE_FUNC void
+HG_INLINE_FUNC void
 _hg_array_convert_from_matrix(hg_array_t  *array,
 			      hg_matrix_t *matrix)
 {

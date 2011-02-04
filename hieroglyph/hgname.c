@@ -48,7 +48,7 @@ struct _hg_name_t {
 static hg_name_t __hg_name_pool = {0, 0, NULL, NULL};
 
 /*< private >*/
-G_INLINE_FUNC hg_quark_t
+HG_INLINE_FUNC hg_quark_t
 _hg_name_new(const gchar *string)
 {
 	hg_quark_t retval;

@@ -83,10 +83,10 @@ hg_bool_t        hg_quark_compare       (hg_quark_t               qdata1,
                                          hg_pointer_t             user_data);
 
 
-G_INLINE_FUNC hg_bool_t hg_type_is_simple        (hg_type_t               type);
-G_INLINE_FUNC hg_bool_t hg_quark_is_simple_object(hg_quark_t              quark);
-G_INLINE_FUNC hg_bool_t hg_quark_has_mem_id      (hg_quark_t              quark,
-						  hg_uint_t               id);
+HG_INLINE_FUNC hg_bool_t hg_type_is_simple        (hg_type_t               type);
+HG_INLINE_FUNC hg_bool_t hg_quark_is_simple_object(hg_quark_t              quark);
+HG_INLINE_FUNC hg_bool_t hg_quark_has_mem_id      (hg_quark_t              quark,
+						   hg_uint_t               id);
 
 /**
  * hg_type_is_simple:
@@ -96,7 +96,7 @@ G_INLINE_FUNC hg_bool_t hg_quark_has_mem_id      (hg_quark_t              quark,
  *
  * Returns:
  */
-G_INLINE_FUNC hg_bool_t
+HG_INLINE_FUNC hg_bool_t
 hg_type_is_simple(hg_type_t type)
 {
 	return type == HG_TYPE_NULL ||
@@ -116,7 +116,7 @@ hg_type_is_simple(hg_type_t type)
  *
  * Returns:
  */
-G_INLINE_FUNC hg_bool_t
+HG_INLINE_FUNC hg_bool_t
 hg_quark_is_simple_object(hg_quark_t quark)
 {
 	hg_type_t t = hg_quark_get_type(quark);
@@ -132,7 +132,7 @@ hg_quark_is_simple_object(hg_quark_t quark)
  *
  * Returns:
  */
-G_INLINE_FUNC hg_bool_t
+HG_INLINE_FUNC hg_bool_t
 hg_quark_has_mem_id(hg_quark_t quark,
 		    hg_uint_t  id)
 {

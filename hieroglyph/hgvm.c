@@ -85,7 +85,7 @@ hg_mem_t *__hg_vm_mem = NULL;
 gboolean __hg_vm_is_initialized = FALSE;
 
 /*< private >*/
-G_INLINE_FUNC hg_mem_t *
+HG_INLINE_FUNC hg_mem_t *
 _hg_vm_get_mem(hg_vm_t    *vm,
 	       hg_quark_t  quark)
 {
@@ -103,7 +103,7 @@ _hg_vm_get_mem(hg_vm_t    *vm,
 	return retval;
 }
 
-G_INLINE_FUNC gpointer
+HG_INLINE_FUNC gpointer
 _hg_vm_real_lock_object(hg_vm_t      *vm,
 			hg_quark_t    qdata,
 			const gchar  *pretty_function,
@@ -115,7 +115,7 @@ _hg_vm_real_lock_object(hg_vm_t      *vm,
 					      error);
 }
 
-G_INLINE_FUNC void
+HG_INLINE_FUNC void
 _hg_vm_real_unlock_object(hg_vm_t    *vm,
 			  hg_quark_t  qdata)
 {
@@ -156,7 +156,7 @@ _hg_vm_real_dict_remove(hg_mem_t    *mem,
 	return !x->result || x->remove_all;
 }
 
-G_INLINE_FUNC gchar *
+HG_INLINE_FUNC gchar *
 _hg_vm_find_file(const gchar *initfile)
 {
 	const gchar *env = g_getenv("HIEROGLYPH_LIB_PATH");

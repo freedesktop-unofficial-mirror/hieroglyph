@@ -130,8 +130,8 @@ union _hg_real_ieee754_t {
 	} mpn;
 };
 
-G_INLINE_FUNC hg_quark_t hg_real_convert_from_native(hg_real_t  vreal);
-G_INLINE_FUNC hg_real_t  hg_real_convert_to_native  (hg_quark_t qreal);
+HG_INLINE_FUNC hg_quark_t hg_real_convert_from_native(hg_real_t  vreal);
+HG_INLINE_FUNC hg_real_t  hg_real_convert_to_native  (hg_quark_t qreal);
 
 /**
  * hg_real_convert_from_native:
@@ -141,7 +141,7 @@ G_INLINE_FUNC hg_real_t  hg_real_convert_to_native  (hg_quark_t qreal);
  *
  * Returns:
  */
-G_INLINE_FUNC hg_quark_t
+HG_INLINE_FUNC hg_quark_t
 hg_real_convert_from_native(hg_real_t vreal)
 {
 	hg_real_ieee754_t v;
@@ -173,7 +173,7 @@ hg_real_convert_from_native(hg_real_t vreal)
  *
  * Returns:
  */
-G_INLINE_FUNC hg_real_t
+HG_INLINE_FUNC hg_real_t
 hg_real_convert_to_native(hg_quark_t qreal)
 {
 	hg_real_ieee754_t v;

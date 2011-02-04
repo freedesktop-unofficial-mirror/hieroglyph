@@ -65,41 +65,41 @@ enum _hg_typebit_t {
 	HG_TYPEBIT_END /* 31 */
 };
 
-G_INLINE_FUNC hg_quark_t _hg_typebit_shift      (hg_typebit_t  typebit);
-G_INLINE_FUNC hg_quark_t _hg_typebit_unshift    (hg_quark_t    q);
-G_INLINE_FUNC hg_quark_t _hg_typebit_get_mask   (hg_typebit_t  begin,
-						 hg_typebit_t  end);
-G_INLINE_FUNC hg_quark_t _hg_typebit_clear_range(hg_quark_t    q,
-						 hg_typebit_t  begin,
-						 hg_typebit_t  end);
-G_INLINE_FUNC hg_quark_t _hg_typebit_round_value(hg_quark_t    q,
-						 hg_typebit_t  begin,
-						 hg_typebit_t  end);
-G_INLINE_FUNC void       _hg_typebit_set_value  (hg_quark_t   *q,
-						 hg_typebit_t  begin,
-						 hg_typebit_t  end,
-						 hg_quark_t    v);
-G_INLINE_FUNC hg_quark_t _hg_typebit_get_value_ (hg_quark_t    v,
-						 hg_typebit_t  begin,
-						 hg_typebit_t  end);
-G_INLINE_FUNC hg_quark_t _hg_typebit_get_value  (hg_quark_t    v,
-						 hg_typebit_t  begin,
-						 hg_typebit_t  end);
+HG_INLINE_FUNC hg_quark_t _hg_typebit_shift      (hg_typebit_t  typebit);
+HG_INLINE_FUNC hg_quark_t _hg_typebit_unshift    (hg_quark_t    q);
+HG_INLINE_FUNC hg_quark_t _hg_typebit_get_mask   (hg_typebit_t  begin,
+						  hg_typebit_t  end);
+HG_INLINE_FUNC hg_quark_t _hg_typebit_clear_range(hg_quark_t    q,
+						  hg_typebit_t  begin,
+						  hg_typebit_t  end);
+HG_INLINE_FUNC hg_quark_t _hg_typebit_round_value(hg_quark_t    q,
+						  hg_typebit_t  begin,
+						  hg_typebit_t  end);
+HG_INLINE_FUNC void       _hg_typebit_set_value  (hg_quark_t   *q,
+						  hg_typebit_t  begin,
+						  hg_typebit_t  end,
+						  hg_quark_t    v);
+HG_INLINE_FUNC hg_quark_t _hg_typebit_get_value_ (hg_quark_t    v,
+						  hg_typebit_t  begin,
+						  hg_typebit_t  end);
+HG_INLINE_FUNC hg_quark_t _hg_typebit_get_value  (hg_quark_t    v,
+						  hg_typebit_t  begin,
+						  hg_typebit_t  end);
 
 
-G_INLINE_FUNC hg_quark_t
+HG_INLINE_FUNC hg_quark_t
 _hg_typebit_shift(hg_typebit_t typebit)
 {
 	return 1LL << (typebit + HG_TYPEBIT_SHIFT);
 }
 
-G_INLINE_FUNC hg_quark_t
+HG_INLINE_FUNC hg_quark_t
 _hg_typebit_unshift(hg_quark_t q)
 {
 	return q >> HG_TYPEBIT_SHIFT;
 }
 
-G_INLINE_FUNC hg_quark_t
+HG_INLINE_FUNC hg_quark_t
 _hg_typebit_get_mask(hg_typebit_t begin,
 		     hg_typebit_t end)
 {
@@ -113,7 +113,7 @@ _hg_typebit_get_mask(hg_typebit_t begin,
 	return (((1LL << (e - b + 1)) - 1) << b);
 }
 
-G_INLINE_FUNC hg_quark_t
+HG_INLINE_FUNC hg_quark_t
 _hg_typebit_clear_range(hg_quark_t   q,
 			hg_typebit_t begin,
 			hg_typebit_t end)
@@ -121,7 +121,7 @@ _hg_typebit_clear_range(hg_quark_t   q,
 	return q & ~(_hg_typebit_get_mask(begin, end));
 }
 
-G_INLINE_FUNC hg_quark_t
+HG_INLINE_FUNC hg_quark_t
 _hg_typebit_round_value(hg_quark_t   q,
 			hg_typebit_t begin,
 			hg_typebit_t end)
@@ -129,7 +129,7 @@ _hg_typebit_round_value(hg_quark_t   q,
 	return q & ((1LL << (end - begin + 1)) - 1);
 }
 
-G_INLINE_FUNC void
+HG_INLINE_FUNC void
 _hg_typebit_set_value(hg_quark_t   *q,
 		      hg_typebit_t  begin,
 		      hg_typebit_t  end,
@@ -141,7 +141,7 @@ _hg_typebit_set_value(hg_quark_t   *q,
 		(_hg_typebit_round_value(v, begin, end) << (begin + HG_TYPEBIT_SHIFT));
 }
 
-G_INLINE_FUNC hg_quark_t
+HG_INLINE_FUNC hg_quark_t
 _hg_typebit_get_value_(hg_quark_t   v,
 		       hg_typebit_t begin,
 		       hg_typebit_t end)
@@ -149,7 +149,7 @@ _hg_typebit_get_value_(hg_quark_t   v,
 	return (v & _hg_typebit_get_mask(begin, end)) >> begin;
 }
 
-G_INLINE_FUNC hg_quark_t
+HG_INLINE_FUNC hg_quark_t
 _hg_typebit_get_value(hg_quark_t   v,
 		      hg_typebit_t begin,
 		      hg_typebit_t end)

@@ -32,25 +32,55 @@
 
 /* enable a debugging code */
 #if defined(GNOME_ENABLE_DEBUG) || defined(DEBUG)
-#define HG_DEBUG
-#define hg_d(x)		x
+#  define HG_DEBUG
+#  define hg_d(x)		x
 #else
-#define hg_d(x)
+#  define hg_d(x)
 #endif /* GNOME_ENABLE_DEBUG || DEBUG */
 
 /* Guard C code in headers, while including them from C++ */
 #ifdef __cplusplus
-#define HG_BEGIN_DECLS	extern "C" {
-#define HG_END_DECLS	}
+#  define HG_BEGIN_DECLS	extern "C" {
+#  define HG_END_DECLS		}
 #else
-#define HG_BEGIN_DECLS
-#define HG_END_DECLS
+#  define HG_BEGIN_DECLS
+#  define HG_END_DECLS
 #endif
 
 /* statement wrappers */
 #if !(defined (HG_STMT_START) && defined (HG_STMT_END))
-#define HG_STMT_START	do
-#define HG_STMT_END	while (0)
+#  define HG_STMT_START	do
+#  define HG_STMT_END	while (0)
+#endif
+
+/* inline wrapper */
+/* inlining hassle. for compilers thta don't allow the 'inline' keyword,
+ * mostly because of strict ANSI C compliance or dumbness, we try to fall
+ * back to either '__inline__' or '__inline'.
+ * HG_CAN_INLINE is defined in hgconfig.h if the compiler seems to be
+ * actually *capable* to do function inlining, in which case inline
+ * function bodies do make sense. we also define HG_INLINE_FUNC to properly
+ * export the function prototypes if no inlining can be performed.
+ */
+#if defined (HG_HAVE_INLINE) && defined (__GNUC__) && defined (__STRICT_ANSI__)
+#  undef inline
+#  define inline	__inline__
+#elif !defined (HG_HAVE_INLINE)
+#  undef inline
+#  if defined (HG_HAVE___INLINE__)
+#    define inline __inline__
+#  elif defined (HG_HAVE___INLINE)
+#    define inline __inline
+#  else /* !inline && !__inline__ && !__inline */
+#    define inline /* don't inline, then */
+#  endif
+#endif
+#if defined (__GNUC__)
+#  define HG_INLINE_FUNC	static __inline __attribute__ ((unused))
+#elif defined (HG_CAN_INLINE)
+#  define HG_INLINE_FUNC	static inline
+#else /* can't inline */
+#  define HG_INLINE_FUNC
 #endif
 
 /*

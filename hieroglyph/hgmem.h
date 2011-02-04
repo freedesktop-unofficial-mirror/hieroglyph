@@ -123,12 +123,12 @@ gboolean                      hg_mem_reserved_spool_foreach              (hg_mem
                                                                           gpointer                      user_data,
                                                                           GError                       **error);
 
-G_INLINE_FUNC gpointer hg_mem_lock_object_with_gerror(hg_mem_t     *mem,
-						      hg_quark_t    quark,
-						      const gchar  *pretty_function,
-						      GError      **error);
+HG_INLINE_FUNC gpointer hg_mem_lock_object_with_gerror(hg_mem_t     *mem,
+						       hg_quark_t    quark,
+						       const gchar  *pretty_function,
+						       GError      **error);
 
-G_INLINE_FUNC gpointer
+HG_INLINE_FUNC gpointer
 hg_mem_lock_object_with_gerror(hg_mem_t     *mem,
 			       hg_quark_t    quark,
 			       const gchar  *pretty_function,

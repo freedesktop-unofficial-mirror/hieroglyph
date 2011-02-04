@@ -26,7 +26,6 @@
 #endif
 
 #include <stdlib.h>
-#include <glib.h>
 #include "hgerror.h"
 #include "hgmem.h"
 #include "hgstack.h"
@@ -49,7 +48,7 @@ struct _hg_stack_spool_t {
 HG_DEFINE_VTABLE_WITH (stack, NULL, NULL, NULL);
 
 /*< private >*/
-G_INLINE_FUNC hg_slist_t *
+HG_INLINE_FUNC hg_slist_t *
 _hg_stack_spooler_new_node(hg_stack_spool_t *spool)
 {
 	hg_slist_t *retval;
@@ -66,7 +65,7 @@ _hg_stack_spooler_new_node(hg_stack_spool_t *spool)
 	return retval;
 }
 
-G_INLINE_FUNC void
+HG_INLINE_FUNC void
 _hg_stack_spooler_free_node(hg_stack_spool_t *spool,
 			    hg_slist_t       *node)
 {
@@ -175,7 +174,7 @@ _hg_object_stack_compare(hg_object_t             *o1,
 	return o1->self == o2->self;
 }
 
-G_INLINE_FUNC hg_slist_t *
+HG_INLINE_FUNC hg_slist_t *
 _hg_slist_new(hg_mem_t *mem)
 {
 	hg_quark_t self;
@@ -196,7 +195,7 @@ _hg_slist_new(hg_mem_t *mem)
 	return l;
 }
 
-G_INLINE_FUNC void
+HG_INLINE_FUNC void
 _hg_slist_free1(hg_mem_t   *mem,
 		hg_slist_t *list)
 {
@@ -204,7 +203,7 @@ _hg_slist_free1(hg_mem_t   *mem,
 	hg_mem_free(mem, list->self);
 }
 
-G_INLINE_FUNC void
+HG_INLINE_FUNC void
 _hg_slist_free(hg_mem_t   *mem,
 	       hg_slist_t *list)
 {

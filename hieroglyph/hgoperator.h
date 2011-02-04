@@ -212,7 +212,7 @@ typedef hg_bool_t (* hg_operator_func_t) (hg_vm_t  *vm,
 	} HG_STMT_END
 
 
-G_INLINE_FUNC hg_quark_t hg_operator_new(guint encoding);
+HG_INLINE_FUNC hg_quark_t hg_operator_new(guint encoding);
 
 /**
  * hg_operator_new:
@@ -222,7 +222,7 @@ G_INLINE_FUNC hg_quark_t hg_operator_new(guint encoding);
  *
  * Returns:
  */
-G_INLINE_FUNC hg_quark_t
+HG_INLINE_FUNC hg_quark_t
 hg_operator_new(guint encoding)
 {
 	hg_quark_t retval = hg_quark_new(HG_TYPE_OPER, encoding);

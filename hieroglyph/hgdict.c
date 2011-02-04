@@ -398,7 +398,7 @@ _hg_object_dict_node_compare(hg_object_t             *o1,
 	return FALSE;
 }
 
-G_INLINE_FUNC hg_quark_t
+HG_INLINE_FUNC hg_quark_t
 _hg_dict_node_new(hg_mem_t *mem,
 		  gpointer *ret,
 		  gpointer *ret_key,
@@ -420,7 +420,7 @@ _hg_dict_node_new(hg_mem_t *mem,
 	return retval;
 }
 
-G_INLINE_FUNC void
+HG_INLINE_FUNC void
 _hg_dict_node_free(hg_mem_t   *mem,
 		   hg_quark_t  qdata)
 {
@@ -437,7 +437,7 @@ _hg_dict_node_free(hg_mem_t   *mem,
 	hg_mem_free(mem, qdata);
 }
 
-G_INLINE_FUNC gboolean
+HG_INLINE_FUNC gboolean
 _hg_dict_node_insert(hg_mem_t    *mem,
 		     hg_quark_t   qnode,
 		     hg_quark_t  *qkey,
@@ -491,7 +491,7 @@ _hg_dict_node_insert(hg_mem_t    *mem,
 	return retval;
 }
 
-G_INLINE_FUNC void
+HG_INLINE_FUNC void
 _hg_dict_node_insert_data(hg_dict_node_t *node,
 			  hg_quark_t      *qkeys,
 			  hg_quark_t      *qvals,
@@ -517,7 +517,7 @@ _hg_dict_node_insert_data(hg_dict_node_t *node,
 	node->n_data++;
 }
 
-G_INLINE_FUNC void
+HG_INLINE_FUNC void
 _hg_dict_node_balance(hg_dict_node_t  *node,
 		      hg_quark_t      *qnode_keys,
 		      hg_quark_t      *qnode_vals,
@@ -581,7 +581,7 @@ _hg_dict_node_balance(hg_dict_node_t  *node,
 	hg_mem_reserved_spool_remove(node->o.mem, q);
 }
 
-G_INLINE_FUNC gboolean
+HG_INLINE_FUNC gboolean
 _hg_dict_node_remove(hg_mem_t    *mem,
 		     hg_quark_t   qnode,
 		     hg_quark_t  *qkey,
@@ -678,7 +678,7 @@ _hg_dict_node_remove(hg_mem_t    *mem,
 	return retval;
 }
 
-G_INLINE_FUNC gboolean
+HG_INLINE_FUNC gboolean
 _hg_dict_node_remove_data(hg_dict_node_t  *node,
 			  hg_quark_t      *qkeys,
 			  hg_quark_t      *qvals,
@@ -695,7 +695,7 @@ _hg_dict_node_remove_data(hg_dict_node_t  *node,
 	return --(node->n_data) < __hg_dict_node_size;
 }
 
-G_INLINE_FUNC gboolean
+HG_INLINE_FUNC gboolean
 _hg_dict_node_restore(hg_dict_node_t  *node,
 		      hg_quark_t      *qkeys,
 		      hg_quark_t      *qvals,
@@ -740,7 +740,7 @@ _hg_dict_node_restore(hg_dict_node_t  *node,
 	return FALSE;
 }
 
-G_INLINE_FUNC void
+HG_INLINE_FUNC void
 _hg_dict_node_restore_right_balance(hg_dict_node_t  *node,
 				    hg_quark_t      *qkeys,
 				    hg_quark_t      *qvals,
@@ -778,7 +778,7 @@ _hg_dict_node_restore_right_balance(hg_dict_node_t  *node,
 	HG_DICT_NODE_UNLOCK (node->o.mem, qleft, ql);
 }
 
-G_INLINE_FUNC void
+HG_INLINE_FUNC void
 _hg_dict_node_restore_left_balance(hg_dict_node_t  *node,
 				   hg_quark_t      *qkeys,
 				   hg_quark_t      *qvals,
@@ -816,7 +816,7 @@ _hg_dict_node_restore_left_balance(hg_dict_node_t  *node,
 	HG_DICT_NODE_UNLOCK (node->o.mem, qleft, ql);
 }
 
-G_INLINE_FUNC gboolean
+HG_INLINE_FUNC gboolean
 _hg_dict_node_combine(hg_dict_node_t  *node,
 		      hg_quark_t      *qkeys,
 		      hg_quark_t      *qvals,
@@ -858,7 +858,7 @@ _hg_dict_node_combine(hg_dict_node_t  *node,
 	return need_restore;
 }
 
-G_INLINE_FUNC void
+HG_INLINE_FUNC void
 _hg_dict_node_foreach(hg_mem_t                 *mem,
 		      hg_quark_t                qnode,
 		      hg_dict_traverse_func_t   func,

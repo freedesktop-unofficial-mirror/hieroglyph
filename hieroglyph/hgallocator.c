@@ -65,7 +65,7 @@ G_LOCK_DEFINE_STATIC (allocator);
 
 /*< private >*/
 
-G_INLINE_FUNC gsize
+HG_INLINE_FUNC gsize
 hg_allocator_get_page_size(void)
 {
 	static gsize retval = ((1LL << (HG_ALLOC_TYPE_BIT_INDEX_END - HG_ALLOC_TYPE_BIT_INDEX + 1)) - 1);
@@ -73,7 +73,7 @@ hg_allocator_get_page_size(void)
 	return retval;
 }
 
-G_INLINE_FUNC gsize
+HG_INLINE_FUNC gsize
 hg_allocator_get_max_page(void)
 {
 	static gsize retval = ((1LL << (HG_ALLOC_TYPE_BIT_PAGE_END - HG_ALLOC_TYPE_BIT_PAGE + 1)) - 1);
@@ -81,14 +81,14 @@ hg_allocator_get_max_page(void)
 	return retval;
 }
 
-G_INLINE_FUNC hg_pointer_t
+HG_INLINE_FUNC hg_pointer_t
 hg_allocator_get_allocated_object(hg_allocator_block_t *block)
 {
 	return (hg_pointer_t)((gchar *)(block) + HG_ALIGNED_TO_POINTER (sizeof (hg_allocator_block_t)));
 }
 
 /** bitmap operation **/
-G_INLINE_FUNC hg_allocator_bitmap_t *
+HG_INLINE_FUNC hg_allocator_bitmap_t *
 _hg_allocator_bitmap_new(gsize size)
 {
 	hg_allocator_bitmap_t *retval;
@@ -120,7 +120,7 @@ _hg_allocator_bitmap_new(gsize size)
 	return retval;
 }
 
-G_INLINE_FUNC gint32
+HG_INLINE_FUNC gint32
 _hg_allocator_bitmap_get_free_page(hg_allocator_bitmap_t *bitmap)
 {
 	gint32 i, max_page = hg_allocator_get_max_page();
@@ -133,7 +133,7 @@ _hg_allocator_bitmap_get_free_page(hg_allocator_bitmap_t *bitmap)
 	return -1;
 }
 
-G_INLINE_FUNC void
+HG_INLINE_FUNC void
 _hg_allocator_bitmap_destroy(gpointer data)
 {
 	hg_allocator_bitmap_t *bitmap = data;
@@ -150,7 +150,7 @@ _hg_allocator_bitmap_destroy(gpointer data)
 	g_free(bitmap);
 }
 
-G_INLINE_FUNC gint32
+HG_INLINE_FUNC gint32
 _hg_allocator_bitmap_add_page(hg_allocator_bitmap_t *bitmap,
 			      gsize                  size)
 {
@@ -165,7 +165,7 @@ _hg_allocator_bitmap_add_page(hg_allocator_bitmap_t *bitmap,
 	return page;
 }
 
-G_INLINE_FUNC gboolean
+HG_INLINE_FUNC gboolean
 _hg_allocator_bitmap_add_page_to(hg_allocator_bitmap_t *bitmap,
 				 gint32                 page,
 				 gsize                  size)
@@ -190,7 +190,7 @@ _hg_allocator_bitmap_add_page_to(hg_allocator_bitmap_t *bitmap,
 	return TRUE;
 }
 
-G_INLINE_FUNC hg_quark_t
+HG_INLINE_FUNC hg_quark_t
 _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 			   gsize                  size)
 {
@@ -245,7 +245,7 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 	return Qnil;
 }
 
-G_INLINE_FUNC hg_quark_t
+HG_INLINE_FUNC hg_quark_t
 _hg_allocator_bitmap_realloc(hg_allocator_bitmap_t *bitmap,
 			     hg_quark_t             index_,
 			     gsize                  old_size,
@@ -306,7 +306,7 @@ _hg_allocator_bitmap_realloc(hg_allocator_bitmap_t *bitmap,
 	return _hg_allocator_bitmap_alloc(bitmap, size);
 }
 
-G_INLINE_FUNC void
+HG_INLINE_FUNC void
 _hg_allocator_bitmap_free(hg_allocator_bitmap_t *bitmap,
 			  hg_quark_t             index_,
 			  gsize                  size)
@@ -339,7 +339,7 @@ _hg_allocator_bitmap_free(hg_allocator_bitmap_t *bitmap,
 #endif
 }
 
-G_INLINE_FUNC void
+HG_INLINE_FUNC void
 _hg_allocator_bitmap_mark(hg_allocator_bitmap_t *bitmap,
 			  gint32                 page,
 			  guint32                index_)
@@ -351,7 +351,7 @@ _hg_allocator_bitmap_mark(hg_allocator_bitmap_t *bitmap,
 	bitmap->bitmaps[page][(index_ - 1) / sizeof (guint32)] |= 1 << ((index_ - 1) % sizeof (guint32));
 }
 
-G_INLINE_FUNC void
+HG_INLINE_FUNC void
 _hg_allocator_bitmap_clear(hg_allocator_bitmap_t *bitmap,
 			   gint32                 page,
 			   guint32                index_)
@@ -362,7 +362,7 @@ _hg_allocator_bitmap_clear(hg_allocator_bitmap_t *bitmap,
 	bitmap->bitmaps[page][(index_ - 1) / sizeof (guint32)] &= ~(1 << ((index_ - 1) % sizeof (guint32)));
 }
 
-G_INLINE_FUNC gboolean
+HG_INLINE_FUNC gboolean
 _hg_allocator_bitmap_is_marked(hg_allocator_bitmap_t *bitmap,
 			       gint32                 page,
 			       guint32                index_)
@@ -373,7 +373,7 @@ _hg_allocator_bitmap_is_marked(hg_allocator_bitmap_t *bitmap,
 	return bitmap->bitmaps[page][(index_ - 1) / sizeof (guint32)] & 1 << ((index_ - 1) % sizeof (guint32));
 }
 
-G_INLINE_FUNC gboolean
+HG_INLINE_FUNC gboolean
 _hg_allocator_bitmap_range_mark(hg_allocator_bitmap_t *bitmap,
 				gint32                 page,
 				guint32               *index_,
@@ -409,7 +409,7 @@ _hg_allocator_bitmap_range_mark(hg_allocator_bitmap_t *bitmap,
 	return FALSE;
 }
 
-G_INLINE_FUNC hg_allocator_bitmap_t *
+HG_INLINE_FUNC hg_allocator_bitmap_t *
 _hg_allocator_bitmap_copy(hg_allocator_bitmap_t *bitmap)
 {
 	hg_allocator_bitmap_t *retval = _hg_allocator_bitmap_new(bitmap->size[0] * BLOCK_SIZE);
@@ -434,7 +434,7 @@ _hg_allocator_bitmap_copy(hg_allocator_bitmap_t *bitmap)
 	return retval;
 }
 
-G_INLINE_FUNC void
+HG_INLINE_FUNC void
 _hg_allocator_bitmap_dump(hg_allocator_bitmap_t *bitmap,
 			  gint32                 page)
 {
@@ -640,7 +640,7 @@ _hg_allocator_free(hg_allocator_data_t *data,
 	}
 }
 
-G_INLINE_FUNC gpointer
+HG_INLINE_FUNC gpointer
 _hg_allocator_get_internal_block(hg_allocator_private_t *priv,
 				 hg_quark_t              index_,
 				 gboolean                initialize)
@@ -654,7 +654,7 @@ _hg_allocator_get_internal_block(hg_allocator_private_t *priv,
 	return _hg_allocator_get_internal_block_from_page_and_index(priv, page, idx, initialize);
 }
 
-G_INLINE_FUNC gpointer
+HG_INLINE_FUNC gpointer
 _hg_allocator_get_internal_block_from_page_and_index(hg_allocator_private_t *priv,
 						     gint32                  page,
 						     guint32                 idx,
@@ -679,7 +679,7 @@ _hg_allocator_get_internal_block_from_page_and_index(hg_allocator_private_t *pri
 	return retval;
 }
 
-G_INLINE_FUNC gpointer
+HG_INLINE_FUNC gpointer
 _hg_allocator_real_lock_object(hg_allocator_data_t *data,
 			       hg_quark_t           index_)
 {
@@ -722,7 +722,7 @@ _hg_allocator_lock_object(hg_allocator_data_t *data,
 	return NULL;
 }
 
-G_INLINE_FUNC void
+HG_INLINE_FUNC void
 _hg_allocator_real_unlock_object(hg_allocator_block_t *block)
 {
 	gint old_val;
