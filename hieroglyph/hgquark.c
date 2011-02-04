@@ -25,7 +25,6 @@
 #include "config.h"
 #endif
 
-#include <glib.h>
 #include "hgreal.h"
 #include "hgtypebit-private.h"
 #include "hgquark.h"

@@ -30,23 +30,22 @@
 #endif
 
 #include <readline.h>
-#include <glib.h>
 #define PLUGIN
 #include "hg.h"
 
 
-static gchar    *_libedit_get_line    (hg_lineedit_t  *lineedit,
-                                       const gchar    *prompt,
-                                       gpointer        user_data);
-static void      _libedit_add_history (hg_lineedit_t  *lineedit,
-                                       const gchar    *history,
-                                       gpointer        user_data);
-static gboolean  _libedit_load_history(hg_lineedit_t  *lineedit,
-                                       const gchar    *historyfile,
-                                       gpointer        user_data);
-static gboolean  _libedit_save_history(hg_lineedit_t  *lineedit,
-                                       const gchar    *historyfile,
-                                       gpointer        user_data);
+static hg_char_t *_libedit_get_line    (hg_lineedit_t  *lineedit,
+					const gchar    *prompt,
+					hg_pointer_t    user_data);
+static void       _libedit_add_history (hg_lineedit_t  *lineedit,
+					const gchar    *history,
+					hg_pointer_t    user_data);
+static hg_bool_t  _libedit_load_history(hg_lineedit_t  *lineedit,
+					const gchar    *historyfile,
+					hg_pointer_t    user_data);
+static hg_bool_t  _libedit_save_history(hg_lineedit_t  *lineedit,
+					const gchar    *historyfile,
+					hg_pointer_t    user_data);
 
 PROTO_PLUGIN (libedit);
 
@@ -64,12 +63,12 @@ static hg_lineedit_vtable_t __libedit_lineedit_vtable = {
 static hg_quark_t __libedit_enc_list[HG_libedit_enc_END];
 
 /*< private >*/
-static gchar *
-_libedit_get_line(hg_lineedit_t *lineedit,
-		  const gchar   *prompt,
-		  gpointer       user_data)
+static hg_char_t *
+_libedit_get_line(hg_lineedit_t   *lineedit,
+		  const hg_char_t *prompt,
+		  hg_pointer_t     user_data)
 {
-	gchar *retval;
+	hg_char_t *retval;
 
 	if (prompt == NULL)
 		retval = readline("");
@@ -80,9 +79,9 @@ _libedit_get_line(hg_lineedit_t *lineedit,
 }
 
 static void
-_libedit_add_history(hg_lineedit_t *lineedit,
-		     const gchar   *history,
-		     gpointer       user_data)
+_libedit_add_history(hg_lineedit_t   *lineedit,
+		     const hg_char_t *history,
+		     hg_pointer_t     user_data)
 {
 	hg_return_if_fail (history != NULL);
 
@@ -95,10 +94,10 @@ _libedit_add_history(hg_lineedit_t *lineedit,
 	add_history(history);
 }
 
-static gboolean
-_libedit_load_history(hg_lineedit_t *lineedit,
-		      const gchar   *historyfile,
-		      gpointer       user_data)
+static hg_bool_t
+_libedit_load_history(hg_lineedit_t   *lineedit,
+		      const hg_char_t *historyfile,
+		      hg_pointer_t     user_data)
 {
 	hg_return_val_if_fail (historyfile != NULL, FALSE);
 
@@ -107,10 +106,10 @@ _libedit_load_history(hg_lineedit_t *lineedit,
 	return TRUE;
 }
 
-static gboolean
-_libedit_save_history(hg_lineedit_t *lineedit,
-		      const gchar   *historyfile,
-		      gpointer       user_data)
+static hg_bool_t
+_libedit_save_history(hg_lineedit_t   *lineedit,
+		      const hg_char_t *historyfile,
+		      hg_pointer_t     user_data)
 {
 	hg_return_val_if_fail (historyfile != NULL, FALSE);
 
@@ -124,8 +123,8 @@ DEFUNC_OPER (private_loadhistory)
 {
 	hg_quark_t arg0;
 	hg_string_t *s;
-	gchar *cstr, *filename, *histfile;
-	const gchar *env;
+	hg_char_t *cstr, *filename, *histfile;
+	const hg_char_t *env;
 
 	CHECK_STACK (ostack, 1);
 
@@ -164,8 +163,8 @@ DEFUNC_OPER (private_savehistory)
 {
 	hg_quark_t arg0;
 	hg_string_t *s;
-	gchar *cstr, *filename, *histfile;
-	const gchar *env;
+	hg_char_t *cstr, *filename, *histfile;
+	const hg_char_t *env;
 
 	CHECK_STACK (ostack, 1);
 
@@ -199,7 +198,7 @@ DEFUNC_OPER (private_savehistory)
 	SET_EXPECTED_OSTACK_SIZE (-1);
 } DEFUNC_OPER_END
 
-static gboolean
+static hg_bool_t
 _libedit_init(void)
 {
 	gint i;
@@ -211,20 +210,20 @@ _libedit_init(void)
 	return TRUE;
 }
 
-static gboolean
+static hg_bool_t
 _libedit_finalize(void)
 {
 	return TRUE;
 }
 
-static gboolean
-_libedit_load(hg_plugin_t  *plugin,
-	      gpointer      vm_,
-	      GError      **error)
+static hg_bool_t
+_libedit_load(hg_plugin_t   *plugin,
+	      hg_pointer_t   vm_,
+	      GError       **error)
 {
 	hg_vm_t *vm = vm_;
 	hg_dict_t *dict;
-	gboolean is_global;
+	hg_bool_t is_global;
 	gint i;
 
 	if (plugin->user_data != NULL) {
@@ -257,10 +256,10 @@ _libedit_load(hg_plugin_t  *plugin,
 	return TRUE;
 }
 
-static gboolean
-_libedit_unload(hg_plugin_t  *plugin,
-		gpointer      vm_,
-		GError      **error)
+static hg_bool_t
+_libedit_unload(hg_plugin_t   *plugin,
+		hg_pointer_t   vm_,
+		GError       **error)
 {
 	hg_vm_t *vm = vm_;
 

@@ -25,7 +25,6 @@
 #include "config.h"
 #endif
 
-#include <glib.h>
 #define PLUGIN
 #include "hg.h"
 
@@ -45,9 +44,9 @@ DEFUNC_OPER (private_validatetestresult)
 	hg_quark_t qastack, qestack;
 	hg_string_t *sexp;
 	hg_dict_t *d;
-	gboolean verbose = FALSE, result = TRUE;
-	gint32 attrs = 0;
-	gchar *cexp;
+	hg_bool_t verbose = FALSE, result = TRUE;
+	hg_int_t attrs = 0;
+	hg_char_t *cexp;
 
 	CHECK_STACK (ostack, 1);
 
@@ -75,7 +74,7 @@ DEFUNC_OPER (private_validatetestresult)
 	}
 
 	qexp = hg_dict_lookup(d, HG_QNAME ("expression"), error);
-	q = hg_vm_quark_to_string(vm, qexp, TRUE, (gpointer *)&sexp, error);
+	q = hg_vm_quark_to_string(vm, qexp, TRUE, (hg_pointer_t *)&sexp, error);
 	if (q == Qnil) {
 		cexp = g_strdup("--%unknown--");
 	} else {
@@ -94,23 +93,23 @@ DEFUNC_OPER (private_validatetestresult)
 			hg_quark_t qa, qe, qf, qp;
 			hg_string_t *sa, *se, *sp;
 			hg_file_t *f;
-			gchar *csa, *cse, *csp;
+			hg_char_t *csa, *cse, *csp;
 
-			qa = hg_vm_quark_to_string(vm, qaerror, TRUE, (gpointer *)&sa, error);
+			qa = hg_vm_quark_to_string(vm, qaerror, TRUE, (hg_pointer_t *)&sa, error);
 			if (qa == Qnil) {
 				csa = g_strdup("--%unknown--");
 			} else {
 				csa = hg_string_get_cstr(sa);
 			}
 			hg_string_free(sa, TRUE);
-			qe = hg_vm_quark_to_string(vm, qeerror, TRUE, (gpointer *)&se, error);
+			qe = hg_vm_quark_to_string(vm, qeerror, TRUE, (hg_pointer_t *)&se, error);
 			if (qe == Qnil) {
 				cse = g_strdup("--%unknown--");
 			} else {
 				cse = hg_string_get_cstr(se);
 			}
 			hg_string_free(se, TRUE);
-			qp = hg_vm_quark_to_string(vm, qerrorat, TRUE, (gpointer *)&sp, error);
+			qp = hg_vm_quark_to_string(vm, qerrorat, TRUE, (hg_pointer_t *)&sp, error);
 			if (qp == Qnil) {
 				csp = g_strdup("--%unknown--");
 			} else {
@@ -140,17 +139,17 @@ DEFUNC_OPER (private_validatetestresult)
 	} else {
 		hg_string_t *sa, *se;
 		hg_quark_t qa, qe, qf;
-		gchar *csa, *cse;
+		hg_char_t *csa, *cse;
 		hg_file_t *f;
 
-		qa = hg_vm_quark_to_string(vm, qastack, TRUE, (gpointer *)&sa, error);
+		qa = hg_vm_quark_to_string(vm, qastack, TRUE, (hg_pointer_t *)&sa, error);
 		if (qa == Qnil) {
 			csa = g_strdup("--%unknown--");
 		} else {
 			csa = hg_string_get_cstr(sa);
 		}
 		hg_string_free(sa, TRUE);
-		qe = hg_vm_quark_to_string(vm, qestack, TRUE, (gpointer *)&se, error);
+		qe = hg_vm_quark_to_string(vm, qestack, TRUE, (hg_pointer_t *)&se, error);
 		if (qe == Qnil) {
 			cse = g_strdup("--%unknown--");
 		} else {
@@ -181,10 +180,10 @@ DEFUNC_OPER (private_validatetestresult)
 	STACK_PUSH (ostack, HG_QBOOL (result && retval));
 } DEFUNC_OPER_END
 
-static gboolean
+static hg_bool_t
 _unittest_init(void)
 {
-	gint i;
+	hg_int_t i;
 
 	for (i = 0; i < HG_unittest_enc_END; i++) {
 		__unittest_enc_list[i] = Qnil;
@@ -193,21 +192,21 @@ _unittest_init(void)
 	return TRUE;
 }
 
-static gboolean
+static hg_bool_t
 _unittest_finalize(void)
 {
 	return TRUE;
 }
 
-static gboolean
-_unittest_load(hg_plugin_t  *plugin,
-	       gpointer      vm_,
-	       GError      **error)
+static hg_bool_t
+_unittest_load(hg_plugin_t   *plugin,
+	       hg_pointer_t   vm_,
+	       GError       **error)
 {
 	hg_vm_t *vm = vm_;
 	hg_dict_t *dict;
-	gboolean is_global, retval;
-	gint i;
+	hg_bool_t is_global, retval;
+	hg_int_t i;
 	hg_stack_t *estack;
 
 	if (plugin->user_data != NULL) {
@@ -240,10 +239,10 @@ _unittest_load(hg_plugin_t  *plugin,
 	return retval;
 }
 
-static gboolean
-_unittest_unload(hg_plugin_t  *plugin,
-		 gpointer      vm_,
-		 GError      **error)
+static hg_bool_t
+_unittest_unload(hg_plugin_t   *plugin,
+		 hg_pointer_t   vm_,
+		 GError       **error)
 {
 	if (plugin->user_data == NULL) {
 		hg_warning("plugin not loaded.");

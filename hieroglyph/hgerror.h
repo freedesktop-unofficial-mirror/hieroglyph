@@ -30,6 +30,7 @@
 
 #include <stdio.h>
 #include <errno.h>
+/* XXX: GLib deps are still needed for GQuark */
 #include <glib.h>
 #include <hieroglyph/hgtypes.h>
 
