@@ -25,87 +25,11 @@
 #include "config.h"
 #endif
 
-#include <execinfo.h>
-#include <stdlib.h>
 #include <glib.h>
 #include "hgerror.h"
 
 #include "hgerror.proto.h"
 
-
-static gboolean __hg_stacktrace_feature = TRUE;
-
-/**
- * hg_get_stacktrace:
- *
- * FIXME
- *
- * Returns: FIXME
- */
-gchar *
-hg_get_stacktrace(void)
-{
-	void *traces[256];
-	GPtrArray *array;
-	GString *retval;
-	int size, i;
-	char **strings;
-
-	if (__hg_stacktrace_feature == FALSE)
-		return g_strdup("");
-
-	array = g_ptr_array_new();
-	retval = g_string_new(NULL);
-	do {
-		size = backtrace(traces, 256);
-		for (i = 0; i < size; i++)
-			g_ptr_array_add(array, traces[i]);
-	} while (size == 256);
-	strings = backtrace_symbols(array->pdata, array->len);
-
-	for (i = 1; i < array->len; i++) {
-		g_string_append_printf(retval, "  %d. ", i);
-		g_string_append(retval, strings[i]);
-		g_string_append_c(retval, '\n');
-	}
-	free(strings);
-	g_ptr_array_free(array, TRUE);
-
-	return g_string_free(retval, FALSE);
-}
-
-/**
- * hg_use_stacktrace:
- * @flag: if %TRUE the stacktrace feature is enabled.
- *
- * FIXME
- */
-void
-hg_use_stacktrace(gboolean flag)
-{
-#ifdef HG_DEBUG
-	__hg_stacktrace_feature = flag;
-#else
-	g_warning("The stacktrace feature are entirely disabled at the build time.");
-#endif
-}
-
-/**
- * hg_is_stacktrace_enabled:
- *
- * FIXME
- *
- * Returns: %TRUE if the stacktrace feature is enabled. otherwise %FALSE.
- */
-gboolean
-hg_is_stacktrace_enabled(void)
-{
-#ifdef HG_DEBUG
-	return __hg_stacktrace_feature;
-#else
-	return FALSE;
-#endif
-}
 
 /**
  * hg_error_quark:

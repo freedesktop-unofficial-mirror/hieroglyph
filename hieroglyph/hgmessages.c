@@ -25,12 +25,13 @@
 #include "config.h"
 #endif
 
+#include <execinfo.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "hgmessage.h"
+#include "hgmessages.h"
 
-#include "hgmessage.proto.h"
+#include "hgmessages.proto.h"
 
 static hg_message_func_t __hg_message_default_handler = _hg_message_default_handler;
 static hg_pointer_t __hg_message_default_handler_data = NULL;
@@ -53,12 +54,14 @@ _hg_message_get_prefix(hg_message_type_t     type,
 	};
 	const hg_char_t *category_string[HG_MSGCAT_END + 1] = {
 		NULL,
+		"TRACE",
 		NULL
 	};
 	const hg_char_t unknown_type[] = "?: ";
 	const hg_char_t unknown_cat[] = "???";
+	const hg_char_t no_cat[] = "";
 	const hg_char_t *ts, *cs;
-	hg_char_t *retval = NULL;
+	hg_char_t *retval = NULL, *catstring = NULL;
 	hg_usize_t tlen = 0, clen = 0, len;
 
 	if (type >= HG_MSG_END)
@@ -73,17 +76,50 @@ _hg_message_get_prefix(hg_message_type_t     type,
 	tlen = strlen(ts);
 	if (category_string[category]) {
 		cs = category_string[category];
+	} else if (category == 0) {
+		cs = no_cat;
 	} else {
 		cs = unknown_cat;
 	}
 	clen = strlen(cs);
-	len = tlen + clen + 6;
+	if (clen > 0) {
+		catstring = malloc(sizeof (hg_char_t) * (clen + 6));
+		snprintf(catstring, clen + 6, "[%s]: ", cs);
+		clen = strlen(catstring);
+	}
+	len = tlen + clen + 1;
 	retval = malloc(sizeof (hg_char_t) * len);
 	if (retval) {
-		snprintf(retval, len, "%s[%s]: ", ts, cs);
+		snprintf(retval, len, "%s%s ", ts, catstring ? catstring : "");
 	}
+	if (catstring)
+		free(catstring);
 
 	return retval;
+}
+
+static void
+_hg_message_stacktrace(void)
+{
+	void *traces[1024];
+	char **strings;
+	int size, i;
+
+	size = backtrace(traces, 1024);
+	if (size > 0) {
+		strings = backtrace_symbols(traces, size);
+		hg_debug(HG_MSGCAT_TRACE, "Stacktrace:");
+		/* 0.. here.
+		 * 1.. _hg_message_default_handler
+		 * 2.. hg_message_vprintf
+		 * 3.. hg_message_printf
+		 * 4.. hg_* macros
+		 */
+		for (i = 4; i < size; i++) {
+			hg_debug(HG_MSGCAT_TRACE, "  %d. %s", i - 3, strings[i]);
+		}
+		free(strings);
+	}
 }
 
 static void
@@ -106,6 +142,8 @@ _hg_message_default_handler(hg_message_type_t      type,
 	}
 	prefix = _hg_message_get_prefix(type, category);
 	fprintf(stderr, "%s%s\n", prefix, message);
+	if (category != HG_MSGCAT_TRACE)
+		_hg_message_stacktrace();
 
 	if (prefix)
 		free(prefix);
@@ -218,4 +256,22 @@ hg_message_vprintf(hg_message_type_t      type,
 	} else if (__hg_message_default_handler) {
 		__hg_message_default_handler(type, category, buffer, __hg_message_default_handler_data);
 	}
+}
+
+/**
+ * hg_return_if_fail_warning:
+ * @pretty_function:
+ * @expression:
+ *
+ * FIXME
+ */
+void
+hg_return_if_fail_warning(const hg_char_t *pretty_function,
+			  const hg_char_t *expression)
+{
+	hg_message_printf(HG_MSG_CRITICAL,
+			  0,
+			  "%s: assertion `%s' failed",
+			  pretty_function,
+			  expression);
 }

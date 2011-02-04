@@ -53,6 +53,31 @@
 #define HG_STMT_END	while (0)
 #endif
 
+/*
+ * The HG_LIKELY and HG_UNLIKELY macros let the programmer give hints to
+ * the compiler about the expected result of an expression. Some compilers
+ * can use this information for optimizations.
+ *
+ * The _HG_BOOLEAN_EXPR macro is intended to trigger a gcc warning when
+ * putting assignments in hg_return_if_fail()
+ */
+#if defined(__GNUC__) && (__GNUC__ > 2) && defined(__OPTIMIZE__)
+#define _HG_BOOLEAN_EXPR(_e_)				\
+	__extension__ ({				\
+			int __bool_var__;		\
+			if (_e_)			\
+				__bool_var__ = 1;	\
+			else				\
+				__bool_var__ = 0;	\
+			__bool_var__;			\
+		})
+#define HG_LIKELY(_e_)		(__builtin_expect (_HG_BOOLEAN_EXPR (_e_), 1))
+#define HG_UNLIKELY(_e_)	(__builtin_expect (_HG_BOOLEAN_EXPR (_e_), 0))
+#else
+#define HG_LIKELY(_e_)		(_e_)
+#define HG_UNLIKELY(_e_)	(_e_)
+#endif
+
 /* boolean */
 #ifndef FALSE
 #define FALSE	(0)

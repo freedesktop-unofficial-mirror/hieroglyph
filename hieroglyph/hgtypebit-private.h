@@ -26,6 +26,7 @@
 
 #include <hieroglyph/hgtypes.h>
 #include <hieroglyph/hgerror.h>
+#include <hieroglyph/hgmessages.h>
 
 HG_BEGIN_DECLS
 

@@ -163,8 +163,8 @@ hg_quark_set_readable(hg_quark_t *quark,
 					      (flag == TRUE ? 1 : 0));
 		} else {
 #ifdef HG_DEBUG
-			g_warning("%s: Access disallowed for modification",
-				  __PRETTY_FUNCTION__);
+			hg_warning("%s: Access disallowed for modification",
+				   __PRETTY_FUNCTION__);
 #endif
 		}
 	}
@@ -215,8 +215,8 @@ hg_quark_set_writable(hg_quark_t *quark,
 					      (flag == TRUE ? 1 : 0));
 		} else {
 #ifdef HG_DEBUG
-			g_warning("%s: Access disallowed for modification",
-				  __PRETTY_FUNCTION__);
+			hg_warning("%s: Access disallowed for modification",
+				   __PRETTY_FUNCTION__);
 #endif
 		}
 	}
@@ -268,8 +268,8 @@ hg_quark_set_executable(hg_quark_t *quark,
 					      (flag == TRUE ? 1 : 0));
 		} else {
 #ifdef HG_DEBUG
-			g_warning("%s: Access disallowed for modification",
-				  __PRETTY_FUNCTION__);
+			hg_warning("%s: Access disallowed for modification",
+				   __PRETTY_FUNCTION__);
 #endif
 		}
 	}

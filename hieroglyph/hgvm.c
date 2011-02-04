@@ -97,7 +97,7 @@ _hg_vm_get_mem(hg_vm_t    *vm,
 	} else if (vm->mem_id[HG_VM_MEM_LOCAL] == id) {
 		retval = vm->mem[HG_VM_MEM_LOCAL];
 	} else {
-		g_warning("Unknown memory spooler id: %d, quark: %lx", id, quark);
+		hg_warning("Unknown memory spooler id: %d, quark: %lx", id, quark);
 	}
 
 	return retval;
@@ -310,7 +310,7 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 			    }
 			    qexecobj = qresult;
 		    } else {
-			    g_warning("Immediately evaluated name object somehow doesn't have a exec bit turned on: %s", hg_name_lookup(qexecobj));
+			    hg_warning("Immediately evaluated name object somehow doesn't have a exec bit turned on: %s", hg_name_lookup(qexecobj));
 		    }
 	    case HG_TYPE_NULL:
 	    case HG_TYPE_INT:
@@ -467,16 +467,16 @@ hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
 		    }
 		    break;
 	    default:
-		    g_warning("Unknown object type: %d\n", hg_quark_get_type(qexecobj));
+		    hg_warning("Unknown object type: %d\n", hg_quark_get_type(qexecobj));
 		    return FALSE;
 	}
 
   finalize:
 	if (err) {
-		g_warning("%s: %s (code: %d)",
-			  __PRETTY_FUNCTION__,
-			  err->message,
-			  err->code);
+		hg_warning("%s: %s (code: %d)",
+			   __PRETTY_FUNCTION__,
+			   err->message,
+			   err->code);
 		if (!hg_vm_has_error(vm))
 			hg_vm_set_error(vm, qexecobj, HG_VM_e_VMerror);
 		g_error_free(err);
@@ -586,7 +586,7 @@ _hg_vm_quark_complex_compare(hg_quark_t q1,
 			    s2 = _HG_VM_LOCK (vm, q2, NULL);
 			    if (s1 == NULL ||
 				s2 == NULL) {
-				    g_warning("%s: Unable to obtain the actual object.", __PRETTY_FUNCTION__);
+				    hg_warning("%s: Unable to obtain the actual object.", __PRETTY_FUNCTION__);
 			    } else {
 				    retval = hg_string_compare(s1, s2);
 			    }
@@ -661,10 +661,10 @@ _hg_vm_rs_gc(hg_mem_t    *mem,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	}
@@ -1604,10 +1604,10 @@ hg_vm_setup(hg_vm_t           *vm,
 	if (dict)
 		_HG_VM_UNLOCK (vm, vm->qsystemdict);
 	if (err) {
-		g_warning("%s: %s (code: %d)",
-			  __PRETTY_FUNCTION__,
-			  err->message,
-			  err->code);
+		hg_warning("%s: %s (code: %d)",
+			   __PRETTY_FUNCTION__,
+			   err->message,
+			   err->code);
 		g_error_free(err);
 	}
 
@@ -1818,7 +1818,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 			    qexecobj = qresult;
 			    goto evaluate;
 		    }
-		    g_warning("Immediately evaluated name object somehow doesn't have a exec bit turned on: %s", hg_name_lookup(qexecobj));
+		    hg_warning("Immediately evaluated name object somehow doesn't have a exec bit turned on: %s", hg_name_lookup(qexecobj));
 		    goto push_stack;
 	    case HG_TYPE_NAME:
 		    /* /foo  ... nope
@@ -2051,7 +2051,7 @@ hg_vm_stepi(hg_vm_t  *vm,
 		    }
 		    break;
 	    default:
-		    g_warning("Unknown object type: %d\n", hg_quark_get_type(qexecobj));
+		    hg_warning("Unknown object type: %d\n", hg_quark_get_type(qexecobj));
 		    return FALSE;
 	}
 
@@ -2184,7 +2184,7 @@ hg_vm_eval(hg_vm_t     *vm,
 		lang = hg_vm_get_language_level(vm);
 		o = _HG_VM_LOCK (vm, old_systemdict, error);
 		if (o == NULL) {
-			g_warning("Unable to protect systemdict.");
+			hg_warning("Unable to protect systemdict.");
 			return FALSE;
 		}
 		vm->qsystemdict = hg_dict_new(o->o.mem,
@@ -2192,7 +2192,7 @@ hg_vm_eval(hg_vm_t     *vm,
 					      o->raise_dictfull,
 					      (gpointer *)&d);
 		if (vm->qsystemdict == Qnil) {
-			g_warning("Unable to duplicate systemdict.");
+			hg_warning("Unable to duplicate systemdict.");
 			flag = FALSE;
 			goto fini_systemdict;
 		}
@@ -2212,7 +2212,7 @@ hg_vm_eval(hg_vm_t     *vm,
 				 vm->qsystemdict,
 				 FALSE,
 				 error)) {
-			g_warning("Unable to reregister systemdict");
+			hg_warning("Unable to reregister systemdict");
 			flag = FALSE;
 			goto fini_systemdict;
 		}
@@ -2349,10 +2349,10 @@ hg_vm_eval_from_cstring(hg_vm_t      *vm,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	}
@@ -2412,15 +2412,15 @@ hg_vm_eval_from_file(hg_vm_t      *vm,
 			if (error) {
 				*error = g_error_copy(err);
 			} else {
-				g_warning("%s: %s (code: %d)",
-					  __PRETTY_FUNCTION__,
-					  err->message,
-					  err->code);
+				hg_warning("%s: %s (code: %d)",
+					   __PRETTY_FUNCTION__,
+					   err->message,
+					   err->code);
 			}
 			g_error_free(err);
 		}
 	} else {
-		g_warning("Unable to find a file `%s'", initfile);
+		hg_warning("Unable to find a file `%s'", initfile);
 	}
 	g_free(filename);
 
@@ -2484,7 +2484,7 @@ hg_vm_startjob(hg_vm_t           *vm,
 
 	/* initialize VM */
 	if (!hg_vm_setup(vm, lang_level, Qnil, Qnil, Qnil)) {
-		g_warning("Unable to initialize PostScript VM");
+		hg_warning("Unable to initialize PostScript VM");
 		return FALSE;
 	}
 
@@ -2510,7 +2510,7 @@ hg_vm_startjob(hg_vm_t           *vm,
 	/* make systemdict read-only */
 	dict = _HG_VM_LOCK (vm, vm->qsystemdict, &err);
 	if (dict == NULL) {
-		g_warning("Unable to obtain systemdict");
+		hg_warning("Unable to obtain systemdict");
 		return FALSE;
 	}
 	hg_vm_quark_set_writable(vm, &vm->qsystemdict, FALSE);
@@ -2519,7 +2519,7 @@ hg_vm_startjob(hg_vm_t           *vm,
 			 vm->qsystemdict,
 			 FALSE,
 			 NULL)) {
-		g_warning("Unable to update the entry for systemdict");
+		hg_warning("Unable to update the entry for systemdict");
 		return FALSE;
 	}
 	_HG_VM_UNLOCK (vm, vm->qsystemdict);
@@ -2533,7 +2533,7 @@ hg_vm_startjob(hg_vm_t           *vm,
 			vm->device = hg_device_null_new(vm->mem[HG_VM_MEM_LOCAL]);
 		hg_device_install(vm->device, vm, &err);
 		if (err) {
-			g_warning(err->message);
+			hg_warning(err->message);
 			return FALSE;
 		}
 		hg_vm_eval_from_cstring(vm, "initgraphics", -1, NULL, NULL, NULL, FALSE, NULL);
@@ -2687,10 +2687,10 @@ hg_vm_get_user_params(hg_vm_t   *vm,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 		hg_object_free(d->o.mem, retval);
@@ -2735,10 +2735,10 @@ hg_vm_set_user_params(hg_vm_t     *vm,
 			if (error) {
 				*error = g_error_copy(err);
 			} else {
-				g_warning("%s: %s (code: %d)",
-					  __PRETTY_FUNCTION__,
-					  err->message,
-					  err->code);
+				hg_warning("%s: %s (code: %d)",
+					   __PRETTY_FUNCTION__,
+					   err->message,
+					   err->code);
 			}
 			g_error_free(err);
 		}
@@ -3058,7 +3058,7 @@ hg_vm_set_error_from_gerror(hg_vm_t    *vm,
 		/* no error */
 	} else {
 #ifdef HG_DEBUG
-		g_warning("%s", error->message);
+		hg_warning("%s", error->message);
 #endif
 		return hg_vm_set_error(vm, qdata, error->code);
 	}
@@ -3118,7 +3118,7 @@ hg_vm_add_plugin(hg_vm_t      *vm,
 	hg_return_val_with_gerror_if_fail (name != NULL, FALSE, error, HG_VM_e_VMerror);
 
 	if (g_hash_table_lookup(vm->plugin_table, name) != NULL) {
-		g_warning("%s plugin is already loaded", name);
+		hg_warning("%s plugin is already loaded", name);
 		return TRUE;
 	}
 	plugin = hg_plugin_open(vm->mem[HG_VM_MEM_LOCAL],
@@ -3155,10 +3155,10 @@ hg_vm_load_plugins(hg_vm_t *vm)
 		GError *err = NULL;
 
 		if (!hg_plugin_load(p, vm, &err)) {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 			g_clear_error(&err);
 		}
 	}
@@ -3186,7 +3186,7 @@ hg_vm_remove_plugin(hg_vm_t      *vm,
 	hg_return_val_with_gerror_if_fail (name != NULL, FALSE, error, HG_VM_e_VMerror);
 
 	if ((l = g_hash_table_lookup(vm->plugin_table, name)) == NULL) {
-		g_warning("No such plugins loaded: %s", name);
+		hg_warning("No such plugins loaded: %s", name);
 		return FALSE;
 	}
 
@@ -3330,10 +3330,10 @@ hg_vm_array_set(hg_vm_t     *vm,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	}
@@ -3394,10 +3394,10 @@ hg_vm_array_get(hg_vm_t     *vm,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	}
@@ -3598,10 +3598,10 @@ hg_vm_dict_add(hg_vm_t     *vm,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	}
@@ -3655,10 +3655,10 @@ hg_vm_dict_remove(hg_vm_t     *vm,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	}
@@ -3715,10 +3715,10 @@ hg_vm_dict_lookup(hg_vm_t     *vm,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	}
@@ -3766,10 +3766,10 @@ hg_vm_quark_gc_mark(hg_vm_t     *vm,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	}
@@ -3817,10 +3817,10 @@ hg_vm_quark_copy(hg_vm_t     *vm,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	} else {
@@ -3997,10 +3997,10 @@ hg_vm_quark_to_string(hg_vm_t     *vm,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 		retval = Qnil;
@@ -4110,10 +4110,10 @@ hg_vm_quark_set_acl(hg_vm_t        *vm,
 			_HG_VM_UNLOCK (vm, *qdata);
 		}
 		if (err) {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 	}
 }
@@ -4144,10 +4144,10 @@ hg_vm_quark_set_readable(hg_vm_t    *vm,
 			_HG_VM_UNLOCK (vm, *qdata);
 		}
 		if (err) {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 			g_error_free(err);
 		}
 	}
@@ -4176,10 +4176,10 @@ hg_vm_quark_is_readable(hg_vm_t    *vm,
 		if (acl != -1) {
 			hg_quark_set_acl(qdata, acl);
 			if (err) {
-				g_warning("%s: %s (code: %d)",
-					  __PRETTY_FUNCTION__,
-					  err->message,
-					  err->code);
+				hg_warning("%s: %s (code: %d)",
+					   __PRETTY_FUNCTION__,
+					   err->message,
+					   err->code);
 				g_error_free(err);
 			}
 		}
@@ -4216,10 +4216,10 @@ hg_vm_quark_set_writable(hg_vm_t    *vm,
 			_HG_VM_UNLOCK (vm, *qdata);
 		}
 		if (err) {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 			g_error_free(err);
 		}
 	}
@@ -4248,10 +4248,10 @@ hg_vm_quark_is_writable(hg_vm_t    *vm,
 		if (acl != -1) {
 			hg_quark_set_acl(qdata, acl);
 			if (err) {
-				g_warning("%s: %s (code: %d)",
-					  __PRETTY_FUNCTION__,
-					  err->message,
-					  err->code);
+				hg_warning("%s: %s (code: %d)",
+					   __PRETTY_FUNCTION__,
+					   err->message,
+					   err->code);
 				g_error_free(err);
 			}
 		}
@@ -4288,10 +4288,10 @@ hg_vm_quark_set_executable(hg_vm_t    *vm,
 			_HG_VM_UNLOCK (vm, *qdata);
 		}
 		if (err) {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 			g_error_free(err);
 		}
 	}
@@ -4320,10 +4320,10 @@ hg_vm_quark_is_executable(hg_vm_t    *vm,
 		if (acl != -1) {
 			hg_quark_set_acl(qdata, acl);
 			if (err) {
-				g_warning("%s: %s (code: %d)",
-					  __PRETTY_FUNCTION__,
-					  err->message,
-					  err->code);
+				hg_warning("%s: %s (code: %d)",
+					   __PRETTY_FUNCTION__,
+					   err->message,
+					   err->code);
 				g_error_free(err);
 			}
 		}
@@ -4360,10 +4360,10 @@ hg_vm_quark_set_accessible(hg_vm_t    *vm,
 			_HG_VM_UNLOCK (vm, *qdata);
 		}
 		if (err) {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 			g_error_free(err);
 		}
 	}
@@ -4392,10 +4392,10 @@ hg_vm_quark_is_accessible(hg_vm_t    *vm,
 		if (acl != -1) {
 			hg_quark_set_acl(qdata, acl);
 			if (err) {
-				g_warning("%s: %s (code: %d)",
-					  __PRETTY_FUNCTION__,
-					  err->message,
-					  err->code);
+				hg_warning("%s: %s (code: %d)",
+					   __PRETTY_FUNCTION__,
+					   err->message,
+					   err->code);
 				g_error_free(err);
 			}
 		}
@@ -4504,10 +4504,10 @@ hg_vm_string_get_cstr(hg_vm_t     *vm,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	}
@@ -4557,10 +4557,10 @@ hg_vm_string_length(hg_vm_t     *vm,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	}

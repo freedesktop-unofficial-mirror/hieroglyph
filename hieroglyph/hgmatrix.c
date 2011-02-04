@@ -28,6 +28,7 @@
 #include <math.h>
 #include <string.h>
 #include "hgerror.h"
+#include "hgmessages.h"
 #include "hgmatrix.h"
 
 #include "hgmatrix.proto.h"

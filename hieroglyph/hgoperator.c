@@ -543,7 +543,7 @@ DEFUNC_OPER (private_applyparams)
 				    q = HG_QSTRING (hg_vm_get_mem(vm), v->u.string);
 				    break;
 			    default:
-				    g_warning("Unknown parameter type: %d", v->type);
+				    hg_warning("Unknown parameter type: %d", v->type);
 				    break;
 			}
 			if (q != Qnil)
@@ -7528,7 +7528,7 @@ DEFUNC_OPER (stop)
 			break;
 	}
 	if (i == edepth) {
-		g_warning("No /stopped operator found.");
+		hg_warning("No /stopped operator found.");
 		q = hg_stack_pop(estack, error);
 		STACK_PUSH (estack, HG_QOPER (HG_enc_private_abort));
 		STACK_PUSH (estack, q);

@@ -32,11 +32,7 @@
 #include <readline.h>
 #include <glib.h>
 #define PLUGIN
-#include "hgdict.h"
-#include "hgplugin.h"
-#include "hgoperator.h"
-#include "hgstack.h"
-#include "hgvm.h"
+#include "hg.h"
 
 
 static gchar    *_libedit_get_line    (hg_lineedit_t  *lineedit,
@@ -232,7 +228,7 @@ _libedit_load(hg_plugin_t  *plugin,
 	gint i;
 
 	if (plugin->user_data != NULL) {
-		g_warning("plugin is already loaded.");
+		hg_warning("plugin is already loaded.");
 		return TRUE;
 	}
 	plugin->user_data = vm->lineedit;
@@ -269,7 +265,7 @@ _libedit_unload(hg_plugin_t  *plugin,
 	hg_vm_t *vm = vm_;
 
 	if (plugin->user_data == NULL) {
-		g_warning("plugin not loaded.");
+		hg_warning("plugin not loaded.");
 		return FALSE;
 	}
 	hg_lineedit_destroy(vm->lineedit);

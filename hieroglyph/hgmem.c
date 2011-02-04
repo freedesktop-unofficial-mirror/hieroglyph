@@ -47,7 +47,7 @@ G_INLINE_FUNC void
 _hg_mem_gc_init(hg_mem_t *mem)
 {
 	if (mem->slave_finalizer_table) {
-		g_warning("%s: slave instance already created.", __PRETTY_FUNCTION__);
+		hg_warning("%s: slave instance already created.", __PRETTY_FUNCTION__);
 		g_hash_table_destroy(mem->slave_finalizer_table);
 	}
 	mem->slave_finalizer_table = g_hash_table_new(g_direct_hash, g_direct_equal);
@@ -73,7 +73,7 @@ _hg_mem_gc_finish(hg_mem_t *mem,
 		  gboolean  was_error)
 {
 	if (!mem->slave_finalizer_table) {
-		g_warning("%s: no slave instance created.", __PRETTY_FUNCTION__);
+		hg_warning("%s: no slave instance created.", __PRETTY_FUNCTION__);
 		return;
 	}
 	if (!was_error) {
@@ -171,7 +171,7 @@ hg_mem_new_with_allocator(hg_mem_vtable_t *allocator,
 	if (_hg_typebit_round_value(retval->id,
 				    HG_TYPEBIT_MEM_ID,
 				    HG_TYPEBIT_MEM_ID_END) != retval->id) {
-		g_warning("too many memory spooler being created.");
+		hg_warning("too many memory spooler being created.");
 		g_free(retval);
 
 		return NULL;
@@ -825,8 +825,8 @@ hg_mem_reserved_spool_add(hg_mem_t     *mem,
 	p = HGQUARK_TO_POINTER (hg_quark_get_hash(qdata));
 	count = GPOINTER_TO_INT (g_hash_table_lookup(mem->reserved_spool, p));
 	if ((count + 1) < 0)
-		g_warning("[BUG] the reference count of %lx on the reserved_spool being overflowed",
-			  qdata);
+		hg_warning("[BUG] the reference count of %lx on the reserved_spool being overflowed",
+			   qdata);
 	g_hash_table_replace(mem->reserved_spool, p, GINT_TO_POINTER (count + 1));
 }
 

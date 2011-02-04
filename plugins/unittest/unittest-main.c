@@ -27,13 +27,7 @@
 
 #include <glib.h>
 #define PLUGIN
-#include "hgarray.h"
-#include "hgbool.h"
-#include "hgdict.h"
-#include "hgint.h"
-#include "hgplugin.h"
-#include "hgoperator.h"
-#include "hgvm.h"
+#include "hg.h"
 
 
 PROTO_PLUGIN (unittest);
@@ -217,7 +211,7 @@ _unittest_load(hg_plugin_t  *plugin,
 	hg_stack_t *estack;
 
 	if (plugin->user_data != NULL) {
-		g_warning("plugin is already loaded.");
+		hg_warning("plugin is already loaded.");
 		return TRUE;
 	}
 	plugin->user_data = plugin; /* dummy */
@@ -252,7 +246,7 @@ _unittest_unload(hg_plugin_t  *plugin,
 		 GError      **error)
 {
 	if (plugin->user_data == NULL) {
-		g_warning("plugin not loaded.");
+		hg_warning("plugin not loaded.");
 		return FALSE;
 	}
 	plugin->user_data = NULL;

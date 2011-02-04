@@ -26,9 +26,14 @@ CLEANFILES =							\
 	hglineedit.c						\
 	hgscanner.c						\
 	$(NULL)
+DISTCLEANFILES =						\
+	hgconfig-stamp						\
+	hgconfig.h						\
+	$(NULL)
 BUILT_SOURCES =							\
 	$(hg_built_headers)					\
 	$(hg_built_sources)					\
+	hgconfig-stamp						\
 	$(NULL)
 
 ##
@@ -49,7 +54,7 @@ hg_public_headers =						\
 	hgmark.h						\
 	hgmatrix.h						\
 	hgmem.h							\
-	hgmessage.h						\
+	hgmessages.h						\
 	hgname.h						\
 	hgnull.h						\
 	hgpath.h						\
@@ -100,7 +105,7 @@ hg_sources =							\
 	hggstate.c						\
 	hgmatrix.c						\
 	hgmem.c							\
-	hgmessage.c						\
+	hgmessages.c						\
 	hgname.c						\
 	hgpath.c						\
 	hgobject.c						\
@@ -129,6 +134,10 @@ LEX_OUTPUT_ROOT=lex.$(basename $<)
 	$(AM_V_GEN)[[ ! -f $(<:.c=.l) ]] && $(top_srcdir)/build_tools/genfuncdecls.sh $< > gfp || $(top_srcdir)/build_tools/genfuncdecls.sh $(<:.c=.l) > gfp;	\
 	(cmp -s gfp $@ || cp gfp $@)	\
 	&& rm -f gfp
+hgconfig-stamp: $(top_builddir)/config.status
+	$(AM_V_GEN) cd $(top_builddir) &&			\
+	$(SHELL) ./config.status hieroglyph/hgconfig.h
+	@touch hgconfig-stamp
 
 ##
 # Target platform
@@ -145,6 +154,11 @@ hginclude_HEADERS =						\
 noinst_HEADERS =						\
 	$(hg_private_headers)					\
 	$(hg_built_private_headers)				\
+	$(NULL)
+#
+configexecincludedir = $(libdir)/hieroglyph/include
+nodist_configexecinclude_HEADERS =				\
+	hgconfig.h						\
 	$(NULL)
 #
 libhieroglyph_la_SOURCES =					\

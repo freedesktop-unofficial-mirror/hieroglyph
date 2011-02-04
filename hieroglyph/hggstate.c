@@ -103,10 +103,10 @@ _hg_object_gstate_copy(hg_object_t              *object,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 		hg_object_free(g->o.mem, retval);
@@ -149,10 +149,10 @@ _hg_object_gstate_gc_mark(hg_object_t           *object,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 		retval = FALSE;
@@ -365,10 +365,10 @@ hg_gstate_save(hg_gstate_t *gstate,
 	hg_mem_unlock_object(gstate->o.mem, retval);
   error:
 	if (err) {
-		g_warning("%s: %s (code: %d)",
-			  __PRETTY_FUNCTION__,
-			  err->message,
-			  err->code);
+		hg_warning("%s: %s (code: %d)",
+			   __PRETTY_FUNCTION__,
+			   err->message,
+			   err->code);
 		g_error_free(err);
 
 		hg_object_free(gstate->o.mem,

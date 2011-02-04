@@ -21,9 +21,11 @@ core.*
 depcomp
 install-sh
 intltool-*
-hieroglyph/hglineedit.c
-hieroglyph/hgscanner.c
-hieroglyph/hgversion.h
+hieroglyph/hgconfig\.h
+hieroglyph/hgconfig-stamp
+hieroglyph/hglineedit\.c
+hieroglyph/hgscanner\.c
+hieroglyph/hgversion\.h
 libtool
 ltmain\.sh
 missing

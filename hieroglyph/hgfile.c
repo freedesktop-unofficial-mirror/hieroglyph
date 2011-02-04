@@ -167,10 +167,10 @@ _hg_object_file_initialize(hg_object_t *object,
 			if (error) {
 				*error = g_error_copy(err);
 			} else {
-				g_warning("%s: %s (code: %d)",
-					  __PRETTY_FUNCTION__,
-					  err->message,
-					  err->code);
+				hg_warning("%s: %s (code: %d)",
+					   __PRETTY_FUNCTION__,
+					   err->message,
+					   err->code);
 			}
 		}
 		g_error_free(err);
@@ -191,10 +191,10 @@ _hg_object_file_free(hg_object_t *object)
 		if (!file->is_closed)
 			file->vtable->close(file, file->user_data, &err);
 		if (err) {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 			g_error_free(err);
 		}
 	}
@@ -269,10 +269,10 @@ _hg_object_file_gc_mark(hg_object_t           *object,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	}
@@ -1532,10 +1532,10 @@ hg_file_append_vprintf(hg_file_t   *file,
 	retval = hg_file_write(file, buffer, sizeof (gchar), strlen(buffer), &err);
 	g_free(buffer);
 	if (err) {
-		g_warning("%s: %s (code: %d)",
-			  __PRETTY_FUNCTION__,
-			  err->message,
-			  err->code);
+		hg_warning("%s: %s (code: %d)",
+			   __PRETTY_FUNCTION__,
+			   err->message,
+			   err->code);
 		g_error_free(err);
 	}
 
@@ -1688,7 +1688,7 @@ hg_file_set_error(GError      **error,
 		    e = HG_VM_e_VMerror;
 		    break;
 	    default:
-		    g_warning("No matching error code for: %s", msg);
+		    hg_warning("No matching error code for: %s", msg);
 		    e = HG_VM_e_VMerror;
 		    break;
 	}

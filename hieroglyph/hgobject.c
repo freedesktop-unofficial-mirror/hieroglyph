@@ -486,10 +486,10 @@ hg_object_quark_copy(hg_mem_t    *mem,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 		retval = Qnil;

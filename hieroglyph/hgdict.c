@@ -376,10 +376,10 @@ _hg_object_dict_node_gc_mark(hg_object_t           *object,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 		retval = FALSE;
@@ -1040,10 +1040,10 @@ hg_dict_add(hg_dict_t   *dict,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 
@@ -1119,10 +1119,10 @@ hg_dict_remove(hg_dict_t   *dict,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	}
@@ -1190,10 +1190,10 @@ hg_dict_lookup(hg_dict_t   *dict,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	}
@@ -1261,10 +1261,10 @@ hg_dict_foreach(hg_dict_t                 *dict,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	}
@@ -1298,10 +1298,10 @@ hg_dict_first_item(hg_dict_t   *dict,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 

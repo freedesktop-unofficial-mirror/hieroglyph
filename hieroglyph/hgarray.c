@@ -134,10 +134,10 @@ _hg_object_array_copy(hg_object_t              *object,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 		if (a)
@@ -246,10 +246,10 @@ _hg_object_array_gc_mark(hg_object_t           *object,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 		retval = FALSE;
@@ -476,10 +476,10 @@ hg_array_set(hg_array_t  *array,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	}
@@ -542,10 +542,10 @@ hg_array_get(hg_array_t  *array,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	}
@@ -730,7 +730,7 @@ hg_array_set_name(hg_array_t      *array,
 	len = strlen(name);
 	array->qname = hg_mem_alloc(array->o.mem, len, (gpointer *)&p);
 	if (array->qname == Qnil) {
-		g_warning("%s: Unable to allocate memory.", __PRETTY_FUNCTION__);
+		hg_warning("%s: Unable to allocate memory.", __PRETTY_FUNCTION__);
 	} else {
 		memcpy(p, name, len);
 	}
@@ -789,10 +789,10 @@ hg_array_make_subarray(hg_array_t    *array,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	}

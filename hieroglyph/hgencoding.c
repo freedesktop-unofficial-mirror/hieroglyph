@@ -27,6 +27,7 @@
 
 #include <glib.h>
 #include "hgerror.h"
+#include "hgmessages.h"
 #include "hgencoding.h"
 
 #include "hgencoding.proto.h"

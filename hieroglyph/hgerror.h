@@ -31,13 +31,30 @@
 #include <stdio.h>
 #include <errno.h>
 #include <glib.h>
-#include <hieroglyph/hgmacros.h>
+#include <hieroglyph/hgtypes.h>
 
 HG_BEGIN_DECLS
 
-#define HG_ERROR	hg_error_quark()
+#define HG_ERROR_VM_STATUS_MASK_SHIFT	8
+#define HG_ERROR_VM_STATUS_MASK		((1 << HG_ERROR_VM_STATUS_MASK_SHIFT) - 1)
 
-typedef enum _hg_vm_error_t		hg_vm_error_t;
+#define HG_ERROR_GET_VM_STATUS(_e_)		\
+	((_e_) & HG_ERROR_VM_STATUS_MASK)
+#define HG_ERROR_SET_VM_STATUS(_e_,_t_)		\
+	(((_e_) & ~HG_ERROR_VM_STATUS_MASK) |	\
+	 ((_t_) & HG_ERROR_VM_STATUS_MASK))
+#define HG_ERROR_GET_REASON(_e_)					\
+	(((_e_) & ~(HG_ERROR_VM_STATUS_MASK)) >> HG_ERROR_VM_STATUS_MASK_SHIFT)
+#define HG_ERROR_SET_REASON(_e_,_t_)					\
+	(((_e_) & HG_ERROR_STATUS_MASK) | ((_t_) << HG_ERROR_VM_STATUS_MASK_SHIFT))
+#define HG_ERROR	(hg_error_quark())
+#define HG_ERROR_(_status_,_reason_)				\
+	(hg_error_t)(HG_ERROR_SET_VM_STATUS (0, (_status_)) |	\
+		     HG_ERROR_SET_REASON (0, (_reason_)))
+
+typedef hg_int_t		hg_error_t;
+typedef enum _hg_vm_error_t	hg_vm_error_t;
+typedef enum _hg_error_reason_t	hg_error_reason_t;
 
 enum _hg_vm_error_t {
 	HG_VM_e_dictfull = 1,
@@ -70,129 +87,10 @@ enum _hg_vm_error_t {
 	HG_VM_e_undefinedresource,
 	HG_VM_e_END
 };
+enum _hg_error_reason_t {
+	HG_e_END
+};
 
-#ifdef HG_DEBUG
-/* evaluate x if the debugging build */
-#define d(x)	x
-
-#define hg_stacktrace()							\
-	HG_STMT_START {							\
-		if (hg_is_stacktrace_enabled()) {			\
-			gchar *__stacktrace__ = hg_get_stacktrace();	\
-									\
-			g_log(G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL,	\
-			      "Stacktrace:\n%s\n", __stacktrace__);	\
-			g_free(__stacktrace__);				\
-		}							\
-	} HG_STMT_END
-#else /* !HG_DEBUG */
-/* ignore x if not in the debugging build */
-#define d(x)
-
-#define hg_stacktrace()
-
-#endif /* HG_DEBUG */
-
-#ifdef __GNUC__
-#define _hg_return_if_fail_warning(__domain__,__func__,__expr__)	\
-	HG_STMT_START {							\
-		g_return_if_fail_warning(__domain__,			\
-					 __func__,			\
-					 __expr__);			\
-	} HG_STMT_END
-#define _hg_return_after_eval_if_fail(__expr__,__eval__)		\
-	HG_STMT_START {							\
-		if (G_LIKELY(__expr__)) {				\
-		} else {						\
-			_hg_return_if_fail_warning(G_LOG_DOMAIN,	\
-						   __PRETTY_FUNCTION__,	\
-						   #__expr__);		\
-			__eval__;					\
-			return;						\
-		}							\
-	} HG_STMT_END
-#define _hg_return_val_after_eval_if_fail(__expr__,__val__,__eval__)	\
-	HG_STMT_START {							\
-		if (G_LIKELY(__expr__)) {				\
-		} else {						\
-			_hg_return_if_fail_warning(G_LOG_DOMAIN,	\
-						   __PRETTY_FUNCTION__,	\
-						   #__expr__);		\
-			__eval__;					\
-			return (__val__);				\
-		}							\
-	} HG_STMT_END
-#define _hg_gerror_on_fail(__expr__,__err__,__code__)			\
-	HG_STMT_START {							\
-		hg_stacktrace();					\
-		if ((__err__)) {					\
-			g_set_error((__err__), HG_ERROR, __code__,	\
-				    "%s: assertion `%s' failed",	\
-				    __PRETTY_FUNCTION__,		\
-				    #__expr__);				\
-		}							\
-	} HG_STMT_END
-#else /* !__GNUC__ */
-#define _hg_return_after_eval_if_fail(__expr__,__eval__)		\
-	HG_STMT_START {							\
-		if (__expr__) {						\
-		} else {						\
-			g_log(G_LOG_DOMAIN,				\
-			      G_LOG_LEVEL_CRITICAL,			\
-			      "file %s: line %d: assertion `%s' failed", \
-			      __FILE__,					\
-			      __LINE__,					\
-			      #__expr__);				\
-			__eval__;					\
-			return;						\
-		}							\
-	} HG_STMT_END
-#define _hg_return_val_after_eval_if_fail(__expr__,__val__,__eval__)	\
-	HG_STMT_START {							\
-		if (__expr__) {						\
-		} else {						\
-			g_log(G_LOG_DOMAIN,				\
-			      G_LOG_LEVEL_CRITICAL,			\
-			      "file %s: line %d: assertion `%s' failed", \
-			      __FILE__,					\
-			      __LINE__,					\
-			      #__expr__);				\
-			__eval__;					\
-			return (__val__);				\
-		}							\
-	} HG_STMT_END
-#define _hg_error_if_fail(__expr__,__err__)				\
-	HG_STMT_START {							\
-		hg_stacktrace();					\
-		if ((__err__)) {					\
-			g_set_error((__err__), HG_ERROR, HG_VM_e_VMerror, \
-				    "file %s: line %d: assertion `%s' failed", \
-				    __FILE__,				\
-				    __LINE__,				\
-				    #__expr__);				\
-		}							\
-	} HG_STMT_END
-#endif /* __GNUC__ */
-
-#define hg_return_if_fail(__expr__)					\
-	_hg_return_after_eval_if_fail(__expr__,hg_stacktrace())
-#define hg_return_val_if_fail(__expr__,__val__)				\
-	_hg_return_val_after_eval_if_fail(__expr__,__val__,hg_stacktrace())
-#define hg_return_after_eval_if_fail(__expr__,__eval__)			\
-	_hg_return_after_eval_if_fail(__expr__,hg_stacktrace();__eval__)
-#define hg_return_val_after_eval_if_fail(__expr__,__val__,__eval__)	\
-	_hg_return_val_after_eval_if_fail(__expr__,__val__,hg_stacktrace();__eval__)
-#define hg_return_with_gerror_if_fail(__expr__,__err__,__code__)	\
-	_hg_return_after_eval_if_fail(__expr__,_hg_gerror_on_fail(__expr__,__err__,__code__))
-#define hg_return_val_with_gerror_if_fail(__expr__,__val__,__err__,__code__) \
-	_hg_return_val_after_eval_if_fail(__expr__,__val__,_hg_gerror_on_fail(__expr__,__err__,__code__))
-#define hg_return_val_with_gerror_after_eval_if_fail(__expr__,__val__,__eval__,__err__,__code__) \
-	_hg_return_val_after_eval_if_fail(__expr__,__val__,_hg_gerror_on_fail(__expr__,__err__,__code__);__eval__)
-
-
-gchar    *hg_get_stacktrace       (void) G_GNUC_MALLOC;
-void      hg_use_stacktrace       (gboolean flag);
-gboolean  hg_is_stacktrace_enabled(void);
 GQuark    hg_error_quark          (void);
 
 

@@ -30,6 +30,7 @@
 /* GLib is still needed for the mutex lock */
 #include <glib.h>
 #include "hgerror.h"
+#include "hgmessages.h"
 #include "hgquark.h"
 #include "hgallocator.h"
 #include "hgallocator-private.h"
@@ -609,7 +610,7 @@ _hg_allocator_realloc(hg_allocator_data_t *data,
 		}
 	} else {
 #if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
-		g_warning("%lx isn't the allocated object.\n", qdata);
+		hg_warning("%lx isn't the allocated object.\n", qdata);
 #endif
 	}
 
@@ -634,7 +635,7 @@ _hg_allocator_free(hg_allocator_data_t *data,
 		_hg_allocator_bitmap_free(priv->bitmap, index_, block->size);
 	} else {
 #if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
-		g_warning("%lx isn't the allocated object.\n", index_);
+		hg_warning("%lx isn't the allocated object.\n", index_);
 #endif
 	}
 }
@@ -663,9 +664,7 @@ _hg_allocator_get_internal_block_from_page_and_index(hg_allocator_private_t *pri
 
 	if (page >= hg_allocator_get_max_page() ||
 	    idx > priv->bitmap->size[page]) {
-		gchar *s = hg_get_stacktrace();
-
-		g_warning("Invalid quark to access: [page: %d, index: %d\nStack trace:\n%s", page, idx, s);
+		hg_warning("Invalid quark to access: [page: %d, index: %d]", page, idx);
 		return NULL;
 	}
 	retval = (hg_allocator_block_t *)((gulong)priv->heaps[page] + ((idx - 1) * BLOCK_SIZE));
@@ -765,7 +764,7 @@ _hg_allocator_gc_init(hg_allocator_data_t *data)
 	gsize i, max_page = hg_allocator_get_max_page();
 
 	if (G_UNLIKELY (priv->slave_bitmap)) {
-		g_warning("GC is already ongoing.");
+		hg_warning("GC is already ongoing.");
 		return FALSE;
 	}
 	priv->slave_bitmap = _hg_allocator_bitmap_new(priv->bitmap->size[0] * BLOCK_SIZE);
@@ -824,10 +823,10 @@ _hg_allocator_gc_mark(hg_allocator_data_t  *data,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 		retval = FALSE;
@@ -843,7 +842,7 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
 
 	if (G_UNLIKELY (!priv->slave_bitmap)) {
-		g_warning("GC isn't yet started.");
+		hg_warning("GC isn't yet started.");
 		return FALSE;
 	}
 
@@ -876,8 +875,8 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 					if (!_hg_allocator_bitmap_is_marked(priv->slave_bitmap, i, j + 1)) {
 						used_size -= block->size;
 						if (block->lock_count > 0) {
-							g_warning("[BUG] locked block without references [page: %d, index: %d, size: %ld, count: %d]\n",
-								  i, j + 1, block->size, block->lock_count);
+							hg_warning("[BUG] locked block without references [page: %d, index: %d, size: %ld, count: %d]\n",
+								   i, j + 1, block->size, block->lock_count);
 #if defined (HG_DEBUG) && defined (HG_GC_DEBUG)
 							abort();
 #endif

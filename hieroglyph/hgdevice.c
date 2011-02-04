@@ -141,7 +141,7 @@ _hg_device_open(hg_mem_t    *mem,
 		g_module_symbol(module, "hg_module_finalize", &dev_fini);
 
 		if (!dev_init || !dev_fini) {
-			g_warning(g_module_error());
+			hg_warning(g_module_error());
 			g_module_close(module);
 
 			return NULL;
@@ -157,7 +157,7 @@ _hg_device_open(hg_mem_t    *mem,
 		}
 #if defined (HG_DEBUG) && defined (HG_MODULE_DEBUG)
 	} else {
-		g_warning(g_module_error());
+		hg_warning(g_module_error());
 #endif /* HG_DEBUG && HG_MODULE_DEBUG */
 	}
 
@@ -265,7 +265,7 @@ hg_device_open(hg_mem_t    *mem,
 		g_free(fullname);
 	}
 	if (retval == NULL) {
-		g_warning("No such device module: %s", basename);
+		hg_warning("No such device module: %s", basename);
 	}
 
 	g_free(modulename);
@@ -502,7 +502,7 @@ hg_device_get_page_params(hg_device_t                 *device,
 				    if ((q = device->get_page_param(device, i)) != Qnil)
 					    break;
 			    }
-			    g_warning("Unknown pagedevice parameter: %d\n", i);
+			    hg_warning("Unknown pagedevice parameter: %d\n", i);
 			    break;
 		}
 		if (q != Qnil) {
@@ -524,10 +524,10 @@ hg_device_get_page_params(hg_device_t                 *device,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 		hg_object_free(d->o.mem, retval);
@@ -649,10 +649,10 @@ hg_device_eofill(hg_device_t  *device,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	}
@@ -698,10 +698,10 @@ hg_device_fill(hg_device_t  *device,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	}
@@ -747,10 +747,10 @@ hg_device_stroke(hg_device_t  *device,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	}

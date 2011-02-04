@@ -30,6 +30,7 @@
 
 #include <hieroglyph/hgtypes.h>
 #include <hieroglyph/hgerror.h>
+#include <hieroglyph/hgmessages.h>
 #include <hieroglyph/hgallocator.h>
 
 HG_BEGIN_DECLS
@@ -150,9 +151,9 @@ hg_mem_lock_object_with_gerror(hg_mem_t     *mem,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s (code: %d)",
-				  err->message,
-				  err->code);
+			hg_warning("%s (code: %d)",
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 	}

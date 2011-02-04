@@ -278,7 +278,7 @@ _hg_cairo_device_set_line_cap(hg_cairo_device_t *device,
 		    cap = CAIRO_LINE_CAP_SQUARE;
 		    break;
 	    default:
-		    g_warning("unknown line cap");
+		    hg_warning("unknown line cap");
 		    cap = CAIRO_LINE_CAP_BUTT;
 		    break;
 	}
@@ -302,7 +302,7 @@ _hg_cairo_device_set_line_join(hg_cairo_device_t *device,
 		    join = CAIRO_LINE_JOIN_BEVEL;
 		    break;
 	    default:
-		    g_warning("unknown line join");
+		    hg_warning("unknown line join");
 		    join = CAIRO_LINE_JOIN_MITER;
 		    break;
 	}

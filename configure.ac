@@ -18,6 +18,7 @@ AC_PROG_LEX
 
 AC_PROG_CC
 AM_PROG_CC_C_O
+AC_PROG_CXX
 
 GNOME_COMPILE_WARNINGS
 
@@ -88,6 +89,43 @@ AC_CHECK_ALIGNOF(int)
 AC_CHECK_ALIGNOF(long)
 AC_CHECK_ALIGNOF(void *)
 AC_CHECK_ALIGNOF(long long)
+
+dnl check for flavours of varargs macros
+AC_MSG_CHECKING(for ISO C99 varargs macros in C)
+_save_cflags=$CFLAGS
+CFLAGS=$(sed -e 's/\-Werror//g')
+AC_TRY_COMPILE([],[
+int a(int p1, int p2, int p3);
+#define call_a(...) a(1,__VA_ARGS__)
+call_a(2,3);
+],have_iso_c_varargs=yes,have_iso_c_varargs=no)
+CFLAGS=$_save_cflags
+AC_MSG_RESULT($have_iso_c_varargs)
+
+AC_MSG_CHECKING(for ISO C99 varargs macros in C++)
+if test "$CXX" = ""; then
+	have_iso_cxx_varargs=no
+else
+	AC_LANG_CPLUSPLUS
+	AC_TRY_COMPILE([],[
+int a(int p1, int p2, int p3);
+#define call_a(...) a(1,__VA_ARGS__)
+call_a(2,3);
+],have_iso_cxx_varargs=yes,have_iso_cxx_varargs=no)
+	AC_LANG_C
+fi
+AC_MSG_RESULT($have_iso_cxx_varargs)
+
+AC_MSG_CHECKING(for GNUC varargs macros)
+_save_cflags=$CFLAGS
+CFLAGS=$(sed -e 's/\-Werror//g')
+AC_TRY_COMPILE([],[
+int a(int p1, int p2, int p3);
+#define call_a(params...) a(1,params)
+call_a(2,3);
+],have_gnuc_varargs=yes,have_gnuc_varargs=no)
+CFLAGS=$_save_cflags
+AC_MSG_RESULT($have_gnuc_varargs)
 
 dnl ======================================================================
 dnl functions testing
@@ -197,6 +235,75 @@ AM_CONDITIONAL(ENABLE_CAIRO, test x$with_cairo != xno)
 dnl ======================================================================
 dnl output
 dnl ======================================================================
+AC_CONFIG_COMMANDS([hieroglyph/hgconfig.h],
+[
+	outfile=hieroglyph/hgconfig.h-tmp
+	cat > $outfile <<\_______EOF
+/*
+ * hgconfig.h
+ *
+ * This is a genereated file.  Please modify 'configure.ac'
+ */
+#ifndef __HIEROGLYPH_HGCONFIG_H__
+#define __HIEROGLYPH_HGCONFIG_H__
+
+#include <hieroglyph/hgmacros.h>
+
+_______EOF
+
+	cat >> $outfile <<_______EOF
+
+HG_BEGIN_DECLS
+
+_______EOF
+
+	if test x$hg_have_iso_c_varargs = xyes; then
+		cat >>$outfile <<_______EOF
+#ifndef __cplusplus
+#  define HG_HAVE_ISO_VARARGS	1
+#endif
+_______EOF
+	fi
+	if test x$hg_have_iso_cxx_varargs = xyes; then
+		cat >>$outfile <<_______EOF
+#ifdef __cplusplus
+#  define HG_HAVE_ISO_VARARGS	1
+#endif
+_______EOF
+	fi
+	if test x$hg_have_gnuc_varargs = xyes; then
+		cat >>$outfile <<_______EOF
+
+/* gcc-2.95.x supports both gnu style and ISO varargs, but if -ansi
+ * is passed ISO vararg support is turned off, and there is no work
+ * around to turn it on, so we unconditionally turn it off.
+ */
+#if __GNUC__ == 2 && __GNUC_MINOR__ == 95
+#  undef HG_HAVE_ISO_VARARGS
+#endif
+
+#define HG_HAVE_GNUC_VARARGS	1
+_______EOF
+	fi
+
+	cat >>$outfile <<_______EOF
+
+HG_END_DECLS
+
+#endif /* __HIEROGLYPH_HGCONFIG_H__ */
+_______EOF
+
+	if cmp -s $outfile hieroglyph/hgconfig.h; then
+		AC_MSG_NOTICE([hieroglyph/hgconfig.h is unchanged])
+		rm -f $outfile
+	else
+		mv $outfile hieroglyph/hgconfig.h
+	fi
+],[
+hg_have_gnuc_varargs=$have_gnuc_varargs
+hg_have_iso_c_varargs=$have_iso_c_varargs
+hg_have_iso_cxx_varargs=$have_iso_cxx_varargs
+])
 AC_CONFIG_FILES([
 	Makefile
 	build_tools/Makefile

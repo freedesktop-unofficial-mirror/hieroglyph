@@ -118,10 +118,10 @@ _hg_object_path_copy(hg_object_t              *object,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 		hg_object_free(p->o.mem, retval);
@@ -163,10 +163,10 @@ _hg_object_path_gc_mark(hg_object_t           *object,
 		if (error) {
 			*error = g_error_copy(err);
 		} else {
-			g_warning("%s: %s (code: %d)",
-				  __PRETTY_FUNCTION__,
-				  err->message,
-				  err->code);
+			hg_warning("%s: %s (code: %d)",
+				   __PRETTY_FUNCTION__,
+				   err->message,
+				   err->code);
 		}
 		g_error_free(err);
 		retval = FALSE;
@@ -256,8 +256,8 @@ _hg_path_add(hg_path_t      *path,
 	    case HG_PATH_UCACHE:
 		    break;
 	    default:
-		    g_warning("%s: Unknown path type: %d",
-			      __PRETTY_FUNCTION__, type);
+		    hg_warning("%s: Unknown path type: %d",
+			       __PRETTY_FUNCTION__, type);
 		    retval = FALSE;
 		    goto finalize;
 	}
@@ -952,8 +952,8 @@ hg_path_operate(hg_path_t                 *path,
 			    g_assert("XXX: not yet implemented.");
 			    break;
 		    default:
-			    g_warning("%s: Unknown path type: %d",
-				      __PRETTY_FUNCTION__, node[i].type);
+			    hg_warning("%s: Unknown path type: %d",
+				       __PRETTY_FUNCTION__, node[i].type);
 			    retval = FALSE;
 			    goto finalize;
 		}
