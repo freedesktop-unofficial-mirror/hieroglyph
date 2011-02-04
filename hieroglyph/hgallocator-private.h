@@ -25,7 +25,6 @@
 #define __HIEROGLYPH_HGALLOCATOR_PRIVATE_H__
 
 #include <hieroglyph/hgtypes.h>
-#include <hieroglyph/hgerror.h>
 #include <hieroglyph/hgmessages.h>
 #include <hieroglyph/hgquark.h>
 

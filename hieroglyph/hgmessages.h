@@ -34,8 +34,10 @@
 HG_BEGIN_DECLS
 
 typedef enum _hg_message_type_t		hg_message_type_t;
+typedef enum _hg_message_flags_t	hg_message_flags_t;
 typedef enum _hg_message_category_t	hg_message_category_t;
 typedef void (* hg_message_func_t)	(hg_message_type_t      type,
+					 hg_message_flags_t     flags,
 					 hg_message_category_t  category,
 					 const hg_char_t       *message,
 					 hg_pointer_t           user_data);
@@ -49,9 +51,19 @@ enum _hg_message_type_t {
 	HG_MSG_DEBUG,
 	HG_MSG_END
 };
+enum _hg_message_flags_t {
+	HG_MSG_FLAG_NONE	= 0,
+	HG_MSG_FLAG_NO_LINEFEED	= (1 << 0),
+	HG_MSG_FLAG_NO_PREFIX	= (1 << 1),
+	HG_MSG_FLAG_END
+};
 enum _hg_message_category_t {
 	HG_MSGCAT_0 = 0,
 	HG_MSGCAT_TRACE,
+	HG_MSGCAT_BITMAP,
+	HG_MSGCAT_ALLOC,
+	HG_MSGCAT_GC,
+	HG_MSGCAT_SNAPSHOT,
 	HG_MSGCAT_END
 };
 
@@ -61,11 +73,14 @@ hg_message_func_t hg_message_set_default_handler(hg_message_func_t      func,
 hg_message_func_t hg_message_set_handler        (hg_message_type_t      type,
                                                  hg_message_func_t      func,
                                                  hg_pointer_t           user_data);
+hg_bool_t         hg_message_is_enabled         (hg_message_category_t  category);
 void              hg_message_printf             (hg_message_type_t      type,
+						 hg_message_flags_t     flags,
                                                  hg_message_category_t  category,
                                                  const hg_char_t       *format,
 						 ...);
 void              hg_message_vprintf            (hg_message_type_t      type,
+						 hg_message_flags_t     flags,
                                                  hg_message_category_t  category,
                                                  const hg_char_t       *format,
                                                  va_list                args);
@@ -77,51 +92,67 @@ void              hg_return_if_fail_warning     (const hg_char_t       *pretty_f
 /* for(;;) ; so that GCC knows that control doesn't go past hg_fatal().
  * Put space before ending semicolon to avoid C++ build warnings.
  */
-#define hg_fatal(...)				\
-	HG_STMT_START {				\
-		hg_message_printf(HG_MSG_FATAL,	\
-				  0,		\
-				  __VA_ARGS__);	\
-		for (;;) ;			\
+#define hg_fatal(...)					\
+	HG_STMT_START {					\
+		hg_message_printf(HG_MSG_FATAL,		\
+				  HG_MSG_FLAG_NONE,	\
+				  0,			\
+				  __VA_ARGS__);		\
+		for (;;) ;				\
 	} HG_STMT_END
 #define hg_critical(...)			\
 	hg_message_printf(HG_MSG_CRITICAL,	\
+			  HG_MSG_FLAG_NONE,	\
 			  0,			\
 			  __VA_ARGS__)
 #define hg_warning(...)				\
 	hg_message_printf(HG_MSG_WARNING,	\
+			  HG_MSG_FLAG_NONE,	\
 			  0,			\
 			  __VA_ARGS__)
 #define hg_info(...)				\
 	hg_message_printf(HG_MSG_INFO,		\
+			  HG_MSG_FLAG_NONE,	\
 			  0,			\
 			  __VA_ARGS__)
 #define hg_debug(...)				\
+	hg_message_printf(HG_MSG_DEBUG,		\
+			  HG_MSG_FLAG_NONE,	\
+			  __VA_ARGS__)
+#define hg_debug0(...)				\
 	hg_message_printf(HG_MSG_DEBUG,		\
 			  __VA_ARGS__)
 
 #elif defined(HG_HAVE_GNUC_VARARGS)
 
-#define hg_fatal(format...)			\
-	HG_STMT_START {				\
-		hg_message_printf(HG_MSG_FATAL,	\
-				  0,		\
-				  format);	\
-		for (;;) ;			\
+#define hg_fatal(format...)				\
+	HG_STMT_START {					\
+		hg_message_printf(HG_MSG_FATAL,		\
+				  HG_MSG_FLAG_NONE,	\
+				  0,			\
+				  format);		\
+		for (;;) ;				\
 	} HG_STMT_END
 #define hg_critical(format...)			\
 	hg_message_printf(HG_MSG_CRITICAL,	\
+			  HG_MSG_FLAG_NONE,	\
 			  0,			\
 			  format)
 #define hg_warning(format...)			\
 	hg_message_printf(HG_MSG_WARNING,	\
+			  HG_MSG_FLAG_NONE,	\
 			  0,			\
 			  format)
 #define hg_info(format...)			\
 	hg_message_printf(HG_MSG_INFO,		\
+			  HG_MSG_FLAG_NONE,	\
 			  0,			\
 			  format)
 #define hg_debug(format...)			\
+	hg_message_printf(HG_MSG_DEBUG,		\
+			  HG_MSG_FLAG_NONE,	\
+			  format)
+#define hg_debug0(format...)			\
 	hg_message_printf(HG_MSG_DEBUG,		\
 			  format)
 #else
@@ -132,7 +163,7 @@ hg_fatal(const hg_char_t *format,
 	va_list args;
 
 	va_start(args, format);
-	hg_message_vprintf(HG_MSG_FATAL, 0, format, args);
+	hg_message_vprintf(HG_MSG_FATAL, HG_MSG_FLAG_NONE, 0, format, args);
 	va_end(args);
 
 	for (;;) ;
@@ -144,7 +175,7 @@ hg_critical(const hg_char_t *format,
 	va_list args;
 
 	va_start(args, format);
-	hg_message_vprintf(HG_MSG_CRITICAL, 0, format, args);
+	hg_message_vprintf(HG_MSG_CRITICAL, HG_MSG_FLAG_NONE, 0, format, args);
 	va_end(args);
 }
 static void
@@ -154,7 +185,7 @@ hg_warning(const hg_char_t *format,
 	va_list args;
 
 	va_start(args, format);
-	hg_message_vprintf(HG_MSG_WARNING, 0, format, args);
+	hg_message_vprintf(HG_MSG_WARNING, HG_MSG_FLAG_NONE, 0, format, args);
 	va_end(args);
 }
 static void
@@ -164,7 +195,7 @@ hg_info(const hg_char_t *format,
 	va_list args;
 
 	va_start(args, format);
-	hg_message_vprintf(HG_MSG_INFO, 0, format, args);
+	hg_message_vprintf(HG_MSG_INFO, HG_MSG_FLAG_NONE, 0, format, args);
 	va_end(args);
 }
 static void
@@ -175,7 +206,19 @@ hg_debug(hg_message_category_t  category,
 	va_list args;
 
 	va_start(args, format);
-	hg_message_vprintf(HG_MSG_DEBUG, category, format, args);
+	hg_message_vprintf(HG_MSG_DEBUG, HG_MSG_FLAG_NONE, category, format, args);
+	va_end(args);
+}
+static void
+hg_debug0(hg_message_flags_t     flags,
+	  hg_message_category_t  category,
+	  const hg_char_t       *format,
+	  ...)
+{
+	va_list args;
+
+	va_start(args, format);
+	hg_message_vprintf(HG_MSG_DEBUG, flags, category, format, args);
 	va_end(args);
 }
 #endif

@@ -62,9 +62,7 @@ _hg_mem_call_gc_finalizer(gpointer key,
 	hg_mem_finalizer_func_t func = val;
 	hg_mem_t *mem = user_data;
 
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-	g_print("GC: invoking finalizer for %lx\n", qdata);
-#endif
+	hg_debug(HG_MSGCAT_GC, "invoking finalizer for %lx", qdata);
 	func(mem, qdata);
 }
 
@@ -577,9 +575,7 @@ hg_mem_collect_garbage(hg_mem_t *mem)
 		if (mem->allocator->gc_init(mem->data)) {
 			gboolean ret = TRUE;
 
-#if defined (HG_DEBUG) && defined (HG_GC_DEBUG)
-			g_print("GC: starting [mem_id: %d]\n", mem->id);
-#endif
+			hg_debug(HG_MSGCAT_GC, "starting [mem_id: %d]", mem->id);
 			_hg_mem_gc_init(mem);
 			if (mem->gc_func)
 				ret = mem->gc_func(mem, mem->gc_data);

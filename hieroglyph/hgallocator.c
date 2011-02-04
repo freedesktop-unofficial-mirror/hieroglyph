@@ -202,8 +202,8 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 	aligned_size = HG_ALIGNED_TO (size, BLOCK_SIZE) / BLOCK_SIZE;
 	page = bitmap->last_page;
 
-#if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
-	g_print("ALLOC: %" G_GSIZE_FORMAT " blocks required\n", aligned_size);
+	hg_debug(HG_MSGCAT_ALLOC, "%ld blocks required", aligned_size);
+#if defined(HG_DEBUG)
 	_hg_allocator_bitmap_dump(bitmap, page);
 #endif
   find_free_page:
@@ -217,9 +217,7 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 			bitmap->last_index[page] = ((i + 1) >= bitmap->size[page] ? 0 : i);
 			bitmap->last_page = page;
 
-#if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
-			g_print("Allocated at [page: %d, index: %d]\n", page, i + 1);
-#endif
+			hg_debug(HG_MSGCAT_ALLOC, "allocated at [page: %d, index: %d]", page, i + 1);
 
 			return _hg_allocator_quark_build(page, i + 1);
 		} else {
@@ -263,8 +261,9 @@ _hg_allocator_bitmap_realloc(hg_allocator_bitmap_t *bitmap,
 	old_aligned_size = HG_ALIGNED_TO (old_size, BLOCK_SIZE) / BLOCK_SIZE;
 	page = _hg_allocator_quark_get_page(index_);
 	idx = _hg_allocator_quark_get_index(index_);
-#if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
-	g_print("ALLOC: %" G_GSIZE_FORMAT " blocks to be grown from %" G_GSIZE_FORMAT " blocks at index %" G_GSIZE_FORMAT "(page:%d, idx:%u)\n", aligned_size, old_aligned_size, index_, page, idx);
+
+	hg_debug(HG_MSGCAT_ALLOC, "%ld blocks to be reallocated from %ld blocks at index %ld [page: %d, idx: %u]", aligned_size, old_aligned_size, index_, page, idx);
+#if defined(HG_DEBUG)
 	_hg_allocator_bitmap_dump(bitmap, page);
 #endif
 	required_size = aligned_size - old_aligned_size;
@@ -299,9 +298,7 @@ _hg_allocator_bitmap_realloc(hg_allocator_bitmap_t *bitmap,
 
 		return index_;
 	}
-#if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
-	g_print("Falling back to allocate the memory.\n");
-#endif
+	hg_debug(HG_MSGCAT_ALLOC, "Unable to reallocate. falling back to simply allocate the new memory.");
 
 	return _hg_allocator_bitmap_alloc(bitmap, size);
 }
@@ -333,8 +330,8 @@ _hg_allocator_bitmap_free(hg_allocator_bitmap_t *bitmap,
 
 	G_UNLOCK (bitmap);
 
-#if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
-	g_print("After freed ");
+	hg_debug(HG_MSGCAT_ALLOC, "Freed %ld blocks at index %ld [page: %d, idx: %u]", aligned_size, index_, page, idx);
+#if defined(HG_DEBUG)
 	_hg_allocator_bitmap_dump(bitmap, page);
 #endif
 }
@@ -440,15 +437,27 @@ _hg_allocator_bitmap_dump(hg_allocator_bitmap_t *bitmap,
 {
 	gsize i;
 
-	g_print("bitmap[%d]: %" G_GSIZE_FORMAT " blocks allocated\n", page, bitmap->size[page]);
-	g_print("        :         1         2         3         4         5         6         7\n");
-	g_print("        :12345678901234567890123456789012345678901234567890123456789012345678901234567890");
-	for (i = 0; i < bitmap->size[page]; i++) {
-		if (i % 70 == 0)
-			g_print("\n%08lx:", i);
-		g_print("%d", _hg_allocator_bitmap_is_marked(bitmap, page, i + 1) ? 1 : 0);
+	if (hg_message_is_enabled(HG_MSGCAT_BITMAP)) {
+		hg_debug(HG_MSGCAT_BITMAP, "bitmap[%d]: %ld blocks allocated", page, bitmap->size[page]);
+		hg_debug(HG_MSGCAT_BITMAP, "        :         1         2         3         4         5         6         7");
+		hg_debug(HG_MSGCAT_BITMAP, "        :12345678901234567890123456789012345678901234567890123456789012345678901234567890");
+		for (i = 0; i < bitmap->size[page]; i++) {
+			if (i % 70 == 0) {
+				if (i != 0) {
+					hg_debug0(HG_MSG_FLAG_NO_PREFIX,
+						  HG_MSGCAT_BITMAP,
+						  "");
+				}
+				hg_debug0(HG_MSG_FLAG_NO_LINEFEED,
+					  HG_MSGCAT_BITMAP,
+					  "%08lx:", i);
+			}
+			hg_debug0(HG_MSG_FLAG_NO_LINEFEED|HG_MSG_FLAG_NO_PREFIX,
+				  HG_MSGCAT_BITMAP,
+				  "%d", _hg_allocator_bitmap_is_marked(bitmap, page, i + 1) ? 1 : 0);
+		}
+		hg_debug0(HG_MSG_FLAG_NO_PREFIX, HG_MSGCAT_BITMAP, "");
 	}
-	g_print("\n");
 }
 
 /** allocator **/
@@ -609,7 +618,7 @@ _hg_allocator_realloc(hg_allocator_data_t *data,
 			_hg_allocator_real_unlock_object(block);
 		}
 	} else {
-#if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
+#if defined(HG_DEBUG)
 		hg_warning("%lx isn't the allocated object.\n", qdata);
 #endif
 	}
@@ -634,7 +643,7 @@ _hg_allocator_free(hg_allocator_data_t *data,
 
 		_hg_allocator_bitmap_free(priv->bitmap, index_, block->size);
 	} else {
-#if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
+#if defined(HG_DEBUG)
 		hg_warning("%lx isn't the allocated object.\n", index_);
 #endif
 	}
@@ -672,9 +681,6 @@ _hg_allocator_get_internal_block_from_page_and_index(hg_allocator_private_t *pri
 		memset(retval, 0, sizeof (hg_allocator_block_t));
 		retval->lock_count = 1;
 	}
-#if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
-	g_print("%s: %p\n", __FUNCTION__, retval);
-#endif
 
 	return retval;
 }
@@ -691,10 +697,8 @@ _hg_allocator_real_lock_object(hg_allocator_data_t *data,
 
 	page = _hg_allocator_quark_get_page(index_);
 	idx = _hg_allocator_quark_get_index(index_);
-#if defined(HG_DEBUG) && defined(HG_MEM_DEBUG)
-	g_print("%s: index 0x%lx [page: %d, idx: %d]\n",
-		__PRETTY_FUNCTION__, index_, page, idx);
-#endif
+
+	hg_debug(HG_MSGCAT_ALLOC, "Locking index %ld [page: %d, idx: %u]", index_, page, idx);
 	priv = (hg_allocator_private_t *)data;
 	if (_hg_allocator_bitmap_is_marked(priv->bitmap, page, idx)) {
 		/* XXX: maybe better validate the block size too? */
@@ -804,15 +808,13 @@ _hg_allocator_gc_mark(hg_allocator_data_t  *data,
 		idx = _hg_allocator_quark_get_index(index_);
 		aligned_size = HG_ALIGNED_TO (block->size, BLOCK_SIZE) / BLOCK_SIZE;
 		if (_hg_allocator_bitmap_range_mark(priv->slave_bitmap, page, &idx, aligned_size)) {
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-			g_print("GC: Marked index %ld, size: %ld\n", index_, aligned_size);
+			hg_debug(HG_MSGCAT_GC, "Marked index %ld, size: %ld", index_, aligned_size);
+#if defined(HG_DEBUG)
 			_hg_allocator_bitmap_dump(priv->slave_bitmap, page);
 #endif
 			priv->slave.used_size += block->size;
 		} else {
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-			g_print("GC: already marked index %ld\n", index_);
-#endif
+			hg_debug(HG_MSGCAT_GC, "index %ld already marked", index_);
 		}
 		_hg_allocator_real_unlock_object(block);
 	} else {
@@ -855,9 +857,8 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 
 		used_size = data->used_size - priv->slave.used_size;
 
-#if defined (HG_DEBUG) && defined (HG_GC_DEBUG)
-		g_print("GC: marking the locked objects\n");
-#endif
+		hg_debug(HG_MSGCAT_GC, "Marking the locked objects");
+
 		/* give aid to the locked blocks */
 		for (i = 0; used_size > 0 && i < max_page; i++) {
 			for (j = 0; used_size > 0 && j < priv->bitmap->size[i]; j++) {
@@ -877,7 +878,7 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 						if (block->lock_count > 0) {
 							hg_warning("[BUG] locked block without references [page: %d, index: %d, size: %ld, count: %d]\n",
 								   i, j + 1, block->size, block->lock_count);
-#if defined (HG_DEBUG) && defined (HG_GC_DEBUG)
+#if defined (HG_DEBUG)
 							abort();
 #endif
 							was_error = !_hg_allocator_gc_mark(data, _hg_allocator_quark_build(i, j + 1), NULL);
@@ -892,15 +893,14 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 		}
 	}
 
-#if defined (HG_DEBUG) && defined (HG_GC_DEBUG)
-	if (!was_error)
-		g_print("GC: %ld -> %ld (%ld bytes freed) / %ld\n",
-			data->used_size, priv->slave.used_size,
-			data->used_size - priv->slave.used_size,
-			data->total_size);
-	else
-		g_print("GC: failed.\n");
-#endif
+	if (!was_error) {
+		hg_debug(HG_MSGCAT_GC, "%ld -> %ld (%ld bytes freed) / %ld",
+			 data->used_size, priv->slave.used_size,
+			 data->used_size - priv->slave.used_size,
+			 data->total_size);
+	} else {
+		hg_debug(HG_MSGCAT_GC, "the garbage collection failed");
+	}
 
 	if (was_error) {
 		_hg_allocator_bitmap_destroy(priv->slave_bitmap);
@@ -979,9 +979,8 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t          *data,
 									 NULL,
 									 NULL) ||
 					    b1->lock_count > 0) {
-#if defined (HG_DEBUG) && defined (HG_SNAPSHOT_DEBUG)
-						g_print("SN: detected the block has different size or different age: [page: %d, index: %d] - [age: %ld, size: %d] [age: %ld, size: %d]\n", i, j + 1, b1->size, b1->age, b2->size, b2->age);
-#endif
+						hg_debug(HG_MSGCAT_SNAPSHOT, "detected the block that has different size or different age at [page: %d, index: %d]: current:[age: %ld, size: %d] snapshot:[age: %ld, size: %d]",
+							 i, j + 1, b1->size, b1->age, b2->size, b2->age);
 						goto error;
 					}
 				}
@@ -996,9 +995,7 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t          *data,
 								 NULL,
 								 NULL) ||
 				    b1->lock_count > 0) {
-#if defined (HG_DEBUG) && defined (HG_SNAPSHOT_DEBUG)
-					g_print("SN: detected newly allocated block: [page: %d, index: %d]\n", i, j + 1);
-#endif
+					hg_debug(HG_MSGCAT_SNAPSHOT, "detected newly allocated block after snapshot at [page: %d, index: %d]", i, j + 1);
 					goto error;
 				}
 				aligned_size = HG_ALIGNED_TO (b1->size, BLOCK_SIZE) / BLOCK_SIZE;
@@ -1013,9 +1010,7 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t          *data,
 				check_size--;
 				for (k = j + 1; check_size > 0 && k < priv->bitmap->size[i]; k++) {
 					if (_hg_allocator_bitmap_is_marked(priv->bitmap, i, k + 1)) {
-#if defined (HG_DEBUG) && defined (HG_SNAPSHOT_DEBUG)
-						g_print("SN: detected newly allocated block: [page: %d, index: %" G_GSIZE_FORMAT "] - [size: %" G_GSIZE_FORMAT "]\n", i, k + 1, b2->size);
-#endif
+						hg_debug(HG_MSGCAT_SNAPSHOT, "detected newly allocated block at [page: %d, index: %ld, size: %ld]", i, k + 1, b2->size);
 						goto error;
 					}
 					check_size--;

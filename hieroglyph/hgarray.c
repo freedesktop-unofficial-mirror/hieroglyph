@@ -221,14 +221,10 @@ _hg_object_array_gc_mark(hg_object_t           *object,
 
 	hg_return_val_if_fail (object->type == HG_TYPE_ARRAY, FALSE);
 
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-	g_print("GC: (array) marking container\n");
-#endif
+	hg_debug(HG_MSGCAT_GC, "array: marking container");
 	if (!hg_mem_gc_mark(array->o.mem, array->qcontainer, &err))
 		goto finalize;
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-	g_print("GC: (array) marking name\n");
-#endif
+	hg_debug(HG_MSGCAT_GC, "array: marking name");
 	if (!hg_mem_gc_mark(array->o.mem, array->qname, &err))
 		goto finalize;
 

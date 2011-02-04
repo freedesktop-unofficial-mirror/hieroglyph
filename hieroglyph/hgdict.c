@@ -311,19 +311,13 @@ _hg_object_dict_node_gc_mark(hg_object_t           *object,
 
 	hg_return_val_if_fail (object->type == HG_TYPE_DICT_NODE, FALSE);
 
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-	g_print("GC: (dict) marking key container\n");
-#endif
+	hg_debug(HG_MSGCAT_GC, "dict: marking key container");
 	if (!hg_mem_gc_mark(dnode->o.mem, dnode->qkey, &err))
 		goto finalize;
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-	g_print("GC: (dict) marking value container\n");
-#endif
+	hg_debug(HG_MSGCAT_GC, "dict: marking value container");
 	if (!hg_mem_gc_mark(dnode->o.mem, dnode->qval, &err))
 		goto finalize;
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-	g_print("GC: (dict) marking node container\n");
-#endif
+	hg_debug(HG_MSGCAT_GC, "dict: marking node container");
 	if (!hg_mem_gc_mark(dnode->o.mem, dnode->qnodes, &err))
 		goto finalize;
 
@@ -339,25 +333,17 @@ _hg_object_dict_node_gc_mark(hg_object_t           *object,
 	}
 
 	for (i = 0; i < dnode->n_data; i++) {
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-		g_print("GC: (dict) marking node[%ld]\n", i);
-#endif
+		hg_debug(HG_MSGCAT_GC, "dict: marking node[%ld]", i);
 		if (!func(qnode_nodes[i], user_data, &err))
 			goto qfinalize;
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-		g_print("GC: (dict) marking key[%ld]\n", i);
-#endif
+		hg_debug(HG_MSGCAT_GC, "dict: marking key[%ld]", i);
 		if (!func(qnode_keys[i], user_data, &err))
 			goto qfinalize;
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-		g_print("GC: (dict) marking value[%ld]\n", i);
-#endif
+		hg_debug(HG_MSGCAT_GC, "dict: marking value[%ld]", i);
 		if (!func(qnode_vals[i], user_data, &err))
 			goto qfinalize;
 	}
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-		g_print("GC: (dict) marking node[%ld]\n", dnode->n_data);
-#endif
+	hg_debug(HG_MSGCAT_GC, "dict: marking node[%ld]", dnode->n_data);
 	if (!func(qnode_nodes[dnode->n_data], user_data, &err))
 		goto qfinalize;
 
