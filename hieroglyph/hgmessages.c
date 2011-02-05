@@ -209,7 +209,7 @@ hg_bool_t
 hg_message_is_enabled(hg_message_category_t category)
 {
 	static hg_bool_t cache = FALSE;
-	hg_int_t mask = 0;
+	static hg_int_t mask = 0;
 	const hg_char_t *env;
 
 	if (!cache) {
