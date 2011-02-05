@@ -113,7 +113,9 @@ _hg_message_stacktrace(void)
 	if (size > 0) {
 		strings = backtrace_symbols(traces, size);
 		hg_debug(HG_MSGCAT_TRACE, "Stacktrace:");
-		/* 0.. here.
+		/*
+		 * XXX:
+		 * 0.. here.
 		 * 1.. _hg_message_default_handler
 		 * 2.. hg_message_vprintf
 		 * 3.. hg_message_printf
