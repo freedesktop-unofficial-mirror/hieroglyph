@@ -42,6 +42,7 @@
 #include <hieroglyph/hgmark.h>
 #include <hieroglyph/hgmatrix.h>
 #include <hieroglyph/hgmem.h>
+#include <hieroglyph/hgmessages.h>
 #include <hieroglyph/hgname.h>
 #include <hieroglyph/hgnull.h>
 #include <hieroglyph/hgobject.h>
