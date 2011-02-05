@@ -208,11 +208,16 @@ hg_message_set_handler(hg_message_type_t type,
 hg_bool_t
 hg_message_is_enabled(hg_message_category_t category)
 {
-	const hg_char_t *env = getenv("HG_DEBUG");
+	static hg_bool_t cache = FALSE;
 	hg_int_t mask = 0;
+	const hg_char_t *env;
 
-	if (env)
-		mask = atoi(env);
+	if (!cache) {
+		env = getenv("HG_DEBUG");
+		if (env)
+			mask = atoi(env);
+		cache = TRUE;
+	}
 
 	return ((1 << (category - 1)) & mask) != 0;
 }
