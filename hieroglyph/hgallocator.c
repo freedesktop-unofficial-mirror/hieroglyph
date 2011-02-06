@@ -444,19 +444,19 @@ _hg_allocator_bitmap_dump(hg_allocator_bitmap_t *bitmap,
 		for (i = 0; i < bitmap->size[page]; i++) {
 			if (i % 70 == 0) {
 				if (i != 0) {
-					hg_debug0(HG_MSG_FLAG_NO_PREFIX,
-						  HG_MSGCAT_BITMAP,
+					hg_debug0(HG_MSGCAT_BITMAP,
+						  HG_MSG_FLAG_NO_PREFIX,
 						  "");
 				}
-				hg_debug0(HG_MSG_FLAG_NO_LINEFEED,
-					  HG_MSGCAT_BITMAP,
+				hg_debug0(HG_MSGCAT_BITMAP,
+					  HG_MSG_FLAG_NO_LINEFEED,
 					  "%08lx:", i);
 			}
-			hg_debug0(HG_MSG_FLAG_NO_LINEFEED|HG_MSG_FLAG_NO_PREFIX,
-				  HG_MSGCAT_BITMAP,
+			hg_debug0(HG_MSGCAT_BITMAP,
+				  HG_MSG_FLAG_NO_LINEFEED|HG_MSG_FLAG_NO_PREFIX,
 				  "%d", _hg_allocator_bitmap_is_marked(bitmap, page, i + 1) ? 1 : 0);
 		}
-		hg_debug0(HG_MSG_FLAG_NO_PREFIX, HG_MSGCAT_BITMAP, "");
+		hg_debug0(HG_MSGCAT_BITMAP, HG_MSG_FLAG_NO_PREFIX, "");
 	}
 }
 

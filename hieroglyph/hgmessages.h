@@ -115,12 +115,15 @@ void              hg_return_if_fail_warning     (const hg_char_t       *pretty_f
 			  HG_MSG_FLAG_NONE,	\
 			  0,			\
 			  __VA_ARGS__)
-#define hg_debug(...)				\
+#define hg_debug(_c_,...)			\
 	hg_message_printf(HG_MSG_DEBUG,		\
 			  HG_MSG_FLAG_NONE,	\
+			  (_c_),		\
 			  __VA_ARGS__)
-#define hg_debug0(...)				\
+#define hg_debug0(_c_,_f_,...)			\
 	hg_message_printf(HG_MSG_DEBUG,		\
+			  (_f_),		\
+			  (_c_),		\
 			  __VA_ARGS__)
 
 #elif defined(HG_HAVE_GNUC_VARARGS)
@@ -148,12 +151,15 @@ void              hg_return_if_fail_warning     (const hg_char_t       *pretty_f
 			  HG_MSG_FLAG_NONE,	\
 			  0,			\
 			  format)
-#define hg_debug(format...)			\
+#define hg_debug(_c_,format...)			\
 	hg_message_printf(HG_MSG_DEBUG,		\
 			  HG_MSG_FLAG_NONE,	\
+			  (_c_),		\
 			  format)
-#define hg_debug0(format...)			\
+#define hg_debug0(_c_,_f_,format...)		\
 	hg_message_printf(HG_MSG_DEBUG,		\
+			  (_f_),		\
+			  (_c_),		\
 			  format)
 #else
 static void
@@ -210,8 +216,8 @@ hg_debug(hg_message_category_t  category,
 	va_end(args);
 }
 static void
-hg_debug0(hg_message_flags_t     flags,
-	  hg_message_category_t  category,
+hg_debug0(hg_message_category_t  category,
+	  hg_message_flags_t     flags,
 	  const hg_char_t       *format,
 	  ...)
 {
