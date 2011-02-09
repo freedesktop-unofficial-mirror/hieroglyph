@@ -349,6 +349,11 @@ void       hg_vm_quark_set_accessible        (hg_vm_t     *vm,
 gboolean   hg_vm_quark_is_accessible         (hg_vm_t     *vm,
                                               hg_quark_t  *qdata);
 
+/* hg_snapshot_t */
+hg_error_t hg_vm_snapshot_save   (hg_vm_t    *vm);
+hg_error_t hg_vm_snapshot_restore(hg_vm_t    *vm,
+				  hg_quark_t  qsnapshot);
+
 /* hg_stack_t */
 hg_stack_t *hg_vm_stack_new (hg_vm_t    *vm,
                              gsize       size);

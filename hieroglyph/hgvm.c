@@ -31,6 +31,7 @@
 #include "hgbool.h"
 #include "hgdevice.h"
 #include "hgdict.h"
+#include "hgerror.h"
 #include "hggstate.h"
 #include "hgint.h"
 #include "hgmark.h"
@@ -850,6 +851,46 @@ _hg_vm_set_user_params(hg_mem_t    *mem,
 			    break;
 		    default:
 			    break;
+		}
+	}
+
+	return TRUE;
+}
+
+static hg_bool_t
+_hg_vm_restore_mark_traverse(hg_mem_t      *mem,
+			     hg_quark_t     qdata,
+			     hg_pointer_t   data,
+			     GError       **error)
+{
+	guint id = hg_quark_get_mem_id(qdata);
+	hg_mem_t *m = hg_mem_get(id);
+
+	if (m == NULL) {
+		g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
+			    "No memory spool found");
+		return FALSE;
+	}
+	hg_mem_restore_mark(m, qdata);
+
+	return TRUE;
+}
+
+static hg_bool_t
+_hg_vm_restore_mark(hg_mem_t     *mem,
+		    hg_pointer_t  data)
+{
+	hg_vm_t *vm = (hg_vm_t *)data;
+	gsize i;
+	GError *err = NULL;
+
+	for (i = 0; i <= HG_VM_STACK_DSTACK; i++) {
+		hg_stack_foreach(vm->stacks[i],
+				 _hg_vm_restore_mark_traverse,
+				 vm, FALSE, &err);
+		if (err) {
+			g_error_free(err);
+			return FALSE;
 		}
 	}
 
@@ -4404,6 +4445,108 @@ hg_vm_quark_is_accessible(hg_vm_t    *vm,
 	}
 
 	return hg_quark_is_accessible(*qdata);
+}
+
+/* hg_snapshot_t */
+
+/**
+ * hg_vm_snapshot_save:
+ * @vm:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_error_t
+hg_vm_snapshot_save(hg_vm_t *vm)
+{
+	hg_quark_t q, qgg = hg_vm_get_gstate(vm), qg;
+	hg_snapshot_t *sn;
+	hg_gstate_t *gstate;
+
+	hg_return_val_if_fail (vm != NULL, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
+
+	q = hg_snapshot_new(vm->mem[HG_VM_MEM_LOCAL],
+			    (hg_pointer_t *)&sn);
+	if (q == Qnil)
+		return HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
+	if (!hg_snapshot_save(sn)) {
+		_HG_VM_UNLOCK (vm, q);
+		return HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
+	}
+	_HG_VM_UNLOCK (vm, q);
+
+	qg = hg_vm_quark_copy(vm, qgg, NULL, NULL);
+	if (qg == Qnil)
+		return HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
+
+	gstate = _HG_VM_LOCK (vm, qgg, NULL);
+	if (gstate == NULL)
+		return HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
+	gstate->is_snapshot = q;
+	_HG_VM_UNLOCK (vm, qgg);
+
+	if (!hg_stack_push(vm->stacks[HG_VM_STACK_GSTATE], qgg)) {
+		return HG_ERROR_ (HG_STATUS_FAILED, HG_e_limitcheck);
+	}
+	hg_vm_set_gstate(vm, qg);
+
+	if (!hg_stack_push(vm->stacks[HG_VM_STACK_OSTACK], q)) {
+		return HG_ERROR_ (HG_STATUS_FAILED, HG_e_stackoverflow);
+	}
+	vm->vm_state->n_save_objects++;
+
+	return HG_ERROR_ (HG_STATUS_SUCCESS, 0);
+}
+
+/**
+ * hg_vm_snapshot_restore:
+ * @vm:
+ * @qsnapshot:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_error_t
+hg_vm_snapshot_restore(hg_vm_t    *vm,
+		       hg_quark_t  qsnapshot)
+{
+	hg_quark_t q = Qnil, qq = Qnil;
+	hg_snapshot_t *sn;
+	hg_gstate_t *gstate;
+
+	hg_return_val_if_fail (vm != NULL, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
+	hg_return_val_if_fail (HG_IS_QSNAPSHOT (qsnapshot), HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck));
+
+	/* drop the gstate in the stack */
+	while (hg_stack_depth(vm->stacks[HG_VM_STACK_GSTATE]) > 0 &&
+	       qq != qsnapshot) {
+		q = hg_stack_index(vm->stacks[HG_VM_STACK_GSTATE], 0, NULL);
+		gstate = _HG_VM_LOCK (vm, q, NULL);
+		if (gstate == NULL) {
+			return HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
+		}
+		hg_vm_set_gstate(vm, q);
+		qq = gstate->is_snapshot;
+		hg_stack_drop(vm->stacks[HG_VM_STACK_GSTATE], NULL);
+
+		_HG_VM_UNLOCK (vm, q);
+	}
+
+	sn = _HG_VM_LOCK (vm, qsnapshot, NULL);
+	if (sn == NULL) {
+		return HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
+	}
+	if (!hg_snapshot_restore(sn,
+				 _hg_vm_restore_mark,
+				 vm)) {
+		_HG_VM_UNLOCK (vm, qsnapshot);
+
+		return HG_ERROR_ (HG_STATUS_FAILED, HG_e_invalidrestore);
+	}
+
+	return HG_ERROR_ (HG_STATUS_SUCCESS, 0);
 }
 
 /* hg_stack_t */

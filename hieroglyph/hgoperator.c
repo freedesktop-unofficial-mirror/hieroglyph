@@ -6458,95 +6458,24 @@ DEFUNC_UNIMPLEMENTED_OPER (resetfile);
 DEFUNC_UNIMPLEMENTED_OPER (resourceforall);
 DEFUNC_UNIMPLEMENTED_OPER (resourcestatus);
 
-static gboolean
-_hg_operator_restore_mark_traverse(hg_mem_t    *mem,
-				   hg_quark_t   qdata,
-				   gpointer     data,
-				   GError     **error)
-{
-	guint id = hg_quark_get_mem_id(qdata);
-	hg_mem_t *m = hg_mem_get(id);
-
-	if (m == NULL) {
-		g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
-			    "No memory spool found");
-		return FALSE;
-	}
-	hg_mem_restore_mark(m, qdata);
-
-	return TRUE;
-}
-
-static gboolean
-_hg_operator_restore_mark(hg_mem_t *mem,
-			  gpointer  data)
-{
-	hg_vm_t *vm = (hg_vm_t *)data;
-	gsize i;
-	GError *err = NULL;
-
-	for (i = 0; i <= HG_VM_STACK_DSTACK; i++) {
-		hg_stack_foreach(vm->stacks[i],
-				 _hg_operator_restore_mark_traverse,
-				 vm, FALSE, &err);
-		if (err) {
-			g_error_free(err);
-			return FALSE;
-		}
-	}
-
-	return TRUE;
-}
-
 /* <save> restore - */
 DEFUNC_OPER (restore)
 {
-	hg_quark_t arg0, q, qq = Qnil;
-	hg_snapshot_t *sn;
-	hg_gstate_t *g;
+	hg_quark_t arg0;
+	hg_error_t err;
 
 	CHECK_STACK (ostack, 1);
 
 	arg0 = hg_stack_index(ostack, 0, error);
-	if (!HG_IS_QSNAPSHOT (arg0)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+	err = hg_vm_snapshot_restore(vm, arg0);
+	if (!HG_ERROR_IS_SUCCESS (err)) {
+		hg_vm_set_error(vm, qself, HG_ERROR_GET_REASON (err));
 		return FALSE;
 	}
-	/* can't call _hg_operator_real_grestoreall.
-	 * check the quark what it's referenced from.
-	 * otherwise restore will fails due to the remaining gstate object.
-	 */
-	while (hg_stack_depth(vm->stacks[HG_VM_STACK_GSTATE]) > 0 && qq != arg0) {
-		q = hg_stack_index(vm->stacks[HG_VM_STACK_GSTATE], 0, error);
 
-		g = HG_VM_LOCK (vm, q, error);
-		if (g == NULL) {
-			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
-			return FALSE;
-		}
-		hg_vm_set_gstate(vm, q);
-		qq = g->is_snapshot;
-		hg_stack_drop(vm->stacks[HG_VM_STACK_GSTATE], error);
-
-		HG_VM_UNLOCK (vm, q);
-	}
-
-	sn = HG_VM_LOCK (vm, arg0, error);
-	if (sn == NULL) {
-		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
-		return FALSE;
-	}
-	if (!hg_snapshot_restore(sn,
-				 _hg_operator_restore_mark,
-				 vm)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_invalidrestore);
-		goto error;
-	}
 	retval = TRUE;
 	hg_stack_drop(ostack, error);
 	SET_EXPECTED_OSTACK_SIZE (-1);
-  error:
-	HG_VM_UNLOCK (vm, arg0);
 } DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (reversepath);
@@ -6827,39 +6756,12 @@ DEFUNC_OPER (rrand)
 /* - save <save> */
 DEFUNC_OPER (save)
 {
-	hg_quark_t q, qgg = hg_vm_get_gstate(vm), qg;
-	hg_snapshot_t *sn;
-	hg_gstate_t *gstate;
+	hg_error_t err = hg_vm_snapshot_save(vm);
 
-	q = hg_snapshot_new(vm->mem[HG_VM_MEM_LOCAL],
-			    (gpointer *)&sn);
-	if (q == Qnil) {
-		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+	if (!HG_ERROR_IS_SUCCESS (err)) {
+		hg_vm_set_error(vm, qself, HG_ERROR_GET_REASON (err));
 		return FALSE;
 	}
-	if (!hg_snapshot_save(sn)) {
-		HG_VM_UNLOCK (vm, q);
-		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
-		return FALSE;
-	}
-	HG_VM_UNLOCK (vm, q);
-
-	/* save the gstate too */
-	gstate = HG_VM_LOCK (vm, qgg, error);
-	if (gstate == NULL) {
-		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
-		return FALSE;
-	}
-	qg = hg_gstate_save(gstate, q);
-
-	STACK_PUSH (vm->stacks[HG_VM_STACK_GSTATE], qgg);
-
-	HG_VM_UNLOCK (vm, qgg);
-	hg_vm_set_gstate(vm, qg);
-
-	STACK_PUSH (ostack, q);
-
-	vm->vm_state->n_save_objects++;
 
 	retval = TRUE;
 	SET_EXPECTED_OSTACK_SIZE (1);
