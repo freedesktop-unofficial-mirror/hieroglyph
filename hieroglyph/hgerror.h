@@ -36,25 +36,29 @@
 
 HG_BEGIN_DECLS
 
-#define HG_ERROR_VM_STATUS_MASK_SHIFT	8
-#define HG_ERROR_VM_STATUS_MASK		((1 << HG_ERROR_VM_STATUS_MASK_SHIFT) - 1)
+#define HG_ERROR_STATUS_MASK_SHIFT	8
+#define HG_ERROR_STATUS_MASK		((1 << HG_ERROR_STATUS_MASK_SHIFT) - 1)
 
-#define HG_ERROR_GET_VM_STATUS(_e_)		\
-	((_e_) & HG_ERROR_VM_STATUS_MASK)
-#define HG_ERROR_SET_VM_STATUS(_e_,_t_)		\
-	(((_e_) & ~HG_ERROR_VM_STATUS_MASK) |	\
-	 ((_t_) & HG_ERROR_VM_STATUS_MASK))
+#define HG_ERROR_GET_STATUS(_e_)		\
+	((_e_) & HG_ERROR_STATUS_MASK)
+#define HG_ERROR_SET_STATUS(_e_,_t_)		\
+	(((_e_) & ~HG_ERROR_STATUS_MASK) |	\
+	 ((_t_) & HG_ERROR_STATUS_MASK))
 #define HG_ERROR_GET_REASON(_e_)					\
-	(((_e_) & ~(HG_ERROR_VM_STATUS_MASK)) >> HG_ERROR_VM_STATUS_MASK_SHIFT)
+	(((_e_) & ~(HG_ERROR_STATUS_MASK)) >> HG_ERROR_STATUS_MASK_SHIFT)
 #define HG_ERROR_SET_REASON(_e_,_t_)					\
-	(((_e_) & HG_ERROR_STATUS_MASK) | ((_t_) << HG_ERROR_VM_STATUS_MASK_SHIFT))
+	(((_e_) & HG_ERROR_STATUS_MASK) | ((_t_) << HG_ERROR_STATUS_MASK_SHIFT))
+#define HG_ERROR_IS_SUCCESS(_e_)			\
+	(HG_ERROR_GET_STATUS(_e_) == HG_STATUS_SUCCESS)
+
 #define HG_ERROR	(hg_error_quark())
 #define HG_ERROR_(_status_,_reason_)				\
-	(hg_error_t)(HG_ERROR_SET_VM_STATUS (0, (_status_)) |	\
+	(hg_error_t)(HG_ERROR_SET_STATUS (0, (_status_)) |	\
 		     HG_ERROR_SET_REASON (0, (_reason_)))
 
 typedef hg_int_t		hg_error_t;
 typedef enum _hg_vm_error_t	hg_vm_error_t;
+typedef enum _hg_error_status_t	hg_error_status_t;
 typedef enum _hg_error_reason_t	hg_error_reason_t;
 
 enum _hg_vm_error_t {
@@ -88,7 +92,40 @@ enum _hg_vm_error_t {
 	HG_VM_e_undefinedresource,
 	HG_VM_e_END
 };
+enum _hg_error_status_t {
+	HG_STATUS_SUCCESS = 0,
+	HG_STATUS_FAILED = 1,
+	HG_STATUS_END
+};
 enum _hg_error_reason_t {
+	HG_e_dictfull = 1,
+	HG_e_dictstackoverflow,
+	HG_e_dictstackunderflow,
+	HG_e_execstackoverflow,
+	HG_e_handleerror,
+	HG_e_interrupt,
+	HG_e_invalidaccess,
+	HG_e_invalidexit,
+	HG_e_invalidfileaccess,
+	HG_e_invalidfont,
+	HG_e_invalidrestore,
+	HG_e_ioerror,
+	HG_e_limitcheck,
+	HG_e_nocurrentpoint,
+	HG_e_rangecheck,
+	HG_e_stackoverflow,
+	HG_e_stackunderflow,
+	HG_e_syntaxerror,
+	HG_e_timeout,
+	HG_e_typecheck,
+	HG_e_undefined,
+	HG_e_undefinedfilename,
+	HG_e_undefinedresult,
+	HG_e_unmatchedmark,
+	HG_e_unregistered,
+	HG_e_VMerror,
+	HG_e_configurationerror,
+	HG_e_undefinedresource,
 	HG_e_END
 };
 
