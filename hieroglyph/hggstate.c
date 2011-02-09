@@ -86,12 +86,18 @@ _hg_object_gstate_copy(hg_object_t              *object,
 		g->qpath = func(gstate->qpath, user_data, NULL, &err);
 		if (err)
 			goto finalize;
+		hg_mem_reserved_spool_remove(gstate->o.mem,
+					     g->qpath);
 		g->qclippath = func(gstate->qclippath, user_data, NULL, &err);
 		if (err)
 			goto finalize;
+		hg_mem_reserved_spool_remove(gstate->o.mem,
+					     g->qclippath);
 		g->qdashpattern = func(gstate->qdashpattern, user_data, NULL, &err);
 		if (err)
 			goto finalize;
+		hg_mem_reserved_spool_remove(gstate->o.mem,
+					     g->qdashpattern);
 
 		if (ret)
 			*ret = g;
