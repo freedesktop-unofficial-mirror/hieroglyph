@@ -128,7 +128,7 @@ enum _hg_error_reason_t {
 	HG_e_END
 };
 
-extern hg_error_t hg_errno;
+extern HG_THREAD_VAR hg_error_t hg_errno;
 
 GQuark    hg_error_quark          (void);
 
