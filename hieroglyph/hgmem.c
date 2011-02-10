@@ -371,6 +371,7 @@ hg_mem_alloc_with_flags(hg_mem_t *mem,
 				goto retry;
 			}
 		}
+		hg_warning("Out of memory");
 	}
 
 	return retval;
