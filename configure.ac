@@ -90,6 +90,58 @@ AC_CHECK_ALIGNOF(long)
 AC_CHECK_ALIGNOF(void *)
 AC_CHECK_ALIGNOF(long long)
 
+dnl check for TLS
+AC_MSG_CHECKING(for _Thread_local)
+_save_cflags=$CFLAGS
+CFLAGS=$(sed -e 's/\-Werror//g')
+AC_TRY_COMPILE([],[
+int a(void);
+int b(void);
+a();
+return 0;
+}
+
+_Thread_local int i = 0;
+int a(void) {return i;}
+int b(void){
+],_Thread_local=yes,_Thread_local=no)
+CFLAGS=$_save_cflags
+AC_MSG_RESULT($_Thread_local)
+
+AC_MSG_CHECKING(for thread_local)
+_save_cflags=$CFLAGS
+CFLAGS=$(sed -e 's/\-Werror//g')
+AC_TRY_COMPILE([],[
+int a(void);
+int b(void);
+a();
+return 0;
+}
+
+thread_local int i = 0;
+int a(void) {return i;}
+int b(void){
+],thread_local=yes,thread_local=no)
+CFLAGS=$_save_cflags
+AC_MSG_RESULT($thread_local)
+
+AC_MSG_CHECKING(for __thread)
+_save_cflags=$CFLAGS
+CFLAGS=$(sed -e 's/\-Werror//g')
+AC_TRY_COMPILE([],[
+int a(void);
+int b(void);
+a();
+return 0;
+}
+
+__thread int i = 0;
+int a(void) {return i;}
+int b(void){
+],__thread=yes,__thread=no)
+CFLAGS=$_save_cflags
+AC_MSG_RESULT($__thread)
+
 dnl check for flavours of varargs macros
 AC_MSG_CHECKING(for ISO C99 varargs macros in C)
 _save_cflags=$CFLAGS
@@ -319,6 +371,8 @@ _______EOF
 
 HG_BEGIN_DECLS
 
+$thread_var_t
+
 #ifdef __cplusplus
 #define HG_HAVE_INLINE		1
 #else /* !__cplusplus */
@@ -384,6 +438,15 @@ _______EOF
 		mv $outfile hieroglyph/hgconfig.h
 	fi
 ],[
+if test x$_Thread_local = xyes; then
+	thread_var_t='#define HG_THREAD_VAR	_Thread_local'
+elif test x$thread_local = xyes; then
+	thread_var_t='#define HG_THREAD_VAR	thread_local'
+elif test x$__thread = xyes; then
+	thread_var_t='#define HG_THREAD_VAR	__thread'
+else
+	thread_var_t='#define HG_THREAD_VAR'
+fi
 hg_have_gnuc_varargs=$have_gnuc_varargs
 hg_have_iso_c_varargs=$have_iso_c_varargs
 hg_have_iso_cxx_varargs=$have_iso_cxx_varargs

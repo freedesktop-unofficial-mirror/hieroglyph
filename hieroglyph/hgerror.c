@@ -31,6 +31,8 @@
 #include "hgerror.proto.h"
 
 
+HG_THREAD_VAR hg_error_t hg_errno = 0;
+
 /**
  * hg_error_quark:
  *
