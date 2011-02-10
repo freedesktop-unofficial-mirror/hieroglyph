@@ -54,6 +54,7 @@ _hg_message_get_prefix(hg_message_type_t     type,
 	};
 	static const hg_char_t *category_string[HG_MSGCAT_END + 1] = {
 		NULL,
+		"DEBUG",
 		"TRACE",
 		"BTMAP",
 		"ALLOC",
@@ -142,6 +143,8 @@ _hg_message_default_handler(hg_message_type_t      type,
 	fprintf(stderr, "%s%s%s", prefix ? prefix : "", message, flags == 0 || (flags & HG_MSG_FLAG_NO_LINEFEED) == 0 ? "\n" : "");
 	if (type != HG_MSG_DEBUG && category != HG_MSGCAT_TRACE)
 		_hg_message_stacktrace();
+	if (hg_message_is_enabled(HG_MSGCAT_DEBUG))
+		HG_BREAKPOINT();
 
 	if (prefix)
 		free(prefix);

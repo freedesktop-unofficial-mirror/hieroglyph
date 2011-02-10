@@ -59,6 +59,7 @@ enum _hg_message_flags_t {
 };
 enum _hg_message_category_t {
 	HG_MSGCAT_0 = 0,
+	HG_MSGCAT_DEBUG,
 	HG_MSGCAT_TRACE,
 	HG_MSGCAT_BITMAP,
 	HG_MSGCAT_ALLOC,
