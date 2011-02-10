@@ -29,7 +29,6 @@
 #define __HIEROGLYPH_HGALLOCATOR_H__
 
 #include <hieroglyph/hgtypes.h>
-#include <hieroglyph/hgerror.h>
 /* XXX: GLib is still needed to satisfy the GHashTable dependency */
 #include <glib.h>
 
