@@ -27,7 +27,6 @@
 #endif
 
 #include <glib.h>
-#include "hgerror.h"
 #include "hgmem.h"
 #include "hglineedit.h"
 
@@ -488,17 +487,15 @@ hg_lineedit_set_outfile(hg_lineedit_t *lineedit,
 /**
  * hg_lineedit_gc_mark:
  * @lineedit:
- * @error:
  *
  * FIXME
  *
  * Returns:
  */
-hg_bool_t
-hg_lineedit_gc_mark(hg_lineedit_t  *lineedit,
-		    GError        **error)
+hg_error_t
+hg_lineedit_gc_mark(hg_lineedit_t  *lineedit)
 {
-	hg_return_val_if_fail (lineedit != NULL, FALSE);
+	hg_return_val_if_fail (lineedit != NULL, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
 
-	return hg_mem_gc_mark(lineedit->mem, lineedit->qself, error);
+	return hg_mem_gc_mark(lineedit->mem, lineedit->qself);
 }

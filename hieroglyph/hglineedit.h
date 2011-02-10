@@ -29,6 +29,7 @@
 #define __HIEROGLYPH_HGLINEEDIT_H__
 
 #include <hieroglyph/hgtypes.h>
+#include <hieroglyph/hgerror.h>
 #include <hieroglyph/hgfile.h>
 
 HG_BEGIN_DECLS
@@ -72,8 +73,7 @@ void                  hg_lineedit_set_infile        (hg_lineedit_t              
                                                      hg_file_t                   *infile);
 void                  hg_lineedit_set_outfile       (hg_lineedit_t               *lineedit,
                                                      hg_file_t                   *outfile);
-hg_bool_t             hg_lineedit_gc_mark           (hg_lineedit_t               *lineedit,
-						     GError                     **error);
+hg_error_t            hg_lineedit_gc_mark           (hg_lineedit_t               *lineedit);
 
 HG_END_DECLS
 

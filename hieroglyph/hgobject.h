@@ -29,6 +29,7 @@
 #define __HIEROGLYPH_HGOBJECT_H__
 
 #include <stdarg.h>
+#include <hieroglyph/hgerror.h>
 #include <hieroglyph/hgquark.h>
 
 HG_BEGIN_DECLS
@@ -59,10 +60,9 @@ HG_BEGIN_DECLS
 									      hg_quark_iterate_func_t   func, \
 									      gpointer                  user_data, \
 									      GError                  **error); \
-	static gboolean        _hg_object_ ## _name_ ## _gc_mark             (hg_object_t              *object, \
+	static hg_error_t      _hg_object_ ## _name_ ## _gc_mark             (hg_object_t              *object, \
 									      hg_gc_iterate_func_t      func, \
-									      gpointer                  user_data, \
-									      GError                  **error); \
+									      gpointer                  user_data); \
 	static gboolean        _hg_object_ ## _name_ ## _compare             (hg_object_t              *o1,	\
 									      hg_object_t              *o2, \
 									      hg_quark_compare_func_t   func, \
@@ -89,9 +89,8 @@ HG_BEGIN_DECLS
 
 typedef struct _hg_object_vtable_t		hg_object_vtable_t;
 typedef struct _hg_object_t			hg_object_t;
-typedef gboolean (* hg_gc_iterate_func_t)	(hg_quark_t   qdata,
-						 gpointer     user_data,
-						 GError     **error);
+typedef hg_error_t (* hg_gc_iterate_func_t)	(hg_quark_t   qdata,
+						 gpointer     user_data);
 typedef void (* hg_destroy_func_t)		(hg_mem_t    *mem,
 						 gpointer     user_data);
 
@@ -111,10 +110,9 @@ struct _hg_object_vtable_t {
 						   hg_quark_iterate_func_t   func,
 						   gpointer                  user_data,
 						   GError                  **error);
-	gboolean         (* gc_mark)              (hg_object_t              *object,
+	hg_error_t       (* gc_mark)              (hg_object_t              *object,
 						   hg_gc_iterate_func_t      func,
-						   gpointer                  user_data,
-						   GError                  **error);
+						   gpointer                  user_data);
 	gboolean         (* compare)              (hg_object_t              *o1,
 						   hg_object_t              *o2,
 						   hg_quark_compare_func_t   func,
@@ -158,10 +156,9 @@ gchar          *hg_object_to_cstr   (hg_object_t              *object,
 				     hg_quark_iterate_func_t   func,
 				     gpointer                  user_data,
 				     GError                  **error);
-gboolean        hg_object_gc_mark   (hg_object_t              *object,
+hg_error_t      hg_object_gc_mark   (hg_object_t              *object,
 				     hg_gc_iterate_func_t      func,
-				     gpointer                  user_data,
-				     GError                  **error);
+				     gpointer                  user_data);
 gboolean        hg_object_compare   (hg_object_t              *o1,
 				     hg_object_t              *o2,
 				     hg_quark_compare_func_t   func,

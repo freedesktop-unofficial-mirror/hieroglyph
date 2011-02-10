@@ -140,39 +140,18 @@ _hg_object_path_to_cstr(hg_object_t              *object,
 	return NULL;
 }
 
-static gboolean
+static hg_error_t
 _hg_object_path_gc_mark(hg_object_t           *object,
 			hg_gc_iterate_func_t   func,
-			gpointer               user_data,
-			GError               **error)
+			gpointer               user_data)
 {
 	hg_path_t *path = (hg_path_t *)object;
-	GError *err = NULL;
-	gboolean retval = TRUE;
 
-	hg_return_val_if_fail (object->type == HG_TYPE_PATH, FALSE);
+	hg_return_val_if_fail (object->type == HG_TYPE_PATH, HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck));
 
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-	g_print("GC: (path) marking node\n");
-#endif
-	if (!hg_mem_gc_mark(path->o.mem, path->qnode, &err))
-		goto finalize;
+	hg_debug(HG_MSGCAT_GC, "path: marking node");
 
-  finalize:
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
-		retval = FALSE;
-	}
-
-	return retval;
+	return hg_mem_gc_mark(path->o.mem, path->qnode);
 }
 
 static gboolean

@@ -31,7 +31,6 @@
 #include "hgbool.h"
 #include "hgdevice.h"
 #include "hgdict.h"
-#include "hgerror.h"
 #include "hggstate.h"
 #include "hgint.h"
 #include "hgmark.h"
@@ -234,12 +233,11 @@ _hg_vm_stack_real_dump(hg_mem_t    *mem,
 	return TRUE;
 }
 
-static gboolean
-_hg_vm_rs_real_dump(hg_mem_t    *mem,
-		    hg_quark_t   qkey,
-		    hg_quark_t   qval,
-		    gpointer     data,
-		    GError     **error)
+static hg_error_t
+_hg_vm_rs_real_dump(hg_mem_t     *mem,
+		    hg_quark_t    qkey,
+		    hg_quark_t    qval,
+		    hg_pointer_t  data)
 {
 	hg_vm_rs_dump_data_t *ddata = data;
 	hg_quark_t q;
@@ -247,7 +245,7 @@ _hg_vm_rs_real_dump(hg_mem_t    *mem,
 	gchar *cstr = NULL;
 	gchar mc;
 
-	q = hg_vm_quark_to_string(ddata->vm, qkey, TRUE, (gpointer *)&s, error);
+	q = hg_vm_quark_to_string(ddata->vm, qkey, TRUE, (hg_pointer_t *)&s, NULL);
 	if (q != Qnil)
 		cstr = hg_string_get_cstr(s);
 
@@ -277,7 +275,7 @@ _hg_vm_rs_real_dump(hg_mem_t    *mem,
 	 */
 	hg_string_free(s, TRUE);
 
-	return TRUE;
+	return HG_ERROR_ (HG_STATUS_SUCCESS, 0);
 }
 
 static gboolean
@@ -520,12 +518,11 @@ hg_vm_step_in_exec_array(hg_vm_t    *vm,
 	return retval;
 }
 
-static gboolean
+static hg_error_t
 _hg_vm_quark_iterate_gc_mark(hg_quark_t   qdata,
-			     gpointer     user_data,
-			     GError     **error)
+			     gpointer     user_data)
 {
-	return hg_vm_quark_gc_mark((hg_vm_t *)user_data, qdata, error);
+	return hg_vm_quark_gc_mark((hg_vm_t *)user_data, qdata);
 }
 
 static hg_quark_t
@@ -632,152 +629,129 @@ _hg_vm_quark_complex_compare_content(hg_quark_t q1,
 	return retval;
 }
 
-static gboolean
-_hg_vm_vm_rs_gc(hg_mem_t    *mem,
-		hg_quark_t   qkey,
-		hg_quark_t   qval,
-		gpointer     data,
-		GError     **error)
+static hg_error_t
+_hg_vm_vm_rs_gc(hg_mem_t     *mem,
+		hg_quark_t    qkey,
+		hg_quark_t    qval,
+		hg_pointer_t  data)
 {
-	return hg_mem_gc_mark(mem, qkey, error);
+	return hg_mem_gc_mark(mem, qkey);
 }
 
-static gboolean
-_hg_vm_rs_gc(hg_mem_t    *mem,
-	     hg_quark_t   qkey,
-	     hg_quark_t   qval,
-	     gpointer     data,
-	     GError     **error)
+static hg_error_t
+_hg_vm_rs_gc(hg_mem_t     *mem,
+	     hg_quark_t    qkey,
+	     hg_quark_t    qval,
+	     hg_pointer_t  data)
 {
 	hg_vm_t *vm = data;
-	GError *err = NULL;
-	gboolean retval;
 
-	retval = hg_vm_quark_gc_mark(vm, qkey, &err);
-	if (!retval && err == NULL) {
-		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-			    "GC failed");
-	}
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
-	}
-
-	return retval;
+	return hg_vm_quark_gc_mark(vm, qkey);
 }
 
-static gboolean
+static hg_error_t
 _hg_vm_run_gc(hg_mem_t *mem,
 	      gpointer  user_data)
 {
 	hg_vm_t *vm = user_data;
 	hg_file_t *f;
 	gsize i;
-	GError *err = NULL;
+	hg_error_t error = 0;
 	GList *l;
 
-	hg_return_val_if_fail (mem != NULL, FALSE);
-	hg_return_val_if_fail (vm != NULL, FALSE);
+	hg_return_val_if_fail (mem != NULL, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
+	hg_return_val_if_fail (vm != NULL, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
 
 	/* marking objects */
 	/** marking I/O **/
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-	g_print("GC: marking file objects\n");
-#endif
+	hg_debug(HG_MSGCAT_GC, "VM: marking file objects");
 	for (i = 0; i < HG_FILE_IO_END; i++) {
-		if (!hg_vm_quark_gc_mark(vm, vm->qio[i], &err))
-			goto error;
+		error = hg_vm_quark_gc_mark(vm, vm->qio[i]);
+		if (!HG_ERROR_IS_SUCCESS (error))
+			goto finalize;
 	}
-	if (vm->lineedit &&
-	    !hg_lineedit_gc_mark(vm->lineedit, &err))
-		goto error;
+	if (vm->lineedit) {
+		error = hg_lineedit_gc_mark(vm->lineedit);
+		if (!HG_ERROR_IS_SUCCESS (error))
+			goto finalize;
+	}
 	/* marking I/O in scanner */
 	f = hg_scanner_get_infile(vm->scanner);
-	if (f && !hg_object_gc_mark((hg_object_t *)f,
-				    _hg_vm_quark_iterate_gc_mark,
-				    vm, &err))
-		goto error;
+	if (f) {
+		error = hg_object_gc_mark((hg_object_t *)f,
+					  _hg_vm_quark_iterate_gc_mark,
+					  vm);
+		if (!HG_ERROR_IS_SUCCESS (error))
+			goto finalize;
+	}
 
 	/** marking in stacks **/
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-	g_print("GC: marking objects in stacks\n");
-#endif
+	hg_debug(HG_MSGCAT_GC, "VM: marking objects in stacks");
 	for (i = 0; i < HG_VM_STACK_END; i++) {
 		hg_stack_t *s = vm->stacks[i];
 
-		if (!hg_object_gc_mark((hg_object_t *)s,
-				       _hg_vm_quark_iterate_gc_mark,
-				       vm, &err))
-			goto error;
+		error = hg_object_gc_mark((hg_object_t *)s,
+					  _hg_vm_quark_iterate_gc_mark,
+					  vm);
+		if (!HG_ERROR_IS_SUCCESS (error))
+			goto finalize;
 	}
 	for (i = 0; i < vm->stacks_stack->len; i++) {
 		gpointer p = g_ptr_array_index(vm->stacks_stack, i);
 
-		if (!hg_object_gc_mark((hg_object_t *)p,
-				       _hg_vm_quark_iterate_gc_mark,
-				       vm, &err))
-			goto error;
+		error = hg_object_gc_mark((hg_object_t *)p,
+					  _hg_vm_quark_iterate_gc_mark,
+					  vm);
+		if (!HG_ERROR_IS_SUCCESS (error))
+			goto finalize;
 	}
 	/** marking plugins **/
 	for (l = vm->plugin_list; l != NULL; l = g_list_next(l)) {
 		hg_plugin_t *p = l->data;
 
-		if (!hg_mem_gc_mark(p->mem, p->self, &err))
-			goto error;
+		error = hg_mem_gc_mark(p->mem, p->self);
+		if (!HG_ERROR_IS_SUCCESS (error))
+			goto finalize;
 	}
 	/** marking miscellaneous **/
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-	g_print("GC: marking objects in vm state\n");
-#endif
-	if (!hg_mem_gc_mark(vm->mem[HG_VM_MEM_LOCAL], vm->vm_state->self, &err))
-		goto error;
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-	g_print("GC: marking objects in $error\n");
-#endif
-	if (!hg_vm_quark_gc_mark(vm, vm->qerror, &err))
-		goto error;
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-	g_print("GC: marking objects in systemdict\n");
-#endif
-	if (!hg_vm_quark_gc_mark(vm, vm->qsystemdict, &err))
-		goto error;
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-	g_print("GC: marking objects in globaldict\n");
-#endif
-	if (!hg_vm_quark_gc_mark(vm, vm->qglobaldict, &err))
-		goto error;
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-	g_print("GC: marking objects in internaldict\n");
-#endif
-	if (!hg_vm_quark_gc_mark(vm, vm->qinternaldict, &err))
-		goto error;
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-	g_print("GC: marking objects in gstate\n");
-#endif
-	if (!hg_vm_quark_gc_mark(vm, vm->qgstate, &err))
-		goto error;
-#if defined(HG_DEBUG) && defined(HG_GC_DEBUG)
-	g_print("GC: marking objects in device\n");
-#endif
-	if (vm->device &&
-	    !hg_device_gc_mark(vm->device,
-			       _hg_vm_quark_iterate_gc_mark,
-			       vm, &err))
-		goto error;
+	hg_debug(HG_MSGCAT_GC, "VM: marking objects in vm state");
+	error = hg_mem_gc_mark(vm->mem[HG_VM_MEM_LOCAL], vm->vm_state->self);
+	if (!HG_ERROR_IS_SUCCESS (error))
+		goto finalize;
+	hg_debug(HG_MSGCAT_GC, "VM: marking objects in $error");
+	error = hg_vm_quark_gc_mark(vm, vm->qerror);
+	if (!HG_ERROR_IS_SUCCESS (error))
+		goto finalize;
+	hg_debug(HG_MSGCAT_GC, "VM: marking objects in systemdict");
+	error = hg_vm_quark_gc_mark(vm, vm->qsystemdict);
+	if (!HG_ERROR_IS_SUCCESS (error))
+		goto finalize;
+	hg_debug(HG_MSGCAT_GC, "VM: marking objects in globaldict");
+	error = hg_vm_quark_gc_mark(vm, vm->qglobaldict);
+	if (!HG_ERROR_IS_SUCCESS (error))
+		goto finalize;
+	hg_debug(HG_MSGCAT_GC, "VM: marking objects in internaldict");
+	error = hg_vm_quark_gc_mark(vm, vm->qinternaldict);
+	if (!HG_ERROR_IS_SUCCESS (error))
+		goto finalize;
+	hg_debug(HG_MSGCAT_GC, "VM: marking objects in gstate");
+	error = hg_vm_quark_gc_mark(vm, vm->qgstate);
+	if (!HG_ERROR_IS_SUCCESS (error))
+		goto finalize;
+	hg_debug(HG_MSGCAT_GC, "VM: marking objects in device");
+	if (vm->device) {
+		error = hg_device_gc_mark(vm->device,
+					  _hg_vm_quark_iterate_gc_mark,
+					  vm);
+		if (!HG_ERROR_IS_SUCCESS (error))
+			goto finalize;
+	}
 
 
 	/* sweeping objects */
 
-	return TRUE;
-  error:
-	return FALSE;
+  finalize:
+	return error;
 }
 
 static gboolean
@@ -3135,7 +3109,7 @@ hg_vm_reserved_spool_dump(hg_vm_t   *vm,
 
 	hg_file_append_printf(ofile, "       value      |    type    |refcnt|M|attr|content\n");
 	hg_file_append_printf(ofile, "----------========+------------+------+-+----+---------------------------------\n");
-	hg_mem_reserved_spool_foreach(mem, _hg_vm_rs_real_dump, &data, NULL);
+	hg_mem_reserved_spool_foreach(mem, _hg_vm_rs_real_dump, &data);
 }
 
 /**
@@ -3773,49 +3747,36 @@ hg_vm_dict_lookup(hg_vm_t     *vm,
  * hg_vm_quark_gc_mark:
  * @vm:
  * @qdata:
- * @error:
  *
  * FIXME
  *
  * Returns:
  */
-gboolean
+hg_error_t
 hg_vm_quark_gc_mark(hg_vm_t     *vm,
-		    hg_quark_t   qdata,
-		    GError     **error)
+		    hg_quark_t   qdata)
 {
 	hg_object_t *o;
-	GError *err = NULL;
-	gboolean retval = FALSE;
+	hg_error_t error = 0;
 
-	hg_return_val_with_gerror_if_fail (vm != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (vm != NULL, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
 
 	if (qdata == Qnil)
-		return TRUE;
+		return HG_ERROR_ (HG_STATUS_SUCCESS, 0);
 
 	if (hg_quark_is_simple_object(qdata) ||
 	    HG_IS_QOPER (qdata))
-		return TRUE;
+		return HG_ERROR_ (HG_STATUS_SUCCESS, 0);
 
-	o = _HG_VM_LOCK (vm, qdata, &err);
-	if (o) {
-		retval = hg_object_gc_mark(o, _hg_vm_quark_iterate_gc_mark, vm, &err);
+	o = _HG_VM_LOCK (vm, qdata, NULL);
+	if (o == NULL)
+		return HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 
-		_HG_VM_UNLOCK (vm, qdata);
-	}
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
-	}
+	error = hg_object_gc_mark(o, _hg_vm_quark_iterate_gc_mark, vm);
 
-	return retval;
+	_HG_VM_UNLOCK (vm, qdata);
+
+	return error;
 }
 
 /**

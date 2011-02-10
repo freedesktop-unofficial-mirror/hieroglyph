@@ -168,17 +168,16 @@ _hg_object_string_to_cstr(hg_object_t              *object,
 	return g_string_free(retval, FALSE);
 }
 
-static gboolean
+static hg_error_t
 _hg_object_string_gc_mark(hg_object_t           *object,
 			  hg_gc_iterate_func_t   func,
-			  gpointer               user_data,
-			  GError               **error)
+			  gpointer               user_data)
 {
 	hg_string_t *string = (hg_string_t *)object;
 
-	hg_return_val_if_fail (object->type == HG_TYPE_STRING, FALSE);
+	hg_return_val_if_fail (object->type == HG_TYPE_STRING, HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck));
 
-	return hg_mem_gc_mark(string->o.mem, string->qstring, error);
+	return hg_mem_gc_mark(string->o.mem, string->qstring);
 }
 
 static gboolean

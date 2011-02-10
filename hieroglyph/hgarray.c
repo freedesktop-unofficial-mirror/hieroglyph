@@ -207,51 +207,38 @@ _hg_object_array_to_cstr(hg_object_t              *object,
 	return g_string_free(retval, FALSE);
 }
 
-static gboolean
+static hg_error_t
 _hg_object_array_gc_mark(hg_object_t           *object,
 			 hg_gc_iterate_func_t   func,
-			 hg_pointer_t           user_data,
-			 GError               **error)
+			 hg_pointer_t           user_data)
 {
 	hg_array_t *array = (hg_array_t *)object;
 	hg_quark_t q;
 	hg_usize_t i, len;
-	GError *err = NULL;
-	hg_bool_t retval = TRUE;
+	hg_error_t error = 0;
 
-	hg_return_val_if_fail (object->type == HG_TYPE_ARRAY, FALSE);
+	hg_return_val_if_fail (object->type == HG_TYPE_ARRAY, HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck));
 
 	hg_debug(HG_MSGCAT_GC, "array: marking container");
-	if (!hg_mem_gc_mark(array->o.mem, array->qcontainer, &err))
+	error = hg_mem_gc_mark(array->o.mem, array->qcontainer);
+	if (!HG_ERROR_IS_SUCCESS (error))
 		goto finalize;
 	hg_debug(HG_MSGCAT_GC, "array: marking name");
-	if (!hg_mem_gc_mark(array->o.mem, array->qname, &err))
+	error = hg_mem_gc_mark(array->o.mem, array->qname);
+	if (!HG_ERROR_IS_SUCCESS (error))
 		goto finalize;
 
 	len = hg_array_length(array);
 
 	for (i = 0; i < len; i++) {
-		q = hg_array_get(array, i, &err);
-		if (err)
-			goto finalize;
-		if (!func(q, user_data, &err))
+		q = hg_array_get(array, i, NULL);
+		error = func(q, user_data);
+		if (!HG_ERROR_IS_SUCCESS (error))
 			goto finalize;
 	}
   finalize:
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
-		retval = FALSE;
-	}
 
-	return retval;
+	return error;
 }
 
 static hg_bool_t

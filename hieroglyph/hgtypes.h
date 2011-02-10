@@ -81,6 +81,7 @@ typedef enum _hg_type_t {
 /* types commonly used in libarry */
 typedef struct _hg_mem_t	hg_mem_t;
 typedef struct _hg_vm_t		hg_vm_t;
+typedef hg_int_t		hg_error_t;
 
 /* types of callback functions */
 typedef hg_bool_t (* hg_cb_BOOL__QUARK_t)       (hg_mem_t      *mem,
@@ -92,6 +93,10 @@ typedef hg_bool_t (* hg_cb_BOOL__QUARK_QUARK_t) (hg_mem_t      *mem,
 						 hg_quark_t     q2,
 						 hg_pointer_t   data,
 						 GError       **error);
+typedef hg_error_t (* hg_cb_ERROR__QUARK_QUARK_t) (hg_mem_t      *mem,
+						   hg_quark_t     q1,
+						   hg_quark_t     q2,
+						   hg_pointer_t   data);
 
 HG_END_DECLS
 

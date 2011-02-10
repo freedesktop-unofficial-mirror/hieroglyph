@@ -174,41 +174,51 @@ _hg_device_open(hg_mem_t    *mem,
  *
  * Returns:
  */
-gboolean
+hg_error_t
 hg_device_gc_mark(hg_device_t           *device,
 		  hg_gc_iterate_func_t   func,
-		  gpointer               user_data,
-		  GError               **error)
+		  gpointer               user_data)
 {
-	hg_return_val_with_gerror_if_fail (device != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (func != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_error_t error = 0;
+
+	hg_return_val_if_fail (device != NULL, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
+	hg_return_val_if_fail (func != NULL, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
 
 	if (device->params) {
 		hg_mem_t *mem = hg_mem_get(hg_quark_get_mem_id(device->params->self));
 
-		if (!hg_mem_gc_mark(mem, device->params->self, error))
-			return FALSE;
-		if (!func(device->params->qinput_attributes, user_data, error))
-			return FALSE;
-		if (!func(device->params->qmedia_color, user_data, error))
-			return FALSE;
-		if (!func(device->params->qmedia_type, user_data, error))
-			return FALSE;
-		if (!func(device->params->qoutput_type, user_data, error))
-			return FALSE;
-		if (!func(device->params->qinstall, user_data, error))
-			return FALSE;
-		if (!func(device->params->qbegin_page, user_data, error))
-			return FALSE;
-		if (!func(device->params->qend_page, user_data, error))
-			return FALSE;
+		error = hg_mem_gc_mark(mem, device->params->self);
+		if (!HG_ERROR_IS_SUCCESS (error))
+			goto finalize;
+		error = func(device->params->qinput_attributes, user_data);
+		if (!HG_ERROR_IS_SUCCESS (error))
+			goto finalize;
+		error = func(device->params->qmedia_color, user_data);
+		if (!HG_ERROR_IS_SUCCESS (error))
+			goto finalize;
+		error = func(device->params->qmedia_type, user_data);
+		if (!HG_ERROR_IS_SUCCESS (error))
+			goto finalize;
+		error = func(device->params->qoutput_type, user_data);
+		if (!HG_ERROR_IS_SUCCESS (error))
+			goto finalize;
+		error = func(device->params->qinstall, user_data);
+		if (!HG_ERROR_IS_SUCCESS (error))
+			goto finalize;
+		error = func(device->params->qbegin_page, user_data);
+		if (!HG_ERROR_IS_SUCCESS (error))
+			goto finalize;
+		error = func(device->params->qend_page, user_data);
+		if (!HG_ERROR_IS_SUCCESS (error))
+			goto finalize;
 
-		if (device->gc_mark)
-			if (!device->gc_mark(device, func, user_data, error))
-				return FALSE;
+		if (device->gc_mark) {
+			error = device->gc_mark(device, func, user_data);
+		}
 	}
+  finalize:
 
-	return TRUE;
+	return error;
 }
 
 /**

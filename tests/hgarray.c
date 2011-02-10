@@ -67,27 +67,25 @@ TDEF (get_capsulated_size)
 	fail_unless(size == sizeof (hg_array_t), "Obtaining the different size: expect: %" G_GSIZE_FORMAT " actual: %" G_GSIZE_FORMAT, sizeof (hg_array_t), size);
 } TEND
 
-static gboolean
+static hg_error_t
 _gc_iter_func(hg_quark_t   qdata,
-	      gpointer     data,
-	      GError     **error)
+	      gpointer     data)
 {
-	return TRUE;
+	return HG_ERROR_ (HG_STATUS_SUCCESS, 0);
 }
 
-static gboolean
+static hg_error_t
 _gc_func(hg_mem_t    *mem,
 	 hg_quark_t   qkey,
 	 hg_quark_t   qval,
-	 gpointer     data,
-	 GError     **error)
+	 gpointer     data)
 {
 	hg_array_t *a = data;
 
 	if (data == NULL)
-		return TRUE;
+		return HG_ERROR_ (HG_STATUS_SUCCESS, 0);
 
-	return hg_object_gc_mark((hg_object_t *)a, _gc_iter_func, NULL, NULL);
+	return hg_object_gc_mark((hg_object_t *)a, _gc_iter_func, NULL);
 }
 
 TDEF (gc_mark)

@@ -299,35 +299,35 @@ hg_object_to_cstr(hg_object_t              *object,
  *
  * Returns:
  */
-gboolean
+hg_error_t
 hg_object_gc_mark(hg_object_t           *object,
 		  hg_gc_iterate_func_t   func,
-		  gpointer               user_data,
-		  GError               **error)
+		  gpointer               user_data)
 {
 	hg_object_vtable_t *v;
-	gboolean retval = FALSE;
+	hg_error_t error = 0;
 
-	hg_return_val_with_gerror_if_fail (__hg_object_is_initialized, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (object != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (object->type < HG_TYPE_END, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (__hg_object_vtables[object->type] != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (func != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (__hg_object_is_initialized, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
+	hg_return_val_if_fail (object != NULL, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
+	hg_return_val_if_fail (object->type < HG_TYPE_END, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
+	hg_return_val_if_fail (__hg_object_vtables[object->type] != NULL, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
+	hg_return_val_if_fail (func != NULL, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
 
 	if (object->on_gc)
-		return TRUE;
+		return HG_ERROR_ (HG_STATUS_SUCCESS, 0);
 
 	object->on_gc = TRUE;
 
-	if (hg_mem_gc_mark(object->mem, object->self, error)) {
+	error = hg_mem_gc_mark(object->mem, object->self);
+	if (HG_ERROR_IS_SUCCESS (error)) {
 		v = __hg_object_vtables[object->type];
 
-		retval = v->gc_mark(object, func, user_data, error);
+		error = v->gc_mark(object, func, user_data);
 	}
 
 	object->on_gc = FALSE;
 
-	return retval;
+	return error;
 }
 
 /**

@@ -148,10 +148,9 @@ struct _hg_device_t {
 	hg_pdev_params_t          *params;
 
 	hg_usize_t (* get_page_params_size) (hg_device_t           *device);
-	hg_bool_t  (* gc_mark)              (hg_device_t           *device,
+	hg_error_t (* gc_mark)              (hg_device_t           *device,
 					     hg_gc_iterate_func_t   func,
-					     hg_pointer_t           user_data,
-					     GError               **error);
+					     hg_pointer_t           user_data);
 	hg_quark_t (* get_page_param)       (hg_device_t           *device,
 					     hg_uint_t              index);
 	void       (* install)              (hg_device_t           *device,
@@ -171,10 +170,9 @@ struct _hg_device_t {
 };
 
 
-hg_bool_t    hg_device_gc_mark        (hg_device_t                 *device,
+hg_error_t   hg_device_gc_mark        (hg_device_t                 *device,
 				       hg_gc_iterate_func_t         func,
-				       hg_pointer_t                 user_data,
-				       GError                     **error);
+				       hg_pointer_t                 user_data);
 hg_device_t *hg_device_open           (hg_mem_t                    *mem,
 				       const gchar                 *name);
 void         hg_device_close          (hg_device_t                 *device);

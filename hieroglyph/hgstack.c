@@ -75,22 +75,25 @@ _hg_stack_spooler_free_node(hg_stack_spool_t *spool,
 	hg_mem_reserved_spool_remove(spool->mem, node->self);
 }
 
-static gboolean
-_hg_stack_spooler_gc_mark(hg_stack_spool_t  *spool,
-			  GError           **error)
+static hg_error_t
+_hg_stack_spooler_gc_mark(hg_stack_spool_t  *spool)
 {
 	hg_slist_t *l;
+	hg_error_t error = 0;
 
 	if (spool) {
-		if (!hg_mem_gc_mark(spool->mem, spool->self, error))
-			return FALSE;
+		error = hg_mem_gc_mark(spool->mem, spool->self);
+		if (!HG_ERROR_IS_SUCCESS (error))
+			goto finalize;
 		for (l = spool->spool; l != NULL; l = l->next) {
-			if (!hg_mem_gc_mark(spool->mem, l->self, error))
-				return FALSE;
+			error = hg_mem_gc_mark(spool->mem, l->self);
+			if (!HG_ERROR_IS_SUCCESS (error))
+				goto finalize;
 		}
 	}
+  finalize:
 
-	return TRUE;
+	return error;
 }
 
 static gsize
@@ -139,30 +142,27 @@ _hg_object_stack_to_cstr(hg_object_t              *object,
 	return g_strdup("-stack-");
 }
 
-static gboolean
+static hg_error_t
 _hg_object_stack_gc_mark(hg_object_t           *object,
 			 hg_gc_iterate_func_t   func,
-			 gpointer               user_data,
-			 GError               **error)
+			 gpointer               user_data)
 {
 	hg_stack_t *stack = (hg_stack_t *)object;
 	hg_slist_t *l;
-	gboolean retval = TRUE;
+	hg_error_t error = 0;
 
 	for (l = stack->last_stack; l != NULL; l = l->next) {
-		if (!hg_mem_gc_mark(object->mem, l->self, error)) {
-			retval = FALSE;
-			break;
-		}
-		if (!func(l->data, user_data, error)) {
-			retval = FALSE;
-			break;
-		}
+		error = hg_mem_gc_mark(object->mem, l->self);
+		if (!HG_ERROR_IS_SUCCESS (error))
+			goto finalize;
+		error = func(l->data, user_data);
+		if (!HG_ERROR_IS_SUCCESS (error))
+			goto finalize;
 	}
-	if (!_hg_stack_spooler_gc_mark(stack->spool, error))
-		retval = FALSE;
+	error = _hg_stack_spooler_gc_mark(stack->spool);
+  finalize:
 
-	return retval;
+	return error;
 }
 
 static gboolean

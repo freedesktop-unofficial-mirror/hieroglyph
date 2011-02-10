@@ -25,7 +25,6 @@
 #include "config.h"
 #endif
 
-#include <glib.h>
 #include "hgmem.h"
 #include "hgsnapshot.h"
 
@@ -51,7 +50,7 @@ _hg_object_snapshot_get_allocation_flags(void)
 	return HG_MEM_FLAGS_DEFAULT_WITHOUT_RESTORABLE;
 }
 
-static gboolean
+static hg_bool_t
 _hg_object_snapshot_initialize(hg_object_t *object,
 			       va_list      args)
 {
@@ -73,8 +72,8 @@ _hg_object_snapshot_free(hg_object_t *object)
 static hg_quark_t
 _hg_object_snapshot_copy(hg_object_t              *object,
 			 hg_quark_iterate_func_t   func,
-			 gpointer                  user_data,
-			 gpointer                 *ret,
+			 hg_pointer_t              user_data,
+			 hg_pointer_t             *ret,
 			 GError                  **error)
 {
 	hg_return_val_if_fail (object->type == HG_TYPE_SNAPSHOT, Qnil);
@@ -85,7 +84,7 @@ _hg_object_snapshot_copy(hg_object_t              *object,
 static gchar *
 _hg_object_snapshot_to_cstr(hg_object_t              *object,
 			    hg_quark_iterate_func_t   func,
-			    gpointer                  user_data,
+			    hg_pointer_t              user_data,
 			    GError                  **error)
 {
 	hg_return_val_if_fail (object->type == HG_TYPE_SNAPSHOT, NULL);
@@ -93,22 +92,21 @@ _hg_object_snapshot_to_cstr(hg_object_t              *object,
 	return g_strdup("-save-");
 }
 
-static gboolean
+static hg_error_t
 _hg_object_snapshot_gc_mark(hg_object_t           *object,
 			    hg_gc_iterate_func_t   func,
-			    gpointer               user_data,
-			    GError               **error)
+			    hg_pointer_t           user_data)
 {
-	hg_return_val_if_fail (object->type == HG_TYPE_SNAPSHOT, FALSE);
+	hg_return_val_if_fail (object->type == HG_TYPE_SNAPSHOT, HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck));
 
-	return TRUE;
+	return HG_ERROR_ (HG_STATUS_SUCCESS, 0);
 }
 
-static gboolean
+static hg_bool_t
 _hg_object_snapshot_compare(hg_object_t             *o1,
 			    hg_object_t             *o2,
 			    hg_quark_compare_func_t  func,
-			    gpointer                 user_data)
+			    hg_pointer_t             user_data)
 {
 	hg_return_val_if_fail (o1->type == HG_TYPE_SNAPSHOT, FALSE);
 	hg_return_val_if_fail (o2->type == HG_TYPE_SNAPSHOT, FALSE);
@@ -126,15 +124,15 @@ _hg_object_snapshot_compare(hg_object_t             *o1,
  * Returns:
  */
 hg_quark_t
-hg_snapshot_new(hg_mem_t *mem,
-		gpointer *ret)
+hg_snapshot_new(hg_mem_t     *mem,
+		hg_pointer_t *ret)
 {
 	hg_quark_t retval;
 	hg_snapshot_t *s = NULL;
 
 	hg_return_val_if_fail (mem != NULL, Qnil);
 
-	retval = hg_object_new(mem, (gpointer *)&s, HG_TYPE_SNAPSHOT, 0);
+	retval = hg_object_new(mem, (hg_pointer_t *)&s, HG_TYPE_SNAPSHOT, 0);
 	if (retval != Qnil) {
 		if (ret)
 			*ret = s;
@@ -153,7 +151,7 @@ hg_snapshot_new(hg_mem_t *mem,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_snapshot_save(hg_snapshot_t *snapshot)
 {
 	hg_return_val_if_fail (snapshot != NULL, FALSE);
@@ -175,12 +173,12 @@ hg_snapshot_save(hg_snapshot_t *snapshot)
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_snapshot_restore(hg_snapshot_t *snapshot,
 		    hg_gc_func_t   func,
-		    gpointer       data)
+		    hg_pointer_t   data)
 {
-	gboolean retval;
+	hg_bool_t retval;
 
 	hg_return_val_if_fail (snapshot != NULL, FALSE);
 	hg_return_val_if_fail (snapshot->snapshot != NULL, FALSE);

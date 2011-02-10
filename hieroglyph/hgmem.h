@@ -39,13 +39,13 @@ HG_BEGIN_DECLS
 #define HG_MEM_FLAGS_DEFAULT_WITHOUT_RESTORABLE	(HG_MEM_FLAGS_DEFAULT & ~HG_MEM_RESTORABLE)
 
 typedef enum _hg_mem_type_t		hg_mem_type_t;
-typedef hg_cb_BOOL__QUARK_QUARK_t	hg_rs_gc_func_t;
+typedef hg_cb_ERROR__QUARK_QUARK_t	hg_rs_gc_func_t;
 typedef hg_allocator_snapshot_data_t	hg_mem_snapshot_data_t;
 
 typedef void (* hg_mem_finalizer_func_t) (hg_mem_t    *mem,
 					  hg_quark_t  index);
-typedef gboolean (* hg_gc_func_t)	(hg_mem_t *mem,
-					 gpointer  user_data);
+typedef hg_error_t (* hg_gc_func_t)	(hg_mem_t     *mem,
+					 hg_pointer_t  user_data);
 
 /* hgmem.h */
 enum _hg_mem_type_t {
@@ -96,9 +96,8 @@ void                          hg_mem_set_garbage_collector               (hg_mem
                                                                           hg_gc_func_t                  func,
                                                                           gpointer                      user_data);
 gssize                        hg_mem_collect_garbage                     (hg_mem_t                     *mem);
-gboolean                      hg_mem_gc_mark                             (hg_mem_t                     *mem,
-                                                                          hg_quark_t                    qdata,
-                                                                          GError                       **error);
+hg_error_t                    hg_mem_gc_mark                             (hg_mem_t                     *mem,
+                                                                          hg_quark_t                    qdata);
 hg_allocator_snapshot_data_t *hg_mem_save_snapshot                       (hg_mem_t                     *mem);
 gboolean                      hg_mem_restore_snapshot                    (hg_mem_t                     *mem,
                                                                           hg_allocator_snapshot_data_t *snapshot,
@@ -118,10 +117,9 @@ void                          hg_mem_reserved_spool_remove               (hg_mem
 void                          hg_mem_reserved_spool_set_garbage_collector(hg_mem_t                     *mem,
                                                                           hg_rs_gc_func_t               func,
                                                                           gpointer                      user_data);
-gboolean                      hg_mem_reserved_spool_foreach              (hg_mem_t                     *mem,
+hg_error_t                    hg_mem_reserved_spool_foreach              (hg_mem_t                     *mem,
                                                                           hg_rs_gc_func_t               func,
-                                                                          gpointer                      user_data,
-                                                                          GError                       **error);
+                                                                          gpointer                      user_data);
 
 HG_INLINE_FUNC gpointer hg_mem_lock_object_with_gerror(hg_mem_t     *mem,
 						       hg_quark_t    quark,

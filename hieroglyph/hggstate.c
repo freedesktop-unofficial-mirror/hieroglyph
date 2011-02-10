@@ -133,38 +133,27 @@ _hg_object_gstate_to_cstr(hg_object_t              *object,
 	return g_strdup("-gstate-");
 }
 
-static gboolean
+static hg_error_t
 _hg_object_gstate_gc_mark(hg_object_t           *object,
 			  hg_gc_iterate_func_t   func,
-			  gpointer               user_data,
-			  GError               **error)
+			  gpointer               user_data)
 {
 	hg_gstate_t *gstate = (hg_gstate_t *)object;
-	GError *err = NULL;
-	gboolean retval = TRUE;
+	hg_error_t error = 0;
 
-	if (!func(gstate->qpath, user_data, &err))
+	error = func(gstate->qpath, user_data);
+	if (!HG_ERROR_IS_SUCCESS (error))
 		goto finalize;
-	if (!func(gstate->qclippath, user_data, &err))
+	error = func(gstate->qclippath, user_data);
+	if (!HG_ERROR_IS_SUCCESS (error))
 		goto finalize;
-	if (!func(gstate->qdashpattern, user_data, &err))
+	error = func(gstate->qdashpattern, user_data);
+	if (!HG_ERROR_IS_SUCCESS (error))
 		goto finalize;
 
   finalize:
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
-		retval = FALSE;
-	}
 
-	return retval;
+	return error;
 }
 
 static gboolean

@@ -56,7 +56,6 @@ HG_BEGIN_DECLS
 	(hg_error_t)(HG_ERROR_SET_STATUS (0, (_status_)) |	\
 		     HG_ERROR_SET_REASON (0, (_reason_)))
 
-typedef hg_int_t		hg_error_t;
 typedef enum _hg_vm_error_t	hg_vm_error_t;
 typedef enum _hg_error_status_t	hg_error_status_t;
 typedef enum _hg_error_reason_t	hg_error_reason_t;

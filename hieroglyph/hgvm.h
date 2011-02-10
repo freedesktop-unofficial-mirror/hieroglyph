@@ -305,9 +305,8 @@ hg_quark_t hg_vm_dict_lookup    (hg_vm_t     *vm,
                                  GError     **error);
 
 /* hg_quark_t */
-gboolean   hg_vm_quark_gc_mark               (hg_vm_t     *vm,
-                                              hg_quark_t   qdata,
-                                              GError     **error);
+hg_error_t hg_vm_quark_gc_mark               (hg_vm_t     *vm,
+                                              hg_quark_t   qdata);
 hg_quark_t hg_vm_quark_copy                  (hg_vm_t     *vm,
                                               hg_quark_t   qdata,
                                               gpointer    *ret,

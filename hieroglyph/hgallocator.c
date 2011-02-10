@@ -785,22 +785,19 @@ _hg_allocator_gc_init(hg_allocator_data_t *data)
 	return TRUE;
 }
 
-static gboolean
+static hg_error_t
 _hg_allocator_gc_mark(hg_allocator_data_t  *data,
-		      hg_quark_t            index_,
-		      GError              **error)
+		      hg_quark_t            index_)
 {
 	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
 	hg_allocator_block_t *block;
 	gint32 page;
 	guint32 idx;
-	gboolean retval = TRUE;
-	GError *err = NULL;
 	gsize aligned_size;
 
 	/* this isn't the object in the targeted spool */
 	if (!priv->slave_bitmap)
-		return TRUE;
+		return HG_ERROR_ (HG_STATUS_SUCCESS, 0);
 
 	block = _hg_allocator_real_lock_object(data, index_);
 	if (block) {
@@ -818,40 +815,29 @@ _hg_allocator_gc_mark(hg_allocator_data_t  *data,
 		}
 		_hg_allocator_real_unlock_object(block);
 	} else {
-		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-			    "%lx isn't an allocated object from this spool", index_);
-	}
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
-		retval = FALSE;
+		hg_critical("%lx is not an allocated object from this spool", index_);
+
+		return HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 	}
 
-	return retval;
+	return HG_ERROR_ (HG_STATUS_SUCCESS, 0);
 }
 
-static gboolean
+static hg_error_t
 _hg_allocator_gc_finish(hg_allocator_data_t *data,
-			gboolean             was_error)
+			hg_error_t           error)
 {
 	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
 
 	if (G_UNLIKELY (!priv->slave_bitmap)) {
 		hg_warning("GC isn't yet started.");
-		return FALSE;
+		return HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 	}
 
 	G_LOCK (allocator);
 
 	/* XXX: this has to be dropped in the future */
-	if (!was_error) {
+	if (HG_ERROR_IS_SUCCESS (error)) {
 		gsize used_size;
 		guint32 i, j, max_page = hg_allocator_get_max_page();
 
@@ -870,7 +856,7 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 												     i, j + 1, FALSE);
 
 					if (block == NULL) {
-						was_error = TRUE;
+						error = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 						break;
 					}
 					if (!_hg_allocator_bitmap_is_marked(priv->slave_bitmap, i, j + 1)) {
@@ -881,8 +867,8 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 #if defined (HG_DEBUG)
 							abort();
 #endif
-							was_error = !_hg_allocator_gc_mark(data, _hg_allocator_quark_build(i, j + 1), NULL);
-							if (was_error)
+							error = _hg_allocator_gc_mark(data, _hg_allocator_quark_build(i, j + 1));
+							if (!HG_ERROR_IS_SUCCESS (error))
 								break;
 						}
 					}
@@ -893,28 +879,24 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 		}
 	}
 
-	if (!was_error) {
+	if (HG_ERROR_IS_SUCCESS (error)) {
 		hg_debug(HG_MSGCAT_GC, "%ld -> %ld (%ld bytes freed) / %ld",
 			 data->used_size, priv->slave.used_size,
 			 data->used_size - priv->slave.used_size,
 			 data->total_size);
-	} else {
-		hg_debug(HG_MSGCAT_GC, "the garbage collection failed");
-	}
-
-	if (was_error) {
-		_hg_allocator_bitmap_destroy(priv->slave_bitmap);
-		priv->slave_bitmap = NULL;
-	} else {
 		_hg_allocator_bitmap_destroy(priv->bitmap);
 		priv->bitmap = priv->slave_bitmap;
 		priv->slave_bitmap = NULL;
 		data->used_size = priv->slave.used_size;
+	} else {
+		hg_debug(HG_MSGCAT_GC, "the garbage collection failed");
+		_hg_allocator_bitmap_destroy(priv->slave_bitmap);
+		priv->slave_bitmap = NULL;
 	}
 
 	G_UNLOCK (allocator);
 
-	return !was_error;
+	return error;
 }
 
 static hg_allocator_snapshot_data_t *

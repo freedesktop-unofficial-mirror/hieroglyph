@@ -233,51 +233,35 @@ _hg_object_file_to_cstr(hg_object_t              *object,
 	return g_strdup("-file-");
 }
 
-static gboolean
+static hg_error_t
 _hg_object_file_gc_mark(hg_object_t           *object,
 			hg_gc_iterate_func_t   func,
-			gpointer               user_data,
-			GError               **error)
+			gpointer               user_data)
 {
 	hg_file_t *file = (hg_file_t *)object;
-	GError *err = NULL;
-	gboolean retval = FALSE;
 	hg_file_gc_t g;
+	hg_error_t error = 0;
 
-	hg_return_val_if_fail (object->type == HG_TYPE_FILE, FALSE);
+	hg_return_val_if_fail (object->type == HG_TYPE_FILE, HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck));
 
-	if (!func(file->qfilename, user_data, &err))
+	error = func(file->qfilename, user_data);
+	if (!HG_ERROR_IS_SUCCESS (error))
 		goto finalize;
 	if (file->user_data) {
 		if (!file->user_data->gc_func) {
-			if (!hg_mem_gc_mark(file->o.mem, file->user_data->self, &err))
-				goto finalize;
+			error = hg_mem_gc_mark(file->o.mem, file->user_data->self);
 		} else {
 			g.func = func;
 			g.user_data = user_data;
 			g.mem = file->o.mem;
 			g.data = file->user_data;
 
-			if (!file->user_data->gc_func(file->user_data->self, &g, &err))
-				goto finalize;
+			error = file->user_data->gc_func(file->user_data->self, &g);
 		}
 	}
-
-	retval = TRUE;
   finalize:
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
-	}
 
-	return retval;
+	return error;
 }
 
 static gboolean
@@ -289,14 +273,13 @@ _hg_object_file_compare(hg_object_t             *o1,
 	return o1->self == o2->self;
 }
 
-static gboolean
+static hg_error_t
 _hg_file_io_data_gc_mark(hg_quark_t   qdata,
-			 gpointer     user_data,
-			 GError     **error)
+			 gpointer     user_data)
 {
 	hg_file_gc_t *g = user_data;
 
-	return hg_mem_gc_mark(g->mem, qdata, error);
+	return hg_mem_gc_mark(g->mem, qdata);
 }
 
 static void
@@ -308,22 +291,29 @@ _hg_file_io_data_free(hg_mem_t *mem,
 	hg_mem_free(mem, data->self);
 }
 
-static gboolean
+static hg_error_t
 _hg_file_io_buffered_data_gc_mark(hg_quark_t   qdata,
-				  gpointer     user_data,
-				  GError     **error)
+				  gpointer     user_data)
 {
 	hg_file_gc_t *g = user_data;
 	hg_file_io_buffered_data_t *bd = (hg_file_io_buffered_data_t *)g->data;
+	hg_error_t error = 0;
 
-	if (bd->in &&
-	    !g->func(bd->in->o.self, g->user_data, error))
-		return FALSE;
-	if (bd->out &&
-	    !g->func(bd->out->o.self, g->user_data, error))
-		return FALSE;
+	if (bd->in) {
+		error = g->func(bd->in->o.self, g->user_data);
+		if (!HG_ERROR_IS_SUCCESS (error))
+			goto finalize;
+	}
+	if (bd->out) {
+		error = g->func(bd->out->o.self, g->user_data);
+		if (!HG_ERROR_IS_SUCCESS (error))
+			goto finalize;
+	}
 
-	return hg_mem_gc_mark(g->mem, qdata, error);
+	error = hg_mem_gc_mark(g->mem, qdata);
+  finalize:
+
+	return error;
 }
 
 static void

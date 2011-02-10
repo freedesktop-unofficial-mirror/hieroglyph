@@ -107,22 +107,18 @@ _hg_object_dict_to_cstr(hg_object_t              *object,
 	return g_strdup("-dict-");
 }
 
-static gboolean
+static hg_error_t
 _hg_object_dict_gc_mark(hg_object_t           *object,
 			hg_gc_iterate_func_t   func,
-			gpointer               user_data,
-			GError               **error)
+			gpointer               user_data)
 {
 	hg_dict_t *dict;
-	gboolean retval = FALSE;
 
-	hg_return_val_if_fail (object->type == HG_TYPE_DICT, FALSE);
+	hg_return_val_if_fail (object->type == HG_TYPE_DICT, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
 
 	dict = (hg_dict_t *)object;
 
-	retval = func(dict->qroot, user_data, error);
-
-	return retval;
+	return func(dict->qroot, user_data);
 }
 
 static gboolean
@@ -297,28 +293,29 @@ _hg_object_dict_node_to_cstr(hg_object_t              *object,
 	return g_strdup("-dnode-");
 }
 
-static gboolean
+static hg_error_t
 _hg_object_dict_node_gc_mark(hg_object_t           *object,
 			     hg_gc_iterate_func_t   func,
-			     gpointer               user_data,
-			     GError               **error)
+			     gpointer               user_data)
 {
 	hg_dict_node_t *dnode = (hg_dict_node_t *)object;
-	GError *err = NULL;
+	hg_error_t error = 0;
 	gsize i;
 	hg_quark_t *qnode_keys = NULL, *qnode_vals = NULL, *qnode_nodes = NULL;
-	gboolean retval = FALSE;
 
-	hg_return_val_if_fail (object->type == HG_TYPE_DICT_NODE, FALSE);
+	hg_return_val_if_fail (object->type == HG_TYPE_DICT_NODE, HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck));
 
 	hg_debug(HG_MSGCAT_GC, "dict: marking key container");
-	if (!hg_mem_gc_mark(dnode->o.mem, dnode->qkey, &err))
+	error = hg_mem_gc_mark(dnode->o.mem, dnode->qkey);
+	if (!HG_ERROR_IS_SUCCESS (error))
 		goto finalize;
 	hg_debug(HG_MSGCAT_GC, "dict: marking value container");
-	if (!hg_mem_gc_mark(dnode->o.mem, dnode->qval, &err))
+	error = hg_mem_gc_mark(dnode->o.mem, dnode->qval);
+	if (!HG_ERROR_IS_SUCCESS (error))
 		goto finalize;
 	hg_debug(HG_MSGCAT_GC, "dict: marking node container");
-	if (!hg_mem_gc_mark(dnode->o.mem, dnode->qnodes, &err))
+	error = hg_mem_gc_mark(dnode->o.mem, dnode->qnodes);
+	if (!HG_ERROR_IS_SUCCESS (error))
 		goto finalize;
 
 	qnode_keys = hg_mem_lock_object(dnode->o.mem, dnode->qkey);
@@ -327,28 +324,30 @@ _hg_object_dict_node_gc_mark(hg_object_t           *object,
 	if (qnode_keys == NULL ||
 	    qnode_vals == NULL ||
 	    qnode_nodes == NULL) {
-		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-			    "%s: Invalid quark to obtain the actual object in dnode", __PRETTY_FUNCTION__);
+		hg_critical("%s: Invalid quark to obtain the actual object in dnode",
+			    __PRETTY_FUNCTION__);
+		error = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 		goto qfinalize;
 	}
 
 	for (i = 0; i < dnode->n_data; i++) {
 		hg_debug(HG_MSGCAT_GC, "dict: marking node[%ld]", i);
-		if (!func(qnode_nodes[i], user_data, &err))
+		error = func(qnode_nodes[i], user_data);
+		if (!HG_ERROR_IS_SUCCESS (error))
 			goto qfinalize;
 		hg_debug(HG_MSGCAT_GC, "dict: marking key[%ld]", i);
-		if (!func(qnode_keys[i], user_data, &err))
+		error = func(qnode_keys[i], user_data);
+		if (!HG_ERROR_IS_SUCCESS (error))
 			goto qfinalize;
 		hg_debug(HG_MSGCAT_GC, "dict: marking value[%ld]", i);
-		if (!func(qnode_vals[i], user_data, &err))
+		error = func(qnode_vals[i], user_data);
+		if (!HG_ERROR_IS_SUCCESS (error))
 			goto qfinalize;
 	}
 	hg_debug(HG_MSGCAT_GC, "dict: marking node[%ld]", dnode->n_data);
-	if (!func(qnode_nodes[dnode->n_data], user_data, &err))
+	error = func(qnode_nodes[dnode->n_data], user_data);
+	if (!HG_ERROR_IS_SUCCESS (error))
 		goto qfinalize;
-
-	retval = TRUE;
-
   qfinalize:
 	if (qnode_keys)
 		hg_mem_unlock_object(dnode->o.mem, dnode->qkey);
@@ -358,20 +357,7 @@ _hg_object_dict_node_gc_mark(hg_object_t           *object,
 		hg_mem_unlock_object(dnode->o.mem, dnode->qnodes);
 
   finalize:
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
-		retval = FALSE;
-	}
-
-	return retval;
+	return error;
 }
 
 static gboolean

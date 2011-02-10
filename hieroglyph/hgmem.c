@@ -28,7 +28,6 @@
 #include <math.h>
 #include <glib.h>
 #include "hgallocator.h"
-#include "hgerror.h"
 #include "hgquark.h"
 #include "hgtypebit-private.h"
 #include "hgmem.h"
@@ -67,14 +66,14 @@ _hg_mem_call_gc_finalizer(gpointer key,
 }
 
 HG_INLINE_FUNC void
-_hg_mem_gc_finish(hg_mem_t *mem,
-		  gboolean  was_error)
+_hg_mem_gc_finish(hg_mem_t   *mem,
+		  hg_error_t  error)
 {
 	if (!mem->slave_finalizer_table) {
 		hg_warning("%s: no slave instance created.", __PRETTY_FUNCTION__);
 		return;
 	}
-	if (!was_error) {
+	if (HG_ERROR_IS_SUCCESS (error)) {
 		GList *lk, *lv, *llk, *llv;
 
 		/* NOTE: do not use g_hash_foreach().
@@ -573,19 +572,21 @@ hg_mem_collect_garbage(hg_mem_t *mem)
 	    mem->allocator->gc_finish &&
 	    mem->enable_gc) {
 		if (mem->allocator->gc_init(mem->data)) {
-			gboolean ret = TRUE;
+			hg_error_t error = 0;
 
 			hg_debug(HG_MSGCAT_GC, "starting [mem_id: %d]", mem->id);
 			_hg_mem_gc_init(mem);
 			if (mem->gc_func)
-				ret = mem->gc_func(mem, mem->gc_data);
-			if (ret && mem->rs_gc_func)
-				ret = hg_mem_reserved_spool_foreach(mem,
-								    mem->rs_gc_func,
-								    mem->rs_gc_data,
-								    NULL);
-			_hg_mem_gc_finish(mem, !ret);
-			if (!mem->allocator->gc_finish(mem->data, !ret))
+				error = mem->gc_func(mem, mem->gc_data);
+			if (HG_ERROR_IS_SUCCESS (error) &&
+			    mem->rs_gc_func) {
+				error = hg_mem_reserved_spool_foreach(mem,
+								      mem->rs_gc_func,
+								      mem->rs_gc_data);
+			}
+			_hg_mem_gc_finish(mem, error);
+			error = mem->allocator->gc_finish(mem->data, error);
+			if (!HG_ERROR_IS_SUCCESS (error))
 				return -1;
 		}
 	}
@@ -603,22 +604,21 @@ hg_mem_collect_garbage(hg_mem_t *mem)
  *
  * Returns:
  */
-gboolean
+hg_error_t
 hg_mem_gc_mark(hg_mem_t    *mem,
-	       hg_quark_t   qdata,
-	       GError     **error)
+	       hg_quark_t   qdata)
 {
 	hg_mem_finalizer_func_t func;
 
-	hg_return_val_if_fail (mem != NULL, FALSE);
-	hg_return_val_if_fail (mem->allocator != NULL, FALSE);
-	hg_return_val_if_fail (mem->allocator->gc_mark != NULL, FALSE);
-	hg_return_val_if_fail (mem->data != NULL, FALSE);
+	hg_return_val_if_fail (mem != NULL, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
+	hg_return_val_if_fail (mem->allocator != NULL, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
+	hg_return_val_if_fail (mem->allocator->gc_mark != NULL, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
+	hg_return_val_if_fail (mem->data != NULL, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
 
 	if (qdata == Qnil)
-		return TRUE;
+		return HG_ERROR_ (HG_STATUS_SUCCESS, 0);
 
-	hg_return_val_if_fail (hg_quark_has_mem_id(qdata, mem->id), FALSE);
+	hg_return_val_if_fail (hg_quark_has_mem_id(qdata, mem->id), HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
 
 	if (mem->slave_finalizer_table &&
 	    (func = g_hash_table_lookup(mem->finalizer_table,
@@ -631,8 +631,7 @@ hg_mem_gc_mark(hg_mem_t    *mem,
 	}
 
 	return mem->allocator->gc_mark(mem->data,
-				       hg_quark_get_value(qdata),
-				       error);
+				       hg_quark_get_value(qdata));
 }
 
 /**
@@ -841,7 +840,9 @@ hg_mem_reserved_spool_remove(hg_mem_t   *mem,
 	gint count;
 
 	hg_return_if_fail (mem != NULL);
-	hg_return_if_fail (qdata != Qnil);
+
+	if (qdata == Qnil)
+		return;
 
 	p = HGQUARK_TO_POINTER (hg_quark_get_hash(qdata));
 	count = GPOINTER_TO_INT (g_hash_table_lookup(mem->reserved_spool, p));
@@ -884,16 +885,15 @@ hg_mem_reserved_spool_set_garbage_collector(hg_mem_t        *mem,
  *
  * Returns:
  */
-gboolean
+hg_error_t
 hg_mem_reserved_spool_foreach(hg_mem_t         *mem,
 			      hg_rs_gc_func_t   func,
-			      gpointer          user_data,
-			      GError          **error)
+			      hg_pointer_t      user_data)
 {
 	GList *lk, *lv, *llk, *llv;
-	gboolean retval = TRUE;
+	hg_error_t error = 0;
 
-	hg_return_val_if_fail (mem != NULL, FALSE);
+	hg_return_val_if_fail (mem != NULL, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
 
 	lk = g_hash_table_get_keys(mem->reserved_spool);
 	lv = g_hash_table_get_values(mem->reserved_spool);
@@ -901,18 +901,16 @@ hg_mem_reserved_spool_foreach(hg_mem_t         *mem,
 	for (llk = lk, llv = lv;
 	     llk != NULL && llv != NULL;
 	     llk = g_list_next(llk), llv = g_list_next(llv)) {
-		if (!func(mem,
-			  HGPOINTER_TO_QUARK (llk->data),
-			  HGPOINTER_TO_QUARK (llv->data),
-			  user_data,
-			  error)) {
-			retval = FALSE;
+		error = func(mem,
+			     HGPOINTER_TO_QUARK (llk->data),
+			     HGPOINTER_TO_QUARK (llv->data),
+			     user_data);
+		if (!HG_ERROR_IS_SUCCESS (error))
 			break;
-		}
 	}
 
 	g_list_free(lk);
 	g_list_free(lv);
 
-	return retval;
+	return error;
 }

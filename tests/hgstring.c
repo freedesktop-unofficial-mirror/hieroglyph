@@ -65,24 +65,23 @@ TDEF (get_capsulated_size)
 	fail_unless(size == sizeof (hg_string_t), "Obtaining the different size: expect: %" G_GSIZE_FORMAT " actual: %" G_GSIZE_FORMAT, sizeof (hg_string_t), size);
 } TEND
 
-static gboolean
+static hg_error_t
 _gc_iter_func(hg_quark_t   qdata,
-	      gpointer     data,
-	      GError     **error)
+	      gpointer     data)
 {
-	return TRUE;
+	return HG_ERROR_ (HG_STATUS_SUCCESS, 0);
 }
 
-static gboolean
-_gc_func(hg_mem_t *mem,
-	 gpointer  data)
+static hg_error_t
+_gc_func(hg_mem_t     *mem,
+	 hg_pointer_t  data)
 {
 	hg_string_t *s = data;
 
 	if (data == NULL)
-		return TRUE;
+		return HG_ERROR_ (HG_STATUS_SUCCESS, 0);
 
-	return hg_object_gc_mark((hg_object_t *)s, _gc_iter_func, NULL, NULL);
+	return hg_object_gc_mark((hg_object_t *)s, _gc_iter_func, NULL);
 }
 
 TDEF (gc_mark)

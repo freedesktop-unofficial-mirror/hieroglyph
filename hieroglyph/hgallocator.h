@@ -29,6 +29,7 @@
 #define __HIEROGLYPH_HGALLOCATOR_H__
 
 #include <hieroglyph/hgtypes.h>
+#include <hieroglyph/hgerror.h>
 /* XXX: GLib is still needed to satisfy the GHashTable dependency */
 #include <glib.h>
 
@@ -113,11 +114,10 @@ struct _hg_mem_vtable_t {
 	void                           (* unlock_object)     (hg_allocator_data_t           *data,
 							      hg_quark_t                     quark);
 	hg_bool_t                      (* gc_init)           (hg_allocator_data_t           *data);
-	hg_bool_t                      (* gc_mark)           (hg_allocator_data_t           *data,
-							      hg_quark_t                     quark,
-							      GError                       **error);
-	hg_bool_t                      (* gc_finish)         (hg_allocator_data_t           *data,
-							      hg_bool_t                      was_error);
+	hg_error_t                     (* gc_mark)           (hg_allocator_data_t           *data,
+							      hg_quark_t                     quark);
+	hg_error_t                     (* gc_finish)         (hg_allocator_data_t           *data,
+							      hg_error_t                     error);
 	hg_allocator_snapshot_data_t * (* save_snapshot)     (hg_allocator_data_t           *data);
 	hg_bool_t                      (* restore_snapshot)  (hg_allocator_data_t           *data,
 							      hg_allocator_snapshot_data_t  *snapshot,

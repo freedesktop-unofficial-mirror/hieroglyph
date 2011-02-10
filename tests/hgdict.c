@@ -122,35 +122,34 @@ TDEF (get_capsulated_size)
 	fail_unless(size == sizeof (hg_dict_node_t), "Obtaining the different size: expect: %" G_GSIZE_FORMAT " actual: %" G_GSIZE_FORMAT, sizeof (hg_dict_node_t), size);
 } TEND
 
-static gboolean
+static hg_error_t
 _gc_iter_func(hg_quark_t   qdata,
-	      gpointer     data,
-	      GError     **error)
+	      gpointer     data)
 {
 	hg_object_t *o = data;
 
 	if (hg_quark_get_type(qdata) == HG_TYPE_DICT_NODE) {
 		hg_object_t *dnode = hg_mem_lock_object(o->mem, qdata);
-		gboolean ret = hg_object_gc_mark(dnode, _gc_iter_func, o, NULL);
+		hg_error_t error = hg_object_gc_mark(dnode, _gc_iter_func, o);
 
 		hg_mem_unlock_object(o->mem, qdata);
 
-		return ret;
+		return error;
 	}
 
-	return TRUE;
+	return HG_ERROR_ (HG_STATUS_SUCCESS, 0);
 }
 
-static gboolean
-_gc_func(hg_mem_t *mem,
-	 gpointer  data)
+static hg_error_t
+_gc_func(hg_mem_t     *mem,
+	 hg_pointer_t  data)
 {
 	hg_dict_t *d = data;
 
 	if (data == NULL)
-		return TRUE;
+		return HG_ERROR_ (HG_STATUS_SUCCESS, 0);
 
-	return hg_object_gc_mark((hg_object_t *)d, _gc_iter_func, d, NULL);
+	return hg_object_gc_mark((hg_object_t *)d, _gc_iter_func, d);
 }
 
 TDEF (gc_mark)
