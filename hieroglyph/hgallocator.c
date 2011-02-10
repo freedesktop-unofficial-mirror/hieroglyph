@@ -65,18 +65,18 @@ G_LOCK_DEFINE_STATIC (allocator);
 
 /*< private >*/
 
-HG_INLINE_FUNC gsize
+HG_INLINE_FUNC hg_usize_t
 hg_allocator_get_page_size(void)
 {
-	static gsize retval = ((1LL << (HG_ALLOC_TYPE_BIT_INDEX_END - HG_ALLOC_TYPE_BIT_INDEX + 1)) - 1);
+	static hg_usize_t retval = ((1LL << (HG_ALLOC_TYPE_BIT_INDEX_END - HG_ALLOC_TYPE_BIT_INDEX + 1)) - 1);
 
 	return retval;
 }
 
-HG_INLINE_FUNC gsize
+HG_INLINE_FUNC hg_usize_t
 hg_allocator_get_max_page(void)
 {
-	static gsize retval = ((1LL << (HG_ALLOC_TYPE_BIT_PAGE_END - HG_ALLOC_TYPE_BIT_PAGE + 1)) - 1);
+	static hg_usize_t retval = ((1LL << (HG_ALLOC_TYPE_BIT_PAGE_END - HG_ALLOC_TYPE_BIT_PAGE + 1)) - 1);
 
 	return retval;
 }
@@ -84,16 +84,16 @@ hg_allocator_get_max_page(void)
 HG_INLINE_FUNC hg_pointer_t
 hg_allocator_get_allocated_object(hg_allocator_block_t *block)
 {
-	return (hg_pointer_t)((gchar *)(block) + HG_ALIGNED_TO_POINTER (sizeof (hg_allocator_block_t)));
+	return (hg_pointer_t)((hg_char_t *)(block) + HG_ALIGNED_TO_POINTER (sizeof (hg_allocator_block_t)));
 }
 
 /** bitmap operation **/
 HG_INLINE_FUNC hg_allocator_bitmap_t *
-_hg_allocator_bitmap_new(gsize size)
+_hg_allocator_bitmap_new(hg_usize_t size)
 {
 	hg_allocator_bitmap_t *retval;
-	gsize aligned_size, bitmap_size;
-	gint32 page, max_page = hg_allocator_get_max_page();
+	hg_usize_t aligned_size, bitmap_size;
+	hg_int_t page, max_page = hg_allocator_get_max_page();
 
 	hg_return_val_if_fail (size > 0, NULL);
 	hg_return_val_if_fail (size <= hg_allocator_get_page_size() * BLOCK_SIZE, NULL);
@@ -102,7 +102,7 @@ _hg_allocator_bitmap_new(gsize size)
 	bitmap_size = HG_ALIGNED_TO (aligned_size / BLOCK_SIZE, sizeof (guint32));
 	retval = g_new0(hg_allocator_bitmap_t, 1);
 	if (retval) {
-		retval->bitmaps = g_new0(guint32 *, max_page);
+		retval->bitmaps = g_new0(hg_uint_t *, max_page);
 		retval->size = g_new0(gsize, max_page);
 		retval->last_index = g_new0(hg_quark_t, max_page);
 		page = _hg_allocator_bitmap_get_free_page(retval);
@@ -113,17 +113,17 @@ _hg_allocator_bitmap_new(gsize size)
 			_hg_allocator_bitmap_destroy(retval);
 			return NULL;
 		}
-		retval->bitmaps[page] = g_new0(guint32, bitmap_size / sizeof (guint32));
+		retval->bitmaps[page] = g_new0(hg_uint_t, bitmap_size / sizeof (guint32));
 		retval->size[page] = bitmap_size;
 	}
 
 	return retval;
 }
 
-HG_INLINE_FUNC gint32
+HG_INLINE_FUNC hg_int_t
 _hg_allocator_bitmap_get_free_page(hg_allocator_bitmap_t *bitmap)
 {
-	gint32 i, max_page = hg_allocator_get_max_page();
+	hg_int_t i, max_page = hg_allocator_get_max_page();
 
 	for (i = 0; i < max_page; i++) {
 		if (!bitmap->bitmaps[i])
@@ -134,10 +134,10 @@ _hg_allocator_bitmap_get_free_page(hg_allocator_bitmap_t *bitmap)
 }
 
 HG_INLINE_FUNC void
-_hg_allocator_bitmap_destroy(gpointer data)
+_hg_allocator_bitmap_destroy(hg_pointer_t data)
 {
 	hg_allocator_bitmap_t *bitmap = data;
-	gsize i, max_page = hg_allocator_get_max_page();
+	hg_usize_t i, max_page = hg_allocator_get_max_page();
 
 	if (!data)
 		return;
@@ -150,11 +150,11 @@ _hg_allocator_bitmap_destroy(gpointer data)
 	g_free(bitmap);
 }
 
-HG_INLINE_FUNC gint32
+HG_INLINE_FUNC hg_int_t
 _hg_allocator_bitmap_add_page(hg_allocator_bitmap_t *bitmap,
-			      gsize                  size)
+			      hg_usize_t             size)
 {
-	gint32 page;
+	hg_int_t page;
 
 	page = _hg_allocator_bitmap_get_free_page(bitmap);
 	if (page >= 0) {
@@ -165,12 +165,12 @@ _hg_allocator_bitmap_add_page(hg_allocator_bitmap_t *bitmap,
 	return page;
 }
 
-HG_INLINE_FUNC gboolean
+HG_INLINE_FUNC hg_bool_t
 _hg_allocator_bitmap_add_page_to(hg_allocator_bitmap_t *bitmap,
-				 gint32                 page,
-				 gsize                  size)
+				 hg_int_t               page,
+				 hg_usize_t             size)
 {
-	gsize aligned_size, bitmap_size;
+	hg_usize_t aligned_size, bitmap_size;
 
 	hg_return_val_if_fail (size > 0 && size <= hg_allocator_get_page_size() * BLOCK_SIZE, FALSE);
 	hg_return_val_if_fail (page >= 0 && page < hg_allocator_get_max_page(), FALSE);
@@ -179,9 +179,9 @@ _hg_allocator_bitmap_add_page_to(hg_allocator_bitmap_t *bitmap,
 	G_LOCK (bitmap);
 
 	aligned_size = HG_ALIGNED_TO (size, BLOCK_SIZE);
-	bitmap_size = HG_ALIGNED_TO (aligned_size / BLOCK_SIZE, sizeof (guint32));
+	bitmap_size = HG_ALIGNED_TO (aligned_size / BLOCK_SIZE, sizeof (hg_uint_t));
 	if (page >= 0) {
-		bitmap->bitmaps[page] = g_new0(guint32, bitmap_size / sizeof (guint32));
+		bitmap->bitmaps[page] = g_new0(hg_uint_t, bitmap_size / sizeof (hg_uint_t));
 		bitmap->size[page] = bitmap_size;
 	}
 
@@ -192,12 +192,12 @@ _hg_allocator_bitmap_add_page_to(hg_allocator_bitmap_t *bitmap,
 
 HG_INLINE_FUNC hg_quark_t
 _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
-			   gsize                  size)
+			   hg_usize_t             size)
 {
-	gsize aligned_size;
-	gint32 page;
-	guint32 i, j, idx = 0;
-	gboolean retry = FALSE;
+	hg_usize_t aligned_size;
+	hg_int_t page;
+	hg_uint_t i, j, idx = 0;
+	hg_bool_t retry = FALSE;
 
 	aligned_size = HG_ALIGNED_TO (size, BLOCK_SIZE) / BLOCK_SIZE;
 	page = bitmap->last_page;
@@ -246,13 +246,13 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 HG_INLINE_FUNC hg_quark_t
 _hg_allocator_bitmap_realloc(hg_allocator_bitmap_t *bitmap,
 			     hg_quark_t             index_,
-			     gsize                  old_size,
-			     gsize                  size)
+			     hg_usize_t             old_size,
+			     hg_usize_t             size)
 {
 	hg_quark_t i;
-	gssize aligned_size, old_aligned_size, required_size;
-	gint32 page;
-	guint32 idx;
+	hg_size_t aligned_size, old_aligned_size, required_size;
+	hg_int_t page;
+	hg_uint_t idx;
 
 	hg_return_val_if_fail (index_ != Qnil, Qnil);
 	hg_return_val_if_fail (size > 0, Qnil);
@@ -306,12 +306,12 @@ _hg_allocator_bitmap_realloc(hg_allocator_bitmap_t *bitmap,
 HG_INLINE_FUNC void
 _hg_allocator_bitmap_free(hg_allocator_bitmap_t *bitmap,
 			  hg_quark_t             index_,
-			  gsize                  size)
+			  hg_usize_t             size)
 {
 	hg_quark_t i;
-	gsize aligned_size;
-	gint32 page;
-	guint32 idx;
+	hg_usize_t aligned_size;
+	hg_int_t page;
+	hg_uint_t idx;
 
 	hg_return_if_fail (index_ > 0);
 	hg_return_if_fail (size > 0);
@@ -338,45 +338,45 @@ _hg_allocator_bitmap_free(hg_allocator_bitmap_t *bitmap,
 
 HG_INLINE_FUNC void
 _hg_allocator_bitmap_mark(hg_allocator_bitmap_t *bitmap,
-			  gint32                 page,
-			  guint32                index_)
+			  hg_int_t               page,
+			  hg_uint_t              index_)
 {
 	hg_return_if_fail (page >= 0 && page < hg_allocator_get_max_page());
 	hg_return_if_fail (index_ > 0 && index_ <= bitmap->size[page]);
 	hg_return_if_fail (!_hg_allocator_bitmap_is_marked(bitmap, page, index_));
 
-	bitmap->bitmaps[page][(index_ - 1) / sizeof (guint32)] |= 1 << ((index_ - 1) % sizeof (guint32));
+	bitmap->bitmaps[page][(index_ - 1) / sizeof (hg_uint_t)] |= 1 << ((index_ - 1) % sizeof (hg_uint_t));
 }
 
 HG_INLINE_FUNC void
 _hg_allocator_bitmap_clear(hg_allocator_bitmap_t *bitmap,
-			   gint32                 page,
-			   guint32                index_)
+			   hg_int_t               page,
+			   hg_uint_t              index_)
 {
 	hg_return_if_fail (page >= 0 && page < hg_allocator_get_max_page());
 	hg_return_if_fail (index_ > 0 && index_ <= bitmap->size[page]);
 
-	bitmap->bitmaps[page][(index_ - 1) / sizeof (guint32)] &= ~(1 << ((index_ - 1) % sizeof (guint32)));
+	bitmap->bitmaps[page][(index_ - 1) / sizeof (hg_uint_t)] &= ~(1 << ((index_ - 1) % sizeof (hg_uint_t)));
 }
 
-HG_INLINE_FUNC gboolean
+HG_INLINE_FUNC hg_bool_t
 _hg_allocator_bitmap_is_marked(hg_allocator_bitmap_t *bitmap,
-			       gint32                 page,
-			       guint32                index_)
+			       hg_int_t               page,
+			       hg_uint_t              index_)
 {
 	hg_return_val_if_fail (page >= 0 && page < hg_allocator_get_max_page(), FALSE);
 	hg_return_val_if_fail (index_ > 0 && index_ <= bitmap->size[page], FALSE);
 
-	return bitmap->bitmaps[page][(index_ - 1) / sizeof (guint32)] & 1 << ((index_ - 1) % sizeof (guint32));
+	return bitmap->bitmaps[page][(index_ - 1) / sizeof (hg_uint_t)] & 1 << ((index_ - 1) % sizeof (hg_uint_t));
 }
 
-HG_INLINE_FUNC gboolean
+HG_INLINE_FUNC hg_bool_t
 _hg_allocator_bitmap_range_mark(hg_allocator_bitmap_t *bitmap,
-				gint32                 page,
-				guint32               *index_,
-				gsize                  size)
+				hg_int_t               page,
+				hg_uint_t             *index_,
+				hg_usize_t             size)
 {
-	gsize required_size = size, j;
+	hg_usize_t required_size = size, j;
 
 	if (!_hg_allocator_bitmap_is_marked(bitmap, page, *index_)) {
 		required_size--;
@@ -410,7 +410,7 @@ HG_INLINE_FUNC hg_allocator_bitmap_t *
 _hg_allocator_bitmap_copy(hg_allocator_bitmap_t *bitmap)
 {
 	hg_allocator_bitmap_t *retval = _hg_allocator_bitmap_new(bitmap->size[0] * BLOCK_SIZE);
-	gsize i, max_page = hg_allocator_get_max_page();
+	hg_usize_t i, max_page = hg_allocator_get_max_page();
 
 	G_LOCK (bitmap);
 
@@ -433,9 +433,9 @@ _hg_allocator_bitmap_copy(hg_allocator_bitmap_t *bitmap)
 
 HG_INLINE_FUNC void
 _hg_allocator_bitmap_dump(hg_allocator_bitmap_t *bitmap,
-			  gint32                 page)
+			  hg_int_t               page)
 {
-	gsize i;
+	hg_usize_t i;
 
 	if (hg_message_is_enabled(HG_MSGCAT_BITMAP)) {
 		hg_debug(HG_MSGCAT_BITMAP, "bitmap[%d]: %ld blocks allocated", page, bitmap->size[page]);
@@ -461,7 +461,7 @@ _hg_allocator_bitmap_dump(hg_allocator_bitmap_t *bitmap,
 }
 
 /** allocator **/
-static gpointer
+static hg_pointer_t
 _hg_allocator_initialize(void)
 {
 	hg_allocator_private_t *retval;
@@ -475,7 +475,7 @@ static void
 _hg_allocator_finalize(hg_allocator_data_t *data)
 {
 	hg_allocator_private_t *priv;
-	gsize i, max_page = hg_allocator_get_max_page();
+	hg_usize_t i, max_page = hg_allocator_get_max_page();
 
 	if (!data)
 		return;
@@ -492,15 +492,15 @@ _hg_allocator_finalize(hg_allocator_data_t *data)
 	g_free(priv);
 }
 
-static gboolean
+static hg_bool_t
 _hg_allocator_expand_heap(hg_allocator_data_t *data,
-			  gsize                size)
+			  hg_usize_t           size)
 {
 	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
-	gint32 page = 0;
+	hg_int_t page = 0;
 
 	if (!priv->heaps) {
-		priv->heaps = g_new0(gpointer, hg_allocator_get_max_page());
+		priv->heaps = g_new0(hg_pointer_t, hg_allocator_get_max_page());
 		if (!priv->heaps)
 			return FALSE;
 	}
@@ -520,11 +520,11 @@ _hg_allocator_expand_heap(hg_allocator_data_t *data,
 	return TRUE;
 }
 
-static gsize
+static hg_usize_t
 _hg_allocator_get_max_heap_size(hg_allocator_data_t *data)
 {
 	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
-	gsize retval = 0, i, max_page = hg_allocator_get_max_page();
+	hg_usize_t retval = 0, i, max_page = hg_allocator_get_max_page();
 
 	for (i = 0; i < max_page; i++) {
 		retval = MAX (retval, priv->bitmap->size[i]);
@@ -535,13 +535,13 @@ _hg_allocator_get_max_heap_size(hg_allocator_data_t *data)
 
 static hg_quark_t
 _hg_allocator_alloc(hg_allocator_data_t *data,
-		    gsize                size,
-		    guint                flags,
-		    gpointer            *ret)
+		    hg_usize_t           size,
+		    hg_uint_t            flags,
+		    hg_pointer_t        *ret)
 {
 	hg_allocator_private_t *priv;
 	hg_allocator_block_t *block;
-	gsize obj_size;
+	hg_usize_t obj_size;
 	hg_quark_t index_, retval = Qnil;
 
 	priv = (hg_allocator_private_t *)data;
@@ -574,12 +574,12 @@ _hg_allocator_alloc(hg_allocator_data_t *data,
 static hg_quark_t
 _hg_allocator_realloc(hg_allocator_data_t *data,
 		      hg_quark_t           qdata,
-		      gsize                size,
-		      gpointer            *ret)
+		      hg_usize_t           size,
+		      hg_pointer_t        *ret)
 {
 	hg_allocator_private_t *priv;
 	hg_allocator_block_t *block, *new_block;
-	gsize obj_size;
+	hg_usize_t obj_size;
 	hg_quark_t index_ = Qnil, retval = Qnil;
 
 	G_LOCK (allocator);
@@ -588,7 +588,7 @@ _hg_allocator_realloc(hg_allocator_data_t *data,
 
 	obj_size = HG_ALIGNED_TO_POINTER (sizeof (hg_allocator_block_t) + size);
 	block = _hg_allocator_real_lock_object(data, qdata);
-	if (G_LIKELY (block)) {
+	if (HG_LIKELY (block)) {
 		volatile gint make_sure_if_no_referrer;
 
 		make_sure_if_no_referrer = g_atomic_int_get(&block->lock_count);
@@ -637,7 +637,7 @@ _hg_allocator_free(hg_allocator_data_t *data,
 
 	priv = (hg_allocator_private_t *)data;
 	block = _hg_allocator_real_lock_object(data, index_);
-	if (G_LIKELY (block)) {
+	if (HG_LIKELY (block)) {
 		/* Update the used size */
 		data->used_size -= block->size;
 
@@ -649,13 +649,13 @@ _hg_allocator_free(hg_allocator_data_t *data,
 	}
 }
 
-HG_INLINE_FUNC gpointer
+HG_INLINE_FUNC hg_pointer_t
 _hg_allocator_get_internal_block(hg_allocator_private_t *priv,
 				 hg_quark_t              index_,
-				 gboolean                initialize)
+				 hg_bool_t               initialize)
 {
-	gint32 page;
-	guint32 idx;
+	hg_int_t page;
+	hg_uint_t idx;
 
 	page = _hg_allocator_quark_get_page(index_);
 	idx = _hg_allocator_quark_get_index(index_);
@@ -663,11 +663,11 @@ _hg_allocator_get_internal_block(hg_allocator_private_t *priv,
 	return _hg_allocator_get_internal_block_from_page_and_index(priv, page, idx, initialize);
 }
 
-HG_INLINE_FUNC gpointer
+HG_INLINE_FUNC hg_pointer_t
 _hg_allocator_get_internal_block_from_page_and_index(hg_allocator_private_t *priv,
-						     gint32                  page,
-						     guint32                 idx,
-						     gboolean                initialize)
+						     hg_int_t                page,
+						     hg_uint_t               idx,
+						     hg_bool_t               initialize)
 {
 	hg_allocator_block_t *retval;
 
@@ -676,7 +676,7 @@ _hg_allocator_get_internal_block_from_page_and_index(hg_allocator_private_t *pri
 		hg_warning("Invalid quark to access: [page: %d, index: %d]", page, idx);
 		return NULL;
 	}
-	retval = (hg_allocator_block_t *)((gulong)priv->heaps[page] + ((idx - 1) * BLOCK_SIZE));
+	retval = (hg_allocator_block_t *)((hg_quark_t)priv->heaps[page] + ((idx - 1) * BLOCK_SIZE));
 	if (initialize) {
 		memset(retval, 0, sizeof (hg_allocator_block_t));
 		retval->lock_count = 1;
@@ -685,15 +685,15 @@ _hg_allocator_get_internal_block_from_page_and_index(hg_allocator_private_t *pri
 	return retval;
 }
 
-HG_INLINE_FUNC gpointer
+HG_INLINE_FUNC hg_pointer_t
 _hg_allocator_real_lock_object(hg_allocator_data_t *data,
 			       hg_quark_t           index_)
 {
 	hg_allocator_private_t *priv;
 	hg_allocator_block_t *retval = NULL;
-	gint old_val;
-	gint32 page;
-	guint32 idx;
+	hg_int_t old_val;
+	hg_int_t page;
+	hg_uint_t idx;
 
 	page = _hg_allocator_quark_get_page(index_);
 	idx = _hg_allocator_quark_get_index(index_);
@@ -709,7 +709,7 @@ _hg_allocator_real_lock_object(hg_allocator_data_t *data,
 	return retval;
 }
 
-static gpointer
+static hg_pointer_t
 _hg_allocator_lock_object(hg_allocator_data_t *data,
 			  hg_quark_t           index_)
 {
@@ -729,7 +729,7 @@ _hg_allocator_lock_object(hg_allocator_data_t *data,
 HG_INLINE_FUNC void
 _hg_allocator_real_unlock_object(hg_allocator_block_t *block)
 {
-	gint old_val;
+	hg_int_t old_val;
 
 	hg_return_if_fail (block != NULL);
 	hg_return_if_fail (block->lock_count > 0);
@@ -746,8 +746,8 @@ _hg_allocator_unlock_object(hg_allocator_data_t *data,
 {
 	hg_allocator_private_t *priv;
 	hg_allocator_block_t *retval = NULL;
-	gint32 page;
-	guint32 idx;
+	hg_int_t page;
+	hg_uint_t idx;
 
 	priv = (hg_allocator_private_t *)data;
 
@@ -761,13 +761,13 @@ _hg_allocator_unlock_object(hg_allocator_data_t *data,
 	}
 }
 
-static gboolean
+static hg_bool_t
 _hg_allocator_gc_init(hg_allocator_data_t *data)
 {
 	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
-	gsize i, max_page = hg_allocator_get_max_page();
+	hg_usize_t i, max_page = hg_allocator_get_max_page();
 
-	if (G_UNLIKELY (priv->slave_bitmap)) {
+	if (HG_UNLIKELY (priv->slave_bitmap)) {
 		hg_warning("GC is already ongoing.");
 		return FALSE;
 	}
@@ -791,9 +791,9 @@ _hg_allocator_gc_mark(hg_allocator_data_t  *data,
 {
 	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
 	hg_allocator_block_t *block;
-	gint32 page;
-	guint32 idx;
-	gsize aligned_size;
+	hg_int_t page;
+	hg_uint_t idx;
+	hg_usize_t aligned_size;
 
 	/* this isn't the object in the targeted spool */
 	if (!priv->slave_bitmap)
@@ -829,7 +829,7 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 {
 	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
 
-	if (G_UNLIKELY (!priv->slave_bitmap)) {
+	if (HG_UNLIKELY (!priv->slave_bitmap)) {
 		hg_warning("GC isn't yet started.");
 		return HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 	}
@@ -838,8 +838,8 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 
 	/* XXX: this has to be dropped in the future */
 	if (HG_ERROR_IS_SUCCESS (error)) {
-		gsize used_size;
-		guint32 i, j, max_page = hg_allocator_get_max_page();
+		hg_usize_t used_size;
+		hg_uint_t i, j, max_page = hg_allocator_get_max_page();
 
 		used_size = data->used_size - priv->slave.used_size;
 
@@ -850,7 +850,7 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data,
 			for (j = 0; used_size > 0 && j < priv->bitmap->size[i]; j++) {
 				if (_hg_allocator_bitmap_is_marked(priv->bitmap, i, j + 1)) {
 					hg_allocator_block_t *block;
-					gsize aligned_size;
+					hg_usize_t aligned_size;
 
 					block = _hg_allocator_get_internal_block_from_page_and_index((hg_allocator_private_t *)data,
 												     i, j + 1, FALSE);
@@ -904,7 +904,7 @@ _hg_allocator_save_snapshot(hg_allocator_data_t *data)
 {
 	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
 	hg_allocator_snapshot_private_t *snapshot;
-	gsize i, max_page = hg_allocator_get_max_page();
+	hg_usize_t i, max_page = hg_allocator_get_max_page();
 
 	G_LOCK (allocator);
 
@@ -933,8 +933,8 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t          *data,
 {
 	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
 	hg_allocator_snapshot_private_t *spriv = (hg_allocator_snapshot_private_t *)snapshot;
-	guint32 i, j, max_page = hg_allocator_get_max_page();
-	gboolean retval = FALSE;
+	hg_uint_t i, j, max_page = hg_allocator_get_max_page();
+	hg_bool_t retval = FALSE;
 
 	if (spriv->age >= priv->snapshot_age)
 		return FALSE;
@@ -943,17 +943,17 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t          *data,
 
 	for (i = 0; i < max_page; i++) {
 		for (j = 0; j < priv->bitmap->size[i]; j++) {
-			gboolean f1, f2;
-			gsize aligned_size;
+			hg_bool_t f1, f2;
+			hg_usize_t aligned_size;
 
 			f1 = _hg_allocator_bitmap_is_marked(priv->bitmap, i, j + 1);
 			f2 = j >= spriv->bitmap->size[i] ? FALSE : _hg_allocator_bitmap_is_marked(spriv->bitmap, i, j + 1);
 			if (f1 && f2) {
 				hg_allocator_block_t *b1, *b2;
-				gsize idx = j * BLOCK_SIZE;
+				hg_usize_t idx = j * BLOCK_SIZE;
 
 				b1 = _hg_allocator_get_internal_block_from_page_and_index(priv, i, j + 1, FALSE);
-				b2 = (hg_allocator_block_t *)((gulong)spriv->heaps[i] + idx);
+				b2 = (hg_allocator_block_t *)((hg_quark_t)spriv->heaps[i] + idx);
 				if (b1->size != b2->size ||
 				    b1->age != b2->age) {
 					if (g_hash_table_lookup_extended(references,
@@ -984,10 +984,10 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t          *data,
 				j += aligned_size - 1;
 			} else if (!f1 && f2) {
 				hg_allocator_block_t *b2;
-				gsize k, check_size;
-				gsize idx = j * BLOCK_SIZE;
+				hg_usize_t k, check_size;
+				hg_usize_t idx = j * BLOCK_SIZE;
 
-				b2 = (hg_allocator_block_t *)((gulong)spriv->heaps[i] + idx);
+				b2 = (hg_allocator_block_t *)((hg_quark_t)spriv->heaps[i] + idx);
 				check_size = aligned_size = HG_ALIGNED_TO (b2->size, BLOCK_SIZE) / BLOCK_SIZE;
 				check_size--;
 				for (k = j + 1; check_size > 0 && k < priv->bitmap->size[i]; k++) {
@@ -1011,14 +1011,14 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t          *data,
 		for (j = 0; j < spriv->bitmap->size[i]; j++) {
 			if (_hg_allocator_bitmap_is_marked(spriv->bitmap, i, j + 1)) {
 				hg_allocator_block_t *block;
-				gsize aligned_size;
+				hg_usize_t aligned_size;
 
 				block = _hg_allocator_get_internal_block_from_page_and_index(priv, i, j + 1, FALSE);
 				if (block == NULL)
 					goto error;
 				if (block->is_restorable) {
-					memcpy((((gchar *)priv->heaps[i]) + j * BLOCK_SIZE),
-					       (((gchar *)spriv->heaps[i]) + j * BLOCK_SIZE),
+					memcpy((((hg_char_t *)priv->heaps[i]) + j * BLOCK_SIZE),
+					       (((hg_char_t *)spriv->heaps[i]) + j * BLOCK_SIZE),
 					       block->size);
 				}
 				aligned_size = HG_ALIGNED_TO (block->size, BLOCK_SIZE) / BLOCK_SIZE;
@@ -1045,11 +1045,11 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t          *data,
 }
 
 static void
-_hg_allocator_destroy_snapshot(hg_allocator_data_t    *data,
+_hg_allocator_destroy_snapshot(hg_allocator_data_t          *data,
 			       hg_allocator_snapshot_data_t *snapshot)
 {
 	hg_allocator_snapshot_private_t *spriv = (hg_allocator_snapshot_private_t *)snapshot;
-	gsize i, max_page = hg_allocator_get_max_page();
+	hg_usize_t i, max_page = hg_allocator_get_max_page();
 
 	_hg_allocator_bitmap_destroy(spriv->bitmap);
 	for (i = 0; i < max_page; i++) {
