@@ -213,9 +213,8 @@ _hg_object_file_free(hg_object_t *object)
 static hg_quark_t
 _hg_object_file_copy(hg_object_t              *object,
 		     hg_quark_iterate_func_t   func,
-		     gpointer                  user_data,
-		     gpointer                 *ret,
-		     GError                  **error)
+		     hg_pointer_t              user_data,
+		     hg_pointer_t             *ret)
 {
 	hg_return_val_if_fail (object->type == HG_TYPE_FILE, Qnil);
 

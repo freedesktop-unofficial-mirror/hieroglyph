@@ -106,8 +106,6 @@ hg_quark_t          hg_gstate_get_path         (hg_gstate_t    *gstate);
 void                hg_gstate_set_clippath     (hg_gstate_t    *gstate,
                                                 hg_quark_t      qpath);
 hg_quark_t          hg_gstate_get_clippath     (hg_gstate_t    *gstate);
-hg_quark_t          hg_gstate_save             (hg_gstate_t    *gstate,
-						hg_quark_t      is_snapshot);
 void                hg_gstate_set_rgbcolor     (hg_gstate_t    *gstate,
 						gdouble         red,
 						gdouble         green,

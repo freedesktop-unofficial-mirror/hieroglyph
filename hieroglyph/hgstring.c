@@ -83,15 +83,13 @@ _hg_object_string_initialize(hg_object_t *object,
 }
 
 static hg_quark_t
-_hg_object_string_copy(hg_object_t              *object,
-		       hg_quark_iterate_func_t   func,
-		       gpointer                  user_data,
-		       gpointer                 *ret,
-		       GError                  **error)
+_hg_object_string_copy(hg_object_t             *object,
+		       hg_quark_iterate_func_t  func,
+		       hg_pointer_t             user_data,
+		       hg_pointer_t            *ret)
 {
 	hg_string_t *s = (hg_string_t *)object;
-	hg_quark_t retval;
-	GError *err = NULL;
+	hg_quark_t retval = Qnil;
 	gchar *cstr = hg_string_get_cstr(s);
 
 	hg_return_val_if_fail (object->type == HG_TYPE_STRING, Qnil);
@@ -99,19 +97,7 @@ _hg_object_string_copy(hg_object_t              *object,
 	retval = HG_QSTRING_LEN (s->o.mem, cstr, hg_string_length(s));
 	g_free(cstr);
 	if (retval == Qnil) {
-		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-			    "Out of memory");
-	}
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
+		hg_warning("Out of memory");
 	}
 
 	return retval;

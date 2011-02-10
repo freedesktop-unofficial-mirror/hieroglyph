@@ -67,13 +67,11 @@ _hg_object_gstate_initialize(hg_object_t *object,
 static hg_quark_t
 _hg_object_gstate_copy(hg_object_t              *object,
 		       hg_quark_iterate_func_t   func,
-		       gpointer                  user_data,
-		       gpointer                 *ret,
-		       GError                  **error)
+		       hg_pointer_t              user_data,
+		       hg_pointer_t             *ret)
 {
-	hg_gstate_t *gstate = (hg_gstate_t *)object, *g;
+	hg_gstate_t *gstate = (hg_gstate_t *)object, *g = NULL;
 	hg_quark_t retval;
-	GError *err = NULL;
 
 	hg_return_val_if_fail (object->type == HG_TYPE_GSTATE, Qnil);
 
@@ -83,42 +81,47 @@ _hg_object_gstate_copy(hg_object_t              *object,
 	object->on_copying = retval = hg_gstate_new(gstate->o.mem, (gpointer *)&g);
 	if (retval != Qnil) {
 		memcpy(&g->ctm, &gstate->ctm, sizeof (hg_gstate_t) - sizeof (hg_object_t) - (sizeof (hg_quark_t) * 3));
-		g->qpath = func(gstate->qpath, user_data, NULL, &err);
-		if (err)
-			goto finalize;
-		hg_mem_reserved_spool_remove(gstate->o.mem,
-					     g->qpath);
-		g->qclippath = func(gstate->qclippath, user_data, NULL, &err);
-		if (err)
-			goto finalize;
-		hg_mem_reserved_spool_remove(gstate->o.mem,
-					     g->qclippath);
-		g->qdashpattern = func(gstate->qdashpattern, user_data, NULL, &err);
-		if (err)
-			goto finalize;
-		hg_mem_reserved_spool_remove(gstate->o.mem,
-					     g->qdashpattern);
+		if (gstate->qpath == Qnil) {
+			g->qpath = Qnil;
+		} else {
+			g->qpath = func(gstate->qpath, user_data, NULL);
+			if (g->qpath == Qnil)
+				goto bail;
+			hg_mem_reserved_spool_remove(gstate->o.mem,
+						     g->qpath);
+		}
+		if (gstate->qclippath == Qnil) {
+			g->qclippath = Qnil;
+		} else {
+			g->qclippath = func(gstate->qclippath, user_data, NULL);
+			if (g->qclippath == Qnil)
+				goto bail;
+			hg_mem_reserved_spool_remove(gstate->o.mem,
+						     g->qclippath);
+		}
+		if (gstate->qdashpattern == Qnil) {
+			g->qdashpattern = Qnil;
+		} else {
+			g->qdashpattern = func(gstate->qdashpattern, user_data, NULL);
+			if (g->qdashpattern == Qnil)
+				goto bail;
+			hg_mem_reserved_spool_remove(gstate->o.mem,
+						     g->qdashpattern);
+		}
 
 		if (ret)
 			*ret = g;
 		else
 			hg_mem_unlock_object(g->o.mem, retval);
 	}
-  finalize:
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
+	goto finalize;
+  bail:
+	if (g) {
 		hg_object_free(g->o.mem, retval);
 
 		retval = Qnil;
 	}
+  finalize:
 	object->on_copying = Qnil;
 
 	return retval;
@@ -163,28 +166,6 @@ _hg_object_gstate_compare(hg_object_t             *o1,
 			  gpointer                 user_data)
 {
 	return FALSE;
-}
-
-static hg_quark_t
-_hg_gstate_iterate_copy(hg_quark_t   qdata,
-			gpointer     user_data,
-			gpointer    *ret,
-			GError     **error)
-{
-	hg_quark_t retval;
-	hg_object_t *o;
-	hg_gstate_t *gstate = (hg_gstate_t *)user_data;
-
-	if (hg_quark_is_simple_object(qdata))
-		return qdata;
-
-	hg_return_val_with_gerror_if_lock_fail (o, gstate->o.mem, qdata, error, Qnil);
-
-	retval = hg_object_copy(o, _hg_gstate_iterate_copy, user_data, NULL, error);
-
-	hg_mem_unlock_object(gstate->o.mem, qdata);
-
-	return retval;
 }
 
 /*< public >*/
@@ -328,50 +309,6 @@ hg_gstate_get_clippath(hg_gstate_t *gstate)
 	hg_return_val_if_fail (gstate != NULL, Qnil);
 
 	return gstate->qclippath;
-}
-
-/**
- * hg_gstate_save:
- * @gstate:
- * @is_snapshot:
- *
- * FIXME
- *
- * Returns:
- */
-hg_quark_t
-hg_gstate_save(hg_gstate_t *gstate,
-	       hg_quark_t   is_snapshot)
-{
-	hg_quark_t retval;
-	GError *err = NULL;
-	hg_gstate_t *g;
-
-	hg_return_val_if_fail (gstate != NULL, Qnil);
-
-	retval = hg_object_copy((hg_object_t *)gstate,
-				_hg_gstate_iterate_copy,
-				gstate, (gpointer *)&g, &err);
-	if (retval == Qnil)
-		goto error;
-
-	g->is_snapshot = is_snapshot;
-
-	hg_mem_unlock_object(gstate->o.mem, retval);
-  error:
-	if (err) {
-		hg_warning("%s: %s (code: %d)",
-			   __PRETTY_FUNCTION__,
-			   err->message,
-			   err->code);
-		g_error_free(err);
-
-		hg_object_free(gstate->o.mem,
-			       retval);
-		retval = Qnil;
-	}
-
-	return retval;
 }
 
 /**

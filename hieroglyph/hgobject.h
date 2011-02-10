@@ -54,8 +54,7 @@ HG_BEGIN_DECLS
 	static hg_quark_t      _hg_object_ ## _name_ ## _copy                (hg_object_t              *object, \
 									      hg_quark_iterate_func_t   func, \
 									      gpointer                  user_data, \
-									      gpointer                 *ret, \
-									      GError                  **error); \
+									      gpointer                 *ret); \
 	static gchar          *_hg_object_ ## _name_ ## _to_cstr             (hg_object_t              *object, \
 									      hg_quark_iterate_func_t   func, \
 									      gpointer                  user_data, \
@@ -103,9 +102,8 @@ struct _hg_object_vtable_t {
 	void             (* free)                 (hg_object_t              *object);
 	hg_quark_t       (* copy)                 (hg_object_t              *object,
 						   hg_quark_iterate_func_t   func,
-						   gpointer                  user_data,
-						   gpointer                 *ret,
-						   GError                  **error);
+						   hg_pointer_t              user_data,
+						   hg_pointer_t             *ret);
 	gchar          * (* to_cstr)              (hg_object_t              *object,
 						   hg_quark_iterate_func_t   func,
 						   gpointer                  user_data,
@@ -149,9 +147,8 @@ void            hg_object_free      (hg_mem_t                 *mem,
 				     hg_quark_t                index);
 hg_quark_t      hg_object_copy      (hg_object_t              *object,
 				     hg_quark_iterate_func_t   func,
-				     gpointer                  user_data,
-				     gpointer                 *ret,
-				     GError                  **error);
+				     hg_pointer_t              user_data,
+				     hg_pointer_t             *ret);
 gchar          *hg_object_to_cstr   (hg_object_t              *object,
 				     hg_quark_iterate_func_t   func,
 				     gpointer                  user_data,
@@ -171,8 +168,7 @@ void            hg_object_set_acl   (hg_object_t              *object,
 hg_quark_acl_t  hg_object_get_acl   (hg_object_t              *object);
 hg_quark_t      hg_object_quark_copy(hg_mem_t                 *mem,
 				     hg_quark_t                qdata,
-				     gpointer                 *ret,
-				     GError                  **error);
+				     hg_pointer_t             *ret);
 
 HG_END_DECLS
 

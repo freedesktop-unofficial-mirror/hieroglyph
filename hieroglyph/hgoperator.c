@@ -1082,7 +1082,7 @@ DEFUNC_OPER (protected_for_yield_int_continue)
 		SET_EXPECTED_STACK_SIZE (1, 2, 0);
 	}
 
-	qq = hg_vm_quark_copy(vm, proc, NULL, error);
+	qq = hg_vm_quark_copy(vm, proc, NULL);
 	if (qq == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
@@ -1129,7 +1129,7 @@ DEFUNC_OPER (protected_for_yield_real_continue)
 		SET_EXPECTED_STACK_SIZE (1, 2, 0);
 	}
 
-	qq = hg_vm_quark_copy(vm, proc, NULL, error);
+	qq = hg_vm_quark_copy(vm, proc, NULL);
 	if (qq == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
@@ -1181,7 +1181,7 @@ DEFUNC_OPER (protected_forall_array_continue)
 	qq = hg_array_get(a, i, error);
 	HG_VM_UNLOCK (vm, val);
 
-	q = hg_vm_quark_copy(vm, proc, NULL, error);
+	q = hg_vm_quark_copy(vm, proc, NULL);
 	if (q == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
@@ -1238,7 +1238,7 @@ DEFUNC_OPER (protected_forall_dict_continue)
 	hg_dict_remove(d, qk, error);
 	HG_VM_UNLOCK (vm, val);
 
-	q = hg_vm_quark_copy(vm, proc, NULL, error);
+	q = hg_vm_quark_copy(vm, proc, NULL);
 	if (q == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
@@ -1290,7 +1290,7 @@ DEFUNC_OPER (protected_forall_string_continue)
 	qq = HG_QINT (hg_string_index(s, i));
 	HG_VM_UNLOCK (vm, val);
 
-	q = hg_vm_quark_copy(vm, proc, NULL, error);
+	q = hg_vm_quark_copy(vm, proc, NULL);
 	if (q == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
@@ -1312,7 +1312,7 @@ DEFUNC_OPER (protected_loop_continue)
 	self = hg_stack_index(estack, 0, error);
 	qproc = hg_stack_index(estack, 1, error);
 
-	q = hg_vm_quark_copy(vm, qproc, NULL, error);
+	q = hg_vm_quark_copy(vm, qproc, NULL);
 	if (q == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
@@ -1339,7 +1339,7 @@ DEFUNC_OPER (protected_repeat_continue)
 	if (HG_INT (*arg0) > 0) {
 		*arg0 = HG_QINT (HG_INT (*arg0) - 1);
 
-		q = hg_vm_quark_copy(vm, arg1, NULL, error);
+		q = hg_vm_quark_copy(vm, arg1, NULL);
 		if (q == Qnil) {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
@@ -2271,7 +2271,7 @@ DEFUNC_OPER (clippath)
 		return FALSE;
 	}
 	q = hg_gstate_get_clippath(gstate);
-	qq = hg_vm_quark_copy(vm, q, NULL, error);
+	qq = hg_vm_quark_copy(vm, q, NULL);
 	if (qq == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		goto finalize;
@@ -3706,7 +3706,7 @@ DEFUNC_OPER (exec)
 			return FALSE;
 		}
 
-		q = hg_vm_quark_copy(vm, arg0, NULL, error);
+		q = hg_vm_quark_copy(vm, arg0, NULL);
 		if (q == Qnil) {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
@@ -4598,17 +4598,12 @@ DEFUNC_OPER (grestoreall)
 DEFUNC_OPER (gsave)
 {
 	hg_quark_t q, qg = hg_vm_get_gstate(vm);
-	hg_gstate_t *gstate;
 
-	gstate = HG_VM_LOCK (vm, qg, error);
-	if (gstate == NULL) {
+	q = hg_vm_quark_copy(vm, qg, NULL);
+	if (q == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}
-	q = hg_gstate_save(gstate, Qnil);
-
-	HG_VM_UNLOCK (vm, qg);
-
 	STACK_PUSH (vm->stacks[HG_VM_STACK_GSTATE], qg);
 	hg_vm_set_gstate(vm, q);
 
@@ -4757,8 +4752,8 @@ DEFUNC_OPER (if)
 		return FALSE;
 	}
 	if (HG_BOOL (arg0)) {
-		q = hg_vm_quark_copy(vm, arg1, NULL, error);
-		if (error && *error) {
+		q = hg_vm_quark_copy(vm, arg1, NULL);
+		if (q == Qnil) {
 			hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 			return FALSE;
 		}
@@ -4806,11 +4801,11 @@ DEFUNC_OPER (ifelse)
 		return FALSE;
 	}
 	if (HG_BOOL (arg0)) {
-		q = hg_vm_quark_copy(vm, arg1, NULL, error);
+		q = hg_vm_quark_copy(vm, arg1, NULL);
 	} else {
-		q = hg_vm_quark_copy(vm, arg2, NULL, error);
+		q = hg_vm_quark_copy(vm, arg2, NULL);
 	}
-	if (error && *error) {
+	if (q == Qnil) {
 		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
 		return FALSE;
 	}

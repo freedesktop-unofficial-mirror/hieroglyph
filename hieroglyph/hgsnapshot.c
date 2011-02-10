@@ -70,11 +70,10 @@ _hg_object_snapshot_free(hg_object_t *object)
 }
 
 static hg_quark_t
-_hg_object_snapshot_copy(hg_object_t              *object,
-			 hg_quark_iterate_func_t   func,
-			 hg_pointer_t              user_data,
-			 hg_pointer_t             *ret,
-			 GError                  **error)
+_hg_object_snapshot_copy(hg_object_t             *object,
+			 hg_quark_iterate_func_t  func,
+			 hg_pointer_t             user_data,
+			 hg_pointer_t            *ret)
 {
 	hg_return_val_if_fail (object->type == HG_TYPE_SNAPSHOT, Qnil);
 

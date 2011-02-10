@@ -305,48 +305,47 @@ hg_quark_t hg_vm_dict_lookup    (hg_vm_t     *vm,
                                  GError     **error);
 
 /* hg_quark_t */
-hg_error_t hg_vm_quark_gc_mark               (hg_vm_t     *vm,
-                                              hg_quark_t   qdata);
-hg_quark_t hg_vm_quark_copy                  (hg_vm_t     *vm,
-                                              hg_quark_t   qdata,
-                                              gpointer    *ret,
-                                              GError     **error);
-hg_quark_t hg_vm_quark_to_string             (hg_vm_t     *vm,
-                                              hg_quark_t   qdata,
-                                              gboolean     ps_like_syntax,
-                                              gpointer    *ret,
-                                              GError     **error);
-gboolean   hg_vm_quark_compare               (hg_vm_t     *vm,
-                                              hg_quark_t   qdata1,
-                                              hg_quark_t   qdata2);
-gboolean   hg_vm_quark_compare_content       (hg_vm_t     *vm,
-                                              hg_quark_t   qdata1,
-                                              hg_quark_t   qdata2);
-void       hg_vm_quark_set_default_acl       (hg_vm_t     *vm,
-                                              hg_quark_t  *qdata);
-void       hg_vm_quark_set_acl               (hg_vm_t     *vm,
-                                              hg_quark_t  *qdata,
+hg_error_t hg_vm_quark_gc_mark               (hg_vm_t        *vm,
+                                              hg_quark_t      qdata);
+hg_quark_t hg_vm_quark_copy                  (hg_vm_t        *vm,
+                                              hg_quark_t      qdata,
+                                              hg_pointer_t   *ret);
+hg_quark_t hg_vm_quark_to_string             (hg_vm_t        *vm,
+                                              hg_quark_t      qdata,
+                                              gboolean        ps_like_syntax,
+                                              gpointer       *ret,
+                                              GError        **error);
+gboolean   hg_vm_quark_compare               (hg_vm_t        *vm,
+                                              hg_quark_t      qdata1,
+                                              hg_quark_t      qdata2);
+gboolean   hg_vm_quark_compare_content       (hg_vm_t        *vm,
+                                              hg_quark_t      qdata1,
+                                              hg_quark_t      qdata2);
+void       hg_vm_quark_set_default_acl       (hg_vm_t        *vm,
+                                              hg_quark_t     *qdata);
+void       hg_vm_quark_set_acl               (hg_vm_t        *vm,
+                                              hg_quark_t     *qdata,
 					      hg_quark_acl_t  acl);
-void       hg_vm_quark_set_readable          (hg_vm_t     *vm,
-                                              hg_quark_t  *qdata,
-                                              gboolean     flag);
-gboolean   hg_vm_quark_is_readable           (hg_vm_t     *vm,
-                                              hg_quark_t  *qdata);
-void       hg_vm_quark_set_writable          (hg_vm_t     *vm,
-                                              hg_quark_t  *qdata,
-                                              gboolean     flag);
-gboolean   hg_vm_quark_is_writable           (hg_vm_t     *vm,
-                                              hg_quark_t  *qdata);
-void       hg_vm_quark_set_executable        (hg_vm_t     *vm,
-                                              hg_quark_t  *qdata,
-                                              gboolean     flag);
-gboolean   hg_vm_quark_is_executable         (hg_vm_t     *vm,
-                                              hg_quark_t  *qdata);
-void       hg_vm_quark_set_accessible        (hg_vm_t     *vm,
-                                              hg_quark_t  *qdata,
-                                              gboolean     flag);
-gboolean   hg_vm_quark_is_accessible         (hg_vm_t     *vm,
-                                              hg_quark_t  *qdata);
+void       hg_vm_quark_set_readable          (hg_vm_t        *vm,
+                                              hg_quark_t     *qdata,
+                                              gboolean        flag);
+gboolean   hg_vm_quark_is_readable           (hg_vm_t        *vm,
+                                              hg_quark_t     *qdata);
+void       hg_vm_quark_set_writable          (hg_vm_t        *vm,
+                                              hg_quark_t     *qdata,
+                                              gboolean        flag);
+gboolean   hg_vm_quark_is_writable           (hg_vm_t        *vm,
+                                              hg_quark_t     *qdata);
+void       hg_vm_quark_set_executable        (hg_vm_t        *vm,
+                                              hg_quark_t     *qdata,
+                                              gboolean        flag);
+gboolean   hg_vm_quark_is_executable         (hg_vm_t        *vm,
+                                              hg_quark_t     *qdata);
+void       hg_vm_quark_set_accessible        (hg_vm_t        *vm,
+                                              hg_quark_t     *qdata,
+                                              gboolean        flag);
+gboolean   hg_vm_quark_is_accessible         (hg_vm_t        *vm,
+                                              hg_quark_t     *qdata);
 
 /* hg_snapshot_t */
 hg_error_t hg_vm_snapshot_save   (hg_vm_t    *vm);

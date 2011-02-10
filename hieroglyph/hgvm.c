@@ -526,26 +526,24 @@ _hg_vm_quark_iterate_gc_mark(hg_quark_t   qdata,
 }
 
 static hg_quark_t
-_hg_vm_quark_iterate_copy(hg_quark_t   qdata,
-			  gpointer     user_data,
-			  gpointer    *ret,
-			  GError     **error)
+_hg_vm_quark_iterate_copy(hg_quark_t    qdata,
+			  hg_pointer_t  user_data,
+			  hg_pointer_t *ret)
 {
-	return hg_vm_quark_copy((hg_vm_t *)user_data, qdata, ret, error);
+	return hg_vm_quark_copy((hg_vm_t *)user_data, qdata, ret);
 }
 
 static hg_quark_t
-_hg_vm_quark_iterate_to_cstr(hg_quark_t   qdata,
-			     gpointer     user_data,
-			     gpointer    *ret,
-			     GError     **error)
+_hg_vm_quark_iterate_to_cstr(hg_quark_t    qdata,
+			     hg_pointer_t  user_data,
+			     hg_pointer_t *ret)
 {
 	hg_vm_t *vm = (hg_vm_t *)user_data;
 	hg_string_t *s = NULL;
 	hg_quark_t q;
 	gchar *cstr = NULL;
 
-	q = hg_vm_quark_to_string(vm, qdata, TRUE, (gpointer *)&s, error);
+	q = hg_vm_quark_to_string(vm, qdata, TRUE, (gpointer *)&s, NULL);
 	if (s) {
 		cstr = hg_string_get_cstr(s);
 	}
@@ -1544,7 +1542,13 @@ hg_vm_setup(hg_vm_t           *vm,
 	}
 
 	for (i = 0; i < HG_VM_MEM_END; i++) {
-		hg_mem_set_resizable(vm->mem[i], (lang_level >= HG_LANG_LEVEL_2));
+		/* Even if the memory spool expansion wasn't supported in PS1,
+		 * following up on that spec here isn't a good idea because
+		 * this isn't entire clone of Adobe's and the memory management
+		 * should be totally different.
+		 * So OOM is likely happening on only hieroglyph.
+		 */
+		hg_mem_set_resizable(vm->mem[i], TRUE);
 	}
 
 	hg_vm_quark_set_acl(vm, &vm->qsystemdict, HG_ACL_READABLE|HG_ACL_WRITABLE|HG_ACL_ACCESSIBLE);
@@ -1850,8 +1854,8 @@ hg_vm_stepi(hg_vm_t  *vm,
 				    return TRUE;
 			    }
 			    if (hg_vm_quark_is_executable(vm, &qresult)) {
-				    q = hg_vm_quark_copy(vm, qresult, NULL, &err);
-				    if (err) {
+				    q = hg_vm_quark_copy(vm, qresult, NULL);
+				    if (q == Qnil) {
 					    hg_vm_set_error(vm, qexecobj,
 							    HG_VM_e_VMerror);
 					    return TRUE;
@@ -3032,8 +3036,8 @@ hg_vm_set_error(hg_vm_t       *vm,
 		goto fatal_error;
 	}
 
-	q = hg_vm_quark_copy(vm, qhandler, NULL, &err);
-	if (err)
+	q = hg_vm_quark_copy(vm, qhandler, NULL);
+	if (q == Qnil)
 		goto fatal_error;
 	hg_stack_push(vm->stacks[HG_VM_STACK_ESTACK], q);
 	hg_stack_push(vm->stacks[HG_VM_STACK_OSTACK], qdata);
@@ -3791,41 +3795,27 @@ hg_vm_quark_gc_mark(hg_vm_t     *vm,
  * Returns:
  */
 hg_quark_t
-hg_vm_quark_copy(hg_vm_t     *vm,
-		 hg_quark_t   qdata,
-		 gpointer    *ret,
-		 GError     **error)
+hg_vm_quark_copy(hg_vm_t      *vm,
+		 hg_quark_t    qdata,
+		 hg_pointer_t *ret)
 {
 	hg_object_t *o;
 	hg_quark_t retval = Qnil;
-	GError *err = NULL;
 
-	hg_return_val_with_gerror_if_fail (vm != NULL, Qnil, error, HG_VM_e_VMerror);
-
-	if (qdata == Qnil)
-		return Qnil;
+	hg_return_val_if_fail (vm != NULL, Qnil);
+	hg_return_val_if_fail (qdata != Qnil, Qnil);
 
 	if (hg_quark_is_simple_object(qdata) ||
 	    HG_IS_QOPER (qdata))
 		return qdata;
 
-	o = _HG_VM_LOCK (vm, qdata, &err);
+	o = _HG_VM_LOCK (vm, qdata, NULL);
 	if (o) {
-		retval = hg_object_copy(o, _hg_vm_quark_iterate_copy, vm, ret, &err);
+		retval = hg_object_copy(o, _hg_vm_quark_iterate_copy, vm, ret);
 
 		_HG_VM_UNLOCK (vm, qdata);
 	}
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
-	} else {
+	if (retval != Qnil) {
 		hg_quark_acl_t acl = 0;
 
 		if (hg_vm_quark_is_readable(vm, &qdata))
@@ -4429,17 +4419,22 @@ hg_vm_snapshot_save(hg_vm_t *vm)
 
 	q = hg_snapshot_new(vm->mem[HG_VM_MEM_LOCAL],
 			    (hg_pointer_t *)&sn);
-	if (q == Qnil)
+	if (q == Qnil) {
+		hg_debug(HG_MSGCAT_SNAPSHOT, "Unable to create a snapshot object");
 		return HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
+	}
 	if (!hg_snapshot_save(sn)) {
+		hg_debug(HG_MSGCAT_SNAPSHOT, "Unable to take a snapshot.");
 		_HG_VM_UNLOCK (vm, q);
 		return HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 	}
 	_HG_VM_UNLOCK (vm, q);
 
-	qg = hg_vm_quark_copy(vm, qgg, NULL, NULL);
-	if (qg == Qnil)
+	qg = hg_vm_quark_copy(vm, qgg, NULL);
+	if (qg == Qnil) {
+		hg_debug(HG_MSGCAT_SNAPSHOT, "Unable to copy the gstate.");
 		return HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
+	}
 
 	gstate = _HG_VM_LOCK (vm, qgg, NULL);
 	if (gstate == NULL)

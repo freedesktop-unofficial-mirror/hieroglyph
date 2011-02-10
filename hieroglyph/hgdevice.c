@@ -354,11 +354,13 @@ hg_device_get_page_params(hg_device_t                 *device,
 		q = Qnil;
 		switch (i) {
 		    case HG_pdev_InputAttributes:
-			    q = hg_object_quark_copy(mem, device->params->qinput_attributes, NULL, &err);
-			    if (err)
-				    goto finalize;
-			    if (q == Qnil)
+			    if (device->params->qinput_attributes == Qnil) {
 				    q = HG_QNULL;
+			    } else {
+				    q = hg_object_quark_copy(mem, device->params->qinput_attributes, NULL);
+				    if (q == Qnil)
+					    goto finalize;
+			    }
 			    break;
 		    case HG_pdev_PageSize:
 			    q = hg_array_new(mem, 2, (gpointer *)&a);
@@ -374,21 +376,25 @@ hg_device_get_page_params(hg_device_t                 *device,
 			    hg_mem_unlock_object(mem, q);
 			    break;
 		    case HG_pdev_MediaColor:
-			    q = hg_object_quark_copy(mem, device->params->qmedia_color, NULL, &err);
-			    if (err)
-				    goto finalize;
-			    if (q == Qnil)
+			    if (device->params->qmedia_color == Qnil) {
 				    q = HG_QNULL;
+			    } else {
+				    q = hg_object_quark_copy(mem, device->params->qmedia_color, NULL);
+				    if (q == Qnil)
+					    goto finalize;
+			    }
 			    break;
 		    case HG_pdev_MediaWeight:
 			    q = HG_QREAL (device->params->media_weight);
 			    break;
 		    case HG_pdev_MediaType:
-			    q = hg_object_quark_copy(mem, device->params->qmedia_type, NULL, &err);
-			    if (err)
-				    goto finalize;
-			    if (q == Qnil)
+			    if (device->params->qmedia_type == Qnil) {
 				    q = HG_QNULL;
+			    } else {
+				    q = hg_object_quark_copy(mem, device->params->qmedia_type, NULL);
+				    if (q == Qnil)
+					    goto finalize;
+			    }
 			    break;
 		    case HG_pdev_ManualFeed:
 			    q = HG_QBOOL (device->params->manual_feed);
@@ -468,11 +474,13 @@ hg_device_get_page_params(hg_device_t                 *device,
 			    q = HG_QBOOL (device->params->tumble);
 			    break;
 		    case HG_pdev_OutputType:
-			    q = hg_object_quark_copy(mem, device->params->qoutput_type, NULL, &err);
-			    if (err)
-				    goto finalize;
-			    if (q == Qnil)
+			    if (device->params->qoutput_type == Qnil) {
 				    q = HG_QNULL;
+			    } else {
+				    q = hg_object_quark_copy(mem, device->params->qoutput_type, NULL);
+				    if (q == Qnil)
+					    goto finalize;
+			    }
 			    break;
 		    case HG_pdev_NumCopies:
 			    if (device->params->num_copies < 0)
@@ -493,18 +501,18 @@ hg_device_get_page_params(hg_device_t                 *device,
 			    q = HG_QBOOL (device->params->separations);
 			    break;
 		    case HG_pdev_Install:
-			    q = hg_object_quark_copy(mem, device->params->qinstall, NULL, &err);
-			    if (err)
+			    q = hg_object_quark_copy(mem, device->params->qinstall, NULL);
+			    if (q == Qnil)
 				    goto finalize;
 			    break;
 		    case HG_pdev_BeginPage:
-			    q = hg_object_quark_copy(mem, device->params->qbegin_page, NULL, &err);
-			    if (err)
+			    q = hg_object_quark_copy(mem, device->params->qbegin_page, NULL);
+			    if (q == Qnil)
 				    goto finalize;
 			    break;
 		    case HG_pdev_EndPage:
-			    q = hg_object_quark_copy(mem, device->params->qend_page, NULL, &err);
-			    if (err)
+			    q = hg_object_quark_copy(mem, device->params->qend_page, NULL);
+			    if (q == Qnil)
 				    goto finalize;
 			    break;
 		    default:

@@ -79,13 +79,12 @@ _hg_object_new(hg_mem_t     *mem,
 }
 
 static hg_quark_t
-_hg_object_quark_iterate_copy(hg_quark_t   qdata,
-			      gpointer     user_data,
-			      gpointer    *ret,
-			      GError     **error)
+_hg_object_quark_iterate_copy(hg_quark_t    qdata,
+			      hg_pointer_t  user_data,
+			      hg_pointer_t *ret)
 {
 	return hg_object_quark_copy((hg_mem_t *)user_data,
-				    qdata, ret, error);
+				    qdata, ret);
 }
 
 /*< public >*/
@@ -241,21 +240,20 @@ hg_object_free(hg_mem_t   *mem,
 hg_quark_t
 hg_object_copy(hg_object_t              *object,
 	       hg_quark_iterate_func_t   func,
-	       gpointer                  user_data,
-	       gpointer                 *ret,
-	       GError                  **error)
+	       hg_pointer_t              user_data,
+	       hg_pointer_t             *ret)
 {
 	hg_object_vtable_t *v;
 
-	hg_return_val_with_gerror_if_fail (__hg_object_is_initialized, Qnil, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (object != NULL, Qnil, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (object->type < HG_TYPE_END, Qnil, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (__hg_object_vtables[object->type] != NULL, Qnil, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (func != NULL, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (__hg_object_is_initialized, Qnil);
+	hg_return_val_if_fail (object != NULL, Qnil);
+	hg_return_val_if_fail (object->type < HG_TYPE_END, Qnil);
+	hg_return_val_if_fail (__hg_object_vtables[object->type] != NULL, Qnil);
+	hg_return_val_if_fail (func != NULL, Qnil);
 
 	v = __hg_object_vtables[object->type];
 
-	return v->copy(object, func, user_data, ret, error);
+	return v->copy(object, func, user_data, ret);
 }
 
 /**
@@ -449,50 +447,37 @@ hg_object_get_acl(hg_object_t *object)
  * Returns:
  */
 hg_quark_t
-hg_object_quark_copy(hg_mem_t    *mem,
-		     hg_quark_t   qdata,
-		     gpointer    *ret,
-		     GError     **error)
+hg_object_quark_copy(hg_mem_t     *mem,
+		     hg_quark_t    qdata,
+		     hg_pointer_t *ret)
 {
 	hg_quark_t retval = Qnil;
 	hg_object_t *o;
-	GError *err = NULL;
 
-	hg_return_val_with_gerror_if_fail (mem != NULL, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (mem != NULL, Qnil);
+	hg_return_val_if_fail (qdata != Qnil, Qnil);
 
-	if (qdata == Qnil)
-		return Qnil;
 	if (hg_quark_is_simple_object(qdata) ||
 	    hg_quark_get_type(qdata) == HG_TYPE_OPER)
 		return qdata;
 
-	o = HG_MEM_LOCK (mem, qdata, &err);
+	o = HG_MEM_LOCK (mem, qdata, NULL);
 	if (o) {
 		hg_quark_acl_t acl = 0;
 
-		retval = hg_object_copy(o, _hg_object_quark_iterate_copy, mem, ret, &err);
-		hg_mem_unlock_object(mem, qdata);
-		if (hg_quark_is_readable(qdata))
-			acl |= HG_ACL_READABLE;
-		if (hg_quark_is_writable(qdata))
-			acl |= HG_ACL_WRITABLE;
-		if (hg_quark_is_executable(qdata))
-			acl |= HG_ACL_EXECUTABLE;
-		if (hg_quark_is_accessible(qdata))
-			acl |= HG_ACL_ACCESSIBLE;
-		hg_quark_set_acl(&retval, acl);
-	}
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
+		retval = hg_object_copy(o, _hg_object_quark_iterate_copy, mem, ret);
+		if (retval != Qnil) {
+			hg_mem_unlock_object(mem, qdata);
+			if (hg_quark_is_readable(qdata))
+				acl |= HG_ACL_READABLE;
+			if (hg_quark_is_writable(qdata))
+				acl |= HG_ACL_WRITABLE;
+			if (hg_quark_is_executable(qdata))
+				acl |= HG_ACL_EXECUTABLE;
+			if (hg_quark_is_accessible(qdata))
+				acl |= HG_ACL_ACCESSIBLE;
+			hg_quark_set_acl(&retval, acl);
 		}
-		g_error_free(err);
-		retval = Qnil;
 	}
 
 	return retval;

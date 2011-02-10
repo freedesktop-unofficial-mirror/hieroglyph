@@ -124,11 +124,10 @@ _hg_object_stack_initialize(hg_object_t *object,
 }
 
 static hg_quark_t
-_hg_object_stack_copy(hg_object_t              *object,
-		      hg_quark_iterate_func_t   func,
-		      gpointer                  user_data,
-		      gpointer                 *ret,
-		      GError                  **error)
+_hg_object_stack_copy(hg_object_t             *object,
+		      hg_quark_iterate_func_t  func,
+		      hg_pointer_t             user_data,
+		      hg_pointer_t            *ret)
 {
 	return Qnil;
 }

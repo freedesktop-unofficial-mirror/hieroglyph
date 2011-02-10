@@ -34,8 +34,7 @@ HG_BEGIN_DECLS
 
 typedef hg_quark_t (* hg_quark_iterate_func_t)	(hg_quark_t     qdata,
 						 hg_pointer_t   user_data,
-						 hg_pointer_t  *ret,
-						 GError       **error);
+						 hg_pointer_t  *ret);
 typedef hg_bool_t  (* hg_quark_compare_func_t)  (hg_quark_t     q1,
 						 hg_quark_t     q2,
 						 hg_pointer_t   user_data);
