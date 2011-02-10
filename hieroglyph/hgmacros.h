@@ -29,6 +29,7 @@
 #define __HIEROGLYPH_HGMACROS_H__
 
 #include <stddef.h>
+#include <signal.h>
 
 /* enable a debugging code */
 #if defined(GNOME_ENABLE_DEBUG) || defined(DEBUG)
@@ -126,5 +127,22 @@
 #define HG_ALIGNED_TO_POINTER(_x_)		\
 	HG_ALIGNED_TO ((_x_), ALIGNOF_VOID_P)
 
+/* Debugging macro */
+#if (defined (__i386__) || defined (__x86_64__)) && defined (__GNUC__) && __GNUC__ >= 2
+#define HG_BREAKPOINT()							\
+	HG_STMT_START {__asm__ __volatile__ ("int $03");} HG_STMT_END
+#elif (defined (_MSC_VER) || defined (__DMC__)) && defined (_M_IX86)
+#define HG_BREAKPOINT()					\
+	HG_STMT_START {__asm int 3h} HG_STMT_END
+#elif defined (_MSC_VER)
+#define HG_BREAKPOINT()					\
+	HG_STMT_START {__debugbreak();} HG_STMT_END
+#elif defined (__alpha__) && !defined(__osf__) && defined (__GNUC__) && __GNUC__ >= 2
+#defined HG_BREAKPOINT()						\
+	HG_STMT_START {__asm__ __volatile__ ("bpt");} HG_STMT_END
+#else
+#define HG_BREAKPOINT()					\
+	HG_STMT_START {raise(SIGTRAP);} HG_STMT_END
+#endif
 
 #endif /* __HIEROGLYPH_HGMACROS_H__ */
