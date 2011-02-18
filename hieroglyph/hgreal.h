@@ -28,6 +28,7 @@
 #ifndef __HIEROGLYPH_HGREAL_H__
 #define __HIEROGLYPH_HGREAL_H__
 
+#include <float.h>
 #include <math.h>
 #include <string.h>
 #include <hieroglyph/hgquark.h>
@@ -74,7 +75,7 @@ HG_BEGIN_DECLS
  * Returns:
  */
 #define HG_REAL_EQUAL(_f1_,_f2_)		\
-	(fabsf((_f1_) - (_f2_)) <= FLT_EPSILON)
+	(fabs((_f1_) - (_f2_)) <= DBL_EPSILON)
 /**
  * HG_REAL_IS_ZERO:
  * @real:
@@ -84,7 +85,7 @@ HG_BEGIN_DECLS
  * Returns:
  */
 #define HG_REAL_IS_ZERO(_f_)			\
-	(fabsf((_f_)) <= FLT_EPSILON)
+	(fabs((_f_)) <= DBL_EPSILON)
 /**
  * HG_REAL_GE:
  * @real1:
