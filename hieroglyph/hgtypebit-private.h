@@ -105,7 +105,7 @@ _hg_typebit_get_mask(hg_typebit_t begin,
 {
 	hg_quark_t b, e;
 
-	hg_return_val_if_fail (begin <= end, Qnil);
+	hg_return_val_if_fail (begin <= end, Qnil, HG_e_VMerror);
 
 	b = begin + HG_TYPEBIT_SHIFT;
 	e = end + HG_TYPEBIT_SHIFT;

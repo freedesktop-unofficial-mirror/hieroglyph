@@ -50,31 +50,31 @@ DEFUNC_OPER (private_validatetestresult)
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	arg0 = hg_stack_index(ostack, 0);
 	if (!HG_IS_QDICT (arg0)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		hg_vm_set_error(vm, qself, HG_e_typecheck);
 		return FALSE;
 	}
 	if (!hg_vm_quark_is_readable(vm, &arg0)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_invalidaccess);
+		hg_vm_set_error(vm, qself, HG_e_invalidaccess);
 		return FALSE;
 	}
-	d = HG_VM_LOCK (vm, arg0, error);
+	d = HG_VM_LOCK (vm, arg0);
 	if (d == NULL) {
-		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		hg_vm_set_error(vm, qself, HG_e_VMerror);
 		return FALSE;
 	}
-	qverbose = hg_dict_lookup(d, HG_QNAME ("verbose"), error);
+	qverbose = hg_dict_lookup(d, HG_QNAME ("verbose"));
 	if (qverbose != Qnil && HG_IS_QBOOL (qverbose)) {
 		verbose = HG_BOOL (qverbose);
 	}
-	qattrs = hg_dict_lookup(d, HG_QNAME ("attrsmask"), error);
+	qattrs = hg_dict_lookup(d, HG_QNAME ("attrsmask"));
 	if (qattrs != Qnil && HG_IS_QINT (qattrs)) {
 		attrs = HG_INT (qattrs);
 	}
 
-	qexp = hg_dict_lookup(d, HG_QNAME ("expression"), error);
-	q = hg_vm_quark_to_string(vm, qexp, TRUE, (hg_pointer_t *)&sexp, error);
+	qexp = hg_dict_lookup(d, HG_QNAME ("expression"));
+	q = hg_vm_quark_to_string(vm, qexp, TRUE, (hg_pointer_t *)&sexp);
 	if (q == Qnil) {
 		cexp = g_strdup("--%unknown--");
 	} else {
@@ -82,11 +82,11 @@ DEFUNC_OPER (private_validatetestresult)
 	}
 	hg_string_free(sexp, TRUE);
 
-	qaerror = hg_dict_lookup(d, HG_QNAME ("actualerror"), error);
-	qeerror = hg_dict_lookup(d, HG_QNAME ("expectederror"), error);
-	qerrorat = hg_dict_lookup(d, HG_QNAME ("errorat"), error);
+	qaerror = hg_dict_lookup(d, HG_QNAME ("actualerror"));
+	qeerror = hg_dict_lookup(d, HG_QNAME ("expectederror"));
+	qerrorat = hg_dict_lookup(d, HG_QNAME ("errorat"));
 	if (qaerror == Qnil || qeerror == Qnil || qerrorat == Qnil) {
-		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		hg_vm_set_error(vm, qself, HG_e_typecheck);
 		goto error;
 	} else if (!hg_vm_quark_compare(vm, qaerror, qeerror)) {
 		if (verbose) {
@@ -95,21 +95,21 @@ DEFUNC_OPER (private_validatetestresult)
 			hg_file_t *f;
 			hg_char_t *csa, *cse, *csp;
 
-			qa = hg_vm_quark_to_string(vm, qaerror, TRUE, (hg_pointer_t *)&sa, error);
+			qa = hg_vm_quark_to_string(vm, qaerror, TRUE, (hg_pointer_t *)&sa);
 			if (qa == Qnil) {
 				csa = g_strdup("--%unknown--");
 			} else {
 				csa = hg_string_get_cstr(sa);
 			}
 			hg_string_free(sa, TRUE);
-			qe = hg_vm_quark_to_string(vm, qeerror, TRUE, (hg_pointer_t *)&se, error);
+			qe = hg_vm_quark_to_string(vm, qeerror, TRUE, (hg_pointer_t *)&se);
 			if (qe == Qnil) {
 				cse = g_strdup("--%unknown--");
 			} else {
 				cse = hg_string_get_cstr(se);
 			}
 			hg_string_free(se, TRUE);
-			qp = hg_vm_quark_to_string(vm, qerrorat, TRUE, (hg_pointer_t *)&sp, error);
+			qp = hg_vm_quark_to_string(vm, qerrorat, TRUE, (hg_pointer_t *)&sp);
 			if (qp == Qnil) {
 				csp = g_strdup("--%unknown--");
 			} else {
@@ -117,8 +117,8 @@ DEFUNC_OPER (private_validatetestresult)
 			}
 			hg_string_free(sp, TRUE);
 
-			qf = hg_vm_get_io(vm, HG_FILE_IO_STDERR, error);
-			f = HG_VM_LOCK (vm, qf, error);
+			qf = hg_vm_get_io(vm, HG_FILE_IO_STDERR);
+			f = HG_VM_LOCK (vm, qf);
 			hg_file_append_printf(f, "Expression: %s - expected error is %s, but actual error was %s at %s\n",
 					      cexp, cse, csa, csp);
 			HG_VM_UNLOCK (vm, qf);
@@ -129,12 +129,12 @@ DEFUNC_OPER (private_validatetestresult)
 		result = FALSE;
 	}
 
-	qastack = hg_dict_lookup(d, HG_QNAME ("actualostack"), error);
-	qestack = hg_dict_lookup(d, HG_QNAME ("expectedostack"), error);
+	qastack = hg_dict_lookup(d, HG_QNAME ("actualostack"));
+	qestack = hg_dict_lookup(d, HG_QNAME ("expectedostack"));
 	if (qastack == Qnil || qestack == Qnil ||
 	    !HG_IS_QARRAY (qastack) ||
 	    !HG_IS_QARRAY (qestack)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		hg_vm_set_error(vm, qself, HG_e_typecheck);
 		goto error;
 	} else {
 		hg_string_t *sa, *se;
@@ -142,14 +142,14 @@ DEFUNC_OPER (private_validatetestresult)
 		hg_char_t *csa, *cse;
 		hg_file_t *f;
 
-		qa = hg_vm_quark_to_string(vm, qastack, TRUE, (hg_pointer_t *)&sa, error);
+		qa = hg_vm_quark_to_string(vm, qastack, TRUE, (hg_pointer_t *)&sa);
 		if (qa == Qnil) {
 			csa = g_strdup("--%unknown--");
 		} else {
 			csa = hg_string_get_cstr(sa);
 		}
 		hg_string_free(sa, TRUE);
-		qe = hg_vm_quark_to_string(vm, qestack, TRUE, (hg_pointer_t *)&se, error);
+		qe = hg_vm_quark_to_string(vm, qestack, TRUE, (hg_pointer_t *)&se);
 		if (qe == Qnil) {
 			cse = g_strdup("--%unknown--");
 		} else {
@@ -159,8 +159,8 @@ DEFUNC_OPER (private_validatetestresult)
 
 		if (!hg_vm_quark_compare_content(vm, qastack, qestack)) {
 			if (verbose) {
-				qf = hg_vm_get_io(vm, HG_FILE_IO_STDERR, error);
-				f = HG_VM_LOCK (vm, qf, error);
+				qf = hg_vm_get_io(vm, HG_FILE_IO_STDERR);
+				f = HG_VM_LOCK (vm, qf);
 				hg_file_append_printf(f, "Expression: %s - expected ostack is %s, but actual ostack was %s\n",
 						      cexp, cse, csa);
 			}
@@ -176,7 +176,7 @@ DEFUNC_OPER (private_validatetestresult)
 	g_free(cexp);
 	HG_VM_UNLOCK (vm, arg0);
 
-	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack);
 	STACK_PUSH (ostack, HG_QBOOL (result && retval));
 } DEFUNC_OPER_END
 
@@ -199,9 +199,8 @@ _unittest_finalize(void)
 }
 
 static hg_bool_t
-_unittest_load(hg_plugin_t   *plugin,
-	       hg_pointer_t   vm_,
-	       GError       **error)
+_unittest_load(hg_plugin_t  *plugin,
+	       hg_pointer_t  vm_)
 {
 	hg_vm_t *vm = vm_;
 	hg_dict_t *dict;
@@ -216,7 +215,7 @@ _unittest_load(hg_plugin_t   *plugin,
 	plugin->user_data = plugin; /* dummy */
 
 	is_global = hg_vm_is_global_mem_used(vm);
-	dict = HG_VM_LOCK (vm, vm->qsystemdict, error);
+	dict = HG_VM_LOCK (vm, vm->qsystemdict);
 	if (dict == NULL)
 		return FALSE;
 	hg_vm_use_global_mem(vm, TRUE);
@@ -233,16 +232,15 @@ _unittest_load(hg_plugin_t   *plugin,
 
 	estack = hg_vm_stack_new(vm, 256);
 	retval = hg_vm_eval_from_cstring(vm, "{(hg_unittest.ps) runlibfile} stopped {(** Unable to initialize the unittest extension plugin: reason: /) $error /errorname get 256 string cvs .concatstring = (\n) = } if", -1,
-					 NULL, estack, NULL, TRUE, error);
+					 NULL, estack, NULL, TRUE);
 	hg_stack_free(estack);
 
 	return retval;
 }
 
 static hg_bool_t
-_unittest_unload(hg_plugin_t   *plugin,
-		 hg_pointer_t   vm_,
-		 GError       **error)
+_unittest_unload(hg_plugin_t  *plugin,
+		 hg_pointer_t  vm_)
 {
 	if (plugin->user_data == NULL) {
 		hg_warning("plugin not loaded.");
@@ -255,10 +253,9 @@ _unittest_unload(hg_plugin_t   *plugin,
 
 /*< public >*/
 hg_plugin_t *
-plugin_new(hg_mem_t  *mem,
-	   GError   **error)
+plugin_new(hg_mem_t *mem)
 {
-	hg_return_val_with_gerror_if_fail (mem != NULL, NULL, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (mem != NULL, NULL, HG_e_VMerror);
 
 	return hg_plugin_new(mem,
 			     &__unittest_plugin_info);

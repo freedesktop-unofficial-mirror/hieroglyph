@@ -34,7 +34,7 @@
 void tree2string(hg_mem_t   *mem,
 		 hg_quark_t  qnode,
 		 GString    *string,
-		 gboolean    with_nth);
+		 hg_bool_t    with_nth);
 
 hg_mem_t *mem = NULL;
 hg_object_vtable_t *vtable = NULL, *node_vtable = NULL;
@@ -45,7 +45,7 @@ setup(void)
 {
 	hg_object_init();
 	HG_DICT_INIT;
-	mem = hg_mem_new(HG_MEM_TYPE_LOCAL, 100000);
+	mem = hg_mem_spool_new(HG_MEM_TYPE_LOCAL, 100000);
 	vtable = hg_object_dict_get_vtable();
 	node_vtable = hg_object_dict_node_get_vtable();
 	_hg_dict_node_set_size(2);
@@ -54,25 +54,25 @@ setup(void)
 void
 teardown(void)
 {
-	gchar *e = hieroglyph_test_pop_error();
+	hg_char_t *e = hieroglyph_test_pop_error();
 
 	if (e) {
 		g_print("E: %s\n", e);
 		g_free(e);
 	}
-	hg_mem_destroy(mem);
+	hg_mem_spool_destroy(mem);
 }
 
 void
 tree2string(hg_mem_t   *mem,
 	    hg_quark_t  qnode,
 	    GString    *string,
-	    gboolean    with_nth)
+	    hg_bool_t    with_nth)
 {
 	hg_dict_node_t *qnode_node = NULL;
 	hg_quark_t *qnode_keys = NULL, *qnode_vals = NULL, *qnode_nodes = NULL;
-	static gint depth = 0;
-	gsize i;
+	static hg_int_t depth = 0;
+	hg_usize_t i;
 
 	if (qnode == Qnil) {
 		g_string_append_c(string, '.');
@@ -80,14 +80,14 @@ tree2string(hg_mem_t   *mem,
 	}
 	g_string_append_c(string, '(');
 
-	HG_DICT_NODE_LOCK (mem, qnode, qnode, "", NULL);
+	HG_DICT_NODE_LOCK (mem, qnode, qnode, "");
 
 	depth++;
 	if (with_nth)
-		g_string_append_printf(string, "[%" G_GSIZE_FORMAT "]", qnode_node->n_data);
+		g_string_append_printf(string, "[%ld]", qnode_node->n_data);
 	for (i = 0; i < qnode_node->n_data; i++) {
 		tree2string(qnode_node->o.mem, qnode_nodes[i], string, with_nth);
-		g_string_append_printf(string, "%" G_GSIZE_FORMAT, qnode_vals[i]);
+		g_string_append_printf(string, "%ld", qnode_vals[i]);
 	}
 	tree2string(qnode_node->o.mem, qnode_nodes[qnode_node->n_data], string, with_nth);
 
@@ -97,14 +97,13 @@ tree2string(hg_mem_t   *mem,
 	depth--;
 }
 
-static gboolean
-_mark(hg_mem_t    *mem,
-      hg_quark_t   qkey,
-      hg_quark_t   qval,
-      gpointer     data,
-      GError     **error)
+static hg_bool_t
+_mark(hg_mem_t     *mem,
+      hg_quark_t    qkey,
+      hg_quark_t    qval,
+      hg_pointer_t  data)
 {
-	gint *x = data;
+	hg_int_t *x = data;
 
 	x[qkey] = qval + 1;
 
@@ -114,40 +113,40 @@ _mark(hg_mem_t    *mem,
 /** test cases **/
 TDEF (get_capsulated_size)
 {
-	gsize size;
+	hg_usize_t size;
 
 	size = vtable->get_capsulated_size();
-	fail_unless(size == sizeof (hg_dict_t), "Obtaining the different size: expect: %" G_GSIZE_FORMAT " actual: %" G_GSIZE_FORMAT, sizeof (hg_dict_t), size);
+	fail_unless(size == sizeof (hg_dict_t), "Obtaining the different size: expect: %lx actual: %lx", sizeof (hg_dict_t), size);
 	size = node_vtable->get_capsulated_size();
-	fail_unless(size == sizeof (hg_dict_node_t), "Obtaining the different size: expect: %" G_GSIZE_FORMAT " actual: %" G_GSIZE_FORMAT, sizeof (hg_dict_node_t), size);
+	fail_unless(size == sizeof (hg_dict_node_t), "Obtaining the different size: expect: %lx actual: %lx", sizeof (hg_dict_node_t), size);
 } TEND
 
-static hg_error_t
+static hg_bool_t
 _gc_iter_func(hg_quark_t   qdata,
-	      gpointer     data)
+	      hg_pointer_t data)
 {
 	hg_object_t *o = data;
 
 	if (hg_quark_get_type(qdata) == HG_TYPE_DICT_NODE) {
 		hg_object_t *dnode = hg_mem_lock_object(o->mem, qdata);
-		hg_error_t error = hg_object_gc_mark(dnode, _gc_iter_func, o);
+		hg_bool_t ret = hg_object_gc_mark(dnode, _gc_iter_func, o);
 
 		hg_mem_unlock_object(o->mem, qdata);
 
-		return error;
+		return ret;
 	}
 
-	return HG_ERROR_ (HG_STATUS_SUCCESS, 0);
+	return TRUE;
 }
 
-static hg_error_t
+static hg_bool_t
 _gc_func(hg_mem_t     *mem,
 	 hg_pointer_t  data)
 {
 	hg_dict_t *d = data;
 
 	if (data == NULL)
-		return HG_ERROR_ (HG_STATUS_SUCCESS, 0);
+		return TRUE;
 
 	return hg_object_gc_mark((hg_object_t *)d, _gc_iter_func, d);
 }
@@ -156,17 +155,17 @@ TDEF (gc_mark)
 {
 	hg_quark_t q;
 	hg_dict_t *d;
-	gssize size = 0;
-	hg_mem_t *m = hg_mem_new(HG_MEM_TYPE_LOCAL, 65535);
-	gsize i;
+	hg_size_t size = 0;
+	hg_mem_t *m = hg_mem_spool_new(HG_MEM_TYPE_LOCAL, 65535);
+	hg_usize_t i;
 
-	q = hg_dict_new(m, 10, TRUE, (gpointer *)&d);
-	hg_dict_add(d, 0, 0, FALSE, NULL);
+	q = hg_dict_new(m, 10, TRUE, (hg_pointer_t *)&d);
+	hg_dict_add(d, 0, 0, FALSE);
 	hg_mem_set_garbage_collector(m, _gc_func, d);
 	size = hg_mem_collect_garbage(m);
 	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
 	for (i = 1; i < 256; i++) {
-		hg_dict_add(d, i, i, FALSE, NULL);
+		hg_dict_add(d, i, i, FALSE);
 	}
 	size = hg_mem_collect_garbage(m);
 	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
@@ -191,59 +190,54 @@ TDEF (hg_dict_add)
 	hg_dict_t *dict;
 	hg_quark_t q;
 	GString *string = g_string_new(NULL);
-	gsize i, size;
-	const gchar *test = "(((((.0.1.)2(.3.4.)5(.6.7.))8((.9.10.)11(.12.13.)14(.15.16.))17((.18.19.)20(.21.22.)23(.24.25.)))26(((.27.28.)29(.30.31.)32(.33.34.))35((.36.37.)38(.39.40.)41(.42.43.))44((.45.46.)47(.48.49.)50(.51.52.)))53(((.54.55.)56(.57.58.)59(.60.61.))62((.63.64.)65(.66.67.)68(.69.70.))71((.72.73.)74(.75.76.)77(.78.79.))))80((((.81.82.)83(.84.85.)86(.87.88.))89((.90.91.)92(.93.94.)95(.96.97.))98((.99.100.)101(.102.103.)104(.105.106.)))107(((.108.109.)110(.111.112.)113(.114.115.))116((.117.118.)119(.120.121.)122(.123.124.))125((.126.127.)128(.129.130.)131(.132.133.)))134(((.135.136.)137(.138.139.)140(.141.142.))143((.144.145.)146(.147.148.)149(.150.151.))152((.153.154.)155(.156.157.)158(.159.160.))))161((((.162.163.)164(.165.166.)167(.168.169.))170((.171.172.)173(.174.175.)176(.177.178.))179((.180.181.)182(.183.184.)185(.186.187.)))188(((.189.190.)191(.192.193.)194(.195.196.))197((.198.199.)200(.201.202.)203(.204.205.))206((.207.208.)209(.210.211.)212(.213.214.)))215(((.216.217.)218(.219.220.)221(.222.223.))224((.225.226.)227(.228.229.)230(.231.232.))233((.234.235.)236(.237.238.)239(.240.241.))242((.243.244.)245(.246.247.)248(.249.250.)251(.252.253.254.255.)))))";
-	gint xx[256];
+	hg_usize_t i, size;
+	const hg_char_t *test = "(((((.0.1.)2(.3.4.)5(.6.7.))8((.9.10.)11(.12.13.)14(.15.16.))17((.18.19.)20(.21.22.)23(.24.25.)))26(((.27.28.)29(.30.31.)32(.33.34.))35((.36.37.)38(.39.40.)41(.42.43.))44((.45.46.)47(.48.49.)50(.51.52.)))53(((.54.55.)56(.57.58.)59(.60.61.))62((.63.64.)65(.66.67.)68(.69.70.))71((.72.73.)74(.75.76.)77(.78.79.))))80((((.81.82.)83(.84.85.)86(.87.88.))89((.90.91.)92(.93.94.)95(.96.97.))98((.99.100.)101(.102.103.)104(.105.106.)))107(((.108.109.)110(.111.112.)113(.114.115.))116((.117.118.)119(.120.121.)122(.123.124.))125((.126.127.)128(.129.130.)131(.132.133.)))134(((.135.136.)137(.138.139.)140(.141.142.))143((.144.145.)146(.147.148.)149(.150.151.))152((.153.154.)155(.156.157.)158(.159.160.))))161((((.162.163.)164(.165.166.)167(.168.169.))170((.171.172.)173(.174.175.)176(.177.178.))179((.180.181.)182(.183.184.)185(.186.187.)))188(((.189.190.)191(.192.193.)194(.195.196.))197((.198.199.)200(.201.202.)203(.204.205.))206((.207.208.)209(.210.211.)212(.213.214.)))215(((.216.217.)218(.219.220.)221(.222.223.))224((.225.226.)227(.228.229.)230(.231.232.))233((.234.235.)236(.237.238.)239(.240.241.))242((.243.244.)245(.246.247.)248(.249.250.)251(.252.253.254.255.)))))";
+	hg_int_t xx[256];
 
-	q = hg_dict_new(mem, 256, TRUE, (gpointer *)&dict);
+	q = hg_dict_new(mem, 256, TRUE, (hg_pointer_t *)&dict);
 	fail_unless(q != Qnil, "Unable to create a dict object.");
-	hg_dict_add(dict, 0, 0, FALSE, NULL);
+	hg_dict_add(dict, 0, 0, FALSE);
 	tree2string(mem, dict->qroot, string, TRUE);
 	fail_unless(strcmp(string->str, "([1].0.)") == 0, "Unexpected result in the tree structure: expect: %s, actual: %s", "([1].0.)", string->str);
-	hg_dict_add(dict, 1, 1, FALSE, NULL);
+	hg_dict_add(dict, 1, 1, FALSE);
 	g_string_erase(string, 0, -1);
 	tree2string(mem, dict->qroot, string, TRUE);
 	fail_unless(strcmp(string->str, "([2].0.1.)") == 0, "Unexpected result in the tree structure: expect: %s, actual: %s", "([2].0.1.)", string->str);
-	hg_dict_add(dict, 2, 2, FALSE, NULL);
-	hg_dict_add(dict, 3, 3, FALSE, NULL);
+	hg_dict_add(dict, 2, 2, FALSE);
+	hg_dict_add(dict, 3, 3, FALSE);
 	g_string_erase(string, 0, -1);
 	tree2string(mem, dict->qroot, string, TRUE);
 	fail_unless(strcmp(string->str, "([4].0.1.2.3.)") == 0, "Unexpected result in the tree structure: expect: %s, actual: %s", "([4].0.1.2.3.)", string->str);
-	hg_dict_add(dict, 4, 4, FALSE, NULL);
+	hg_dict_add(dict, 4, 4, FALSE);
 	g_string_erase(string, 0, -1);
 	tree2string(mem, dict->qroot, string, TRUE);
 	fail_unless(strcmp(string->str, "([1]([2].0.1.)2([2].3.4.))") == 0, "Unexpected result in the tree structure: expect: %s, actual: %s", "([1]([2].0.1.)2([2].3.4.))", string->str);
 	g_string_erase(string, 0, -1);
 	for (i = 5; i < 256; i++) {
-		hg_dict_add(dict, i, i, FALSE, NULL);
+		hg_dict_add(dict, i, i, FALSE);
 	}
 	tree2string(mem, dict->qroot, string, FALSE);
 	fail_unless(strcmp(string->str, test) == 0, "Unexpected result in the tree structure: expect: %s, actual: %s", test, string->str);
 	fail_unless(hg_dict_length(dict) == 256, "Unexpected result in the size of the tree");
 
-	memset(xx, 0, sizeof (gint) * 256);
-	hg_dict_foreach(dict, _mark, xx, NULL);
+	memset(xx, 0, sizeof (hg_int_t) * 256);
+	hg_dict_foreach(dict, _mark, xx);
 	for (i = 0; i < 256; i++) {
-		fail_unless(xx[i] != 0, "Unexpected result in traversing the tree at %" G_GSIZE_FORMAT, i);
+		fail_unless(xx[i] != 0, "Unexpected result in traversing the tree at %lx", i);
 	}
 	for (i = 0; i < 256; i++) {
-		fail_unless(hg_dict_lookup(dict, i, NULL) == i, "Unexpected result to find out: key %" G_GSIZE_FORMAT, i);
+		fail_unless(hg_dict_lookup(dict, i) == i, "Unexpected result to find out: key %lx", i);
 	}
 
 	for (i = 0; i < 256; i++) {
-		GError *err = NULL;
-
 		g_string_erase(string, 0, -1);
 		tree2string(mem, dict->qroot, string, TRUE);
-		g_print("%" G_GSIZE_FORMAT ": %s\n", i, string->str);
-		hg_dict_remove(dict, i, &err);
-		if (err) {
-			g_print("%s\n", err->message);
-		}
-		fail_unless(err == NULL, "Unexpected result to remove a node: %" G_GSIZE_FORMAT, i);
+		g_print("%lx: %s\n", i, string->str);
+		hg_dict_remove(dict, i);
+		fail_unless(HG_ERROR_IS_SUCCESS0 (), "Unexpected result to remove a node: %lx", i);
 	}
 	size = hg_dict_length(dict);
-	fail_unless(size == 0, "Unexpected result in the size of the tree after removing all: actual: %" G_GSIZE_FORMAT, size);
+	fail_unless(size == 0, "Unexpected result in the size of the tree after removing all: actual: %lx", size);
 } TEND
 
 TDEF (hg_dict_remove)
@@ -255,15 +249,15 @@ TDEF (hg_dict_lookup)
 	hg_dict_t *dict;
 	hg_quark_t q, t, t2;
 
-	q = hg_dict_new(mem, 2, TRUE, (gpointer *)&dict);
+	q = hg_dict_new(mem, 2, TRUE, (hg_pointer_t *)&dict);
 	fail_unless(q != Qnil, "Unable to create a dict object.");
 	t = hg_quark_new(HG_TYPE_BOOL, TRUE);
 	hg_quark_set_acl(&t, HG_ACL_READABLE|HG_ACL_WRITABLE|HG_ACL_EXECUTABLE|HG_ACL_ACCESSIBLE);
 	fail_unless(hg_quark_is_readable(t), "Failed for prechecking read permission");
 	fail_unless(hg_quark_is_writable(t), "Failed for prechecking write permission");
 	fail_unless(hg_quark_is_executable(t), "Failed for prechecking execute permission");
-	hg_dict_add(dict, t, t, FALSE, NULL);
-	t2 = hg_dict_lookup(dict, t, NULL);
+	hg_dict_add(dict, t, t, FALSE);
+	t2 = hg_dict_lookup(dict, t);
 	fail_unless(t == t2, "Unexpected result in lookup: expected: %lx, actual: %lx", t, t2);
 	fail_unless(hg_quark_is_readable(t2), "Failed for post-checking read permission");
 	fail_unless(hg_quark_is_writable(t2), "Failed for post-checking write permission");

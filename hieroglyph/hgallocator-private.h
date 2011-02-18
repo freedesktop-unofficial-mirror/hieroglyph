@@ -87,6 +87,7 @@ struct _hg_allocator_block_t {
 	hg_usize_t         size;
 	volatile hg_uint_t lock_count;
 	hg_int_t           age;
+	hg_int_t           finalizer_id;
 	hg_bool_t          is_restorable:1;
 };
 struct _hg_allocator_private_t {
@@ -96,6 +97,9 @@ struct _hg_allocator_private_t {
 	hg_allocator_bitmap_t *slave_bitmap;
 	hg_pointer_t          *heaps;
 	hg_int_t               snapshot_age;
+	hg_finalizer_func_t   *finalizer;
+	hg_int_t               finalizer_count;
+	hg_int_t               max_finalizer;
 };
 struct _hg_allocator_snapshot_private_t {
 	hg_allocator_snapshot_data_t  parent;
@@ -123,7 +127,7 @@ HG_INLINE_FUNC hg_quark_t
 _hg_allocator_typebit_get_mask(hg_allocator_typebit_t begin,
 			       hg_allocator_typebit_t end)
 {
-	hg_return_val_if_fail (begin <= end, Qnil);
+	hg_return_val_if_fail (begin <= end, Qnil, HG_e_VMerror);
 
 	return (((1LL << (end - begin + 1)) - 1) << begin);
 }

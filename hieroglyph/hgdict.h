@@ -33,12 +33,12 @@
 HG_BEGIN_DECLS
 
 #define HG_DICT_INIT							\
-	G_STMT_START {							\
+	HG_STMT_START {							\
 		hg_object_register(HG_TYPE_DICT,			\
 				   hg_object_dict_get_vtable());	\
 		hg_object_register(HG_TYPE_DICT_NODE,			\
 				   hg_object_dict_node_get_vtable());	\
-	} G_STMT_END
+	} HG_STMT_END
 
 #define HG_IS_QDICT(_v_)				\
 	(hg_quark_get_type(_v_) == HG_TYPE_DICT)
@@ -60,31 +60,26 @@ struct _hg_dict_t {
 
 hg_object_vtable_t *hg_object_dict_get_vtable     (void) G_GNUC_CONST;
 hg_object_vtable_t *hg_object_dict_node_get_vtable(void) G_GNUC_CONST;
-hg_quark_t          hg_dict_new                   (hg_mem_t                 *mem,
-						   gsize                     size,
-						   gboolean                  raise_dictfull,
-						   gpointer                 *ret);
-gboolean            hg_dict_add                   (hg_dict_t                *dict,
-						   hg_quark_t                qkey,
-						   hg_quark_t                qval,
-						   gboolean                  force,
-						   GError                  **error);
-gboolean            hg_dict_remove                (hg_dict_t                *dict,
-						   hg_quark_t                qkey,
-						   GError                  **error);
-hg_quark_t          hg_dict_lookup                (hg_dict_t                *dict,
-						   hg_quark_t                qkey,
-						   GError                  **error);
-gsize               hg_dict_length                (hg_dict_t                *dict);
-gsize               hg_dict_maxlength             (hg_dict_t                *dict);
-void                hg_dict_foreach               (hg_dict_t                *dict,
-						   hg_dict_traverse_func_t   func,
-						   gpointer                  data,
-						   GError                  **error);
-gboolean            hg_dict_first_item            (hg_dict_t                *dict,
-						   hg_quark_t               *qkey,
-						   hg_quark_t               *qval,
-						   GError                  **error);
+hg_quark_t          hg_dict_new                   (hg_mem_t                *mem,
+                                                   hg_usize_t               size,
+                                                   hg_bool_t                raise_dictfull,
+                                                   hg_pointer_t            *ret);
+hg_bool_t           hg_dict_add                   (hg_dict_t               *dict,
+                                                   hg_quark_t               qkey,
+                                                   hg_quark_t               qval,
+                                                   hg_bool_t                force);
+hg_bool_t           hg_dict_remove                (hg_dict_t               *dict,
+                                                   hg_quark_t               qkey);
+hg_quark_t          hg_dict_lookup                (hg_dict_t               *dict,
+                                                   hg_quark_t               qkey);
+hg_usize_t          hg_dict_length                (hg_dict_t               *dict);
+hg_usize_t          hg_dict_maxlength             (hg_dict_t               *dict);
+void                hg_dict_foreach               (hg_dict_t               *dict,
+                                                   hg_dict_traverse_func_t  func,
+                                                   hg_pointer_t             data);
+hg_bool_t           hg_dict_first_item            (hg_dict_t               *dict,
+                                                   hg_quark_t              *qkey,
+                                                   hg_quark_t              *qval);
 
 
 HG_END_DECLS

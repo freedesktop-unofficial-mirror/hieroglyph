@@ -75,46 +75,42 @@ _hg_stack_spooler_free_node(hg_stack_spool_t *spool,
 	hg_mem_reserved_spool_remove(spool->mem, node->self);
 }
 
-static hg_error_t
+static hg_bool_t
 _hg_stack_spooler_gc_mark(hg_stack_spool_t  *spool)
 {
 	hg_slist_t *l;
-	hg_error_t error = 0;
 
 	if (spool) {
-		error = hg_mem_gc_mark(spool->mem, spool->self);
-		if (!HG_ERROR_IS_SUCCESS (error))
-			goto finalize;
+		if (!hg_mem_gc_mark(spool->mem, spool->self))
+			return FALSE;
 		for (l = spool->spool; l != NULL; l = l->next) {
-			error = hg_mem_gc_mark(spool->mem, l->self);
-			if (!HG_ERROR_IS_SUCCESS (error))
-				goto finalize;
+			if (!hg_mem_gc_mark(spool->mem, l->self))
+				return FALSE;
 		}
 	}
-  finalize:
 
-	return error;
+	return TRUE;
 }
 
-static gsize
+static hg_usize_t
 _hg_object_stack_get_capsulated_size(void)
 {
 	return HG_ALIGNED_TO_POINTER (sizeof (hg_stack_t));
 }
 
-static guint
+static hg_uint_t
 _hg_object_stack_get_allocation_flags(void)
 {
 	return HG_MEM_FLAGS_DEFAULT;
 }
 
-static gboolean
+static hg_bool_t
 _hg_object_stack_initialize(hg_object_t *object,
 			    va_list      args)
 {
 	hg_stack_t *stack = (hg_stack_t *)object;
 
-	stack->max_depth = va_arg(args, gsize);
+	stack->max_depth = va_arg(args, hg_usize_t);
 	stack->last_stack = NULL;
 	stack->depth = 0;
 	stack->validate_depth = TRUE;
@@ -132,43 +128,36 @@ _hg_object_stack_copy(hg_object_t             *object,
 	return Qnil;
 }
 
-static gchar *
-_hg_object_stack_to_cstr(hg_object_t              *object,
-			 hg_quark_iterate_func_t   func,
-			 gpointer                  user_data,
-			 GError                  **error)
+static hg_char_t *
+_hg_object_stack_to_cstr(hg_object_t             *object,
+			 hg_quark_iterate_func_t  func,
+			 hg_pointer_t             user_data)
 {
 	return g_strdup("-stack-");
 }
 
-static hg_error_t
-_hg_object_stack_gc_mark(hg_object_t           *object,
-			 hg_gc_iterate_func_t   func,
-			 gpointer               user_data)
+static hg_bool_t
+_hg_object_stack_gc_mark(hg_object_t          *object,
+			 hg_gc_iterate_func_t  func,
+			 hg_pointer_t          user_data)
 {
 	hg_stack_t *stack = (hg_stack_t *)object;
 	hg_slist_t *l;
-	hg_error_t error = 0;
 
 	for (l = stack->last_stack; l != NULL; l = l->next) {
-		error = hg_mem_gc_mark(object->mem, l->self);
-		if (!HG_ERROR_IS_SUCCESS (error))
-			goto finalize;
-		error = func(l->data, user_data);
-		if (!HG_ERROR_IS_SUCCESS (error))
-			goto finalize;
+		if (!hg_mem_gc_mark(object->mem, l->self))
+			return FALSE;
+		if (!func(l->data, user_data))
+			return FALSE;
 	}
-	error = _hg_stack_spooler_gc_mark(stack->spool);
-  finalize:
-
-	return error;
+	return _hg_stack_spooler_gc_mark(stack->spool);
 }
 
-static gboolean
+static hg_bool_t
 _hg_object_stack_compare(hg_object_t             *o1,
 			 hg_object_t             *o2,
 			 hg_quark_compare_func_t  func,
-			 gpointer                 user_data)
+			 hg_pointer_t             user_data)
 {
 	return o1->self == o2->self;
 }
@@ -181,7 +170,7 @@ _hg_slist_new(hg_mem_t *mem)
 
 	self = hg_mem_alloc(mem,
 			    sizeof (hg_slist_t),
-			    (gpointer *)&l);
+			    (hg_pointer_t *)&l);
 	if (self == Qnil)
 		return NULL;
 
@@ -214,7 +203,7 @@ _hg_slist_free(hg_mem_t   *mem,
 	}
 }
 
-static gboolean
+static hg_bool_t
 _hg_stack_push(hg_stack_t *stack,
 	       hg_quark_t  quark)
 {
@@ -244,8 +233,7 @@ _hg_stack_push(hg_stack_t *stack,
 }
 
 static hg_quark_t
-_hg_stack_pop(hg_stack_t  *stack,
-	      GError     **error)
+_hg_stack_pop(hg_stack_t  *stack)
 {
 	hg_slist_t *l;
 	hg_quark_t retval;
@@ -281,10 +269,10 @@ hg_stack_spooler_new(hg_mem_t *mem)
 	hg_stack_spool_t *retval;
 	hg_quark_t q;
 
-	hg_return_val_if_fail (mem != NULL, NULL);
+	hg_return_val_if_fail (mem != NULL, NULL, HG_e_VMerror);
 
 	q = hg_mem_alloc(mem, sizeof (hg_stack_spool_t),
-			 (gpointer)&retval);
+			 (hg_pointer_t)&retval);
 	if (q == Qnil)
 		return NULL;
 
@@ -306,7 +294,7 @@ hg_stack_spooler_new(hg_mem_t *mem)
 void
 hg_stack_spooler_destroy(hg_stack_spool_t *spool)
 {
-	hg_return_if_fail (spool != NULL);
+	hg_return_if_fail (spool != NULL, HG_e_VMerror);
 
 	_hg_slist_free(spool->mem, spool->spool);
 	hg_mem_reserved_spool_remove(spool->mem, spool->self);
@@ -323,17 +311,17 @@ hg_stack_spooler_destroy(hg_stack_spool_t *spool)
  * Returns:
  */
 hg_stack_t *
-hg_stack_new(hg_mem_t *mem,
-	     gsize     max_depth,
-	     hg_vm_t  *vm)
+hg_stack_new(hg_mem_t   *mem,
+	     hg_usize_t  max_depth,
+	     hg_vm_t    *vm)
 {
 	hg_stack_t *retval = NULL;
 	hg_quark_t self;
 
-	hg_return_val_if_fail (mem != NULL, NULL);
-	hg_return_val_if_fail (max_depth > 0, NULL);
+	hg_return_val_if_fail (mem != NULL, NULL, HG_e_VMerror);
+	hg_return_val_if_fail (max_depth > 0, NULL, HG_e_VMerror);
 
-	self = hg_object_new(mem, (gpointer *)&retval, HG_TYPE_STACK, 0, max_depth, vm);
+	self = hg_object_new(mem, (hg_pointer_t *)&retval, HG_TYPE_STACK, 0, max_depth, vm);
 	if (self != Qnil) {
 		retval->self = self;
 	}
@@ -367,7 +355,7 @@ void
 hg_stack_set_spooler(hg_stack_t       *stack,
 		     hg_stack_spool_t *spool)
 {
-	hg_return_if_fail (stack != NULL);
+	hg_return_if_fail (stack != NULL, HG_e_typecheck);
 
 	stack->spool = spool;
 }
@@ -381,9 +369,9 @@ hg_stack_set_spooler(hg_stack_t       *stack,
  */
 void
 hg_stack_set_validation(hg_stack_t *stack,
-			gboolean    flag)
+			hg_bool_t   flag)
 {
-	hg_return_if_fail (stack != NULL);
+	hg_return_if_fail (stack != NULL, HG_e_typecheck);
 
 	stack->validate_depth = (flag == TRUE);
 }
@@ -396,10 +384,10 @@ hg_stack_set_validation(hg_stack_t *stack,
  *
  * Returns:
  */
-gsize
+hg_usize_t
 hg_stack_depth(hg_stack_t *stack)
 {
-	hg_return_val_if_fail (stack != NULL, 0);
+	hg_return_val_if_fail (stack != NULL, 0, HG_e_typecheck);
 
 	return stack->depth;
 }
@@ -413,11 +401,11 @@ hg_stack_depth(hg_stack_t *stack)
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_stack_set_max_depth(hg_stack_t *stack,
-		       gsize       depth)
+		       hg_usize_t  depth)
 {
-	hg_return_val_if_fail (stack != NULL, FALSE);
+	hg_return_val_if_fail (stack != NULL, FALSE, HG_e_typecheck);
 
 	if (depth < stack->depth || depth == 0)
 		return FALSE;
@@ -436,11 +424,11 @@ hg_stack_set_max_depth(hg_stack_t *stack,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_stack_push(hg_stack_t *stack,
 	      hg_quark_t  quark)
 {
-	hg_return_val_if_fail (stack != NULL, FALSE);
+	hg_return_val_if_fail (stack != NULL, FALSE, HG_e_typecheck);
 
 	if (stack->validate_depth &&
 	    stack->depth >= stack->max_depth)
@@ -452,22 +440,20 @@ hg_stack_push(hg_stack_t *stack,
 /**
  * hg_stack_pop:
  * @stack:
- * @error:
  *
  * FIXME
  *
  * Returns:
  */
 hg_quark_t
-hg_stack_pop(hg_stack_t  *stack,
-	     GError     **error)
+hg_stack_pop(hg_stack_t *stack)
 {
 	hg_quark_t retval;
 	hg_mem_t *m;
 
-	hg_return_val_with_gerror_if_fail (stack != NULL, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (stack != NULL, Qnil, HG_e_typecheck);
 
-	retval = _hg_stack_pop(stack, error);
+	retval = _hg_stack_pop(stack);
 
 	if (stack->vm &&
 	    !hg_quark_is_simple_object(retval) &&
@@ -482,17 +468,15 @@ hg_stack_pop(hg_stack_t  *stack,
 /**
  * hg_stack_drop:
  * @stack:
- * @error:
  *
  * FIXME
  */
 void
-hg_stack_drop(hg_stack_t  *stack,
-	      GError     **error)
+hg_stack_drop(hg_stack_t *stack)
 {
-	hg_return_with_gerror_if_fail (stack != NULL, error, HG_VM_e_VMerror);
+	hg_return_if_fail (stack != NULL, HG_e_typecheck);
 
-	_hg_stack_pop(stack, error);
+	_hg_stack_pop(stack);
 }
 
 /**
@@ -504,7 +488,7 @@ hg_stack_drop(hg_stack_t  *stack,
 void
 hg_stack_clear(hg_stack_t *stack)
 {
-	hg_return_if_fail (stack != NULL);
+	hg_return_if_fail (stack != NULL, HG_e_typecheck);
 
 	_hg_slist_free(stack->o.mem, stack->last_stack);
 	stack->last_stack = NULL;
@@ -515,21 +499,19 @@ hg_stack_clear(hg_stack_t *stack)
  * hg_stack_index:
  * @stack:
  * @index:
- * @error:
  *
  * FIXME
  *
  * Returns:
  */
 hg_quark_t
-hg_stack_index(hg_stack_t  *stack,
-	       gsize        index,
-	       GError     **error)
+hg_stack_index(hg_stack_t *stack,
+	       hg_usize_t  index)
 {
 	hg_slist_t *l;
 
-	hg_return_val_with_gerror_if_fail (stack != NULL, Qnil, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (index < stack->depth, Qnil, error, HG_VM_e_stackunderflow);
+	hg_return_val_if_fail (stack != NULL, Qnil, HG_e_typecheck);
+	hg_return_val_if_fail (index < stack->depth, Qnil, HG_e_stackunderflow);
 
 	for (l = stack->last_stack; index > 0; l = l->next, index--);
 
@@ -540,21 +522,19 @@ hg_stack_index(hg_stack_t  *stack,
  * hg_stack_peek:
  * @stack:
  * @index:
- * @error:
  *
  * FIXME
  *
  * Returns:
  */
 hg_quark_t *
-hg_stack_peek(hg_stack_t  *stack,
-	      gsize        index,
-	      GError     **error)
+hg_stack_peek(hg_stack_t *stack,
+	      hg_usize_t  index)
 {
 	hg_slist_t *l;
 
-	hg_return_val_with_gerror_if_fail (stack != NULL, NULL, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (index < stack->depth, NULL, error, HG_VM_e_stackunderflow);
+	hg_return_val_if_fail (stack != NULL, NULL, HG_e_typecheck);
+	hg_return_val_if_fail (index < stack->depth, NULL, HG_e_stackunderflow);
 
 	for (l = stack->last_stack; index > 0; l = l->next, index--);
 
@@ -564,18 +544,16 @@ hg_stack_peek(hg_stack_t  *stack,
 /**
  * hg_stack_exch:
  * @stack:
- * @error:
  *
  * FIXME
  */
 void
-hg_stack_exch(hg_stack_t  *stack,
-	      GError     **error)
+hg_stack_exch(hg_stack_t *stack)
 {
 	hg_quark_t q;
 
-	hg_return_with_gerror_if_fail (stack != NULL, error, HG_VM_e_VMerror);
-	hg_return_with_gerror_if_fail (stack->depth > 1, error, HG_VM_e_stackunderflow);
+	hg_return_if_fail (stack != NULL, HG_e_typecheck);
+	hg_return_if_fail (stack->depth > 1, HG_e_stackunderflow);
 
 	q = stack->last_stack->data;
 	stack->last_stack->data = stack->last_stack->next->data;
@@ -587,21 +565,19 @@ hg_stack_exch(hg_stack_t  *stack,
  * @stack:
  * @n_blocks:
  * @n_times:
- * @error:
  *
  * FIXME
  */
 void
-hg_stack_roll(hg_stack_t  *stack,
-	      gsize        n_blocks,
-	      gssize       n_times,
-	      GError     **error)
+hg_stack_roll(hg_stack_t *stack,
+	      hg_usize_t  n_blocks,
+	      hg_size_t   n_times)
 {
 	hg_slist_t *oonode, *top_node, *last_node;
-	gssize n, i;
+	hg_size_t n, i;
 
-	hg_return_with_gerror_if_fail (stack != NULL, error, HG_VM_e_VMerror);
-	hg_return_with_gerror_if_fail (n_blocks <= stack->depth, error, HG_VM_e_stackunderflow);
+	hg_return_if_fail (stack != NULL, HG_e_typecheck);
+	hg_return_if_fail (n_blocks <= stack->depth, HG_e_stackunderflow);
 
 	if (n_blocks == 0 ||
 	    n_times == 0)
@@ -631,41 +607,39 @@ hg_stack_roll(hg_stack_t  *stack,
  * @func:
  * @data:
  * @is_forwarded:
- * @error:
  *
  * FIXME
  */
 void
-hg_stack_foreach(hg_stack_t                *stack,
-		 hg_stack_traverse_func_t   func,
-		 gpointer                   data,
-		 gboolean                   is_forwarded,
-		 GError                   **error)
+hg_stack_foreach(hg_stack_t               *stack,
+		 hg_stack_traverse_func_t  func,
+		 hg_pointer_t              data,
+		 hg_bool_t                 is_forwarded)
 {
 	hg_slist_t *l;
 
-	hg_return_if_fail (stack != NULL);
-	hg_return_if_fail (func != NULL);
+	hg_return_if_fail (stack != NULL, HG_e_typecheck);
+	hg_return_if_fail (func != NULL, HG_e_VMerror);
 
 	if (stack->depth == 0)
 		return;
 
 	if (is_forwarded) {
-		gpointer *p = g_new0(gpointer, stack->depth + 1);
-		gssize i;
+		hg_pointer_t *p = g_new0(hg_pointer_t, stack->depth + 1);
+		hg_size_t i;
 
 		for (l = stack->last_stack, i = stack->depth;
 		     l != NULL && i > 0;
 		     l = l->next, i--)
 			p[i - 1] = l;
 		for (i = 0; i < stack->depth; i++) {
-			if (!func(stack->o.mem, ((hg_slist_t *)p[i])->data, data, error))
+			if (!func(stack->o.mem, ((hg_slist_t *)p[i])->data, data))
 				break;
 		}
 		g_free(p);
 	} else {
 		for (l = stack->last_stack; l != NULL; l = l->next) {
-			if (!func(stack->o.mem, l->data, data, error))
+			if (!func(stack->o.mem, l->data, data))
 				break;
 		}
 	}

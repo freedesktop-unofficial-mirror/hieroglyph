@@ -32,7 +32,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <glib.h>
 #include "hglineedit.h"
 #include "hgmem.h"
 #include "hgfile.h"
@@ -106,49 +105,53 @@ static hg_file_vtable_t __hg_file_io_lineedit_vtable = {
 	.is_eof    = _hg_file_io_real_buffered_is_eof,
 	.clear_eof = _hg_file_io_real_buffered_clear_eof,
 };
+HG_THREAD_VAR hg_int_t hg_fileerrno = 0;
 
 HG_DEFINE_VTABLE (file);
 
 /*< private >*/
-static gsize
+static hg_usize_t
 _hg_object_file_get_capsulated_size(void)
 {
 	return HG_ALIGNED_TO_POINTER (sizeof (hg_file_t));
 }
 
-static guint
+static hg_uint_t
 _hg_object_file_get_allocation_flags(void)
 {
 	return HG_MEM_FLAGS_DEFAULT_WITHOUT_RESTORABLE;
 }
 
-static gboolean
+static hg_bool_t
 _hg_object_file_initialize(hg_object_t *object,
 			   va_list      args)
 {
 	hg_file_t *file = (hg_file_t *)object;
-	const gchar *name;
+	const hg_char_t *name;
 	hg_file_mode_t mode;
 	hg_file_vtable_t *vtable;
-	GError **error, *err = NULL;
-	gpointer user_data;
-	gboolean retval;
+	hg_pointer_t user_data;
 
-	name = va_arg(args, const gchar *);
+	name = va_arg(args, const hg_char_t *);
 	mode = va_arg(args, hg_file_mode_t);
 	vtable = va_arg(args, hg_file_vtable_t *);
-	user_data = va_arg(args, gpointer);
-	error = va_arg(args, GError **);
+	user_data = va_arg(args, hg_pointer_t);
 
-	if (name == NULL || name[0] == 0)
+	if (name == NULL || name[0] == 0) {
+		hg_debug(HG_MSGCAT_FILE, "No filename to open");
+		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_undefinedfilename);
 		return FALSE;
-	if (vtable == NULL || vtable->open == NULL)
+	}
+	if (vtable == NULL || vtable->open == NULL) {
+		hg_debug(HG_MSGCAT_FILE, "No virtual functions");
+		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 		return FALSE;
+	}
 
 	/* initialize the members first to avoid
 	 * segfault on GC
 	 */
-	memset(G_STRUCT_MEMBER_P (file, sizeof (hg_object_t)), 0, sizeof (hg_file_t) - sizeof (hg_object_t));
+	memset(HG_STRUCT_MEMBER_P (file, sizeof (hg_object_t)), 0, sizeof (hg_file_t) - sizeof (hg_object_t));
 	file->qfilename = HG_QSTRING (file->o.mem, name);
 	file->io_type   = hg_file_get_io_type(name);
 	file->mode      = mode;
@@ -161,42 +164,19 @@ _hg_object_file_initialize(hg_object_t *object,
 
 	hg_mem_reserved_spool_remove(file->o.mem, file->qfilename);
 
-	retval = vtable->open(file, file->user_data, &err);
-	if (err) {
-		if (err->code != ENOENT) {
-			if (error) {
-				*error = g_error_copy(err);
-			} else {
-				hg_warning("%s: %s (code: %d)",
-					   __PRETTY_FUNCTION__,
-					   err->message,
-					   err->code);
-			}
-		}
-		g_error_free(err);
-	}
-
-	return retval;
+	return vtable->open(file, file->user_data);
 }
 
 static void
 _hg_object_file_free(hg_object_t *object)
 {
 	hg_file_t *file = (hg_file_t *)object;
-	GError *err = NULL;
 
-	hg_return_if_fail (object->type == HG_TYPE_FILE);
+	hg_return_if_fail (object->type == HG_TYPE_FILE, HG_e_typecheck);
 
 	if (file->vtable && file->vtable->close) {
 		if (!file->is_closed)
-			file->vtable->close(file, file->user_data, &err);
-		if (err) {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-			g_error_free(err);
-		}
+			file->vtable->close(file, file->user_data);
 	}
 	if (file->yybuffer && file->yyfree)
 		file->yyfree(file->yybuffer, file->yydata);
@@ -211,70 +191,70 @@ _hg_object_file_free(hg_object_t *object)
 }
 
 static hg_quark_t
-_hg_object_file_copy(hg_object_t              *object,
-		     hg_quark_iterate_func_t   func,
-		     hg_pointer_t              user_data,
-		     hg_pointer_t             *ret)
+_hg_object_file_copy(hg_object_t             *object,
+		     hg_quark_iterate_func_t  func,
+		     hg_pointer_t             user_data,
+		     hg_pointer_t            *ret)
 {
-	hg_return_val_if_fail (object->type == HG_TYPE_FILE, Qnil);
+	hg_return_val_if_fail (object->type == HG_TYPE_FILE, Qnil, HG_e_typecheck);
 
 	return object->self;
 }
 
-static gchar *
-_hg_object_file_to_cstr(hg_object_t              *object,
-			hg_quark_iterate_func_t   func,
-			gpointer                  user_data,
-			GError                  **error)
+static hg_char_t *
+_hg_object_file_to_cstr(hg_object_t             *object,
+			hg_quark_iterate_func_t  func,
+			hg_pointer_t             user_data)
 {
-	hg_return_val_if_fail (object->type == HG_TYPE_FILE, NULL);
+	hg_return_val_if_fail (object->type == HG_TYPE_FILE, NULL, HG_e_typecheck);
 
 	return g_strdup("-file-");
 }
 
-static hg_error_t
-_hg_object_file_gc_mark(hg_object_t           *object,
-			hg_gc_iterate_func_t   func,
-			gpointer               user_data)
+static hg_bool_t
+_hg_object_file_gc_mark(hg_object_t          *object,
+			hg_gc_iterate_func_t  func,
+			hg_pointer_t          user_data)
 {
 	hg_file_t *file = (hg_file_t *)object;
 	hg_file_gc_t g;
-	hg_error_t error = 0;
 
-	hg_return_val_if_fail (object->type == HG_TYPE_FILE, HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck));
+	hg_return_val_if_fail (object->type == HG_TYPE_FILE, FALSE, HG_e_typecheck);
 
-	error = func(file->qfilename, user_data);
-	if (!HG_ERROR_IS_SUCCESS (error))
-		goto finalize;
+	hg_debug(HG_MSGCAT_GC, "file: marking filename");
+	if (!func(file->qfilename, user_data))
+		return FALSE;
 	if (file->user_data) {
 		if (!file->user_data->gc_func) {
-			error = hg_mem_gc_mark(file->o.mem, file->user_data->self);
+			hg_debug(HG_MSGCAT_GC, "file: marking user data");
+			return hg_mem_gc_mark(file->o.mem, file->user_data->self);
 		} else {
 			g.func = func;
 			g.user_data = user_data;
 			g.mem = file->o.mem;
 			g.data = file->user_data;
 
-			error = file->user_data->gc_func(file->user_data->self, &g);
+			hg_debug(HG_MSGCAT_GC, "file: marking user data with own gc_func");
+
+			return file->user_data->gc_func(file->user_data->self, &g);
 		}
 	}
-  finalize:
 
-	return error;
+	return TRUE;
 }
 
-static gboolean
+static hg_bool_t
 _hg_object_file_compare(hg_object_t             *o1,
 			hg_object_t             *o2,
 			hg_quark_compare_func_t  func,
-			gpointer                 user_data)
+			hg_pointer_t             user_data)
 {
 	return o1->self == o2->self;
 }
 
-static hg_error_t
+static hg_bool_t
 _hg_file_io_data_gc_mark(hg_quark_t   qdata,
-			 gpointer     user_data)
+			 hg_pointer_t user_data)
 {
 	hg_file_gc_t *g = user_data;
 
@@ -282,42 +262,36 @@ _hg_file_io_data_gc_mark(hg_quark_t   qdata,
 }
 
 static void
-_hg_file_io_data_free(hg_mem_t *mem,
-		      gpointer  user_data)
+_hg_file_io_data_free(hg_mem_t     *mem,
+		      hg_pointer_t  user_data)
 {
 	hg_file_io_data_t *data = (hg_file_io_data_t *)user_data;
 
 	hg_mem_free(mem, data->self);
 }
 
-static hg_error_t
+static hg_bool_t
 _hg_file_io_buffered_data_gc_mark(hg_quark_t   qdata,
-				  gpointer     user_data)
+				  hg_pointer_t user_data)
 {
 	hg_file_gc_t *g = user_data;
 	hg_file_io_buffered_data_t *bd = (hg_file_io_buffered_data_t *)g->data;
-	hg_error_t error = 0;
 
 	if (bd->in) {
-		error = g->func(bd->in->o.self, g->user_data);
-		if (!HG_ERROR_IS_SUCCESS (error))
-			goto finalize;
+		if (!g->func(bd->in->o.self, g->user_data))
+			return FALSE;
 	}
 	if (bd->out) {
-		error = g->func(bd->out->o.self, g->user_data);
-		if (!HG_ERROR_IS_SUCCESS (error))
-			goto finalize;
+		if (!g->func(bd->out->o.self, g->user_data))
+			return FALSE;
 	}
 
-	error = hg_mem_gc_mark(g->mem, qdata);
-  finalize:
-
-	return error;
+	return hg_mem_gc_mark(g->mem, qdata);
 }
 
 static void
-_hg_file_io_buffered_data_free(hg_mem_t *mem,
-			       gpointer  user_data)
+_hg_file_io_buffered_data_free(hg_mem_t     *mem,
+			       hg_pointer_t  user_data)
 {
 	hg_file_io_buffered_data_t *bd = (hg_file_io_buffered_data_t *)user_data;
 
@@ -330,20 +304,18 @@ _hg_file_io_buffered_data_free(hg_mem_t *mem,
 }
 
 /** file IO callbacks **/
-static gboolean
-_hg_file_io_real_stdin_open(hg_file_t  *file,
-			    gpointer    user_data,
-			    GError    **error)
+static hg_bool_t
+_hg_file_io_real_stdin_open(hg_file_t    *file,
+			    hg_pointer_t  user_data)
 {
 	hg_file_io_data_t *data = user_data;
 	hg_quark_t qdata;
 
-	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, HG_e_VMerror);
 
 	if (file->io_type != HG_FILE_IO_STDIN) {
-		g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
-			    "%s: Invalid I/O request.",
-			    __PRETTY_FUNCTION__);
+		hg_debug(HG_MSGCAT_FILE, "Invalid I/O request.");
+		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 		return FALSE;
 	}
 	if ((file->mode & HG_FILE_IO_MODE_WRITE) != 0) {
@@ -353,7 +325,7 @@ _hg_file_io_real_stdin_open(hg_file_t  *file,
 	if (data == NULL) {
 		qdata = hg_mem_alloc(file->o.mem,
 				     sizeof (hg_file_io_data_t),
-				     (gpointer *)&data);
+				     (hg_pointer_t *)&data);
 		if (qdata == Qnil) {
 			errno = ENOMEM;
 			goto exception;
@@ -372,29 +344,23 @@ _hg_file_io_real_stdin_open(hg_file_t  *file,
 
 	return TRUE;
   exception:
-	G_STMT_START {
-		gint errno_ = errno;
-
-		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
-	} G_STMT_END;
+	hg_file_set_error(__PRETTY_FUNCTION__);
 
 	return FALSE;
 }
 
-static gboolean
-_hg_file_io_real_stdout_open(hg_file_t  *file,
-			     gpointer    user_data,
-			     GError    **error)
+static hg_bool_t
+_hg_file_io_real_stdout_open(hg_file_t    *file,
+			     hg_pointer_t  user_data)
 {
 	hg_file_io_data_t *data = user_data;
 	hg_quark_t qdata;
 
-	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, HG_e_VMerror);
 
 	if (file->io_type != HG_FILE_IO_STDOUT) {
-		g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
-			    "%s: Invalid I/O request.",
-			    __PRETTY_FUNCTION__);
+		hg_debug(HG_MSGCAT_FILE, "Invalid I/O request.");
+		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 		return FALSE;
 	}
 	if ((file->mode & HG_FILE_IO_MODE_READ) != 0) {
@@ -404,7 +370,7 @@ _hg_file_io_real_stdout_open(hg_file_t  *file,
 	if (data == NULL) {
 		qdata = hg_mem_alloc(file->o.mem,
 				     sizeof (hg_file_io_data_t),
-				     (gpointer *)&data);
+				     (hg_pointer_t *)&data);
 		if (qdata == Qnil) {
 			errno = ENOMEM;
 			goto exception;
@@ -423,29 +389,23 @@ _hg_file_io_real_stdout_open(hg_file_t  *file,
 
 	return TRUE;
   exception:
-	G_STMT_START {
-		gint errno_ = errno;
-
-		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
-	} G_STMT_END;
+	hg_file_set_error(__PRETTY_FUNCTION__);
 
 	return FALSE;
 }
 
-static gboolean
-_hg_file_io_real_stderr_open(hg_file_t  *file,
-			     gpointer    user_data,
-			     GError    **error)
+static hg_bool_t
+_hg_file_io_real_stderr_open(hg_file_t    *file,
+			     hg_pointer_t  user_data)
 {
 	hg_file_io_data_t *data = user_data;
 	hg_quark_t qdata;
 
-	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, HG_e_VMerror);
 
 	if (file->io_type != HG_FILE_IO_STDERR) {
-		g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
-			    "%s: Invalid I/O request.",
-			    __PRETTY_FUNCTION__);
+		hg_debug(HG_MSGCAT_FILE, "Invalid I/O request.");
+		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 		return FALSE;
 	}
 	if ((file->mode & HG_FILE_IO_MODE_READ) != 0) {
@@ -455,7 +415,7 @@ _hg_file_io_real_stderr_open(hg_file_t  *file,
 	if (data == NULL) {
 		qdata = hg_mem_alloc(file->o.mem,
 				     sizeof (hg_file_io_data_t),
-				     (gpointer *)&data);
+				     (hg_pointer_t *)&data);
 		if (qdata == Qnil) {
 			errno = ENOMEM;
 			goto exception;
@@ -474,36 +434,30 @@ _hg_file_io_real_stderr_open(hg_file_t  *file,
 
 	return TRUE;
   exception:
-	G_STMT_START {
-		gint errno_ = errno;
-
-		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
-	} G_STMT_END;
+	hg_file_set_error(__PRETTY_FUNCTION__);
 
 	return FALSE;
 }
 
 static void
-_hg_file_io_real_no_close(hg_file_t  *file,
-			  gpointer    user_data,
-			  GError    **error)
+_hg_file_io_real_no_close(hg_file_t    *file,
+			  hg_pointer_t  user_data)
 {
 	file->is_closed = TRUE;
 }
 
-static gboolean
-_hg_file_io_real_file_open(hg_file_t  *file,
-			   gpointer    user_data,
-			   GError    **error)
+static hg_bool_t
+_hg_file_io_real_file_open(hg_file_t    *file,
+			   hg_pointer_t  user_data)
 {
 	hg_file_io_data_t *data = user_data;
 	hg_quark_t qdata;
 	hg_string_t *sfilename;
-	gchar *filename;
+	hg_char_t *filename;
 	struct stat st;
 	int fd;
-	gpointer buffer = NULL;
-	static gint flags[] = {
+	hg_pointer_t buffer = NULL;
+	static hg_int_t flags[] = {
 		0,				/* 0 */
 		O_RDONLY,			/* HG_FILE_IO_MODE_READ */
 		O_WRONLY | O_CREAT | O_TRUNC,	/* HG_FILE_IO_MODE_WRITE */
@@ -514,18 +468,17 @@ _hg_file_io_real_file_open(hg_file_t  *file,
 		O_RDWR | O_CREAT | O_APPEND,	/* HG_FILE_IO_MODE_READWRITE | HG_FILE_IO_MODE_APPEND */
 	};
 
-	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, HG_e_VMerror);
 
 	if (file->io_type != HG_FILE_IO_FILE) {
-		g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
-			    "%s: Invalid I/O request.",
-			    __PRETTY_FUNCTION__);
+		hg_debug(HG_MSGCAT_FILE, "Invalid I/O request.");
+		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 		return FALSE;
 	}
 	if (data == NULL) {
 		qdata = hg_mem_alloc(file->o.mem,
 				     sizeof (hg_file_io_data_t),
-				     (gpointer *)&data);
+				     (hg_pointer_t *)&data);
 		if (qdata == Qnil) {
 			errno = ENOMEM;
 			goto exception;
@@ -539,11 +492,10 @@ _hg_file_io_real_file_open(hg_file_t  *file,
 	data->mmapped_buffer = NULL;
 	file->user_data = data;
 
-	hg_return_val_with_gerror_if_lock_fail (sfilename,
-						file->o.mem,
-						file->qfilename,
-						error,
-						FALSE);
+	hg_return_val_if_lock_fail (sfilename,
+				    file->o.mem,
+				    file->qfilename,
+				    FALSE);
 	filename = hg_string_get_cstr(sfilename);
 	hg_mem_unlock_object(file->o.mem, file->qfilename);
 	errno = 0;
@@ -563,19 +515,14 @@ _hg_file_io_real_file_open(hg_file_t  *file,
 
 	return TRUE;
   exception:
-	G_STMT_START {
-		gint errno_ = errno;
-
-		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
-	} G_STMT_END;
+	hg_file_set_error(__PRETTY_FUNCTION__);
 
 	return FALSE;
 }
 
 static void
-_hg_file_io_real_file_close(hg_file_t  *file,
-			    gpointer    user_data,
-			    GError    **error)
+_hg_file_io_real_file_close(hg_file_t    *file,
+			    hg_pointer_t  user_data)
 {
 	hg_file_io_data_t *data = user_data;
 
@@ -588,15 +535,14 @@ _hg_file_io_real_file_close(hg_file_t  *file,
 	file->is_closed = TRUE;
 }
 
-static gssize
-_hg_file_io_real_file_read(hg_file_t  *file,
-			   gpointer    user_data,
-			   gpointer    buffer,
-			   gsize       size,
-			   gsize       n,
-			   GError    **error)
+static hg_size_t
+_hg_file_io_real_file_read(hg_file_t    *file,
+			   hg_pointer_t  user_data,
+			   hg_pointer_t  buffer,
+			   hg_usize_t    size,
+			   hg_usize_t    n)
 {
-	gsize retval;
+	hg_usize_t retval;
 	hg_file_io_data_t *data = user_data;
 
 	if ((file->mode & HG_FILE_IO_MODE_READ) == 0) {
@@ -609,8 +555,8 @@ _hg_file_io_real_file_read(hg_file_t  *file,
 		} else {
 			retval = size * n;
 		}
-		memcpy(buffer, (gchar *)data->mmapped_buffer + file->position, retval);
-//		((gchar *)buffer)[retval] = 0;
+		memcpy(buffer, (hg_char_t *)data->mmapped_buffer + file->position, retval);
+//		((hg_char_t *)buffer)[retval] = 0;
 		if (retval == 0 &&
 		    file->position == file->size)
 			data->is_eof = TRUE;
@@ -626,24 +572,19 @@ _hg_file_io_real_file_read(hg_file_t  *file,
 
 	return retval;
   exception:
-	G_STMT_START {
-		gint errno_ = errno;
-
-		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
-	} G_STMT_END;
+	hg_file_set_error(__PRETTY_FUNCTION__);
 
 	return -1;
 }
 
-static gssize
-_hg_file_io_real_file_write(hg_file_t      *file,
-			    gpointer        user_data,
-			    gconstpointer   buffer,
-			    gsize           size,
-			    gsize           n,
-			    GError        **error)
+static hg_size_t
+_hg_file_io_real_file_write(hg_file_t          *file,
+			    hg_pointer_t        user_data,
+			    const hg_pointer_t  buffer,
+			    hg_usize_t          size,
+			    hg_usize_t          n)
 {
-	gsize retval;
+	hg_usize_t retval;
 	hg_file_io_data_t *data = user_data;
 
 	if ((file->mode & HG_FILE_IO_MODE_WRITE) == 0) {
@@ -657,24 +598,19 @@ _hg_file_io_real_file_write(hg_file_t      *file,
 
 	return retval;
   exception:
-	G_STMT_START {
-		gint errno_ = errno;
-
-		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
-	} G_STMT_END;
+	hg_file_set_error(__PRETTY_FUNCTION__);
 
 	return -1;
 }
 
-static gboolean
-_hg_file_io_real_file_flush(hg_file_t  *file,
-			    gpointer    user_data,
-			    GError    **error)
+static hg_bool_t
+_hg_file_io_real_file_flush(hg_file_t    *file,
+			    hg_pointer_t  user_data)
 {
 	hg_file_io_data_t *data = user_data;
 
 	if ((file->mode & HG_FILE_IO_MODE_READ)) {
-		if (hg_file_seek(file, 0, HG_FILE_POS_END, error) == -1)
+		if (hg_file_seek(file, 0, HG_FILE_POS_END) == -1)
 			return FALSE;
 	}
 	if ((file->mode & HG_FILE_IO_MODE_WRITE)) {
@@ -686,24 +622,19 @@ _hg_file_io_real_file_flush(hg_file_t  *file,
 
 	return TRUE;
   exception:
-	G_STMT_START {
-		gint errno_ = errno;
-
-		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
-	} G_STMT_END;
+	hg_file_set_error(__PRETTY_FUNCTION__);
 
 	return FALSE;
 }
 
-static gssize
-_hg_file_io_real_file_seek(hg_file_t      *file,
-			   gpointer        user_data,
-			   gssize          offset,
-			   hg_file_pos_t   whence,
-			   GError        **error)
+static hg_size_t
+_hg_file_io_real_file_seek(hg_file_t     *file,
+			   hg_pointer_t   user_data,
+			   hg_size_t      offset,
+			   hg_file_pos_t  whence)
 {
 	hg_file_io_data_t *data = user_data;
-	gssize retval;
+	hg_size_t retval;
 
 	if (data->mmapped_buffer) {
 		switch (whence) {
@@ -743,18 +674,14 @@ _hg_file_io_real_file_seek(hg_file_t      *file,
 
 	return retval;
   exception:
-	G_STMT_START {
-		gint errno_ = errno;
-
-		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
-	} G_STMT_END;
+	hg_file_set_error(__PRETTY_FUNCTION__);
 
 	return -1;
 }
 
-static gboolean
-_hg_file_io_real_file_is_eof(hg_file_t *file,
-			     gpointer   user_data)
+static hg_bool_t
+_hg_file_io_real_file_is_eof(hg_file_t    *file,
+			     hg_pointer_t  user_data)
 {
 	hg_file_io_data_t *data = user_data;
 
@@ -762,8 +689,8 @@ _hg_file_io_real_file_is_eof(hg_file_t *file,
 }
 
 static void
-_hg_file_io_real_file_clear_eof(hg_file_t *file,
-				gpointer   user_data)
+_hg_file_io_real_file_clear_eof(hg_file_t    *file,
+				hg_pointer_t  user_data)
 {
 	hg_file_io_data_t *data = user_data;
 
@@ -771,14 +698,13 @@ _hg_file_io_real_file_clear_eof(hg_file_t *file,
 }
 
 /** buffered IO callbacks **/
-static gboolean
-_hg_file_io_real_buffered_open(hg_file_t  *file,
-			       gpointer    user_data,
-			       GError    **error)
+static hg_bool_t
+_hg_file_io_real_buffered_open(hg_file_t    *file,
+			       hg_pointer_t  user_data)
 {
 	hg_file_io_buffered_data_t *bd = user_data;
 
-	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, HG_e_VMerror);
 
 	switch (file->io_type) {
 	    case HG_FILE_IO_FILE:
@@ -799,9 +725,8 @@ _hg_file_io_real_buffered_open(hg_file_t  *file,
 		    }
 		    break;
 	    default:
-		    g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
-				"%s: Invalid I/O request.",
-				__PRETTY_FUNCTION__);
+		    hg_debug(HG_MSGCAT_FILE, "Invalid I/O request.");
+		    hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 		    return FALSE;
 	}
 	bd->data.fd = -1;
@@ -811,19 +736,14 @@ _hg_file_io_real_buffered_open(hg_file_t  *file,
 
 	return TRUE;
   exception:
-	G_STMT_START {
-		gint errno_ = errno;
-
-		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
-	} G_STMT_END;
+	hg_file_set_error(__PRETTY_FUNCTION__);
 
 	return FALSE;
 }
 
 static void
-_hg_file_io_real_buffered_close(hg_file_t  *file,
-				gpointer    user_data,
-				GError    **error)
+_hg_file_io_real_buffered_close(hg_file_t    *file,
+				hg_pointer_t  user_data)
 {
 	hg_file_io_buffered_data_t *bd = user_data;
 
@@ -836,17 +756,16 @@ _hg_file_io_real_buffered_close(hg_file_t  *file,
 	file->is_closed = TRUE;
 }
 
-static gssize
-_hg_file_io_real_buffered_read(hg_file_t      *file,
-			       gpointer        user_data,
-			       gpointer        buffer,
-			       gsize           size,
-			       gsize           n,
-			       GError        **error)
+static hg_size_t
+_hg_file_io_real_buffered_read(hg_file_t    *file,
+			       hg_pointer_t  user_data,
+			       hg_pointer_t  buffer,
+			       hg_usize_t    size,
+			       hg_usize_t    n)
 {
-	gsize retval;
+	hg_usize_t retval;
 	hg_file_io_buffered_data_t *bd = user_data;
-	gchar *cstr;
+	hg_char_t *cstr;
 
 	if ((file->mode & HG_FILE_IO_MODE_READ) == 0) {
 		errno = EBADF;
@@ -859,7 +778,7 @@ _hg_file_io_real_buffered_read(hg_file_t      *file,
 	}
 	cstr = hg_string_get_cstr(bd->in);
 	memcpy(buffer, cstr + file->position, retval);
-//	((gchar *)buffer)[retval] = 0;
+//	((hg_char_t *)buffer)[retval] = 0;
 	if (retval == 0 &&
 	    file->position == file->size)
 		bd->data.is_eof = TRUE;
@@ -868,22 +787,17 @@ _hg_file_io_real_buffered_read(hg_file_t      *file,
 
 	return retval;
   exception:
-	G_STMT_START {
-		gint errno_ = errno;
-
-		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
-	} G_STMT_END;
+	hg_file_set_error(__PRETTY_FUNCTION__);
 
 	return -1;
 }
 
-static gssize
-_hg_file_io_real_buffered_write(hg_file_t       *file,
-				gpointer         user_data,
-				gconstpointer    buffer,
-				gsize            size,
-				gsize            n,
-				GError         **error)
+static hg_size_t
+_hg_file_io_real_buffered_write(hg_file_t          *file,
+				hg_pointer_t        user_data,
+				const hg_pointer_t  buffer,
+				hg_usize_t          size,
+				hg_usize_t          n)
 {
 	hg_file_io_buffered_data_t *bd = user_data;
 
@@ -891,42 +805,36 @@ _hg_file_io_real_buffered_write(hg_file_t       *file,
 		errno = EBADF;
 		goto exception;
 	}
-	if (!hg_string_append(bd->out, buffer, size * n, error)) {
+	if (!hg_string_append(bd->out, buffer, size * n)) {
 		return -1;
 	}
 
 	return size * n;
   exception:
-	G_STMT_START {
-		gint errno_ = errno;
-
-		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
-	} G_STMT_END;
+	hg_file_set_error(__PRETTY_FUNCTION__);
 
 	return -1;
 }
 
-static gboolean
-_hg_file_io_real_buffered_flush(hg_file_t  *file,
-				gpointer    user_data,
-				GError    **error)
+static hg_bool_t
+_hg_file_io_real_buffered_flush(hg_file_t    *file,
+				hg_pointer_t  user_data)
 {
 	if ((file->mode & HG_FILE_IO_MODE_READ)) {
-		if (hg_file_seek(file, 0, HG_FILE_POS_END, error) == -1)
+		if (hg_file_seek(file, 0, HG_FILE_POS_END) == -1)
 			return FALSE;
 	}
 
 	return TRUE;
 }
 
-static gssize
-_hg_file_io_real_buffered_seek(hg_file_t      *file,
-			       gpointer        user_data,
-			       gssize          offset,
-			       hg_file_pos_t   whence,
-			       GError        **error)
+static hg_size_t
+_hg_file_io_real_buffered_seek(hg_file_t     *file,
+			       hg_pointer_t   user_data,
+			       hg_size_t      offset,
+			       hg_file_pos_t  whence)
 {
-	gssize retval;
+	hg_size_t retval;
 
 	switch (whence) {
 	    case HG_FILE_POS_BEGIN:
@@ -959,18 +867,14 @@ _hg_file_io_real_buffered_seek(hg_file_t      *file,
 
 	return retval;
   exception:
-	G_STMT_START {
-		gint errno_ = errno;
-
-		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
-	} G_STMT_END;
+	hg_file_set_error(__PRETTY_FUNCTION__);
 
 	return -1;
 }
 
-static gboolean
-_hg_file_io_real_buffered_is_eof(hg_file_t  *file,
-				 gpointer    user_data)
+static hg_bool_t
+_hg_file_io_real_buffered_is_eof(hg_file_t    *file,
+				 hg_pointer_t  user_data)
 {
 	hg_file_io_data_t *data = user_data;
 
@@ -978,8 +882,8 @@ _hg_file_io_real_buffered_is_eof(hg_file_t  *file,
 }
 
 static void
-_hg_file_io_real_buffered_clear_eof(hg_file_t  *file,
-				    gpointer    user_data)
+_hg_file_io_real_buffered_clear_eof(hg_file_t    *file,
+				    hg_pointer_t  user_data)
 {
 	hg_file_io_data_t *data = user_data;
 
@@ -987,18 +891,17 @@ _hg_file_io_real_buffered_clear_eof(hg_file_t  *file,
 }
 
 /** lineedit I/O callbacks **/
-static gboolean
-_hg_file_io_real_lineedit_open(hg_file_t  *file,
-			       gpointer    user_data,
-			       GError    **error)
+static hg_bool_t
+_hg_file_io_real_lineedit_open(hg_file_t    *file,
+			       hg_pointer_t  user_data)
 {
 	hg_quark_t q, qs;
 	hg_file_io_buffered_data_t *bd;
-	gchar *buf;
+	hg_char_t *buf;
 	hg_lineedit_t *lineedit = (hg_lineedit_t *)user_data;
 	hg_string_t *s;
 
-	hg_return_val_with_gerror_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, HG_e_VMerror);
 
 	switch (file->io_type) {
 	    case HG_FILE_IO_LINEEDIT:
@@ -1024,21 +927,20 @@ _hg_file_io_real_lineedit_open(hg_file_t  *file,
 		    }
 		    break;
 	    default:
-		    g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
-				"%s: Invalid I/O request.",
-				__PRETTY_FUNCTION__);
+		    hg_debug(HG_MSGCAT_FILE, "Invalid I/O request.");
+		    hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 		    return FALSE;
 	}
 	qs = hg_string_new_with_value(file->o.mem,
 				      buf, -1,
-				      (gpointer *)&s);
+				      (hg_pointer_t *)&s);
 	if (qs == Qnil) {
 		errno = ENOENT;
 		goto exception;
 	}
 	q = hg_mem_alloc(file->o.mem,
 			  sizeof (hg_file_io_buffered_data_t),
-			  (gpointer *)&bd);
+			  (hg_pointer_t *)&bd);
 	if (q == Qnil) {
 		hg_string_free(s, TRUE);
 		errno = ENOMEM;
@@ -1060,11 +962,7 @@ _hg_file_io_real_lineedit_open(hg_file_t  *file,
 
 	return TRUE;
   exception:
-	G_STMT_START {
-		gint errno_ = errno;
-
-		hg_file_set_error(error, __PRETTY_FUNCTION__, errno_);
-	} G_STMT_END;
+	hg_file_set_error(__PRETTY_FUNCTION__);
 
 	return FALSE;
 }
@@ -1092,9 +990,9 @@ hg_file_get_lineedit_vtable(void)
  * Returns:
  */
 hg_file_io_t
-hg_file_get_io_type(const gchar *name)
+hg_file_get_io_type(const hg_char_t *name)
 {
-	const gchar *reserved_names[] = {
+	const hg_char_t *reserved_names[] = {
 		"stdin",
 		"stdout",
 		"stderr",
@@ -1102,10 +1000,10 @@ hg_file_get_io_type(const gchar *name)
 		"statementedit",
 		NULL
 	};
-	gint i;
+	hg_int_t i;
 
-	hg_return_val_if_fail (name != NULL, HG_FILE_IO_END);
-	hg_return_val_if_fail (name[0] != 0, HG_FILE_IO_END);
+	hg_return_val_if_fail (name != NULL, HG_FILE_IO_END, HG_e_VMerror);
+	hg_return_val_if_fail (name[0] != 0, HG_FILE_IO_END, HG_e_VMerror);
 
 	if (name[0] != '%')
 		return HG_FILE_IO_FILE;
@@ -1132,17 +1030,16 @@ hg_file_get_io_type(const gchar *name)
  */
 hg_quark_t
 hg_file_new(hg_mem_t        *mem,
-	    const gchar     *name,
+	    const hg_char_t *name,
 	    hg_file_mode_t   mode,
-	    GError         **error,
-	    gpointer        *ret)
+	    hg_pointer_t    *ret)
 {
 	hg_file_io_t io;
 	hg_file_vtable_t *vtable = NULL;
 
-	hg_return_val_with_gerror_if_fail (mem != NULL, Qnil, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (name != NULL, Qnil, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (name[0] != 0, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (mem != NULL, Qnil, HG_e_VMerror);
+	hg_return_val_if_fail (name != NULL, Qnil, HG_e_VMerror);
+	hg_return_val_if_fail (name[0] != 0, Qnil, HG_e_VMerror);
 
 	io = hg_file_get_io_type(name);
 	switch (io) {
@@ -1164,7 +1061,7 @@ hg_file_new(hg_mem_t        *mem,
 		    break;
 	}
 
-	return hg_file_new_with_vtable(mem, name, mode, vtable, NULL, error, ret);
+	return hg_file_new_with_vtable(mem, name, mode, vtable, NULL, ret);
 }
 
 /**
@@ -1174,7 +1071,6 @@ hg_file_new(hg_mem_t        *mem,
  * @mode:
  * @vtable:
  * @user_data:
- * @error:
  * @ret:
  *
  * FIXME
@@ -1182,23 +1078,22 @@ hg_file_new(hg_mem_t        *mem,
  * Returns:
  */
 hg_quark_t
-hg_file_new_with_vtable(hg_mem_t                *mem,
-			const gchar             *name,
-			hg_file_mode_t           mode,
-			const hg_file_vtable_t  *vtable,
-			gpointer                 user_data,
-			GError                 **error,
-			gpointer                *ret)
+hg_file_new_with_vtable(hg_mem_t               *mem,
+			const hg_char_t        *name,
+			hg_file_mode_t          mode,
+			const hg_file_vtable_t *vtable,
+			hg_pointer_t            user_data,
+			hg_pointer_t           *ret)
 {
 	hg_quark_t retval;
 	hg_file_t *f = NULL;
 
-	hg_return_val_with_gerror_if_fail (mem != NULL, Qnil, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (name != NULL, Qnil, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (name[0] != 0, Qnil, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (vtable != NULL, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (mem != NULL, Qnil, HG_e_VMerror);
+	hg_return_val_if_fail (name != NULL, Qnil, HG_e_VMerror);
+	hg_return_val_if_fail (name[0] != 0, Qnil, HG_e_VMerror);
+	hg_return_val_if_fail (vtable != NULL, Qnil, HG_e_VMerror);
 
-	retval = hg_object_new(mem, (gpointer *)&f, HG_TYPE_FILE, 0, name, mode, vtable, user_data, error);
+	retval = hg_object_new(mem, (hg_pointer_t *)&f, HG_TYPE_FILE, 0, name, mode, vtable, user_data);
 
 	if (retval != Qnil) {
 		if (ret)
@@ -1225,22 +1120,21 @@ hg_file_new_with_vtable(hg_mem_t                *mem,
  */
 hg_quark_t
 hg_file_new_with_string(hg_mem_t        *mem,
-			const gchar     *name,
+			const hg_char_t *name,
 			hg_file_mode_t   mode,
 			hg_string_t     *in,
 			hg_string_t     *out,
-			GError         **error,
-			gpointer        *ret)
+			hg_pointer_t    *ret)
 {
 	hg_quark_t retval, qbdata;
 	hg_file_t *f = NULL;
 	hg_file_io_buffered_data_t *x;
 
-	hg_return_val_with_gerror_if_fail (mem != NULL, Qnil, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (name != NULL, Qnil, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (name[0] != 0, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (mem != NULL, Qnil, HG_e_VMerror);
+	hg_return_val_if_fail (name != NULL, Qnil, HG_e_VMerror);
+	hg_return_val_if_fail (name[0] != 0, Qnil, HG_e_VMerror);
 
-	qbdata = hg_mem_alloc(mem, sizeof (hg_file_io_buffered_data_t), (gpointer *)&x);
+	qbdata = hg_mem_alloc(mem, sizeof (hg_file_io_buffered_data_t), (hg_pointer_t *)&x);
 	if (qbdata == Qnil)
 		return Qnil;
 
@@ -1250,9 +1144,9 @@ hg_file_new_with_string(hg_mem_t        *mem,
 	x->data.destroy_func = _hg_file_io_buffered_data_free;
 	x->in = in;
 	x->out = out;
-	retval = hg_object_new(mem, (gpointer *)&f, HG_TYPE_FILE, 0,
+	retval = hg_object_new(mem, (hg_pointer_t *)&f, HG_TYPE_FILE, 0,
 			       name, mode, &__hg_file_io_buffered_vtable,
-			       x, error);
+			       x);
 	if (retval != Qnil) {
 		if (x->in) {
 			hg_mem_lock_object(x->in->o.mem, x->in->o.self);
@@ -1280,18 +1174,18 @@ hg_file_new_with_string(hg_mem_t        *mem,
  * FIXME
  */
 void
-hg_file_close(hg_file_t  *file,
-	      GError    **error)
+hg_file_close(hg_file_t *file)
 {
-	hg_return_with_gerror_if_fail (file != NULL, error, HG_VM_e_VMerror);
-	hg_return_with_gerror_if_fail (file->o.type == HG_TYPE_FILE, error, HG_VM_e_VMerror);
-	hg_return_with_gerror_if_fail (file->vtable != NULL, error, HG_VM_e_VMerror);
-	hg_return_with_gerror_if_fail (file->vtable->close != NULL, error, HG_VM_e_VMerror);
+	hg_return_if_fail (file != NULL, HG_e_typecheck);
+	hg_return_if_fail (file->o.type == HG_TYPE_FILE, HG_e_typecheck);
+	hg_return_if_fail (file->vtable != NULL, HG_e_VMerror);
+	hg_return_if_fail (file->vtable->close != NULL, HG_e_VMerror);
 
 	if (file->is_closed) {
-		hg_file_set_error(error, __PRETTY_FUNCTION__, EBADF);
+		errno = EBADF;
+		hg_file_set_error(__PRETTY_FUNCTION__);
 	} else {
-		file->vtable->close(file, file->user_data, error);
+		file->vtable->close(file, file->user_data);
 	}
 }
 
@@ -1301,31 +1195,30 @@ hg_file_close(hg_file_t  *file,
  * @buffer:
  * @size:
  * @n:
- * @error:
  *
  * FIXME
  *
  * Returns:
  */
-gssize
-hg_file_read(hg_file_t  *file,
-	     gpointer    buffer,
-	     gsize       size,
-	     gsize       n,
-	     GError    **error)
+hg_size_t
+hg_file_read(hg_file_t    *file,
+	     hg_pointer_t  buffer,
+	     hg_usize_t    size,
+	     hg_usize_t    n)
 {
-	hg_return_val_with_gerror_if_fail (file != NULL, -1, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (file->o.type == HG_TYPE_FILE, -1, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (buffer != NULL, -1, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (file->vtable != NULL, -1, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (file->vtable->read != NULL, -1, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (file != NULL, -1, HG_e_typecheck);
+	hg_return_val_if_fail (file->o.type == HG_TYPE_FILE, -1, HG_e_typecheck);
+	hg_return_val_if_fail (buffer != NULL, -1, HG_e_VMerror);
+	hg_return_val_if_fail (file->vtable != NULL, -1, HG_e_VMerror);
+	hg_return_val_if_fail (file->vtable->read != NULL, -1, HG_e_VMerror);
 
 	if (file->is_closed) {
-		hg_file_set_error(error, __PRETTY_FUNCTION__, EBADF);
+		errno = EBADF;
+		hg_file_set_error(__PRETTY_FUNCTION__);
 		return -1;
 	}
 
-	return file->vtable->read(file, file->user_data, buffer, size, n, error);
+	return file->vtable->read(file, file->user_data, buffer, size, n);
 }
 
 /**
@@ -1334,57 +1227,55 @@ hg_file_read(hg_file_t  *file,
  * @buffer:
  * @size:
  * @n:
- * @error:
  *
  * FIXME
  *
  * Returns:
  */
-gssize
-hg_file_write(hg_file_t  *file,
-	      gpointer    buffer,
-	      gsize       size,
-	      gsize       n,
-	      GError    **error)
+hg_size_t
+hg_file_write(hg_file_t    *file,
+	      hg_pointer_t  buffer,
+	      hg_usize_t    size,
+	      hg_usize_t    n)
 {
-	hg_return_val_with_gerror_if_fail (file != NULL, -1, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (file->o.type == HG_TYPE_FILE, -1, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (buffer != NULL, -1, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (file->vtable != NULL, -1, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (file->vtable->write != NULL, -1, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (file != NULL, -1, HG_e_typecheck);
+	hg_return_val_if_fail (file->o.type == HG_TYPE_FILE, -1, HG_e_typecheck);
+	hg_return_val_if_fail (buffer != NULL, -1, HG_e_VMerror);
+	hg_return_val_if_fail (file->vtable != NULL, -1, HG_e_VMerror);
+	hg_return_val_if_fail (file->vtable->write != NULL, -1, HG_e_VMerror);
 
 	if (file->is_closed) {
-		hg_file_set_error(error, __PRETTY_FUNCTION__, EBADF);
+		errno = EBADF;
+		hg_file_set_error(__PRETTY_FUNCTION__);
 		return -1;
 	}
 
-	return file->vtable->write(file, file->user_data, buffer, size, n, error);
+	return file->vtable->write(file, file->user_data, buffer, size, n);
 }
 
 /**
  * hg_file_flush:
  * @file:
- * @error:
  *
  * FIXME
  *
  * Returns:
  */
-gboolean
-hg_file_flush(hg_file_t  *file,
-	      GError    **error)
+hg_bool_t
+hg_file_flush(hg_file_t *file)
 {
-	hg_return_val_with_gerror_if_fail (file != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (file->o.type == HG_TYPE_FILE, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (file->vtable != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (file->vtable->flush != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (file != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (file->o.type == HG_TYPE_FILE, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (file->vtable != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (file->vtable->flush != NULL, FALSE, HG_e_VMerror);
 
 	if (file->is_closed) {
-		hg_file_set_error(error, __PRETTY_FUNCTION__, EBADF);
+		errno = EBADF;
+		hg_file_set_error(__PRETTY_FUNCTION__);
 		return FALSE;
 	}
 
-	return file->vtable->flush(file, file->user_data, error);
+	return file->vtable->flush(file, file->user_data);
 }
 
 /**
@@ -1392,29 +1283,28 @@ hg_file_flush(hg_file_t  *file,
  * @file:
  * @offset:
  * @whence:
- * @error:
  *
  * FIXME
  *
  * Returns:
  */
-gssize
-hg_file_seek(hg_file_t      *file,
-	     gssize          offset,
-	     hg_file_pos_t   whence,
-	     GError        **error)
+hg_size_t
+hg_file_seek(hg_file_t     *file,
+	     hg_size_t      offset,
+	     hg_file_pos_t  whence)
 {
-	hg_return_val_with_gerror_if_fail (file != NULL, -1, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (file->o.type == HG_TYPE_FILE, -1, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (file->vtable != NULL, -1, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (file->vtable->seek != NULL, -1, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (file != NULL, -1, HG_e_typecheck);
+	hg_return_val_if_fail (file->o.type == HG_TYPE_FILE, -1, HG_e_typecheck);
+	hg_return_val_if_fail (file->vtable != NULL, -1, HG_e_VMerror);
+	hg_return_val_if_fail (file->vtable->seek != NULL, -1, HG_e_VMerror);
 
 	if (file->is_closed) {
-		hg_file_set_error(error, __PRETTY_FUNCTION__, EBADF);
+		errno = EBADF;
+		hg_file_set_error(__PRETTY_FUNCTION__);
 		return -1;
 	}
 
-	return file->vtable->seek(file, file->user_data, offset, whence, error);
+	return file->vtable->seek(file, file->user_data, offset, whence);
 }
 
 /**
@@ -1425,11 +1315,11 @@ hg_file_seek(hg_file_t      *file,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_file_is_closed(hg_file_t *file)
 {
-	hg_return_val_if_fail (file != NULL, TRUE);
-	hg_return_val_if_fail (file->o.type == HG_TYPE_FILE, TRUE);
+	hg_return_val_if_fail (file != NULL, TRUE, HG_e_typecheck);
+	hg_return_val_if_fail (file->o.type == HG_TYPE_FILE, TRUE, HG_e_typecheck);
 
 	return file->is_closed;
 }
@@ -1442,13 +1332,13 @@ hg_file_is_closed(hg_file_t *file)
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_file_is_eof(hg_file_t *file)
 {
-	hg_return_val_if_fail (file != NULL, TRUE);
-	hg_return_val_if_fail (file->o.type == HG_TYPE_FILE, TRUE);
-	hg_return_val_if_fail (file->vtable != NULL, TRUE);
-	hg_return_val_if_fail (file->vtable->is_eof != NULL, TRUE);
+	hg_return_val_if_fail (file != NULL, TRUE, HG_e_typecheck);
+	hg_return_val_if_fail (file->o.type == HG_TYPE_FILE, TRUE, HG_e_typecheck);
+	hg_return_val_if_fail (file->vtable != NULL, TRUE, HG_e_VMerror);
+	hg_return_val_if_fail (file->vtable->is_eof != NULL, TRUE, HG_e_VMerror);
 
 	return file->is_closed || file->vtable->is_eof(file, file->user_data);
 }
@@ -1462,10 +1352,10 @@ hg_file_is_eof(hg_file_t *file)
 void
 hg_file_clear_eof(hg_file_t *file)
 {
-	hg_return_if_fail (file != NULL);
-	hg_return_if_fail (file->o.type == HG_TYPE_FILE);
-	hg_return_if_fail (file->vtable != NULL);
-	hg_return_if_fail (file->vtable->clear_eof != NULL);
+	hg_return_if_fail (file != NULL, HG_e_typecheck);
+	hg_return_if_fail (file->o.type == HG_TYPE_FILE, HG_e_typecheck);
+	hg_return_if_fail (file->vtable != NULL, HG_e_VMerror);
+	hg_return_if_fail (file->vtable->clear_eof != NULL, HG_e_VMerror);
 
 	file->vtable->clear_eof(file, file->user_data);
 }
@@ -1479,13 +1369,13 @@ hg_file_clear_eof(hg_file_t *file)
  *
  * Returns:
  */
-gssize
-hg_file_append_printf(hg_file_t   *file,
-		      gchar const *format,
+hg_size_t
+hg_file_append_printf(hg_file_t       *file,
+		      hg_char_t const *format,
 		      ...)
 {
 	va_list ap;
-	gssize retval;
+	hg_size_t retval;
 
 	va_start(ap, format);
 	retval = hg_file_append_vprintf(file, format, ap);
@@ -1504,29 +1394,21 @@ hg_file_append_printf(hg_file_t   *file,
  *
  * Returns:
  */
-gssize
-hg_file_append_vprintf(hg_file_t   *file,
-		       gchar const *format,
-		       va_list      args)
+hg_size_t
+hg_file_append_vprintf(hg_file_t       *file,
+		       hg_char_t const *format,
+		       va_list          args)
 {
-	gchar *buffer;
-	gssize retval;
-	GError *err = NULL;
+	hg_char_t *buffer;
+	hg_size_t retval;
 
-	hg_return_val_if_fail (file != NULL, -1);
-	hg_return_val_if_fail (file->o.type == HG_TYPE_FILE, -1);
-	hg_return_val_if_fail (format != NULL, -1);
+	hg_return_val_if_fail (file != NULL, -1, HG_e_typecheck);
+	hg_return_val_if_fail (file->o.type == HG_TYPE_FILE, -1, HG_e_typecheck);
+	hg_return_val_if_fail (format != NULL, -1, HG_e_VMerror);
 
 	buffer = g_strdup_vprintf(format, args);
-	retval = hg_file_write(file, buffer, sizeof (gchar), strlen(buffer), &err);
+	retval = hg_file_write(file, buffer, sizeof (hg_char_t), strlen(buffer));
 	g_free(buffer);
-	if (err) {
-		hg_warning("%s: %s (code: %d)",
-			   __PRETTY_FUNCTION__,
-			   err->message,
-			   err->code);
-		g_error_free(err);
-	}
 
 	return retval;
 }
@@ -1540,11 +1422,11 @@ hg_file_append_vprintf(hg_file_t   *file,
  */
 void
 hg_file_set_lineno(hg_file_t *file,
-		   gssize     n)
+		   hg_size_t  n)
 {
-	hg_return_if_fail (file != NULL);
-	hg_return_if_fail (file->o.type == HG_TYPE_FILE);
-	hg_return_if_fail (n > 0);
+	hg_return_if_fail (file != NULL, HG_e_typecheck);
+	hg_return_if_fail (file->o.type == HG_TYPE_FILE, HG_e_typecheck);
+	hg_return_if_fail (n > 0, HG_e_rangecheck);
 
 	file->lineno = n;
 }
@@ -1557,10 +1439,10 @@ hg_file_set_lineno(hg_file_t *file,
  *
  * Returns:
  */
-gssize
+hg_size_t
 hg_file_get_lineno(hg_file_t *file)
 {
-	hg_return_val_if_fail (file != NULL, -1);
+	hg_return_val_if_fail (file != NULL, -1, HG_e_typecheck);
 
 	return file->lineno;
 }
@@ -1573,11 +1455,11 @@ hg_file_get_lineno(hg_file_t *file)
  *
  * Returns:
  */
-gssize
+hg_size_t
 hg_file_get_position(hg_file_t *file)
 {
-	hg_return_val_if_fail (file != NULL, -1);
-	hg_return_val_if_fail (file->o.type == HG_TYPE_FILE, -1);
+	hg_return_val_if_fail (file != NULL, -1, HG_e_typecheck);
+	hg_return_val_if_fail (file->o.type == HG_TYPE_FILE, -1, HG_e_typecheck);
 
 	return file->position;
 }
@@ -1592,11 +1474,11 @@ hg_file_get_position(hg_file_t *file)
  */
 void
 hg_file_set_yybuffer(hg_file_t                        *file,
-		     gpointer                          yybuffer,
+		     hg_pointer_t                      yybuffer,
 		     hg_file_yybuffer_finalizer_func_t func,
-		     gpointer                          user_data)
+		     hg_pointer_t                      user_data)
 {
-	hg_return_if_fail (file != NULL);
+	hg_return_if_fail (file != NULL, HG_e_typecheck);
 
 	if (file->yybuffer &&
 	    file->yybuffer != yybuffer) {
@@ -1617,35 +1499,30 @@ hg_file_set_yybuffer(hg_file_t                        *file,
  *
  * Returns:
  */
-gpointer
+hg_pointer_t
 hg_file_get_yybuffer(hg_file_t *file)
 {
-	hg_return_val_if_fail (file != NULL, NULL);
+	hg_return_val_if_fail (file != NULL, NULL, HG_e_typecheck);
 
 	return file->yybuffer;
 }
 
 /**
  * hg_file_set_error:
- * @error:
  * @function:
- * @errno_:
  *
  * FIXME
  */
 void
-hg_file_set_error(GError      **error,
-		  const gchar  *function,
-		  guint         errno_)
+hg_file_set_error(const hg_char_t  *function)
 {
-	hg_vm_error_t e = 0;
-	gchar *msg;
+	hg_char_t *msg;
+	hg_error_t e = 0;
 
-	hg_return_if_fail (error != NULL);
+	hg_fileerrno = errno;
+	msg = g_strdup_printf("%s: %s", function, g_strerror(hg_fileerrno));
 
-	msg = g_strdup_printf("%s: %s", function, g_strerror(errno_));
-
-	switch (errno_) {
+	switch (hg_fileerrno) {
 	    case 0:
 		    /* ??? */
 		    break;
@@ -1656,33 +1533,33 @@ hg_file_set_error(GError      **error,
 	    case ENOTEMPTY:
 	    case EPERM:
 	    case EROFS:
-		    e = HG_VM_e_invalidaccess;
+		    e = HG_e_invalidaccess;
 		    break;
 	    case EAGAIN:
 	    case EBUSY:
 	    case EIO:
 	    case ENOSPC:
 	    case EINVAL:
-		    e = HG_VM_e_ioerror;
+		    e = HG_e_ioerror;
 		    break;
 	    case EMFILE:
-		    e = HG_VM_e_limitcheck;
+		    e = HG_e_limitcheck;
 		    break;
 	    case ENAMETOOLONG:
 	    case ENODEV:
 	    case ENOENT:
-		    e = HG_VM_e_undefinedfilename;
+		    e = HG_e_undefinedfilename;
 		    break;
 	    case ENOMEM:
-		    e = HG_VM_e_VMerror;
+		    e = HG_e_VMerror;
 		    break;
 	    default:
 		    hg_warning("No matching error code for: %s", msg);
-		    e = HG_VM_e_VMerror;
+		    e = HG_e_VMerror;
 		    break;
 	}
 	if (e > 0) {
-		g_set_error(error, HG_ERROR, e, msg);
+		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, e);
 	}
 	g_free(msg);
 }

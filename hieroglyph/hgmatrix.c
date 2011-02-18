@@ -58,7 +58,7 @@ hg_matrix_init(hg_matrix_t *matrix,
 	       hg_real_t    x0,
 	       hg_real_t    y0)
 {
-	hg_return_if_fail (matrix != NULL);
+	hg_return_if_fail (matrix != NULL, HG_e_typecheck);
 
 	matrix->mtx.xx = xx;
 	matrix->mtx.xy = xy;
@@ -93,8 +93,8 @@ hg_matrix_invert(hg_matrix_t *matrix1,
 {
 	hg_real_t det;
 
-	hg_return_val_if_fail (matrix1 != NULL, FALSE);
-	hg_return_val_if_fail (matrix2 != NULL, FALSE);
+	hg_return_val_if_fail (matrix1 != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (matrix2 != NULL, FALSE, HG_e_typecheck);
 
 	/*
 	 * detA = a11a22a33 + a21a32a13 + a31a12a23
@@ -140,9 +140,9 @@ hg_matrix_multiply(hg_matrix_t *matrix1,
 {
 	hg_matrix_t ret;
 
-	hg_return_if_fail (matrix1 != NULL);
-	hg_return_if_fail (matrix2 != NULL);
-	hg_return_if_fail (matrix3 != NULL);
+	hg_return_if_fail (matrix1 != NULL, HG_e_typecheck);
+	hg_return_if_fail (matrix2 != NULL, HG_e_typecheck);
+	hg_return_if_fail (matrix3 != NULL, HG_e_typecheck);
 
 	ret.mtx.xx = matrix1->mtx.xx * matrix2->mtx.xx + matrix1->mtx.yx * matrix2->mtx.xy;
 	ret.mtx.yx = matrix1->mtx.xx * matrix2->mtx.yx + matrix1->mtx.yx * matrix2->mtx.yy;
@@ -169,7 +169,7 @@ hg_matrix_translate(hg_matrix_t *matrix,
 {
 	hg_matrix_t t;
 
-	hg_return_if_fail (matrix != NULL);
+	hg_return_if_fail (matrix != NULL, HG_e_typecheck);
 
 	hg_matrix_init(&t, 1, 0, 0, 1, tx, ty);
 
@@ -191,7 +191,7 @@ hg_matrix_rotate(hg_matrix_t *matrix,
 	hg_real_t cos_a = cos(angle / 180 * M_PI);
 	hg_real_t sin_a = sin(angle / 180 * M_PI);
 
-	hg_return_if_fail (matrix != NULL);
+	hg_return_if_fail (matrix != NULL, HG_e_typecheck);
 
 	hg_matrix_init(&t, cos_a, sin_a, -sin_a, cos_a, 0, 0);
 
@@ -219,7 +219,7 @@ hg_matrix_get_affine(hg_matrix_t *matrix,
 		     hg_real_t   *x0,
 		     hg_real_t   *y0)
 {
-	hg_return_if_fail (matrix != NULL);
+	hg_return_if_fail (matrix != NULL, HG_e_typecheck);
 
 	if (xx)
 		*xx = matrix->mtx.xx;

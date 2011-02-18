@@ -117,9 +117,20 @@
 #define TRUE	(!FALSE)
 #endif
 
-/* interconversion between hg_quark_t and hg_pointer_t */
+/* Define min and max constants for the fixed size numerical types */
+#define HG_MININT	((hg_int_t) 0x80000000)
+#define HG_MAXINT	((hg_int_t) 0x7fffffff)
+#define HG_MAXUINT	((hg_uint_t) 0xffffffff)
+
+/* interconversion between hg_*_t and hg_pointer_t */
 #define HGPOINTER_TO_QUARK(_p_)	((hg_quark_t)(_p_))
 #define HGQUARK_TO_POINTER(_q_)	((hg_pointer_t)(hg_quark_t)(_q_))
+#define HGPOINTER_TO_INT(_p_)	((hg_int_t)(hg_quark_t)(_p_))
+#define HGINT_TO_POINTER(_i_)	((hg_pointer_t)(hg_quark_t)(_i_))
+
+/* handling structure fields through their offsets */
+#define HG_STRUCT_MEMBER_P(_struct_p_,_struct_offset_)			\
+	((hg_pointer_t)((hg_char_t *)(_struct_p_) + (hg_quark_t)(_struct_offset_)))
 
 /* Macros to adjust an alignment */
 #define HG_ALIGNED_TO(_x_,_y_)			\

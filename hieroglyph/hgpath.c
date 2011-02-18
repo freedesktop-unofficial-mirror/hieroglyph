@@ -25,7 +25,6 @@
 #include "config.h"
 #endif
 
-#include <glib.h>
 #include "hgmem.h"
 #include "hgreal.h"
 #include "hgpath.h"
@@ -37,15 +36,15 @@
 typedef struct _hg_path_bbox_private_t {
 	hg_path_bbox_t bbox1;
 	hg_path_bbox_t bbox2;
-	gboolean       initialized:1;
-	gboolean       all_moveto:1;
+	hg_bool_t      initialized:1;
+	hg_bool_t      all_moveto:1;
 } hg_path_bbox_private_t;
 
 
 HG_DEFINE_VTABLE_WITH (path, NULL, NULL, NULL);
 
 /*< private >*/
-static gsize
+static hg_usize_t
 _hg_object_path_get_capsulated_size(void)
 {
 	return HG_ALIGNED_TO_POINTER (sizeof (hg_path_t));
@@ -57,7 +56,7 @@ _hg_object_path_get_allocation_flags(void)
 	return HG_MEM_FLAGS_DEFAULT;
 }
 
-static gboolean
+static hg_bool_t
 _hg_object_path_initialize(hg_object_t *object,
 			   va_list      args)
 {
@@ -79,16 +78,16 @@ _hg_object_path_initialize(hg_object_t *object,
 }
 
 static hg_quark_t
-_hg_object_path_copy(hg_object_t              *object,
-		     hg_quark_iterate_func_t   func,
-		     hg_pointer_t              user_data,
-		     hg_pointer_t             *ret)
+_hg_object_path_copy(hg_object_t             *object,
+		     hg_quark_iterate_func_t  func,
+		     hg_pointer_t             user_data,
+		     hg_pointer_t            *ret)
 {
 	hg_path_t *path = (hg_path_t *)object, *p = NULL;
 	hg_path_node_t *on, *nn;
 	hg_quark_t retval;
 
-	hg_return_val_if_fail (object->type == HG_TYPE_PATH, Qnil);
+	hg_return_val_if_fail (object->type == HG_TYPE_PATH, Qnil, HG_e_typecheck);
 
 	if (object->on_copying != Qnil)
 		return object->on_copying;
@@ -96,8 +95,8 @@ _hg_object_path_copy(hg_object_t              *object,
 	object->on_copying = retval = hg_path_new(path->o.mem, (hg_pointer_t *)&p);
 	if (retval != Qnil) {
 		p->length = path->length;
-		on = HG_MEM_LOCK (path->o.mem, path->qnode, NULL);
-		nn = HG_MEM_LOCK (path->o.mem, p->qnode, NULL);
+		on = HG_MEM_LOCK (path->o.mem, path->qnode);
+		nn = HG_MEM_LOCK (path->o.mem, p->qnode);
 		if (on == NULL ||
 		    nn == NULL) {
 			goto bail;
@@ -122,51 +121,50 @@ _hg_object_path_copy(hg_object_t              *object,
 	return retval;
 }
 
-static gchar *
-_hg_object_path_to_cstr(hg_object_t              *object,
-			hg_quark_iterate_func_t   func,
-			gpointer                  user_data,
-			GError                  **error)
+static hg_char_t *
+_hg_object_path_to_cstr(hg_object_t             *object,
+			hg_quark_iterate_func_t  func,
+			hg_pointer_t             user_data)
 {
 	return NULL;
 }
 
-static hg_error_t
-_hg_object_path_gc_mark(hg_object_t           *object,
-			hg_gc_iterate_func_t   func,
-			gpointer               user_data)
+static hg_bool_t
+_hg_object_path_gc_mark(hg_object_t          *object,
+			hg_gc_iterate_func_t  func,
+			hg_pointer_t          user_data)
 {
 	hg_path_t *path = (hg_path_t *)object;
 
-	hg_return_val_if_fail (object->type == HG_TYPE_PATH, HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck));
+	hg_return_val_if_fail (object->type == HG_TYPE_PATH, FALSE, HG_e_typecheck);
 
 	hg_debug(HG_MSGCAT_GC, "path: marking node");
 
 	return hg_mem_gc_mark(path->o.mem, path->qnode);
 }
 
-static gboolean
+static hg_bool_t
 _hg_object_path_compare(hg_object_t             *o1,
 			hg_object_t             *o2,
 			hg_quark_compare_func_t  func,
-			gpointer                 user_data)
+			hg_pointer_t             user_data)
 {
 	return FALSE;
 }
 
-static gboolean
+static hg_bool_t
 _hg_path_add(hg_path_t      *path,
 	     hg_path_type_t  type,
-	     gdouble         x,
-	     gdouble         y)
+	     hg_real_t       x,
+	     hg_real_t       y)
 {
 	hg_path_node_t *node;
-	gdouble cx = 0.0, cy = 0.0;
-	gboolean retval = TRUE;
+	hg_real_t cx = 0.0, cy = 0.0;
+	hg_bool_t retval = TRUE;
 
-	hg_return_val_if_fail (path != NULL, FALSE);
-	hg_return_val_if_fail (type < HG_PATH_END, FALSE);
-	hg_return_val_if_fail (path->length < HG_PATH_MAX, FALSE);
+	hg_return_val_if_fail (path != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (type < HG_PATH_END, FALSE, HG_e_rangecheck);
+	hg_return_val_if_fail (path->length < HG_PATH_MAX, FALSE, HG_e_limitcheck);
 
 	hg_return_val_if_lock_fail (node,
 				    path->o.mem,
@@ -241,14 +239,14 @@ _hg_path_add(hg_path_t      *path,
 }
 
 static void
-_hg_path_bbox_nop(gpointer user_data)
+_hg_path_bbox_nop(hg_pointer_t user_data)
 {
 }
 
 static void
-_hg_path_bbox_moveto(gpointer user_data,
-		     gdouble  x,
-		     gdouble  y)
+_hg_path_bbox_moveto(hg_pointer_t user_data,
+		     hg_real_t    x,
+		     hg_real_t    y)
 {
 	hg_path_bbox_private_t *priv = (hg_path_bbox_private_t *)user_data;
 
@@ -280,9 +278,9 @@ _hg_path_bbox_moveto(gpointer user_data,
 }
 
 static void
-_hg_path_bbox_lineto(gpointer user_data,
-		     gdouble  x,
-		     gdouble  y)
+_hg_path_bbox_lineto(hg_pointer_t user_data,
+		     hg_real_t    x,
+		     hg_real_t    y)
 {
 	hg_path_bbox_private_t *priv = (hg_path_bbox_private_t *)user_data;
 
@@ -304,13 +302,13 @@ _hg_path_bbox_lineto(gpointer user_data,
 }
 
 static void
-_hg_path_bbox_curveto(gpointer user_data,
-		      gdouble  x1,
-		      gdouble  y1,
-		      gdouble  x2,
-		      gdouble  y2,
-		      gdouble  x3,
-		      gdouble  y3)
+_hg_path_bbox_curveto(hg_pointer_t user_data,
+		      hg_real_t    x1,
+		      hg_real_t    y1,
+		      hg_real_t    x2,
+		      hg_real_t    y2,
+		      hg_real_t    x3,
+		      hg_real_t    y3)
 {
 	hg_path_bbox_private_t *priv = (hg_path_bbox_private_t *)user_data;
 
@@ -366,15 +364,15 @@ _hg_path_bbox_curveto(gpointer user_data,
  * Returns:
  */
 hg_quark_t
-hg_path_new(hg_mem_t *mem,
-	    gpointer *ret)
+hg_path_new(hg_mem_t     *mem,
+	    hg_pointer_t *ret)
 {
 	hg_quark_t retval;
 	hg_path_t *path = NULL;
 
-	hg_return_val_if_fail (mem != NULL, Qnil);
+	hg_return_val_if_fail (mem != NULL, Qnil, HG_e_VMerror);
 
-	retval = hg_object_new(mem, (gpointer *)&path, HG_TYPE_PATH, 0);
+	retval = hg_object_new(mem, (hg_pointer_t *)&path, HG_TYPE_PATH, 0);
 	if (retval != Qnil) {
 		if (ret)
 			*ret = path;
@@ -395,14 +393,14 @@ hg_path_new(hg_mem_t *mem,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_path_get_current_point(hg_path_t *path,
-			  gdouble   *x,
-			  gdouble   *y)
+			  hg_real_t *x,
+			  hg_real_t *y)
 {
 	hg_path_node_t *node;
 
-	hg_return_val_if_fail (path != NULL, FALSE);
+	hg_return_val_if_fail (path != NULL, FALSE, HG_e_typecheck);
 
 	if (path->length == 0)
 		return FALSE;
@@ -432,20 +430,20 @@ hg_path_get_current_point(hg_path_t *path,
  */
 #if 0
 hg_quark_t
-hg_path_reverse(hg_path_t *path,
-		gpointer  *ret)
+hg_path_reverse(hg_path_t    *path,
+		hg_pointer_t *ret)
 {
 	hg_quark_t retval;
 	hg_path_t *new_path;
 	hg_path_node_t *node, *new_node;
-	gboolean closed = FALSE;
+	hg_bool_t closed = FALSE;
 
-	hg_return_val_if_fail (path != NULL, Qnil);
-	hg_return_val_if_fail (path->length > 0, Qnil);
+	hg_return_val_if_fail (path != NULL, Qnil, HG_e_typecheck);
+	hg_return_val_if_fail (path->length > 0, Qnil, HG_e_VMerror);
 
-	retval = hg_path_new(path->o.mem, (gpointer *)&new_path);
+	retval = hg_path_new(path->o.mem, (hg_pointer_t *)&new_path);
 	if (retval != Qnil) {
-		gssize i;
+		hg_size_t i;
 
 		node = HG_MEM_LOCK (path->o.mem, path->qnode, NULL);
 		new_node = HG_MEM_LOCK (new_path->o.mem, new_path->qnode, NULL);
@@ -507,7 +505,7 @@ hg_path_reverse(hg_path_t *path,
  *
  * FIXME
  */
-gboolean
+hg_bool_t
 hg_path_close(hg_path_t *path)
 {
 	return _hg_path_add(path, HG_PATH_CLOSEPATH, 0.0, 0.0);
@@ -523,10 +521,10 @@ hg_path_close(hg_path_t *path)
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_path_moveto(hg_path_t *path,
-	       gdouble    x,
-	       gdouble    y)
+	       hg_real_t  x,
+	       hg_real_t  y)
 {
 	return _hg_path_add(path, HG_PATH_MOVETO, x, y);
 }
@@ -541,12 +539,12 @@ hg_path_moveto(hg_path_t *path,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_path_rmoveto(hg_path_t *path,
-		gdouble    x,
-		gdouble    y)
+		hg_real_t  x,
+		hg_real_t  y)
 {
-	gboolean retval = hg_path_get_current_point(path, NULL, NULL);
+	hg_bool_t retval = hg_path_get_current_point(path, NULL, NULL);
 
 	if (retval)
 		return _hg_path_add(path, HG_PATH_RMOVETO, x, y);
@@ -564,12 +562,12 @@ hg_path_rmoveto(hg_path_t *path,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_path_lineto(hg_path_t *path,
-	       gdouble    x,
-	       gdouble    y)
+	       hg_real_t  x,
+	       hg_real_t  y)
 {
-	gboolean retval = hg_path_get_current_point(path, NULL, NULL);
+	hg_bool_t retval = hg_path_get_current_point(path, NULL, NULL);
 
 	if (retval)
 		return _hg_path_add(path, HG_PATH_LINETO, x, y);
@@ -587,12 +585,12 @@ hg_path_lineto(hg_path_t *path,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_path_rlineto(hg_path_t *path,
-		gdouble    x,
-		gdouble    y)
+		hg_real_t  x,
+		hg_real_t  y)
 {
-	gboolean retval = hg_path_get_current_point(path, NULL, NULL);
+	hg_bool_t retval = hg_path_get_current_point(path, NULL, NULL);
 
 	if (retval)
 		return _hg_path_add(path, HG_PATH_RLINETO, x, y);
@@ -614,16 +612,16 @@ hg_path_rlineto(hg_path_t *path,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_path_curveto(hg_path_t *path,
-		gdouble    x1,
-		gdouble    y1,
-		gdouble    x2,
-		gdouble    y2,
-		gdouble    x3,
-		gdouble    y3)
+		hg_real_t  x1,
+		hg_real_t  y1,
+		hg_real_t  x2,
+		hg_real_t  y2,
+		hg_real_t  x3,
+		hg_real_t  y3)
 {
-	gboolean retval = !hg_path_get_current_point(path, NULL, NULL);
+	hg_bool_t retval = !hg_path_get_current_point(path, NULL, NULL);
 
 	if (!retval) {
 		retval |= !_hg_path_add(path, HG_PATH_CURVETO, x1, y1);
@@ -648,16 +646,16 @@ hg_path_curveto(hg_path_t *path,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_path_rcurveto(hg_path_t *path,
-		 gdouble    x1,
-		 gdouble    y1,
-		 gdouble    x2,
-		 gdouble    y2,
-		 gdouble    x3,
-		 gdouble    y3)
+		 hg_real_t  x1,
+		 hg_real_t  y1,
+		 hg_real_t  x2,
+		 hg_real_t  y2,
+		 hg_real_t  x3,
+		 hg_real_t  y3)
 {
-	gboolean retval = !hg_path_get_current_point(path, NULL, NULL);
+	hg_bool_t retval = !hg_path_get_current_point(path, NULL, NULL);
 
 	if (!retval) {
 		retval |= !_hg_path_add(path, HG_PATH_RCURVETO, x1, y1);
@@ -681,18 +679,18 @@ hg_path_rcurveto(hg_path_t *path,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_path_arc(hg_path_t *path,
-	    gdouble    x,
-	    gdouble    y,
-	    gdouble    r,
-	    gdouble    angle1,
-	    gdouble    angle2)
+	    hg_real_t  x,
+	    hg_real_t  y,
+	    hg_real_t  r,
+	    hg_real_t  angle1,
+	    hg_real_t  angle2)
 {
-	gdouble r_sin_a1, r_cos_a1;
-	gdouble r_sin_a2, r_cos_a2;
-	gdouble h;
-	gboolean retval = hg_path_get_current_point(path, NULL, NULL);
+	hg_real_t r_sin_a1, r_cos_a1;
+	hg_real_t r_sin_a2, r_cos_a2;
+	hg_real_t h;
+	hg_bool_t retval = hg_path_get_current_point(path, NULL, NULL);
 
 	if (angle1 < 0.0)
 		angle1 = 2 * G_PI - angle1;
@@ -733,18 +731,18 @@ hg_path_arc(hg_path_t *path,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_path_arcn(hg_path_t *path,
-	     gdouble    x,
-	     gdouble    y,
-	     gdouble    r,
-	     gdouble    angle1,
-	     gdouble    angle2)
+	     hg_real_t  x,
+	     hg_real_t  y,
+	     hg_real_t  r,
+	     hg_real_t  angle1,
+	     hg_real_t  angle2)
 {
-	gdouble r_sin_a1, r_cos_a1;
-	gdouble r_sin_a2, r_cos_a2;
-	gdouble h;
-	gboolean retval = hg_path_get_current_point(path, NULL, NULL);
+	hg_real_t r_sin_a1, r_cos_a1;
+	hg_real_t r_sin_a2, r_cos_a2;
+	hg_real_t h;
+	hg_bool_t retval = hg_path_get_current_point(path, NULL, NULL);
 
 	if (angle1 < 0.0)
 		angle1 = 2 * G_PI - angle1;
@@ -786,36 +784,36 @@ hg_path_arcn(hg_path_t *path,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_path_arcto(hg_path_t *path,
-	      gdouble    x1,
-	      gdouble    y1,
-	      gdouble    x2,
-	      gdouble    y2,
-	      gdouble    r,
-	      gdouble    tp[4])
+	      hg_real_t  x1,
+	      hg_real_t  y1,
+	      hg_real_t  x2,
+	      hg_real_t  y2,
+	      hg_real_t  r,
+	      hg_real_t  tp[4])
 {
-	gdouble x0 = 0.0, y0 = 0.0;
-	gboolean retval = !hg_path_get_current_point(path, &x0, &y0);
+	hg_real_t x0 = 0.0, y0 = 0.0;
+	hg_bool_t retval = !hg_path_get_current_point(path, &x0, &y0);
 
 	if (!retval) {
 		/* calculate the tangent points */
 		/* a = <x0,y0>, b = <x1,y1>, c = <x2,y2> */
-		gdouble d_ab_x = x0 - x1, d_ab_y = y0 - y1;
-		gdouble d_bc_x = x2 - x1, d_bc_y = y2 - y1;
-		gdouble _ab_ = sqrt(d_ab_x * d_ab_x + d_ab_y * d_ab_y);
-		gdouble _bc_ = sqrt(d_bc_x * d_bc_x + d_bc_y * d_bc_y);
-		gdouble a_o_c = d_ab_x * d_bc_x + d_ab_y * d_bc_y;
-		gdouble a_x_c = d_ab_y * d_bc_x - d_bc_y * d_ab_x;
-		gdouble common = r * (_ab_ * _bc_ + a_o_c);
-		gdouble _t1b_ = common * _bc_ / (_ab_ * a_x_c);
-		gdouble _t2b_ = common * _ab_ / (_bc_ * a_x_c);
-		gdouble ca = fabs(_t1b_ / _bc_);
-		gdouble cc = fabs(_t2b_ / _ab_);
-		gdouble t1x = d_ab_x * ca + x1;
-		gdouble t1y = d_ab_y * ca + y1;
-		gdouble t2x = d_bc_x * cc + x1;
-		gdouble t2y = d_bc_y * cc + y1;
+		hg_real_t d_ab_x = x0 - x1, d_ab_y = y0 - y1;
+		hg_real_t d_bc_x = x2 - x1, d_bc_y = y2 - y1;
+		hg_real_t _ab_ = sqrt(d_ab_x * d_ab_x + d_ab_y * d_ab_y);
+		hg_real_t _bc_ = sqrt(d_bc_x * d_bc_x + d_bc_y * d_bc_y);
+		hg_real_t a_o_c = d_ab_x * d_bc_x + d_ab_y * d_bc_y;
+		hg_real_t a_x_c = d_ab_y * d_bc_x - d_bc_y * d_ab_x;
+		hg_real_t common = r * (_ab_ * _bc_ + a_o_c);
+		hg_real_t _t1b_ = common * _bc_ / (_ab_ * a_x_c);
+		hg_real_t _t2b_ = common * _ab_ / (_bc_ * a_x_c);
+		hg_real_t ca = fabs(_t1b_ / _bc_);
+		hg_real_t cc = fabs(_t2b_ / _ab_);
+		hg_real_t t1x = d_ab_x * ca + x1;
+		hg_real_t t1y = d_ab_y * ca + y1;
+		hg_real_t t2x = d_bc_x * cc + x1;
+		hg_real_t t2y = d_bc_y * cc + y1;
 
 		if (tp) {
 			tp[0] = t1x;
@@ -843,41 +841,38 @@ hg_path_arcto(hg_path_t *path,
  * hg_path_operate:
  * @path:
  * @vtable:
- * @error:
  *
  * FIXME
  *
  * Returns:
  */
-gboolean
-hg_path_operate(hg_path_t                 *path,
-		hg_path_operate_vtable_t  *vtable,
-		gpointer                   user_data,
-		GError                   **error)
+hg_bool_t
+hg_path_operate(hg_path_t                *path,
+		hg_path_operate_vtable_t *vtable,
+		hg_pointer_t              user_data)
 {
 	hg_path_node_t *node;
-	gboolean retval = TRUE;
-	gsize i;
+	hg_bool_t retval = TRUE;
+	hg_usize_t i;
 
-	hg_return_val_with_gerror_if_fail (path != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (vtable != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (vtable->new_path != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (vtable->moveto != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (vtable->lineto != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (vtable->curveto != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (vtable->close_path != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (path != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (vtable != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (vtable->new_path != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (vtable->moveto != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (vtable->lineto != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (vtable->curveto != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (vtable->close_path != NULL, FALSE, HG_e_VMerror);
 
-	hg_return_val_with_gerror_if_lock_fail (node,
-						path->o.mem,
-						path->qnode,
-						error,
-						FALSE);
+	hg_return_val_if_lock_fail (node,
+				    path->o.mem,
+				    path->qnode,
+				    FALSE);
 
 	vtable->new_path(user_data);
 	for (i = 0; i < path->length; i++) {
 		switch (node[i].type) {
 		    case HG_PATH_SETBBOX:
-			    g_assert("XXX: not yet implemented.");
+			    hg_fatal("XXX: not yet implemented.");
 			    break;
 		    case HG_PATH_RMOVETO:
 			    if (vtable->rmoveto) {
@@ -919,7 +914,7 @@ hg_path_operate(hg_path_t                 *path,
 			    vtable->close_path(user_data);
 			    break;
 		    case HG_PATH_UCACHE:
-			    g_assert("XXX: not yet implemented.");
+			    hg_fatal("XXX: not yet implemented.");
 			    break;
 		    default:
 			    hg_warning("%s: Unknown path type: %d",
@@ -945,11 +940,10 @@ hg_path_operate(hg_path_t                 *path,
  *
  * Returns:
  */
-gboolean
-hg_path_get_bbox(hg_path_t       *path,
-		 gboolean         ignore_last_moveto,
-		 hg_path_bbox_t  *ret,
-		 GError         **error)
+hg_bool_t
+hg_path_get_bbox(hg_path_t      *path,
+		 hg_bool_t       ignore_last_moveto,
+		 hg_path_bbox_t *ret)
 {
 	hg_path_bbox_private_t priv;
 	hg_path_operate_vtable_t vtable = {
@@ -962,13 +956,13 @@ hg_path_get_bbox(hg_path_t       *path,
 		_hg_path_bbox_curveto, /* curveto */
 		NULL /* rcurveto */
 	};
-	gboolean retval;
+	hg_bool_t retval;
 
-	hg_return_val_with_gerror_if_fail (path != NULL, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (path != NULL, FALSE, HG_e_typecheck);
 
 	if (path->length == 0) {
-		g_set_error(error, HG_ERROR, HG_VM_e_nocurrentpoint,
-			    "no current point");
+		hg_debug(HG_MSGCAT_PATH, "no current point");
+		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_nocurrentpoint);
 		return FALSE;
 	}
 	memset(&priv, 0, sizeof (hg_path_bbox_private_t));
@@ -976,7 +970,7 @@ hg_path_get_bbox(hg_path_t       *path,
 	priv.initialized = FALSE;
 	priv.all_moveto = TRUE;
 
-	if ((retval = hg_path_operate(path, &vtable, &priv, error))) {
+	if ((retval = hg_path_operate(path, &vtable, &priv))) {
 		if (ret) {
 			if (ignore_last_moveto)
 				memcpy(ret, &priv.bbox2, sizeof (hg_path_bbox_t));

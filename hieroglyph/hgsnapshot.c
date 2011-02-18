@@ -38,13 +38,13 @@ struct _hg_snapshot_t {
 HG_DEFINE_VTABLE (snapshot);
 
 /*< private >*/
-static gsize
+static hg_usize_t
 _hg_object_snapshot_get_capsulated_size(void)
 {
 	return HG_ALIGNED_TO_POINTER (sizeof (hg_snapshot_t));
 }
 
-static guint
+static hg_uint_t
 _hg_object_snapshot_get_allocation_flags(void)
 {
 	return HG_MEM_FLAGS_DEFAULT_WITHOUT_RESTORABLE;
@@ -62,7 +62,7 @@ _hg_object_snapshot_free(hg_object_t *object)
 {
 	hg_snapshot_t *snapshot = (hg_snapshot_t *)object;
 
-	hg_return_if_fail (object->type == HG_TYPE_SNAPSHOT);
+	hg_return_if_fail (object->type == HG_TYPE_SNAPSHOT, HG_e_typecheck);
 
 	if (snapshot->snapshot)
 		hg_mem_snapshot_free(snapshot->o.mem,
@@ -75,30 +75,29 @@ _hg_object_snapshot_copy(hg_object_t             *object,
 			 hg_pointer_t             user_data,
 			 hg_pointer_t            *ret)
 {
-	hg_return_val_if_fail (object->type == HG_TYPE_SNAPSHOT, Qnil);
+	hg_return_val_if_fail (object->type == HG_TYPE_SNAPSHOT, Qnil, HG_e_typecheck);
 
 	return object->self;
 }
 
-static gchar *
-_hg_object_snapshot_to_cstr(hg_object_t              *object,
-			    hg_quark_iterate_func_t   func,
-			    hg_pointer_t              user_data,
-			    GError                  **error)
+static hg_char_t *
+_hg_object_snapshot_to_cstr(hg_object_t             *object,
+			    hg_quark_iterate_func_t  func,
+			    hg_pointer_t             user_data)
 {
-	hg_return_val_if_fail (object->type == HG_TYPE_SNAPSHOT, NULL);
+	hg_return_val_if_fail (object->type == HG_TYPE_SNAPSHOT, NULL, HG_e_typecheck);
 
 	return g_strdup("-save-");
 }
 
-static hg_error_t
-_hg_object_snapshot_gc_mark(hg_object_t           *object,
-			    hg_gc_iterate_func_t   func,
-			    hg_pointer_t           user_data)
+static hg_bool_t
+_hg_object_snapshot_gc_mark(hg_object_t          *object,
+			    hg_gc_iterate_func_t  func,
+			    hg_pointer_t          user_data)
 {
-	hg_return_val_if_fail (object->type == HG_TYPE_SNAPSHOT, HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck));
+	hg_return_val_if_fail (object->type == HG_TYPE_SNAPSHOT, FALSE, HG_e_typecheck);
 
-	return HG_ERROR_ (HG_STATUS_SUCCESS, 0);
+	return TRUE;
 }
 
 static hg_bool_t
@@ -107,8 +106,8 @@ _hg_object_snapshot_compare(hg_object_t             *o1,
 			    hg_quark_compare_func_t  func,
 			    hg_pointer_t             user_data)
 {
-	hg_return_val_if_fail (o1->type == HG_TYPE_SNAPSHOT, FALSE);
-	hg_return_val_if_fail (o2->type == HG_TYPE_SNAPSHOT, FALSE);
+	hg_return_val_if_fail (o1->type == HG_TYPE_SNAPSHOT, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (o2->type == HG_TYPE_SNAPSHOT, FALSE, HG_e_typecheck);
 
 	return o1->self == o2->self;
 }
@@ -129,7 +128,7 @@ hg_snapshot_new(hg_mem_t     *mem,
 	hg_quark_t retval;
 	hg_snapshot_t *s = NULL;
 
-	hg_return_val_if_fail (mem != NULL, Qnil);
+	hg_return_val_if_fail (mem != NULL, Qnil, HG_e_VMerror);
 
 	retval = hg_object_new(mem, (hg_pointer_t *)&s, HG_TYPE_SNAPSHOT, 0);
 	if (retval != Qnil) {
@@ -153,7 +152,7 @@ hg_snapshot_new(hg_mem_t     *mem,
 hg_bool_t
 hg_snapshot_save(hg_snapshot_t *snapshot)
 {
-	hg_return_val_if_fail (snapshot != NULL, FALSE);
+	hg_return_val_if_fail (snapshot != NULL, FALSE, HG_e_typecheck);
 
 	snapshot->snapshot = hg_mem_save_snapshot(snapshot->o.mem);
 	if (snapshot->snapshot == NULL)
@@ -179,8 +178,8 @@ hg_snapshot_restore(hg_snapshot_t *snapshot,
 {
 	hg_bool_t retval;
 
-	hg_return_val_if_fail (snapshot != NULL, FALSE);
-	hg_return_val_if_fail (snapshot->snapshot != NULL, FALSE);
+	hg_return_val_if_fail (snapshot != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (snapshot->snapshot != NULL, FALSE, HG_e_VMerror);
 
 	hg_mem_collect_garbage(snapshot->o.mem);
 	retval = hg_mem_restore_snapshot(snapshot->o.mem,

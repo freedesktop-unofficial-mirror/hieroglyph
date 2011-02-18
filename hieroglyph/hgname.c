@@ -26,6 +26,7 @@
 #endif
 
 #include <string.h>
+/* XXX: GLib is still needed for the hash table */
 #include <glib.h>
 #include "hgerror.h"
 #include "hgquark.h"
@@ -39,26 +40,26 @@
 typedef struct _hg_name_t	hg_name_t;
 
 struct _hg_name_t {
-	volatile hg_int_t     ref_count;
-	volatile hg_int_t     seq_id;
-	GHashTable           *name_spool;
-	gchar               **quarks;
+	volatile hg_int_t   ref_count;
+	volatile hg_int_t   seq_id;
+	GHashTable         *name_spool;
+	hg_char_t         **quarks;
 };
 
 static hg_name_t __hg_name_pool = {0, 0, NULL, NULL};
 
 /*< private >*/
 HG_INLINE_FUNC hg_quark_t
-_hg_name_new(const gchar *string)
+_hg_name_new(const hg_char_t *string)
 {
 	hg_quark_t retval;
-	gchar *s;
+	hg_char_t *s;
 
-	hg_return_val_if_fail (__hg_name_pool.seq_id < (1LL << HG_TYPEBIT_SHIFT), Qnil);
-	hg_return_val_if_fail (__hg_name_pool.seq_id != 0, Qnil);
+	hg_return_val_if_fail (__hg_name_pool.seq_id < (1LL << HG_TYPEBIT_SHIFT), Qnil, HG_e_VMerror);
+	hg_return_val_if_fail (__hg_name_pool.seq_id != 0, Qnil, HG_e_VMerror);
 
 	if ((__hg_name_pool.seq_id - HG_enc_POSTSCRIPT_RESERVED_END) % HG_NAME_BLOCK_SIZE == 0)
-		__hg_name_pool.quarks = g_renew(gchar *,
+		__hg_name_pool.quarks = g_renew(hg_char_t *,
 						 __hg_name_pool.quarks,
 						 __hg_name_pool.seq_id - HG_enc_POSTSCRIPT_RESERVED_END + HG_NAME_BLOCK_SIZE);
 	s = g_strdup(string);
@@ -82,7 +83,7 @@ hg_name_init(void)
 	if (g_atomic_int_exchange_and_add(&__hg_name_pool.ref_count, 1) == 0) {
 		__hg_name_pool.name_spool = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 		__hg_name_pool.seq_id = HG_enc_POSTSCRIPT_RESERVED_END + 1;
-		__hg_name_pool.quarks = g_new0(gchar *, HG_NAME_BLOCK_SIZE);
+		__hg_name_pool.quarks = g_new0(hg_char_t *, HG_NAME_BLOCK_SIZE);
 	}
 	if (!hg_encoding_init()) {
 		hg_name_tini();
@@ -99,7 +100,7 @@ hg_name_tini(void)
 {
 	hg_int_t oldval;
 
-	hg_return_if_fail (__hg_name_pool.ref_count > 0);
+	hg_return_if_fail (__hg_name_pool.ref_count > 0, HG_e_VMerror);
 
 	oldval = g_atomic_int_exchange_and_add(&__hg_name_pool.ref_count, -1);
 	if (oldval == 1) {
@@ -123,8 +124,8 @@ hg_name_tini(void)
 hg_quark_t
 hg_name_new_with_encoding(hg_system_encoding_t  encoding)
 {
-	hg_return_val_if_fail (__hg_name_pool.ref_count > 0, Qnil);
-	hg_return_val_if_fail (encoding < HG_enc_POSTSCRIPT_RESERVED_END, Qnil);
+	hg_return_val_if_fail (__hg_name_pool.ref_count > 0, Qnil, HG_e_VMerror);
+	hg_return_val_if_fail (encoding < HG_enc_POSTSCRIPT_RESERVED_END, Qnil, HG_e_VMerror);
 
 	return hg_quark_new(HG_TYPE_NAME, encoding);
 }
@@ -140,15 +141,15 @@ hg_name_new_with_encoding(hg_system_encoding_t  encoding)
  * Returns:
  */
 hg_quark_t
-hg_name_new_with_string(const gchar *string,
-			gssize       len)
+hg_name_new_with_string(const hg_char_t *string,
+			hg_size_t        len)
 {
 	hg_system_encoding_t enc;
 	hg_quark_t retval;
-	gchar *s;
+	hg_char_t *s;
 
-	hg_return_val_if_fail (__hg_name_pool.ref_count > 0, Qnil);
-	hg_return_val_if_fail (string != NULL, Qnil);
+	hg_return_val_if_fail (__hg_name_pool.ref_count > 0, Qnil, HG_e_VMerror);
+	hg_return_val_if_fail (string != NULL, Qnil, HG_e_VMerror);
 
 	if (len < 0)
 		len = strlen(string);
@@ -156,7 +157,7 @@ hg_name_new_with_string(const gchar *string,
 	s = g_strndup(string, len);
 	enc = hg_encoding_lookup_system_encoding(s);
 	if (enc == HG_enc_END) {
-		gpointer p = NULL;
+		hg_pointer_t p = NULL;
 
 		/* string isn't a system encoding.
 		 * try to look up on the name database.
@@ -187,16 +188,16 @@ hg_name_new_with_string(const gchar *string,
  *
  * Returns:
  */
-const gchar *
+const hg_char_t *
 hg_name_lookup(hg_quark_t  quark)
 {
-	const gchar *retval;
+	const hg_char_t *retval;
 	hg_quark_t value;
 	hg_type_t type = hg_quark_get_type(quark);
 
-	hg_return_val_if_fail (__hg_name_pool.ref_count > 0, NULL);
-	hg_return_val_if_fail (quark != Qnil, NULL);
-	hg_return_val_if_fail (type == HG_TYPE_NAME || type == HG_TYPE_EVAL_NAME, NULL);
+	hg_return_val_if_fail (__hg_name_pool.ref_count > 0, NULL, HG_e_VMerror);
+	hg_return_val_if_fail (quark != Qnil, NULL, HG_e_VMerror);
+	hg_return_val_if_fail (type == HG_TYPE_NAME || type == HG_TYPE_EVAL_NAME, NULL, HG_e_VMerror);
 
 	value = hg_quark_get_value(quark);
 	if ((hg_system_encoding_t)value > HG_enc_POSTSCRIPT_RESERVED_END) {

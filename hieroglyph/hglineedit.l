@@ -1,7 +1,7 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /* 
  * hglineedit.l
- * Copyright (C) 2006-2010 Akira TAGOH
+ * Copyright (C) 2006-2011 Akira TAGOH
  * 
  * Authors:
  *   Akira TAGOH  <akira@tagoh.org>
@@ -26,6 +26,7 @@
 #include "config.h"
 #endif
 
+/* XXX: GLib is still needed for GString */
 #include <glib.h>
 #include "hgmem.h"
 #include "hglineedit.h"
@@ -77,7 +78,7 @@ CONTROL		[\x04%\(\)/<>\[\]\{\}]
 SPACE		[\t\f\r\n\0 ]
 HEXDIGITS	[0-9a-fA-F]
 %%
-	gint string_count = 0, proc_count = 0;
+	hg_int_t string_count = 0, proc_count = 0;
 	GString *string = g_string_new(NULL);
 
 <STRING>{
@@ -157,39 +158,32 @@ HEXDIGITS	[0-9a-fA-F]
 static hg_char_t *
 _hg_lineedit_real_get_line(hg_lineedit_t   *lineedit,
 			   const hg_char_t *prompt,
-			   gpointer         user_data)
+			   hg_pointer_t         user_data)
 {
 	GString *buf = g_string_new(NULL);
 	hg_char_t c;
-	GError *err = NULL;
 
-	hg_return_val_if_fail (lineedit->infile != NULL, NULL);
-	hg_return_val_if_fail (lineedit->outfile != NULL, NULL);
+	hg_return_val_if_fail (lineedit->infile != NULL, NULL, HG_e_VMerror);
+	hg_return_val_if_fail (lineedit->outfile != NULL, NULL, HG_e_VMerror);
 
 	if (prompt) {
 		hg_file_write(lineedit->outfile, (hg_char_t *)prompt,
-			      sizeof (hg_char_t), strlen(prompt), &err);
-		hg_file_flush(lineedit->outfile, &err);
+			      sizeof (hg_char_t), strlen(prompt));
+		hg_file_flush(lineedit->outfile);
 	}
 	while (1) {
+		hg_fileerrno = 0;
 		hg_file_read(lineedit->infile, &c,
-			     sizeof (hg_char_t), 1, &err);
-		if (err) {
-			if (err->code == EAGAIN) {
+			     sizeof (hg_char_t), 1);
+		if (!HG_ERROR_IS_SUCCESS0 ()) {
+			if (hg_fileerrno == EAGAIN) {
 				sleep(1);
-				g_clear_error(&err);
 				continue;
-			} else if (err->code == EBADF) {
+			} else if (hg_fileerrno == EBADF) {
 				g_string_free(buf, TRUE);
-				g_error_free(err);
 
 				return NULL;
 			}
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-			g_error_free(err);
 			break;
 		}
 		if (hg_file_is_eof(lineedit->infile)) {
@@ -208,14 +202,14 @@ _hg_lineedit_real_get_line(hg_lineedit_t   *lineedit,
 static void
 _hg_lineedit_real_add_history(hg_lineedit_t   *lineedit,
 			      const hg_char_t *history,
-			      gpointer         user_data)
+			      hg_pointer_t     user_data)
 {
 }
 
 static hg_bool_t
 _hg_lineedit_real_load_history(hg_lineedit_t   *lineedit,
 			       const hg_char_t *historyfile,
-			       gpointer         user_data)
+			       hg_pointer_t     user_data)
 {
 	return TRUE;
 }
@@ -223,7 +217,7 @@ _hg_lineedit_real_load_history(hg_lineedit_t   *lineedit,
 static hg_bool_t
 _hg_lineedit_real_save_history(hg_lineedit_t   *lineedit,
 			       const hg_char_t *historyfile,
-			       gpointer         user_data)
+			       hg_pointer_t     user_data)
 {
 	return TRUE;
 }
@@ -262,10 +256,10 @@ hg_lineedit_new(hg_mem_t                   *mem,
 	hg_lineedit_t *retval;
 	hg_quark_t q;
 
-	hg_return_val_if_fail (mem != NULL, NULL);
-	hg_return_val_if_fail (vtable != NULL, NULL);
+	hg_return_val_if_fail (mem != NULL, NULL, HG_e_VMerror);
+	hg_return_val_if_fail (vtable != NULL, NULL, HG_e_VMerror);
 
-	q = hg_mem_alloc(mem, sizeof (hg_lineedit_t), (gpointer *)&retval);
+	q = hg_mem_alloc(mem, sizeof (hg_lineedit_t), (hg_pointer_t *)&retval);
 	if (q == Qnil)
 		return NULL;
 
@@ -325,9 +319,9 @@ hg_lineedit_get_line(hg_lineedit_t   *lineedit,
 {
 	hg_char_t *retval;
 
-	hg_return_val_if_fail (lineedit != NULL, NULL);
-	hg_return_val_if_fail (lineedit->vtable != NULL, NULL);
-	hg_return_val_if_fail (lineedit->vtable->get_line != NULL, NULL);
+	hg_return_val_if_fail (lineedit != NULL, NULL, HG_e_VMerror);
+	hg_return_val_if_fail (lineedit->vtable != NULL, NULL, HG_e_VMerror);
+	hg_return_val_if_fail (lineedit->vtable->get_line != NULL, NULL, HG_e_VMerror);
 
 	retval = lineedit->vtable->get_line(lineedit,
 					    prompt,
@@ -405,9 +399,9 @@ hg_bool_t
 hg_lineedit_load_history(hg_lineedit_t   *lineedit,
 			 const hg_char_t *historyfile)
 {
-	hg_return_val_if_fail (lineedit != NULL, FALSE);
-	hg_return_val_if_fail (historyfile != NULL, FALSE);
-	hg_return_val_if_fail (lineedit->vtable != NULL, FALSE);
+	hg_return_val_if_fail (lineedit != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (historyfile != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (lineedit->vtable != NULL, FALSE, HG_e_VMerror);
 
 	if (lineedit->vtable->load_history)
 		return lineedit->vtable->load_history(lineedit,
@@ -430,9 +424,9 @@ hg_bool_t
 hg_lineedit_save_history(hg_lineedit_t   *lineedit,
 			 const hg_char_t *historyfile)
 {
-	hg_return_val_if_fail (lineedit != NULL, FALSE);
-	hg_return_val_if_fail (historyfile != NULL, FALSE);
-	hg_return_val_if_fail (lineedit->vtable != NULL, FALSE);
+	hg_return_val_if_fail (lineedit != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (historyfile != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (lineedit->vtable != NULL, FALSE, HG_e_VMerror);
 
 	if (lineedit->vtable->save_history)
 		return lineedit->vtable->save_history(lineedit,
@@ -453,8 +447,8 @@ void
 hg_lineedit_set_infile(hg_lineedit_t *lineedit,
 		       hg_file_t     *infile)
 {
-	hg_return_if_fail (lineedit != NULL);
-	hg_return_if_fail (infile != NULL);
+	hg_return_if_fail (lineedit != NULL, HG_e_VMerror);
+	hg_return_if_fail (infile != NULL, HG_e_VMerror);
 
 	if (lineedit->infile)
 		hg_mem_unlock_object(lineedit->infile->o.mem,
@@ -474,8 +468,8 @@ void
 hg_lineedit_set_outfile(hg_lineedit_t *lineedit,
 			hg_file_t     *outfile)
 {
-	hg_return_if_fail (lineedit != NULL);
-	hg_return_if_fail (outfile != NULL);
+	hg_return_if_fail (lineedit != NULL, HG_e_VMerror);
+	hg_return_if_fail (outfile != NULL, HG_e_VMerror);
 
 	if (lineedit->outfile)
 		hg_mem_unlock_object(lineedit->outfile->o.mem,
@@ -492,10 +486,10 @@ hg_lineedit_set_outfile(hg_lineedit_t *lineedit,
  *
  * Returns:
  */
-hg_error_t
+hg_bool_t
 hg_lineedit_gc_mark(hg_lineedit_t  *lineedit)
 {
-	hg_return_val_if_fail (lineedit != NULL, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
+	hg_return_val_if_fail (lineedit != NULL, FALSE, HG_e_VMerror);
 
 	return hg_mem_gc_mark(lineedit->mem, lineedit->qself);
 }

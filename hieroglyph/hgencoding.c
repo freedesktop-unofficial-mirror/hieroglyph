@@ -25,13 +25,13 @@
 #include "config.h"
 #endif
 
+/* XXX: GLib is still needed for the hash table */
 #include <glib.h>
 #include "hgerror.h"
 #include "hgmessages.h"
 #include "hgencoding.h"
 
 #include "hgencoding.proto.h"
-
 
 static GHashTable *__hg_encoding_index_table = NULL;
 static const hg_char_t *__hg_system_encodings =
@@ -998,7 +998,7 @@ hg_encoding_init(void)
 
 		if (n && *n != '\0') {
 			g_hash_table_insert(__hg_encoding_index_table,
-					    (hg_pointer_t)n, GINT_TO_POINTER (i+1));
+					    (hg_pointer_t)n, HGINT_TO_POINTER (i+1));
 		}
 	}
 
@@ -1030,7 +1030,7 @@ hg_encoding_tini(void)
 const hg_char_t *
 hg_encoding_get_system_encoding_name(hg_system_encoding_t encoding)
 {
-	hg_return_val_if_fail (encoding < HG_enc_POSTSCRIPT_RESERVED_END, NULL);
+	hg_return_val_if_fail (encoding < HG_enc_POSTSCRIPT_RESERVED_END, NULL, HG_e_rangecheck);
 
 	return &__hg_system_encodings[__hg_system_encodings_offset_indexes[encoding]];
 }
@@ -1048,12 +1048,12 @@ hg_encoding_lookup_system_encoding(const hg_char_t *name)
 {
 	hg_pointer_t result;
 
-	hg_return_val_if_fail (name != NULL, HG_enc_END);
-	hg_return_val_if_fail (__hg_encoding_index_table != NULL, HG_enc_END);
+	hg_return_val_if_fail (name != NULL, HG_enc_END, HG_e_VMerror);
+	hg_return_val_if_fail (__hg_encoding_index_table != NULL, HG_enc_END, HG_e_VMerror);
 
 	result = g_hash_table_lookup(__hg_encoding_index_table, name);
 	if (!result)
 		return HG_enc_END;
 
-	return GPOINTER_TO_INT (result) - 1;
+	return HGPOINTER_TO_INT (result) - 1;
 }

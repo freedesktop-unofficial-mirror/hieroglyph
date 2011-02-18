@@ -26,7 +26,6 @@
 #endif
 
 #include <string.h>
-#include <glib.h>
 #include "hgarray.h"
 #include "hgint.h"
 #include "hgmem.h"
@@ -35,23 +34,22 @@
 
 #include "hggstate.proto.h"
 
-
 HG_DEFINE_VTABLE_WITH (gstate, NULL, NULL, NULL);
 
 /*< private >*/
-static gsize
+static hg_usize_t
 _hg_object_gstate_get_capsulated_size(void)
 {
 	return HG_ALIGNED_TO_POINTER (sizeof (hg_gstate_t));
 }
 
-static guint
+static hg_uint_t
 _hg_object_gstate_get_allocation_flags(void)
 {
 	return HG_MEM_FLAGS_DEFAULT;
 }
 
-static gboolean
+static hg_bool_t
 _hg_object_gstate_initialize(hg_object_t *object,
 			     va_list      args)
 {
@@ -65,28 +63,30 @@ _hg_object_gstate_initialize(hg_object_t *object,
 }
 
 static hg_quark_t
-_hg_object_gstate_copy(hg_object_t              *object,
-		       hg_quark_iterate_func_t   func,
-		       hg_pointer_t              user_data,
-		       hg_pointer_t             *ret)
+_hg_object_gstate_copy(hg_object_t             *object,
+		       hg_quark_iterate_func_t  func,
+		       hg_pointer_t             user_data,
+		       hg_pointer_t            *ret)
 {
 	hg_gstate_t *gstate = (hg_gstate_t *)object, *g = NULL;
 	hg_quark_t retval;
 
-	hg_return_val_if_fail (object->type == HG_TYPE_GSTATE, Qnil);
+	hg_return_val_if_fail (object->type == HG_TYPE_GSTATE, Qnil, HG_e_typecheck);
 
 	if (object->on_copying != Qnil)
 		return object->on_copying;
 
-	object->on_copying = retval = hg_gstate_new(gstate->o.mem, (gpointer *)&g);
+	object->on_copying = retval = hg_gstate_new(gstate->o.mem, (hg_pointer_t *)&g);
 	if (retval != Qnil) {
 		memcpy(&g->ctm, &gstate->ctm, sizeof (hg_gstate_t) - sizeof (hg_object_t) - (sizeof (hg_quark_t) * 3));
 		if (gstate->qpath == Qnil) {
 			g->qpath = Qnil;
 		} else {
 			g->qpath = func(gstate->qpath, user_data, NULL);
-			if (g->qpath == Qnil)
+			if (g->qpath == Qnil) {
+				hg_debug(HG_MSGCAT_GSTATE, "Unable to copy the path object");
 				goto bail;
+			}
 			hg_mem_reserved_spool_remove(gstate->o.mem,
 						     g->qpath);
 		}
@@ -94,8 +94,10 @@ _hg_object_gstate_copy(hg_object_t              *object,
 			g->qclippath = Qnil;
 		} else {
 			g->qclippath = func(gstate->qclippath, user_data, NULL);
-			if (g->qclippath == Qnil)
+			if (g->qclippath == Qnil) {
+				hg_debug(HG_MSGCAT_GSTATE, "Unable to copy the clippath object");
 				goto bail;
+			}
 			hg_mem_reserved_spool_remove(gstate->o.mem,
 						     g->qclippath);
 		}
@@ -103,8 +105,10 @@ _hg_object_gstate_copy(hg_object_t              *object,
 			g->qdashpattern = Qnil;
 		} else {
 			g->qdashpattern = func(gstate->qdashpattern, user_data, NULL);
-			if (g->qdashpattern == Qnil)
+			if (g->qdashpattern == Qnil) {
+				hg_debug(HG_MSGCAT_GSTATE, "Unable to copy the dashpattern object");
 				goto bail;
+			}
 			hg_mem_reserved_spool_remove(gstate->o.mem,
 						     g->qdashpattern);
 		}
@@ -127,43 +131,36 @@ _hg_object_gstate_copy(hg_object_t              *object,
 	return retval;
 }
 
-static gchar *
-_hg_object_gstate_to_cstr(hg_object_t              *object,
-			  hg_quark_iterate_func_t   func,
-			  gpointer                  user_data,
-			  GError                  **error)
+static hg_char_t *
+_hg_object_gstate_to_cstr(hg_object_t             *object,
+			  hg_quark_iterate_func_t  func,
+			  hg_pointer_t             user_data)
 {
 	return g_strdup("-gstate-");
 }
 
-static hg_error_t
-_hg_object_gstate_gc_mark(hg_object_t           *object,
-			  hg_gc_iterate_func_t   func,
-			  gpointer               user_data)
+static hg_bool_t
+_hg_object_gstate_gc_mark(hg_object_t          *object,
+			  hg_gc_iterate_func_t  func,
+			  hg_pointer_t          user_data)
 {
 	hg_gstate_t *gstate = (hg_gstate_t *)object;
-	hg_error_t error = 0;
 
-	error = func(gstate->qpath, user_data);
-	if (!HG_ERROR_IS_SUCCESS (error))
-		goto finalize;
-	error = func(gstate->qclippath, user_data);
-	if (!HG_ERROR_IS_SUCCESS (error))
-		goto finalize;
-	error = func(gstate->qdashpattern, user_data);
-	if (!HG_ERROR_IS_SUCCESS (error))
-		goto finalize;
+	if (!func(gstate->qpath, user_data))
+		return FALSE;
+	if (!func(gstate->qclippath, user_data))
+		return FALSE;
+	if (!func(gstate->qdashpattern, user_data))
+		return FALSE;
 
-  finalize:
-
-	return error;
+	return TRUE;
 }
 
-static gboolean
+static hg_bool_t
 _hg_object_gstate_compare(hg_object_t             *o1,
 			  hg_object_t             *o2,
 			  hg_quark_compare_func_t  func,
-			  gpointer                 user_data)
+			  hg_pointer_t             user_data)
 {
 	return FALSE;
 }
@@ -179,15 +176,15 @@ _hg_object_gstate_compare(hg_object_t             *o1,
  * Returns:
  */
 hg_quark_t
-hg_gstate_new(hg_mem_t *mem,
-	      gpointer *ret)
+hg_gstate_new(hg_mem_t     *mem,
+	      hg_pointer_t *ret)
 {
 	hg_quark_t retval;
 	hg_gstate_t *gstate = NULL;
 
-	hg_return_val_if_fail (mem != NULL, Qnil);
+	hg_return_val_if_fail (mem != NULL, Qnil, HG_e_VMerror);
 
-	retval = hg_object_new(mem, (gpointer *)&gstate, HG_TYPE_GSTATE, 0);
+	retval = hg_object_new(mem, (hg_pointer_t *)&gstate, HG_TYPE_GSTATE, 0);
 
 	if (ret)
 		*ret = gstate;
@@ -208,8 +205,8 @@ void
 hg_gstate_set_ctm(hg_gstate_t *gstate,
 		  hg_matrix_t *matrix)
 {
-	hg_return_if_fail (gstate != NULL);
-	hg_return_if_fail (matrix != NULL);
+	hg_return_if_fail (gstate != NULL, HG_e_typecheck);
+	hg_return_if_fail (matrix != NULL, HG_e_typecheck);
 
 	memcpy(&gstate->ctm, matrix, sizeof (hg_matrix_t));
 }
@@ -225,8 +222,8 @@ void
 hg_gstate_get_ctm(hg_gstate_t *gstate,
 		  hg_matrix_t *matrix)
 {
-	hg_return_if_fail (gstate != NULL);
-	hg_return_if_fail (matrix != NULL);
+	hg_return_if_fail (gstate != NULL, HG_e_typecheck);
+	hg_return_if_fail (matrix != NULL, HG_e_typecheck);
 
 	memcpy(matrix, &gstate->ctm, sizeof (hg_matrix_t));
 }
@@ -242,14 +239,14 @@ void
 hg_gstate_set_path(hg_gstate_t *gstate,
 		   hg_quark_t   qpath)
 {
-	guint mem_id;
+	hg_uint_t mem_id;
 
-	hg_return_if_fail (gstate != NULL);
-	hg_return_if_fail (HG_IS_QPATH (qpath));
+	hg_return_if_fail (gstate != NULL, HG_e_typecheck);
+	hg_return_if_fail (HG_IS_QPATH (qpath), HG_e_typecheck);
 
 	mem_id = hg_quark_get_mem_id(gstate->o.self);
 
-	hg_return_if_fail (hg_quark_has_mem_id(qpath, mem_id));
+	hg_return_if_fail (hg_quark_has_mem_id(qpath, mem_id), HG_e_VMerror);
 
 	gstate->qpath = qpath;
 	hg_mem_reserved_spool_remove(gstate->o.mem, qpath);
@@ -266,7 +263,7 @@ hg_gstate_set_path(hg_gstate_t *gstate,
 hg_quark_t
 hg_gstate_get_path(hg_gstate_t *gstate)
 {
-	hg_return_val_if_fail (gstate != NULL, Qnil);
+	hg_return_val_if_fail (gstate != NULL, Qnil, HG_e_typecheck);
 
 	return gstate->qpath;
 }
@@ -282,14 +279,14 @@ void
 hg_gstate_set_clippath(hg_gstate_t *gstate,
 		       hg_quark_t   qpath)
 {
-	guint mem_id;
+	hg_uint_t mem_id;
 
-	hg_return_if_fail (gstate != NULL);
-	hg_return_if_fail (HG_IS_QPATH (qpath));
+	hg_return_if_fail (gstate != NULL, HG_e_typecheck);
+	hg_return_if_fail (HG_IS_QPATH (qpath), HG_e_typecheck);
 
 	mem_id = hg_quark_get_mem_id(gstate->o.self);
 
-	hg_return_if_fail (hg_quark_has_mem_id(qpath, mem_id));
+	hg_return_if_fail (hg_quark_has_mem_id(qpath, mem_id), HG_e_VMerror);
 
 	gstate->qclippath = qpath;
 	hg_mem_reserved_spool_remove(gstate->o.mem, qpath);
@@ -306,7 +303,7 @@ hg_gstate_set_clippath(hg_gstate_t *gstate,
 hg_quark_t
 hg_gstate_get_clippath(hg_gstate_t *gstate)
 {
-	hg_return_val_if_fail (gstate != NULL, Qnil);
+	hg_return_val_if_fail (gstate != NULL, Qnil, HG_e_typecheck);
 
 	return gstate->qclippath;
 }
@@ -322,11 +319,11 @@ hg_gstate_get_clippath(hg_gstate_t *gstate)
  */
 void
 hg_gstate_set_rgbcolor(hg_gstate_t *gstate,
-		       gdouble      red,
-		       gdouble      green,
-		       gdouble      blue)
+		       hg_real_t    red,
+		       hg_real_t    green,
+		       hg_real_t    blue)
 {
-	hg_return_if_fail (gstate != NULL);
+	hg_return_if_fail (gstate != NULL, HG_e_typecheck);
 
 	gstate->color.type = HG_COLOR_RGB;
 	gstate->color.is.rgb.red = red;
@@ -345,11 +342,11 @@ hg_gstate_set_rgbcolor(hg_gstate_t *gstate,
  */
 void
 hg_gstate_set_hsbcolor(hg_gstate_t *gstate,
-		       gdouble      hue,
-		       gdouble      saturation,
-		       gdouble      brightness)
+		       hg_real_t    hue,
+		       hg_real_t    saturation,
+		       hg_real_t    brightness)
 {
-	hg_return_if_fail (gstate != NULL);
+	hg_return_if_fail (gstate != NULL, HG_e_typecheck);
 
 	gstate->color.type = HG_COLOR_HSB;
 	gstate->color.is.hsb.hue = hue;
@@ -366,9 +363,9 @@ hg_gstate_set_hsbcolor(hg_gstate_t *gstate,
  */
 void
 hg_gstate_set_graycolor(hg_gstate_t *gstate,
-			gdouble      gray)
+			hg_real_t    gray)
 {
-	hg_return_if_fail (gstate != NULL);
+	hg_return_if_fail (gstate != NULL, HG_e_typecheck);
 
 	gstate->color.type = HG_COLOR_GRAY;
 	gstate->color.is.rgb.red = gray;
@@ -385,9 +382,9 @@ hg_gstate_set_graycolor(hg_gstate_t *gstate,
  */
 void
 hg_gstate_set_linewidth(hg_gstate_t *gstate,
-			gdouble      width)
+			hg_real_t    width)
 {
-	hg_return_if_fail (gstate != NULL);
+	hg_return_if_fail (gstate != NULL, HG_e_typecheck);
 
 	gstate->linewidth = width;
 }
@@ -403,8 +400,8 @@ void
 hg_gstate_set_linecap(hg_gstate_t  *gstate,
 		      hg_linecap_t  linecap)
 {
-	hg_return_if_fail (gstate != NULL);
-	hg_return_if_fail (linecap >= 0 && linecap < HG_LINECAP_END);
+	hg_return_if_fail (gstate != NULL, HG_e_typecheck);
+	hg_return_if_fail (linecap >= 0 && linecap < HG_LINECAP_END, HG_e_rangecheck);
 
 	gstate->linecap = linecap;
 }
@@ -420,8 +417,8 @@ void
 hg_gstate_set_linejoin(hg_gstate_t   *gstate,
 		       hg_linejoin_t  linejoin)
 {
-	hg_return_if_fail (gstate != NULL);
-	hg_return_if_fail (linejoin >= 0 && linejoin < HG_LINEJOIN_END);
+	hg_return_if_fail (gstate != NULL, HG_e_typecheck);
+	hg_return_if_fail (linejoin >= 0 && linejoin < HG_LINEJOIN_END, HG_e_rangecheck);
 
 	gstate->linejoin = linejoin;
 }
@@ -435,11 +432,11 @@ hg_gstate_set_linejoin(hg_gstate_t   *gstate,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_gstate_set_miterlimit(hg_gstate_t *gstate,
-			 gdouble      miterlen)
+			 hg_real_t    miterlen)
 {
-	hg_return_val_if_fail (gstate != NULL, FALSE);
+	hg_return_val_if_fail (gstate != NULL, FALSE, HG_e_typecheck);
 
 	if (miterlen < 1.0)
 		return FALSE;
@@ -459,37 +456,38 @@ hg_gstate_set_miterlimit(hg_gstate_t *gstate,
  *
  * Returns:
  */
-gboolean
-hg_gstate_set_dash(hg_gstate_t  *gstate,
-		   hg_quark_t    qpattern,
-		   gdouble       offset,
-		   GError      **error)
+hg_bool_t
+hg_gstate_set_dash(hg_gstate_t *gstate,
+		   hg_quark_t   qpattern,
+		   hg_real_t    offset)
 {
 	hg_array_t *a;
 	hg_mem_t *mem;
-	guint id;
-	gsize i;
-	gboolean is_zero = TRUE;
+	hg_uint_t id;
+	hg_usize_t i;
+	hg_bool_t is_zero = TRUE;
 
-	hg_return_val_with_gerror_if_fail (gstate != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (HG_IS_QARRAY (qpattern), FALSE, error, HG_VM_e_typecheck);
-	hg_return_val_if_fail(error != NULL, FALSE);
+	hg_return_val_if_fail (gstate != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (HG_IS_QARRAY (qpattern), FALSE, HG_e_typecheck);
+
+	/* initialize hg_errno to estimate properly */
+	hg_errno = 0;
 
 	id = hg_quark_get_mem_id(qpattern);
 
-	hg_return_val_with_gerror_if_fail ((mem = hg_mem_get(id)) != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_lock_fail (a, mem, qpattern, error, FALSE);
+	hg_return_val_if_fail ((mem = hg_mem_spool_get(id)) != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_lock_fail (a, mem, qpattern, FALSE);
 
 	if (hg_array_length(a) > 11) {
-		g_set_error(error, HG_ERROR, HG_VM_e_limitcheck,
-			    "pattern array is too big.");
+		hg_debug(HG_MSGCAT_GSTATE, "Array size for dash pattern is too big");
+		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_limitcheck);
 		goto finalize;
 	}
 	if (hg_array_length(a) > 0) {
 		for (i = 0; i < hg_array_length(a); i++) {
-			hg_quark_t q = hg_array_get(a, i, error);
+			hg_quark_t q = hg_array_get(a, i);
 
-			if (*error != NULL)
+			if (!HG_ERROR_IS_SUCCESS0 ())
 				return FALSE;
 			if (HG_IS_QINT (q)) {
 				if (HG_INT (q) != 0)
@@ -498,14 +496,14 @@ hg_gstate_set_dash(hg_gstate_t  *gstate,
 				if (!HG_REAL_IS_ZERO (q))
 					is_zero = FALSE;
 			} else {
-				g_set_error(error, HG_ERROR, HG_VM_e_typecheck,
-					    "pattern contains non-numeric.");
+				hg_debug(HG_MSGCAT_GSTATE, "Dash pattern contains non-numeric.");
+				hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck);
 				goto finalize;
 			}
 		}
 		if (is_zero) {
-			g_set_error(error, HG_ERROR, HG_VM_e_rangecheck,
-				    "no patterns");
+			hg_debug(HG_MSGCAT_GSTATE, "No patterns in Array");
+			hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_rangecheck);
 			goto finalize;
 		}
 	}
@@ -515,5 +513,5 @@ hg_gstate_set_dash(hg_gstate_t  *gstate,
   finalize:
 	hg_mem_unlock_object(mem, qpattern);
 
-	return *error == NULL;
+	return HG_ERROR_IS_SUCCESS0 ();
 }

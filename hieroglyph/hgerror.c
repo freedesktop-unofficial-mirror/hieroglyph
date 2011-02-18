@@ -25,22 +25,9 @@
 #include "config.h"
 #endif
 
-#include <glib.h>
 #include "hgerror.h"
 
 #include "hgerror.proto.h"
 
 
 HG_THREAD_VAR hg_error_t hg_errno = 0;
-
-/**
- * hg_error_quark:
- *
- * FIXME
- *
- */
-GQuark
-hg_error_quark(void)
-{
-	return g_quark_from_static_string("hg-error-quark");
-}

@@ -26,7 +26,6 @@
 #endif
 
 #include <string.h>
-#include <glib.h>
 #include "hgerror.h"
 #include "hgmatrix.h"
 #include "hgmem.h"
@@ -66,8 +65,8 @@ _hg_object_array_initialize(hg_object_t *object,
 	hg_quark_t qcontainer;
 
 	qcontainer = va_arg(args, hg_quark_t);
-	offset = va_arg(args, gsize);
-	size = va_arg(args, gsize);
+	offset = va_arg(args, hg_usize_t);
+	size = va_arg(args, hg_usize_t);
 
 	array->offset = offset;
 	array->allocated_size = size;
@@ -95,7 +94,7 @@ _hg_object_array_copy(hg_object_t              *object,
 	hg_quark_t retval, q, qr;
 	hg_usize_t i, len;
 
-	hg_return_val_if_fail (object->type == HG_TYPE_ARRAY, Qnil);
+	hg_return_val_if_fail (object->type == HG_TYPE_ARRAY, Qnil, HG_e_typecheck);
 
 	if (object->on_copying != Qnil)
 		return object->on_copying;
@@ -106,28 +105,37 @@ _hg_object_array_copy(hg_object_t              *object,
 						   (hg_pointer_t *)&a);
 	if (retval != Qnil) {
 		for (i = 0; i < len; i++) {
-			q = hg_array_get(array, i, NULL);
-			if (q == Qnil)
+			q = hg_array_get(array, i);
+			if (q == Qnil) {
+				hg_debug(HG_MSGCAT_ARRAY, "Unable to obtain the object during copying the object: [%ld/%ld]",
+					 i, len);
 				goto bail;
+			}
 			qr = func(q, user_data, NULL);
-			if (qr == Qnil)
+			if (qr == Qnil) {
+				hg_debug(HG_MSGCAT_ARRAY, "Unable to copy the object: [%ld/%ld]",
+					 i, len);
 				goto bail;
-			if (!hg_array_set(a, qr, i, TRUE, NULL))
+			}
+			if (!hg_array_set(a, qr, i, TRUE)) {
+				hg_debug(HG_MSGCAT_ARRAY, "Unable to store the object during copying the object: [%ld/%ld]",
+					 i, len);
 				goto bail;
+			}
 		}
 		if (array->qname == Qnil) {
 			a->qname = Qnil;
 		} else {
 			a->qname = func(array->qname, user_data, NULL);
-			if (a->qname == Qnil)
+			if (a->qname == Qnil) {
+				hg_debug(HG_MSGCAT_ARRAY, "Unable to copy the name of the object.");
 				goto bail;
+			}
 		}
 		if (ret)
 			*ret = a;
 		else
 			hg_mem_unlock_object(a->o.mem, retval);
-	} else {
-		hg_warning("Out of memory");
 	}
 	goto finalize;
   bail:
@@ -142,24 +150,24 @@ _hg_object_array_copy(hg_object_t              *object,
 }
 
 static hg_char_t *
-_hg_object_array_to_cstr(hg_object_t              *object,
-			 hg_quark_iterate_func_t   func,
-			 hg_pointer_t              user_data,
-			 GError                  **error)
+_hg_object_array_to_cstr(hg_object_t             *object,
+			 hg_quark_iterate_func_t  func,
+			 hg_pointer_t             user_data)
 {
 	hg_array_t *array = (hg_array_t *)object;
 	hg_quark_t q, qr;
 	hg_usize_t i, len;
 	GString *retval = g_string_new(NULL);
-	GError *err = NULL;
 	hg_char_t *s;
 
-	hg_return_val_if_fail (object->type == HG_TYPE_ARRAY, NULL);
+	hg_return_val_if_fail (object->type == HG_TYPE_ARRAY, NULL, HG_e_typecheck);
 
 	if (array->qname != Qnil) {
-		const gchar *p;
+		const hg_char_t *p;
 
-		p = HG_MEM_LOCK (array->o.mem, array->qname, error);
+		p = HG_MEM_LOCK (array->o.mem, array->qname);
+		if (!HG_ERROR_IS_SUCCESS0 ())
+			return g_strdup("[FAILED]");
 		s = g_strdup(p);
 		hg_mem_unlock_object(array->o.mem, array->qname);
 
@@ -175,14 +183,13 @@ _hg_object_array_to_cstr(hg_object_t              *object,
 	for (i = 0; i < len; i++) {
 		if (i != 0)
 			g_string_append_c(retval, ' ');
-		q = hg_array_get(array, i, &err);
-		if (err) {
+		q = hg_array_get(array, i);
+		if (!HG_ERROR_IS_SUCCESS0 ()) {
 			g_string_append(retval, "...");
-			g_clear_error(&err);
 			continue;
 		}
 		qr = func(q, user_data, NULL);
-		s = (gchar *)HGQUARK_TO_POINTER (qr);
+		s = (hg_char_t *)HGQUARK_TO_POINTER (qr);
 		if (s == NULL) {
 			g_string_append(retval, "...");
 			continue;
@@ -198,38 +205,33 @@ _hg_object_array_to_cstr(hg_object_t              *object,
 	return g_string_free(retval, FALSE);
 }
 
-static hg_error_t
-_hg_object_array_gc_mark(hg_object_t           *object,
-			 hg_gc_iterate_func_t   func,
-			 hg_pointer_t           user_data)
+static hg_bool_t
+_hg_object_array_gc_mark(hg_object_t          *object,
+			 hg_gc_iterate_func_t  func,
+			 hg_pointer_t          user_data)
 {
 	hg_array_t *array = (hg_array_t *)object;
 	hg_quark_t q;
 	hg_usize_t i, len;
-	hg_error_t error = 0;
 
-	hg_return_val_if_fail (object->type == HG_TYPE_ARRAY, HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck));
+	hg_return_val_if_fail (object->type == HG_TYPE_ARRAY, FALSE, HG_e_typecheck);
 
 	hg_debug(HG_MSGCAT_GC, "array: marking container");
-	error = hg_mem_gc_mark(array->o.mem, array->qcontainer);
-	if (!HG_ERROR_IS_SUCCESS (error))
-		goto finalize;
+	if (!hg_mem_gc_mark(array->o.mem, array->qcontainer))
+		return FALSE;
 	hg_debug(HG_MSGCAT_GC, "array: marking name");
-	error = hg_mem_gc_mark(array->o.mem, array->qname);
-	if (!HG_ERROR_IS_SUCCESS (error))
-		goto finalize;
+	if (!hg_mem_gc_mark(array->o.mem, array->qname))
+		return FALSE;
 
 	len = hg_array_length(array);
 
 	for (i = 0; i < len; i++) {
-		q = hg_array_get(array, i, NULL);
-		error = func(q, user_data);
-		if (!HG_ERROR_IS_SUCCESS (error))
-			goto finalize;
+		q = hg_array_get(array, i);
+		if (!func(q, user_data))
+			return FALSE;
 	}
-  finalize:
 
-	return error;
+	return TRUE;
 }
 
 static hg_bool_t
@@ -242,9 +244,9 @@ _hg_object_array_compare(hg_object_t             *o1,
 	hg_bool_t retval = TRUE;
 	hg_array_t *a1 = (hg_array_t *)o1, *a2 = (hg_array_t *)o2;
 
-	hg_return_val_if_fail (o1 != NULL, FALSE);
-	hg_return_val_if_fail (o2 != NULL, FALSE);
-	hg_return_val_if_fail (func != NULL, FALSE);
+	hg_return_val_if_fail (o1 != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (o2 != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (func != NULL, FALSE, HG_e_VMerror);
 
 	len = hg_array_maxlength(a1);
 	if (len != hg_array_maxlength(a2))
@@ -253,8 +255,8 @@ _hg_object_array_compare(hg_object_t             *o1,
 	for (i = 0; i < len; i++) {
 		hg_quark_t q1, q2;
 
-		q1 = hg_array_get(a1, i, NULL);
-		q2 = hg_array_get(a2, i, NULL);
+		q1 = hg_array_get(a1, i);
+		q2 = hg_array_get(a2, i);
 		if ((retval = func(q1, q2, user_data)) == FALSE)
 			break;
 	}
@@ -273,12 +275,14 @@ _hg_array_maybe_expand(hg_array_t *array,
 	    array->offset != 0)
 		return TRUE;
 
-	hg_return_val_if_fail ((length + 1) <= array->allocated_size, FALSE);
+	hg_return_val_if_fail ((length + 1) <= array->allocated_size, FALSE, HG_e_rangecheck);
 
 	if (array->qcontainer == Qnil) {
 		array->qcontainer = hg_mem_alloc(array->o.mem,
 						 sizeof (hg_quark_t) * (length + 1),
-						 (gpointer *)&container);
+						 (hg_pointer_t *)&container);
+		if (array->qcontainer == Qnil)
+			return FALSE;
 		for (i = 0; i < length; i++) {
 			container[i] = HG_QNULL;
 		}
@@ -289,7 +293,7 @@ _hg_array_maybe_expand(hg_array_t *array,
 		q = hg_mem_realloc(array->o.mem,
 				   array->qcontainer,
 				   sizeof (hg_quark_t) * (length + 1),
-				   (gpointer *)&container);
+				   (hg_pointer_t *)&container);
 
 		if (q == Qnil)
 			return FALSE;
@@ -310,12 +314,12 @@ _hg_array_convert_to_matrix(hg_array_t  *array,
 			    hg_matrix_t *matrix)
 {
 	hg_quark_t q;
-	gsize i;
+	hg_usize_t i;
 
 	for (i = 0; i < 6; i++) {
-		q = hg_array_get(array, i, NULL);
+		q = hg_array_get(array, i);
 		if (HG_IS_QINT (q)) {
-			matrix->d[i] = (gdouble)HG_INT (q);
+			matrix->d[i] = (hg_real_t)HG_INT (q);
 		} else {
 			matrix->d[i] = HG_REAL (q);
 		}
@@ -326,10 +330,10 @@ HG_INLINE_FUNC void
 _hg_array_convert_from_matrix(hg_array_t  *array,
 			      hg_matrix_t *matrix)
 {
-	gsize i;
+	hg_usize_t i;
 
 	for (i = 0; i < 6; i++) {
-		hg_array_set(array, HG_QREAL (matrix->d[i]), i, TRUE, NULL);
+		hg_array_set(array, HG_QREAL (matrix->d[i]), i, TRUE);
 	}
 }
 
@@ -345,17 +349,20 @@ _hg_array_convert_from_matrix(hg_array_t  *array,
  * Returns:
  */
 hg_quark_t
-hg_array_new(hg_mem_t *mem,
-	     gsize     size,
-	     gpointer *ret)
+hg_array_new(hg_mem_t     *mem,
+	     hg_usize_t    size,
+	     hg_pointer_t *ret)
 {
 	hg_quark_t retval;
 	hg_array_t *array = NULL;
 
-	hg_return_val_if_fail (mem != NULL, Qnil);
-	hg_return_val_if_fail (size < (HG_ARRAY_MAX_SIZE + 1), Qnil);
+	hg_return_val_if_fail (mem != NULL, Qnil, HG_e_VMerror);
+	hg_return_val_if_fail (size < (HG_ARRAY_MAX_SIZE + 1), Qnil, HG_e_limitcheck);
 
-	retval = hg_object_new(mem, (gpointer *)&array, HG_TYPE_ARRAY, 0, Qnil, 0LL, size);
+	/* initialize hg_errno to estimate properly */
+	hg_errno = 0;
+
+	retval = hg_object_new(mem, (hg_pointer_t *)&array, HG_TYPE_ARRAY, 0, Qnil, 0LL, size);
 	if (ret)
 		*ret = array;
 	else
@@ -373,8 +380,8 @@ hg_array_new(hg_mem_t *mem,
 void
 hg_array_free(hg_array_t *array)
 {
-	hg_return_if_fail (array != NULL);
-	hg_return_if_fail (array->o.type == HG_TYPE_ARRAY);
+	hg_return_if_fail (array != NULL, HG_e_typecheck);
+	hg_return_if_fail (array->o.type == HG_TYPE_ARRAY, HG_e_typecheck);
 
 	hg_mem_reserved_spool_remove(array->o.mem, array->o.self);
 
@@ -386,107 +393,93 @@ hg_array_free(hg_array_t *array)
  * hg_array_set:
  * @array:
  * @quark:
- * @index:
+ * @index_:
  * @force:
- * @error:
  *
  * FIXME
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_array_set(hg_array_t  *array,
 	     hg_quark_t   quark,
-	     gsize        index,
-	     gboolean     force,
-	     GError     **error)
+	     hg_usize_t   index_,
+	     hg_bool_t    force)
 {
 	hg_quark_t *container;
-	gsize new_length;
-	GError *err = NULL;
-	gboolean retval = TRUE;
+	hg_usize_t new_length;
 
-	hg_return_val_with_gerror_if_fail (array != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (array != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (array->o.type == HG_TYPE_ARRAY, FALSE, HG_e_typecheck);
 
-	if (index > hg_array_maxlength(array)) {
-		g_set_error(&err, HG_ERROR, HG_VM_e_rangecheck,
-			    "wrong index to access the array");
-		goto finalize;
+	/* initialize hg_errno to estimate properly */
+	hg_errno = 0;
+
+	if (index_ > hg_array_maxlength(array)) {
+		hg_debug(HG_MSGCAT_ARRAY, "Wrong index to access the array: index: %ld, size: %ld",
+			   index_, hg_array_maxlength(array));
+		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_rangecheck);
+
+		return FALSE;
 	}
 	if (!force &&
 	    !(hg_quark_is_simple_object(quark) ||
 	      hg_quark_get_type(quark) == HG_TYPE_OPER) &&
-	    hg_mem_get_type(array->o.mem) == HG_MEM_TYPE_GLOBAL &&
-	    hg_mem_get_type(hg_mem_get(hg_quark_get_mem_id(quark))) == HG_MEM_TYPE_LOCAL) {
-		g_set_error(&err, HG_ERROR, HG_VM_e_invalidaccess,
-			    "Unable to store the object allocated in the local memory into the global memory");
-		goto finalize;
+	    hg_mem_spool_get_type(array->o.mem) == HG_MEM_TYPE_GLOBAL &&
+	    hg_mem_spool_get_type(hg_mem_spool_get(hg_quark_get_mem_id(quark))) == HG_MEM_TYPE_LOCAL) {
+		hg_debug(HG_MSGCAT_ARRAY, "Unable to store the object allocated in the local memory into the global memory");
+		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_invalidaccess);
+		return FALSE;
 	}
 
-	new_length = MAX (index, array->length);
-	if (index >= new_length && new_length >= array->length) {
-		if (!_hg_array_maybe_expand(array, new_length)) {
-			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-				    "Out of memory");
-			retval = FALSE;
-			goto finalize;
-		}
+	new_length = MAX (index_, array->length);
+	if (index_ >= new_length && new_length >= array->length) {
+		if (!_hg_array_maybe_expand(array, new_length))
+			return FALSE;
 	}
-	hg_return_val_with_gerror_if_lock_fail (container,
-						array->o.mem,
-						array->qcontainer,
-						error,
-						FALSE);
+	hg_return_val_if_lock_fail (container,
+				    array->o.mem,
+				    array->qcontainer,
+				    FALSE);
 
-	container[array->offset + index] = quark;
+	container[array->offset + index_] = quark;
 
 	hg_mem_unlock_object(array->o.mem, array->qcontainer);
 
-	hg_mem_reserved_spool_remove(hg_mem_get(hg_quark_get_mem_id(quark)),
+	hg_mem_reserved_spool_remove(hg_mem_spool_get(hg_quark_get_mem_id(quark)),
 				     quark);
-  finalize:
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
-	}
 
-	return retval;
+	return TRUE;
 }
 
 /**
  * hg_array_get:
  * @array:
- * @index:
- * @error:
+ * @index_:
  *
  * FIXME
  *
  * Returns:
  */
 hg_quark_t
-hg_array_get(hg_array_t  *array,
-	     hg_usize_t   index,
-	     GError     **error)
+hg_array_get(hg_array_t *array,
+	     hg_usize_t  index_)
 {
 	hg_quark_t retval = Qnil;
 	hg_quark_t *container;
-	GError *err = NULL;
 
-	hg_return_val_with_gerror_if_fail (array != NULL, Qnil, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (array != NULL, Qnil, HG_e_typecheck);
+	hg_return_val_if_fail (array->o.type == HG_TYPE_ARRAY, Qnil, HG_e_typecheck);
 
-	if (index >= hg_array_maxlength(array)) {
-		g_set_error(&err, HG_ERROR, HG_VM_e_rangecheck,
-			    "wrong index to access the array");
-		goto finalize;
+	/* initialize hg_errno to estimate properly */
+	hg_errno = 0;
+
+	if (index_ >= hg_array_maxlength(array)) {
+		hg_debug(HG_MSGCAT_ARRAY, "Wrong index to access the array: index: %ld, size: %ld",
+			 index_, hg_array_maxlength(array));
+		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_rangecheck);
+
+		return Qnil;
 	}
 
 	if (array->qcontainer == Qnil) {
@@ -494,35 +487,18 @@ hg_array_get(hg_array_t  *array,
 		return HG_QNULL;
 	}
 
-	if (index >= array->length) {
-		if (!_hg_array_maybe_expand(array, index)) {
-			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-				    "Out of memory");
-			retval = Qnil;
-			goto finalize;
-		}
+	if (index_ >= array->length) {
+		if (!_hg_array_maybe_expand(array, index_))
+			return Qnil;
 	}
-	hg_return_val_with_gerror_if_lock_fail (container,
-						array->o.mem,
-						array->qcontainer,
-						error,
-						Qnil);
+	hg_return_val_if_lock_fail (container,
+				    array->o.mem,
+				    array->qcontainer,
+				    Qnil);
 
-	retval = container[array->offset + index];
+	retval = container[array->offset + index_];
 
 	hg_mem_unlock_object(array->o.mem, array->qcontainer);
-  finalize:
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
-	}
 
 	return retval;
 }
@@ -538,32 +514,33 @@ hg_array_get(hg_array_t  *array,
  *
  * Returns:
  */
-gboolean
-hg_array_insert(hg_array_t  *array,
-		hg_quark_t   quark,
-		hg_size_t    pos,
-		GError     **error)
+hg_bool_t
+hg_array_insert(hg_array_t *array,
+		hg_quark_t  quark,
+		hg_size_t   pos)
 {
 	hg_size_t i;
 	hg_quark_t *container;
 
-	hg_return_val_with_gerror_if_fail (array != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (array->offset == 0, FALSE, error, HG_VM_e_invalidaccess);
+	hg_return_val_if_fail (array != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (array->o.type == HG_TYPE_ARRAY, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (array->offset == 0, FALSE, HG_e_invalidaccess);
+
+	/* initialize hg_errno to estimate properly */
+	hg_errno = 0;
 
 	if (pos < 0)
 		pos = array->length;
 
-	hg_return_val_with_gerror_if_fail (pos < array->allocated_size, FALSE, error, HG_VM_e_rangecheck);
+	hg_return_val_if_fail (pos < array->allocated_size, FALSE, HG_e_rangecheck);
 
 	if (pos < array->length) {
-		hg_return_val_with_gerror_if_fail ((array->length + 1) < array->allocated_size, FALSE, error, HG_VM_e_rangecheck);
-		hg_return_val_with_gerror_if_fail (array->qcontainer != Qnil, FALSE, error, HG_VM_e_VMerror); /* unlikely */
-		hg_return_val_with_gerror_if_lock_fail (container,
-							array->o.mem,
-							array->qcontainer,
-							error,
-							FALSE);
+		hg_return_val_if_fail ((array->length + 1) < array->allocated_size, FALSE, HG_e_rangecheck);
+		hg_return_val_if_fail (array->qcontainer != Qnil, FALSE, HG_e_VMerror); /* unlikely */
+		hg_return_val_if_lock_fail (container,
+					    array->o.mem,
+					    array->qcontainer,
+					    FALSE);
 
 		array->length++;
 		for (i = array->length; i > pos; i--) {
@@ -573,10 +550,10 @@ hg_array_insert(hg_array_t  *array,
 
 		hg_mem_unlock_object(array->o.mem, array->qcontainer);
 
-		hg_mem_reserved_spool_remove(hg_mem_get(hg_quark_get_mem_id(quark)),
+		hg_mem_reserved_spool_remove(hg_mem_spool_get(hg_quark_get_mem_id(quark)),
 					     quark);
 	} else {
-		return hg_array_set(array, quark, pos, FALSE, error);
+		return hg_array_set(array, quark, pos, FALSE);
 	}
 
 	return TRUE;
@@ -598,14 +575,17 @@ hg_array_remove(hg_array_t *array,
 	hg_usize_t i;
 	hg_quark_t *container;
 
-	hg_return_val_if_fail (array != NULL, FALSE);
-	hg_return_val_if_fail (array->o.type == HG_TYPE_ARRAY, FALSE);
-	hg_return_val_if_fail (array->offset == 0, FALSE);
-	hg_return_val_if_fail (pos < array->length, FALSE);
+	hg_return_val_if_fail (array != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (array->o.type == HG_TYPE_ARRAY, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (array->offset == 0, FALSE, HG_e_invalidaccess);
+	hg_return_val_if_fail (pos < array->length, FALSE, HG_e_rangecheck);
 	hg_return_val_if_lock_fail (container,
 				    array->o.mem,
 				    array->qcontainer,
 				    FALSE);
+
+	/* initialize hg_errno to estimate properly */
+	hg_errno = 0;
 
 	for (i = pos; i < array->length; i++) {
 		container[i] = container[i + 1];
@@ -628,8 +608,8 @@ hg_array_remove(hg_array_t *array,
 hg_usize_t
 hg_array_length(hg_array_t *array)
 {
-	hg_return_val_if_fail (array != NULL, 0);
-	hg_return_val_if_fail (array->o.type == HG_TYPE_ARRAY, 0);
+	hg_return_val_if_fail (array != NULL, 0, HG_e_typecheck);
+	hg_return_val_if_fail (array->o.type == HG_TYPE_ARRAY, 0, HG_e_typecheck);
 
 	return array->length;
 }
@@ -645,8 +625,8 @@ hg_array_length(hg_array_t *array)
 hg_usize_t
 hg_array_maxlength(hg_array_t *array)
 {
-	hg_return_val_if_fail (array != NULL, 0);
-	hg_return_val_if_fail (array->o.type == HG_TYPE_ARRAY, 0);
+	hg_return_val_if_fail (array != NULL, 0, HG_e_typecheck);
+	hg_return_val_if_fail (array->o.type == HG_TYPE_ARRAY, 0, HG_e_typecheck);
 
 	return array->allocated_size;
 }
@@ -660,24 +640,25 @@ hg_array_maxlength(hg_array_t *array)
  * FIXME
  */
 void
-hg_array_foreach(hg_array_t                *array,
-		 hg_array_traverse_func_t   func,
-		 hg_pointer_t               data,
-		 GError                   **error)
+hg_array_foreach(hg_array_t               *array,
+		 hg_array_traverse_func_t  func,
+		 hg_pointer_t              data)
 {
 	hg_quark_t *container;
 	hg_usize_t i;
 
-	hg_return_with_gerror_if_fail (array != NULL, error, HG_VM_e_VMerror);
-	hg_return_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, error, HG_VM_e_VMerror);
-	hg_return_with_gerror_if_fail (func != NULL, error, HG_VM_e_VMerror);
-	hg_return_with_gerror_if_lock_fail (container,
-					    array->o.mem,
-					    array->qcontainer,
-					    error);
+	hg_return_if_fail (array != NULL, HG_e_typecheck);
+	hg_return_if_fail (array->o.type == HG_TYPE_ARRAY, HG_e_typecheck);
+	hg_return_if_fail (func != NULL, HG_e_VMerror);
+	hg_return_if_lock_fail (container,
+				array->o.mem,
+				array->qcontainer);
+
+	/* initialize hg_errno to estimate properly */
+	hg_errno = 0;
 
 	for (i = 0; i < array->length; i++) {
-		if (!func(array->o.mem, container[i], data, error))
+		if (!func(array->o.mem, container[i], data))
 			break;
 	}
 	hg_mem_unlock_object(array->o.mem, array->qcontainer);
@@ -697,18 +678,19 @@ hg_array_set_name(hg_array_t      *array,
 	hg_char_t *p;
 	hg_usize_t len;
 
-	hg_return_if_fail (array != NULL);
-	hg_return_if_fail (array->o.type == HG_TYPE_ARRAY);
-	hg_return_if_fail (name != NULL);
+	hg_return_if_fail (array != NULL, HG_e_typecheck);
+	hg_return_if_fail (array->o.type == HG_TYPE_ARRAY, HG_e_typecheck);
+	hg_return_if_fail (name != NULL, HG_e_VMerror);
+
+	/* initialize hg_errno to estimate properly */
+	hg_errno = 0;
 
 	len = strlen(name);
-	array->qname = hg_mem_alloc(array->o.mem, len, (gpointer *)&p);
-	if (array->qname == Qnil) {
-		hg_warning("%s: Unable to allocate memory.", __PRETTY_FUNCTION__);
-	} else {
+	array->qname = hg_mem_alloc(array->o.mem, len, (hg_pointer_t *)&p);
+	if (array->qname != Qnil) {
 		memcpy(p, name, len);
+		hg_mem_unlock_object(array->o.mem, array->qname);
 	}
-	hg_mem_unlock_object(array->o.mem, array->qname);
 }
 
 /**
@@ -724,32 +706,30 @@ hg_array_set_name(hg_array_t      *array,
  * Returns:
  */
 hg_quark_t
-hg_array_make_subarray(hg_array_t    *array,
-		       hg_usize_t     start_index,
-		       hg_usize_t     end_index,
-		       hg_pointer_t  *ret,
-		       GError       **error)
+hg_array_make_subarray(hg_array_t   *array,
+		       hg_usize_t    start_index,
+		       hg_usize_t    end_index,
+		       hg_pointer_t *ret)
 {
 	hg_quark_t retval;
-	GError *err = NULL;
 	hg_array_t *a;
 
-	hg_return_val_with_gerror_if_fail (array != NULL, Qnil, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (array->o.type == HG_TYPE_ARRAY, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (array != NULL, Qnil, HG_e_typecheck);
+	hg_return_val_if_fail (array->o.type == HG_TYPE_ARRAY, Qnil, HG_e_typecheck);
 
-	retval = hg_array_new(array->o.mem, 0, (gpointer *)&a);
+	/* initialize hg_errno to estimate properly */
+	hg_errno = 0;
+
+	retval = hg_array_new(array->o.mem, 0, (hg_pointer_t *)&a);
 	if (retval == Qnil) {
-		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-			    "Out of memory");
-		goto error;
+		return Qnil;
 	}
 	if (end_index > HG_ARRAY_MAX_SIZE) {
 		/* make an empty array */
 	} else {
 		if (!hg_array_copy_as_subarray(array, a,
 					       start_index,
-					       end_index,
-					       &err)) {
+					       end_index)) {
 			hg_mem_free(array->o.mem, retval);
 			retval = Qnil;
 		}
@@ -757,18 +737,6 @@ hg_array_make_subarray(hg_array_t    *array,
 			*ret = a;
 		else
 			hg_mem_unlock_object(array->o.mem, retval);
-	}
-  error:
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
 	}
 
 	return retval;
@@ -787,19 +755,21 @@ hg_array_make_subarray(hg_array_t    *array,
  * Returns:
  */
 hg_bool_t
-hg_array_copy_as_subarray(hg_array_t  *src,
-			  hg_array_t  *dest,
-			  hg_usize_t   start_index,
-			  hg_usize_t   end_index,
-			  GError     **error)
+hg_array_copy_as_subarray(hg_array_t *src,
+			  hg_array_t *dest,
+			  hg_usize_t  start_index,
+			  hg_usize_t  end_index)
 {
-	hg_return_val_with_gerror_if_fail (src != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (src->o.type == HG_TYPE_ARRAY, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (dest != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (dest->o.type == HG_TYPE_ARRAY, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (start_index < hg_array_maxlength(src), FALSE, error, HG_VM_e_rangecheck);
-	hg_return_val_with_gerror_if_fail (end_index < hg_array_maxlength(src), FALSE, error, HG_VM_e_rangecheck);
-	hg_return_val_with_gerror_if_fail (start_index <= end_index, FALSE, error, HG_VM_e_rangecheck);
+	hg_return_val_if_fail (src != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (src->o.type == HG_TYPE_ARRAY, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (dest != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (dest->o.type == HG_TYPE_ARRAY, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (start_index < hg_array_maxlength(src), FALSE, HG_e_rangecheck);
+	hg_return_val_if_fail (end_index < hg_array_maxlength(src), FALSE, HG_e_rangecheck);
+	hg_return_val_if_fail (start_index <= end_index, FALSE, HG_e_rangecheck);
+
+	/* initialize hg_errno to estimate properly */
+	hg_errno = 0;
 
 	/* destroy the unnecessary destination's container */
 	hg_mem_free(dest->o.mem, dest->qcontainer);
@@ -827,16 +797,23 @@ hg_array_is_matrix(hg_array_t *array)
 	hg_usize_t i;
 	hg_quark_t q;
 
-	hg_return_val_if_fail (array != NULL, FALSE);
+	hg_return_val_if_fail (array != NULL, FALSE, HG_e_typecheck);
 
-	if (hg_array_maxlength(array) != 6)
+	/* initialize hg_errno to estimate properly */
+	hg_errno = 0;
+
+	if (hg_array_maxlength(array) != 6) {
+		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_rangecheck);
 		return FALSE;
+	}
 
 	for (i = 0; i < 6; i++) {
-		q = hg_array_get(array, i, NULL);
+		q = hg_array_get(array, i);
 		if (!HG_IS_QINT (q) &&
-		    !HG_IS_QREAL (q))
+		    !HG_IS_QREAL (q)) {
+			hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_rangecheck);
 			return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -855,9 +832,9 @@ hg_bool_t
 hg_array_from_matrix(hg_array_t  *array,
 		     hg_matrix_t *matrix)
 {
-	hg_return_val_if_fail (array != NULL, FALSE);
-	hg_return_val_if_fail (matrix != NULL, FALSE);
-	hg_return_val_if_fail (hg_array_maxlength(array) == 6, FALSE);
+	hg_return_val_if_fail (array != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (matrix != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (hg_array_maxlength(array) == 6, FALSE, HG_e_rangecheck);
 
 	_hg_array_convert_from_matrix(array, matrix);
 
@@ -877,9 +854,9 @@ hg_bool_t
 hg_array_to_matrix(hg_array_t  *array,
 		   hg_matrix_t *matrix)
 {
-	hg_return_val_if_fail (array != NULL, FALSE);
-	hg_return_val_if_fail (matrix != NULL, FALSE);
-	hg_return_val_if_fail (hg_array_is_matrix(array), FALSE);
+	hg_return_val_if_fail (array != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (matrix != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (hg_array_is_matrix(array), FALSE, HG_e_rangecheck);
 
 	_hg_array_convert_to_matrix(array, matrix);
 

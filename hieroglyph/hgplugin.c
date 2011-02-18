@@ -26,62 +26,41 @@
 #endif
 
 #include <string.h>
-#include <glib.h>
 #include "hgmem.h"
 #include "hgplugin.h"
 
 #include "hgplugin.proto.h"
 
-#define CHECK_SYMBOL(_mod_,_sym_,_err_)					\
-	G_STMT_START {							\
+#define CHECK_SYMBOL(_mod_,_sym_)					\
+	HG_STMT_START {							\
 		g_module_symbol(_mod_, #_sym_, &(_sym_));		\
 		if ((_sym_) == NULL) {					\
-			g_set_error(&(_err_), HG_ERROR, HG_VM_e_VMerror, \
-				    g_module_error());			\
+			hg_warning("%s", g_module_error());		\
+			hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror); \
 		}							\
-	} G_STMT_END
+	} HG_STMT_END
 
 /*< private >*/
 static hg_plugin_t *
-_hg_plugin_load(hg_mem_t     *mem,
-		const gchar  *filename,
-		GError      **error)
+_hg_plugin_load(hg_mem_t        *mem,
+		const hg_char_t *filename)
 {
 	GModule *module;
 	hg_plugin_t *retval = NULL;
-	gpointer plugin_new = NULL;
-	GError *err = NULL;
+	hg_pointer_t plugin_new = NULL;
 
 	if ((module = g_module_open(filename,
 				    G_MODULE_BIND_LAZY|G_MODULE_BIND_LOCAL)) != NULL) {
-		CHECK_SYMBOL (module, plugin_new, err);
+		CHECK_SYMBOL (module, plugin_new);
 		if (plugin_new == NULL)
-			goto error;
+			return NULL;
 
-		retval = ((hg_plugin_new_func_t)plugin_new) (mem, &err);
+		retval = ((hg_plugin_new_func_t)plugin_new) (mem);
 		if (retval) {
 			retval->module = module;
 		} else {
-			if (err == NULL)
-				g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-					    "Unable to create a plugin instance: %s", filename);
-			goto error;
+			return NULL;
 		}
-	} else {
-		g_set_error(&err, HG_ERROR, HG_VM_e_undefinedfilename,
-			    g_module_error());
-	}
-  error:
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
 	}
 
 	return retval;
@@ -93,30 +72,27 @@ _hg_plugin_load(hg_mem_t     *mem,
  * @mem:
  * @name:
  * @type:
- * @error:
  *
  * FIXME
  *
  * Returns:
  */
 hg_plugin_t *
-hg_plugin_open(hg_mem_t          *mem,
-	       const gchar       *name,
-	       hg_plugin_type_t   type,
-	       GError           **error)
+hg_plugin_open(hg_mem_t         *mem,
+	       const hg_char_t  *name,
+	       hg_plugin_type_t  type)
 {
 	hg_plugin_t *retval = NULL;
-	gchar *realname, *modulename = NULL, *fullname;
-	const gchar *modpath;
-	static const gchar *typename[HG_PLUGIN_END] = {
+	hg_char_t *realname, *modulename = NULL, *fullname;
+	const hg_char_t *modpath;
+	static const hg_char_t *typename[HG_PLUGIN_END] = {
 		"",
 		"extension",
 		"device",
 	};
-	GError *err = NULL;
 
-	hg_return_val_with_gerror_if_fail (mem != NULL, NULL, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (name != NULL, NULL, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (mem != NULL, NULL, HG_e_VMerror);
+	hg_return_val_if_fail (name != NULL, NULL, HG_e_VMerror);
 
 	realname = g_path_get_basename(name);
 	switch (type) {
@@ -127,14 +103,14 @@ hg_plugin_open(hg_mem_t          *mem,
 		    modulename = g_strdup_printf("libdevice-%s.so", realname);
 		    break;
 	    default:
-		    g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-				"Unknown plugin type: %d", type);
-		    goto error;
+		    hg_warning("Unknown plugin type: %d", type);
+		    hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
+		    goto finalize;
 	}
 	if ((modpath = g_getenv("HIEROGLYPH_PLUGIN_PATH")) != NULL) {
-		gchar **path_list = g_strsplit(modpath, G_SEARCHPATH_SEPARATOR_S, -1);
-		gchar *p, *path;
-		gint i = 0;
+		hg_char_t **path_list = g_strsplit(modpath, G_SEARCHPATH_SEPARATOR_S, -1);
+		hg_char_t *p, *path;
+		hg_int_t i = 0;
 		size_t len;
 
 		while (path_list[i]) {
@@ -149,44 +125,26 @@ hg_plugin_open(hg_mem_t          *mem,
 
 			if (path[0] != 0) {
 				fullname = g_build_filename(path, modulename, NULL);
-				retval = _hg_plugin_load(mem, fullname, &err);
+				retval = _hg_plugin_load(mem, fullname);
 				g_free(fullname);
 			}
 			g_free(path);
 			if (retval != NULL)
 				break;
 			i++;
-			if (err)
-				g_clear_error(&err);
 		}
 		g_strfreev(path_list);
 	}
 	if (retval == NULL) {
 		fullname = g_build_filename(HIEROGLYPH_PLUGINDIR, modulename, NULL);
-		retval = _hg_plugin_load(mem, fullname, &err);
+		retval = _hg_plugin_load(mem, fullname);
 		g_free(fullname);
-		if (err)
-			g_clear_error(&err);
 	}
 	if (retval == NULL) {
-		g_set_error(&err, HG_ERROR, HG_VM_e_undefinedfilename,
-			    "No such %s plugins found: %s",
-			    typename[type],
-			    realname);
-		goto error;
+		hg_debug(HG_MSGCAT_PLUGIN, "No such %s plugins found: %s", typename[type], realname);
+		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_undefinedfilename);
 	}
-  error:
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
-	}
+  finalize:
 	g_free(realname);
 	g_free(modulename);
 
@@ -209,14 +167,14 @@ hg_plugin_new(hg_mem_t         *mem,
 	hg_plugin_t *retval;
 	hg_quark_t q;
 
-	hg_return_val_if_fail (mem != NULL, NULL);
-	hg_return_val_if_fail (info != NULL, NULL);
-	hg_return_val_if_fail (info->version == HG_PLUGIN_VERSION, NULL);
+	hg_return_val_if_fail (mem != NULL, NULL, HG_e_VMerror);
+	hg_return_val_if_fail (info != NULL, NULL, HG_e_VMerror);
+	hg_return_val_if_fail (info->version == HG_PLUGIN_VERSION, NULL, HG_e_VMerror);
 
 	q = hg_mem_alloc_with_flags(mem,
 				    sizeof (hg_plugin_t),
 				    HG_MEM_FLAGS_DEFAULT_WITHOUT_RESTORABLE,
-				    (gpointer *)&retval);
+				    (hg_pointer_t *)&retval);
 	if (q == Qnil)
 		return NULL;
 
@@ -236,7 +194,7 @@ hg_plugin_new(hg_mem_t         *mem,
 void
 hg_plugin_destroy(hg_plugin_t *plugin)
 {
-	hg_return_if_fail (plugin != NULL);
+	hg_return_if_fail (plugin != NULL, HG_e_VMerror);
 
 	hg_mem_free(plugin->mem, plugin->self);
 }
@@ -251,37 +209,24 @@ hg_plugin_destroy(hg_plugin_t *plugin)
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_plugin_load(hg_plugin_t  *plugin,
-	       gpointer      vm,
-	       GError      **error)
+	       hg_pointer_t  vm)
 {
-	gboolean retval;
-	GError *err = NULL;
+	hg_bool_t retval;
 
-	hg_return_val_if_fail (plugin != NULL, FALSE);
-	hg_return_val_if_fail (plugin->vtable != NULL, FALSE);
-	hg_return_val_if_fail (plugin->vtable->load != NULL, FALSE);
-	hg_return_val_if_fail (vm != NULL, FALSE);
+	hg_return_val_if_fail (plugin != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (plugin->vtable != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (plugin->vtable->load != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (vm != NULL, FALSE, HG_e_VMerror);
 
-	retval = plugin->vtable->load(plugin, vm, &err);
+	retval = plugin->vtable->load(plugin, vm);
 	if (retval) {
 		plugin->is_loaded = TRUE;
 	} else {
-		if (err == NULL) {
-			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-				    "Unable to load a plugin: %s",
-				    g_module_name(plugin->module));
-		}
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
+		hg_warning("Unable to load a plugin: %s",
+			   g_module_name(plugin->module));
+		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 	}
 
 	return retval;
@@ -297,37 +242,24 @@ hg_plugin_load(hg_plugin_t  *plugin,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_plugin_unload(hg_plugin_t  *plugin,
-		 gpointer      vm,
-		 GError      **error)
+		 hg_pointer_t  vm)
 {
-	gboolean retval;
-	GError *err = NULL;
+	hg_bool_t retval;
 
-	hg_return_val_if_fail (plugin != NULL, FALSE);
-	hg_return_val_if_fail (plugin->vtable != NULL, FALSE);
-	hg_return_val_if_fail (plugin->vtable->unload != NULL, FALSE);
-	hg_return_val_if_fail (vm != NULL, FALSE);
+	hg_return_val_if_fail (plugin != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (plugin->vtable != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (plugin->vtable->unload != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (vm != NULL, FALSE, HG_e_VMerror);
 
-	retval = plugin->vtable->unload(plugin, vm, &err);
+	retval = plugin->vtable->unload(plugin, vm);
 	if (retval) {
 		plugin->is_loaded = FALSE;
 	} else {
-		if (err == NULL) {
-			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-				    "Unable to unload a plugin: %s",
-				    g_module_name(plugin->module));
-		}
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
+		hg_warning("Unable to unload a plugin: %s",
+			   g_module_name(plugin->module));
+		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 	}
 
 	return retval;

@@ -38,8 +38,8 @@
 
 HG_BEGIN_DECLS
 
-#define HG_VM_LOCK(_v_,_q_,_e_)						\
-	(hg_vm_lock_object((_v_),(_q_),__PRETTY_FUNCTION__,(_e_)))
+#define HG_VM_LOCK(_v_,_q_)						\
+	(hg_vm_lock_object((_v_),(_q_),__PRETTY_FUNCTION__))
 #define HG_VM_UNLOCK(_v_,_q_)			\
 	(hg_vm_unlock_object((_v_),(_q_)))
 
@@ -106,7 +106,7 @@ struct _hg_vm_t {
 	hg_stack_spool_t    *stack_spooler;
 	hg_stack_t          *stacks[HG_VM_STACK_END];
 	GPtrArray           *stacks_stack;
-	hg_quark_t           qerror_name[HG_VM_e_END];
+	hg_quark_t           qerror_name[HG_e_END];
 	hg_quark_t           quparams_name[HG_VM_user_END];
 	hg_quark_t           qsparams_name[HG_VM_sys_END];
 	hg_quark_t           qpdevparams_name[HG_pdev_END];
@@ -161,8 +161,7 @@ void               hg_vm_mfree                 (hg_vm_t            *vm,
                                                 hg_quark_t          qdata);
 gpointer           hg_vm_lock_object           (hg_vm_t            *vm,
                                                 hg_quark_t          qdata,
-                                                const gchar        *pretty_function,
-                                                GError            **error);
+                                                const gchar        *pretty_function);
 void               hg_vm_unlock_object         (hg_vm_t            *vm,
                                                 hg_quark_t          qdata);
 void               hg_vm_set_default_acl       (hg_vm_t            *vm,
@@ -174,8 +173,7 @@ void               hg_vm_use_global_mem        (hg_vm_t            *vm,
                                                 gboolean            flag);
 gboolean           hg_vm_is_global_mem_used    (hg_vm_t            *vm);
 hg_quark_t         hg_vm_get_io                (hg_vm_t            *vm,
-                                                hg_file_io_t        type,
-						GError            **error);
+                                                hg_file_io_t        type);
 void               hg_vm_set_io                (hg_vm_t            *vm,
                                                 hg_file_io_t        type,
                                                 hg_quark_t          file);
@@ -201,23 +199,20 @@ gboolean           hg_vm_eval                  (hg_vm_t            *vm,
                                                 hg_stack_t         *ostack,
                                                 hg_stack_t         *estack,
                                                 hg_stack_t         *dstack,
-                                                gboolean            protect_systemdict,
-                                                GError            **error);
+                                                gboolean            protect_systemdict);
 gboolean           hg_vm_eval_from_cstring     (hg_vm_t            *vm,
                                                 const gchar        *cstring,
                                                 gssize              clen,
                                                 hg_stack_t         *ostack,
                                                 hg_stack_t         *estack,
                                                 hg_stack_t         *dstack,
-                                                gboolean            protect_systemdict,
-                                                GError            **error);
+                                                gboolean            protect_systemdict);
 gboolean           hg_vm_eval_from_file        (hg_vm_t            *vm,
                                                 const gchar        *initfile,
                                                 hg_stack_t         *ostack,
                                                 hg_stack_t         *estack,
                                                 hg_stack_t         *dstack,
-                                                gboolean            protect_systemdict,
-                                                GError            **error);
+                                                gboolean            protect_systemdict);
 gint               hg_vm_get_error_code        (hg_vm_t            *vm);
 void               hg_vm_set_error_code        (hg_vm_t            *vm,
                                                 gint                error_code);
@@ -232,11 +227,9 @@ hg_quark_t         hg_vm_get_gstate            (hg_vm_t            *vm);
 void               hg_vm_set_gstate            (hg_vm_t            *vm,
                                                 hg_quark_t          qgstate);
 hg_quark_t         hg_vm_get_user_params       (hg_vm_t            *vm,
-                                                gpointer           *ret,
-                                                GError            **error);
-void               hg_vm_set_user_params       (hg_vm_t            *vm,
-                                                hg_quark_t          qdict,
-                                                GError            **error);
+                                                gpointer           *ret);
+hg_bool_t          hg_vm_set_user_params       (hg_vm_t            *vm,
+                                                hg_quark_t          qdict);
 void               hg_vm_set_rand_seed         (hg_vm_t            *vm,
                                                 guint32             seed);
 guint32            hg_vm_get_rand_seed         (hg_vm_t            *vm);
@@ -247,20 +240,17 @@ void               hg_vm_clear_error           (hg_vm_t            *vm);
 void               hg_vm_reset_error           (hg_vm_t            *vm);
 gboolean           hg_vm_set_error             (hg_vm_t            *vm,
                                                 hg_quark_t          qdata,
-                                                hg_vm_error_t       error);
-gboolean           hg_vm_set_error_from_gerror (hg_vm_t            *vm,
-                                                hg_quark_t          qdata,
-                                                GError             *error);
+                                                hg_error_reason_t   error);
+gboolean           hg_vm_set_error0            (hg_vm_t            *vm,
+                                                hg_quark_t          qdata);
 void               hg_vm_reserved_spool_dump   (hg_vm_t            *vm,
                                                 hg_mem_t           *mem,
                                                 hg_file_t          *ofile);
 gboolean           hg_vm_add_plugin            (hg_vm_t            *vm,
-                                                const gchar        *name,
-                                                GError            **error);
+                                                const gchar        *name);
 void               hg_vm_load_plugins          (hg_vm_t            *vm);
 gboolean           hg_vm_remove_plugin         (hg_vm_t            *vm,
-                                                const gchar        *name,
-                                                GError            **error);
+                                                const gchar        *name);
 void               hg_vm_unload_plugins        (hg_vm_t            *vm);
 gboolean           hg_vm_set_device            (hg_vm_t            *vm,
                                                 const gchar        *name);
@@ -273,13 +263,11 @@ gboolean   hg_vm_array_set(hg_vm_t     *vm,
                            hg_quark_t   qarray,
                            hg_quark_t   qdata,
                            gsize        index,
-                           gboolean     force,
-                           GError     **error);
+                           gboolean     force);
 hg_quark_t hg_vm_array_get(hg_vm_t     *vm,
                            hg_quark_t   qarray,
                            gsize        index,
-                           gboolean     force,
-                           GError     **error);
+                           gboolean     force);
 
 /* hg_dict_t */
 hg_quark_t hg_vm_dstack_lookup  (hg_vm_t     *vm,
@@ -292,17 +280,14 @@ gboolean   hg_vm_dict_add       (hg_vm_t     *vm,
                                  hg_quark_t   qdict,
                                  hg_quark_t   qkey,
                                  hg_quark_t   qval,
-                                 gboolean     force,
-                                 GError     **error);
+                                 gboolean     force);
 gboolean   hg_vm_dict_remove    (hg_vm_t     *vm,
 				 hg_quark_t   qdict,
-				 hg_quark_t   qkey,
-				 GError     **error);
+				 hg_quark_t   qkey);
 hg_quark_t hg_vm_dict_lookup    (hg_vm_t     *vm,
                                  hg_quark_t   qdict,
                                  hg_quark_t   qkey,
-                                 gboolean     check_perms,
-                                 GError     **error);
+                                 gboolean     check_perms);
 
 /* hg_quark_t */
 hg_error_t hg_vm_quark_gc_mark               (hg_vm_t        *vm,
@@ -313,8 +298,7 @@ hg_quark_t hg_vm_quark_copy                  (hg_vm_t        *vm,
 hg_quark_t hg_vm_quark_to_string             (hg_vm_t        *vm,
                                               hg_quark_t      qdata,
                                               gboolean        ps_like_syntax,
-                                              gpointer       *ret,
-                                              GError        **error);
+                                              gpointer       *ret);
 gboolean   hg_vm_quark_compare               (hg_vm_t        *vm,
                                               hg_quark_t      qdata1,
                                               hg_quark_t      qdata2);
@@ -361,11 +345,9 @@ void        hg_vm_stack_dump(hg_vm_t    *vm,
 
 /* hg_string_t */
 gchar *hg_vm_string_get_cstr(hg_vm_t     *vm,
-                             hg_quark_t   qstring,
-                             GError     **error);
+                             hg_quark_t   qstring);
 guint  hg_vm_string_length  (hg_vm_t     *vm,
-                             hg_quark_t   qstring,
-                             GError     **error);
+                             hg_quark_t   qstring);
 
 /* hg_vm_value_t */
 void           hg_vm_value_free       (gpointer     data);

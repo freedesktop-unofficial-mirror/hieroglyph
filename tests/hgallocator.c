@@ -140,7 +140,7 @@ TDEF (realloc)
 {
 	hg_allocator_data_t *retval;
 	hg_quark_t t, t2, t3;
-	gpointer p, p2;
+	hg_pointer_t p, p2;
 
 	retval = vtable->initialize();
 	fail_unless(retval != NULL, "Unable to initialize the allocator.");
@@ -200,7 +200,7 @@ TDEF (lock_object)
 {
 	hg_allocator_data_t *retval;
 	hg_quark_t t;
-	gpointer p, p2;
+	hg_pointer_t p, p2;
 	hg_allocator_block_t *b;
 
 	retval = vtable->initialize();

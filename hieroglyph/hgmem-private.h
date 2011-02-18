@@ -31,17 +31,15 @@ HG_BEGIN_DECLS
 struct _hg_mem_t {
 	hg_mem_vtable_t     *allocator;
 	hg_mem_type_t        type;
-	gint                 id;
+	hg_int_t             id;
 	hg_allocator_data_t *data;
 	hg_gc_func_t         gc_func;
-	gpointer             gc_data;
-	GHashTable          *finalizer_table;
-	GHashTable          *slave_finalizer_table;
+	hg_pointer_t         gc_data;
 	GHashTable          *reference_table;
 	GHashTable          *reserved_spool;
 	hg_rs_gc_func_t      rs_gc_func;
-	gpointer             rs_gc_data;
-	gboolean             enable_gc:1;
+	hg_pointer_t         rs_gc_data;
+	hg_bool_t            enable_gc:1;
 };
 
 HG_END_DECLS

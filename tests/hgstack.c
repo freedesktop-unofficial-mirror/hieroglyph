@@ -41,30 +41,30 @@ setup(void)
 {
 	hg_object_init();
 	HG_STACK_INIT;
-	mem = hg_mem_new(HG_MEM_TYPE_LOCAL, 100000);
+	mem = hg_mem_spool_new(HG_MEM_TYPE_LOCAL, 100000);
 	vtable = hg_object_stack_get_vtable();
 }
 
 void
 teardown(void)
 {
-	gchar *e = hieroglyph_test_pop_error();
+	hg_char_t *e = hieroglyph_test_pop_error();
 
 	if (e) {
 		g_print("E: %s\n", e);
 		g_free(e);
 	}
 	hg_object_tini();
-	hg_mem_destroy(mem);
+	hg_mem_spool_destroy(mem);
 }
 
 /** test cases **/
 TDEF (get_capsulated_size)
 {
-	gsize size;
+	hg_usize_t size;
 
 	size = vtable->get_capsulated_size();
-	fail_unless(size == sizeof (hg_stack_t), "Obtaining the different size: expect: %" G_GSIZE_FORMAT " actual: %" G_GSIZE_FORMAT, sizeof (hg_stack_t), size);
+	fail_unless(size == sizeof (hg_stack_t), "Obtaining the different size: expect: %lx actual: %lx", sizeof (hg_stack_t), size);
 } TEND
 
 TDEF (hg_stack_new)
@@ -108,8 +108,8 @@ TDEF (hg_stack_pop)
 	fail_unless(hg_stack_push(s, HG_QINT (5)), "Unexpected result to push a value into the stack");
 	fail_unless(hg_stack_depth(s) == 1, "Unexpected result to obtain the current depth on the stack");
 	fail_unless(hg_stack_push(s, HG_QINT (6)), "Unexpected result to push a value into the stack [take 2]");
-	fail_unless(hg_stack_index(s, 1, NULL) == HG_QINT (5), "Unexpected result to obtain a value with the index.");
-	fail_unless(hg_stack_pop(s, NULL) == HG_QINT (6), "Unexpected result to pop a value from the stack");
+	fail_unless(hg_stack_index(s, 1) == HG_QINT (5), "Unexpected result to obtain a value with the index.");
+	fail_unless(hg_stack_pop(s) == HG_QINT (6), "Unexpected result to pop a value from the stack");
 	hg_stack_clear(s);
 	fail_unless(hg_stack_depth(s) == 0, "Unexpected result to obtain the current depth after cleaning up");
 } TEND
@@ -124,18 +124,17 @@ TDEF (hg_stack_index)
 	/* should be done the above */
 } TEND
 
-static gboolean
-_s2s(hg_mem_t    *mem,
-     hg_quark_t   q,
-     gpointer     data,
-     GError     **error)
+static hg_bool_t
+_s2s(hg_mem_t     *mem,
+     hg_quark_t    q,
+     hg_pointer_t  data)
 {
 	GString *s = data;
 
 	if (q == Qnil)
 		g_string_append(s, "nil ");
 	else
-		g_string_append_printf(s, "%" G_GSIZE_FORMAT " ", hg_quark_get_value(q));
+		g_string_append_printf(s, "%lx ", hg_quark_get_value(q));
 
 	return TRUE;
 }
@@ -143,39 +142,39 @@ _s2s(hg_mem_t    *mem,
 TDEF (hg_stack_roll)
 {
 	hg_stack_t *s;
-	gsize i;
+	hg_usize_t i;
 	GString *str = g_string_new(NULL);
 
 	s = hg_stack_new(mem, 10, NULL);
 	fail_unless(s != NULL, "Unable to create a stack object");
 	for (i = 1; i < 6; i++) {
-		fail_unless(hg_stack_push(s, HG_QINT (i)), "Unexpected result to push a value into the stack: %" G_GSIZE_FORMAT, i);
+		fail_unless(hg_stack_push(s, HG_QINT (i)), "Unexpected result to push a value into the stack: %lx", i);
 	}
-	hg_stack_roll(s, 5, 1, NULL);
-	hg_stack_foreach(s, _s2s, str, FALSE, NULL);
+	hg_stack_roll(s, 5, 1);
+	hg_stack_foreach(s, _s2s, str, FALSE);
 	fail_unless(strcmp(str->str, "4 3 2 1 5 ") == 0, "Unexpected result to roll up: actual: %s", str->str);
-	hg_stack_roll(s, 5, -1, NULL);
+	hg_stack_roll(s, 5, -1);
 	g_string_erase(str, 0, -1);
-	hg_stack_foreach(s, _s2s, str, FALSE, NULL);
+	hg_stack_foreach(s, _s2s, str, FALSE);
 	fail_unless(strcmp(str->str, "5 4 3 2 1 ") == 0, "Unexpected result to roll down: actual: %s", str->str);
-	fail_unless(hg_stack_push(s, HG_QINT (6)), "Unexpected result to push a value into the stack: %" G_GSIZE_FORMAT, 6);
+	fail_unless(hg_stack_push(s, HG_QINT (6)), "Unexpected result to push a value into the stack: %lx", 6);
 
-	hg_stack_roll(s, 5, 1, NULL);
+	hg_stack_roll(s, 5, 1);
 	g_string_erase(str, 0, -1);
-	hg_stack_foreach(s, _s2s, str, FALSE, NULL);
+	hg_stack_foreach(s, _s2s, str, FALSE);
 	fail_unless(strcmp(str->str, "5 4 3 2 6 1 ") == 0, "Unexpected result to roll up [take 2]: actual: %s", str->str);
-	hg_stack_roll(s, 5, -1, NULL);
+	hg_stack_roll(s, 5, -1);
 	g_string_erase(str, 0, -1);
-	hg_stack_foreach(s, _s2s, str, FALSE, NULL);
+	hg_stack_foreach(s, _s2s, str, FALSE);
 	fail_unless(strcmp(str->str, "6 5 4 3 2 1 ") == 0, "Unexpected result to roll down [take 2]: actual: %s", str->str);
 
-	hg_stack_roll(s, 5, 2, NULL);
+	hg_stack_roll(s, 5, 2);
 	g_string_erase(str, 0, -1);
-	hg_stack_foreach(s, _s2s, str, FALSE, NULL);
+	hg_stack_foreach(s, _s2s, str, FALSE);
 	fail_unless(strcmp(str->str, "4 3 2 6 5 1 ") == 0, "Unexpected result to roll up [take 3]: actual: %s", str->str);
-	hg_stack_roll(s, 5, -2, NULL);
+	hg_stack_roll(s, 5, -2);
 	g_string_erase(str, 0, -1);
-	hg_stack_foreach(s, _s2s, str, FALSE, NULL);
+	hg_stack_foreach(s, _s2s, str, FALSE);
 	fail_unless(strcmp(str->str, "6 5 4 3 2 1 ") == 0, "Unexpected result to roll down [take 3]: actual: %s", str->str);
 } TEND
 

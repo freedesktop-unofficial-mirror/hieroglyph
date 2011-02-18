@@ -81,7 +81,7 @@ hg_quark_set_acl(hg_quark_t     *quark,
 	hg_int_t readable, writable, executable, accessible;
 	hg_quark_t v = 0;
 
-	hg_return_if_fail (quark != NULL);
+	hg_return_if_fail (quark != NULL, HG_e_VMerror);
 
 	if (*quark != Qnil &&
 	    !HG_IS_QREAL (*quark)) {
@@ -151,7 +151,7 @@ void
 hg_quark_set_readable(hg_quark_t *quark,
 		      hg_bool_t   flag)
 {
-	hg_return_if_fail (quark != NULL);
+	hg_return_if_fail (quark != NULL, HG_e_VMerror);
 
 	if (*quark != Qnil &&
 	    !HG_IS_QREAL (*quark)) {
@@ -203,7 +203,7 @@ void
 hg_quark_set_writable(hg_quark_t *quark,
 		      hg_bool_t   flag)
 {
-	hg_return_if_fail (quark != NULL);
+	hg_return_if_fail (quark != NULL, HG_e_VMerror);
 
 	if (*quark != Qnil &&
 	    !HG_IS_QREAL (*quark)) {
@@ -256,7 +256,7 @@ void
 hg_quark_set_executable(hg_quark_t *quark,
 			hg_bool_t   flag)
 {
-	hg_return_if_fail (quark != NULL);
+	hg_return_if_fail (quark != NULL, HG_e_VMerror);
 
 	if (*quark != Qnil &&
 	    !HG_IS_QREAL (*quark)) {
@@ -308,7 +308,7 @@ void
 hg_quark_set_accessible(hg_quark_t *quark,
 			hg_bool_t   flag)
 {
-	hg_return_if_fail (quark != NULL);
+	hg_return_if_fail (quark != NULL, HG_e_VMerror);
 
 	if (*quark != Qnil &&
 	    !HG_IS_QREAL (*quark)) {
@@ -463,7 +463,7 @@ hg_quark_compare(hg_quark_t              qdata1,
 		 hg_quark_compare_func_t func,
 		 hg_pointer_t            user_data)
 {
-	hg_return_val_if_fail (func != NULL, FALSE);
+	hg_return_val_if_fail (func != NULL, FALSE, HG_e_VMerror);
 
 	if (hg_quark_get_type(qdata1) != hg_quark_get_type(qdata2))
 		return FALSE;

@@ -113,65 +113,63 @@ struct _hg_path_operate_vtable_t {
 
 
 hg_object_vtable_t *hg_object_path_get_vtable(void) G_GNUC_CONST;
-hg_quark_t          hg_path_new              (hg_mem_t       *mem,
-                                              hg_pointer_t   *ret);
-hg_bool_t           hg_path_get_current_point(hg_path_t      *path,
-                                              hg_real_t      *x,
-                                              hg_real_t      *y);
-hg_bool_t           hg_path_close            (hg_path_t      *path);
-hg_bool_t           hg_path_moveto           (hg_path_t      *path,
-                                              hg_real_t       x,
-                                              hg_real_t       y);
-hg_bool_t           hg_path_rmoveto          (hg_path_t      *path,
-                                              hg_real_t       x,
-                                              hg_real_t       y);
-hg_bool_t           hg_path_lineto           (hg_path_t      *path,
-                                              hg_real_t       x,
-                                              hg_real_t       y);
-hg_bool_t           hg_path_rlineto          (hg_path_t      *path,
-                                              hg_real_t       x,
-                                              hg_real_t       y);
-hg_bool_t           hg_path_curveto          (hg_path_t      *path,
-                                              hg_real_t       x1,
-                                              hg_real_t       y1,
-                                              hg_real_t       x2,
-                                              hg_real_t       y2,
-                                              hg_real_t       x3,
-                                              hg_real_t       y3);
-hg_bool_t           hg_path_rcurveto         (hg_path_t      *path,
-                                              hg_real_t       x1,
-                                              hg_real_t       y1,
-                                              hg_real_t       x2,
-                                              hg_real_t       y2,
-                                              hg_real_t       x3,
-                                              hg_real_t       y3);
-hg_bool_t           hg_path_arc              (hg_path_t      *path,
-                                              hg_real_t       x,
-                                              hg_real_t       y,
-                                              hg_real_t       r,
-                                              hg_real_t       angle1,
-                                              hg_real_t       angle2);
-hg_bool_t           hg_path_arcn             (hg_path_t      *path,
-                                              hg_real_t       x,
-                                              hg_real_t       y,
-                                              hg_real_t       r,
-                                              hg_real_t       angle1,
-                                              hg_real_t       angle2);
-hg_bool_t           hg_path_arcto            (hg_path_t      *path,
-					      hg_real_t       x1,
-					      hg_real_t       y1,
-					      hg_real_t       x2,
-					      hg_real_t       y2,
-					      hg_real_t       r,
-					      hg_real_t       tp[4]);
-hg_bool_t           hg_path_operate          (hg_path_t                 *path,
-					      hg_path_operate_vtable_t  *vtable,
-					      hg_pointer_t               user_data,
-					      GError                   **error);
-hg_bool_t           hg_path_get_bbox         (hg_path_t                 *path,
-					      hg_bool_t                  ignore_last_moveto,
-					      hg_path_bbox_t            *ret,
-					      GError                   **error);
+hg_quark_t          hg_path_new              (hg_mem_t                 *mem,
+                                              hg_pointer_t             *ret);
+hg_bool_t           hg_path_get_current_point(hg_path_t                *path,
+                                              hg_real_t                *x,
+                                              hg_real_t                *y);
+hg_bool_t           hg_path_close            (hg_path_t                *path);
+hg_bool_t           hg_path_moveto           (hg_path_t                *path,
+                                              hg_real_t                 x,
+                                              hg_real_t                 y);
+hg_bool_t           hg_path_rmoveto          (hg_path_t                *path,
+                                              hg_real_t                 x,
+                                              hg_real_t                 y);
+hg_bool_t           hg_path_lineto           (hg_path_t                *path,
+                                              hg_real_t                 x,
+                                              hg_real_t                 y);
+hg_bool_t           hg_path_rlineto          (hg_path_t                *path,
+                                              hg_real_t                 x,
+                                              hg_real_t                 y);
+hg_bool_t           hg_path_curveto          (hg_path_t                *path,
+                                              hg_real_t                 x1,
+                                              hg_real_t                 y1,
+                                              hg_real_t                 x2,
+                                              hg_real_t                 y2,
+                                              hg_real_t                 x3,
+                                              hg_real_t                 y3);
+hg_bool_t           hg_path_rcurveto         (hg_path_t                *path,
+                                              hg_real_t                 x1,
+                                              hg_real_t                 y1,
+                                              hg_real_t                 x2,
+                                              hg_real_t                 y2,
+                                              hg_real_t                 x3,
+                                              hg_real_t                 y3);
+hg_bool_t           hg_path_arc              (hg_path_t                *path,
+                                              hg_real_t                 x,
+                                              hg_real_t                 y,
+                                              hg_real_t                 r,
+                                              hg_real_t                 angle1,
+                                              hg_real_t                 angle2);
+hg_bool_t           hg_path_arcn             (hg_path_t                *path,
+                                              hg_real_t                 x,
+                                              hg_real_t                 y,
+                                              hg_real_t                 r,
+                                              hg_real_t                 angle1,
+                                              hg_real_t                 angle2);
+hg_bool_t           hg_path_arcto            (hg_path_t                *path,
+                                              hg_real_t                 x1,
+                                              hg_real_t                 y1,
+                                              hg_real_t                 x2,
+                                              hg_real_t                 y2,
+                                              hg_real_t                 r,
+                                              hg_real_t                 tp[4]);
+hg_bool_t           hg_path_operate          (hg_path_t                *path,
+                                              hg_path_operate_vtable_t *vtable,
+                                              hg_pointer_t              user_data);
+hg_bool_t           hg_path_get_bbox         (hg_path_t                *path,
+                                              hg_bool_t                 ignore_last_moveto,
+                                              hg_path_bbox_t           *ret);
 
 HG_END_DECLS
 

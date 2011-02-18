@@ -39,18 +39,15 @@ typedef struct _hg_plugin_vtable_t	hg_plugin_vtable_t;
 typedef struct _hg_plugin_t		hg_plugin_t;
 typedef struct _hg_plugin_info_t	hg_plugin_info_t;
 typedef enum _hg_plugin_type_t		hg_plugin_type_t;
-typedef hg_plugin_t * (* hg_plugin_new_func_t) (hg_mem_t  *mem,
-						GError   **error);
+typedef hg_plugin_t * (* hg_plugin_new_func_t) (hg_mem_t  *mem);
 
 struct _hg_plugin_vtable_t {
 	hg_bool_t (* init)     (void);
 	hg_bool_t (* finalize) (void);
-	hg_bool_t (* load)     (hg_plugin_t   *plugin,
-				hg_pointer_t   vm,
-				GError       **error);
-	hg_bool_t (* unload)   (hg_plugin_t   *plugin,
-				hg_pointer_t   vm,
-				GError       **error);
+	hg_bool_t (* load)     (hg_plugin_t  *plugin,
+				hg_pointer_t  vm);
+	hg_bool_t (* unload)   (hg_plugin_t  *plugin,
+				hg_pointer_t  vm);
 };
 struct _hg_plugin_t {
 	hg_mem_t           *mem;
@@ -71,19 +68,16 @@ enum _hg_plugin_type_t {
 };
 
 
-hg_plugin_t *hg_plugin_open   (hg_mem_t          *mem,
-			       const hg_char_t   *name,
-			       hg_plugin_type_t   type,
-			       GError           **error);
-hg_plugin_t *hg_plugin_new    (hg_mem_t          *mem,
-			       hg_plugin_info_t  *info);
-void         hg_plugin_destroy(hg_plugin_t       *plugin);
-hg_bool_t    hg_plugin_load   (hg_plugin_t       *plugin,
-			       hg_pointer_t       vm,
-			       GError           **error);
-hg_bool_t    hg_plugin_unload (hg_plugin_t       *plugin,
-			       hg_pointer_t       vm,
-			       GError           **error);
+hg_plugin_t *hg_plugin_open   (hg_mem_t         *mem,
+                               const hg_char_t  *name,
+                               hg_plugin_type_t  type);
+hg_plugin_t *hg_plugin_new    (hg_mem_t         *mem,
+                               hg_plugin_info_t *info);
+void         hg_plugin_destroy(hg_plugin_t      *plugin);
+hg_bool_t    hg_plugin_load   (hg_plugin_t      *plugin,
+                               hg_pointer_t      vm);
+hg_bool_t    hg_plugin_unload (hg_plugin_t      *plugin,
+                               hg_pointer_t      vm);
 
 HG_END_DECLS
 

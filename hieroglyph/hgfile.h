@@ -34,12 +34,16 @@
 
 HG_BEGIN_DECLS
 
-#define HG_FILE_INIT						\
-	HG_STRING_INIT;						\
-	(hg_object_register(HG_TYPE_FILE,			\
-			    hg_object_file_get_vtable()))
+#define HG_FILE_INIT							\
+	HG_STMT_START {							\
+		HG_STRING_INIT;						\
+		hg_object_register(HG_TYPE_FILE,			\
+				   hg_object_file_get_vtable());	\
+	} HG_STMT_END
 #define HG_IS_QFILE(_q_)				\
 	(hg_quark_get_type((_q_)) == HG_TYPE_FILE)
+
+extern HG_THREAD_VAR hg_int_t hg_fileerrno;
 
 typedef enum _hg_file_io_t			hg_file_io_t;
 typedef enum _hg_file_mode_t			hg_file_mode_t;
@@ -48,8 +52,8 @@ typedef struct _hg_file_vtable_t		hg_file_vtable_t;
 typedef struct _hg_file_t			hg_file_t;
 typedef struct _hg_file_io_data_t		hg_file_io_data_t;
 typedef struct _hg_file_gc_t			hg_file_gc_t;
-typedef void (* hg_file_yybuffer_finalizer_func_t) (gpointer yybuffer,
-						    gpointer yydata);
+typedef void (* hg_file_yybuffer_finalizer_func_t) (hg_pointer_t yybuffer,
+						    hg_pointer_t yydata);
 
 enum _hg_file_io_t {
 	HG_FILE_IO_FILE = 0,
@@ -73,63 +77,57 @@ enum _hg_file_pos_t {
 	HG_FILE_POS_END     = SEEK_END
 };
 struct _hg_file_vtable_t {
-	gboolean (* open)      (hg_file_t      *file,
-				gpointer        user_data,
-				GError        **error);
-	void     (* close)     (hg_file_t      *file,
-				gpointer        user_data,
-				GError        **error);
-	gssize   (* read)      (hg_file_t      *file,
-				gpointer        user_data,
-				gpointer        buffer,
-				gsize           size,
-				gsize           n,
-				GError        **error);
-	gssize   (* write)     (hg_file_t      *file,
-				gpointer        user_data,
-				gconstpointer   buffer,
-				gsize           size,
-				gsize           n,
-				GError        **error);
-	gboolean (* flush)     (hg_file_t      *file,
-				gpointer        user_data,
-				GError        **error);
-	gssize   (* seek)      (hg_file_t      *file,
-				gpointer        user_data,
-				gssize          offset,
-				hg_file_pos_t   whence,
-				GError        **error);
-	gboolean (* is_eof)    (hg_file_t      *file,
-				gpointer        user_data);
-	void     (* clear_eof) (hg_file_t      *file,
-				gpointer        user_data);
+	hg_bool_t (* open)      (hg_file_t          *file,
+				 hg_pointer_t        user_data);
+	void      (* close)     (hg_file_t          *file,
+				 hg_pointer_t        user_data);
+	hg_size_t (* read)      (hg_file_t          *file,
+				 hg_pointer_t        user_data,
+				 hg_pointer_t        buffer,
+				 hg_usize_t          size,
+				 hg_usize_t          n);
+	hg_size_t (* write)     (hg_file_t          *file,
+				 hg_pointer_t        user_data,
+				 const hg_pointer_t  buffer,
+				 hg_usize_t          size,
+				 hg_usize_t          n);
+	hg_bool_t (* flush)     (hg_file_t          *file,
+				 hg_pointer_t        user_data);
+	hg_size_t (* seek)      (hg_file_t          *file,
+				 hg_pointer_t        user_data,
+				 hg_size_t           offset,
+				 hg_file_pos_t       whence);
+	hg_bool_t (* is_eof)    (hg_file_t          *file,
+				 hg_pointer_t        user_data);
+	void      (* clear_eof) (hg_file_t          *file,
+				 hg_pointer_t        user_data);
 };
 struct _hg_file_t {
-	hg_object_t                       o;
-	hg_quark_t                        qfilename;
-	hg_file_io_t                      io_type;
-	hg_file_mode_t                    mode;
-	hg_file_vtable_t                 *vtable;
-	gsize                             size;
-	gssize                            position;
-	gssize                            lineno;
-	gboolean                          is_closed;
-	hg_file_io_data_t                *user_data;
-	hg_file_yybuffer_finalizer_func_t yyfree;
-	gpointer                          yybuffer;
-	gpointer                          yydata;
+	hg_object_t                        o;
+	hg_quark_t                         qfilename;
+	hg_file_io_t                       io_type;
+	hg_file_mode_t                     mode;
+	hg_file_vtable_t                  *vtable;
+	hg_usize_t                         size;
+	hg_size_t                          position;
+	hg_size_t                          lineno;
+	hg_bool_t                          is_closed;
+	hg_file_io_data_t                 *user_data;
+	hg_file_yybuffer_finalizer_func_t  yyfree;
+	hg_pointer_t                       yybuffer;
+	hg_pointer_t                       yydata;
 };
 struct _hg_file_io_data_t {
 	hg_quark_t           self;
 	hg_gc_iterate_func_t gc_func;
 	hg_destroy_func_t    destroy_func;
-	gboolean             is_eof;
+	hg_bool_t            is_eof;
 	gint                 fd;
-	gpointer             mmapped_buffer;
+	hg_pointer_t         mmapped_buffer;
 };
 struct _hg_file_gc_t {
 	hg_gc_iterate_func_t  func;
-	gpointer              user_data;
+	hg_pointer_t          user_data;
 	hg_mem_t             *mem;
 	hg_file_io_data_t    *data;
 };
@@ -137,65 +135,55 @@ struct _hg_file_gc_t {
 
 hg_object_vtable_t     *hg_object_file_get_vtable  (void) G_GNUC_CONST;
 const hg_file_vtable_t *hg_file_get_lineedit_vtable(void) G_GNUC_CONST;
-hg_file_io_t            hg_file_get_io_type        (const gchar                       *name);
+hg_file_io_t            hg_file_get_io_type        (const hg_char_t                   *name);
 hg_quark_t              hg_file_new                (hg_mem_t                          *mem,
-                                                    const gchar                       *name,
+                                                    const hg_char_t                   *name,
                                                     hg_file_mode_t                     mode,
-                                                    GError                            **error,
-                                                    gpointer                          *ret);
+                                                    hg_pointer_t                      *ret);
 hg_quark_t              hg_file_new_with_vtable    (hg_mem_t                          *mem,
-                                                    const gchar                       *name,
+                                                    const hg_char_t                   *name,
                                                     hg_file_mode_t                     mode,
                                                     const hg_file_vtable_t            *vtable,
-                                                    gpointer                           user_data,
-                                                    GError                            **error,
-                                                    gpointer                          *ret);
+                                                    hg_pointer_t                       user_data,
+                                                    hg_pointer_t                      *ret);
 hg_quark_t              hg_file_new_with_string    (hg_mem_t                          *mem,
-                                                    const gchar                       *name,
+                                                    const hg_char_t                   *name,
                                                     hg_file_mode_t                     mode,
                                                     hg_string_t                       *in,
                                                     hg_string_t                       *out,
-                                                    GError                            **error,
-                                                    gpointer                          *ret);
-void                    hg_file_close              (hg_file_t                         *file,
-                                                    GError                            **error);
-gssize                  hg_file_read               (hg_file_t                         *file,
-                                                    gpointer                           buffer,
-                                                    gsize                              size,
-                                                    gsize                              n,
-                                                    GError                            **error);
-gssize                  hg_file_write              (hg_file_t                         *file,
-                                                    gpointer                           buffer,
-                                                    gsize                              size,
-                                                    gsize                              n,
-                                                    GError                            **error);
-gboolean                hg_file_flush              (hg_file_t                         *file,
-                                                    GError                            **error);
-gssize                  hg_file_seek               (hg_file_t                         *file,
-                                                    gssize                             offset,
-                                                    hg_file_pos_t                      whence,
-                                                    GError                            **error);
-gboolean                hg_file_is_closed          (hg_file_t                         *file);
-gboolean                hg_file_is_eof             (hg_file_t                         *file);
+                                                    hg_pointer_t                      *ret);
+void                    hg_file_close              (hg_file_t                         *file);
+hg_size_t               hg_file_read               (hg_file_t                         *file,
+                                                    hg_pointer_t                       buffer,
+                                                    hg_usize_t                         size,
+                                                    hg_usize_t                         n);
+hg_size_t               hg_file_write              (hg_file_t                         *file,
+                                                    hg_pointer_t                       buffer,
+                                                    hg_usize_t                         size,
+                                                    hg_usize_t                         n);
+hg_bool_t               hg_file_flush              (hg_file_t                         *file);
+hg_size_t               hg_file_seek               (hg_file_t                         *file,
+                                                    hg_size_t                          offset,
+                                                    hg_file_pos_t                      whence);
+hg_bool_t               hg_file_is_closed          (hg_file_t                         *file);
+hg_bool_t               hg_file_is_eof             (hg_file_t                         *file);
 void                    hg_file_clear_eof          (hg_file_t                         *file);
-gssize                  hg_file_append_printf      (hg_file_t                         *file,
-                                                    gchar const                       *format,
+hg_size_t               hg_file_append_printf      (hg_file_t                         *file,
+                                                    hg_char_t const                   *format,
 						    ...);
-gssize                  hg_file_append_vprintf     (hg_file_t                         *file,
-                                                    gchar const                       *format,
+hg_size_t               hg_file_append_vprintf     (hg_file_t                         *file,
+                                                    hg_char_t const                   *format,
                                                     va_list                            args);
 void                    hg_file_set_lineno         (hg_file_t                         *file,
-                                                    gssize                             n);
-gssize                  hg_file_get_lineno         (hg_file_t                         *file);
-gssize                  hg_file_get_position       (hg_file_t                         *file);
+                                                    hg_size_t                          n);
+hg_size_t               hg_file_get_lineno         (hg_file_t                         *file);
+hg_size_t               hg_file_get_position       (hg_file_t                         *file);
 void                    hg_file_set_yybuffer       (hg_file_t                         *file,
-                                                    gpointer                           yybuffer,
+                                                    hg_pointer_t                       yybuffer,
                                                     hg_file_yybuffer_finalizer_func_t  func,
-						    gpointer                           user_data);
-gpointer                hg_file_get_yybuffer       (hg_file_t                         *file);
-void                    hg_file_set_error          (GError                           **error,
-						    const gchar                       *function,
-						    guint                              errno_);
+                                                    hg_pointer_t                       user_data);
+hg_pointer_t            hg_file_get_yybuffer       (hg_file_t                         *file);
+void                    hg_file_set_error          (const hg_char_t                   *function);
 
 
 HG_END_DECLS

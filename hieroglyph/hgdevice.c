@@ -26,7 +26,6 @@
 #endif
 
 #include <string.h>
-#include <glib.h>
 #include "hgarray.h"
 #include "hgbool.h"
 #include "hgdict.h"
@@ -44,7 +43,7 @@
 #include "hgdevice.proto.h"
 
 /*< private >*/
-static gboolean
+static hg_bool_t
 _hg_device_init_page_params(hg_device_t *device,
 			    hg_mem_t    *mem)
 {
@@ -52,7 +51,7 @@ _hg_device_init_page_params(hg_device_t *device,
 	hg_array_t *a;
 
 	if (!device->params) {
-		hg_quark_t q = hg_mem_alloc(mem, sizeof (hg_pdev_params_t), (gpointer *)&device->params);
+		hg_quark_t q = hg_mem_alloc(mem, sizeof (hg_pdev_params_t), (hg_pointer_t *)&device->params);
 
 		if (q == Qnil)
 			return FALSE;
@@ -85,10 +84,10 @@ _hg_device_init_page_params(hg_device_t *device,
 
 	type = hg_quark_get_type(device->params->qinstall);
 	if (type != HG_TYPE_ARRAY) {
-		device->params->qinstall = hg_array_new(mem, 1, (gpointer *)&a);
+		device->params->qinstall = hg_array_new(mem, 1, (hg_pointer_t *)&a);
 		if (device->params->qinstall == Qnil)
 			return FALSE;
-		if (!hg_array_set(a, HG_QOPER (HG_enc_private_callinstall), 0, FALSE, NULL)) {
+		if (!hg_array_set(a, HG_QOPER (HG_enc_private_callinstall), 0, FALSE)) {
 			hg_mem_unlock_object(mem, device->params->qinstall);
 			return FALSE;
 		}
@@ -99,10 +98,10 @@ _hg_device_init_page_params(hg_device_t *device,
 
 	type = hg_quark_get_type(device->params->qbegin_page);
 	if (type != HG_TYPE_ARRAY) {
-		device->params->qbegin_page = hg_array_new(mem, 1, (gpointer *)&a);
+		device->params->qbegin_page = hg_array_new(mem, 1, (hg_pointer_t *)&a);
 		if (device->params->qbegin_page == Qnil)
 			return FALSE;
-		if (!hg_array_set(a, HG_QOPER (HG_enc_private_callbeginpage), 0, FALSE, NULL)) {
+		if (!hg_array_set(a, HG_QOPER (HG_enc_private_callbeginpage), 0, FALSE)) {
 			hg_mem_unlock_object(mem, device->params->qbegin_page);
 			return FALSE;
 		}
@@ -113,10 +112,10 @@ _hg_device_init_page_params(hg_device_t *device,
 
 	type = hg_quark_get_type(device->params->qend_page);
 	if (type != HG_TYPE_ARRAY) {
-		device->params->qend_page = hg_array_new(mem, 1, (gpointer *)&a);
+		device->params->qend_page = hg_array_new(mem, 1, (hg_pointer_t *)&a);
 		if (device->params->qend_page == Qnil)
 			return FALSE;
-		if (!hg_array_set(a, HG_QOPER (HG_enc_private_callendpage), 0, FALSE, NULL)) {
+		if (!hg_array_set(a, HG_QOPER (HG_enc_private_callendpage), 0, FALSE)) {
 			hg_mem_unlock_object(mem, device->params->qend_page);
 			return FALSE;
 		}
@@ -129,12 +128,12 @@ _hg_device_init_page_params(hg_device_t *device,
 }
 
 static hg_device_t *
-_hg_device_open(hg_mem_t    *mem,
-		const gchar *modulename)
+_hg_device_open(hg_mem_t        *mem,
+		const hg_char_t *modulename)
 {
 	GModule *module;
 	hg_device_t *retval = NULL;
-	gpointer dev_init = NULL, dev_fini = NULL;
+	hg_pointer_t dev_init = NULL, dev_fini = NULL;
 
 	if ((module = g_module_open(modulename, G_MODULE_BIND_LAZY|G_MODULE_BIND_LOCAL)) != NULL) {
 		g_module_symbol(module, "hg_module_init", &dev_init);
@@ -155,10 +154,8 @@ _hg_device_open(hg_mem_t    *mem,
 
 			_hg_device_init_page_params(retval, mem);
 		}
-#if defined (HG_DEBUG) && defined (HG_MODULE_DEBUG)
 	} else {
-		hg_warning(g_module_error());
-#endif /* HG_DEBUG && HG_MODULE_DEBUG */
+		hg_debug(HG_MSGCAT_DEVICE, "%s", g_module_error());
 	}
 
 	return retval;
@@ -174,51 +171,41 @@ _hg_device_open(hg_mem_t    *mem,
  *
  * Returns:
  */
-hg_error_t
-hg_device_gc_mark(hg_device_t           *device,
-		  hg_gc_iterate_func_t   func,
-		  gpointer               user_data)
+hg_bool_t
+hg_device_gc_mark(hg_device_t          *device,
+		  hg_gc_iterate_func_t  func,
+		  hg_pointer_t          user_data)
 {
-	hg_error_t error = 0;
-
-	hg_return_val_if_fail (device != NULL, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
-	hg_return_val_if_fail (func != NULL, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
+	hg_return_val_if_fail (device != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (func != NULL, FALSE, HG_e_VMerror);
 
 	if (device->params) {
-		hg_mem_t *mem = hg_mem_get(hg_quark_get_mem_id(device->params->self));
+		hg_mem_t *mem = hg_mem_spool_get(hg_quark_get_mem_id(device->params->self));
 
-		error = hg_mem_gc_mark(mem, device->params->self);
-		if (!HG_ERROR_IS_SUCCESS (error))
-			goto finalize;
-		error = func(device->params->qinput_attributes, user_data);
-		if (!HG_ERROR_IS_SUCCESS (error))
-			goto finalize;
-		error = func(device->params->qmedia_color, user_data);
-		if (!HG_ERROR_IS_SUCCESS (error))
-			goto finalize;
-		error = func(device->params->qmedia_type, user_data);
-		if (!HG_ERROR_IS_SUCCESS (error))
-			goto finalize;
-		error = func(device->params->qoutput_type, user_data);
-		if (!HG_ERROR_IS_SUCCESS (error))
-			goto finalize;
-		error = func(device->params->qinstall, user_data);
-		if (!HG_ERROR_IS_SUCCESS (error))
-			goto finalize;
-		error = func(device->params->qbegin_page, user_data);
-		if (!HG_ERROR_IS_SUCCESS (error))
-			goto finalize;
-		error = func(device->params->qend_page, user_data);
-		if (!HG_ERROR_IS_SUCCESS (error))
-			goto finalize;
+		if (!hg_mem_gc_mark(mem, device->params->self))
+			return FALSE;
+		if (!func(device->params->qinput_attributes, user_data))
+			return FALSE;
+		if (!func(device->params->qmedia_color, user_data))
+			return FALSE;
+		if (!func(device->params->qmedia_type, user_data))
+			return FALSE;
+		if (!func(device->params->qoutput_type, user_data))
+			return FALSE;
+		if (!func(device->params->qinstall, user_data))
+			return FALSE;
+		if (!func(device->params->qbegin_page, user_data))
+			return FALSE;
+		if (!func(device->params->qend_page, user_data))
+			return FALSE;
 
 		if (device->gc_mark) {
-			error = device->gc_mark(device, func, user_data);
+			if (!device->gc_mark(device, func, user_data))
+				return FALSE;
 		}
 	}
-  finalize:
 
-	return error;
+	return TRUE;
 }
 
 /**
@@ -231,22 +218,22 @@ hg_device_gc_mark(hg_device_t           *device,
  * Returns:
  */
 hg_device_t *
-hg_device_open(hg_mem_t    *mem,
-	       const gchar *name)
+hg_device_open(hg_mem_t        *mem,
+	       const hg_char_t *name)
 {
 	hg_device_t *retval = NULL;
-	gchar *basename, *modulename, *fullname;
-	const gchar *modpath;
+	hg_char_t *basename, *modulename, *fullname;
+	const hg_char_t *modpath;
 
-	hg_return_val_if_fail (name != NULL, NULL);
+	hg_return_val_if_fail (name != NULL, NULL, HG_e_VMerror);
 
 	basename = g_path_get_basename(name);
 	modulename = g_strdup_printf("libhgdev-%s.so", basename);
 	if ((modpath = g_getenv("HIEROGLYPH_DEVICE_PATH")) != NULL) {
-		gchar **path_list = g_strsplit(modpath, G_SEARCHPATH_SEPARATOR_S, -1);
-		gchar *p, *path;
-		gint i = 0;
-		gsize len;
+		hg_char_t **path_list = g_strsplit(modpath, G_SEARCHPATH_SEPARATOR_S, -1);
+		hg_char_t *p, *path;
+		hg_int_t i = 0;
+		hg_usize_t len;
 
 		for (i = 0; path_list[i] != NULL; i++) {
 			p = path_list[i];
@@ -295,8 +282,8 @@ hg_device_close(hg_device_t *device)
 {
 	GModule *module;
 
-	hg_return_if_fail (device != NULL);
-	hg_return_if_fail (device->finalizer != NULL);
+	hg_return_if_fail (device != NULL, HG_e_VMerror);
+	hg_return_if_fail (device->finalizer != NULL, HG_e_VMerror);
 
 	module = device->module;
 	device->finalizer(device);
@@ -320,34 +307,30 @@ hg_device_close(hg_device_t *device)
  * Returns:
  */
 hg_quark_t
-hg_device_get_page_params(hg_device_t                 *device,
-			  hg_mem_t                    *mem,
-			  gboolean                     check_dictfull,
-			  hg_pdev_name_lookup_func_t   func,
-			  gpointer                     func_user_data,
-			  gpointer                    *ret,
-			  GError                     **error)
+hg_device_get_page_params(hg_device_t                *device,
+			  hg_mem_t                   *mem,
+			  hg_bool_t                   check_dictfull,
+			  hg_pdev_name_lookup_func_t  func,
+			  hg_pointer_t                func_user_data,
+			  hg_pointer_t               *ret)
 {
 	hg_quark_t retval, q = Qnil, qn;
 	hg_dict_t *d;
-	GError *err = NULL;
-	gint i;
+	hg_int_t i;
 	hg_array_t *a;
-	gsize size;
+	hg_usize_t size;
 
-	hg_return_val_with_gerror_if_fail (device != NULL, Qnil, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (device->params != NULL, Qnil, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (mem != NULL, Qnil, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (func != NULL, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (device != NULL, Qnil, HG_e_VMerror);
+	hg_return_val_if_fail (device->params != NULL, Qnil, HG_e_VMerror);
+	hg_return_val_if_fail (mem != NULL, Qnil, HG_e_VMerror);
+	hg_return_val_if_fail (func != NULL, Qnil, HG_e_VMerror);
 
 	if (device->get_page_params_size)
 		size = device->get_page_params_size(device);
 	else
 		size = HG_pdev_END;
-	retval = hg_dict_new(mem, size, check_dictfull, (gpointer *)&d);
+	retval = hg_dict_new(mem, size, check_dictfull, (hg_pointer_t *)&d);
 	if (retval == Qnil) {
-		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-			    "Out of memory");
 		goto finalize;
 	}
 	for (i = HG_pdev_BEGIN + 1; i < size; i++) {
@@ -363,15 +346,13 @@ hg_device_get_page_params(hg_device_t                 *device,
 			    }
 			    break;
 		    case HG_pdev_PageSize:
-			    q = hg_array_new(mem, 2, (gpointer *)&a);
+			    q = hg_array_new(mem, 2, (hg_pointer_t *)&a);
 			    if (q == Qnil) {
-				    g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-						"Out of memory");
 				    goto finalize;
 			    }
-			    if (!hg_array_set(a, HG_QREAL (device->params->page_size.width), 0, FALSE, &err))
+			    if (!hg_array_set(a, HG_QREAL (device->params->page_size.width), 0, FALSE))
 				    goto error;
-			    if (!hg_array_set(a, HG_QREAL (device->params->page_size.height), 1, FALSE, &err))
+			    if (!hg_array_set(a, HG_QREAL (device->params->page_size.height), 1, FALSE))
 				    goto error;
 			    hg_mem_unlock_object(mem, q);
 			    break;
@@ -412,15 +393,13 @@ hg_device_get_page_params(hg_device_t                 *device,
 			    q = HG_QINT (device->params->cut_media);
 			    break;
 		    case HG_pdev_HWResolution:
-			    q = hg_array_new(mem, 2, (gpointer *)&a);
+			    q = hg_array_new(mem, 2, (hg_pointer_t *)&a);
 			    if (q == Qnil) {
-				    g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-						"Out of memory");
 				    goto finalize;
 			    }
-			    if (!hg_array_set(a, HG_QREAL (device->params->hw_resolution.x), 0, FALSE, &err))
+			    if (!hg_array_set(a, HG_QREAL (device->params->hw_resolution.x), 0, FALSE))
 				    goto error;
-			    if (!hg_array_set(a, HG_QREAL (device->params->hw_resolution.y), 1, FALSE, &err))
+			    if (!hg_array_set(a, HG_QREAL (device->params->hw_resolution.y), 1, FALSE))
 				    goto error;
 			    hg_mem_unlock_object(mem, q);
 			    break;
@@ -431,33 +410,29 @@ hg_device_get_page_params(hg_device_t                 *device,
 				HG_REAL_IS_ZERO (device->params->imaging_bbox.y2)) {
 				    q = HG_QNULL;
 			    } else {
-				    q = hg_array_new(mem, 4, (gpointer *)&a);
+				    q = hg_array_new(mem, 4, (hg_pointer_t *)&a);
 				    if (q == Qnil) {
-					    g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-							"Out of memory");
 					    goto finalize;
 				    }
-				    if (!hg_array_set(a, HG_QREAL (device->params->imaging_bbox.x1), 0, FALSE, &err))
+				    if (!hg_array_set(a, HG_QREAL (device->params->imaging_bbox.x1), 0, FALSE))
 					    goto error;
-				    if (!hg_array_set(a, HG_QREAL (device->params->imaging_bbox.y1), 1, FALSE, &err))
+				    if (!hg_array_set(a, HG_QREAL (device->params->imaging_bbox.y1), 1, FALSE))
 					    goto error;
-				    if (!hg_array_set(a, HG_QREAL (device->params->imaging_bbox.x2), 2, FALSE, &err))
+				    if (!hg_array_set(a, HG_QREAL (device->params->imaging_bbox.x2), 2, FALSE))
 					    goto error;
-				    if (!hg_array_set(a, HG_QREAL (device->params->imaging_bbox.y2), 3, FALSE, &err))
+				    if (!hg_array_set(a, HG_QREAL (device->params->imaging_bbox.y2), 3, FALSE))
 					    goto error;
 				    hg_mem_unlock_object(mem, q);
 			    }
 			    break;
 		    case HG_pdev_Margins:
-			    q = hg_array_new(mem, 2, (gpointer *)&a);
+			    q = hg_array_new(mem, 2, (hg_pointer_t *)&a);
 			    if (q == Qnil) {
-				    g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-						"Out of memory");
 				    goto finalize;
 			    }
-			    if (!hg_array_set(a, HG_QREAL (device->params->margins.x), 0, FALSE, &err))
+			    if (!hg_array_set(a, HG_QREAL (device->params->margins.x), 0, FALSE))
 				    goto error;
-			    if (!hg_array_set(a, HG_QREAL (device->params->margins.y), 1, FALSE, &err))
+			    if (!hg_array_set(a, HG_QREAL (device->params->margins.y), 1, FALSE))
 				    goto error;
 			    hg_mem_unlock_object(mem, q);
 			    break;
@@ -525,7 +500,7 @@ hg_device_get_page_params(hg_device_t                 *device,
 		}
 		if (q != Qnil) {
 			qn = func(i, func_user_data);
-			if (!hg_dict_add(d, qn, q, FALSE, &err)) {
+			if (!hg_dict_add(d, qn, q, FALSE)) {
 			  error:
 				hg_object_free(mem, q);
 				goto finalize;
@@ -538,16 +513,7 @@ hg_device_get_page_params(hg_device_t                 *device,
 	else
 		hg_mem_unlock_object(d->o.mem, retval);
   finalize:
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
+	if (!HG_ERROR_IS_SUCCESS0 ()) {
 		hg_object_free(d->o.mem, retval);
 		retval = Qnil;
 	}
@@ -559,20 +525,18 @@ hg_device_get_page_params(hg_device_t                 *device,
  * hg_device_install:
  * @device:
  * @vm:
- * @error:
  *
  * FIXME
  */
 void
-hg_device_install(hg_device_t  *device,
-		  hg_vm_t      *vm,
-		  GError      **error)
+hg_device_install(hg_device_t *device,
+		  hg_vm_t     *vm)
 {
-	hg_return_with_gerror_if_fail (device != NULL, error, HG_VM_e_VMerror);
-	hg_return_with_gerror_if_fail (vm != NULL, error, HG_VM_e_VMerror);
+	hg_return_if_fail (device != NULL, HG_e_VMerror);
+	hg_return_if_fail (vm != NULL, HG_e_VMerror);
 
 	if (device->install)
-		device->install(device, vm, error);
+		device->install(device, vm);
 }
 
 /**
@@ -583,10 +547,10 @@ hg_device_install(hg_device_t  *device,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_device_is_pending_draw(hg_device_t *device)
 {
-	hg_return_val_if_fail (device != NULL, FALSE);
+	hg_return_val_if_fail (device != NULL, FALSE, HG_e_VMerror);
 
 	if (device->is_pending_draw)
 		return device->is_pending_draw(device);
@@ -603,7 +567,7 @@ hg_device_is_pending_draw(hg_device_t *device)
 void
 hg_device_draw(hg_device_t *device)
 {
-	hg_return_if_fail (device != NULL);
+	hg_return_if_fail (device != NULL, HG_e_VMerror);
 
 	if (device->draw)
 		device->draw(device);
@@ -618,13 +582,13 @@ hg_device_draw(hg_device_t *device)
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_device_get_ctm(hg_device_t *device,
 		  hg_matrix_t *matrix)
 {
-	hg_return_val_if_fail (device != NULL, FALSE);
-	hg_return_val_if_fail (matrix != NULL, FALSE);
-	hg_return_val_if_fail (device->get_ctm != NULL, FALSE);
+	hg_return_val_if_fail (device != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (matrix != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (device->get_ctm != NULL, FALSE, HG_e_VMerror);
 
 	return device->get_ctm(device, matrix);
 }
@@ -633,46 +597,30 @@ hg_device_get_ctm(hg_device_t *device,
  * hg_device_eofill:
  * @device:
  * @gstate:
- * @error:
  *
  * FIXME
  *
  * Returns:
  */
-gboolean
-hg_device_eofill(hg_device_t  *device,
-		 hg_gstate_t  *gstate,
-		 GError      **error)
+hg_bool_t
+hg_device_eofill(hg_device_t *device,
+		 hg_gstate_t *gstate)
 {
-	gboolean retval;
-	GError *err = NULL;
+	hg_bool_t retval;
 
-	hg_return_val_if_fail (device != NULL, FALSE);
-	hg_return_val_if_fail (gstate != NULL, FALSE);
-	hg_return_val_if_fail (device->eofill != NULL, FALSE);
+	hg_return_val_if_fail (device != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (gstate != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (device->eofill != NULL, FALSE, HG_e_VMerror);
 
 	retval = device->eofill(device, gstate);
 	if (retval) {
 		hg_quark_t qpath = hg_path_new(gstate->o.mem, NULL);
 
 		if (qpath == Qnil) {
-			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-				    "Out of memory.");
-			retval = FALSE;
+			return FALSE;
 		} else {
 			hg_gstate_set_path(gstate, qpath);
 		}
-	}
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
 	}
 
 	return retval;
@@ -682,46 +630,30 @@ hg_device_eofill(hg_device_t  *device,
  * hg_device_fill:
  * @device:
  * @gstate:
- * @error:
  *
  * FIXME
  *
  * Returns:
  */
-gboolean
-hg_device_fill(hg_device_t  *device,
-	       hg_gstate_t  *gstate,
-	       GError      **error)
+hg_bool_t
+hg_device_fill(hg_device_t *device,
+	       hg_gstate_t *gstate)
 {
-	gboolean retval;
-	GError *err = NULL;
+	hg_bool_t retval;
 
-	hg_return_val_if_fail (device != NULL, FALSE);
-	hg_return_val_if_fail (gstate != NULL, FALSE);
-	hg_return_val_if_fail (device->fill != NULL, FALSE);
+	hg_return_val_if_fail (device != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (gstate != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (device->fill != NULL, FALSE, HG_e_VMerror);
 
 	retval = device->fill(device, gstate);
 	if (retval) {
 		hg_quark_t qpath = hg_path_new(gstate->o.mem, NULL);
 
 		if (qpath == Qnil) {
-			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-				    "Out of memory.");
-			retval = FALSE;
+			return FALSE;
 		} else {
 			hg_gstate_set_path(gstate, qpath);
 		}
-	}
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
 	}
 
 	return retval;
@@ -731,46 +663,30 @@ hg_device_fill(hg_device_t  *device,
  * hg_device_stroke:
  * @device:
  * @gstate:
- * @error:
  *
  * FIXME
  *
  * Returns:
  */
-gboolean
-hg_device_stroke(hg_device_t  *device,
-		 hg_gstate_t  *gstate,
-		 GError      **error)
+hg_bool_t
+hg_device_stroke(hg_device_t *device,
+		 hg_gstate_t *gstate)
 {
-	gboolean retval;
-	GError *err = NULL;
+	hg_bool_t retval;
 
-	hg_return_val_if_fail (device != NULL, FALSE);
-	hg_return_val_if_fail (gstate != NULL, FALSE);
-	hg_return_val_if_fail (device->stroke != NULL, FALSE);
+	hg_return_val_if_fail (device != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (gstate != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (device->stroke != NULL, FALSE, HG_e_VMerror);
 
 	retval = device->stroke(device, gstate);
 	if (retval) {
 		hg_quark_t qpath = hg_path_new(gstate->o.mem, NULL);
 
 		if (qpath == Qnil) {
-			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-				    "Out of memory.");
-			retval = FALSE;
+			return FALSE;
 		} else {
 			hg_gstate_set_path(gstate, qpath);
 		}
-	}
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
 	}
 
 	return retval;
@@ -785,7 +701,7 @@ struct _hg_null_device_t {
 	hg_device_t parent;
 };
 
-static gboolean
+static hg_bool_t
 _hg_device_null_nop(hg_device_t *device,
 		    hg_gstate_t *gstate)
 {
@@ -800,7 +716,7 @@ _hg_device_null_destroy(hg_device_t *device)
 	g_free(devnul);
 }
 
-static gboolean
+static hg_bool_t
 _hg_device_null_get_ctm(hg_device_t *device,
 			hg_matrix_t *matrix)
 {

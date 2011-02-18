@@ -62,34 +62,34 @@ typedef struct _hg_cairo_device_t {
 	} u;
 } hg_cairo_device_t;
 
-static void _hg_cairo_device_new_path  (gpointer  user_data);
-static void _hg_cairo_device_close_path(gpointer  user_data);
-static void _hg_cairo_device_moveto    (gpointer  user_data,
-                                        gdouble   x,
-                                        gdouble   y);
-static void _hg_cairo_device_rmoveto   (gpointer  user_data,
-                                        gdouble   rx,
-                                        gdouble   ry);
-static void _hg_cairo_device_lineto    (gpointer  user_data,
-                                        gdouble   x,
-                                        gdouble   y);
-static void _hg_cairo_device_rlineto   (gpointer  user_data,
-                                        gdouble   rx,
-                                        gdouble   ry);
-static void _hg_cairo_device_curveto   (gpointer  user_data,
-                                        gdouble   x1,
-                                        gdouble   y1,
-                                        gdouble   x2,
-                                        gdouble   y2,
-                                        gdouble   x3,
-                                        gdouble   y3);
-static void _hg_cairo_device_rcurveto  (gpointer  user_data,
-                                        gdouble   rx1,
-                                        gdouble   ry1,
-                                        gdouble   rx2,
-                                        gdouble   ry2,
-                                        gdouble   rx3,
-                                        gdouble   ry3);
+static void _hg_cairo_device_new_path  (hg_pointer_t user_data);
+static void _hg_cairo_device_close_path(hg_pointer_t user_data);
+static void _hg_cairo_device_moveto    (hg_pointer_t user_data,
+                                        hg_real_t    x,
+                                        hg_real_t    y);
+static void _hg_cairo_device_rmoveto   (hg_pointer_t user_data,
+                                        hg_real_t    rx,
+                                        hg_real_t    ry);
+static void _hg_cairo_device_lineto    (hg_pointer_t user_data,
+                                        hg_real_t    x,
+                                        hg_real_t    y);
+static void _hg_cairo_device_rlineto   (hg_pointer_t user_data,
+                                        hg_real_t    rx,
+                                        hg_real_t    ry);
+static void _hg_cairo_device_curveto   (hg_pointer_t user_data,
+                                        hg_real_t    x1,
+                                        hg_real_t    y1,
+                                        hg_real_t    x2,
+                                        hg_real_t    y2,
+                                        hg_real_t    x3,
+                                        hg_real_t    y3);
+static void _hg_cairo_device_rcurveto  (hg_pointer_t user_data,
+                                        hg_real_t    rx1,
+                                        hg_real_t    ry1,
+                                        hg_real_t    rx2,
+                                        hg_real_t    ry2,
+                                        hg_real_t    rx3,
+                                        hg_real_t    ry3);
 
 
 static hg_path_operate_vtable_t __vtable = {
@@ -107,69 +107,69 @@ G_LOCK_DEFINE_STATIC (cairo);
 
 /*< private >*/
 static void
-_hg_cairo_device_new_path(gpointer user_data)
+_hg_cairo_device_new_path(hg_pointer_t user_data)
 {
 	cairo_new_path((cairo_t *)user_data);
 }
 
 static void
-_hg_cairo_device_close_path(gpointer user_data)
+_hg_cairo_device_close_path(hg_pointer_t user_data)
 {
 	cairo_close_path((cairo_t *)user_data);
 }
 
 static void
-_hg_cairo_device_moveto(gpointer user_data,
-			gdouble  x,
-			gdouble  y)
+_hg_cairo_device_moveto(hg_pointer_t user_data,
+			hg_real_t    x,
+			hg_real_t    y)
 {
 	cairo_move_to((cairo_t *)user_data, x, y);
 }
 
 static void
-_hg_cairo_device_rmoveto(gpointer user_data,
-			 gdouble  rx,
-			 gdouble  ry)
+_hg_cairo_device_rmoveto(hg_pointer_t user_data,
+			 hg_real_t    rx,
+			 hg_real_t    ry)
 {
 	cairo_rel_move_to((cairo_t *)user_data, rx, ry);
 }
 
 static void
-_hg_cairo_device_lineto(gpointer user_data,
-			gdouble  x,
-			gdouble  y)
+_hg_cairo_device_lineto(hg_pointer_t user_data,
+			hg_real_t    x,
+			hg_real_t    y)
 {
 	cairo_line_to((cairo_t *)user_data, x, y);
 }
 
 static void
-_hg_cairo_device_rlineto(gpointer user_data,
-			 gdouble  rx,
-			 gdouble  ry)
+_hg_cairo_device_rlineto(hg_pointer_t user_data,
+			 hg_real_t    rx,
+			 hg_real_t    ry)
 {
 	cairo_rel_line_to((cairo_t *)user_data, rx, ry);
 }
 
 static void
-_hg_cairo_device_curveto(gpointer user_data,
-			 gdouble  x1,
-			 gdouble  y1,
-			 gdouble  x2,
-			 gdouble  y2,
-			 gdouble  x3,
-			 gdouble  y3)
+_hg_cairo_device_curveto(hg_pointer_t user_data,
+			 hg_real_t    x1,
+			 hg_real_t    y1,
+			 hg_real_t    x2,
+			 hg_real_t    y2,
+			 hg_real_t    x3,
+			 hg_real_t    y3)
 {
 	cairo_curve_to((cairo_t *)user_data, x1, y1, x2, y2, x3, y3);
 }
 
 static void
-_hg_cairo_device_rcurveto(gpointer user_data,
-			  gdouble  rx1,
-			  gdouble  ry1,
-			  gdouble  rx2,
-			  gdouble  ry2,
-			  gdouble  rx3,
-			  gdouble  ry3)
+_hg_cairo_device_rcurveto(hg_pointer_t user_data,
+			  hg_real_t    rx1,
+			  hg_real_t    ry1,
+			  hg_real_t    rx2,
+			  hg_real_t    ry2,
+			  hg_real_t    rx3,
+			  hg_real_t    ry3)
 {
 	cairo_rel_curve_to((cairo_t *)user_data, rx1, ry1, rx2, ry2, rx3, ry3);
 }
@@ -203,7 +203,7 @@ _hg_cairo_device_set_color(hg_cairo_device_t *device,
 				     color->is.rgb.green,
 				     color->is.rgb.blue);
 	} else if (color->type == HG_COLOR_HSB) {
-		gdouble r, g, b, h, s, v, f, p, q, t;
+		hg_real_t r, g, b, h, s, v, f, p, q, t;
 
 		if (color->is.hsb.saturation == 0.0) {
 			r = color->is.hsb.brightness;
@@ -312,21 +312,21 @@ _hg_cairo_device_set_line_join(hg_cairo_device_t *device,
 static void
 _hg_cairo_device_set_dash(hg_cairo_device_t *device,
 			  hg_quark_t         qdash,
-			  gdouble            dash_offset)
+			  hg_real_t          dash_offset)
 {
 	hg_array_t *a;
-	hg_mem_t *m = hg_mem_get(hg_quark_get_mem_id(qdash));
+	hg_mem_t *m = hg_mem_spool_get(hg_quark_get_mem_id(qdash));
 	hg_quark_t q;
-	gsize len, i;
-	gdouble *dashes;
+	hg_usize_t len, i;
+	hg_real_t *dashes;
 
 	hg_return_if_lock_fail (a, m, qdash);
 
 	len = hg_array_length(a);
-	dashes = g_new(gdouble, len);
+	dashes = g_new(hg_real_t, len);
 
 	for (i = 0; i < len; i++) {
-		q = hg_array_get(a, i, NULL);
+		q = hg_array_get(a, i);
 		if (HG_IS_QINT (q)) {
 			dashes[i] = HG_INT (q);
 		} else {
@@ -340,13 +340,12 @@ _hg_cairo_device_set_dash(hg_cairo_device_t *device,
 }
 
 static void
-_hg_cairo_device_install(hg_device_t  *device,
-			 hg_vm_t      *vm,
-			 GError      **error)
+_hg_cairo_device_install(hg_device_t *device,
+			 hg_vm_t     *vm)
 {
 	hg_cairo_device_t *cdev = (hg_cairo_device_t *)device;
-	gint screen;
-	gulong black, white;
+	hg_int_t screen;
+	hg_ulong_t black, white;
 	cairo_matrix_t mtx;
 
 	device->params->page_size.width = 600;
@@ -357,8 +356,8 @@ _hg_cairo_device_install(hg_device_t  *device,
 	    case HG_CAIRO_DEVICE_SURFACE_XLIB:
 		    cdev->u.xlib.dpy = XOpenDisplay(NULL);
 		    if (cdev->u.xlib.dpy == NULL) {
-			    g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
-					"Unable to open a display");
+			    hg_debug(HG_MSGCAT_DEVICE, "Unable to open a display");
+			    hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 			    return;
 		    }
 		    screen = DefaultScreen(cdev->u.xlib.dpy);
@@ -385,14 +384,14 @@ _hg_cairo_device_install(hg_device_t  *device,
 							      device->params->page_size.height);
 		    break;
 	    default:
-		    g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
-				"Invalid surface.");
+		    hg_debug(HG_MSGCAT_DEVICE, "Invalid surface.");
+		    hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 		    return;
 	}
 	cdev->cr = cairo_create(cdev->surface);
 	if (cairo_status(cdev->cr) != CAIRO_STATUS_SUCCESS) {
-		g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
-			    "Unable to create a cairo instance");
+		hg_debug(HG_MSGCAT_DEVICE, "Unable to create a cairo instance.");
+		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 		return;
 	}
 	/* The page needs to be transformed.
@@ -402,7 +401,7 @@ _hg_cairo_device_install(hg_device_t  *device,
 	cairo_set_matrix(cdev->cr, &mtx);
 }
 
-static gboolean
+static hg_bool_t
 _hg_cairo_device_is_pending_draw(hg_device_t *device)
 {
 	hg_cairo_device_t *cdev = (hg_cairo_device_t *)device;
@@ -479,7 +478,7 @@ _hg_cairo_device_draw(hg_device_t *device)
 	}
 }
 
-static gboolean
+static hg_bool_t
 _hg_cairo_device_get_ctm(hg_device_t *device,
 			 hg_matrix_t *matrix)
 {
@@ -493,7 +492,7 @@ _hg_cairo_device_get_ctm(hg_device_t *device,
 	return TRUE;
 }
 
-static gboolean
+static hg_bool_t
 _hg_cairo_device_eofill(hg_device_t  *device,
 			hg_gstate_t  *gstate)
 {
@@ -511,7 +510,7 @@ _hg_cairo_device_eofill(hg_device_t  *device,
 	hg_gstate_get_ctm(gstate, &mtx);
 	_hg_cairo_device_set_ctm(cdev, &mtx);
 	cairo_new_path(cdev->cr);
-	if (!hg_path_operate(path, &__vtable, cdev->cr, NULL))
+	if (!hg_path_operate(path, &__vtable, cdev->cr))
 		return FALSE;
 	_hg_cairo_device_set_color(cdev, &gstate->color);
 
@@ -534,7 +533,7 @@ _hg_cairo_device_eofill(hg_device_t  *device,
 	return TRUE;
 }
 
-static gboolean
+static hg_bool_t
 _hg_cairo_device_fill(hg_device_t  *device,
 		      hg_gstate_t  *gstate)
 {
@@ -543,7 +542,7 @@ _hg_cairo_device_fill(hg_device_t  *device,
 	hg_path_t *path;
 	hg_matrix_t mtx;
 	XRectangle r;
-	gboolean retval = TRUE;
+	hg_bool_t retval = TRUE;
 
 	hg_return_val_if_lock_fail (path,
 				    gstate->o.mem,
@@ -553,7 +552,7 @@ _hg_cairo_device_fill(hg_device_t  *device,
 	hg_gstate_get_ctm(gstate, &mtx);
 	_hg_cairo_device_set_ctm(cdev, &mtx);
 	cairo_new_path(cdev->cr);
-	if (!hg_path_operate(path, &__vtable, cdev->cr, NULL)) {
+	if (!hg_path_operate(path, &__vtable, cdev->cr)) {
 		retval = FALSE;
 		goto finalize;
 	}
@@ -580,7 +579,7 @@ _hg_cairo_device_fill(hg_device_t  *device,
 	return TRUE;
 }
 
-static gboolean
+static hg_bool_t
 _hg_cairo_device_stroke(hg_device_t  *device,
 			hg_gstate_t  *gstate)
 {
@@ -598,7 +597,7 @@ _hg_cairo_device_stroke(hg_device_t  *device,
 	hg_gstate_get_ctm(gstate, &mtx);
 	_hg_cairo_device_set_ctm(cdev, &mtx);
 	cairo_new_path(cdev->cr);
-	if (!hg_path_operate(path, &__vtable, cdev->cr, NULL))
+	if (!hg_path_operate(path, &__vtable, cdev->cr))
 		return FALSE;
 	_hg_cairo_device_set_color(cdev, &gstate->color);
 	cairo_set_line_width(cdev->cr, gstate->linewidth);

@@ -49,6 +49,8 @@ typedef int8_t		hg_int8_t;
 typedef uint8_t		hg_uint8_t;
 typedef int16_t		hg_int16_t;
 typedef uint16_t	hg_uint16_t;
+typedef long		hg_long_t;
+typedef unsigned long	hg_ulong_t;
 typedef void *		hg_pointer_t;
 typedef uint64_t	hg_quark_t;
 typedef size_t		hg_usize_t;
@@ -86,17 +88,11 @@ typedef hg_int_t		hg_error_t;
 /* types of callback functions */
 typedef hg_bool_t (* hg_cb_BOOL__QUARK_t)       (hg_mem_t      *mem,
 						 hg_quark_t     q,
-						 hg_pointer_t   data,
-						 GError       **error);
+						 hg_pointer_t   data);
 typedef hg_bool_t (* hg_cb_BOOL__QUARK_QUARK_t) (hg_mem_t      *mem,
 						 hg_quark_t     q1,
 						 hg_quark_t     q2,
-						 hg_pointer_t   data,
-						 GError       **error);
-typedef hg_error_t (* hg_cb_ERROR__QUARK_QUARK_t) (hg_mem_t      *mem,
-						   hg_quark_t     q1,
-						   hg_quark_t     q2,
-						   hg_pointer_t   data);
+						 hg_pointer_t   data);
 
 HG_END_DECLS
 

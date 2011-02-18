@@ -55,47 +55,41 @@ struct _hg_array_t {
 
 
 hg_object_vtable_t *hg_object_array_get_vtable(void) G_GNUC_CONST;
-hg_quark_t          hg_array_new              (hg_mem_t                  *mem,
-                                               hg_usize_t                 size,
-                                               hg_pointer_t              *ret);
-void                hg_array_free             (hg_array_t                *array);
-hg_bool_t           hg_array_set              (hg_array_t                *array,
-                                               hg_quark_t                 quark,
-                                               hg_usize_t                 index,
-					       hg_bool_t                  force,
-					       GError                   **error);
-hg_quark_t          hg_array_get              (hg_array_t                *array,
-                                               hg_usize_t                 index,
-                                               GError                   **error);
-hg_bool_t           hg_array_insert           (hg_array_t                *array,
-                                               hg_quark_t                 quark,
-                                               gssize                     pos,
-					       GError                   **error);
-hg_bool_t           hg_array_remove           (hg_array_t                *array,
-                                               hg_usize_t                 pos);
-hg_usize_t          hg_array_length           (hg_array_t                *array);
-hg_usize_t          hg_array_maxlength        (hg_array_t                *array);
-void                hg_array_foreach          (hg_array_t                *array,
-                                               hg_array_traverse_func_t   func,
-                                               hg_pointer_t               data,
-                                               GError                   **error);
-void                hg_array_set_name         (hg_array_t                *array,
-					       const hg_char_t           *name);
-hg_quark_t          hg_array_make_subarray    (hg_array_t                *array,
-					       hg_usize_t                 start_index,
-					       hg_usize_t                 end_index,
-					       hg_pointer_t              *ret,
-					       GError                   **error);
-hg_bool_t           hg_array_copy_as_subarray (hg_array_t                *src,
-					       hg_array_t                *dest,
-					       hg_usize_t                 start_index,
-					       hg_usize_t                 end_index,
-					       GError                   **error);
-hg_bool_t           hg_array_is_matrix        (hg_array_t                *array);
-hg_bool_t           hg_array_from_matrix      (hg_array_t                *array,
-					       hg_matrix_t               *matrix);
-hg_bool_t           hg_array_to_matrix        (hg_array_t                *array,
-					       hg_matrix_t               *matrix);
+hg_quark_t          hg_array_new              (hg_mem_t                 *mem,
+                                               hg_usize_t                size,
+                                               hg_pointer_t             *ret);
+void                hg_array_free             (hg_array_t               *array);
+hg_bool_t           hg_array_set              (hg_array_t               *array,
+                                               hg_quark_t                quark,
+                                               hg_usize_t                index,
+                                               hg_bool_t                 force);
+hg_quark_t          hg_array_get              (hg_array_t               *array,
+                                               hg_usize_t                index);
+hg_bool_t           hg_array_insert           (hg_array_t               *array,
+                                               hg_quark_t                quark,
+                                               hg_size_t                 pos);
+hg_bool_t           hg_array_remove           (hg_array_t               *array,
+                                               hg_usize_t                pos);
+hg_usize_t          hg_array_length           (hg_array_t               *array);
+hg_usize_t          hg_array_maxlength        (hg_array_t               *array);
+void                hg_array_foreach          (hg_array_t               *array,
+                                               hg_array_traverse_func_t  func,
+                                               hg_pointer_t              data);
+void                hg_array_set_name         (hg_array_t               *array,
+                                               const hg_char_t          *name);
+hg_quark_t          hg_array_make_subarray    (hg_array_t               *array,
+                                               hg_usize_t                start_index,
+                                               hg_usize_t                end_index,
+                                               hg_pointer_t             *ret);
+hg_bool_t           hg_array_copy_as_subarray (hg_array_t               *src,
+                                               hg_array_t               *dest,
+                                               hg_usize_t                start_index,
+                                               hg_usize_t                end_index);
+hg_bool_t           hg_array_is_matrix        (hg_array_t               *array);
+hg_bool_t           hg_array_from_matrix      (hg_array_t               *array,
+                                               hg_matrix_t              *matrix);
+hg_bool_t           hg_array_to_matrix        (hg_array_t               *array,
+                                               hg_matrix_t              *matrix);
 
 
 HG_END_DECLS

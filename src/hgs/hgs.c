@@ -25,11 +25,19 @@
 #include "config.h"
 #endif
 
+#include <stdio.h>
 #include <glib.h>
 #include <hieroglyph/hgvm.h>
 
+#define HGS_ERROR	_hgs_error_quark()
 
 /*< private >*/
+static GQuark
+_hgs_error_quark(void)
+{
+	return g_quark_from_static_string("hgs-error-quark");
+}
+
 static gboolean
 _hgs_arg_define_cb(const gchar  *option_name,
 		   const gchar  *value,
@@ -58,9 +66,8 @@ _hgs_arg_device_cb(const gchar  *option_name,
 	hg_vm_t *vm = data;
 
 	if (!hg_vm_set_device(vm, value)) {
-		g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
-			    "Unable to open a device: %s",
-			    value);
+		g_set_error(error, HGS_ERROR, HG_e_VMerror,
+			    "Unable to open a device: %s", value);
 		return FALSE;
 	}
 
@@ -73,11 +80,17 @@ _hgs_arg_load_plugin_cb(const gchar  *option_name,
 			gpointer      data,
 			GError      **error)
 {
-	gboolean retval = FALSE;
+	hg_bool_t retval = FALSE;
 	hg_vm_t *vm = data;
 
 	if (value && *value) {
-		retval = hg_vm_add_plugin(vm, value, error);
+		retval = hg_vm_add_plugin(vm, value);
+		if (!HG_ERROR_IS_SUCCESS0 ()) {
+			g_set_error(error, HGS_ERROR, HG_ERROR_GET_REASON (hg_errno),
+				    "Unable to load a plugin: %s", value);
+
+			return FALSE;
+		}
 	}
 
 	return retval;
@@ -89,10 +102,10 @@ main(int    argc,
      char **argv)
 {
 	GError *err = NULL;
-	const gchar *psfile = NULL;
-	gint errcode = 0;
+	const hg_char_t *psfile = NULL;
+	hg_int_t errcode = 0;
 	hg_vm_t *vm = NULL;
-	guint arg_langlevel = HG_LANG_LEVEL_END;
+	hg_uint_t arg_langlevel = HG_LANG_LEVEL_END;
 	GOptionContext *ctxt = g_option_context_new("<PostScript file>");
 	GOptionGroup *group;
 	GOptionEntry entries[] = {
@@ -125,8 +138,8 @@ main(int    argc,
 
 	if (argc > 1) {
 		FILE *fp;
-		gchar buffer[256], token[] = "%!PS-Adobe-";
-		gsize len = strlen(token);
+		hg_char_t buffer[256], token[] = "%!PS-Adobe-";
+		hg_usize_t len = strlen(token);
 
 		psfile = argv[1];
 		if (arg_langlevel == HG_LANG_LEVEL_END) {
@@ -136,11 +149,11 @@ main(int    argc,
 			}
 			if (fgets(buffer, 255, fp)) {
 				if (strncmp(buffer, token, len) == 0) {
-					gchar *p = &buffer[len];
-					gdouble d;
+					hg_char_t *p = &buffer[len];
+					hg_real_t d;
 
 					sscanf(p, "%lf", &d);
-					arg_langlevel = (guint)d;
+					arg_langlevel = (hg_uint_t)d;
 					hg_vm_hold_language_level(vm, TRUE);
 				}
 			}

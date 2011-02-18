@@ -34,18 +34,18 @@
 #include "hg.h"
 
 
-static hg_char_t *_libedit_get_line    (hg_lineedit_t  *lineedit,
-					const gchar    *prompt,
-					hg_pointer_t    user_data);
-static void       _libedit_add_history (hg_lineedit_t  *lineedit,
-					const gchar    *history,
-					hg_pointer_t    user_data);
-static hg_bool_t  _libedit_load_history(hg_lineedit_t  *lineedit,
-					const gchar    *historyfile,
-					hg_pointer_t    user_data);
-static hg_bool_t  _libedit_save_history(hg_lineedit_t  *lineedit,
-					const gchar    *historyfile,
-					hg_pointer_t    user_data);
+static hg_char_t *_libedit_get_line    (hg_lineedit_t   *lineedit,
+					const hg_char_t *prompt,
+					hg_pointer_t     user_data);
+static void       _libedit_add_history (hg_lineedit_t   *lineedit,
+					const hg_char_t *history,
+					hg_pointer_t     user_data);
+static hg_bool_t  _libedit_load_history(hg_lineedit_t   *lineedit,
+					const hg_char_t *historyfile,
+					hg_pointer_t     user_data);
+static hg_bool_t  _libedit_save_history(hg_lineedit_t   *lineedit,
+					const hg_char_t *historyfile,
+					hg_pointer_t     user_data);
 
 PROTO_PLUGIN (libedit);
 
@@ -83,7 +83,7 @@ _libedit_add_history(hg_lineedit_t   *lineedit,
 		     const hg_char_t *history,
 		     hg_pointer_t     user_data)
 {
-	hg_return_if_fail (history != NULL);
+	hg_return_if_fail (history != NULL, HG_e_VMerror);
 
 	if (history[0] == 0 ||
 	    history[0] == '\n' ||
@@ -99,7 +99,7 @@ _libedit_load_history(hg_lineedit_t   *lineedit,
 		      const hg_char_t *historyfile,
 		      hg_pointer_t     user_data)
 {
-	hg_return_val_if_fail (historyfile != NULL, FALSE);
+	hg_return_val_if_fail (historyfile != NULL, FALSE, HG_e_VMerror);
 
 	read_history(historyfile);
 
@@ -111,7 +111,7 @@ _libedit_save_history(hg_lineedit_t   *lineedit,
 		      const hg_char_t *historyfile,
 		      hg_pointer_t     user_data)
 {
-	hg_return_val_if_fail (historyfile != NULL, FALSE);
+	hg_return_val_if_fail (historyfile != NULL, FALSE, HG_e_VMerror);
 
 	write_history(historyfile);
 
@@ -128,14 +128,14 @@ DEFUNC_OPER (private_loadhistory)
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	arg0 = hg_stack_index(ostack, 0);
 	if (!HG_IS_QSTRING (arg0)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		hg_vm_set_error(vm, qself, HG_e_typecheck);
 		return FALSE;
 	}
-	s = HG_VM_LOCK (vm, arg0, error);
+	s = HG_VM_LOCK (vm, arg0);
 	if (s == NULL) {
-		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		hg_vm_set_error(vm, qself, HG_e_VMerror);
 		return FALSE;
 	}
 	cstr = hg_string_get_cstr(s);
@@ -154,7 +154,7 @@ DEFUNC_OPER (private_loadhistory)
 	g_free(filename);
 	g_free(cstr);
 
-	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack);
 	SET_EXPECTED_OSTACK_SIZE (-1);
 } DEFUNC_OPER_END
 
@@ -168,14 +168,14 @@ DEFUNC_OPER (private_savehistory)
 
 	CHECK_STACK (ostack, 1);
 
-	arg0 = hg_stack_index(ostack, 0, error);
+	arg0 = hg_stack_index(ostack, 0);
 	if (!HG_IS_QSTRING (arg0)) {
-		hg_vm_set_error(vm, qself, HG_VM_e_typecheck);
+		hg_vm_set_error(vm, qself, HG_e_typecheck);
 		return FALSE;
 	}
-	s = HG_VM_LOCK (vm, arg0, error);
+	s = HG_VM_LOCK (vm, arg0);
 	if (s == NULL) {
-		hg_vm_set_error(vm, qself, HG_VM_e_VMerror);
+		hg_vm_set_error(vm, qself, HG_e_VMerror);
 		return FALSE;
 	}
 	cstr = hg_string_get_cstr(s);
@@ -194,14 +194,14 @@ DEFUNC_OPER (private_savehistory)
 	g_free(filename);
 	g_free(cstr);
 
-	hg_stack_drop(ostack, error);
+	hg_stack_drop(ostack);
 	SET_EXPECTED_OSTACK_SIZE (-1);
 } DEFUNC_OPER_END
 
 static hg_bool_t
 _libedit_init(void)
 {
-	gint i;
+	hg_int_t i;
 
 	for (i = 0; i < HG_libedit_enc_END; i++) {
 		__libedit_enc_list[i] = Qnil;
@@ -217,14 +217,13 @@ _libedit_finalize(void)
 }
 
 static hg_bool_t
-_libedit_load(hg_plugin_t   *plugin,
-	      hg_pointer_t   vm_,
-	      GError       **error)
+_libedit_load(hg_plugin_t  *plugin,
+	      hg_pointer_t  vm_)
 {
 	hg_vm_t *vm = vm_;
 	hg_dict_t *dict;
 	hg_bool_t is_global;
-	gint i;
+	hg_int_t i;
 
 	if (plugin->user_data != NULL) {
 		hg_warning("plugin is already loaded.");
@@ -233,7 +232,7 @@ _libedit_load(hg_plugin_t   *plugin,
 	plugin->user_data = vm->lineedit;
 
 	is_global = hg_vm_is_global_mem_used(vm);
-	dict = HG_VM_LOCK (vm, vm->qsystemdict, error);
+	dict = HG_VM_LOCK (vm, vm->qsystemdict);
 	if (dict == NULL)
 		return FALSE;
 	hg_vm_use_global_mem(vm, TRUE);
@@ -257,9 +256,8 @@ _libedit_load(hg_plugin_t   *plugin,
 }
 
 static hg_bool_t
-_libedit_unload(hg_plugin_t   *plugin,
-		hg_pointer_t   vm_,
-		GError       **error)
+_libedit_unload(hg_plugin_t  *plugin,
+		hg_pointer_t  vm_)
 {
 	hg_vm_t *vm = vm_;
 
@@ -276,10 +274,9 @@ _libedit_unload(hg_plugin_t   *plugin,
 
 /*< public >*/
 hg_plugin_t *
-plugin_new(hg_mem_t  *mem,
-	   GError   **error)
+plugin_new(hg_mem_t *mem)
 {
-	hg_return_val_with_gerror_if_fail (mem != NULL, NULL, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (mem != NULL, NULL, HG_e_VMerror);
 
 	return hg_plugin_new(mem,
 			     &__libedit_plugin_info);

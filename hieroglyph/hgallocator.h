@@ -39,6 +39,8 @@ typedef struct _hg_allocator_snapshot_data_t	hg_allocator_snapshot_data_t;
 typedef struct _hg_mem_vtable_t			hg_mem_vtable_t;
 typedef enum _hg_mem_flags_t			hg_mem_flags_t;
 
+typedef void (* hg_finalizer_func_t)	(hg_pointer_t object);
+
 /**
  * hg_allocator_data_t:
  * @total_size:
@@ -70,7 +72,9 @@ struct _hg_allocator_snapshot_data_t {
  * FIXME
  */
 enum _hg_mem_flags_t {
-	HG_MEM_RESTORABLE      = 1 << 0,
+	HG_MEM_FLAG_RESTORABLE    = 1 << 0,
+	HG_MEM_FLAG_HAS_FINALIZER = 1 << 1,
+	HG_MEM_FLAGS_END
 };
 /**
  * hg_mem_vtable_t:
@@ -112,11 +116,17 @@ struct _hg_mem_vtable_t {
 							      hg_quark_t                     quark);
 	void                           (* unlock_object)     (hg_allocator_data_t           *data,
 							      hg_quark_t                     quark);
+	hg_int_t                       (* add_finalizer)     (hg_allocator_data_t           *data,
+							      hg_finalizer_func_t            func);
+	void                           (* remove_finalizer)  (hg_allocator_data_t           *data,
+							      hg_int_t                       finalizer_id);
+	void                           (* set_finalizer)     (hg_allocator_data_t           *data,
+							      hg_quark_t                     quark,
+							      hg_int_t                       finalizer_id);
 	hg_bool_t                      (* gc_init)           (hg_allocator_data_t           *data);
-	hg_error_t                     (* gc_mark)           (hg_allocator_data_t           *data,
+	hg_bool_t                      (* gc_mark)           (hg_allocator_data_t           *data,
 							      hg_quark_t                     quark);
-	hg_error_t                     (* gc_finish)         (hg_allocator_data_t           *data,
-							      hg_error_t                     error);
+	hg_bool_t                      (* gc_finish)         (hg_allocator_data_t           *data);
 	hg_allocator_snapshot_data_t * (* save_snapshot)     (hg_allocator_data_t           *data);
 	hg_bool_t                      (* restore_snapshot)  (hg_allocator_data_t           *data,
 							      hg_allocator_snapshot_data_t  *snapshot,

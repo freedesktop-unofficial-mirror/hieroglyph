@@ -25,7 +25,6 @@
 #include "config.h"
 #endif
 
-#include <glib.h>
 #include "hgerror.h"
 #include "hgmem.h"
 #include "hgstring.h"
@@ -44,8 +43,8 @@ typedef struct _hg_dict_item_t {
 typedef struct _hg_dict_compare_data_t {
 	hg_dict_t               *opposite_dict;
 	hg_quark_compare_func_t  func;
-	gpointer                 user_data;
-	gboolean                 result;
+	hg_pointer_t             user_data;
+	hg_bool_t                result;
 } hg_dict_compare_data_t;
 
 
@@ -55,22 +54,22 @@ HG_DEFINE_VTABLE_WITH (dict, NULL,
 		       _hg_object_dict_get_acl);
 HG_DEFINE_VTABLE_WITH (dict_node, NULL, NULL, NULL);
 
-static gsize __hg_dict_node_size = HG_DICT_NODE_SIZE;
+static hg_usize_t __hg_dict_node_size = HG_DICT_NODE_SIZE;
 
 /*< private >*/
-static gsize
+static hg_usize_t
 _hg_object_dict_get_capsulated_size(void)
 {
 	return HG_ALIGNED_TO_POINTER (sizeof (hg_dict_t));
 }
 
-static guint
+static hg_uint_t
 _hg_object_dict_get_allocation_flags(void)
 {
 	return HG_MEM_FLAGS_DEFAULT;
 }
 
-static gboolean
+static hg_bool_t
 _hg_object_dict_initialize(hg_object_t *object,
 			   va_list      args)
 {
@@ -78,8 +77,8 @@ _hg_object_dict_initialize(hg_object_t *object,
 
 	dict->qroot = Qnil;
 	dict->length = 0;
-	dict->allocated_size = va_arg(args, gsize);
-	dict->raise_dictfull = va_arg(args, gboolean);
+	dict->allocated_size = va_arg(args, hg_usize_t);
+	dict->raise_dictfull = va_arg(args, hg_bool_t);
 
 	return TRUE;
 }
@@ -90,47 +89,45 @@ _hg_object_dict_copy(hg_object_t              *object,
 		     hg_pointer_t              user_data,
 		     hg_pointer_t             *ret)
 {
-	hg_return_val_if_fail (object->type == HG_TYPE_DICT, Qnil);
+	hg_return_val_if_fail (object->type == HG_TYPE_DICT, Qnil, HG_e_typecheck);
 
 	return object->self;
 }
 
-static gchar *
-_hg_object_dict_to_cstr(hg_object_t              *object,
-			hg_quark_iterate_func_t   func,
-			gpointer                  user_data,
-			GError                  **error)
+static hg_char_t *
+_hg_object_dict_to_cstr(hg_object_t             *object,
+			hg_quark_iterate_func_t  func,
+			hg_pointer_t             user_data)
 {
-	hg_return_val_if_fail (object->type == HG_TYPE_DICT, NULL);
+	hg_return_val_if_fail (object->type == HG_TYPE_DICT, NULL, HG_e_typecheck);
 
 	return g_strdup("-dict-");
 }
 
-static hg_error_t
-_hg_object_dict_gc_mark(hg_object_t           *object,
-			hg_gc_iterate_func_t   func,
-			gpointer               user_data)
+static hg_bool_t
+_hg_object_dict_gc_mark(hg_object_t          *object,
+			hg_gc_iterate_func_t  func,
+			hg_pointer_t          user_data)
 {
 	hg_dict_t *dict;
 
-	hg_return_val_if_fail (object->type == HG_TYPE_DICT, HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror));
+	hg_return_val_if_fail (object->type == HG_TYPE_DICT, FALSE, HG_e_VMerror);
 
 	dict = (hg_dict_t *)object;
 
 	return func(dict->qroot, user_data);
 }
 
-static gboolean
-_hg_dict_traverse_compare(hg_mem_t    *mem,
-			  hg_quark_t   qkey,
-			  hg_quark_t   qval,
-			  gpointer     data,
-			  GError     **error)
+static hg_bool_t
+_hg_dict_traverse_compare(hg_mem_t     *mem,
+			  hg_quark_t    qkey,
+			  hg_quark_t    qval,
+			  hg_pointer_t  data)
 {
 	hg_dict_compare_data_t *cdata = data;
 	hg_quark_t q;
 
-	if ((q = hg_dict_lookup(cdata->opposite_dict, qkey, NULL)) == Qnil) {
+	if ((q = hg_dict_lookup(cdata->opposite_dict, qkey)) == Qnil) {
 		cdata->result = FALSE;
 
 		return FALSE;
@@ -144,16 +141,16 @@ _hg_dict_traverse_compare(hg_mem_t    *mem,
 	return TRUE;
 }
 
-static gboolean
+static hg_bool_t
 _hg_object_dict_compare(hg_object_t             *o1,
 			hg_object_t             *o2,
 			hg_quark_compare_func_t  func,
-			gpointer                 user_data)
+			hg_pointer_t             user_data)
 {
 	hg_dict_compare_data_t data;
 
-	hg_return_val_if_fail (o1->type == HG_TYPE_DICT, FALSE);
-	hg_return_val_if_fail (o2->type == HG_TYPE_DICT, FALSE);
+	hg_return_val_if_fail (o1->type == HG_TYPE_DICT, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (o2->type == HG_TYPE_DICT, FALSE, HG_e_typecheck);
 
 	if (hg_dict_length((hg_dict_t *)o1) != hg_dict_length((hg_dict_t *)o2))
 		return FALSE;
@@ -163,17 +160,17 @@ _hg_object_dict_compare(hg_object_t             *o1,
 	data.user_data = user_data;
 	data.result = TRUE;
 
-	hg_dict_foreach((hg_dict_t *)o1, _hg_dict_traverse_compare, &data, NULL);
+	hg_dict_foreach((hg_dict_t *)o1, _hg_dict_traverse_compare, &data);
 
 	return data.result;
 }
 
 static void
 _hg_object_dict_set_acl(hg_object_t *object,
-			gint         readable,
-			gint         writable,
-			gint         executable,
-			gint         editable)
+			hg_int_t     readable,
+			hg_int_t     writable,
+			hg_int_t     executable,
+			hg_int_t     editable)
 {
 	if (readable != 0) {
 		if (readable > 0)
@@ -207,45 +204,46 @@ _hg_object_dict_get_acl(hg_object_t *object)
 	return object->acl;
 }
 
-static gsize
+static hg_usize_t
 _hg_object_dict_node_get_capsulated_size(void)
 {
 	return HG_ALIGNED_TO_POINTER (sizeof (hg_dict_node_t));
 }
 
-static guint
+static hg_uint_t
 _hg_object_dict_node_get_allocation_flags(void)
 {
 	return HG_MEM_FLAGS_DEFAULT;
 }
 
-static gboolean
+static hg_bool_t
 _hg_object_dict_node_initialize(hg_object_t *object,
 				va_list      args)
 {
 	hg_dict_node_t *dnode = (hg_dict_node_t *)object;
 	hg_quark_t *keys = NULL, *vals = NULL, *nodes = NULL;
-	gpointer *ret_key, *ret_val, *ret_nodes;
-	gsize i;
+	hg_pointer_t *ret_key, *ret_val, *ret_nodes;
+	hg_usize_t i;
 
-	ret_key = va_arg(args, gpointer *);
-	ret_val = va_arg(args, gpointer *);
-	ret_nodes = va_arg(args, gpointer *);
+	ret_key = va_arg(args, hg_pointer_t *);
+	ret_val = va_arg(args, hg_pointer_t *);
+	ret_nodes = va_arg(args, hg_pointer_t *);
 
 	dnode->qkey = hg_mem_alloc(object->mem,
 				   sizeof (hg_quark_t) * __hg_dict_node_size * 2,
-				   (gpointer *)&keys);
+				   (hg_pointer_t *)&keys);
 	dnode->qval = hg_mem_alloc(object->mem,
 				   sizeof (hg_quark_t) * __hg_dict_node_size * 2,
-				   (gpointer *)&vals);
+				   (hg_pointer_t *)&vals);
 	dnode->qnodes = hg_mem_alloc(object->mem,
 				     sizeof (hg_quark_t) * __hg_dict_node_size * 2 + 1,
-				     (gpointer *)&nodes);
+				     (hg_pointer_t *)&nodes);
 	dnode->n_data = 0;
 	hg_return_val_after_eval_if_fail (dnode->qkey != Qnil &&
 					  dnode->qval != Qnil &&
 					  dnode->qnodes != Qnil,
-					  FALSE, _hg_dict_node_free(object->mem, object->self));
+					  FALSE, _hg_dict_node_free(object->mem, object->self),
+					  HG_e_VMerror);
 
 	for (i = 0; i < __hg_dict_node_size * 2 + 1; i++) {
 		((hg_quark_t *)keys)[i] = Qnil;
@@ -275,46 +273,41 @@ _hg_object_dict_node_copy(hg_object_t              *object,
 			  hg_pointer_t              user_data,
 			  hg_pointer_t             *ret)
 {
-	hg_return_val_if_fail (object->type == HG_TYPE_DICT_NODE, Qnil);
+	hg_return_val_if_fail (object->type == HG_TYPE_DICT_NODE, Qnil, HG_e_typecheck);
 
 	return object->self;
 }
 
-static gchar *
-_hg_object_dict_node_to_cstr(hg_object_t              *object,
-			     hg_quark_iterate_func_t   func,
-			     gpointer                  user_data,
-			     GError                  **error)
+static hg_char_t *
+_hg_object_dict_node_to_cstr(hg_object_t             *object,
+			     hg_quark_iterate_func_t  func,
+			     hg_pointer_t             user_data)
 {
-	hg_return_val_if_fail (object->type == HG_TYPE_DICT_NODE, NULL);
+	hg_return_val_if_fail (object->type == HG_TYPE_DICT_NODE, NULL, HG_e_typecheck);
 
 	return g_strdup("-dnode-");
 }
 
-static hg_error_t
-_hg_object_dict_node_gc_mark(hg_object_t           *object,
-			     hg_gc_iterate_func_t   func,
-			     gpointer               user_data)
+static hg_bool_t
+_hg_object_dict_node_gc_mark(hg_object_t          *object,
+			     hg_gc_iterate_func_t  func,
+			     hg_pointer_t          user_data)
 {
 	hg_dict_node_t *dnode = (hg_dict_node_t *)object;
-	hg_error_t error = 0;
-	gsize i;
+	hg_usize_t i;
 	hg_quark_t *qnode_keys = NULL, *qnode_vals = NULL, *qnode_nodes = NULL;
 
-	hg_return_val_if_fail (object->type == HG_TYPE_DICT_NODE, HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck));
+	hg_return_val_if_fail (object->type == HG_TYPE_DICT_NODE, FALSE, HG_e_typecheck);
 
 	hg_debug(HG_MSGCAT_GC, "dict: marking key container");
-	error = hg_mem_gc_mark(dnode->o.mem, dnode->qkey);
-	if (!HG_ERROR_IS_SUCCESS (error))
-		goto finalize;
+	if (!hg_mem_gc_mark(dnode->o.mem, dnode->qkey))
+		return FALSE;
 	hg_debug(HG_MSGCAT_GC, "dict: marking value container");
-	error = hg_mem_gc_mark(dnode->o.mem, dnode->qval);
-	if (!HG_ERROR_IS_SUCCESS (error))
-		goto finalize;
+	if (!hg_mem_gc_mark(dnode->o.mem, dnode->qval))
+		return FALSE;
 	hg_debug(HG_MSGCAT_GC, "dict: marking node container");
-	error = hg_mem_gc_mark(dnode->o.mem, dnode->qnodes);
-	if (!HG_ERROR_IS_SUCCESS (error))
-		goto finalize;
+	if (!hg_mem_gc_mark(dnode->o.mem, dnode->qnodes))
+		return FALSE;
 
 	qnode_keys = hg_mem_lock_object(dnode->o.mem, dnode->qkey);
 	qnode_vals = hg_mem_lock_object(dnode->o.mem, dnode->qval);
@@ -324,27 +317,23 @@ _hg_object_dict_node_gc_mark(hg_object_t           *object,
 	    qnode_nodes == NULL) {
 		hg_critical("%s: Invalid quark to obtain the actual object in dnode",
 			    __PRETTY_FUNCTION__);
-		error = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
+		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 		goto qfinalize;
 	}
 
 	for (i = 0; i < dnode->n_data; i++) {
 		hg_debug(HG_MSGCAT_GC, "dict: marking node[%ld]", i);
-		error = func(qnode_nodes[i], user_data);
-		if (!HG_ERROR_IS_SUCCESS (error))
+		if (!func(qnode_nodes[i], user_data))
 			goto qfinalize;
 		hg_debug(HG_MSGCAT_GC, "dict: marking key[%ld]", i);
-		error = func(qnode_keys[i], user_data);
-		if (!HG_ERROR_IS_SUCCESS (error))
+		if (!func(qnode_keys[i], user_data))
 			goto qfinalize;
 		hg_debug(HG_MSGCAT_GC, "dict: marking value[%ld]", i);
-		error = func(qnode_vals[i], user_data);
-		if (!HG_ERROR_IS_SUCCESS (error))
+		if (!func(qnode_vals[i], user_data))
 			goto qfinalize;
 	}
 	hg_debug(HG_MSGCAT_GC, "dict: marking node[%ld]", dnode->n_data);
-	error = func(qnode_nodes[dnode->n_data], user_data);
-	if (!HG_ERROR_IS_SUCCESS (error))
+	if (!func(qnode_nodes[dnode->n_data], user_data))
 		goto qfinalize;
   qfinalize:
 	if (qnode_keys)
@@ -354,31 +343,30 @@ _hg_object_dict_node_gc_mark(hg_object_t           *object,
 	if (qnode_nodes)
 		hg_mem_unlock_object(dnode->o.mem, dnode->qnodes);
 
-  finalize:
-	return error;
+	return HG_ERROR_IS_SUCCESS0 ();
 }
 
-static gboolean
+static hg_bool_t
 _hg_object_dict_node_compare(hg_object_t             *o1,
 			     hg_object_t             *o2,
 			     hg_quark_compare_func_t  func,
-			     gpointer                 user_data)
+			     hg_pointer_t             user_data)
 {
 	/* shouldn't be reached */
 	return FALSE;
 }
 
 HG_INLINE_FUNC hg_quark_t
-_hg_dict_node_new(hg_mem_t *mem,
-		  gpointer *ret,
-		  gpointer *ret_key,
-		  gpointer *ret_val,
-		  gpointer *ret_nodes)
+_hg_dict_node_new(hg_mem_t     *mem,
+		  hg_pointer_t *ret,
+		  hg_pointer_t *ret_key,
+		  hg_pointer_t *ret_val,
+		  hg_pointer_t *ret_nodes)
 {
 	hg_quark_t retval;
 	hg_dict_node_t *dnode;
 
-	retval = hg_object_new(mem, (gpointer *)&dnode, HG_TYPE_DICT_NODE, 0,
+	retval = hg_object_new(mem, (hg_pointer_t *)&dnode, HG_TYPE_DICT_NODE, 0,
 			       ret_key, ret_val, ret_nodes);
 	if (retval != Qnil) {
 		if (ret)
@@ -407,16 +395,15 @@ _hg_dict_node_free(hg_mem_t   *mem,
 	hg_mem_free(mem, qdata);
 }
 
-HG_INLINE_FUNC gboolean
-_hg_dict_node_insert(hg_mem_t    *mem,
-		     hg_quark_t   qnode,
-		     hg_quark_t  *qkey,
-		     hg_quark_t  *qval,
-		     hg_quark_t  *qright_node,
-		     GError     **error)
+HG_INLINE_FUNC hg_bool_t
+_hg_dict_node_insert(hg_mem_t   *mem,
+		     hg_quark_t  qnode,
+		     hg_quark_t *qkey,
+		     hg_quark_t *qval,
+		     hg_quark_t *qright_node)
 {
-	gsize i;
-	gboolean retval = FALSE;
+	hg_usize_t i;
+	hg_bool_t retval = FALSE;
 	hg_dict_node_t *qnode_node = NULL;
 	hg_quark_t *qnode_keys = NULL, *qnode_vals = NULL, *qnode_nodes = NULL;
 
@@ -424,14 +411,12 @@ _hg_dict_node_insert(hg_mem_t    *mem,
 		*qright_node = Qnil;
 		return FALSE;
 	}
-	HG_DICT_NODE_LOCK (mem, qnode, qnode, "", error);
+	HG_DICT_NODE_LOCK (mem, qnode, qnode, "");
 
 	if (qnode_keys[qnode_node->n_data - 1] >= *qkey) {
 		for (i = 0; i < qnode_node->n_data && qnode_keys[i] < *qkey; i++);
 		if (i < qnode_node->n_data && qnode_keys[i] == *qkey) {
-#if defined(HG_DEBUG) && defined(HG_DICT_DEBUG)
-			g_print("Inserting val %" G_GSIZE_FORMAT " with key %" G_GSIZE_FORMAT " at index %" G_GSIZE_FORMAT " on node %p\n", *qval, *qkey, i, qnode_nodes);
-#endif
+			hg_debug(HG_MSGCAT_DICT, "Inserting val %lx with key %lx at index %lx on node %p\n", *qval, *qkey, i, qnode_nodes);
 			qnode_keys[i] = *qkey;
 			qnode_vals[i] = *qval;
 
@@ -441,8 +426,8 @@ _hg_dict_node_insert(hg_mem_t    *mem,
 	} else {
 		i = qnode_node->n_data;
 	}
-	retval = _hg_dict_node_insert(mem, qnode_nodes[i], qkey, qval, qright_node, error);
-	if (*error) {
+	retval = _hg_dict_node_insert(mem, qnode_nodes[i], qkey, qval, qright_node);
+	if (!HG_ERROR_IS_SUCCESS0 ()) {
 		retval = FALSE;
 		goto finalize;
 	}
@@ -451,7 +436,7 @@ _hg_dict_node_insert(hg_mem_t    *mem,
 			_hg_dict_node_insert_data(qnode_node, qnode_keys, qnode_vals, qnode_nodes, *qkey, *qval, i, qright_node);
 			retval = TRUE;
 		} else {
-			_hg_dict_node_balance(qnode_node, qnode_keys, qnode_vals, qnode_nodes, qkey, qval, i, qright_node, error);
+			_hg_dict_node_balance(qnode_node, qnode_keys, qnode_vals, qnode_nodes, qkey, qval, i, qright_node);
 			retval = FALSE;
 		}
 	}
@@ -463,24 +448,22 @@ _hg_dict_node_insert(hg_mem_t    *mem,
 
 HG_INLINE_FUNC void
 _hg_dict_node_insert_data(hg_dict_node_t *node,
-			  hg_quark_t      *qkeys,
-			  hg_quark_t      *qvals,
-			  hg_quark_t      *qnodes,
-			  hg_quark_t       qkey,
-			  hg_quark_t       qval,
-			  gsize            pos,
-			  hg_quark_t      *qright_node)
+			  hg_quark_t     *qkeys,
+			  hg_quark_t     *qvals,
+			  hg_quark_t     *qnodes,
+			  hg_quark_t      qkey,
+			  hg_quark_t      qval,
+			  hg_usize_t      pos,
+			  hg_quark_t     *qright_node)
 {
-	gsize i;
+	hg_usize_t i;
 
 	for (i = node->n_data; i > pos; i--) {
 		qkeys[i] = qkeys[i - 1];
 		qvals[i] = qvals[i - 1];
 		qnodes[i + 1] = qnodes[i];
 	}
-#if defined(HG_DEBUG) && defined(HG_DICT_DEBUG)
-	g_print("Inserting val %" G_GSIZE_FORMAT " with key %" G_GSIZE_FORMAT " at index %" G_GSIZE_FORMAT " on node %p\n", qval, qkey, pos, qnodes);
-#endif
+	hg_debug(HG_MSGCAT_DICT, "Inserting val %lx with key %lx at index %lx on node %p\n", qval, qkey, pos, qnodes);
 	qkeys[pos] = qkey;
 	qvals[pos] = qval;
 	qnodes[pos + 1] = *qright_node;
@@ -488,17 +471,16 @@ _hg_dict_node_insert_data(hg_dict_node_t *node,
 }
 
 HG_INLINE_FUNC void
-_hg_dict_node_balance(hg_dict_node_t  *node,
-		      hg_quark_t      *qnode_keys,
-		      hg_quark_t      *qnode_vals,
-		      hg_quark_t      *qnode_nodes,
-		      hg_quark_t      *qkey,
-		      hg_quark_t      *qval,
-		      gsize            pos,
-		      hg_quark_t      *qright_node,
-		      GError         **error)
+_hg_dict_node_balance(hg_dict_node_t *node,
+		      hg_quark_t     *qnode_keys,
+		      hg_quark_t     *qnode_vals,
+		      hg_quark_t     *qnode_nodes,
+		      hg_quark_t     *qkey,
+		      hg_quark_t     *qval,
+		      hg_usize_t      pos,
+		      hg_quark_t     *qright_node)
 {
-	gsize i, node_size;
+	hg_usize_t i, node_size;
 	hg_quark_t q, *qnewnode_keys, *qnewnode_vals, *qnewnode_nodes;
 	hg_dict_node_t *new_node;
 
@@ -507,13 +489,11 @@ _hg_dict_node_balance(hg_dict_node_t  *node,
 	else
 		node_size = __hg_dict_node_size + 1;
 	q = _hg_dict_node_new(node->o.mem,
-			      (gpointer *)&new_node,
-			      (gpointer *)&qnewnode_keys,
-			      (gpointer *)&qnewnode_vals,
-			      (gpointer *)&qnewnode_nodes);
+			      (hg_pointer_t *)&new_node,
+			      (hg_pointer_t *)&qnewnode_keys,
+			      (hg_pointer_t *)&qnewnode_vals,
+			      (hg_pointer_t *)&qnewnode_nodes);
 	if (q == Qnil) {
-		g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
-			    "%s: Out of memory.", __PRETTY_FUNCTION__);
 		return;
 	}
 	for (i = node_size + 1; i <= __hg_dict_node_size * 2; i++) {
@@ -551,23 +531,22 @@ _hg_dict_node_balance(hg_dict_node_t  *node,
 	hg_mem_reserved_spool_remove(node->o.mem, q);
 }
 
-HG_INLINE_FUNC gboolean
-_hg_dict_node_remove(hg_mem_t    *mem,
-		     hg_quark_t   qnode,
-		     hg_quark_t  *qkey,
-		     hg_quark_t  *qval,
-		     gboolean    *need_restore,
-		     GError     **error)
+HG_INLINE_FUNC hg_bool_t
+_hg_dict_node_remove(hg_mem_t   *mem,
+		     hg_quark_t  qnode,
+		     hg_quark_t *qkey,
+		     hg_quark_t *qval,
+		     hg_bool_t  *need_restore)
 {
 	hg_quark_t *qnode_keys = NULL, *qnode_vals = NULL, *qnode_nodes = NULL, q;
 	hg_dict_node_t *qnode_node, *p;
-	gsize i;
-	gboolean retval = FALSE;
+	hg_usize_t i;
+	hg_bool_t retval = FALSE;
 
 	if (qnode == Qnil)
 		return FALSE;
 
-	HG_DICT_NODE_LOCK (mem, qnode, qnode, "", error);
+	HG_DICT_NODE_LOCK (mem, qnode, qnode, "");
 
 	if (qnode_keys[qnode_node->n_data - 1] >= *qkey) {
 		for (i = 0; i < qnode_node->n_data && qnode_keys[i] < *qkey; i++);
@@ -590,8 +569,7 @@ _hg_dict_node_remove(hg_mem_t    *mem,
 					hg_mem_unlock_object(qnode_node->o.mem, qqnode);
 				p = hg_mem_lock_object(qnode_node->o.mem, q);
 				if (p == NULL) {
-					g_set_error(error, HG_ERROR, HG_VM_e_VMerror,
-						    "%s: Invalid quark to obtain the node in the nodes container object: mem: %p, quark: %" G_GSIZE_FORMAT " in the node %p(q: %" G_GSIZE_FORMAT ")",
+					hg_warning("%s: Invalid quark to obtain the node in the nodes container object: mem: %p, quark: %lx in the node %p(q: %lx)",
 						    __PRETTY_FUNCTION__, mem, q, qtnode, qqnode != Qnil ? qqnode : qnode_nodes[i + 1]);
 					retval = FALSE;
 					goto finalize;
@@ -600,12 +578,12 @@ _hg_dict_node_remove(hg_mem_t    *mem,
 				qtnode = hg_mem_lock_object(qnode_node->o.mem, qqnode);
 			} while (qtnode[0] != Qnil);
 
-			qtkey = HG_MEM_LOCK (qnode_node->o.mem, p->qkey, error);
+			qtkey = HG_MEM_LOCK (qnode_node->o.mem, p->qkey);
 			if (qtkey == NULL) {
 				retval = FALSE;
 				goto finalize;
 			}
-			qtval = HG_MEM_LOCK (qnode_node->o.mem, p->qval, error);
+			qtval = HG_MEM_LOCK (qnode_node->o.mem, p->qval);
 			if (qtval == NULL) {
 				retval = FALSE;
 				goto finalize;
@@ -619,28 +597,28 @@ _hg_dict_node_remove(hg_mem_t    *mem,
 			hg_mem_unlock_object(qnode_node->o.mem, p->qnodes);
 			hg_mem_unlock_object(qnode_node->o.mem, q);
 
-			retval = _hg_dict_node_remove(qnode_node->o.mem, qnode_nodes[i + 1], qkey, qval, need_restore, error);
-			if (*error) {
+			retval = _hg_dict_node_remove(qnode_node->o.mem, qnode_nodes[i + 1], qkey, qval, need_restore);
+			if (!HG_ERROR_IS_SUCCESS0 ()) {
 				retval = FALSE;
 				goto finalize;
 			}
 			if (*need_restore)
-				*need_restore = _hg_dict_node_restore(qnode_node, qnode_keys, qnode_vals, qnode_nodes, i + 1, error);
+				*need_restore = _hg_dict_node_restore(qnode_node, qnode_keys, qnode_vals, qnode_nodes, i + 1);
 		} else {
-			*need_restore = _hg_dict_node_remove_data(qnode_node, qnode_keys, qnode_vals, qnode_nodes, i, error);
-			if (*error) {
+			*need_restore = _hg_dict_node_remove_data(qnode_node, qnode_keys, qnode_vals, qnode_nodes, i);
+			if (!HG_ERROR_IS_SUCCESS0 ()) {
 				retval = FALSE;
 				goto finalize;
 			}
 		}
 	} else {
-		retval = _hg_dict_node_remove(qnode_node->o.mem, qnode_nodes[i], qkey, qval, need_restore, error);
-		if (*error) {
+		retval = _hg_dict_node_remove(qnode_node->o.mem, qnode_nodes[i], qkey, qval, need_restore);
+		if (!HG_ERROR_IS_SUCCESS0 ()) {
 			retval = FALSE;
 			goto finalize;
 		}
 		if (*need_restore)
-			*need_restore = _hg_dict_node_restore(qnode_node, qnode_keys, qnode_vals, qnode_nodes, i, error);
+			*need_restore = _hg_dict_node_restore(qnode_node, qnode_keys, qnode_vals, qnode_nodes, i);
 	}
   finalize:
 	HG_DICT_NODE_UNLOCK (mem, qnode, qnode);
@@ -648,13 +626,12 @@ _hg_dict_node_remove(hg_mem_t    *mem,
 	return retval;
 }
 
-HG_INLINE_FUNC gboolean
-_hg_dict_node_remove_data(hg_dict_node_t  *node,
-			  hg_quark_t      *qkeys,
-			  hg_quark_t      *qvals,
-			  hg_quark_t      *qnodes,
-			  gsize            pos,
-			  GError         **error)
+HG_INLINE_FUNC hg_bool_t
+_hg_dict_node_remove_data(hg_dict_node_t *node,
+			  hg_quark_t     *qkeys,
+			  hg_quark_t     *qvals,
+			  hg_quark_t     *qnodes,
+			  hg_usize_t      pos)
 {
 	while (++pos < node->n_data) {
 		qkeys[pos - 1] = qkeys[pos];
@@ -665,60 +642,56 @@ _hg_dict_node_remove_data(hg_dict_node_t  *node,
 	return --(node->n_data) < __hg_dict_node_size;
 }
 
-HG_INLINE_FUNC gboolean
-_hg_dict_node_restore(hg_dict_node_t  *node,
-		      hg_quark_t      *qkeys,
-		      hg_quark_t      *qvals,
-		      hg_quark_t      *qnodes,
-		      gsize            pos,
-		      GError         **error)
+HG_INLINE_FUNC hg_bool_t
+_hg_dict_node_restore(hg_dict_node_t *node,
+		      hg_quark_t     *qkeys,
+		      hg_quark_t     *qvals,
+		      hg_quark_t     *qnodes,
+		      hg_usize_t      pos)
 {
 	hg_dict_node_t *tnode;
 
 	if (pos > 0) {
-		gsize ndata;
+		hg_usize_t ndata;
 
-		hg_return_val_with_gerror_if_lock_fail (tnode,
-							node->o.mem,
-							qnodes[pos - 1],
-							error,
-							FALSE);
+		hg_return_val_if_lock_fail (tnode,
+					    node->o.mem,
+					    qnodes[pos - 1],
+					    FALSE);
 		ndata = tnode->n_data;
 		hg_mem_unlock_object(node->o.mem, qnodes[pos - 1]);
 
 		if (ndata > __hg_dict_node_size)
-			_hg_dict_node_restore_right_balance(node, qkeys, qvals, qnodes, pos, error);
+			_hg_dict_node_restore_right_balance(node, qkeys, qvals, qnodes, pos);
 		else
-			return _hg_dict_node_combine(node, qkeys, qvals, qnodes, pos, error);
+			return _hg_dict_node_combine(node, qkeys, qvals, qnodes, pos);
 	} else {
-		gsize ndata;
+		hg_usize_t ndata;
 
-		hg_return_val_with_gerror_if_lock_fail (tnode,
-							node->o.mem,
-							qnodes[1],
-							error,
-							FALSE);
+		hg_return_val_if_lock_fail (tnode,
+					    node->o.mem,
+					    qnodes[1],
+					    FALSE);
 		ndata = tnode->n_data;
 		hg_mem_unlock_object(node->o.mem, qnodes[1]);
 
 		if (ndata > __hg_dict_node_size)
-			_hg_dict_node_restore_left_balance(node, qkeys, qvals, qnodes, 1, error);
+			_hg_dict_node_restore_left_balance(node, qkeys, qvals, qnodes, 1);
 		else
-			return _hg_dict_node_combine(node, qkeys, qvals, qnodes, 1, error);
+			return _hg_dict_node_combine(node, qkeys, qvals, qnodes, 1);
 	}
 
 	return FALSE;
 }
 
 HG_INLINE_FUNC void
-_hg_dict_node_restore_right_balance(hg_dict_node_t  *node,
-				    hg_quark_t      *qkeys,
-				    hg_quark_t      *qvals,
-				    hg_quark_t      *qnodes,
-				    gsize            pos,
-				    GError         **error)
+_hg_dict_node_restore_right_balance(hg_dict_node_t *node,
+				    hg_quark_t     *qkeys,
+				    hg_quark_t     *qvals,
+				    hg_quark_t     *qnodes,
+				    hg_usize_t      pos)
 {
-	gsize i;
+	hg_usize_t i;
 	hg_quark_t qleft, qright;
 	hg_dict_node_t *ql_node = NULL, *qr_node = NULL;
 	hg_quark_t *ql_keys = NULL, *ql_vals = NULL, *ql_nodes = NULL;
@@ -727,8 +700,8 @@ _hg_dict_node_restore_right_balance(hg_dict_node_t  *node,
 	qleft = qnodes[pos - 1];
 	qright = qnodes[pos];
 
-	HG_DICT_NODE_LOCK (node->o.mem, qleft, ql, "left", error);
-	HG_DICT_NODE_LOCK (node->o.mem, qright, qr, "right", error);
+	HG_DICT_NODE_LOCK (node->o.mem, qleft, ql, "left");
+	HG_DICT_NODE_LOCK (node->o.mem, qright, qr, "right");
 
 	for (i = qr_node->n_data; i > 0; i--) {
 		qr_keys[i] = qr_keys[i - 1];
@@ -749,14 +722,13 @@ _hg_dict_node_restore_right_balance(hg_dict_node_t  *node,
 }
 
 HG_INLINE_FUNC void
-_hg_dict_node_restore_left_balance(hg_dict_node_t  *node,
-				   hg_quark_t      *qkeys,
-				   hg_quark_t      *qvals,
-				   hg_quark_t      *qnodes,
-				   gsize            pos,
-				   GError         **error)
+_hg_dict_node_restore_left_balance(hg_dict_node_t *node,
+				   hg_quark_t     *qkeys,
+				   hg_quark_t     *qvals,
+				   hg_quark_t     *qnodes,
+				   hg_usize_t      pos)
 {
-	gsize i;
+	hg_usize_t i;
 	hg_quark_t qleft, qright;
 	hg_dict_node_t *ql_node = NULL, *qr_node = NULL;
 	hg_quark_t *ql_keys = NULL, *ql_vals = NULL, *ql_nodes = NULL;
@@ -765,8 +737,8 @@ _hg_dict_node_restore_left_balance(hg_dict_node_t  *node,
 	qleft = qnodes[pos - 1];
 	qright = qnodes[pos];
 
-	HG_DICT_NODE_LOCK (node->o.mem, qleft, ql, "left", error);
-	HG_DICT_NODE_LOCK (node->o.mem, qright, qr, "right", error);
+	HG_DICT_NODE_LOCK (node->o.mem, qleft, ql, "left");
+	HG_DICT_NODE_LOCK (node->o.mem, qright, qr, "right");
 
 	ql_node->n_data++;
 	ql_keys[ql_node->n_data - 1] = qkeys[pos - 1];
@@ -786,26 +758,25 @@ _hg_dict_node_restore_left_balance(hg_dict_node_t  *node,
 	HG_DICT_NODE_UNLOCK (node->o.mem, qleft, ql);
 }
 
-HG_INLINE_FUNC gboolean
-_hg_dict_node_combine(hg_dict_node_t  *node,
-		      hg_quark_t      *qkeys,
-		      hg_quark_t      *qvals,
-		      hg_quark_t      *qnodes,
-		      gsize            pos,
-		      GError         **error)
+HG_INLINE_FUNC hg_bool_t
+_hg_dict_node_combine(hg_dict_node_t *node,
+		      hg_quark_t     *qkeys,
+		      hg_quark_t     *qvals,
+		      hg_quark_t     *qnodes,
+		      hg_usize_t      pos)
 {
-	gsize i;
+	hg_usize_t i;
 	hg_quark_t qleft, qright;
 	hg_dict_node_t *ql_node = NULL, *qr_node = NULL;
 	hg_quark_t *ql_keys = NULL, *ql_vals = NULL, *ql_nodes = NULL;
 	hg_quark_t *qr_keys = NULL, *qr_vals = NULL, *qr_nodes = NULL;
-	gboolean need_restore = FALSE;
+	hg_bool_t need_restore = FALSE;
 
 	qleft = qnodes[pos - 1];
 	qright = qnodes[pos];
 
-	HG_DICT_NODE_LOCK (node->o.mem, qleft, ql, "left", error);
-	HG_DICT_NODE_LOCK (node->o.mem, qright, qr, "right", error);
+	HG_DICT_NODE_LOCK (node->o.mem, qleft, ql, "left");
+	HG_DICT_NODE_LOCK (node->o.mem, qright, qr, "right");
 
 	ql_node->n_data++;
 	ql_keys[ql_node->n_data - 1] = qkeys[pos - 1];
@@ -817,7 +788,7 @@ _hg_dict_node_combine(hg_dict_node_t  *node,
 		ql_vals[ql_node->n_data - 1] = qr_vals[i - 1];
 		ql_nodes[ql_node->n_data] = qr_nodes[i];
 	}
-	need_restore = _hg_dict_node_remove_data(node, qkeys, qvals, qnodes, pos - 1, error);
+	need_restore = _hg_dict_node_remove_data(node, qkeys, qvals, qnodes, pos - 1);
 	/* 'right' page could be freed here though, it might be referred from
 	 * somewhere. so the actual destroying the page relies on GC.
 	 */
@@ -829,39 +800,37 @@ _hg_dict_node_combine(hg_dict_node_t  *node,
 }
 
 HG_INLINE_FUNC void
-_hg_dict_node_foreach(hg_mem_t                 *mem,
-		      hg_quark_t                qnode,
-		      hg_dict_traverse_func_t   func,
-		      gpointer                  data,
-		      GError                  **error)
+_hg_dict_node_foreach(hg_mem_t                *mem,
+		      hg_quark_t               qnode,
+		      hg_dict_traverse_func_t  func,
+		      hg_pointer_t             data)
 {
 	if (qnode != Qnil) {
-		gsize i;
+		hg_usize_t i;
 		hg_dict_node_t *qnode_node = NULL;
 		hg_quark_t *qnode_keys = NULL, *qnode_vals = NULL, *qnode_nodes = NULL;
 
-		HG_DICT_NODE_LOCK (mem, qnode, qnode, "", error);
+		HG_DICT_NODE_LOCK (mem, qnode, qnode, "");
 
 		for (i = 0; i < qnode_node->n_data; i++) {
-			_hg_dict_node_foreach(qnode_node->o.mem, qnode_nodes[i], func, data, error);
-			if (*error)
+			_hg_dict_node_foreach(qnode_node->o.mem, qnode_nodes[i], func, data);
+			if (!HG_ERROR_IS_SUCCESS0 ())
 				goto error;
-			if (!func(qnode_node->o.mem, qnode_keys[i], qnode_vals[i], data, error))
+			if (!func(qnode_node->o.mem, qnode_keys[i], qnode_vals[i], data))
 				goto error;
 		}
-		_hg_dict_node_foreach(qnode_node->o.mem, qnode_nodes[qnode_node->n_data], func, data, error);
+		_hg_dict_node_foreach(qnode_node->o.mem, qnode_nodes[qnode_node->n_data], func, data);
 
 	  error:
 		HG_DICT_NODE_UNLOCK (mem, qnode, qnode);
 	}
 }
 
-static gboolean
-_hg_dict_traverse_first_item(hg_mem_t    *mem,
-			     hg_quark_t   qkey,
-			     hg_quark_t   qval,
-			     gpointer     data,
-			     GError     **error)
+static hg_bool_t
+_hg_dict_traverse_first_item(hg_mem_t     *mem,
+			     hg_quark_t    qkey,
+			     hg_quark_t    qval,
+			     hg_pointer_t  data)
 {
 	hg_dict_item_t *x = data;
 
@@ -873,7 +842,7 @@ _hg_dict_traverse_first_item(hg_mem_t    *mem,
 
 /*< public >*/
 void
-_hg_dict_node_set_size(gsize size)
+_hg_dict_node_set_size(hg_usize_t size)
 {
 	/* testing purpose */
 	__hg_dict_node_size = size;
@@ -891,18 +860,21 @@ _hg_dict_node_set_size(gsize size)
  * Returns:
  */
 hg_quark_t
-hg_dict_new(hg_mem_t *mem,
-	    gsize     size,
-	    gboolean  raise_dictfull,
-	    gpointer *ret)
+hg_dict_new(hg_mem_t     *mem,
+	    hg_usize_t    size,
+	    hg_bool_t     raise_dictfull,
+	    hg_pointer_t *ret)
 {
 	hg_quark_t retval;
 	hg_dict_t *dict = NULL;
 
-	hg_return_val_if_fail (mem != NULL, Qnil);
-	hg_return_val_if_fail (size < (HG_DICT_MAX_SIZE + 1), Qnil);
+	hg_return_val_if_fail (mem != NULL, Qnil, HG_e_VMerror);
+	hg_return_val_if_fail (size < (HG_DICT_MAX_SIZE + 1), Qnil, HG_e_limitcheck);
 
-	retval = hg_object_new(mem, (gpointer *)&dict, HG_TYPE_DICT, 0, size, raise_dictfull);
+	/* initialize hg_errno to estimate properly */
+	hg_errno = 0;
+
+	retval = hg_object_new(mem, (hg_pointer_t *)&dict, HG_TYPE_DICT, 0, size, raise_dictfull);
 	if (retval != Qnil) {
 		if (ret)
 			*ret = dict;
@@ -919,71 +891,71 @@ hg_dict_new(hg_mem_t *mem,
  * @qkey:
  * @qval:
  * @force:
- * @error:
  *
  * FIXME
  *
  * Returns:
  */
-gboolean
-hg_dict_add(hg_dict_t   *dict,
-	    hg_quark_t   qkey,
-	    hg_quark_t   qval,
-	    gboolean     force,
-	    GError     **error)
+hg_bool_t
+hg_dict_add(hg_dict_t  *dict,
+	    hg_quark_t  qkey,
+	    hg_quark_t  qval,
+	    hg_bool_t   force)
 {
-	gboolean inserted;
+	hg_bool_t inserted;
 	hg_dict_node_t *qnode_node;
 	hg_quark_t new_node = Qnil, qnode, *qnode_keys = NULL, *qnode_vals = NULL, *qnode_nodes = NULL;
 	hg_quark_t qmasked;
-	GError *err = NULL;
 	hg_mem_t *m;
 
-	hg_return_val_with_gerror_if_fail (dict != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (dict->o.type == HG_TYPE_DICT, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (!HG_IS_QSTRING (qkey), FALSE, error, HG_VM_e_typecheck);
+	hg_return_val_if_fail (dict != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (dict->o.type == HG_TYPE_DICT, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (!HG_IS_QSTRING (qkey), FALSE, HG_e_typecheck);
+
+	/* initialize hg_errno to estimate properly */
+	hg_errno = 0;
 
 	if (!force &&
-	    hg_mem_get_type(dict->o.mem) == HG_MEM_TYPE_GLOBAL) {
+	    hg_mem_spool_get_type(dict->o.mem) == HG_MEM_TYPE_GLOBAL) {
 		if (!(hg_quark_is_simple_object(qkey) ||
 		      hg_quark_get_type(qkey) == HG_TYPE_OPER) &&
-		    hg_mem_get_type(hg_mem_get(hg_quark_get_mem_id(qkey))) == HG_MEM_TYPE_LOCAL) {
-			g_set_error(&err, HG_ERROR, HG_VM_e_invalidaccess,
-				    "Unable to store the object allocated in the local memory into the global memory");
-			goto finalize;
+		    hg_mem_spool_get_type(hg_mem_spool_get(hg_quark_get_mem_id(qkey))) == HG_MEM_TYPE_LOCAL) {
+			hg_debug(HG_MSGCAT_DICT, "Unable to store the object allocated in the local memory into the global memory");
+			hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_invalidaccess);
+
+			return FALSE;
 		}
 		if (!(hg_quark_is_simple_object(qval) ||
 		      hg_quark_get_type(qval) == HG_TYPE_OPER) &&
-		    hg_mem_get_type(hg_mem_get(hg_quark_get_mem_id(qval))) == HG_MEM_TYPE_LOCAL) {
-			g_set_error(&err, HG_ERROR, HG_VM_e_invalidaccess,
-				    "Unable to store the object allocated in the local memory into the global memory");
-			goto finalize;
+		    hg_mem_spool_get_type(hg_mem_spool_get(hg_quark_get_mem_id(qval))) == HG_MEM_TYPE_LOCAL) {
+			hg_debug(HG_MSGCAT_DICT, "Unable to store the object allocated in the local memory into the global memory");
+			hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_invalidaccess);
+
+			return FALSE;
 		}
 	}
 	if (dict->raise_dictfull &&
 	    hg_dict_length(dict) == hg_dict_maxlength(dict) &&
-	    hg_dict_lookup(dict, qkey, &err) == Qnil) {
-		g_set_error(&err, HG_ERROR, HG_VM_e_dictfull,
-			    "no more spaces in the dict");
-		goto finalize;
+	    hg_dict_lookup(dict, qkey) == Qnil) {
+		hg_debug(HG_MSGCAT_DICT, "no more spaces in the dict");
+		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_dictfull);
+
+		return FALSE;
 	}
 
 	qmasked = hg_quark_get_hash(qkey);
 	inserted = _hg_dict_node_insert(dict->o.mem, dict->qroot,
-					&qmasked, &qval, &new_node, &err);
-	if (err)
-		goto finalize;
+					&qmasked, &qval, &new_node);
+	if (!HG_ERROR_IS_SUCCESS0 ())
+		return FALSE;
 	if (!inserted) {
 		qnode = _hg_dict_node_new(dict->o.mem,
-					  (gpointer *)&qnode_node,
-					  (gpointer *)&qnode_keys,
-					  (gpointer *)&qnode_vals,
-					  (gpointer *)&qnode_nodes);
+					  (hg_pointer_t *)&qnode_node,
+					  (hg_pointer_t *)&qnode_keys,
+					  (hg_pointer_t *)&qnode_vals,
+					  (hg_pointer_t *)&qnode_nodes);
 		if (qnode == Qnil) {
-			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-				    "%s: Out of memory",
-				    __PRETTY_FUNCTION__);
-			goto finalize;
+			return FALSE;
 		}
 		qnode_node->n_data = 1;
 		qnode_keys[0] = qmasked;
@@ -997,30 +969,15 @@ hg_dict_add(hg_dict_t   *dict,
 	}
 	if (!hg_quark_is_simple_object(qkey) &&
 	    hg_quark_get_type(qkey) != HG_TYPE_OPER) {
-		m = hg_mem_get(hg_quark_get_mem_id(qkey));
+		m = hg_mem_spool_get(hg_quark_get_mem_id(qkey));
 		hg_mem_reserved_spool_remove(m, qkey);
 	}
 	if (!hg_quark_is_simple_object(qval) &&
 	    hg_quark_get_type(qval) != HG_TYPE_OPER) {
-		m = hg_mem_get(hg_quark_get_mem_id(qval));
+		m = hg_mem_spool_get(hg_quark_get_mem_id(qval));
 		hg_mem_reserved_spool_remove(m, qval);
 	}
-  finalize:
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
-
-		return FALSE;
-	} else {
-		dict->length++;
-	}
+	dict->length++;
 
 	return TRUE;
 }
@@ -1035,40 +992,39 @@ hg_dict_add(hg_dict_t   *dict,
  *
  * Returns:
  */
-gboolean
-hg_dict_remove(hg_dict_t   *dict,
-	       hg_quark_t   qkey,
-	       GError     **error)
+hg_bool_t
+hg_dict_remove(hg_dict_t  *dict,
+	       hg_quark_t  qkey)
 {
-	gboolean removed = FALSE, need_restore = FALSE;
+	hg_bool_t removed = FALSE, need_restore = FALSE;
 	hg_quark_t qval = Qnil, qroot = Qnil;
 	hg_quark_t qmasked;
-	GError *err = NULL;
 
-	hg_return_val_with_gerror_if_fail (dict != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (dict->o.type == HG_TYPE_DICT, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (!HG_IS_QSTRING (qkey), FALSE, error, HG_VM_e_typecheck);
+	hg_return_val_if_fail (dict != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (dict->o.type == HG_TYPE_DICT, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (!HG_IS_QSTRING (qkey), FALSE, HG_e_typecheck);
+
+	/* initialize hg_errno to estimate properly */
+	hg_errno = 0;
 
 	qmasked = hg_quark_get_hash(qkey);
 	removed = _hg_dict_node_remove(dict->o.mem, dict->qroot,
-				       &qmasked, &qval, &need_restore, &err);
-	if (err)
+				       &qmasked, &qval, &need_restore);
+	if (!HG_ERROR_IS_SUCCESS0 ())
 		goto finalize;
 	if (removed) {
 		hg_dict_node_t *root_node;
 
 		qroot = dict->qroot;
-		hg_return_val_with_gerror_if_lock_fail (root_node,
-							dict->o.mem,
-							dict->qroot,
-							error,
-							FALSE);
+		hg_return_val_if_lock_fail (root_node,
+					    dict->o.mem,
+					    dict->qroot,
+					    FALSE);
 		if (root_node->n_data == 0) {
 			hg_quark_t *root_nodes;
 
 			root_nodes = HG_MEM_LOCK (root_node->o.mem,
-						  root_node->qnodes,
-						  error);
+						  root_node->qnodes);
 			if (root_nodes == NULL) {
 				goto qfinalize;
 			}
@@ -1085,17 +1041,6 @@ hg_dict_remove(hg_dict_t   *dict,
 		dict->length--;
 	}
   finalize:
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
-	}
 
 	return removed;
 }
@@ -1111,18 +1056,19 @@ hg_dict_remove(hg_dict_t   *dict,
  * Returns:
  */
 hg_quark_t
-hg_dict_lookup(hg_dict_t   *dict,
-	       hg_quark_t   qkey,
-	       GError     **error)
+hg_dict_lookup(hg_dict_t  *dict,
+	       hg_quark_t  qkey)
 {
 	hg_dict_node_t *qnode_node = NULL;
 	hg_quark_t retval = Qnil, qnode, qmasked;
 	hg_quark_t *qnode_keys = NULL, *qnode_vals = NULL, *qnode_nodes = NULL;
-	GError *err = NULL;
 
-	hg_return_val_if_fail (dict != NULL, Qnil);
-	hg_return_val_if_fail (dict->o.type == HG_TYPE_DICT, Qnil);
-	hg_return_val_if_fail (!HG_IS_QSTRING (qkey), Qnil);
+	hg_return_val_if_fail (dict != NULL, Qnil, HG_e_typecheck);
+	hg_return_val_if_fail (dict->o.type == HG_TYPE_DICT, Qnil, HG_e_typecheck);
+	hg_return_val_if_fail (!HG_IS_QSTRING (qkey), Qnil, HG_e_typecheck);
+
+	/* initialize hg_errno to estimate properly */
+	hg_errno = 0;
 
 	qmasked = hg_quark_get_hash(qkey);
 	qnode = dict->qroot;
@@ -1130,10 +1076,10 @@ hg_dict_lookup(hg_dict_t   *dict,
 	if (qnode == Qnil)
 		return Qnil;
 
-	HG_DICT_NODE_LOCK (dict->o.mem, qnode, qnode, "", &err);
+	HG_DICT_NODE_LOCK (dict->o.mem, qnode, qnode, "");
 	while (qnode_node != NULL) {
 		hg_quark_t q;
-		gsize i;
+		hg_usize_t i;
 
 		if (qnode_keys[qnode_node->n_data - 1] >= qmasked) {
 			for (i = 0; i < qnode_node->n_data && qnode_keys[i] < qmasked; i++);
@@ -1151,22 +1097,10 @@ hg_dict_lookup(hg_dict_t   *dict,
 			/* escape the loop here to avoid a warning at follow. */
 			return Qnil;
 		}
-		HG_DICT_NODE_LOCK (dict->o.mem, qnode, qnode, "", &err);
+		HG_DICT_NODE_LOCK (dict->o.mem, qnode, qnode, "");
 	}
 
 	HG_DICT_NODE_UNLOCK (dict->o.mem, qnode, qnode);
-
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
-	}
 
 	return retval;
 }
@@ -1179,11 +1113,11 @@ hg_dict_lookup(hg_dict_t   *dict,
  *
  * Returns:
  */
-gsize
+hg_usize_t
 hg_dict_length(hg_dict_t *dict)
 {
-	hg_return_val_if_fail (dict != NULL, 0);
-	hg_return_val_if_fail (dict->o.type == HG_TYPE_DICT, 0);
+	hg_return_val_if_fail (dict != NULL, 0, HG_e_typecheck);
+	hg_return_val_if_fail (dict->o.type == HG_TYPE_DICT, 0, HG_e_typecheck);
 
 	return dict->length;
 }
@@ -1196,11 +1130,11 @@ hg_dict_length(hg_dict_t *dict)
  *
  * Returns:
  */
-gsize
+hg_usize_t
 hg_dict_maxlength(hg_dict_t *dict)
 {
-	hg_return_val_if_fail (dict != NULL, 0);
-	hg_return_val_if_fail (dict->o.type == HG_TYPE_DICT, 0);
+	hg_return_val_if_fail (dict != NULL, 0, HG_e_typecheck);
+	hg_return_val_if_fail (dict->o.type == HG_TYPE_DICT, 0, HG_e_typecheck);
 
 	return dict->allocated_size;
 }
@@ -1210,34 +1144,22 @@ hg_dict_maxlength(hg_dict_t *dict)
  * @dict:
  * @func:
  * @data:
- * @error:
  *
  * FIXME
  */
 void
-hg_dict_foreach(hg_dict_t                 *dict,
-		hg_dict_traverse_func_t   func,
-		gpointer                   data,
-		GError                   **error)
+hg_dict_foreach(hg_dict_t               *dict,
+		hg_dict_traverse_func_t  func,
+		hg_pointer_t             data)
 {
-	GError *err = NULL;
+	hg_return_if_fail (dict != NULL, HG_e_typecheck);
+	hg_return_if_fail (dict->o.type == HG_TYPE_DICT, HG_e_typecheck);
+	hg_return_if_fail (func != NULL, HG_e_VMerror);
 
-	hg_return_with_gerror_if_fail (dict != NULL, error, HG_VM_e_VMerror);
-	hg_return_with_gerror_if_fail (dict->o.type == HG_TYPE_DICT, error, HG_VM_e_VMerror);
-	hg_return_with_gerror_if_fail (func != NULL, error, HG_VM_e_VMerror);
+	/* initialize hg_errno to estimate properly */
+	hg_errno = 0;
 
-	_hg_dict_node_foreach(dict->o.mem, dict->qroot, func, data, &err);
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
-	}
+	_hg_dict_node_foreach(dict->o.mem, dict->qroot, func, data);
 }
 
 /**
@@ -1251,32 +1173,21 @@ hg_dict_foreach(hg_dict_t                 *dict,
  *
  * Returns:
  */
-gboolean
-hg_dict_first_item(hg_dict_t   *dict,
-		   hg_quark_t  *qkey,
-		   hg_quark_t  *qval,
-		   GError     **error)
+hg_bool_t
+hg_dict_first_item(hg_dict_t  *dict,
+		   hg_quark_t *qkey,
+		   hg_quark_t *qval)
 {
 	hg_dict_item_t x;
-	GError *err = NULL;
 
-	hg_return_val_with_gerror_if_fail (dict != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (dict->o.type == HG_TYPE_DICT, FALSE, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (dict != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (dict->o.type == HG_TYPE_DICT, FALSE, HG_e_typecheck);
 
-	_hg_dict_node_foreach(dict->o.mem, dict->qroot, _hg_dict_traverse_first_item, &x, &err);
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
+	/* initialize hg_errno to estimate properly */
+	hg_errno = 0;
 
-		return FALSE;
-	} else {
+	_hg_dict_node_foreach(dict->o.mem, dict->qroot, _hg_dict_traverse_first_item, &x);
+	if (HG_ERROR_IS_SUCCESS0 ()) {
 		if (qkey)
 			*qkey = x.qkey;
 		if (qval)

@@ -25,8 +25,10 @@
 #include "config.h"
 #endif
 
+#include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+/* GLib is still needed for GString */
 #include <glib.h>
 #include "hgerror.h"
 #include "hgmem.h"
@@ -42,41 +44,41 @@
 HG_DEFINE_VTABLE_WITH (string, NULL, NULL, NULL);
 
 /*< private >*/
-static gsize
+static hg_usize_t
 _hg_object_string_get_capsulated_size(void)
 {
 	return HG_ALIGNED_TO_POINTER (sizeof (hg_string_t));
 }
 
-static guint
+static hg_uint_t
 _hg_object_string_get_allocation_flags(void)
 {
 	return HG_MEM_FLAGS_DEFAULT;
 }
 
-static gboolean
+static hg_bool_t
 _hg_object_string_initialize(hg_object_t *object,
 			     va_list      args)
 {
 	hg_string_t *str = (hg_string_t *)object;
-	const gchar *string = NULL;
-	gsize length;
+	const hg_char_t *string = NULL;
+	hg_usize_t length;
 
 	str->qstring = Qnil;
 	str->length = 0;
 
-	string = va_arg(args, const gchar *);
-	str->offset = va_arg(args, gsize);
-	hg_return_val_if_fail (str->offset >= 0, FALSE);
+	string = va_arg(args, const hg_char_t *);
+	str->offset = va_arg(args, hg_usize_t);
+	hg_return_val_if_fail (str->offset >= 0, FALSE, HG_e_invalidaccess);
 
-	length = va_arg(args, gsize);
+	length = va_arg(args, hg_usize_t);
 
 	/* not allocating any containers here */
 	str->allocated_size = length + 1;
 	str->is_fixed_size = FALSE;
 
 	if (string) {
-		return hg_string_append(str, string, length, NULL);
+		return hg_string_append(str, string, length);
 	}
 
 	return TRUE;
@@ -90,32 +92,28 @@ _hg_object_string_copy(hg_object_t             *object,
 {
 	hg_string_t *s = (hg_string_t *)object;
 	hg_quark_t retval = Qnil;
-	gchar *cstr = hg_string_get_cstr(s);
+	hg_char_t *cstr = hg_string_get_cstr(s);
 
-	hg_return_val_if_fail (object->type == HG_TYPE_STRING, Qnil);
+	hg_return_val_if_fail (object->type == HG_TYPE_STRING, Qnil, HG_e_typecheck);
 
 	retval = HG_QSTRING_LEN (s->o.mem, cstr, hg_string_length(s));
 	g_free(cstr);
-	if (retval == Qnil) {
-		hg_warning("Out of memory");
-	}
 
 	return retval;
 }
 
-static gchar *
-_hg_object_string_to_cstr(hg_object_t              *object,
-			  hg_quark_iterate_func_t   func,
-			  gpointer                  user_data,
-			  GError                  **error)
+static hg_char_t *
+_hg_object_string_to_cstr(hg_object_t             *object,
+			  hg_quark_iterate_func_t  func,
+			  hg_pointer_t             user_data)
 {
 	GString *retval = g_string_new(NULL);
 	hg_string_t *s = (hg_string_t *)object;
-	gchar *cstr = hg_string_get_cstr(s);
-	gchar buffer[8];
-	gsize i;
+	hg_char_t *cstr = hg_string_get_cstr(s);
+	hg_char_t buffer[8];
+	hg_usize_t i;
 
-	hg_return_val_if_fail (object->type == HG_TYPE_STRING, NULL);
+	hg_return_val_if_fail (object->type == HG_TYPE_STRING, NULL, HG_e_typecheck);
 
 	g_string_append_c(retval, '(');
 	for (i = 0; i < hg_string_maxlength(s); i++) {
@@ -154,35 +152,35 @@ _hg_object_string_to_cstr(hg_object_t              *object,
 	return g_string_free(retval, FALSE);
 }
 
-static hg_error_t
-_hg_object_string_gc_mark(hg_object_t           *object,
-			  hg_gc_iterate_func_t   func,
-			  gpointer               user_data)
+static hg_bool_t
+_hg_object_string_gc_mark(hg_object_t          *object,
+			  hg_gc_iterate_func_t  func,
+			  hg_pointer_t          user_data)
 {
 	hg_string_t *string = (hg_string_t *)object;
 
-	hg_return_val_if_fail (object->type == HG_TYPE_STRING, HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck));
+	hg_return_val_if_fail (object->type == HG_TYPE_STRING, FALSE, HG_e_typecheck);
 
 	return hg_mem_gc_mark(string->o.mem, string->qstring);
 }
 
-static gboolean
+static hg_bool_t
 _hg_object_string_compare(hg_object_t             *o1,
 			  hg_object_t             *o2,
 			  hg_quark_compare_func_t  func,
-			  gpointer                 user_data)
+			  hg_pointer_t             user_data)
 {
 	return hg_string_compare((hg_string_t *)o1, (hg_string_t *)o2);
 }
 
-static gboolean
+static hg_bool_t
 _hg_string_maybe_expand(hg_string_t *string)
 {
 	if (string->is_fixed_size ||
 	    string->offset != 0)
 		return TRUE;
 
-	hg_return_val_if_fail (string->length < string->allocated_size, FALSE);
+	hg_return_val_if_fail (string->length < string->allocated_size, FALSE, HG_e_rangecheck);
 
 	if (string->qstring == Qnil) {
 		string->qstring = hg_mem_alloc_with_flags(string->o.mem,
@@ -214,17 +212,17 @@ _hg_string_maybe_expand(hg_string_t *string)
  * Returns:
  */
 hg_quark_t
-hg_string_new(hg_mem_t *mem,
-	      gsize     requisition_size,
-	      gpointer *ret)
+hg_string_new(hg_mem_t     *mem,
+	      hg_usize_t    requisition_size,
+	      hg_pointer_t *ret)
 {
 	hg_string_t *s = NULL;
 	hg_quark_t retval;
 
-	hg_return_val_if_fail (mem != NULL, Qnil);
-	hg_return_val_if_fail (requisition_size <= HG_STRING_MAX_SIZE, Qnil);
+	hg_return_val_if_fail (mem != NULL, Qnil, HG_e_VMerror);
+	hg_return_val_if_fail (requisition_size <= HG_STRING_MAX_SIZE, Qnil, HG_e_limitcheck);
 
-	retval = hg_object_new(mem, (gpointer *)&s, HG_TYPE_STRING, 0, NULL, 0, requisition_size);
+	retval = hg_object_new(mem, (hg_pointer_t *)&s, HG_TYPE_STRING, 0, NULL, 0, requisition_size);
 	if (retval != Qnil) {
 		if (ret)
 			*ret = s;
@@ -247,22 +245,22 @@ hg_string_new(hg_mem_t *mem,
  * Returns:
  */
 hg_quark_t
-hg_string_new_with_value(hg_mem_t    *mem,
-			 const gchar *string,
-			 gssize       length,
-			 gpointer    *ret)
+hg_string_new_with_value(hg_mem_t        *mem,
+			 const hg_char_t *string,
+			 hg_size_t        length,
+			 hg_pointer_t    *ret)
 {
 	hg_string_t *s = NULL;
 	hg_quark_t retval;
 
-	hg_return_val_if_fail (mem != NULL, Qnil);
-	hg_return_val_if_fail (string != NULL, Qnil);
-	hg_return_val_if_fail (length <= HG_STRING_MAX_SIZE, Qnil);
+	hg_return_val_if_fail (mem != NULL, Qnil, HG_e_VMerror);
+	hg_return_val_if_fail (string != NULL, Qnil, HG_e_VMerror);
+	hg_return_val_if_fail (length <= HG_STRING_MAX_SIZE, Qnil, HG_e_limitcheck);
 
 	if (length < 0)
 		length = strlen(string);
 
-	retval = hg_object_new(mem, (gpointer *)&s, HG_TYPE_STRING, 0, string, 0, length);
+	retval = hg_object_new(mem, (hg_pointer_t *)&s, HG_TYPE_STRING, 0, string, 0, length);
 	if (retval != Qnil) {
 		if (ret)
 			*ret = s;
@@ -282,12 +280,12 @@ hg_string_new_with_value(hg_mem_t    *mem,
  */
 void
 hg_string_free(hg_string_t *string,
-	       gboolean     free_segment)
+	       hg_bool_t    free_segment)
 {
 	if (string == NULL)
 		return;
 
-	hg_return_if_fail (string->o.type == HG_TYPE_STRING);
+	hg_return_if_fail (string->o.type == HG_TYPE_STRING, HG_e_typecheck);
 
 	hg_mem_reserved_spool_remove(string->o.mem, string->o.self);
 
@@ -304,11 +302,11 @@ hg_string_free(hg_string_t *string,
  *
  * Returns:
  */
-guint
+hg_uint_t
 hg_string_length(const hg_string_t *string)
 {
-	hg_return_val_if_fail (string != NULL, -1);
-	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, -1);
+	hg_return_val_if_fail (string != NULL, -1, HG_e_typecheck);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, -1, HG_e_typecheck);
 
 	return string->length;
 }
@@ -321,11 +319,11 @@ hg_string_length(const hg_string_t *string)
  *
  * Returns:
  */
-guint
+hg_uint_t
 hg_string_maxlength(const hg_string_t *string)
 {
-	hg_return_val_if_fail (string != NULL, -1);
-	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, -1);
+	hg_return_val_if_fail (string != NULL, -1, HG_e_typecheck);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, -1, HG_e_typecheck);
 
 	return string->allocated_size - 1;
 }
@@ -338,13 +336,13 @@ hg_string_maxlength(const hg_string_t *string)
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_string_clear(hg_string_t *string)
 {
-	gchar *s;
+	hg_char_t *s;
 
-	hg_return_val_if_fail (string != NULL, FALSE);
-	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, FALSE);
+	hg_return_val_if_fail (string != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, FALSE, HG_e_typecheck);
 
 	if (string->qstring == Qnil ||
 	    string->length == 0)
@@ -368,27 +366,23 @@ hg_string_clear(hg_string_t *string)
  *
  * Returns:
  */
-gboolean
-hg_string_append_c(hg_string_t  *string,
-		   gchar         c,
-		   GError      **error)
+hg_bool_t
+hg_string_append_c(hg_string_t *string,
+		   hg_char_t    c)
 {
-	gchar *s;
-	gboolean retval = FALSE;
-	gsize old_length;
-	GError *err = NULL;
+	hg_char_t *s;
+	hg_bool_t retval = FALSE;
+	hg_usize_t old_length;
 
-	hg_return_val_if_fail (string != NULL, FALSE);
-	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, FALSE);
+	hg_return_val_if_fail (string != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, FALSE, HG_e_typecheck);
 
 	if (string->length < hg_string_maxlength(string)) {
 		old_length = string->length;
 		string->length++;
 		if (!_hg_string_maybe_expand(string)) {
 			string->length = old_length;
-			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-				    "Out of memory");
-			goto finalize;
+			return FALSE;
 		}
 		hg_return_val_if_lock_fail (s,
 					    string->o.mem,
@@ -402,12 +396,12 @@ hg_string_append_c(hg_string_t  *string,
 		if (!string->is_fixed_size) {
 			hg_quark_t new_qstr = Qnil;
 
-			hg_return_val_if_fail (hg_string_maxlength(string) <= HG_STRING_MAX_SIZE, FALSE);
+			hg_return_val_if_fail (hg_string_maxlength(string) <= HG_STRING_MAX_SIZE, FALSE, HG_e_limitcheck);
 
 			new_qstr = hg_mem_realloc(string->o.mem,
 						  string->qstring,
 						  MIN (string->allocated_size + HG_STRING_ALLOC_SIZE + 1, HG_STRING_MAX_SIZE + 1),
-						  (gpointer *)&s);
+						  (hg_pointer_t *)&s);
 			if (new_qstr == Qnil)
 				return FALSE;
 
@@ -417,18 +411,6 @@ hg_string_append_c(hg_string_t  *string,
 			hg_mem_unlock_object(string->o.mem, new_qstr);
 			retval = TRUE;
 		}
-	}
-  finalize:
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
 	}
 
 	return retval;
@@ -445,20 +427,18 @@ hg_string_append_c(hg_string_t  *string,
  *
  * Returns:
  */
-gboolean
-hg_string_append(hg_string_t  *string,
-		 const gchar  *str,
-		 gssize        length,
-		 GError      **error)
+hg_bool_t
+hg_string_append(hg_string_t     *string,
+		 const hg_char_t *str,
+		 hg_size_t        length)
 {
-	gchar *s;
-	gboolean retval = FALSE;
-	gssize i, old_length;
-	GError *err = NULL;
+	hg_char_t *s;
+	hg_bool_t retval = FALSE;
+	hg_size_t i, old_length;
 
-	hg_return_val_if_fail (string != NULL, FALSE);
-	hg_return_val_if_fail (str != NULL, FALSE);
-	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, FALSE);
+	hg_return_val_if_fail (string != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (str != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, FALSE, HG_e_typecheck);
 
 	if (length < 0)
 		length = strlen(str);
@@ -468,9 +448,7 @@ hg_string_append(hg_string_t  *string,
 		string->length += length;
 		if (!_hg_string_maybe_expand(string)) {
 			string->length = old_length;
-			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-				    "Out of memory");
-			goto finalize;
+			return FALSE;
 		}
 
 		hg_return_val_if_lock_fail (s,
@@ -486,12 +464,12 @@ hg_string_append(hg_string_t  *string,
 		if (!string->is_fixed_size) {
 			hg_quark_t new_qstr = Qnil;
 
-			hg_return_val_if_fail ((hg_string_maxlength(string) + length) <= HG_STRING_MAX_SIZE, FALSE);
+			hg_return_val_if_fail ((hg_string_maxlength(string) + length) <= HG_STRING_MAX_SIZE, FALSE, HG_e_limitcheck);
 
 			new_qstr = hg_mem_realloc(string->o.mem,
 						  string->qstring,
 						  MIN (string->allocated_size + length + HG_STRING_ALLOC_SIZE + 1, HG_STRING_MAX_SIZE + 1),
-						  (gpointer *)&s);
+						  (hg_pointer_t *)&s);
 			if (new_qstr == Qnil)
 				return FALSE;
 
@@ -502,18 +480,6 @@ hg_string_append(hg_string_t  *string,
 			hg_mem_unlock_object(string->o.mem, new_qstr);
 			retval = TRUE;
 		}
-	}
-  finalize:
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
 	}
 
 	return retval;
@@ -530,28 +496,24 @@ hg_string_append(hg_string_t  *string,
  *
  * Returns:
  */
-gboolean
-hg_string_overwrite_c(hg_string_t  *string,
-		      gchar         c,
-		      guint         index,
-		      GError      **error)
+hg_bool_t
+hg_string_overwrite_c(hg_string_t *string,
+		      hg_char_t    c,
+		      hg_uint_t    index)
 {
-	gchar *s;
-	gsize old_length;
-	GError *err = NULL;
+	hg_char_t *s;
+	hg_usize_t old_length;
 
-	hg_return_val_if_fail (string != NULL, FALSE);
-	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, FALSE);
-	hg_return_val_if_fail (index < hg_string_maxlength(string), FALSE);
+	hg_return_val_if_fail (string != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (index < hg_string_maxlength(string), FALSE, HG_e_rangecheck);
 
 	if (string->length <= index) {
 		old_length = string->length;
 		string->length = index + 1;
 		if (!_hg_string_maybe_expand(string)) {
 			string->length = old_length;
-			g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-				    "Out of memory");
-			goto error;
+			return FALSE;
 		}
 	}
 
@@ -565,20 +527,6 @@ hg_string_overwrite_c(hg_string_t  *string,
 	hg_mem_unlock_object(string->o.mem, string->qstring);
 
 	return TRUE;
-  error:
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
-		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
-		}
-		g_error_free(err);
-	}
-
-	return FALSE;
 }
 
 /**
@@ -591,17 +539,17 @@ hg_string_overwrite_c(hg_string_t  *string,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_string_erase(hg_string_t *string,
-		gssize       pos,
-		gssize       length)
+		hg_size_t    pos,
+		hg_size_t    length)
 {
-	gchar *s;
-	gssize i, j;
+	hg_char_t *s;
+	hg_size_t i, j;
 
-	hg_return_val_if_fail (string != NULL, FALSE);
-	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, FALSE);
-	hg_return_val_if_fail (pos > 0, FALSE);
+	hg_return_val_if_fail (string != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (pos > 0, FALSE, HG_e_rangecheck);
 
 	if (string->qstring == Qnil) {
 		/* no data yet */
@@ -610,7 +558,7 @@ hg_string_erase(hg_string_t *string,
 	if (length < 0)
 		length = string->length - pos;
 
-	hg_return_val_if_fail ((pos + length) <= string->length, FALSE);
+	hg_return_val_if_fail ((pos + length) <= string->length, FALSE, HG_e_rangecheck);
 	hg_return_val_if_lock_fail (s,
 				    string->o.mem,
 				    string->qstring,
@@ -634,23 +582,23 @@ hg_string_erase(hg_string_t *string,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_string_concat(hg_string_t *string1,
 		 hg_string_t *string2)
 {
-	const gchar *s;
-	gboolean retval;
+	const hg_char_t *s;
+	hg_bool_t retval;
 
-	hg_return_val_if_fail (string1 != NULL, FALSE);
-	hg_return_val_if_fail (string1->o.type == HG_TYPE_STRING, FALSE);
-	hg_return_val_if_fail (string2 != NULL, FALSE);
-	hg_return_val_if_fail (string2->o.type == HG_TYPE_STRING, FALSE);
+	hg_return_val_if_fail (string1 != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (string1->o.type == HG_TYPE_STRING, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (string2 != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (string2->o.type == HG_TYPE_STRING, FALSE, HG_e_typecheck);
 	hg_return_val_if_lock_fail (s,
 				    string2->o.mem,
 				    string2->qstring,
 				    FALSE);
 
-	retval = hg_string_append(string1, s, string2->length, NULL);
+	retval = hg_string_append(string1, s, string2->length);
 	hg_mem_unlock_object(string2->o.mem, string2->qstring);
 
 	return retval;
@@ -665,16 +613,16 @@ hg_string_concat(hg_string_t *string1,
  *
  * Returns:
  */
-gchar
+hg_char_t
 hg_string_index(hg_string_t *string,
-		guint        index)
+		hg_uint_t    index)
 {
-	const gchar *s;
-	gchar retval;
+	const hg_char_t *s;
+	hg_char_t retval;
 
-	hg_return_val_if_fail (string != NULL, 0);
-	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, 0);
-	hg_return_val_if_fail (index < string->length, 0);
+	hg_return_val_if_fail (string != NULL, 0, HG_e_typecheck);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, 0, HG_e_typecheck);
+	hg_return_val_if_fail (index < string->length, 0, HG_e_rangecheck);
 
 	if (string->qstring == Qnil) {
 		/* no data yet */
@@ -699,13 +647,13 @@ hg_string_index(hg_string_t *string,
  *
  * Returns:
  */
-gchar *
+hg_char_t *
 hg_string_get_cstr(hg_string_t *string)
 {
-	gchar *retval, *cstr;
+	hg_char_t *retval, *cstr;
 
-	hg_return_val_if_fail (string != NULL, NULL);
-	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, NULL);
+	hg_return_val_if_fail (string != NULL, NULL, HG_e_typecheck);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, NULL, HG_e_typecheck);
 
 	if (string->qstring == Qnil)
 		return NULL;
@@ -715,7 +663,7 @@ hg_string_get_cstr(hg_string_t *string)
 				    string->qstring,
 				    NULL);
 
-	retval = g_new0(gchar, string->length + 1);
+	retval = g_new0(hg_char_t, string->length + 1);
 	memcpy(retval, &cstr[string->offset], string->length);
 	retval[string->length] = 0;
 
@@ -732,11 +680,11 @@ hg_string_get_cstr(hg_string_t *string)
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_string_fix_string_size(hg_string_t *string)
 {
-	hg_return_val_if_fail (string != NULL, FALSE);
-	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, FALSE);
+	hg_return_val_if_fail (string != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, FALSE, HG_e_typecheck);
 
 	if (!string->is_fixed_size) {
 		hg_quark_t new_qstr;
@@ -761,11 +709,11 @@ hg_string_fix_string_size(hg_string_t *string)
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_string_compare(hg_string_t *a,
 		  hg_string_t *b)
 {
-	hg_return_val_if_fail (b != NULL, FALSE);
+	hg_return_val_if_fail (b != NULL, FALSE, HG_e_typecheck);
 
 	return hg_string_ncompare(a, b, b->length);
 }
@@ -780,18 +728,18 @@ hg_string_compare(hg_string_t *a,
  *
  * Returns:
  */
-gboolean
+hg_bool_t
 hg_string_ncompare(hg_string_t *a,
 		   hg_string_t *b,
-		   guint        length)
+		   hg_uint_t    length)
 {
-	gchar *sb;
-	gboolean retval;
+	hg_char_t *sb;
+	hg_bool_t retval;
 
-	hg_return_val_if_fail (a != NULL, FALSE);
-	hg_return_val_if_fail (a->o.type == HG_TYPE_STRING, FALSE);
-	hg_return_val_if_fail (b != NULL, FALSE);
-	hg_return_val_if_fail (b->o.type == HG_TYPE_STRING, FALSE);
+	hg_return_val_if_fail (a != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (a->o.type == HG_TYPE_STRING, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (b != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (b->o.type == HG_TYPE_STRING, FALSE, HG_e_typecheck);
 
 	if (a->qstring == Qnil && b->qstring == Qnil &&
 	    a->length == length)
@@ -816,17 +764,17 @@ hg_string_ncompare(hg_string_t *a,
  *
  * Returns:
  */
-gboolean
-hg_string_ncompare_with_cstr(hg_string_t *a,
-			     const gchar *b,
-			     gssize       length)
+hg_bool_t
+hg_string_ncompare_with_cstr(hg_string_t     *a,
+			     const hg_char_t *b,
+			     hg_size_t        length)
 {
-	gchar *sa;
-	gboolean retval;
+	hg_char_t *sa;
+	hg_bool_t retval;
 
-	hg_return_val_if_fail (a != NULL, FALSE);
-	hg_return_val_if_fail (a->o.type == HG_TYPE_STRING, FALSE);
-	hg_return_val_if_fail (b != NULL, FALSE);
+	hg_return_val_if_fail (a != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (a->o.type == HG_TYPE_STRING, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (b != NULL, FALSE, HG_e_VMerror);
 
 	if (length < 0)
 		length = strlen(b);
@@ -851,23 +799,23 @@ hg_string_ncompare_with_cstr(hg_string_t *a,
  *
  * Returns:
  */
-gboolean
-hg_string_append_printf(hg_string_t *string,
-			const gchar *format,
+hg_bool_t
+hg_string_append_printf(hg_string_t     *string,
+			const hg_char_t *format,
 			...)
 {
 	va_list ap;
-	gchar *ret;
-	gboolean retval;
+	hg_char_t *ret;
+	hg_bool_t retval;
 
-	hg_return_val_if_fail (string != NULL, FALSE);
-	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, FALSE);
-	hg_return_val_if_fail (format != NULL, FALSE);
+	hg_return_val_if_fail (string != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (format != NULL, FALSE, HG_e_VMerror);
 
 	va_start(ap, format);
 
 	ret = g_strdup_vprintf(format, ap);
-	retval = hg_string_append(string, ret, -1, NULL);
+	retval = hg_string_append(string, ret, -1);
 	g_free(ret);
 
 	va_end(ap);
@@ -889,50 +837,32 @@ hg_string_append_printf(hg_string_t *string,
  */
 hg_quark_t
 hg_string_make_substring(hg_string_t  *string,
-			 gssize        start_index,
-			 gssize        end_index,
-			 gpointer     *ret,
-			 GError      **error)
+			 hg_size_t     start_index,
+			 hg_size_t     end_index,
+			 hg_pointer_t *ret)
 {
 	hg_string_t *s;
 	hg_quark_t retval;
-	GError *err = NULL;
 
-	hg_return_val_with_gerror_if_fail (string != NULL, Qnil, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (string->o.type == HG_TYPE_STRING, Qnil, error, HG_VM_e_VMerror);
+	hg_return_val_if_fail (string != NULL, Qnil, HG_e_typecheck);
+	hg_return_val_if_fail (string->o.type == HG_TYPE_STRING, Qnil, HG_e_typecheck);
 
-	retval = hg_string_new(string->o.mem, 0, (gpointer *)&s);
-	if (retval == Qnil) {
-		g_set_error(&err, HG_ERROR, HG_VM_e_VMerror,
-			    "Out of memory");
-		goto error;
-	}
-	if (end_index > HG_STRING_MAX_SIZE) {
-		/* make an empty string */
-	} else {
-		if (!hg_string_copy_as_substring(string, s,
-						 start_index,
-						 end_index,
-						 &err)) {
-			hg_object_free(string->o.mem, retval);
-			retval = Qnil;
-		}
-		if (ret)
-			*ret = s;
-		else
-			hg_mem_unlock_object(string->o.mem, retval);
-	}
-  error:
-	if (err) {
-		if (error) {
-			*error = g_error_copy(err);
+	retval = hg_string_new(string->o.mem, 0, (hg_pointer_t *)&s);
+	if (retval != Qnil) {
+		if (end_index > HG_STRING_MAX_SIZE) {
+			/* make an empty string */
 		} else {
-			hg_warning("%s: %s (code: %d)",
-				   __PRETTY_FUNCTION__,
-				   err->message,
-				   err->code);
+			if (!hg_string_copy_as_substring(string, s,
+							 start_index,
+							 end_index)) {
+				hg_object_free(string->o.mem, retval);
+				retval = Qnil;
+			}
+			if (ret)
+				*ret = s;
+			else
+				hg_mem_unlock_object(string->o.mem, retval);
 		}
-		g_error_free(err);
 	}
 
 	return retval;
@@ -950,20 +880,19 @@ hg_string_make_substring(hg_string_t  *string,
  *
  * Returns:
  */
-gboolean
-hg_string_copy_as_substring(hg_string_t  *src,
-			    hg_string_t  *dest,
-			    gssize        start_index,
-			    gssize        end_index,
-			    GError      **error)
+hg_bool_t
+hg_string_copy_as_substring(hg_string_t *src,
+			    hg_string_t *dest,
+			    hg_size_t    start_index,
+			    hg_size_t    end_index)
 {
-	hg_return_val_with_gerror_if_fail (src != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (src->o.type == HG_TYPE_STRING, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (dest != NULL, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (dest->o.type == HG_TYPE_STRING, FALSE, error, HG_VM_e_VMerror);
-	hg_return_val_with_gerror_if_fail (start_index < hg_string_maxlength(src) || (end_index - start_index + 1) == 0, FALSE, error, HG_VM_e_rangecheck);
-	hg_return_val_with_gerror_if_fail (end_index < hg_string_maxlength(src), FALSE, error, HG_VM_e_rangecheck);
-	hg_return_val_with_gerror_if_fail ((end_index - start_index + 1) >= 0, FALSE, error, HG_VM_e_rangecheck);
+	hg_return_val_if_fail (src != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (src->o.type == HG_TYPE_STRING, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (dest != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (dest->o.type == HG_TYPE_STRING, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (start_index < hg_string_maxlength(src) || (end_index - start_index + 1) == 0, FALSE, HG_e_rangecheck);
+	hg_return_val_if_fail (end_index < hg_string_maxlength(src), FALSE, HG_e_rangecheck);
+	hg_return_val_if_fail ((end_index - start_index + 1) >= 0, FALSE, HG_e_rangecheck);
 
 	/* destroy the unnecessary destination's container */
 	hg_mem_free(dest->o.mem, dest->qstring);

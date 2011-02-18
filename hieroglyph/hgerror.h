@@ -28,9 +28,6 @@
 #ifndef __HIEROGLYPH_HGERROR_H__
 #define __HIEROGLYPH_HGERROR_H__
 
-#include <stdio.h>
-/* XXX: GLib deps are still needed for GQuark */
-#include <glib.h>
 #include <hieroglyph/hgtypes.h>
 
 HG_BEGIN_DECLS
@@ -49,47 +46,31 @@ HG_BEGIN_DECLS
 	(((_e_) & HG_ERROR_STATUS_MASK) | ((_t_) << HG_ERROR_STATUS_MASK_SHIFT))
 #define HG_ERROR_IS_SUCCESS(_e_)			\
 	(HG_ERROR_GET_STATUS(_e_) == HG_STATUS_SUCCESS)
+#define HG_ERROR_IS_SUCCESS0()			\
+	(HG_ERROR_IS_SUCCESS (hg_errno))
 
 #define HG_ERROR	(hg_error_quark())
 #define HG_ERROR_(_status_,_reason_)				\
 	(hg_error_t)(HG_ERROR_SET_STATUS (0, (_status_)) |	\
 		     HG_ERROR_SET_REASON (0, (_reason_)))
 
+#define hg_error_return0(_status_,_reason_)			\
+	HG_STMT_START {						\
+		hg_errno = HG_ERROR_ ((_status_), (_reason_));	\
+		return;						\
+	} HG_STMT_END
+#define hg_error_return_val(_v_,_status_,_reason_)		\
+	HG_STMT_START {						\
+		hg_errno = HG_ERROR_ ((_status_), (_reason_));	\
+		return (_v_);					\
+	} HG_STMT_END
+#define hg_error_return(_status_,_reason_)				\
+	hg_error_return_val((_status_) == HG_STATUS_SUCCESS, (_status_), (_reason_))
+
 typedef enum _hg_vm_error_t	hg_vm_error_t;
 typedef enum _hg_error_status_t	hg_error_status_t;
 typedef enum _hg_error_reason_t	hg_error_reason_t;
 
-enum _hg_vm_error_t {
-	HG_VM_e_dictfull = 1,
-	HG_VM_e_dictstackoverflow,
-	HG_VM_e_dictstackunderflow,
-	HG_VM_e_execstackoverflow,
-	HG_VM_e_handleerror,
-	HG_VM_e_interrupt,
-	HG_VM_e_invalidaccess,
-	HG_VM_e_invalidexit,
-	HG_VM_e_invalidfileaccess,
-	HG_VM_e_invalidfont,
-	HG_VM_e_invalidrestore,
-	HG_VM_e_ioerror,
-	HG_VM_e_limitcheck,
-	HG_VM_e_nocurrentpoint,
-	HG_VM_e_rangecheck,
-	HG_VM_e_stackoverflow,
-	HG_VM_e_stackunderflow,
-	HG_VM_e_syntaxerror,
-	HG_VM_e_timeout,
-	HG_VM_e_typecheck,
-	HG_VM_e_undefined,
-	HG_VM_e_undefinedfilename,
-	HG_VM_e_undefinedresult,
-	HG_VM_e_unmatchedmark,
-	HG_VM_e_unregistered,
-	HG_VM_e_VMerror,
-	HG_VM_e_configurationerror,
-	HG_VM_e_undefinedresource,
-	HG_VM_e_END
-};
 enum _hg_error_status_t {
 	HG_STATUS_SUCCESS = 0,
 	HG_STATUS_FAILED = 1,
@@ -128,9 +109,6 @@ enum _hg_error_reason_t {
 };
 
 extern HG_THREAD_VAR hg_error_t hg_errno;
-
-GQuark    hg_error_quark          (void);
-
 
 HG_END_DECLS
 

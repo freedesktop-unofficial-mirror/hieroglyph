@@ -42,43 +42,36 @@ typedef struct _hg_stack_t		hg_stack_t;
 
 
 hg_object_vtable_t *hg_object_stack_get_vtable(void) G_GNUC_CONST;
-hg_stack_spool_t   *hg_stack_spooler_new      (hg_mem_t                  *mem);
-void                hg_stack_spooler_destroy  (hg_stack_spool_t          *spool);
-hg_stack_t         *hg_stack_new              (hg_mem_t                  *mem,
-                                               gsize                      max_depth,
-					       hg_vm_t                   *vm);
-void                hg_stack_free             (hg_stack_t                *stack);
-void                hg_stack_set_spooler      (hg_stack_t                *stack,
-					       hg_stack_spool_t          *spool);
-void                hg_stack_set_validation   (hg_stack_t                *stack,
-                                               gboolean                   flag);
-gsize               hg_stack_depth            (hg_stack_t                *stack);
-gboolean            hg_stack_set_max_depth    (hg_stack_t                *stack,
-					       gsize                      depth);
-gboolean            hg_stack_push             (hg_stack_t                *stack,
-                                               hg_quark_t                 quark);
-hg_quark_t          hg_stack_pop              (hg_stack_t                *stack,
-                                               GError                   **error);
-void                hg_stack_drop             (hg_stack_t                *stack,
-					       GError                   **error);
-void                hg_stack_clear            (hg_stack_t                *stack);
-hg_quark_t          hg_stack_index            (hg_stack_t                *stack,
-                                               gsize                      index,
-                                               GError                   **error);
-hg_quark_t         *hg_stack_peek             (hg_stack_t                *stack,
-					       gsize                      index,
-					       GError                   **error);
-void                hg_stack_exch             (hg_stack_t                *stack,
-					       GError                   **error);
-void                hg_stack_roll             (hg_stack_t                *stack,
-                                               gsize                      n_blocks,
-                                               gssize                     n_times,
-                                               GError                   **error);
-void                hg_stack_foreach          (hg_stack_t                *stack,
-                                               hg_stack_traverse_func_t   func,
-                                               gpointer                   data,
-					       gboolean                   is_forwarded,
-                                               GError                   **error);
+hg_stack_spool_t   *hg_stack_spooler_new      (hg_mem_t                 *mem);
+void                hg_stack_spooler_destroy  (hg_stack_spool_t         *spool);
+hg_stack_t         *hg_stack_new              (hg_mem_t                 *mem,
+                                               hg_usize_t                max_depth,
+                                               hg_vm_t                  *vm);
+void                hg_stack_free             (hg_stack_t               *stack);
+void                hg_stack_set_spooler      (hg_stack_t               *stack,
+                                               hg_stack_spool_t         *spool);
+void                hg_stack_set_validation   (hg_stack_t               *stack,
+                                               hg_bool_t                 flag);
+hg_usize_t          hg_stack_depth            (hg_stack_t               *stack);
+hg_bool_t           hg_stack_set_max_depth    (hg_stack_t               *stack,
+                                               hg_usize_t                depth);
+hg_bool_t           hg_stack_push             (hg_stack_t               *stack,
+                                               hg_quark_t                quark);
+hg_quark_t          hg_stack_pop              (hg_stack_t               *stack);
+void                hg_stack_drop             (hg_stack_t               *stack);
+void                hg_stack_clear            (hg_stack_t               *stack);
+hg_quark_t          hg_stack_index            (hg_stack_t               *stack,
+                                               hg_usize_t                index);
+hg_quark_t         *hg_stack_peek             (hg_stack_t               *stack,
+                                               hg_usize_t                index);
+void                hg_stack_exch             (hg_stack_t               *stack);
+void                hg_stack_roll             (hg_stack_t               *stack,
+                                               hg_usize_t                n_blocks,
+                                               hg_size_t                 n_times);
+void                hg_stack_foreach          (hg_stack_t               *stack,
+                                               hg_stack_traverse_func_t  func,
+                                               hg_pointer_t              data,
+                                               hg_bool_t                 is_forwarded);
 
 HG_END_DECLS
 

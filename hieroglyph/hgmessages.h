@@ -30,6 +30,7 @@
 
 #include <stdarg.h>
 #include <hieroglyph/hgtypes.h>
+#include <hieroglyph/hgerror.h>
 
 HG_BEGIN_DECLS
 
@@ -65,6 +66,17 @@ enum _hg_message_category_t {
 	HG_MSGCAT_ALLOC,
 	HG_MSGCAT_GC,
 	HG_MSGCAT_SNAPSHOT,
+	HG_MSGCAT_MEM,
+	HG_MSGCAT_ARRAY,
+	HG_MSGCAT_DEVICE,
+	HG_MSGCAT_DICT,
+	HG_MSGCAT_FILE,
+	HG_MSGCAT_GSTATE,
+	HG_MSGCAT_PATH,
+	HG_MSGCAT_PLUGIN,
+	HG_MSGCAT_STRING,
+	HG_MSGCAT_VM,
+	HG_MSGCAT_SCAN,
 	HG_MSGCAT_END
 };
 
@@ -231,28 +243,30 @@ hg_debug0(hg_message_category_t  category,
 #endif
 
 #ifdef __GNUC__
-#define _hg_return_after_eval_if_fail(__expr__,__eval__)		\
+#define _hg_return_after_eval_if_fail(__expr__,__eval__,_reason_)	\
 	HG_STMT_START {							\
 		if (HG_LIKELY(__expr__)) {				\
 		} else {						\
 			hg_return_if_fail_warning(__PRETTY_FUNCTION__,	\
 						  #__expr__);		\
 			__eval__;					\
+			hg_errno = HG_ERROR_ (HG_STATUS_FAILED,(_reason_)); \
 			return;						\
 		}							\
 	} HG_STMT_END
-#define _hg_return_val_after_eval_if_fail(__expr__,__val__,__eval__)	\
+#define _hg_return_val_after_eval_if_fail(__expr__,__val__,__eval__,_reason_) \
 	HG_STMT_START {							\
 		if (HG_LIKELY(__expr__)) {				\
 		} else {						\
 			hg_return_if_fail_warning(__PRETTY_FUNCTION__,	\
 						  #__expr__);		\
 			__eval__;					\
+			hg_errno = HG_ERROR_ (HG_STATUS_FAILED,(_reason_)); \
 			return (__val__);				\
 		}							\
 	} HG_STMT_END
 #else /* !__GNUC__ */
-#define _hg_return_after_eval_if_fail(__expr__,__eval__)		\
+#define _hg_return_after_eval_if_fail(__expr__,__eval__,_reason_)	\
 	HG_STMT_START {							\
 		if (__expr__) {						\
 		} else {						\
@@ -261,10 +275,11 @@ hg_debug0(hg_message_category_t  category,
 				    __LINE__,				\
 				    #__expr__);				\
 			__eval__;					\
+			hg_errno = HG_ERROR_ (HG_STATUS_FAILED,(_reason_)); \
 			return;						\
 		}							\
 	} HG_STMT_END
-#define _hg_return_val_after_eval_if_fail(__expr__,__val__,__eval__)	\
+#define _hg_return_val_after_eval_if_fail(__expr__,__val__,__eval__,_reason_) \
 	HG_STMT_START {							\
 		if (__expr__) {						\
 		} else {						\
@@ -273,23 +288,20 @@ hg_debug0(hg_message_category_t  category,
 				    __LINE__,				\
 				    #__expr__);				\
 			__eval__;					\
+			hg_errno = HG_ERROR_ (HG_STATUS_FAILED,(_reason_)); \
 			return (__val__);				\
 		}							\
 	} HG_STMT_END
 #endif /* __GNUC__ */
 
-#define hg_return_if_fail(__expr__)					\
-	_hg_return_after_eval_if_fail(__expr__,{})
-#define hg_return_val_if_fail(__expr__,__val__)				\
-	_hg_return_val_after_eval_if_fail(__expr__,__val__,{})
-#define hg_return_after_eval_if_fail(__expr__,__eval__)			\
-	_hg_return_after_eval_if_fail(__expr__,__eval__)
-#define hg_return_val_after_eval_if_fail(__expr__,__val__,__eval__)	\
-	_hg_return_val_after_eval_if_fail(__expr__,__val__,__eval__)
-#define hg_return_with_gerror_if_fail(__expr__,__err__,__code__)	\
-	_hg_return_after_eval_if_fail(__expr__,if(__err__){g_set_error((__err__),HG_ERROR,(__code__),__PRETTY_FUNCTION__);})
-#define hg_return_val_with_gerror_if_fail(__expr__,__val__,__err__,__code__) \
-	_hg_return_val_after_eval_if_fail(__expr__,__val__,if(__err__){g_set_error((__err__),HG_ERROR, (__code__), __PRETTY_FUNCTION__);})
+#define hg_return_if_fail(__expr__,_reason_)			\
+	_hg_return_after_eval_if_fail(__expr__,{},_reason_)
+#define hg_return_val_if_fail(__expr__,__val__,_reason_)		\
+	_hg_return_val_after_eval_if_fail(__expr__,__val__,{},_reason_)
+#define hg_return_after_eval_if_fail(__expr__,__eval__,_reason_)	\
+	_hg_return_after_eval_if_fail(__expr__,__eval__,_reason_)
+#define hg_return_val_after_eval_if_fail(__expr__,__val__,__eval__,_reason_) \
+	_hg_return_val_after_eval_if_fail(__expr__,__val__,__eval__,_reason_)
 
 HG_END_DECLS
 

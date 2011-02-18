@@ -54,12 +54,23 @@ _hg_message_get_prefix(hg_message_type_t     type,
 	};
 	static const hg_char_t *category_string[HG_MSGCAT_END + 1] = {
 		NULL,
-		"DEBUG",
-		"TRACE",
-		"BTMAP",
-		"ALLOC",
-		"   GC",
-		"SNAPS",
+		" DEBUG",
+		" TRACE",
+		"BITMAP",
+		" ALLOC",
+		"    GC",
+		"SNAPSH",
+		"   MEM",
+		" ARRAY",
+		"DEVICE",
+		"  DICT",
+		"  FILE",
+		"GSTATE",
+		"  PATH",
+		"PLUGIN",
+		"STRING",
+		"    VM",
+		"  SCAN",
 		NULL
 	};
 	static const hg_char_t unknown_type[] = "?: ";
@@ -141,9 +152,10 @@ _hg_message_default_handler(hg_message_type_t      type,
 	if (flags == 0 || (flags & HG_MSG_FLAG_NO_PREFIX) == 0)
 		prefix = _hg_message_get_prefix(type, category);
 	fprintf(stderr, "%s%s%s", prefix ? prefix : "", message, flags == 0 || (flags & HG_MSG_FLAG_NO_LINEFEED) == 0 ? "\n" : "");
-	if (type != HG_MSG_DEBUG && category != HG_MSGCAT_TRACE)
+	if (hg_message_is_enabled(HG_MSGCAT_TRACE) && category != HG_MSGCAT_TRACE)
 		_hg_message_stacktrace();
-	if (hg_message_is_enabled(HG_MSGCAT_DEBUG))
+	if (hg_message_is_enabled(HG_MSGCAT_DEBUG) &&
+	    type != HG_MSG_DEBUG)
 		HG_BREAKPOINT();
 
 	if (prefix)
@@ -288,6 +300,8 @@ hg_message_vprintf(hg_message_type_t      type,
 	} else if (__hg_message_default_handler) {
 		__hg_message_default_handler(type, flags, category, buffer, __hg_message_default_handler_data);
 	}
+	if (type == HG_MSG_FATAL)
+		abort();
 }
 
 /**

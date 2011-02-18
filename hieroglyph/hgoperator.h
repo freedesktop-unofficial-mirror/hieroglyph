@@ -28,8 +28,10 @@
 #ifndef __HIEROGLYPH_HGOPERATOR_H__
 #define __HIEROGLYPH_HGOPERATOR_H__
 
+#include <hieroglyph/hgerror.h>
 #include <hieroglyph/hgquark.h>
 #include <hieroglyph/hgencoding.h>
+#include <hieroglyph/hgmessages.h>
 #include <hieroglyph/hgname.h>
 #include <hieroglyph/hgvm.h>
 
@@ -42,8 +44,7 @@ HG_BEGIN_DECLS
 #define HG_IS_QOPER(_v_)				\
 	(hg_quark_get_type((_v_)) == HG_TYPE_OPER)
 
-typedef hg_bool_t (* hg_operator_func_t) (hg_vm_t  *vm,
-					  GError  **error);
+typedef hg_bool_t (* hg_operator_func_t) (hg_vm_t  *vm);
 
 #ifdef HG_DEBUG
 #define hg_operator_assert(_vm_,_le_,_re_)				\
@@ -52,8 +53,7 @@ typedef hg_bool_t (* hg_operator_func_t) (hg_vm_t  *vm,
 			g_printerr("%s: assertion failed: %s(%ld) == %s(%ld)\n", \
 				   __PRETTY_FUNCTION__, #_le_, (_le_), #_re_, (_re_)); \
 			hg_operator_invoke(HG_QOPER (HG_enc_private_abort), \
-					   (_vm_),			\
-					   NULL);			\
+					   (_vm_));			\
 		}							\
 	} HG_STMT_END
 
@@ -61,9 +61,9 @@ typedef hg_bool_t (* hg_operator_func_t) (hg_vm_t  *vm,
 	hg_usize_t __hg_stack_odepth G_GNUC_UNUSED = hg_stack_depth(ostack); \
 	hg_usize_t __hg_stack_edepth G_GNUC_UNUSED = hg_stack_depth(estack); \
 	hg_usize_t __hg_stack_ddepth G_GNUC_UNUSED = hg_stack_depth(dstack); \
-	gssize __hg_stack_expected_odepth G_GNUC_UNUSED = 0;		\
-	gssize __hg_stack_expected_edepth G_GNUC_UNUSED = 0;		\
-	gssize __hg_stack_expected_ddepth G_GNUC_UNUSED = 0
+	hg_size_t __hg_stack_expected_odepth G_GNUC_UNUSED = 0;		\
+	hg_size_t __hg_stack_expected_edepth G_GNUC_UNUSED = 0;		\
+	hg_size_t __hg_stack_expected_ddepth G_GNUC_UNUSED = 0
 #define SET_EXPECTED_OSTACK_SIZE(_o_)		\
 	__hg_stack_expected_odepth = (_o_)
 #define SET_EXPECTED_ESTACK_SIZE(_e_)		\
@@ -114,8 +114,7 @@ typedef hg_bool_t (* hg_operator_func_t) (hg_vm_t  *vm,
 		if (!hg_dict_add((_d_),					\
 				 __o_name__,				\
 				 __op__,				\
-				 FALSE,					\
-				 NULL))					\
+				 FALSE))				\
 			return FALSE;					\
 	} HG_STMT_END
 #define REG_VALUE(_d_,_k_,_v_)					\
@@ -127,21 +126,17 @@ typedef hg_bool_t (* hg_operator_func_t) (hg_vm_t  *vm,
 		if (!hg_dict_add((_d_),				\
 				 __o_name__,			\
 				 __v__,				\
-				 FALSE,				\
-				 NULL))				\
+				 FALSE))			\
 			return FALSE;				\
 	} HG_STMT_END
 #define PROTO_PLUGIN(_n_)						\
 	static hg_bool_t _ ## _n_ ## _init    (void);			\
 	static hg_bool_t _ ## _n_ ## _finalize(void);			\
 	static hg_bool_t _ ## _n_ ## _load    (hg_plugin_t   *plugin,	\
-					       hg_pointer_t   vm_,	\
-					       GError       **error);	\
+					       hg_pointer_t   vm_);	\
 	static hg_bool_t _ ## _n_ ## _unload  (hg_plugin_t   *plugin,	\
-					       hg_pointer_t   vm_,	\
-					       GError       **error);	\
-	hg_plugin_t     *plugin_new        (hg_mem_t     *mem,		\
-					    GError      **error);	\
+					       hg_pointer_t   vm_);	\
+	hg_plugin_t     *plugin_new        (hg_mem_t     *mem);		\
 									\
 	static hg_plugin_vtable_t __ ## _n_ ## _plugin_vtable = {	\
 		.init     = _ ## _n_ ## _init,				\
@@ -156,29 +151,26 @@ typedef hg_bool_t (* hg_operator_func_t) (hg_vm_t  *vm,
 #endif
 
 #define PROTO_OPER(_n_)						\
-	static hg_bool_t OPER_FUNC_NAME (_n_) (hg_vm_t  *vm,	\
-					       GError  **error);
+	static hg_bool_t OPER_FUNC_NAME (_n_) (hg_vm_t  *vm);
 #define DEFUNC_OPER(_n_)						\
 	static hg_bool_t						\
-	OPER_FUNC_NAME (_n_) (hg_vm_t  *vm,				\
-			      GError  **error)				\
+	OPER_FUNC_NAME (_n_) (hg_vm_t *vm)				\
 	{								\
 		hg_stack_t *ostack G_GNUC_UNUSED = vm->stacks[HG_VM_STACK_OSTACK]; \
 		hg_stack_t *estack G_GNUC_UNUSED = vm->stacks[HG_VM_STACK_ESTACK]; \
 		hg_stack_t *dstack G_GNUC_UNUSED = vm->stacks[HG_VM_STACK_DSTACK]; \
-		hg_quark_t qself G_GNUC_UNUSED = hg_stack_index(estack, 0, error); \
+		hg_quark_t qself G_GNUC_UNUSED = hg_stack_index(estack, 0); \
 		hg_bool_t retval = FALSE;				\
 		INIT_STACK_VALIDATOR;					\
 		HG_STMT_START
 #define DEFUNC_UNIMPLEMENTED_OPER(_n_)					\
 	static hg_bool_t						\
-	OPER_FUNC_NAME (_n_) (hg_vm_t  *vm,				\
-			      GError  **error)				\
+	OPER_FUNC_NAME (_n_) (hg_vm_t *vm)				\
 	{								\
 		hg_warning("%s isn't yet implemented.", #_n_);		\
 		hg_vm_set_error(vm,					\
-				hg_stack_index(vm->stacks[HG_VM_STACK_ESTACK], 0, error), \
-				HG_VM_e_VMerror);			\
+				hg_stack_index(vm->stacks[HG_VM_STACK_ESTACK], 0), \
+				HG_e_VMerror);			\
 		return FALSE;						\
 	}
 #define DEFUNC_OPER_END					\
@@ -191,7 +183,7 @@ typedef hg_bool_t (* hg_operator_func_t) (hg_vm_t  *vm,
 #define CHECK_STACK(_s_,_n_)						\
 	HG_STMT_START {							\
 		if (hg_stack_depth((_s_)) < (_n_)) {			\
-			hg_vm_set_error(vm, qself, HG_VM_e_stackunderflow); \
+			hg_vm_set_error(vm, qself, HG_e_stackunderflow); \
 			return FALSE;					\
 		}							\
 	} HG_STMT_END
@@ -199,13 +191,13 @@ typedef hg_bool_t (* hg_operator_func_t) (hg_vm_t  *vm,
 	HG_STMT_START {							\
 		if (!hg_stack_push((_s_), (_q_))) {			\
 			if ((_s_) == ostack) {				\
-				hg_vm_set_error(vm, qself, HG_VM_e_stackoverflow); \
+				hg_vm_set_error(vm, qself, HG_e_stackoverflow); \
 			} else if ((_s_) == estack) {			\
-				hg_vm_set_error(vm, qself, HG_VM_e_execstackoverflow); \
+				hg_vm_set_error(vm, qself, HG_e_execstackoverflow); \
 			} else if ((_s_) == dstack) {			\
-				hg_vm_set_error(vm, qself, HG_VM_e_dictstackoverflow); \
+				hg_vm_set_error(vm, qself, HG_e_dictstackoverflow); \
 			} else {					\
-				hg_vm_set_error(vm, qself, HG_VM_e_limitcheck);	\
+				hg_vm_set_error(vm, qself, HG_e_limitcheck);	\
 			}						\
 			return FALSE;					\
 		}							\
@@ -238,8 +230,7 @@ hg_quark_t       hg_operator_add_dynamic   (const hg_char_t     *string,
 					    hg_operator_func_t   func);
 void             hg_operator_remove_dynamic(hg_uint_t            encoding);
 hg_bool_t        hg_operator_invoke        (hg_quark_t           qoper,
-					    hg_vm_t             *vm,
-					    GError             **error);
+					    hg_vm_t             *vm);
 const hg_char_t *hg_operator_get_name      (hg_quark_t           qoper);
 hg_bool_t        hg_operator_register      (hg_vm_t             *vm,
 					    hg_dict_t           *dict,
