@@ -39,6 +39,17 @@
 #  define hg_d(x)
 #endif /* GNOME_ENABLE_DEBUG || DEBUG */
 
+/* Provide macros to feature the GCC function attribute. */
+#if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ > 4)
+#define HG_GNUC_CONST				\
+	__attribute__((__const__))
+#define HG_GNUC_UNUSED				\
+	__attribute__((__unused__))
+#else
+#define HG_GNUC_CONST
+#define HG_GNUC_UNUSED
+#endif
+
 /* Guard C code in headers, while including them from C++ */
 #ifdef __cplusplus
 #  define HG_BEGIN_DECLS	extern "C" {
