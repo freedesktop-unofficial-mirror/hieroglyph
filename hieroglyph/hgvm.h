@@ -192,7 +192,7 @@ gboolean           hg_vm_stepi                 (hg_vm_t            *vm,
                                                 gboolean           *is_proceeded);
 gboolean           hg_vm_step                  (hg_vm_t            *vm);
 gboolean           hg_vm_main_loop             (hg_vm_t            *vm);
-gchar             *hg_vm_find_libfile          (hg_vm_t            *vm G_GNUC_UNUSED,
+gchar             *hg_vm_find_libfile          (hg_vm_t            *vm HG_GNUC_UNUSED,
                                                 const gchar        *filename);
 gboolean           hg_vm_eval                  (hg_vm_t            *vm,
                                                 hg_quark_t          qeval,

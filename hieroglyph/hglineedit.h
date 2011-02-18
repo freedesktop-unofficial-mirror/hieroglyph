@@ -53,7 +53,7 @@ struct _hg_lineedit_vtable_t {
 };
 
 
-hg_lineedit_vtable_t *hg_lineedit_get_default_vtable(void) G_GNUC_CONST;
+hg_lineedit_vtable_t *hg_lineedit_get_default_vtable(void) HG_GNUC_CONST;
 hg_lineedit_t        *hg_lineedit_new               (hg_mem_t                    *mem,
                                                      const hg_lineedit_vtable_t  *vtable,
                                                      hg_file_t                   *infile,

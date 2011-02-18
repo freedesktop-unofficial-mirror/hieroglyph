@@ -112,7 +112,7 @@ struct _hg_path_operate_vtable_t {
 };
 
 
-hg_object_vtable_t *hg_object_path_get_vtable(void) G_GNUC_CONST;
+hg_object_vtable_t *hg_object_path_get_vtable(void) HG_GNUC_CONST;
 hg_quark_t          hg_path_new              (hg_mem_t                 *mem,
                                               hg_pointer_t             *ret);
 hg_bool_t           hg_path_get_current_point(hg_path_t                *path,

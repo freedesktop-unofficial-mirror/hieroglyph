@@ -2094,7 +2094,7 @@ hg_vm_main_loop(hg_vm_t *vm)
  * Returns:
  */
 hg_char_t *
-hg_vm_find_libfile(hg_vm_t         *vm G_GNUC_UNUSED,
+hg_vm_find_libfile(hg_vm_t         *vm HG_GNUC_UNUSED,
 		   const hg_char_t *filename)
 {
 	hg_return_val_if_fail (filename != NULL, NULL, HG_e_VMerror);

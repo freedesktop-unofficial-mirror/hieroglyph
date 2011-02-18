@@ -58,12 +58,12 @@ typedef hg_bool_t (* hg_operator_func_t) (hg_vm_t  *vm);
 	} HG_STMT_END
 
 #define INIT_STACK_VALIDATOR						\
-	hg_usize_t __hg_stack_odepth G_GNUC_UNUSED = hg_stack_depth(ostack); \
-	hg_usize_t __hg_stack_edepth G_GNUC_UNUSED = hg_stack_depth(estack); \
-	hg_usize_t __hg_stack_ddepth G_GNUC_UNUSED = hg_stack_depth(dstack); \
-	hg_size_t __hg_stack_expected_odepth G_GNUC_UNUSED = 0;		\
-	hg_size_t __hg_stack_expected_edepth G_GNUC_UNUSED = 0;		\
-	hg_size_t __hg_stack_expected_ddepth G_GNUC_UNUSED = 0
+	hg_usize_t __hg_stack_odepth HG_GNUC_UNUSED = hg_stack_depth(ostack); \
+	hg_usize_t __hg_stack_edepth HG_GNUC_UNUSED = hg_stack_depth(estack); \
+	hg_usize_t __hg_stack_ddepth HG_GNUC_UNUSED = hg_stack_depth(dstack); \
+	hg_size_t __hg_stack_expected_odepth HG_GNUC_UNUSED = 0;		\
+	hg_size_t __hg_stack_expected_edepth HG_GNUC_UNUSED = 0;		\
+	hg_size_t __hg_stack_expected_ddepth HG_GNUC_UNUSED = 0
 #define SET_EXPECTED_OSTACK_SIZE(_o_)		\
 	__hg_stack_expected_odepth = (_o_)
 #define SET_EXPECTED_ESTACK_SIZE(_e_)		\
@@ -156,10 +156,10 @@ typedef hg_bool_t (* hg_operator_func_t) (hg_vm_t  *vm);
 	static hg_bool_t						\
 	OPER_FUNC_NAME (_n_) (hg_vm_t *vm)				\
 	{								\
-		hg_stack_t *ostack G_GNUC_UNUSED = vm->stacks[HG_VM_STACK_OSTACK]; \
-		hg_stack_t *estack G_GNUC_UNUSED = vm->stacks[HG_VM_STACK_ESTACK]; \
-		hg_stack_t *dstack G_GNUC_UNUSED = vm->stacks[HG_VM_STACK_DSTACK]; \
-		hg_quark_t qself G_GNUC_UNUSED = hg_stack_index(estack, 0); \
+		hg_stack_t *ostack HG_GNUC_UNUSED = vm->stacks[HG_VM_STACK_OSTACK]; \
+		hg_stack_t *estack HG_GNUC_UNUSED = vm->stacks[HG_VM_STACK_ESTACK]; \
+		hg_stack_t *dstack HG_GNUC_UNUSED = vm->stacks[HG_VM_STACK_DSTACK]; \
+		hg_quark_t qself HG_GNUC_UNUSED = hg_stack_index(estack, 0); \
 		hg_bool_t retval = FALSE;				\
 		INIT_STACK_VALIDATOR;					\
 		HG_STMT_START

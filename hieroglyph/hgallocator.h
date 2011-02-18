@@ -136,7 +136,7 @@ struct _hg_mem_vtable_t {
 };
 
 
-hg_mem_vtable_t *hg_allocator_get_vtable   (void) G_GNUC_CONST;
+hg_mem_vtable_t *hg_allocator_get_vtable   (void) HG_GNUC_CONST;
 
 HG_END_DECLS
 

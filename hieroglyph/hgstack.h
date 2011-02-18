@@ -41,7 +41,7 @@ typedef struct _hg_stack_spool_t	hg_stack_spool_t;
 typedef struct _hg_stack_t		hg_stack_t;
 
 
-hg_object_vtable_t *hg_object_stack_get_vtable(void) G_GNUC_CONST;
+hg_object_vtable_t *hg_object_stack_get_vtable(void) HG_GNUC_CONST;
 hg_stack_spool_t   *hg_stack_spooler_new      (hg_mem_t                 *mem);
 void                hg_stack_spooler_destroy  (hg_stack_spool_t         *spool);
 hg_stack_t         *hg_stack_new              (hg_mem_t                 *mem,

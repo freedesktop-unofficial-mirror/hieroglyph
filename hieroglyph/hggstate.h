@@ -93,7 +93,7 @@ struct _hg_gstate_t {
 	hg_bool_t     is_snapshot:1;
 };
 
-hg_object_vtable_t *hg_object_gstate_get_vtable(void) G_GNUC_CONST;
+hg_object_vtable_t *hg_object_gstate_get_vtable(void) HG_GNUC_CONST;
 hg_quark_t          hg_gstate_new              (hg_mem_t      *mem,
                                                 hg_pointer_t  *ret);
 void                hg_gstate_set_ctm          (hg_gstate_t   *gstate,

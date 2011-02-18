@@ -122,7 +122,7 @@ struct _hg_file_io_data_t {
 	hg_gc_iterate_func_t gc_func;
 	hg_destroy_func_t    destroy_func;
 	hg_bool_t            is_eof;
-	gint                 fd;
+	hg_int_t             fd;
 	hg_pointer_t         mmapped_buffer;
 };
 struct _hg_file_gc_t {
@@ -133,8 +133,8 @@ struct _hg_file_gc_t {
 };
 
 
-hg_object_vtable_t     *hg_object_file_get_vtable  (void) G_GNUC_CONST;
-const hg_file_vtable_t *hg_file_get_lineedit_vtable(void) G_GNUC_CONST;
+hg_object_vtable_t     *hg_object_file_get_vtable  (void) HG_GNUC_CONST;
+const hg_file_vtable_t *hg_file_get_lineedit_vtable(void) HG_GNUC_CONST;
 hg_file_io_t            hg_file_get_io_type        (const hg_char_t                   *name);
 hg_quark_t              hg_file_new                (hg_mem_t                          *mem,
                                                     const hg_char_t                   *name,

@@ -45,7 +45,7 @@ _hgs_arg_define_cb(const gchar  *option_name,
 		   GError      **error)
 {
 	gboolean retval = FALSE;
-	hg_vm_t *vm G_GNUC_UNUSED = data;
+	hg_vm_t *vm HG_GNUC_UNUSED = data;
 	hg_vm_value_t *v;
 
 	if (value && *value) {
