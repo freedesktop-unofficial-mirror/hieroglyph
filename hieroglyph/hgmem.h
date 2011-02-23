@@ -67,17 +67,25 @@ hg_bool_t      hg_mem_spool_expand_heap       (hg_mem_t            *mem,
                                                hg_usize_t           size);
 void           hg_mem_spool_set_resizable     (hg_mem_t            *mem,
                                                hg_bool_t            flag);
+hg_int_t       hg_mem_spool_add_gc_marker     (hg_mem_t            *mem,
+                                               hg_gc_mark_func_t    func);
+void           hg_mem_spool_remove_gc_marker  (hg_mem_t            *mem,
+                                               hg_int_t             marker_id);
 hg_int_t       hg_mem_spool_add_finalizer     (hg_mem_t            *mem,
                                                hg_finalizer_func_t  func);
 void           hg_mem_spool_remove_finalizer  (hg_mem_t            *mem,
-					       hg_int_t             finalizer_id);
+                                               hg_int_t             finalizer_id);
 hg_mem_type_t  hg_mem_spool_get_type          (hg_mem_t            *mem);
-void                          hg_mem_enable_garbage_collector            (hg_mem_t                     *mem,
-                                                                          hg_bool_t                     flag);
-void                          hg_mem_set_garbage_collector               (hg_mem_t                     *mem,
-                                                                          hg_gc_func_t                  func,
-                                                                          hg_pointer_t                  user_data);
-hg_size_t                     hg_mem_collect_garbage                     (hg_mem_t                     *mem);
+void           hg_mem_spool_enable_gc         (hg_mem_t            *mem,
+                                               hg_bool_t            flag);
+void           hg_mem_spool_set_gc_procedure  (hg_mem_t            *mem,
+                                               hg_gc_func_t         func,
+                                               hg_pointer_t         user_data);
+hg_size_t      hg_mem_spool_run_gc            (hg_mem_t            *mem);
+hg_usize_t     hg_mem_spool_get_total_size    (hg_mem_t            *mem);
+hg_usize_t     hg_mem_spool_get_used_size     (hg_mem_t            *mem);
+
+
 hg_allocator_snapshot_data_t *hg_mem_save_snapshot                       (hg_mem_t                     *mem);
 hg_bool_t                     hg_mem_restore_snapshot                    (hg_mem_t                     *mem,
                                                                           hg_allocator_snapshot_data_t *snapshot,
@@ -87,42 +95,42 @@ void                          hg_mem_restore_mark                        (hg_mem
                                                                           hg_quark_t                    qdata);
 void                          hg_mem_snapshot_free                       (hg_mem_t                     *mem,
                                                                           hg_allocator_snapshot_data_t *snapshot);
-hg_usize_t                    hg_mem_get_total_size                      (hg_mem_t                     *mem);
-hg_usize_t                    hg_mem_get_used_size                       (hg_mem_t                     *mem);
-void                          hg_mem_reserved_spool_add                  (hg_mem_t                     *mem,
-                                                                          hg_quark_t                    qdata);
-void                          hg_mem_reserved_spool_remove               (hg_mem_t                     *mem,
-                                                                          hg_quark_t                    qdata);
-void                          hg_mem_reserved_spool_set_garbage_collector(hg_mem_t                     *mem,
-                                                                          hg_rs_gc_func_t               func,
-                                                                          hg_pointer_t                  user_data);
-hg_bool_t                     hg_mem_reserved_spool_foreach              (hg_mem_t                     *mem,
-                                                                          hg_rs_gc_func_t               func,
-                                                                          hg_pointer_t                  user_data);
+
 /* memory management */
-hg_quark_t                    hg_mem_alloc                               (hg_mem_t                     *mem,
-                                                                          hg_usize_t                    size,
-                                                                          hg_pointer_t                 *ret);
-hg_quark_t                    hg_mem_alloc_with_flags                    (hg_mem_t                     *mem,
-                                                                          hg_usize_t                    size,
-                                                                          hg_uint_t                     flags,
-                                                                          hg_pointer_t                 *ret);
-hg_quark_t                    hg_mem_realloc                             (hg_mem_t                     *mem,
-                                                                          hg_quark_t                    qdata,
-                                                                          hg_usize_t                    size,
-                                                                          hg_pointer_t                 *ret);
-void                          hg_mem_free                                (hg_mem_t                     *mem,
-                                                                          hg_quark_t                    qdata);
-void                          hg_mem_set_finalizer                       (hg_mem_t   *mem,
-									  hg_quark_t  qdata,
-									  hg_int_t    finalizer_id);
-hg_pointer_t                  hg_mem_lock_object                         (hg_mem_t                     *mem,
-                                                                          hg_quark_t                    qdata);
-void                          hg_mem_unlock_object                       (hg_mem_t                     *mem,
-                                                                          hg_quark_t                    qdata);
-hg_bool_t                     hg_mem_gc_mark                             (hg_mem_t                     *mem,
-                                                                          hg_quark_t                    qdata);
-hg_int_t                      hg_mem_get_id                              (hg_mem_t                     *mem);
+hg_quark_t   hg_mem_alloc           (hg_mem_t                 *mem,
+                                     hg_usize_t                size,
+                                     hg_pointer_t             *ret);
+hg_quark_t   hg_mem_alloc_with_flags(hg_mem_t                 *mem,
+                                     hg_usize_t                size,
+                                     hg_uint_t                 flags,
+                                     hg_pointer_t             *ret);
+hg_quark_t   hg_mem_realloc         (hg_mem_t                 *mem,
+                                     hg_quark_t                qdata,
+                                     hg_usize_t                size,
+                                     hg_pointer_t             *ret);
+void         hg_mem_free            (hg_mem_t                 *mem,
+                                     hg_quark_t                qdata);
+void         hg_mem_set_gc_marker   (hg_mem_t                 *mem,
+                                     hg_quark_t                qdata,
+                                     hg_int_t                  marker_id);
+void         hg_mem_set_finalizer   (hg_mem_t                 *mem,
+                                     hg_quark_t                qdata,
+                                     hg_int_t                  finalizer_id);
+hg_pointer_t hg_mem_lock_object     (hg_mem_t                 *mem,
+                                     hg_quark_t                qdata);
+void         hg_mem_unlock_object   (hg_mem_t                 *mem,
+                                     hg_quark_t                qdata);
+hg_bool_t    hg_mem_gc_mark         (hg_mem_t                 *mem,
+                                     hg_quark_t                qdata);
+hg_int_t     hg_mem_get_id          (hg_mem_t                 *mem);
+void         hg_mem_ref             (hg_mem_t                 *mem,
+                                     hg_quark_t                qdata);
+void         hg_mem_unref           (hg_mem_t                 *mem,
+                                     hg_quark_t                qdata);
+hg_bool_t    hg_mem_foreach         (hg_mem_t                 *mem,
+                                     hg_block_iter_flags_t     flags,
+                                     hg_quark_iterator_func_t  func,
+                                     hg_pointer_t              user_data);
 
 
 HG_INLINE_FUNC hg_pointer_t _hg_mem_lock_object(hg_mem_t        *mem,

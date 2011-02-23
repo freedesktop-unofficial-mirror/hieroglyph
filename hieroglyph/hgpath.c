@@ -130,9 +130,7 @@ _hg_object_path_to_cstr(hg_object_t             *object,
 }
 
 static hg_bool_t
-_hg_object_path_gc_mark(hg_object_t          *object,
-			hg_gc_iterate_func_t  func,
-			hg_pointer_t          user_data)
+_hg_object_path_gc_mark(hg_object_t *object)
 {
 	hg_path_t *path = (hg_path_t *)object;
 

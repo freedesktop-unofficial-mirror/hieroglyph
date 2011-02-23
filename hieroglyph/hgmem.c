@@ -125,7 +125,6 @@ hg_mem_spool_new_with_allocator(hg_mem_vtable_t *allocator,
 	} else {
 		retval->data->resizable = FALSE;
 		hg_mem_spool_expand_heap(retval, size);
-		retval->reserved_spool = g_hash_table_new(g_direct_hash, g_direct_equal);
 		retval->reference_table = NULL;
 	}
 	retval->enable_gc = TRUE;
@@ -157,8 +156,6 @@ hg_mem_spool_destroy(hg_pointer_t data)
 
 	__hg_mem_spool[mem->id] = NULL;
 	mem->allocator->finalize(mem->data);
-	if (mem->reserved_spool)
-		g_hash_table_destroy(mem->reserved_spool);
 	if (mem->type == HG_MEM_TYPE_MASTER)
 		__hg_mem_master = NULL;
 
@@ -203,11 +200,55 @@ hg_mem_spool_set_resizable(hg_mem_t  *mem,
 }
 
 /**
+ * hg_mem_spool_add_gc_marker:
+ * @mem:
+ * @func:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_int_t
+hg_mem_spool_add_gc_marker(hg_mem_t          *mem,
+			   hg_gc_mark_func_t  func)
+{
+	hg_return_val_if_fail (mem != NULL, -1, HG_e_VMerror);
+	hg_return_val_if_fail (mem->allocator != NULL, -1, HG_e_VMerror);
+	hg_return_val_if_fail (mem->allocator->add_gc_marker != NULL, -1, HG_e_VMerror);
+	hg_return_val_if_fail (mem->data != NULL, -1, HG_e_VMerror);
+	hg_return_val_if_fail (func != NULL, -1, HG_e_VMerror);
+
+	return mem->allocator->add_gc_marker(mem->data, func);
+}
+
+/**
+ * hg_mem_spool_remove_gc_marker:
+ * @mem:
+ * @marker_id:
+ *
+ * FIXME
+ */
+void
+hg_mem_spool_remove_gc_marker(hg_mem_t   *mem,
+			      hg_int_t    marker_id)
+{
+	hg_return_if_fail (mem != NULL, HG_e_VMerror);
+	hg_return_if_fail (mem->allocator != NULL, HG_e_VMerror);
+	hg_return_if_fail (mem->allocator->remove_gc_marker != NULL, HG_e_VMerror);
+	hg_return_if_fail (mem->data != NULL, HG_e_VMerror);
+	hg_return_if_fail (marker_id >= 0, HG_e_VMerror);
+
+	return mem->allocator->remove_gc_marker(mem->data, marker_id);
+}
+
+/**
  * hg_mem_spool_add_finalizer:
  * @mem:
  * @func:
  *
  * FIXME
+ *
+ * Returns:
  */
 hg_int_t
 hg_mem_spool_add_finalizer(hg_mem_t            *mem,
@@ -249,15 +290,15 @@ hg_mem_spool_get_type(hg_mem_t *mem)
 }
 
 /**
- * hg_mem_enable_garbage_collector:
+ * hg_mem_spool_enable_gc:
  * @mem:
  * @flag:
  *
  * FIXME
  */
 void
-hg_mem_enable_garbage_collector(hg_mem_t  *mem,
-				hg_bool_t  flag)
+hg_mem_spool_enable_gc(hg_mem_t  *mem,
+		       hg_bool_t  flag)
 {
 	hg_return_if_fail (mem != NULL, HG_e_VMerror);
 
@@ -265,7 +306,7 @@ hg_mem_enable_garbage_collector(hg_mem_t  *mem,
 }
 
 /**
- * hg_mem_set_garbage_collector:
+ * hg_mem_spool_set_gc_procedure:
  * @mem:
  * @func:
  * @data:
@@ -273,9 +314,9 @@ hg_mem_enable_garbage_collector(hg_mem_t  *mem,
  * FIXME
  */
 void
-hg_mem_set_garbage_collector(hg_mem_t     *mem,
-			     hg_gc_func_t  func,
-			     hg_pointer_t  user_data)
+hg_mem_spool_set_gc_procedure(hg_mem_t     *mem,
+			      hg_gc_func_t  func,
+			      hg_pointer_t  user_data)
 {
 	hg_return_if_fail (mem != NULL, HG_e_VMerror);
 
@@ -284,7 +325,7 @@ hg_mem_set_garbage_collector(hg_mem_t     *mem,
 }
 
 /**
- * hg_mem_collect_garbage:
+ * hg_mem_spool_run_gc:
  * @mem:
  *
  * FIXME
@@ -292,7 +333,7 @@ hg_mem_set_garbage_collector(hg_mem_t     *mem,
  * Returns:
  */
 hg_size_t
-hg_mem_collect_garbage(hg_mem_t *mem)
+hg_mem_spool_run_gc(hg_mem_t *mem)
 {
 	hg_size_t retval;
 
@@ -313,18 +354,46 @@ hg_mem_collect_garbage(hg_mem_t *mem)
 			hg_debug(HG_MSGCAT_GC, "starting [mem_id: %d]", mem->id);
 			if (mem->gc_func)
 				mem->gc_func(mem, mem->gc_data);
-			if (HG_ERROR_IS_SUCCESS0 () &&
-			    mem->rs_gc_func) {
-				hg_mem_reserved_spool_foreach(mem,
-							      mem->rs_gc_func,
-							      mem->rs_gc_data);
-			}
 			if (!mem->allocator->gc_finish(mem->data))
 				return -1;
 		}
 	}
 
 	return retval - mem->data->used_size;
+}
+
+/**
+ * hg_mem_spool_get_total_size:
+ * @mem:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_usize_t
+hg_mem_spool_get_total_size(hg_mem_t *mem)
+{
+	hg_return_val_if_fail (mem != NULL, 0, HG_e_VMerror);
+	hg_return_val_if_fail (mem->data != NULL, 0, HG_e_VMerror);
+
+	return mem->data->total_size;
+}
+
+/**
+ * hg_mem_spool_get_used_size:
+ * @mem:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_usize_t
+hg_mem_spool_get_used_size(hg_mem_t *mem)
+{
+	hg_return_val_if_fail (mem != NULL, 0, HG_e_VMerror);
+	hg_return_val_if_fail (mem->data != NULL, 0, HG_e_VMerror);
+
+	return mem->data->used_size;
 }
 
 /**
@@ -346,7 +415,7 @@ hg_mem_save_snapshot(hg_mem_t *mem)
 	hg_return_val_if_fail (mem->data != NULL, NULL, HG_e_VMerror);
 
 	/* clean up to obtain the certain information to be restored */
-	if (hg_mem_collect_garbage(mem) < 0)
+	if (hg_mem_spool_run_gc(mem) < 0)
 		return NULL;
 
 	retval = mem->allocator->save_snapshot(mem->data);
@@ -442,157 +511,6 @@ hg_mem_snapshot_free(hg_mem_t               *mem,
 	mem->allocator->destroy_snapshot(mem->data, snapshot);
 }
 
-/**
- * hg_mem_get_total_size:
- * @mem:
- *
- * FIXME
- *
- * Returns:
- */
-hg_usize_t
-hg_mem_get_total_size(hg_mem_t *mem)
-{
-	hg_return_val_if_fail (mem != NULL, 0, HG_e_VMerror);
-	hg_return_val_if_fail (mem->data != NULL, 0, HG_e_VMerror);
-
-	return mem->data->total_size;
-}
-
-/**
- * hg_mem_get_used_size:
- * @mem:
- *
- * FIXME
- *
- * Returns:
- */
-hg_usize_t
-hg_mem_get_used_size(hg_mem_t *mem)
-{
-	hg_return_val_if_fail (mem != NULL, 0, HG_e_VMerror);
-	hg_return_val_if_fail (mem->data != NULL, 0, HG_e_VMerror);
-
-	return mem->data->used_size;
-}
-
-/**
- * hg_mem_reserved_spool_add:
- * @mem:
- * @qdata:
- *
- * FIXME
- */
-void
-hg_mem_reserved_spool_add(hg_mem_t     *mem,
-			  hg_quark_t    qdata)
-{
-	hg_pointer_t p;
-	hg_int_t count;
-
-	hg_return_if_fail (mem != NULL, HG_e_VMerror);
-	hg_return_if_fail (qdata != Qnil, HG_e_VMerror);
-	hg_return_if_fail (hg_quark_has_mem_id(qdata, mem->id), HG_e_VMerror);
-
-	p = HGQUARK_TO_POINTER (hg_quark_get_hash(qdata));
-	count = HGPOINTER_TO_INT (g_hash_table_lookup(mem->reserved_spool, p));
-	if ((count + 1) < 0)
-		hg_warning("[BUG] the reference count of %lx on the reserved_spool being overflowed",
-			   qdata);
-	g_hash_table_replace(mem->reserved_spool, p, HGINT_TO_POINTER (count + 1));
-}
-
-/**
- * hg_mem_reserved_spool_remove:
- * @mem:
- * @qdata:
- *
- * FIXME
- */
-void
-hg_mem_reserved_spool_remove(hg_mem_t   *mem,
-			     hg_quark_t  qdata)
-{
-	hg_pointer_t p;
-	hg_int_t count;
-
-	hg_return_if_fail (mem != NULL, HG_e_VMerror);
-
-	if (qdata == Qnil)
-		return;
-
-	p = HGQUARK_TO_POINTER (hg_quark_get_hash(qdata));
-	count = HGPOINTER_TO_INT (g_hash_table_lookup(mem->reserved_spool, p));
-	if (count > 0) {
-		if (count == 1) {
-			g_hash_table_remove(mem->reserved_spool, p);
-		} else {
-			g_hash_table_replace(mem->reserved_spool, p, HGINT_TO_POINTER (count - 1));
-		}
-	}
-}
-
-/**
- * hg_mem_reserved_spool_set_garbage_collector:
- * @mem:
- * @func:
- * @user_data:
- *
- * FIXME
- */
-void
-hg_mem_reserved_spool_set_garbage_collector(hg_mem_t        *mem,
-					    hg_rs_gc_func_t  func,
-					    hg_pointer_t         user_data)
-{
-	hg_return_if_fail (mem != NULL, HG_e_VMerror);
-	hg_return_if_fail (func != NULL, HG_e_VMerror);
-
-	mem->rs_gc_func = func;
-	mem->rs_gc_data = user_data;
-}
-
-/**
- * hg_mem_reserved_spool_foreach:
- * @mem:
- * @func:
- * @user_data:
- *
- * FIXME
- *
- * Returns:
- */
-hg_bool_t
-hg_mem_reserved_spool_foreach(hg_mem_t        *mem,
-			      hg_rs_gc_func_t  func,
-			      hg_pointer_t     user_data)
-{
-	GList *lk, *lv, *llk, *llv;
-	hg_bool_t retval = TRUE;
-
-	hg_return_val_if_fail (mem != NULL, FALSE, HG_e_VMerror);
-
-	lk = g_hash_table_get_keys(mem->reserved_spool);
-	lv = g_hash_table_get_values(mem->reserved_spool);
-
-	for (llk = lk, llv = lv;
-	     llk != NULL && llv != NULL;
-	     llk = g_list_next(llk), llv = g_list_next(llv)) {
-		if (!func(mem,
-			  HGPOINTER_TO_QUARK (llk->data),
-			  HGPOINTER_TO_QUARK (llv->data),
-			  user_data)) {
-			retval = FALSE;
-			break;
-		}
-	}
-
-	g_list_free(lk);
-	g_list_free(lv);
-
-	return retval;
-}
-
 /** memory management **/
 
 /**
@@ -648,7 +566,7 @@ hg_mem_alloc_with_flags(hg_mem_t     *mem,
 		hg_quark_set_mem_id(&retval, mem->id);
 	} else {
 		if (!fgc) {
-			if (hg_mem_collect_garbage(mem) > 0) {
+			if (hg_mem_spool_run_gc(mem) > 0) {
 				fgc = TRUE;
 				goto retry;
 			}
@@ -710,7 +628,7 @@ hg_mem_realloc(hg_mem_t     *mem,
 		retval = _hg_typebit_get_value_(qdata, HG_TYPEBIT_BIT0, HG_TYPEBIT_END) | retval;
 	} else {
 		if (!fgc) {
-			if (hg_mem_collect_garbage(mem) > 0) {
+			if (hg_mem_spool_run_gc(mem) > 0) {
 				fgc = TRUE;
 				goto retry;
 			}
@@ -755,6 +673,34 @@ hg_mem_free(hg_mem_t   *mem,
 
 	mem->allocator->free(mem->data,
 			     hg_quark_get_value (qdata));
+}
+
+/**
+ * hg_mem_set_gc_marker:
+ * @mem:
+ * @qdata:
+ * @marker_id:
+ *
+ * FIXME
+ */
+void
+hg_mem_set_gc_marker(hg_mem_t   *mem,
+		     hg_quark_t  qdata,
+		     hg_int_t    marker_id)
+{
+	hg_return_if_fail (mem != NULL, HG_e_VMerror);
+	hg_return_if_fail (mem->allocator != NULL, HG_e_VMerror);
+	hg_return_if_fail (mem->allocator->set_gc_marker != NULL, HG_e_VMerror);
+	hg_return_if_fail (mem->data != NULL, HG_e_VMerror);
+
+	if (qdata == Qnil)
+		return;
+
+	hg_return_if_fail (hg_quark_has_mem_id(qdata, mem->id), HG_e_VMerror);
+
+	mem->allocator->set_gc_marker(mem->data,
+				      hg_quark_get_value (qdata),
+				      marker_id);
 }
 
 /**
@@ -878,4 +824,72 @@ hg_mem_get_id(hg_mem_t *mem)
 	hg_return_val_if_fail (mem != NULL, -1, HG_e_VMerror);
 
 	return mem->id;
+}
+
+/**
+ * hg_mem_ref:
+ * @mem:
+ * @qdata:
+ *
+ * FIXME
+ */
+void
+hg_mem_ref(hg_mem_t   *mem,
+	   hg_quark_t  qdata)
+{
+	hg_return_if_fail (mem != NULL, HG_e_VMerror);
+	hg_return_if_fail (mem->allocator != NULL, HG_e_VMerror);
+	hg_return_if_fail (mem->allocator->block_ref != NULL, HG_e_VMerror);
+	hg_return_if_fail (mem->data != NULL, HG_e_VMerror);
+	hg_return_if_fail (qdata != Qnil, HG_e_VMerror);
+	hg_return_if_fail (hg_quark_has_mem_id(qdata, mem->id), HG_e_VMerror);
+
+	mem->allocator->block_ref(mem->data, qdata);
+}
+
+/**
+ * hg_mem_unref:
+ * @mem:
+ * @qdata:
+ *
+ * FIXME
+ */
+void
+hg_mem_unref(hg_mem_t   *mem,
+	     hg_quark_t  qdata)
+{
+	hg_return_if_fail (mem != NULL, HG_e_VMerror);
+	hg_return_if_fail (mem->allocator != NULL, HG_e_VMerror);
+	hg_return_if_fail (mem->allocator->block_unref != NULL, HG_e_VMerror);
+	hg_return_if_fail (mem->data != NULL, HG_e_VMerror);
+
+	if (qdata == Qnil)
+		return;
+
+	mem->allocator->block_unref(mem->data, qdata);
+}
+
+/**
+ * hg_mem_foreach:
+ * @mem:
+ * @func:
+ * @flags:
+ * @user_data:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_bool_t
+hg_mem_foreach(hg_mem_t                 *mem,
+	       hg_block_iter_flags_t     flags,
+	       hg_quark_iterator_func_t  func,
+	       hg_pointer_t              user_data)
+{
+	hg_return_val_if_fail (mem != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (mem->allocator != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (mem->allocator->block_foreach != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (mem->data != NULL, FALSE, HG_e_VMerror);
+
+	return mem->allocator->block_foreach(mem->data, flags, func, user_data);
 }

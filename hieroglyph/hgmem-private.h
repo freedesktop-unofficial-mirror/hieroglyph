@@ -36,9 +36,6 @@ struct _hg_mem_t {
 	hg_gc_func_t         gc_func;
 	hg_pointer_t         gc_data;
 	GHashTable          *reference_table;
-	GHashTable          *reserved_spool;
-	hg_rs_gc_func_t      rs_gc_func;
-	hg_pointer_t         rs_gc_data;
 	hg_bool_t            enable_gc:1;
 };
 

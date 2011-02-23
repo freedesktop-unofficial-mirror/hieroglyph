@@ -122,24 +122,6 @@ TDEF (get_capsulated_size)
 } TEND
 
 static hg_bool_t
-_gc_iter_func(hg_quark_t   qdata,
-	      hg_pointer_t data)
-{
-	hg_object_t *o = data;
-
-	if (hg_quark_get_type(qdata) == HG_TYPE_DICT_NODE) {
-		hg_object_t *dnode = hg_mem_lock_object(o->mem, qdata);
-		hg_bool_t ret = hg_object_gc_mark(dnode, _gc_iter_func, o);
-
-		hg_mem_unlock_object(o->mem, qdata);
-
-		return ret;
-	}
-
-	return TRUE;
-}
-
-static hg_bool_t
 _gc_func(hg_mem_t     *mem,
 	 hg_pointer_t  data)
 {
@@ -148,7 +130,7 @@ _gc_func(hg_mem_t     *mem,
 	if (data == NULL)
 		return TRUE;
 
-	return hg_object_gc_mark((hg_object_t *)d, _gc_iter_func, d);
+	return hg_mem_gc_mark(d->o.mem, d->o.self);
 }
 
 TDEF (gc_mark)
@@ -161,16 +143,16 @@ TDEF (gc_mark)
 
 	q = hg_dict_new(m, 10, TRUE, (hg_pointer_t *)&d);
 	hg_dict_add(d, 0, 0, FALSE);
-	hg_mem_set_garbage_collector(m, _gc_func, d);
-	size = hg_mem_collect_garbage(m);
-	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
+	hg_mem_spool_set_gc_procedure(m, _gc_func, d);
+	size = hg_mem_spool_run_gc(m);
+	fail_unless(size == 0, "missing something for marking: %ld bytes freed [take 1]", size);
 	for (i = 1; i < 256; i++) {
 		hg_dict_add(d, i, i, FALSE);
 	}
-	size = hg_mem_collect_garbage(m);
-	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
-	size = hg_mem_collect_garbage(m);
-	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
+	size = hg_mem_spool_run_gc(m);
+	fail_unless(size == 0, "missing something for marking: %ld bytes freed [take 2]", size);
+	size = hg_mem_spool_run_gc(m);
+	fail_unless(size == 0, "missing something for marking: %ld bytes freed [take 3]", size);
 } TEND
 
 TDEF (hg_dict_new)
@@ -232,7 +214,9 @@ TDEF (hg_dict_add)
 	for (i = 0; i < 256; i++) {
 		g_string_erase(string, 0, -1);
 		tree2string(mem, dict->qroot, string, TRUE);
+#if 0
 		g_print("%lx: %s\n", i, string->str);
+#endif
 		hg_dict_remove(dict, i);
 		fail_unless(HG_ERROR_IS_SUCCESS0 (), "Unexpected result to remove a node: %lx", i);
 	}

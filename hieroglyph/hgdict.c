@@ -105,17 +105,16 @@ _hg_object_dict_to_cstr(hg_object_t             *object,
 }
 
 static hg_bool_t
-_hg_object_dict_gc_mark(hg_object_t          *object,
-			hg_gc_iterate_func_t  func,
-			hg_pointer_t          user_data)
+_hg_object_dict_gc_mark(hg_object_t *object)
 {
 	hg_dict_t *dict;
 
 	hg_return_val_if_fail (object->type == HG_TYPE_DICT, FALSE, HG_e_VMerror);
 
 	dict = (hg_dict_t *)object;
+	hg_debug(HG_MSGCAT_GC, "dict: marking a root dict node.");
 
-	return func(dict->qroot, user_data);
+	return hg_mem_gc_mark(dict->o.mem, dict->qroot);
 }
 
 static hg_bool_t
@@ -245,11 +244,12 @@ _hg_object_dict_node_initialize(hg_object_t *object,
 					  FALSE, _hg_dict_node_free(object->mem, object->self),
 					  HG_e_VMerror);
 
-	for (i = 0; i < __hg_dict_node_size * 2 + 1; i++) {
+	for (i = 0; i < __hg_dict_node_size * 2; i++) {
 		((hg_quark_t *)keys)[i] = Qnil;
 		((hg_quark_t *)vals)[i] = Qnil;
 		((hg_quark_t *)nodes)[i] = Qnil;
 	}
+	((hg_quark_t *)nodes)[i] = Qnil;
 
 	if (ret_key)
 		*ret_key = keys;
@@ -289,9 +289,7 @@ _hg_object_dict_node_to_cstr(hg_object_t             *object,
 }
 
 static hg_bool_t
-_hg_object_dict_node_gc_mark(hg_object_t          *object,
-			     hg_gc_iterate_func_t  func,
-			     hg_pointer_t          user_data)
+_hg_object_dict_node_gc_mark(hg_object_t *object)
 {
 	hg_dict_node_t *dnode = (hg_dict_node_t *)object;
 	hg_usize_t i;
@@ -299,13 +297,13 @@ _hg_object_dict_node_gc_mark(hg_object_t          *object,
 
 	hg_return_val_if_fail (object->type == HG_TYPE_DICT_NODE, FALSE, HG_e_typecheck);
 
-	hg_debug(HG_MSGCAT_GC, "dict: marking key container");
+	hg_debug(HG_MSGCAT_GC, "dictnode: marking key container");
 	if (!hg_mem_gc_mark(dnode->o.mem, dnode->qkey))
 		return FALSE;
-	hg_debug(HG_MSGCAT_GC, "dict: marking value container");
+	hg_debug(HG_MSGCAT_GC, "dictnode: marking value container");
 	if (!hg_mem_gc_mark(dnode->o.mem, dnode->qval))
 		return FALSE;
-	hg_debug(HG_MSGCAT_GC, "dict: marking node container");
+	hg_debug(HG_MSGCAT_GC, "dictnode: marking node container");
 	if (!hg_mem_gc_mark(dnode->o.mem, dnode->qnodes))
 		return FALSE;
 
@@ -322,18 +320,22 @@ _hg_object_dict_node_gc_mark(hg_object_t          *object,
 	}
 
 	for (i = 0; i < dnode->n_data; i++) {
-		hg_debug(HG_MSGCAT_GC, "dict: marking node[%ld]", i);
-		if (!func(qnode_nodes[i], user_data))
+		hg_mem_t *m;
+
+		hg_debug(HG_MSGCAT_GC, "dictnode: marking node[%ld]", i);
+		if (!hg_mem_gc_mark(dnode->o.mem, qnode_nodes[i]))
 			goto qfinalize;
-		hg_debug(HG_MSGCAT_GC, "dict: marking key[%ld]", i);
-		if (!func(qnode_keys[i], user_data))
+		hg_debug(HG_MSGCAT_GC, "dictnode: marking key[%ld]", i);
+		m = hg_mem_spool_get(hg_quark_get_mem_id(qnode_keys[i]));
+		if (!hg_mem_gc_mark(m, qnode_keys[i]))
 			goto qfinalize;
-		hg_debug(HG_MSGCAT_GC, "dict: marking value[%ld]", i);
-		if (!func(qnode_vals[i], user_data))
+		hg_debug(HG_MSGCAT_GC, "dictnode: marking value[%ld]", i);
+		m = hg_mem_spool_get(hg_quark_get_mem_id(qnode_vals[i]));
+		if (!hg_mem_gc_mark(m, qnode_vals[i]))
 			goto qfinalize;
 	}
-	hg_debug(HG_MSGCAT_GC, "dict: marking node[%ld]", dnode->n_data);
-	if (!func(qnode_nodes[dnode->n_data], user_data))
+	hg_debug(HG_MSGCAT_GC, "dictnode: marking node[%ld]", dnode->n_data);
+	if (!hg_mem_gc_mark(dnode->o.mem, qnode_nodes[dnode->n_data]))
 		goto qfinalize;
   qfinalize:
 	if (qnode_keys)
@@ -528,7 +530,7 @@ _hg_dict_node_balance(hg_dict_node_t *node,
 	hg_mem_unlock_object(node->o.mem, new_node->qval);
 	hg_mem_unlock_object(node->o.mem, new_node->qnodes);
 	hg_mem_unlock_object(node->o.mem, q);
-	hg_mem_reserved_spool_remove(node->o.mem, q);
+	hg_mem_unref(node->o.mem, q);
 }
 
 HG_INLINE_FUNC hg_bool_t
@@ -965,17 +967,17 @@ hg_dict_add(hg_dict_t  *dict,
 		dict->qroot = qnode;
 
 		HG_DICT_NODE_UNLOCK_NO_LABEL (dict->o.mem, qnode, qnode);
-		hg_mem_reserved_spool_remove(dict->o.mem, qnode);
+		hg_mem_unref(dict->o.mem, qnode);
 	}
 	if (!hg_quark_is_simple_object(qkey) &&
 	    hg_quark_get_type(qkey) != HG_TYPE_OPER) {
 		m = hg_mem_spool_get(hg_quark_get_mem_id(qkey));
-		hg_mem_reserved_spool_remove(m, qkey);
+		hg_mem_unref(m, qkey);
 	}
 	if (!hg_quark_is_simple_object(qval) &&
 	    hg_quark_get_type(qval) != HG_TYPE_OPER) {
 		m = hg_mem_spool_get(hg_quark_get_mem_id(qval));
-		hg_mem_reserved_spool_remove(m, qval);
+		hg_mem_unref(m, qval);
 	}
 	dict->length++;
 

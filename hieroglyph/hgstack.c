@@ -57,7 +57,7 @@ _hg_stack_spooler_new_node(hg_stack_spool_t *spool)
 		retval = spool->spool;
 		spool->spool = retval->next;
 
-		hg_mem_reserved_spool_add(spool->mem, retval->self);
+		hg_mem_ref(spool->mem, retval->self);
 	} else {
 		retval = _hg_slist_new(spool->mem);
 	}
@@ -72,7 +72,7 @@ _hg_stack_spooler_free_node(hg_stack_spool_t *spool,
 	node->next = spool->spool;
 	spool->spool = node;
 
-	hg_mem_reserved_spool_remove(spool->mem, node->self);
+	hg_mem_unref(spool->mem, node->self);
 }
 
 static hg_bool_t
@@ -137,17 +137,22 @@ _hg_object_stack_to_cstr(hg_object_t             *object,
 }
 
 static hg_bool_t
-_hg_object_stack_gc_mark(hg_object_t          *object,
-			 hg_gc_iterate_func_t  func,
-			 hg_pointer_t          user_data)
+_hg_object_stack_gc_mark(hg_object_t *object)
 {
 	hg_stack_t *stack = (hg_stack_t *)object;
 	hg_slist_t *l;
+	hg_mem_t *m;
 
 	for (l = stack->last_stack; l != NULL; l = l->next) {
 		if (!hg_mem_gc_mark(object->mem, l->self))
 			return FALSE;
-		if (!func(l->data, user_data))
+		m = hg_mem_spool_get(hg_quark_get_mem_id(l->data));
+		if (!m) {
+			hg_warning("Unable to obtain the memory spooler from %lx",
+				   l->data);
+			hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
+		}
+		if (!hg_mem_gc_mark(m, l->data))
 			return FALSE;
 	}
 	return _hg_stack_spooler_gc_mark(stack->spool);
@@ -178,17 +183,9 @@ _hg_slist_new(hg_mem_t *mem)
 	l->data = Qnil;
 	l->next = NULL;
 
-	hg_mem_reserved_spool_add(mem, self);
+	hg_mem_ref(mem, self);
 
 	return l;
-}
-
-HG_INLINE_FUNC void
-_hg_slist_free1(hg_mem_t   *mem,
-		hg_slist_t *list)
-{
-	hg_mem_reserved_spool_remove(mem, list->self);
-	hg_mem_free(mem, list->self);
 }
 
 HG_INLINE_FUNC void
@@ -199,7 +196,7 @@ _hg_slist_free(hg_mem_t   *mem,
 
 	for (l = list; l != NULL; l = tmp) {
 		tmp = l->next;
-		_hg_slist_free1(mem, l);
+		hg_mem_free(mem, l->self);
 	}
 }
 
@@ -226,7 +223,7 @@ _hg_stack_push(hg_stack_t *stack,
 	    !hg_quark_is_simple_object(quark) &&
 	    hg_quark_get_type(quark) != HG_TYPE_OPER) {
 		m = hg_vm_get_mem_from_quark(stack->vm, quark);
-		hg_mem_reserved_spool_remove(m, quark);
+		hg_mem_unref(m, quark);
 	}
 
 	return TRUE;
@@ -247,7 +244,7 @@ _hg_stack_pop(hg_stack_t  *stack)
 	if (stack->spool)
 		_hg_stack_spooler_free_node(stack->spool, l);
 	else
-		_hg_slist_free1(stack->o.mem, l);
+		hg_mem_free(stack->o.mem, l->self);
 	stack->depth--;
 
 	return retval;
@@ -280,7 +277,7 @@ hg_stack_spooler_new(hg_mem_t *mem)
 	retval->mem = mem;
 	retval->spool = NULL;
 
-	hg_mem_reserved_spool_add(mem, q);
+	hg_mem_ref(mem, q);
 
 	return retval;
 }
@@ -297,7 +294,6 @@ hg_stack_spooler_destroy(hg_stack_spool_t *spool)
 	hg_return_if_fail (spool != NULL, HG_e_VMerror);
 
 	_hg_slist_free(spool->mem, spool->spool);
-	hg_mem_reserved_spool_remove(spool->mem, spool->self);
 	hg_mem_free(spool->mem, spool->self);
 }
 
@@ -459,7 +455,7 @@ hg_stack_pop(hg_stack_t *stack)
 	    !hg_quark_is_simple_object(retval) &&
 	    hg_quark_get_type(retval) != HG_TYPE_OPER) {
 		m = hg_vm_get_mem_from_quark(stack->vm, retval);
-		hg_mem_reserved_spool_add(m, retval);
+		hg_mem_ref(m, retval);
 	}
 
 	return retval;

@@ -94,7 +94,7 @@ _hg_device_init_page_params(hg_device_t *device,
 		hg_mem_unlock_object(mem, device->params->qinstall);
 	}
 	hg_quark_set_executable(&device->params->qinstall, TRUE);
-	hg_mem_reserved_spool_remove(mem, device->params->qinstall);
+	hg_mem_unref(mem, device->params->qinstall);
 
 	type = hg_quark_get_type(device->params->qbegin_page);
 	if (type != HG_TYPE_ARRAY) {
@@ -108,7 +108,7 @@ _hg_device_init_page_params(hg_device_t *device,
 		hg_mem_unlock_object(mem, device->params->qbegin_page);
 	}
 	hg_quark_set_executable(&device->params->qbegin_page, TRUE);
-	hg_mem_reserved_spool_remove(mem, device->params->qbegin_page);
+	hg_mem_unref(mem, device->params->qbegin_page);
 
 	type = hg_quark_get_type(device->params->qend_page);
 	if (type != HG_TYPE_ARRAY) {
@@ -122,7 +122,7 @@ _hg_device_init_page_params(hg_device_t *device,
 		hg_mem_unlock_object(mem, device->params->qend_page);
 	}
 	hg_quark_set_executable(&device->params->qend_page, TRUE);
-	hg_mem_reserved_spool_remove(mem, device->params->qend_page);
+	hg_mem_unref(mem, device->params->qend_page);
 
 	return TRUE;
 }

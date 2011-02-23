@@ -58,9 +58,7 @@ HG_BEGIN_DECLS
 	static hg_char_t      *_hg_object_ ## _name_ ## _to_cstr             (hg_object_t             *object, \
 									      hg_quark_iterate_func_t  func, \
 									      hg_pointer_t             user_data); \
-	static hg_bool_t      _hg_object_ ## _name_ ## _gc_mark              (hg_object_t             *object, \
-									      hg_gc_iterate_func_t     func, \
-									      hg_pointer_t             user_data); \
+	static hg_bool_t      _hg_object_ ## _name_ ## _gc_mark              (hg_object_t             *object); \
 	static hg_bool_t      _hg_object_ ## _name_ ## _compare              (hg_object_t             *o1,	\
 									      hg_object_t             *o2, \
 									      hg_quark_compare_func_t  func, \
@@ -106,9 +104,7 @@ struct _hg_object_vtable_t {
 	hg_char_t      * (* to_cstr)              (hg_object_t             *object,
 						   hg_quark_iterate_func_t  func,
 						   hg_pointer_t             user_data);
-	hg_bool_t       (* gc_mark)               (hg_object_t             *object,
-						   hg_gc_iterate_func_t     func,
-						   hg_pointer_t             user_data);
+	hg_bool_t       (* gc_mark)               (hg_object_t             *object);
 	hg_bool_t       (* compare)               (hg_object_t             *o1,
 						   hg_object_t             *o2,
 						   hg_quark_compare_func_t  func,
@@ -149,9 +145,6 @@ hg_quark_t      hg_object_copy      (hg_object_t             *object,
                                      hg_pointer_t            *ret);
 hg_char_t      *hg_object_to_cstr   (hg_object_t             *object,
                                      hg_quark_iterate_func_t  func,
-                                     hg_pointer_t             user_data);
-hg_bool_t       hg_object_gc_mark   (hg_object_t             *object,
-                                     hg_gc_iterate_func_t     func,
                                      hg_pointer_t             user_data);
 hg_bool_t       hg_object_compare   (hg_object_t             *o1,
                                      hg_object_t             *o2,

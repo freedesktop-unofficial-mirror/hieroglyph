@@ -51,7 +51,6 @@ typedef enum _hg_file_pos_t			hg_file_pos_t;
 typedef struct _hg_file_vtable_t		hg_file_vtable_t;
 typedef struct _hg_file_t			hg_file_t;
 typedef struct _hg_file_io_data_t		hg_file_io_data_t;
-typedef struct _hg_file_gc_t			hg_file_gc_t;
 typedef void (* hg_file_yybuffer_finalizer_func_t) (hg_pointer_t yybuffer,
 						    hg_pointer_t yydata);
 
@@ -119,17 +118,9 @@ struct _hg_file_t {
 };
 struct _hg_file_io_data_t {
 	hg_quark_t           self;
-	hg_gc_iterate_func_t gc_func;
-	hg_destroy_func_t    destroy_func;
 	hg_bool_t            is_eof;
 	hg_int_t             fd;
 	hg_pointer_t         mmapped_buffer;
-};
-struct _hg_file_gc_t {
-	hg_gc_iterate_func_t  func;
-	hg_pointer_t          user_data;
-	hg_mem_t             *mem;
-	hg_file_io_data_t    *data;
 };
 
 

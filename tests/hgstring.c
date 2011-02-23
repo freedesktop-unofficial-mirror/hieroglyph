@@ -66,13 +66,6 @@ TDEF (get_capsulated_size)
 } TEND
 
 static hg_bool_t
-_gc_iter_func(hg_quark_t   qdata,
-	      hg_pointer_t data)
-{
-	return TRUE;
-}
-
-static hg_bool_t
 _gc_func(hg_mem_t     *mem,
 	 hg_pointer_t  data)
 {
@@ -81,7 +74,7 @@ _gc_func(hg_mem_t     *mem,
 	if (data == NULL)
 		return TRUE;
 
-	return hg_object_gc_mark((hg_object_t *)s, _gc_iter_func, NULL);
+	return hg_mem_gc_mark(s->o.mem, s->o.self);
 }
 
 TDEF (gc_mark)
@@ -92,8 +85,8 @@ TDEF (gc_mark)
 	hg_mem_t *m = hg_mem_spool_new(HG_MEM_TYPE_LOCAL, 256);
 
 	q = hg_string_new_with_value(m, "abc", -1, (hg_pointer_t *)&s);
-	hg_mem_set_garbage_collector(m, _gc_func, s);
-	size = hg_mem_collect_garbage(m);
+	hg_mem_spool_set_gc_procedure(m, _gc_func, s);
+	size = hg_mem_spool_run_gc(m);
 	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
 } TEND
 

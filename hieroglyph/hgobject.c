@@ -86,6 +86,32 @@ _hg_object_quark_iterate_copy(hg_quark_t    qdata,
 				    qdata, ret);
 }
 
+static hg_bool_t
+_hg_object_gc_marker(hg_pointer_t p)
+{
+	hg_object_t *o = (hg_object_t *)p;
+	hg_bool_t retval = TRUE;
+	hg_object_vtable_t *v;
+
+	hg_return_val_if_fail (__hg_object_is_initialized, FALSE, HG_e_VMerror);
+
+	if (!o)
+		hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
+
+	hg_return_val_if_fail (o->type < HG_TYPE_END, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (__hg_object_vtables[o->type] != NULL, FALSE, HG_e_VMerror);
+
+	if (o->on_gc)
+		return TRUE;
+
+	v = __hg_object_vtables[o->type];
+	o->on_gc = TRUE;
+	retval = v->gc_mark(o);
+	o->on_gc = FALSE;
+
+	return retval;
+}
+
 static void
 _hg_object_finalizer(hg_pointer_t p)
 {
@@ -100,7 +126,6 @@ _hg_object_finalizer(hg_pointer_t p)
 	if (v->free) {
 		v->free(o);
 	}
-	hg_mem_reserved_spool_remove(o->mem, o->self);
 }
 
 /*< public >*/
@@ -182,20 +207,21 @@ hg_object_new(hg_mem_t     *mem,
 	if (index_ == Qnil)
 		return Qnil;
 
-	hg_mem_reserved_spool_add(mem, index_);
+	hg_mem_ref(mem, index_);
 
 	va_start(ap, preallocated_size);
 
 	if (!v->initialize(retval, ap)) {
 		hg_error_t e = hg_errno;
 
-		hg_mem_reserved_spool_remove(mem, index_);
 		hg_mem_free(mem, index_);
 
 		hg_errno = e;
 
 		return Qnil;
 	}
+	id = hg_mem_spool_add_gc_marker(mem, _hg_object_gc_marker);
+	hg_mem_set_gc_marker(mem, index_, id);
 	id = hg_mem_spool_add_finalizer(mem, _hg_object_finalizer);
 	hg_mem_set_finalizer(mem, index_, id);
 	if (ret)
@@ -278,47 +304,6 @@ hg_object_to_cstr(hg_object_t             *object,
 	v = __hg_object_vtables[object->type];
 
 	return v->to_cstr(object, func, user_data);
-}
-
-/**
- * hg_object_gc_mark:
- * @object:
- * @func:
- * @user_data:
- * @error:
- *
- * FIXME
- *
- * Returns:
- */
-hg_bool_t
-hg_object_gc_mark(hg_object_t          *object,
-		  hg_gc_iterate_func_t  func,
-		  hg_pointer_t          user_data)
-{
-	hg_object_vtable_t *v;
-	hg_bool_t retval = TRUE;
-
-	hg_return_val_if_fail (__hg_object_is_initialized, FALSE, HG_e_VMerror);
-	hg_return_val_if_fail (object != NULL, FALSE, HG_e_VMerror);
-	hg_return_val_if_fail (object->type < HG_TYPE_END, FALSE, HG_e_VMerror);
-	hg_return_val_if_fail (__hg_object_vtables[object->type] != NULL, FALSE, HG_e_VMerror);
-	hg_return_val_if_fail (func != NULL, FALSE, HG_e_VMerror);
-
-	if (object->on_gc)
-		return TRUE;
-
-	object->on_gc = TRUE;
-
-	if ((retval = hg_mem_gc_mark(object->mem, object->self))) {
-		v = __hg_object_vtables[object->type];
-
-		retval = v->gc_mark(object, func, user_data);
-	}
-
-	object->on_gc = FALSE;
-
-	return retval;
 }
 
 /**

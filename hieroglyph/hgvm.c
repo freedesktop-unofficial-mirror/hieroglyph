@@ -228,49 +228,15 @@ _hg_vm_stack_real_dump(hg_mem_t     *mem,
 	return TRUE;
 }
 
-static hg_error_t
-_hg_vm_rs_real_dump(hg_mem_t     *mem,
-		    hg_quark_t    qkey,
-		    hg_quark_t    qval,
-		    hg_pointer_t  data)
+static hg_bool_t
+_hg_vm_rs_real_dump(hg_quark_t   qdata,
+		    hg_pointer_t user_data)
 {
-	hg_vm_rs_dump_data_t *ddata = data;
-	hg_quark_t q;
-	hg_string_t *s = NULL;
-	hg_char_t *cstr = NULL;
-	hg_char_t mc;
+	hg_file_t *file = (hg_file_t *)user_data;
 
-	q = hg_vm_quark_to_string(ddata->vm, qkey, TRUE, (hg_pointer_t *)&s);
-	if (q != Qnil)
-		cstr = hg_string_get_cstr(s);
+	hg_file_append_printf(file, "0x%016lx\n", qdata);
 
-	if (hg_quark_is_simple_object(qkey) ||
-	    HG_IS_QOPER (qkey)) {
-		mc = '-';
-	} else {
-		hg_uint_t id;
-
-		id = hg_mem_get_id(hg_vm_get_mem_from_quark(ddata->vm, qkey));
-		mc = (id == ddata->vm->mem_id[HG_VM_MEM_GLOBAL] ? 'G' : id == ddata->vm->mem_id[HG_VM_MEM_LOCAL] ? 'L' : '?');
-	}
-	hg_file_append_printf(ddata->ofile, "0x%016lx|%-12s|%6d|%c| %c%c%c|%s\n",
-			      qkey,
-			      hg_quark_get_type_name(qkey),
-			      HGPOINTER_TO_INT (HGQUARK_TO_POINTER (qval)),
-			      mc,
-			      (hg_quark_is_readable(qkey) ? 'r' : '-'),
-			      (hg_quark_is_writable(qkey) ? 'w' : '-'),
-			      (hg_quark_is_executable(qkey) ? 'x' : '-'),
-			      q == Qnil ? "..." : cstr);
-
-	g_free(cstr);
-	/* this is an instant object.
-	 * surely no reference to the container.
-	 * so it can be safely destroyed.
-	 */
-	hg_string_free(s, TRUE);
-
-	return HG_ERROR_ (HG_STATUS_SUCCESS, 0);
+	return TRUE;
 }
 
 static hg_bool_t
@@ -616,26 +582,6 @@ _hg_vm_quark_complex_compare_content(hg_quark_t   q1,
 	return retval;
 }
 
-static hg_error_t
-_hg_vm_vm_rs_gc(hg_mem_t     *mem,
-		hg_quark_t    qkey,
-		hg_quark_t    qval,
-		hg_pointer_t  data)
-{
-	return hg_mem_gc_mark(mem, qkey);
-}
-
-static hg_error_t
-_hg_vm_rs_gc(hg_mem_t     *mem,
-	     hg_quark_t    qkey,
-	     hg_quark_t    qval,
-	     hg_pointer_t  data)
-{
-	hg_vm_t *vm = data;
-
-	return hg_vm_quark_gc_mark(vm, qkey);
-}
-
 static hg_bool_t
 _hg_vm_run_gc(hg_mem_t     *mem,
 	      hg_pointer_t  user_data)
@@ -662,28 +608,23 @@ _hg_vm_run_gc(hg_mem_t     *mem,
 	/* marking I/O in scanner */
 	f = hg_scanner_get_infile(vm->scanner);
 	if (f) {
-		if (!hg_object_gc_mark((hg_object_t *)f,
-				       _hg_vm_quark_iterate_gc_mark,
-				       vm))
+		if (!hg_mem_gc_mark(f->o.mem, f->o.self))
 			return FALSE;
 	}
 
 	/** marking in stacks **/
 	hg_debug(HG_MSGCAT_GC, "VM: marking objects in stacks");
 	for (i = 0; i < HG_VM_STACK_END; i++) {
-		hg_stack_t *s = vm->stacks[i];
+		hg_object_t *o = (hg_object_t *)vm->stacks[i];
 
-		if (!hg_object_gc_mark((hg_object_t *)s,
-				       _hg_vm_quark_iterate_gc_mark,
-				       vm))
+		if (!hg_mem_gc_mark(o->mem,
+				    o->self))
 			return FALSE;
 	}
 	for (i = 0; i < vm->stacks_stack->len; i++) {
-		hg_pointer_t p = g_ptr_array_index(vm->stacks_stack, i);
+		hg_object_t *o = (hg_object_t *)g_ptr_array_index(vm->stacks_stack, i);
 
-		if (!hg_object_gc_mark((hg_object_t *)p,
-				       _hg_vm_quark_iterate_gc_mark,
-				       vm))
+		if (!hg_mem_gc_mark(o->mem, o->self))
 			return FALSE;
 	}
 	/** marking plugins **/
@@ -853,9 +794,6 @@ hg_vm_init(void)
 		if (__hg_vm_mem == NULL)
 			return FALSE;
 
-		hg_mem_reserved_spool_set_garbage_collector(__hg_vm_mem,
-							    _hg_vm_vm_rs_gc,
-							    NULL);
 		__hg_vm_is_initialized = TRUE;
 
 		/* initialize objects */
@@ -920,7 +858,7 @@ hg_vm_new(void)
 	if (q == Qnil)
 		return NULL;
 
-	hg_mem_reserved_spool_add(__hg_vm_mem, q);
+	hg_mem_ref(__hg_vm_mem, q);
 
 	memset(retval, 0, sizeof (hg_vm_t));
 	retval->self = q;
@@ -943,10 +881,8 @@ hg_vm_new(void)
 		goto error;
 	retval->mem_id[HG_VM_MEM_GLOBAL] = hg_mem_get_id(retval->mem[HG_VM_MEM_GLOBAL]);
 	retval->mem_id[HG_VM_MEM_LOCAL] = hg_mem_get_id(retval->mem[HG_VM_MEM_LOCAL]);
-	hg_mem_set_garbage_collector(retval->mem[HG_VM_MEM_GLOBAL], _hg_vm_run_gc, retval);
-	hg_mem_set_garbage_collector(retval->mem[HG_VM_MEM_LOCAL], _hg_vm_run_gc, retval);
-	hg_mem_reserved_spool_set_garbage_collector(retval->mem[HG_VM_MEM_GLOBAL], _hg_vm_rs_gc, retval);
-	hg_mem_reserved_spool_set_garbage_collector(retval->mem[HG_VM_MEM_LOCAL], _hg_vm_rs_gc, retval);
+	hg_mem_spool_set_gc_procedure(retval->mem[HG_VM_MEM_GLOBAL], _hg_vm_run_gc, retval);
+	hg_mem_spool_set_gc_procedure(retval->mem[HG_VM_MEM_LOCAL], _hg_vm_run_gc, retval);
 
 	q = hg_mem_alloc(retval->mem[HG_VM_MEM_LOCAL],
 			 sizeof (hg_vm_state_t),
@@ -1130,7 +1066,6 @@ hg_vm_destroy(hg_vm_t *vm)
 		g_list_free(vm->plugin_list);
 	if (vm->rand_)
 		g_rand_free(vm->rand_);
-	hg_mem_reserved_spool_remove(__hg_vm_mem, vm->self);
 	hg_mem_free(__hg_vm_mem, vm->self);
 }
 
@@ -1468,7 +1403,7 @@ hg_vm_setup(hg_vm_t           *vm,
 		if (vm->qgstate == Qnil)
 			goto error;
 
-		hg_mem_reserved_spool_remove(vm->mem[HG_VM_MEM_LOCAL], vm->qgstate);
+		hg_mem_unref(vm->mem[HG_VM_MEM_LOCAL], vm->qgstate);
 
 		/* initialize stacks */
 		hg_stack_clear(vm->stacks[HG_VM_STACK_OSTACK]);
@@ -2418,8 +2353,8 @@ hg_vm_startjob(hg_vm_t           *vm,
 	}
 
 	/* clean up garbages */
-	hg_mem_collect_garbage(vm->mem[HG_VM_MEM_GLOBAL]);
-	hg_mem_collect_garbage(vm->mem[HG_VM_MEM_LOCAL]);
+	hg_mem_spool_run_gc(vm->mem[HG_VM_MEM_GLOBAL]);
+	hg_mem_spool_run_gc(vm->mem[HG_VM_MEM_LOCAL]);
 
 	/* XXX: restore memory */
 
@@ -2556,7 +2491,7 @@ hg_vm_set_gstate(hg_vm_t    *vm,
 		return;
 	}
 	vm->qgstate = qgstate;
-	hg_mem_reserved_spool_remove(mem, qgstate);
+	hg_mem_unref(mem, qgstate);
 }
 
 /**
@@ -2982,9 +2917,14 @@ hg_vm_reserved_spool_dump(hg_vm_t   *vm,
 	data.mem = mem;
 	data.ofile = ofile;
 
-	hg_file_append_printf(ofile, "       value      |    type    |refcnt|M|attr|content\n");
-	hg_file_append_printf(ofile, "----------========+------------+------+-+----+---------------------------------\n");
-	hg_mem_reserved_spool_foreach(mem, _hg_vm_rs_real_dump, &data);
+	hg_file_append_printf(ofile, "Referenced blocks in %s\n",
+			      mem == vm->mem[HG_VM_MEM_GLOBAL] ? "global" :
+			      mem == vm->mem[HG_VM_MEM_LOCAL] ? "local" :
+			      "unknown");
+	hg_file_append_printf(ofile, "       value      \n");
+	hg_file_append_printf(ofile, "----------========\n");
+	hg_mem_foreach(mem, HG_BLK_ITER_REFERENCED_ONLY,
+		       _hg_vm_rs_real_dump, ofile);
 }
 
 /**
@@ -3541,7 +3481,7 @@ hg_vm_quark_gc_mark(hg_vm_t    *vm,
 	if (o == NULL)
 		return FALSE;
 
-	retval = hg_object_gc_mark(o, _hg_vm_quark_iterate_gc_mark, vm);
+	retval = hg_mem_gc_mark(o->mem, o->self);
 
 	_HG_VM_UNLOCK (vm, qdata);
 

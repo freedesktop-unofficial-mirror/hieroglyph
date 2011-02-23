@@ -1952,7 +1952,7 @@ DEFUNC_OPER (array)
 		return FALSE;
 	}
 	*ret = q;
-	hg_mem_reserved_spool_remove(m, q);
+	hg_mem_unref(m, q);
 
 	retval = TRUE;
 } DEFUNC_OPER_END
@@ -7893,19 +7893,19 @@ DEFUNC_OPER (vmreclaim)
 	}
 	switch (HG_INT (arg0)) {
 	    case -2:
-		    hg_mem_enable_garbage_collector(vm->mem[HG_VM_MEM_GLOBAL], FALSE);
+		    hg_mem_spool_enable_gc(vm->mem[HG_VM_MEM_GLOBAL], FALSE);
 	    case -1:
-		    hg_mem_enable_garbage_collector(vm->mem[HG_VM_MEM_LOCAL], FALSE);
+		    hg_mem_spool_enable_gc(vm->mem[HG_VM_MEM_LOCAL], FALSE);
 		    break;
 	    case 0:
 		    /* XXX: no multi-context support yet */
-		    hg_mem_enable_garbage_collector(vm->mem[HG_VM_MEM_GLOBAL], FALSE);
-		    hg_mem_enable_garbage_collector(vm->mem[HG_VM_MEM_LOCAL], FALSE);
+		    hg_mem_spool_enable_gc(vm->mem[HG_VM_MEM_GLOBAL], FALSE);
+		    hg_mem_spool_enable_gc(vm->mem[HG_VM_MEM_LOCAL], FALSE);
 		    break;
 	    case 2:
-		    hg_mem_collect_garbage(vm->mem[HG_VM_MEM_GLOBAL]);
+		    hg_mem_spool_run_gc(vm->mem[HG_VM_MEM_GLOBAL]);
 	    case 1:
-		    hg_mem_collect_garbage(vm->mem[HG_VM_MEM_LOCAL]);
+		    hg_mem_spool_run_gc(vm->mem[HG_VM_MEM_LOCAL]);
 		    break;
 	    default:
 		    hg_vm_set_error(vm, qself, HG_e_rangecheck);
@@ -7924,8 +7924,8 @@ DEFUNC_OPER (vmstatus)
 	hg_mem_t *mem = hg_vm_get_mem(vm);
 
 	STACK_PUSH (ostack, HG_QINT (vm->vm_state->n_save_objects));
-	STACK_PUSH (ostack, HG_QINT (hg_mem_get_used_size(mem)));
-	STACK_PUSH (ostack, HG_QINT (hg_mem_get_total_size(mem) - hg_mem_get_used_size(mem)));
+	STACK_PUSH (ostack, HG_QINT (hg_mem_spool_get_used_size(mem)));
+	STACK_PUSH (ostack, HG_QINT (hg_mem_spool_get_total_size(mem) - hg_mem_spool_get_used_size(mem)));
 
 	retval = TRUE;
 	SET_EXPECTED_OSTACK_SIZE (3);

@@ -38,8 +38,12 @@ typedef struct _hg_allocator_data_t		hg_allocator_data_t;
 typedef struct _hg_allocator_snapshot_data_t	hg_allocator_snapshot_data_t;
 typedef struct _hg_mem_vtable_t			hg_mem_vtable_t;
 typedef enum _hg_mem_flags_t			hg_mem_flags_t;
+typedef enum _hg_block_iter_flags_t		hg_block_iter_flags_t;
 
-typedef void (* hg_finalizer_func_t)	(hg_pointer_t object);
+typedef hg_bool_t (* hg_gc_mark_func_t)		(hg_pointer_t object);
+typedef void      (* hg_finalizer_func_t)	(hg_pointer_t object);
+typedef hg_bool_t (* hg_quark_iterator_func_t)	(hg_quark_t   qdata,
+						 hg_pointer_t user_data);
 
 /**
  * hg_allocator_data_t:
@@ -72,9 +76,16 @@ struct _hg_allocator_snapshot_data_t {
  * FIXME
  */
 enum _hg_mem_flags_t {
-	HG_MEM_FLAG_RESTORABLE    = 1 << 0,
-	HG_MEM_FLAG_HAS_FINALIZER = 1 << 1,
+	HG_MEM_FLAG_RESTORABLE = 1 << 0,
 	HG_MEM_FLAGS_END
+};
+/**
+ * hg_block_iter_flags_t:
+ *
+ */
+enum _hg_block_iter_flags_t {
+	HG_BLK_ITER_ALL = 0,
+	HG_BLK_ITER_REFERENCED_ONLY = (1 << 0)
 };
 /**
  * hg_mem_vtable_t:
@@ -116,6 +127,21 @@ struct _hg_mem_vtable_t {
 							      hg_quark_t                     quark);
 	void                           (* unlock_object)     (hg_allocator_data_t           *data,
 							      hg_quark_t                     quark);
+	void                           (* block_ref)         (hg_allocator_data_t           *data,
+							      hg_quark_t                     quark);
+	void                           (* block_unref)       (hg_allocator_data_t           *data,
+							      hg_quark_t                     quark);
+	hg_bool_t                      (* block_foreach)     (hg_allocator_data_t           *data,
+							      hg_block_iter_flags_t          flags,
+							      hg_quark_iterator_func_t       func,
+							      hg_pointer_t                   user_data);
+	hg_int_t                       (* add_gc_marker)     (hg_allocator_data_t           *data,
+							      hg_gc_mark_func_t              func);
+	void                           (* remove_gc_marker)  (hg_allocator_data_t           *data,
+							      hg_int_t                       marker_id);
+	void                           (* set_gc_marker)     (hg_allocator_data_t           *data,
+							      hg_quark_t                     quark,
+							      hg_int_t                       marker_id);
 	hg_int_t                       (* add_finalizer)     (hg_allocator_data_t           *data,
 							      hg_finalizer_func_t            func);
 	void                           (* remove_finalizer)  (hg_allocator_data_t           *data,

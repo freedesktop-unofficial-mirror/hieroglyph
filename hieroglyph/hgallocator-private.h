@@ -86,7 +86,9 @@ struct _hg_allocator_bitmap_t {
 struct _hg_allocator_block_t {
 	hg_usize_t         size;
 	volatile hg_uint_t lock_count;
+	volatile hg_uint_t ref_count;
 	hg_int_t           age;
+	hg_int_t           gc_marker_id;
 	hg_int_t           finalizer_id;
 	hg_bool_t          is_restorable:1;
 };
@@ -97,6 +99,9 @@ struct _hg_allocator_private_t {
 	hg_allocator_bitmap_t *slave_bitmap;
 	hg_pointer_t          *heaps;
 	hg_int_t               snapshot_age;
+	hg_gc_mark_func_t     *gc_marker;
+	hg_int_t               gc_marker_count;
+	hg_int_t               max_gc_marker;
 	hg_finalizer_func_t   *finalizer;
 	hg_int_t               finalizer_count;
 	hg_int_t               max_finalizer;

@@ -67,27 +67,6 @@ TDEF (get_capsulated_size)
 	fail_unless(size == sizeof (hg_array_t), "Obtaining the different size: expect: %lx actual: %lx", sizeof (hg_array_t), size);
 } TEND
 
-static hg_bool_t
-_gc_iter_func(hg_quark_t   qdata,
-	      hg_pointer_t data)
-{
-	return TRUE;
-}
-
-static hg_bool_t
-_gc_func(hg_mem_t     *mem,
-	 hg_quark_t    qkey,
-	 hg_quark_t    qval,
-	 hg_pointer_t  data)
-{
-	hg_array_t *a = data;
-
-	if (data == NULL)
-		return TRUE;
-
-	return hg_object_gc_mark((hg_object_t *)a, _gc_iter_func, NULL);
-}
-
 TDEF (gc_mark)
 {
 	hg_quark_t q;
@@ -97,14 +76,13 @@ TDEF (gc_mark)
 
 	q = hg_array_new(m, 10, (hg_pointer_t *)&a);
 	fail_unless(hg_array_set(a, HG_QINT (1), 9, FALSE), "Unable to put a value into the array");
-	hg_mem_reserved_spool_set_garbage_collector(m, _gc_func, a);
-	size = hg_mem_collect_garbage(m);
-	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
-	hg_mem_set_garbage_collector(m, NULL, NULL);
-	size = hg_mem_collect_garbage(m);
-	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
-	size = hg_mem_collect_garbage(m);
-	fail_unless(size == 0, "missing something for marking: %ld bytes freed", size);
+	size = hg_mem_spool_run_gc(m);
+	fail_unless(size == 0, "missing something for marking: %ld bytes freed [take 1]", size);
+	hg_mem_spool_set_gc_procedure(m, NULL, NULL);
+	size = hg_mem_spool_run_gc(m);
+	fail_unless(size == 0, "missing something for marking: %ld bytes freed [take 2]", size);
+	size = hg_mem_spool_run_gc(m);
+	fail_unless(size == 0, "missing something for marking: %ld bytes freed [take 3]", size);
 } TEND
 
 TDEF (hg_array_new)

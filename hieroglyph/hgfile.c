@@ -162,7 +162,7 @@ _hg_object_file_initialize(hg_object_t *object,
 	file->is_closed = TRUE;
 	file->user_data = user_data;
 
-	hg_mem_reserved_spool_remove(file->o.mem, file->qfilename);
+	hg_mem_unref(file->o.mem, file->qfilename);
 
 	return vtable->open(file, file->user_data);
 }
@@ -182,10 +182,7 @@ _hg_object_file_free(hg_object_t *object)
 		file->yyfree(file->yybuffer, file->yydata);
 	hg_mem_free(file->o.mem, file->qfilename);
 	if (file->user_data) {
-		if (file->user_data->destroy_func)
-			file->user_data->destroy_func(file->o.mem, file->user_data);
-		else
-			hg_mem_free(file->o.mem, file->user_data->self);
+		hg_mem_free(file->o.mem, file->user_data->self);
 		file->user_data = NULL;
 	}
 }
@@ -212,32 +209,19 @@ _hg_object_file_to_cstr(hg_object_t             *object,
 }
 
 static hg_bool_t
-_hg_object_file_gc_mark(hg_object_t          *object,
-			hg_gc_iterate_func_t  func,
-			hg_pointer_t          user_data)
+_hg_object_file_gc_mark(hg_object_t *object)
 {
 	hg_file_t *file = (hg_file_t *)object;
-	hg_file_gc_t g;
 
 	hg_return_val_if_fail (object->type == HG_TYPE_FILE, FALSE, HG_e_typecheck);
 
 	hg_debug(HG_MSGCAT_GC, "file: marking filename");
-	if (!func(file->qfilename, user_data))
+	if (!hg_mem_gc_mark(file->o.mem, file->qfilename))
 		return FALSE;
 	if (file->user_data) {
-		if (!file->user_data->gc_func) {
-			hg_debug(HG_MSGCAT_GC, "file: marking user data");
-			return hg_mem_gc_mark(file->o.mem, file->user_data->self);
-		} else {
-			g.func = func;
-			g.user_data = user_data;
-			g.mem = file->o.mem;
-			g.data = file->user_data;
+		hg_debug(HG_MSGCAT_GC, "file: marking user data");
 
-			hg_debug(HG_MSGCAT_GC, "file: marking user data with own gc_func");
-
-			return file->user_data->gc_func(file->user_data->self, &g);
-		}
+		return hg_mem_gc_mark(file->o.mem, file->user_data->self);
 	}
 
 	return TRUE;
@@ -253,54 +237,34 @@ _hg_object_file_compare(hg_object_t             *o1,
 }
 
 static hg_bool_t
-_hg_file_io_data_gc_mark(hg_quark_t   qdata,
-			 hg_pointer_t user_data)
+_hg_file_io_buffered_data_gc_marker(hg_pointer_t p)
 {
-	hg_file_gc_t *g = user_data;
+	hg_file_io_buffered_data_t *bd = (hg_file_io_buffered_data_t *)p;
 
-	return hg_mem_gc_mark(g->mem, qdata);
-}
-
-static void
-_hg_file_io_data_free(hg_mem_t     *mem,
-		      hg_pointer_t  user_data)
-{
-	hg_file_io_data_t *data = (hg_file_io_data_t *)user_data;
-
-	hg_mem_free(mem, data->self);
-}
-
-static hg_bool_t
-_hg_file_io_buffered_data_gc_mark(hg_quark_t   qdata,
-				  hg_pointer_t user_data)
-{
-	hg_file_gc_t *g = user_data;
-	hg_file_io_buffered_data_t *bd = (hg_file_io_buffered_data_t *)g->data;
+	if (!bd)
+		hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
 
 	if (bd->in) {
-		if (!g->func(bd->in->o.self, g->user_data))
+		if (!hg_mem_gc_mark(bd->in->o.mem, bd->in->o.self))
 			return FALSE;
 	}
 	if (bd->out) {
-		if (!g->func(bd->out->o.self, g->user_data))
+		if (!hg_mem_gc_mark(bd->out->o.mem, bd->out->o.self))
 			return FALSE;
 	}
 
-	return hg_mem_gc_mark(g->mem, qdata);
+	return TRUE;
 }
 
 static void
-_hg_file_io_buffered_data_free(hg_mem_t     *mem,
-			       hg_pointer_t  user_data)
+_hg_file_io_buffered_data_finalizer(hg_pointer_t data)
 {
-	hg_file_io_buffered_data_t *bd = (hg_file_io_buffered_data_t *)user_data;
+	hg_file_io_buffered_data_t *bd = (hg_file_io_buffered_data_t *)data;
 
 	if (bd->in)
-		hg_object_free(bd->in->o.mem, bd->in->o.self);
+		hg_mem_free(bd->in->o.mem, bd->in->o.self);
 	if (bd->out)
-		hg_object_free(bd->out->o.mem, bd->out->o.self);
-
-	hg_mem_free(mem, bd->data.self);
+		hg_mem_free(bd->out->o.mem, bd->out->o.self);
 }
 
 /** file IO callbacks **/
@@ -332,8 +296,6 @@ _hg_file_io_real_stdin_open(hg_file_t    *file,
 		}
 		memset(data, 0, sizeof (hg_file_io_data_t));
 		data->self = qdata;
-		data->gc_func = _hg_file_io_data_gc_mark;
-		data->destroy_func = _hg_file_io_data_free;
 	}
 	data->fd = 0;
 	data->mmapped_buffer = NULL;
@@ -377,8 +339,6 @@ _hg_file_io_real_stdout_open(hg_file_t    *file,
 		}
 		memset(data, 0, sizeof (hg_file_io_data_t));
 		data->self = qdata;
-		data->gc_func = _hg_file_io_data_gc_mark;
-		data->destroy_func = _hg_file_io_data_free;
 	}
 	data->fd = 1;
 	data->mmapped_buffer = NULL;
@@ -422,8 +382,6 @@ _hg_file_io_real_stderr_open(hg_file_t    *file,
 		}
 		memset(data, 0, sizeof (hg_file_io_data_t));
 		data->self = qdata;
-		data->gc_func = _hg_file_io_data_gc_mark;
-		data->destroy_func = _hg_file_io_data_free;
 	}
 	data->fd = 2;
 	data->mmapped_buffer = NULL;
@@ -485,8 +443,6 @@ _hg_file_io_real_file_open(hg_file_t    *file,
 		}
 		memset(data, 0, sizeof (hg_file_io_data_t));
 		data->self = qdata;
-		data->gc_func = _hg_file_io_data_gc_mark;
-		data->destroy_func = _hg_file_io_data_free;
 	}
 	data->fd = -1;
 	data->mmapped_buffer = NULL;
@@ -900,6 +856,7 @@ _hg_file_io_real_lineedit_open(hg_file_t    *file,
 	hg_char_t *buf;
 	hg_lineedit_t *lineedit = (hg_lineedit_t *)user_data;
 	hg_string_t *s;
+	hg_int_t id;
 
 	hg_return_val_if_fail (file->mode < HG_FILE_IO_MODE_END, FALSE, HG_e_VMerror);
 
@@ -948,8 +905,12 @@ _hg_file_io_real_lineedit_open(hg_file_t    *file,
 	}
 	memset(bd, 0, sizeof (hg_file_io_buffered_data_t));
 	bd->data.self = q;
-	bd->data.gc_func = _hg_file_io_buffered_data_gc_mark;
-	bd->data.destroy_func = _hg_file_io_buffered_data_free;
+	id = hg_mem_spool_add_gc_marker(file->o.mem,
+					_hg_file_io_buffered_data_gc_marker);
+	hg_mem_set_gc_marker(file->o.mem, q, id);
+	id = hg_mem_spool_add_finalizer(file->o.mem,
+					_hg_file_io_buffered_data_finalizer);
+	hg_mem_set_finalizer(file->o.mem, q, id);
 	bd->in = s;
 	bd->out = NULL;
 	bd->data.fd = -1;
@@ -958,7 +919,7 @@ _hg_file_io_real_lineedit_open(hg_file_t    *file,
 	file->size = hg_string_length(bd->in);
 	file->is_closed = FALSE;
 
-	hg_mem_reserved_spool_remove(s->o.mem, qs);
+	hg_mem_unref(s->o.mem, qs);
 
 	return TRUE;
   exception:
@@ -1129,6 +1090,7 @@ hg_file_new_with_string(hg_mem_t        *mem,
 	hg_quark_t retval, qbdata;
 	hg_file_t *f = NULL;
 	hg_file_io_buffered_data_t *x;
+	hg_int_t id;
 
 	hg_return_val_if_fail (mem != NULL, Qnil, HG_e_VMerror);
 	hg_return_val_if_fail (name != NULL, Qnil, HG_e_VMerror);
@@ -1140,8 +1102,6 @@ hg_file_new_with_string(hg_mem_t        *mem,
 
 	memset(x, 0, sizeof (hg_file_io_buffered_data_t));
 	x->data.self = qbdata;
-	x->data.gc_func = _hg_file_io_buffered_data_gc_mark;
-	x->data.destroy_func = _hg_file_io_buffered_data_free;
 	x->in = in;
 	x->out = out;
 	retval = hg_object_new(mem, (hg_pointer_t *)&f, HG_TYPE_FILE, 0,
@@ -1150,12 +1110,20 @@ hg_file_new_with_string(hg_mem_t        *mem,
 	if (retval != Qnil) {
 		if (x->in) {
 			hg_mem_lock_object(x->in->o.mem, x->in->o.self);
-			hg_mem_reserved_spool_remove(x->in->o.mem, x->in->o.self);
+			hg_mem_unref(x->in->o.mem, x->in->o.self);
 		}
 		if (x->out) {
 			hg_mem_lock_object(x->out->o.mem, x->out->o.self);
-			hg_mem_reserved_spool_remove(x->out->o.mem, x->out->o.self);
+			hg_mem_unref(x->out->o.mem, x->out->o.self);
 		}
+		id = hg_mem_spool_add_gc_marker(f->o.mem,
+						_hg_file_io_buffered_data_gc_marker);
+		hg_mem_set_gc_marker(f->o.mem, qbdata, id);
+		id = hg_mem_spool_add_finalizer(f->o.mem,
+						_hg_file_io_buffered_data_finalizer);
+		hg_mem_set_finalizer(f->o.mem, qbdata, id);
+	} else {
+		hg_mem_free(mem, qbdata);
 	}
 
 	if (ret)

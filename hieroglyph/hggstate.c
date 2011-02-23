@@ -87,8 +87,8 @@ _hg_object_gstate_copy(hg_object_t             *object,
 				hg_debug(HG_MSGCAT_GSTATE, "Unable to copy the path object");
 				goto bail;
 			}
-			hg_mem_reserved_spool_remove(gstate->o.mem,
-						     g->qpath);
+			hg_mem_unref(gstate->o.mem,
+				     g->qpath);
 		}
 		if (gstate->qclippath == Qnil) {
 			g->qclippath = Qnil;
@@ -98,8 +98,8 @@ _hg_object_gstate_copy(hg_object_t             *object,
 				hg_debug(HG_MSGCAT_GSTATE, "Unable to copy the clippath object");
 				goto bail;
 			}
-			hg_mem_reserved_spool_remove(gstate->o.mem,
-						     g->qclippath);
+			hg_mem_unref(gstate->o.mem,
+				     g->qclippath);
 		}
 		if (gstate->qdashpattern == Qnil) {
 			g->qdashpattern = Qnil;
@@ -109,8 +109,8 @@ _hg_object_gstate_copy(hg_object_t             *object,
 				hg_debug(HG_MSGCAT_GSTATE, "Unable to copy the dashpattern object");
 				goto bail;
 			}
-			hg_mem_reserved_spool_remove(gstate->o.mem,
-						     g->qdashpattern);
+			hg_mem_unref(gstate->o.mem,
+				     g->qdashpattern);
 		}
 
 		if (ret)
@@ -140,17 +140,15 @@ _hg_object_gstate_to_cstr(hg_object_t             *object,
 }
 
 static hg_bool_t
-_hg_object_gstate_gc_mark(hg_object_t          *object,
-			  hg_gc_iterate_func_t  func,
-			  hg_pointer_t          user_data)
+_hg_object_gstate_gc_mark(hg_object_t *object)
 {
 	hg_gstate_t *gstate = (hg_gstate_t *)object;
 
-	if (!func(gstate->qpath, user_data))
+	if (!hg_mem_gc_mark(gstate->o.mem, gstate->qpath))
 		return FALSE;
-	if (!func(gstate->qclippath, user_data))
+	if (!hg_mem_gc_mark(gstate->o.mem, gstate->qclippath))
 		return FALSE;
-	if (!func(gstate->qdashpattern, user_data))
+	if (!hg_mem_gc_mark(gstate->o.mem, gstate->qdashpattern))
 		return FALSE;
 
 	return TRUE;
@@ -249,7 +247,7 @@ hg_gstate_set_path(hg_gstate_t *gstate,
 	hg_return_if_fail (hg_quark_has_mem_id(qpath, mem_id), HG_e_VMerror);
 
 	gstate->qpath = qpath;
-	hg_mem_reserved_spool_remove(gstate->o.mem, qpath);
+	hg_mem_unref(gstate->o.mem, qpath);
 }
 
 /**
@@ -289,7 +287,7 @@ hg_gstate_set_clippath(hg_gstate_t *gstate,
 	hg_return_if_fail (hg_quark_has_mem_id(qpath, mem_id), HG_e_VMerror);
 
 	gstate->qclippath = qpath;
-	hg_mem_reserved_spool_remove(gstate->o.mem, qpath);
+	hg_mem_unref(gstate->o.mem, qpath);
 }
 
 /**

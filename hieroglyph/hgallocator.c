@@ -40,11 +40,11 @@
 /* memory block size per 1 bit in the bitmap */
 #define BLOCK_SIZE		32
 
-/* memory block size per 1 bit in the bitmap */
-#define BLOCK_SIZE		32
-
 /* finalizer table size */
 #define FINALIZER_SIZE		32
+
+/* GC marker table size */
+#define GC_MARKER_SIZE		32
 
 static hg_mem_vtable_t __hg_allocator_vtable = {
 	.initialize        = _hg_allocator_initialize,
@@ -56,6 +56,12 @@ static hg_mem_vtable_t __hg_allocator_vtable = {
 	.free              = _hg_allocator_free,
 	.lock_object       = _hg_allocator_lock_object,
 	.unlock_object     = _hg_allocator_unlock_object,
+	.block_ref         = _hg_allocator_block_ref,
+	.block_unref       = _hg_allocator_block_unref,
+	.block_foreach     = _hg_allocator_block_foreach,
+	.add_gc_marker     = _hg_allocator_add_gc_marker,
+	.remove_gc_marker  = _hg_allocator_remove_gc_marker,
+	.set_gc_marker     = _hg_allocator_set_gc_marker,
 	.add_finalizer     = _hg_allocator_add_finalizer,
 	.remove_finalizer  = _hg_allocator_remove_finalizer,
 	.set_finalizer     = _hg_allocator_set_finalizer,
@@ -493,6 +499,8 @@ _hg_allocator_finalize(hg_allocator_data_t *data)
 		}
 		g_free(priv->heaps);
 	}
+	if (priv->gc_marker)
+		free(priv->gc_marker);
 	if (priv->finalizer)
 		free(priv->finalizer);
 	_hg_allocator_bitmap_destroy(priv->bitmap);
@@ -563,6 +571,7 @@ _hg_allocator_alloc(hg_allocator_data_t *data,
 		block = _hg_allocator_get_internal_block(priv, index_, TRUE);
 		block->size = obj_size;
 		block->age = priv->snapshot_age;
+		block->gc_marker_id = -1;
 		block->finalizer_id = -1;
 		block->is_restorable = flags & HG_MEM_FLAG_RESTORABLE ? TRUE : FALSE;
 		retval = index_;
@@ -773,6 +782,150 @@ _hg_allocator_unlock_object(hg_allocator_data_t *data,
 	}
 }
 
+static void
+_hg_allocator_block_ref(hg_allocator_data_t *data,
+			hg_quark_t           qdata)
+{
+	hg_allocator_private_t *priv;
+	hg_allocator_block_t *block;
+	hg_int_t old_val;
+
+	priv = (hg_allocator_private_t *)data;
+	block = _hg_allocator_get_internal_block(priv, qdata, FALSE);
+	if (block) {
+		old_val = g_atomic_int_exchange_and_add((int *)&block->ref_count, 1);
+		if (block->ref_count == 0) {
+			hg_critical("The reference counter for %lx is overflowed",
+				    qdata);
+		}
+	} else {
+		hg_warning("Invalid quark to access: %lx", qdata);
+	}
+}
+
+static void
+_hg_allocator_block_unref(hg_allocator_data_t *data,
+			  hg_quark_t           qdata)
+{
+	hg_allocator_private_t *priv;
+	hg_allocator_block_t *block;
+
+	priv = (hg_allocator_private_t *)data;
+	block = _hg_allocator_get_internal_block(priv, qdata, FALSE);
+	if (block) {
+		hg_int_t old_val;
+
+	  retry_atomic_decrement:
+		old_val = g_atomic_int_get(&block->ref_count);
+		if (old_val > 0 &&
+		    !g_atomic_int_compare_and_exchange((int *)&block->ref_count,
+						       old_val, old_val - 1))
+			goto retry_atomic_decrement;
+	} else {
+		hg_warning("Invalid quark to access: %lx", qdata);
+	}
+}
+
+static hg_bool_t
+_hg_allocator_block_foreach(hg_allocator_data_t      *data,
+			    hg_block_iter_flags_t     flags,
+			    hg_quark_iterator_func_t  func,
+			    hg_pointer_t              user_data)
+{
+	return TRUE;
+}
+
+static hg_int_t
+_hg_allocator_add_gc_marker(hg_allocator_data_t *data,
+			    hg_gc_mark_func_t    func)
+{
+	hg_allocator_private_t *priv;
+	hg_int_t i, free_size = 0, retval = -1;
+	hg_int_t *freespace;
+
+	priv = (hg_allocator_private_t *)data;
+
+	freespace = malloc(sizeof (hg_int_t) * priv->max_gc_marker);
+	if (freespace == NULL) {
+		hg_fatal("Unrecoverable error happened.");
+		/* shouldn't be reached */
+		abort();
+	}
+
+	for (i = 0; i < priv->gc_marker_count; i++) {
+		if (priv->gc_marker[i] == func) {
+			retval = i;
+			goto finalize;
+		}
+		if (priv->gc_marker[i] == NULL)
+			freespace[free_size++] = i;
+	}
+	if (priv->gc_marker_count >= priv->max_gc_marker) {
+		if (free_size > 0) {
+			priv->gc_marker[freespace[0]] = func;
+			retval = freespace[0];
+		} else {
+			hg_int_t old_size = priv->max_gc_marker;
+
+			if (priv->max_gc_marker == 0)
+				priv->max_gc_marker = GC_MARKER_SIZE;
+			else
+				priv->max_gc_marker *= 2;
+			priv->gc_marker = realloc(priv->gc_marker, sizeof (hg_gc_mark_func_t) * priv->max_gc_marker);
+			if (priv->gc_marker == NULL) {
+				hg_fatal("Unrecoverable error happened.");
+				/* shouldn't be reached */
+				abort();
+			}
+			memset(priv->gc_marker + old_size, 0, sizeof (hg_gc_mark_func_t) * (priv->max_gc_marker - old_size));
+			goto new;
+		}
+	} else {
+	  new:
+		priv->gc_marker[priv->gc_marker_count] = func;
+		retval = priv->gc_marker_count++;
+	}
+  finalize:
+	free(freespace);
+
+	return retval;
+}
+
+static void
+_hg_allocator_remove_gc_marker(hg_allocator_data_t *data,
+			       hg_int_t             marker_id)
+{
+	hg_allocator_private_t *priv;
+
+	priv = (hg_allocator_private_t *)data;
+
+	hg_return_if_fail (marker_id < priv->gc_marker_count, HG_e_VMerror);
+
+	priv->gc_marker[marker_id] = NULL;
+}
+
+static void
+_hg_allocator_set_gc_marker(hg_allocator_data_t *data,
+			    hg_quark_t           qdata,
+			    hg_int_t             marker_id)
+{
+	hg_allocator_private_t *priv;
+	hg_allocator_block_t *block;
+
+	priv = (hg_allocator_private_t *)data;
+
+	hg_return_if_fail (marker_id < priv->gc_marker_count, HG_e_VMerror);
+
+	block = _hg_allocator_real_lock_object(data, qdata);
+	if (HG_LIKELY (block)) {
+		block->gc_marker_id = marker_id;
+		_hg_allocator_real_unlock_object(block);
+	} else {
+		hg_critical("%lx is not an allocated object from this spool", qdata);
+		hg_error_return0 (HG_STATUS_FAILED, HG_e_VMerror);
+	}
+}
+
 static hg_int_t
 _hg_allocator_add_finalizer(hg_allocator_data_t *data,
 			    hg_finalizer_func_t  func)
@@ -881,7 +1034,7 @@ _hg_allocator_block_finalizer(hg_allocator_data_t  *data,
 		hg_warning("No finalizer registered for %d",
 			   block->finalizer_id);
 	} else {
-		hg_debug(HG_MSGCAT_GC, "Invoking a finalizer %d for %lx", block->finalizer_id, qdata);
+		hg_debug(priv->slave_bitmap ? HG_MSGCAT_GC : HG_MSGCAT_ALLOC, "Invoking a finalizer %d for %lx", block->finalizer_id, qdata);
 		priv->finalizer[block->finalizer_id](hg_allocator_get_allocated_object(block));
 	}
 }
@@ -919,6 +1072,7 @@ _hg_allocator_gc_mark(hg_allocator_data_t  *data,
 	hg_int_t page;
 	hg_uint_t idx;
 	hg_usize_t aligned_size;
+	hg_bool_t retval = TRUE;
 
 	/* this isn't the object in the targeted spool */
 	if (!priv->slave_bitmap)
@@ -935,6 +1089,22 @@ _hg_allocator_gc_mark(hg_allocator_data_t  *data,
 			_hg_allocator_bitmap_dump(priv->slave_bitmap, page);
 #endif
 			priv->slave.used_size += block->size;
+			if (block->gc_marker_id >= 0) {
+				if (block->gc_marker_id >= priv->gc_marker_count) {
+					hg_warning("GC marker ID is invalid: [%d/%d]",
+						   block->gc_marker_id, priv->gc_marker_count);
+					retval = FALSE;
+				} else if (priv->gc_marker[block->gc_marker_id] == NULL) {
+					hg_warning("No GC marker registered for %d",
+						   block->gc_marker_id);
+					retval = FALSE;
+				} else {
+					hg_debug(HG_MSGCAT_GC, "Invoking a GC marker %d for %lx",
+						 block->gc_marker_id,
+						 index_);
+					retval = priv->gc_marker[block->gc_marker_id](hg_allocator_get_allocated_object(block));
+				}
+			}
 		} else {
 			hg_debug(HG_MSGCAT_GC, "index %ld already marked", index_);
 		}
@@ -942,8 +1112,12 @@ _hg_allocator_gc_mark(hg_allocator_data_t  *data,
 	} else {
 		hg_critical("%lx is not an allocated object from this spool", index_);
 
+	  bail:
 		hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
 	}
+
+	if (!retval)
+		goto bail;
 
 	hg_error_return (HG_STATUS_SUCCESS, 0);
 }
@@ -953,6 +1127,7 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data)
 {
 	hg_allocator_private_t *priv = (hg_allocator_private_t *)data;
 	hg_bool_t retval = TRUE;
+	hg_int_t ref_blocks = 0;
 
 	if (HG_UNLIKELY (!priv->slave_bitmap)) {
 		hg_warning("GC isn't yet started.");
@@ -987,21 +1162,30 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data)
 						goto finalize;
 					}
 					if (!_hg_allocator_bitmap_is_marked(priv->slave_bitmap, i, j + 1)) {
-						used_size -= block->size;
-						if (block->lock_count > 0) {
-							/* evaluate later. there might be a block that is referring the early blocks */
-							if (k >= max_size) {
-								max_size *= 2;
-								failed = realloc(failed, max_size);
-								if (!failed) {
-									hg_fatal("Unrecoverable error happened.");
-									/* shouldn't be reached */
-									abort();
-								}
+						if (block->ref_count > 0) {
+							if (!_hg_allocator_gc_mark(data, _hg_allocator_quark_build(i, j + 1))) {
+								hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
+								goto finalize;
 							}
-							failed[k++] = q;
-						} else if (block->finalizer_id >= 0) {
-							_hg_allocator_block_finalizer(data, q);
+							ref_blocks++;
+						} else {
+							g_print("%lx will be freed (p: %d, i: %d/%ld)\n", block->size, i, j + 1, priv->bitmap->size[i]);
+							used_size -= block->size;
+							if (block->lock_count > 0) {
+								/* evaluate later. there might be a block that is referring the early blocks */
+								if (k >= max_size) {
+									max_size *= 2;
+									failed = realloc(failed, max_size);
+									if (!failed) {
+										hg_fatal("Unrecoverable error happened.");
+										/* shouldn't be reached */
+										abort();
+									}
+								}
+								failed[k++] = q;
+							} else if (block->finalizer_id >= 0) {
+								_hg_allocator_block_finalizer(data, q);
+							}
 						}
 					}
 					aligned_size = HG_ALIGNED_TO (block->size, BLOCK_SIZE) / BLOCK_SIZE;
@@ -1035,10 +1219,10 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data)
 	}
 
 	if (HG_ERROR_IS_SUCCESS0 ()) {
-		hg_debug(HG_MSGCAT_GC, "%ld -> %ld (%ld bytes freed) / %ld",
+		hg_debug(HG_MSGCAT_GC, "%ld -> %ld (%ld bytes freed) / %ld; %d ref blocks",
 			 data->used_size, priv->slave.used_size,
 			 data->used_size - priv->slave.used_size,
-			 data->total_size);
+			 data->total_size, ref_blocks);
 		_hg_allocator_bitmap_destroy(priv->bitmap);
 		priv->bitmap = priv->slave_bitmap;
 		priv->slave_bitmap = NULL;

@@ -91,9 +91,7 @@ _hg_object_snapshot_to_cstr(hg_object_t             *object,
 }
 
 static hg_bool_t
-_hg_object_snapshot_gc_mark(hg_object_t          *object,
-			    hg_gc_iterate_func_t  func,
-			    hg_pointer_t          user_data)
+_hg_object_snapshot_gc_mark(hg_object_t *object)
 {
 	hg_return_val_if_fail (object->type == HG_TYPE_SNAPSHOT, FALSE, HG_e_typecheck);
 
@@ -181,7 +179,7 @@ hg_snapshot_restore(hg_snapshot_t *snapshot,
 	hg_return_val_if_fail (snapshot != NULL, FALSE, HG_e_typecheck);
 	hg_return_val_if_fail (snapshot->snapshot != NULL, FALSE, HG_e_VMerror);
 
-	hg_mem_collect_garbage(snapshot->o.mem);
+	hg_mem_spool_run_gc(snapshot->o.mem);
 	retval = hg_mem_restore_snapshot(snapshot->o.mem,
 					 snapshot->snapshot,
 					 func,

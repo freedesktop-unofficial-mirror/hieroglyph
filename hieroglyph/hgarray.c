@@ -206,9 +206,7 @@ _hg_object_array_to_cstr(hg_object_t             *object,
 }
 
 static hg_bool_t
-_hg_object_array_gc_mark(hg_object_t          *object,
-			 hg_gc_iterate_func_t  func,
-			 hg_pointer_t          user_data)
+_hg_object_array_gc_mark(hg_object_t *object)
 {
 	hg_array_t *array = (hg_array_t *)object;
 	hg_quark_t q;
@@ -226,8 +224,11 @@ _hg_object_array_gc_mark(hg_object_t          *object,
 	len = hg_array_length(array);
 
 	for (i = 0; i < len; i++) {
+		hg_mem_t *m;
+
 		q = hg_array_get(array, i);
-		if (!func(q, user_data))
+		m = hg_mem_spool_get(hg_quark_get_mem_id(q));
+		if (!hg_mem_gc_mark(m, q))
 			return FALSE;
 	}
 
@@ -372,24 +373,6 @@ hg_array_new(hg_mem_t     *mem,
 }
 
 /**
- * hg_array_free:
- * @array:
- *
- * FIXME
- */
-void
-hg_array_free(hg_array_t *array)
-{
-	hg_return_if_fail (array != NULL, HG_e_typecheck);
-	hg_return_if_fail (array->o.type == HG_TYPE_ARRAY, HG_e_typecheck);
-
-	hg_mem_reserved_spool_remove(array->o.mem, array->o.self);
-
-	hg_mem_free(array->o.mem, array->qname);
-	hg_mem_free(array->o.mem, array->o.self);
-}
-
-/**
  * hg_array_set:
  * @array:
  * @quark:
@@ -418,9 +401,8 @@ hg_array_set(hg_array_t  *array,
 	if (index_ > hg_array_maxlength(array)) {
 		hg_debug(HG_MSGCAT_ARRAY, "Wrong index to access the array: index: %ld, size: %ld",
 			   index_, hg_array_maxlength(array));
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_rangecheck);
 
-		return FALSE;
+		hg_error_return (HG_STATUS_FAILED, HG_e_rangecheck);
 	}
 	if (!force &&
 	    !(hg_quark_is_simple_object(quark) ||
@@ -428,8 +410,8 @@ hg_array_set(hg_array_t  *array,
 	    hg_mem_spool_get_type(array->o.mem) == HG_MEM_TYPE_GLOBAL &&
 	    hg_mem_spool_get_type(hg_mem_spool_get(hg_quark_get_mem_id(quark))) == HG_MEM_TYPE_LOCAL) {
 		hg_debug(HG_MSGCAT_ARRAY, "Unable to store the object allocated in the local memory into the global memory");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_invalidaccess);
-		return FALSE;
+
+		hg_error_return (HG_STATUS_FAILED, HG_e_invalidaccess);
 	}
 
 	new_length = MAX (index_, array->length);
@@ -446,8 +428,8 @@ hg_array_set(hg_array_t  *array,
 
 	hg_mem_unlock_object(array->o.mem, array->qcontainer);
 
-	hg_mem_reserved_spool_remove(hg_mem_spool_get(hg_quark_get_mem_id(quark)),
-				     quark);
+	hg_mem_unref(hg_mem_spool_get(hg_quark_get_mem_id(quark)),
+		     quark);
 
 	return TRUE;
 }
@@ -477,9 +459,8 @@ hg_array_get(hg_array_t *array,
 	if (index_ >= hg_array_maxlength(array)) {
 		hg_debug(HG_MSGCAT_ARRAY, "Wrong index to access the array: index: %ld, size: %ld",
 			 index_, hg_array_maxlength(array));
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_rangecheck);
 
-		return Qnil;
+		hg_error_return_val (Qnil, HG_STATUS_FAILED, HG_e_rangecheck);
 	}
 
 	if (array->qcontainer == Qnil) {
@@ -537,12 +518,15 @@ hg_array_insert(hg_array_t *array,
 	if (pos < array->length) {
 		hg_return_val_if_fail ((array->length + 1) < array->allocated_size, FALSE, HG_e_rangecheck);
 		hg_return_val_if_fail (array->qcontainer != Qnil, FALSE, HG_e_VMerror); /* unlikely */
+
+		if (!_hg_array_maybe_expand(array, array->length))
+			return FALSE;
+
 		hg_return_val_if_lock_fail (container,
 					    array->o.mem,
 					    array->qcontainer,
 					    FALSE);
 
-		array->length++;
 		for (i = array->length; i > pos; i--) {
 			container[i] = container[i - 1];
 		}
@@ -550,8 +534,8 @@ hg_array_insert(hg_array_t *array,
 
 		hg_mem_unlock_object(array->o.mem, array->qcontainer);
 
-		hg_mem_reserved_spool_remove(hg_mem_spool_get(hg_quark_get_mem_id(quark)),
-					     quark);
+		hg_mem_unref(hg_mem_spool_get(hg_quark_get_mem_id(quark)),
+			     quark);
 	} else {
 		return hg_array_set(array, quark, pos, FALSE);
 	}
@@ -803,16 +787,14 @@ hg_array_is_matrix(hg_array_t *array)
 	hg_errno = 0;
 
 	if (hg_array_maxlength(array) != 6) {
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_rangecheck);
-		return FALSE;
+		hg_error_return (HG_STATUS_FAILED, HG_e_rangecheck);
 	}
 
 	for (i = 0; i < 6; i++) {
 		q = hg_array_get(array, i);
 		if (!HG_IS_QINT (q) &&
 		    !HG_IS_QREAL (q)) {
-			hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_rangecheck);
-			return FALSE;
+			hg_error_return (HG_STATUS_FAILED, HG_e_rangecheck);
 		}
 	}
 

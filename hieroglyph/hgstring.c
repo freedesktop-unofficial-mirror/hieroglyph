@@ -153,9 +153,7 @@ _hg_object_string_to_cstr(hg_object_t             *object,
 }
 
 static hg_bool_t
-_hg_object_string_gc_mark(hg_object_t          *object,
-			  hg_gc_iterate_func_t  func,
-			  hg_pointer_t          user_data)
+_hg_object_string_gc_mark(hg_object_t *object)
 {
 	hg_string_t *string = (hg_string_t *)object;
 
@@ -287,7 +285,7 @@ hg_string_free(hg_string_t *string,
 
 	hg_return_if_fail (string->o.type == HG_TYPE_STRING, HG_e_typecheck);
 
-	hg_mem_reserved_spool_remove(string->o.mem, string->o.self);
+	hg_mem_unref(string->o.mem, string->o.self);
 
 	if (free_segment)
 		hg_mem_free(string->o.mem, string->qstring);
