@@ -326,13 +326,19 @@ _hg_object_dict_node_gc_mark(hg_object_t *object)
 		if (!hg_mem_gc_mark(dnode->o.mem, qnode_nodes[i]))
 			goto qfinalize;
 		hg_debug(HG_MSGCAT_GC, "dictnode: marking key[%ld]", i);
-		m = hg_mem_spool_get(hg_quark_get_mem_id(qnode_keys[i]));
-		if (!hg_mem_gc_mark(m, qnode_keys[i]))
-			goto qfinalize;
+		if (!hg_quark_is_simple_object(qnode_keys[i]) &&
+		    hg_quark_get_type(qnode_keys[i]) != HG_TYPE_OPER) {
+			m = hg_mem_spool_get(hg_quark_get_mem_id(qnode_keys[i]));
+			if (!hg_mem_gc_mark(m, qnode_keys[i]))
+				goto qfinalize;
+		}
 		hg_debug(HG_MSGCAT_GC, "dictnode: marking value[%ld]", i);
-		m = hg_mem_spool_get(hg_quark_get_mem_id(qnode_vals[i]));
-		if (!hg_mem_gc_mark(m, qnode_vals[i]))
-			goto qfinalize;
+		if (!hg_quark_is_simple_object(qnode_vals[i]) &&
+		    hg_quark_get_type(qnode_vals[i]) != HG_TYPE_OPER) {
+			m = hg_mem_spool_get(hg_quark_get_mem_id(qnode_vals[i]));
+			if (!hg_mem_gc_mark(m, qnode_vals[i]))
+				goto qfinalize;
+		}
 	}
 	hg_debug(HG_MSGCAT_GC, "dictnode: marking node[%ld]", dnode->n_data);
 	if (!hg_mem_gc_mark(dnode->o.mem, qnode_nodes[dnode->n_data]))

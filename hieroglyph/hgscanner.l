@@ -622,6 +622,8 @@ hg_scanner_get_token(hg_scanner_t *scanner)
 {
 	hg_return_val_if_fail (scanner != NULL, Qnil, HG_e_VMerror);
 
+	hg_debug(HG_MSGCAT_SCAN, "Scanned object: 0x%lx", scanner->result);
+
 	return scanner->result;
 }
 

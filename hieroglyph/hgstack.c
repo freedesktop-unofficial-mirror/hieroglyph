@@ -143,17 +143,21 @@ _hg_object_stack_gc_mark(hg_object_t *object)
 	hg_slist_t *l;
 	hg_mem_t *m;
 
+	hg_debug(HG_MSGCAT_GC, "Marking objects in the stack");
 	for (l = stack->last_stack; l != NULL; l = l->next) {
 		if (!hg_mem_gc_mark(object->mem, l->self))
 			return FALSE;
-		m = hg_mem_spool_get(hg_quark_get_mem_id(l->data));
-		if (!m) {
-			hg_warning("Unable to obtain the memory spooler from %lx",
-				   l->data);
-			hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
+		if (!hg_quark_is_simple_object(l->data) &&
+		    hg_quark_get_type(l->data) != HG_TYPE_OPER) {
+			m = hg_mem_spool_get(hg_quark_get_mem_id(l->data));
+			if (!m) {
+				hg_warning("Unable to obtain the memory spooler from %lx",
+					   l->data);
+				hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
+			}
+			if (!hg_mem_gc_mark(m, l->data))
+				return FALSE;
 		}
-		if (!hg_mem_gc_mark(m, l->data))
-			return FALSE;
 	}
 	return _hg_stack_spooler_gc_mark(stack->spool);
 }

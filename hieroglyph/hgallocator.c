@@ -570,6 +570,7 @@ _hg_allocator_alloc(hg_allocator_data_t *data,
 
 		block = _hg_allocator_get_internal_block(priv, index_, TRUE);
 		block->size = obj_size;
+		block->ref_count = 0;
 		block->age = priv->snapshot_age;
 		block->gc_marker_id = -1;
 		block->finalizer_id = -1;
@@ -817,10 +818,11 @@ _hg_allocator_block_unref(hg_allocator_data_t *data,
 
 	  retry_atomic_decrement:
 		old_val = g_atomic_int_get(&block->ref_count);
-		if (old_val > 0 &&
-		    !g_atomic_int_compare_and_exchange((int *)&block->ref_count,
-						       old_val, old_val - 1))
-			goto retry_atomic_decrement;
+		if (old_val > 0) {
+			if (!g_atomic_int_compare_and_exchange((int *)&block->ref_count,
+							       old_val, old_val - 1))
+				goto retry_atomic_decrement;
+		}
 	} else {
 		hg_warning("Invalid quark to access: %lx", qdata);
 	}
@@ -1064,6 +1066,39 @@ _hg_allocator_gc_init(hg_allocator_data_t *data)
 }
 
 static hg_bool_t
+_hg_allocator_run_gc_marker(hg_allocator_private_t *priv,
+			    hg_quark_t              index_)
+{
+	hg_bool_t retval = TRUE;
+	hg_allocator_block_t *block;
+
+	/* initialize hg_errno to work it properly */
+	hg_errno = 0;
+
+	block = _hg_allocator_get_internal_block(priv, index_, FALSE);
+	if (!block)
+		hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
+	if (block->gc_marker_id >= 0) {
+		if (block->gc_marker_id >= priv->gc_marker_count) {
+			hg_warning("GC marker ID is invalid: [%d/%d]",
+				   block->gc_marker_id, priv->gc_marker_count);
+			hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
+		} else if (priv->gc_marker[block->gc_marker_id] == NULL) {
+			hg_warning("No GC marker registered for %d",
+				   block->gc_marker_id);
+			hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
+		} else {
+			hg_debug(HG_MSGCAT_GC, "Invoking a GC marker %d for %lx",
+				 block->gc_marker_id,
+				 index_);
+			retval = priv->gc_marker[block->gc_marker_id](hg_allocator_get_allocated_object(block));
+		}
+	}
+
+	return retval;
+}
+
+static hg_bool_t
 _hg_allocator_gc_mark(hg_allocator_data_t  *data,
 		      hg_quark_t            index_)
 {
@@ -1076,7 +1111,7 @@ _hg_allocator_gc_mark(hg_allocator_data_t  *data,
 
 	/* this isn't the object in the targeted spool */
 	if (!priv->slave_bitmap)
-		hg_error_return (HG_STATUS_SUCCESS, 0);
+		return _hg_allocator_run_gc_marker(priv, index_);
 
 	block = _hg_allocator_real_lock_object(data, index_);
 	if (block) {
@@ -1089,22 +1124,8 @@ _hg_allocator_gc_mark(hg_allocator_data_t  *data,
 			_hg_allocator_bitmap_dump(priv->slave_bitmap, page);
 #endif
 			priv->slave.used_size += block->size;
-			if (block->gc_marker_id >= 0) {
-				if (block->gc_marker_id >= priv->gc_marker_count) {
-					hg_warning("GC marker ID is invalid: [%d/%d]",
-						   block->gc_marker_id, priv->gc_marker_count);
-					retval = FALSE;
-				} else if (priv->gc_marker[block->gc_marker_id] == NULL) {
-					hg_warning("No GC marker registered for %d",
-						   block->gc_marker_id);
-					retval = FALSE;
-				} else {
-					hg_debug(HG_MSGCAT_GC, "Invoking a GC marker %d for %lx",
-						 block->gc_marker_id,
-						 index_);
-					retval = priv->gc_marker[block->gc_marker_id](hg_allocator_get_allocated_object(block));
-				}
-			}
+
+			retval = _hg_allocator_run_gc_marker(priv, index_);
 		} else {
 			hg_debug(HG_MSGCAT_GC, "index %ld already marked", index_);
 		}
@@ -1169,7 +1190,7 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data)
 							}
 							ref_blocks++;
 						} else {
-							g_print("%lx will be freed (p: %d, i: %d/%ld)\n", block->size, i, j + 1, priv->bitmap->size[i]);
+							hg_debug(HG_MSGCAT_GC, "%lx will be freed (p: %d, i: %d/%ld)", block->size, i, j + 1, priv->bitmap->size[i]);
 							used_size -= block->size;
 							if (block->lock_count > 0) {
 								/* evaluate later. there might be a block that is referring the early blocks */

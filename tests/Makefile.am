@@ -55,6 +55,7 @@ noinst_PROGRAMS +=					\
 	test-hgencoding					\
 	test-hgint					\
 	test-hgmark					\
+	test-hgmem					\
 	test-hgname					\
 	test-hgnull					\
 	test-hgquark					\
@@ -96,6 +97,11 @@ test_hgint_SOURCES =					\
 #
 test_hgmark_SOURCES =					\
 	hgmark.c					\
+	$(common_sources)				\
+	$(NULL)
+#
+test_hgmem_SOURCES =					\
+	hgmem.c						\
 	$(common_sources)				\
 	$(NULL)
 #

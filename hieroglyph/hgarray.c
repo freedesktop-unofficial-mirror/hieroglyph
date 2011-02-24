@@ -227,9 +227,12 @@ _hg_object_array_gc_mark(hg_object_t *object)
 		hg_mem_t *m;
 
 		q = hg_array_get(array, i);
-		m = hg_mem_spool_get(hg_quark_get_mem_id(q));
-		if (!hg_mem_gc_mark(m, q))
-			return FALSE;
+		if (!hg_quark_is_simple_object(q) &&
+		    hg_quark_get_type(q) != HG_TYPE_OPER) {
+			m = hg_mem_spool_get(hg_quark_get_mem_id(q));
+			if (!hg_mem_gc_mark(m, q))
+				return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -424,6 +427,8 @@ hg_array_set(hg_array_t  *array,
 				    array->qcontainer,
 				    FALSE);
 
+	hg_debug(HG_MSGCAT_ARRAY, "Set 0x%lx into 0x%lx(0x%lx)[%d]",
+		 quark, array->o.self, array->qcontainer, array->offset + index_);
 	container[array->offset + index_] = quark;
 
 	hg_mem_unlock_object(array->o.mem, array->qcontainer);

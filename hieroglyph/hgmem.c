@@ -62,7 +62,7 @@ hg_mem_spool_get(hg_int_t id)
 	hg_return_val_if_fail (id < __hg_mem_id, NULL, HG_e_VMerror);
 	hg_return_val_if_fail (id < HG_MAX_MEM, NULL, HG_e_VMerror);
 
-	return __hg_mem_spool[id];
+	hg_error_return_val (__hg_mem_spool[id], HG_STATUS_SUCCESS, 0);
 }
 
 /**
@@ -116,7 +116,7 @@ hg_mem_spool_new_with_allocator(hg_mem_vtable_t *allocator,
 		hg_warning("too many memory spooler being created.");
 		g_free(retval);
 
-		return NULL;
+		hg_error_return_val (NULL, HG_STATUS_FAILED, HG_e_VMerror);
 	}
 	retval->data = allocator->initialize();
 	if (!retval->data) {
@@ -841,8 +841,12 @@ hg_mem_ref(hg_mem_t   *mem,
 	hg_return_if_fail (mem->allocator != NULL, HG_e_VMerror);
 	hg_return_if_fail (mem->allocator->block_ref != NULL, HG_e_VMerror);
 	hg_return_if_fail (mem->data != NULL, HG_e_VMerror);
-	hg_return_if_fail (qdata != Qnil, HG_e_VMerror);
 	hg_return_if_fail (hg_quark_has_mem_id(qdata, mem->id), HG_e_VMerror);
+
+	if (qdata == Qnil ||
+	    hg_quark_is_simple_object(qdata) ||
+	    hg_quark_get_type(qdata) == HG_TYPE_OPER)
+		return;
 
 	mem->allocator->block_ref(mem->data, qdata);
 }
@@ -863,7 +867,9 @@ hg_mem_unref(hg_mem_t   *mem,
 	hg_return_if_fail (mem->allocator->block_unref != NULL, HG_e_VMerror);
 	hg_return_if_fail (mem->data != NULL, HG_e_VMerror);
 
-	if (qdata == Qnil)
+	if (qdata == Qnil ||
+	    hg_quark_is_simple_object(qdata) ||
+	    hg_quark_get_type(qdata) == HG_TYPE_OPER)
 		return;
 
 	mem->allocator->block_unref(mem->data, qdata);
