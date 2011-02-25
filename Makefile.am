@@ -1,10 +1,13 @@
 NULL =
 AUTOMAKE_OPTIONS = dist-bzip2
-SUBDIRS = build_tools hieroglyph devices src lib tests
+SUBDIRS = build_tools hieroglyph devices src lib
 
 if ENABLE_PLUGINS
 SUBDIRS += plugins
 endif
+
+# to ensure "tests" is last entry.
+SUBDIRS += tests
 
 ACLOCAL_AMFLAGS =		\
 	-I m4macros		\
