@@ -738,20 +738,21 @@ _hg_vm_restore_mark_traverse(hg_mem_t     *mem,
 {
 	hg_uint_t id = hg_quark_get_mem_id(qdata);
 	hg_mem_t *m = hg_mem_spool_get(id);
+	hg_snapshot_t *snapshot = (hg_snapshot_t *)data;
 
 	if (m == NULL) {
 		hg_warning("No memory spool found: %d", id);
 		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 		return FALSE;
 	}
-	hg_mem_restore_mark(m, qdata);
+	hg_snapshot_add_ref(snapshot, qdata);
 
 	return TRUE;
 }
 
 static hg_bool_t
-_hg_vm_restore_mark(hg_mem_t     *mem,
-		    hg_pointer_t  data)
+_hg_vm_restore_mark(hg_snapshot_t *snapshot,
+		    hg_pointer_t   data)
 {
 	hg_vm_t *vm = (hg_vm_t *)data;
 	hg_usize_t i;
@@ -759,7 +760,7 @@ _hg_vm_restore_mark(hg_mem_t     *mem,
 	for (i = 0; i <= HG_VM_STACK_DSTACK; i++) {
 		hg_stack_foreach(vm->stacks[i],
 				 _hg_vm_restore_mark_traverse,
-				 vm, FALSE);
+				 snapshot, FALSE);
 		if (!HG_ERROR_IS_SUCCESS0 ())
 			return FALSE;
 	}
@@ -2338,11 +2339,16 @@ hg_vm_startjob(hg_vm_t           *vm,
 	/* XXX: restore memory */
 
 	if (encapsulated) {
-		hg_mem_snapshot_data_t *gsnap = hg_mem_save_snapshot(vm->mem[HG_VM_MEM_GLOBAL]);
-		hg_mem_snapshot_data_t *lsnap = hg_mem_save_snapshot(vm->mem[HG_VM_MEM_LOCAL]);
+		hg_snapshot_t *gsnap, *lsnap;
+		hg_quark_t qg = hg_snapshot_new(vm->mem[HG_VM_MEM_GLOBAL], (hg_pointer_t *)&gsnap);
+		hg_quark_t ql = hg_snapshot_new(vm->mem[HG_VM_MEM_LOCAL], (hg_pointer_t *)&lsnap);
 
-		gsnap = lsnap;
+		hg_snapshot_save(gsnap);
+		hg_snapshot_save(lsnap);
 		/* XXX: save memory */
+
+		_HG_VM_UNLOCK (vm, qg);
+		_HG_VM_UNLOCK (vm, ql);
 	}
 
 	/* change the default memory */

@@ -85,17 +85,6 @@ hg_size_t      hg_mem_spool_run_gc            (hg_mem_t            *mem);
 hg_usize_t     hg_mem_spool_get_total_size    (hg_mem_t            *mem);
 hg_usize_t     hg_mem_spool_get_used_size     (hg_mem_t            *mem);
 
-
-hg_allocator_snapshot_data_t *hg_mem_save_snapshot                       (hg_mem_t                     *mem);
-hg_bool_t                     hg_mem_restore_snapshot                    (hg_mem_t                     *mem,
-                                                                          hg_allocator_snapshot_data_t *snapshot,
-                                                                          hg_gc_func_t                  func,
-                                                                          hg_pointer_t                  data);
-void                          hg_mem_restore_mark                        (hg_mem_t                     *mem,
-                                                                          hg_quark_t                    qdata);
-void                          hg_mem_snapshot_free                       (hg_mem_t                     *mem,
-                                                                          hg_allocator_snapshot_data_t *snapshot);
-
 /* memory management */
 hg_quark_t   hg_mem_alloc           (hg_mem_t                 *mem,
                                      hg_usize_t                size,

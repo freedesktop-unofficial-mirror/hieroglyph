@@ -40,14 +40,18 @@ HG_BEGIN_DECLS
 
 
 typedef struct _hg_snapshot_t		hg_snapshot_t;
+typedef hg_bool_t (* hg_restore_prep_func_t)	(hg_snapshot_t *snapshot,
+						 hg_pointer_t   user_data);
 
 hg_object_vtable_t *hg_object_snapshot_get_vtable(void) HG_GNUC_CONST;
-hg_quark_t          hg_snapshot_new              (hg_mem_t      *mem,
-						  hg_pointer_t  *ret);
-hg_bool_t           hg_snapshot_save             (hg_snapshot_t *snapshot);
-hg_bool_t           hg_snapshot_restore          (hg_snapshot_t *snapshot,
-						  hg_gc_func_t   func,
-						  hg_pointer_t   data);
+hg_quark_t          hg_snapshot_new              (hg_mem_t               *mem,
+                                                  hg_pointer_t           *ret);
+hg_bool_t           hg_snapshot_save             (hg_snapshot_t          *snapshot);
+hg_bool_t           hg_snapshot_restore          (hg_snapshot_t          *snapshot,
+                                                  hg_restore_prep_func_t  func,
+                                                  hg_pointer_t            data);
+void                hg_snapshot_add_ref          (hg_snapshot_t          *snapshot,
+                                                  hg_quark_t              qdata);
 
 
 HG_END_DECLS
