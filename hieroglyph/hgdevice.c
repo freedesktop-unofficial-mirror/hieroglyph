@@ -172,35 +172,40 @@ _hg_device_open(hg_mem_t        *mem,
  * Returns:
  */
 hg_bool_t
-hg_device_gc_mark(hg_device_t          *device,
-		  hg_gc_iterate_func_t  func,
-		  hg_pointer_t          user_data)
+hg_device_gc_mark(hg_device_t *device)
 {
 	hg_return_val_if_fail (device != NULL, FALSE, HG_e_VMerror);
-	hg_return_val_if_fail (func != NULL, FALSE, HG_e_VMerror);
 
 	if (device->params) {
-		hg_mem_t *mem = hg_mem_spool_get(hg_quark_get_mem_id(device->params->self));
+		hg_mem_t *mem;
 
+		mem = hg_mem_spool_get(hg_quark_get_mem_id(device->params->self));
 		if (!hg_mem_gc_mark(mem, device->params->self))
 			return FALSE;
-		if (!func(device->params->qinput_attributes, user_data))
+		mem = hg_mem_spool_get(hg_quark_get_mem_id(device->params->qinput_attributes));
+		if (!hg_mem_gc_mark(mem, device->params->qinput_attributes))
 			return FALSE;
-		if (!func(device->params->qmedia_color, user_data))
+		mem = hg_mem_spool_get(hg_quark_get_mem_id(device->params->qmedia_color));
+		if (!hg_mem_gc_mark(mem, device->params->qmedia_color))
 			return FALSE;
-		if (!func(device->params->qmedia_type, user_data))
+		mem = hg_mem_spool_get(hg_quark_get_mem_id(device->params->qmedia_type));
+		if (!hg_mem_gc_mark(mem, device->params->qmedia_type))
 			return FALSE;
-		if (!func(device->params->qoutput_type, user_data))
+		mem = hg_mem_spool_get(hg_quark_get_mem_id(device->params->qoutput_type));
+		if (!hg_mem_gc_mark(mem, device->params->qoutput_type))
 			return FALSE;
-		if (!func(device->params->qinstall, user_data))
+		mem = hg_mem_spool_get(hg_quark_get_mem_id(device->params->qinstall));
+		if (!hg_mem_gc_mark(mem, device->params->qinstall))
 			return FALSE;
-		if (!func(device->params->qbegin_page, user_data))
+		mem = hg_mem_spool_get(hg_quark_get_mem_id(device->params->qbegin_page));
+		if (!hg_mem_gc_mark(mem, device->params->qbegin_page))
 			return FALSE;
-		if (!func(device->params->qend_page, user_data))
+		mem = hg_mem_spool_get(hg_quark_get_mem_id(device->params->qend_page));
+		if (!hg_mem_gc_mark(mem, device->params->qend_page))
 			return FALSE;
 
 		if (device->gc_mark) {
-			if (!device->gc_mark(device, func, user_data))
+			if (!device->gc_mark(device))
 				return FALSE;
 		}
 	}

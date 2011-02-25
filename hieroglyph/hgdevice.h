@@ -147,18 +147,16 @@ struct _hg_device_t {
 	hg_quark_t                 qpdevparams_name[HG_pdev_END];
 	hg_pdev_params_t          *params;
 
-	hg_usize_t (* get_page_params_size) (hg_device_t          *device);
-	hg_error_t (* gc_mark)              (hg_device_t          *device,
-					     hg_gc_iterate_func_t  func,
-					     hg_pointer_t          user_data);
-	hg_quark_t (* get_page_param)       (hg_device_t          *device,
-					     hg_uint_t             index_);
-	void       (* install)              (hg_device_t          *device,
-					     hg_vm_t              *vm);
-	hg_bool_t  (* get_ctm)              (hg_device_t          *device,
-					     hg_matrix_t          *array);
-	hg_bool_t  (* is_pending_draw)      (hg_device_t          *device);
-	void       (* draw)                 (hg_device_t          *device);
+	hg_usize_t (* get_page_params_size) (hg_device_t *device);
+	hg_error_t (* gc_mark)              (hg_device_t *device);
+	hg_quark_t (* get_page_param)       (hg_device_t *device,
+					     hg_uint_t    index_);
+	void       (* install)              (hg_device_t *device,
+					     hg_vm_t     *vm);
+	hg_bool_t  (* get_ctm)              (hg_device_t *device,
+					     hg_matrix_t *array);
+	hg_bool_t  (* is_pending_draw)      (hg_device_t *device);
+	void       (* draw)                 (hg_device_t *device);
 
 	hg_device_operator_t eofill;
 	hg_device_operator_t fill;
@@ -169,9 +167,7 @@ struct _hg_device_t {
 };
 
 
-hg_bool_t    hg_device_gc_mark        (hg_device_t                *device,
-                                       hg_gc_iterate_func_t        func,
-                                       hg_pointer_t                user_data);
+hg_bool_t    hg_device_gc_mark        (hg_device_t                *device);
 hg_device_t *hg_device_open           (hg_mem_t                   *mem,
                                        const hg_char_t            *name);
 void         hg_device_close          (hg_device_t                *device);

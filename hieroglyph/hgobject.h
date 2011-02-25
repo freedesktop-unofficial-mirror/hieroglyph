@@ -85,11 +85,6 @@ HG_BEGIN_DECLS
 
 typedef struct _hg_object_vtable_t		hg_object_vtable_t;
 typedef struct _hg_object_t			hg_object_t;
-typedef hg_bool_t (* hg_gc_iterate_func_t)	(hg_quark_t    qdata,
-						 hg_pointer_t  user_data);
-typedef void (* hg_destroy_func_t)		(hg_mem_t     *mem,
-						 hg_pointer_t  user_data);
-
 
 struct _hg_object_vtable_t {
 	hg_usize_t       (* get_capsulated_size)  (void);

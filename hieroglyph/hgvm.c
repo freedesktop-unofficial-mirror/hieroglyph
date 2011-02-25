@@ -463,13 +463,6 @@ hg_vm_step_in_exec_array(hg_vm_t    *vm,
 	return retval;
 }
 
-static hg_error_t
-_hg_vm_quark_iterate_gc_mark(hg_quark_t   qdata,
-			     hg_pointer_t user_data)
-{
-	return hg_vm_quark_gc_mark((hg_vm_t *)user_data, qdata);
-}
-
 static hg_quark_t
 _hg_vm_quark_iterate_copy(hg_quark_t    qdata,
 			  hg_pointer_t  user_data,
@@ -645,9 +638,7 @@ _hg_vm_run_gc(hg_mem_t     *mem,
 		return FALSE;
 	hg_debug(HG_MSGCAT_GC, "VM: marking objects in device");
 	if (vm->device) {
-		if (!hg_device_gc_mark(vm->device,
-				       _hg_vm_quark_iterate_gc_mark,
-				       vm))
+		if (!hg_device_gc_mark(vm->device))
 			return FALSE;
 	}
 
