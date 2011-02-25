@@ -174,22 +174,6 @@ TDEF (hg_mem_foreach)
 {
 } TEND
 
-TDEF (hg_mem_save_snapshot)
-{
-} TEND
-
-TDEF (hg_mem_restore_snapshot)
-{
-} TEND
-
-TDEF (hg_mem_restore_mark)
-{
-} TEND
-
-TDEF (hg_mem_snapshot_free)
-{
-} TEND
-
 /****/
 Suite *
 hieroglyph_suite(void)
@@ -228,10 +212,6 @@ hieroglyph_suite(void)
 	T (hg_mem_ref);
 	T (hg_mem_unref);
 	T (hg_mem_foreach);
-	T (hg_mem_save_snapshot);
-	T (hg_mem_restore_snapshot);
-	T (hg_mem_restore_mark);
-	T (hg_mem_snapshot_free);
 
 	suite_add_tcase(s, tc);
 

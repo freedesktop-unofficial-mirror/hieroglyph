@@ -26,8 +26,6 @@
 #endif /* HAVE_CONFIG_H */
 
 #include <math.h>
-/* XXX: Glib is still needed for the hash table */
-#include <glib.h>
 #include "hgallocator.h"
 #include "hgquark.h"
 #include "hgtypebit-private.h"

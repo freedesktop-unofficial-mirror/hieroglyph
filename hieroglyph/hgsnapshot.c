@@ -34,9 +34,9 @@
 #include "hgsnapshot.proto.h"
 
 struct _hg_snapshot_t {
-	hg_object_t             o;
-	hg_mem_snapshot_data_t *snapshot;
-	GHashTable             *ref_table;
+	hg_object_t                   o;
+	hg_allocator_snapshot_data_t *snapshot;
+	GHashTable                   *ref_table;
 };
 
 HG_DEFINE_VTABLE (snapshot);

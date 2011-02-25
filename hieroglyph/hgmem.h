@@ -40,7 +40,6 @@ HG_BEGIN_DECLS
 
 typedef enum _hg_mem_type_t		hg_mem_type_t;
 typedef hg_cb_BOOL__QUARK_QUARK_t	hg_rs_gc_func_t;
-typedef hg_allocator_snapshot_data_t	hg_mem_snapshot_data_t;
 
 typedef void (* hg_mem_finalizer_func_t) (hg_mem_t    *mem,
 					  hg_quark_t  index);
