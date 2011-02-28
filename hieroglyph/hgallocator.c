@@ -829,10 +829,10 @@ _hg_allocator_block_unref(hg_allocator_data_t *data,
 }
 
 static hg_bool_t
-_hg_allocator_block_foreach(hg_allocator_data_t      *data,
-			    hg_block_iter_flags_t     flags,
-			    hg_quark_iterator_func_t  func,
-			    hg_pointer_t              user_data)
+_hg_allocator_block_foreach(hg_allocator_data_t   *data,
+			    hg_block_iter_flags_t  flags,
+			    hg_block_iter_func_t   func,
+			    hg_pointer_t           user_data)
 {
 	return TRUE;
 }

@@ -770,10 +770,10 @@ hg_mem_unref(hg_mem_t   *mem,
  * Returns:
  */
 hg_bool_t
-hg_mem_foreach(hg_mem_t                 *mem,
-	       hg_block_iter_flags_t     flags,
-	       hg_quark_iterator_func_t  func,
-	       hg_pointer_t              user_data)
+hg_mem_foreach(hg_mem_t              *mem,
+	       hg_block_iter_flags_t  flags,
+	       hg_block_iter_func_t   func,
+	       hg_pointer_t           user_data)
 {
 	hg_return_val_if_fail (mem != NULL, FALSE, HG_e_VMerror);
 	hg_return_val_if_fail (mem->allocator != NULL, FALSE, HG_e_VMerror);

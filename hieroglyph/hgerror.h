@@ -67,7 +67,6 @@ HG_BEGIN_DECLS
 #define hg_error_return(_status_,_reason_)				\
 	hg_error_return_val((_status_) == HG_STATUS_SUCCESS, (_status_), (_reason_))
 
-typedef enum _hg_vm_error_t	hg_vm_error_t;
 typedef enum _hg_error_status_t	hg_error_status_t;
 typedef enum _hg_error_reason_t	hg_error_reason_t;
 

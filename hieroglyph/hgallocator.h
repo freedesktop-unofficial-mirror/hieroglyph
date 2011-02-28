@@ -42,7 +42,7 @@ typedef enum _hg_block_iter_flags_t		hg_block_iter_flags_t;
 
 typedef hg_bool_t (* hg_gc_mark_func_t)		(hg_pointer_t object);
 typedef void      (* hg_finalizer_func_t)	(hg_pointer_t object);
-typedef hg_bool_t (* hg_quark_iterator_func_t)	(hg_quark_t   qdata,
+typedef hg_bool_t (* hg_block_iter_func_t)	(hg_quark_t   qdata,
 						 hg_pointer_t user_data);
 
 /**
@@ -133,7 +133,7 @@ struct _hg_mem_vtable_t {
 							      hg_quark_t                     quark);
 	hg_bool_t                      (* block_foreach)     (hg_allocator_data_t           *data,
 							      hg_block_iter_flags_t          flags,
-							      hg_quark_iterator_func_t       func,
+							      hg_block_iter_func_t           func,
 							      hg_pointer_t                   user_data);
 	hg_int_t                       (* add_gc_marker)     (hg_allocator_data_t           *data,
 							      hg_gc_mark_func_t              func);
