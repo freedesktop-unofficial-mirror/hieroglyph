@@ -30,7 +30,6 @@
 
 #include <hieroglyph/hgobject.h>
 #include <hieroglyph/hgmatrix.h>
-#include <hieroglyph/hgpath.h>
 
 HG_BEGIN_DECLS
 
@@ -100,8 +99,6 @@ void                hg_gstate_set_ctm          (hg_gstate_t   *gstate,
 						hg_matrix_t   *matrix);
 void                hg_gstate_get_ctm          (hg_gstate_t   *gstate,
 						hg_matrix_t   *matrix);
-void                hg_gstate_set_path         (hg_gstate_t   *gstate,
-                                                hg_quark_t     qpath);
 hg_quark_t          hg_gstate_get_path         (hg_gstate_t   *gstate);
 void                hg_gstate_set_clippath     (hg_gstate_t   *gstate,
                                                 hg_quark_t     qpath);
@@ -127,6 +124,64 @@ hg_bool_t           hg_gstate_set_miterlimit   (hg_gstate_t   *gstate,
 hg_bool_t           hg_gstate_set_dash         (hg_gstate_t   *gstate,
 						hg_quark_t     qpattern,
 						hg_real_t      offset);
+
+/** hg_path_t wrappers **/
+
+hg_bool_t hg_gstate_newpath          (hg_gstate_t    *gstate);
+hg_bool_t hg_gstate_closepath        (hg_gstate_t    *gstate);
+hg_bool_t hg_gstate_moveto           (hg_gstate_t    *gstate,
+                                      hg_real_t       x,
+                                      hg_real_t       y);
+hg_bool_t hg_gstate_rmoveto          (hg_gstate_t    *gstate,
+                                      hg_real_t       rx,
+                                      hg_real_t       ry);
+hg_bool_t hg_gstate_lineto           (hg_gstate_t    *gstate,
+                                      hg_real_t       x,
+                                      hg_real_t       y);
+hg_bool_t hg_gstate_rlineto          (hg_gstate_t    *gstate,
+                                      hg_real_t       rx,
+                                      hg_real_t       ry);
+hg_bool_t hg_gstate_curveto          (hg_gstate_t    *gstate,
+                                      hg_real_t       x1,
+                                      hg_real_t       y1,
+                                      hg_real_t       x2,
+                                      hg_real_t       y2,
+                                      hg_real_t       x3,
+                                      hg_real_t       y3);
+hg_bool_t hg_gstate_rcurveto         (hg_gstate_t    *gstate,
+                                      hg_real_t       rx1,
+                                      hg_real_t       ry1,
+                                      hg_real_t       rx2,
+                                      hg_real_t       ry2,
+                                      hg_real_t       rx3,
+                                      hg_real_t       ry3);
+hg_bool_t hg_gstate_arc              (hg_gstate_t    *gstate,
+                                      hg_real_t       x,
+                                      hg_real_t       y,
+                                      hg_real_t       r,
+                                      hg_real_t       angle1,
+                                      hg_real_t       angle2);
+hg_bool_t hg_gstate_arcn             (hg_gstate_t    *gstate,
+                                      hg_real_t       x,
+                                      hg_real_t       y,
+                                      hg_real_t       r,
+                                      hg_real_t       angle1,
+                                      hg_real_t       angle2);
+hg_bool_t hg_gstate_arcto            (hg_gstate_t    *gstate,
+                                      hg_real_t       x1,
+                                      hg_real_t       y1,
+                                      hg_real_t       x2,
+                                      hg_real_t       y2,
+                                      hg_real_t       r,
+                                      hg_real_t       ret[4]);
+hg_bool_t hg_gstate_pathbbox         (hg_gstate_t    *gstate,
+                                      hg_bool_t       ignore_last_moveto,
+                                      hg_path_bbox_t *bbox);
+hg_bool_t hg_gstate_initclip         (hg_gstate_t    *gstate);
+hg_bool_t hg_gstate_clippath         (hg_gstate_t    *gstate);
+hg_bool_t hg_gstate_get_current_point(hg_gstate_t    *gstate,
+                                      hg_real_t      *x,
+                                      hg_real_t      *y);
 
 
 HG_END_DECLS

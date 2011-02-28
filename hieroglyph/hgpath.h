@@ -39,7 +39,6 @@ HG_BEGIN_DECLS
 	(hg_quark_get_type((_q_)) == HG_TYPE_PATH)
 
 typedef struct _hg_path_t			hg_path_t;
-typedef struct _hg_path_bbox_t			hg_path_bbox_t;
 typedef enum _hg_path_type_t			hg_path_type_t;
 typedef struct _hg_path_node_t			hg_path_node_t;
 typedef struct _hg_path_operate_vtable_t	hg_path_operate_vtable_t;
@@ -73,12 +72,6 @@ struct _hg_path_node_t {
 	hg_real_t      dy;
 	hg_real_t      cx;
 	hg_real_t      cy;
-};
-struct _hg_path_bbox_t {
-	hg_real_t llx;
-	hg_real_t lly;
-	hg_real_t urx;
-	hg_real_t ury;
 };
 struct _hg_path_operate_vtable_t {
 	void (* new_path)   (hg_pointer_t user_data);

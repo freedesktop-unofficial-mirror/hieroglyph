@@ -164,11 +164,6 @@ _hg_path_add(hg_path_t      *path,
 	hg_return_val_if_fail (type < HG_PATH_END, FALSE, HG_e_rangecheck);
 	hg_return_val_if_fail (path->length < HG_PATH_MAX, FALSE, HG_e_limitcheck);
 
-	hg_return_val_if_lock_fail (node,
-				    path->o.mem,
-				    path->qnode,
-				    FALSE);
-
 	if (path->length == 0) {
 		switch (type) {
 		    case HG_PATH_CURVETO:
@@ -177,15 +172,19 @@ _hg_path_add(hg_path_t      *path,
 		    case HG_PATH_RMOVETO:
 		    case HG_PATH_RLINETO:
 			    /* /nocurrentpoint would be raised. */
-			    retval = FALSE;
-			    goto finalize;
+			    hg_error_return (HG_STATUS_FAILED, HG_e_nocurrentpoint);
 		    case HG_PATH_CLOSEPATH:
 			    /* no errors */
-			    goto finalize;
+			    hg_error_return (HG_STATUS_SUCCESS, 0);
 		    default:
 			    break;
 		}
 	}
+
+	hg_return_val_if_lock_fail (node,
+				    path->o.mem,
+				    path->qnode,
+				    FALSE);
 
 	if (path->length > 0) {
 		cx = node[path->length - 1].cx;
@@ -376,9 +375,11 @@ hg_path_new(hg_mem_t     *mem,
 			*ret = path;
 		else
 			hg_mem_unlock_object(mem, retval);
+	} else {
+		hg_error_return_val (Qnil, HG_STATUS_FAILED, HG_e_limitcheck);
 	}
 
-	return retval;
+	hg_error_return_val (retval, HG_STATUS_SUCCESS, 0);
 }
 
 /**
@@ -401,7 +402,7 @@ hg_path_get_current_point(hg_path_t *path,
 	hg_return_val_if_fail (path != NULL, FALSE, HG_e_typecheck);
 
 	if (path->length == 0)
-		return FALSE;
+		hg_error_return (HG_STATUS_FAILED, HG_e_nocurrentpoint);
 
 	hg_return_val_if_lock_fail (node,
 				    path->o.mem,
@@ -415,7 +416,7 @@ hg_path_get_current_point(hg_path_t *path,
 
 	hg_mem_unlock_object(path->o.mem, path->qnode);
 
-	return TRUE;
+	hg_error_return (HG_STATUS_SUCCESS, 0);
 }
 
 /**
@@ -542,12 +543,7 @@ hg_path_rmoveto(hg_path_t *path,
 		hg_real_t  x,
 		hg_real_t  y)
 {
-	hg_bool_t retval = hg_path_get_current_point(path, NULL, NULL);
-
-	if (retval)
-		return _hg_path_add(path, HG_PATH_RMOVETO, x, y);
-
-	return retval;
+	return _hg_path_add(path, HG_PATH_RMOVETO, x, y);
 }
 
 /**
@@ -565,12 +561,7 @@ hg_path_lineto(hg_path_t *path,
 	       hg_real_t  x,
 	       hg_real_t  y)
 {
-	hg_bool_t retval = hg_path_get_current_point(path, NULL, NULL);
-
-	if (retval)
-		return _hg_path_add(path, HG_PATH_LINETO, x, y);
-
-	return retval;
+	return _hg_path_add(path, HG_PATH_LINETO, x, y);
 }
 
 /**
@@ -588,12 +579,7 @@ hg_path_rlineto(hg_path_t *path,
 		hg_real_t  x,
 		hg_real_t  y)
 {
-	hg_bool_t retval = hg_path_get_current_point(path, NULL, NULL);
-
-	if (retval)
-		return _hg_path_add(path, HG_PATH_RLINETO, x, y);
-
-	return retval;
+	return _hg_path_add(path, HG_PATH_RLINETO, x, y);
 }
 
 /**
@@ -619,13 +605,11 @@ hg_path_curveto(hg_path_t *path,
 		hg_real_t  x3,
 		hg_real_t  y3)
 {
-	hg_bool_t retval = !hg_path_get_current_point(path, NULL, NULL);
+	hg_bool_t retval = FALSE;
 
-	if (!retval) {
-		retval |= !_hg_path_add(path, HG_PATH_CURVETO, x1, y1);
-		retval |= !_hg_path_add(path, HG_PATH_CURVETO, x2, y2);
-		retval |= !_hg_path_add(path, HG_PATH_CURVETO, x3, y3);
-	}
+	retval |= !_hg_path_add(path, HG_PATH_CURVETO, x1, y1);
+	retval |= !_hg_path_add(path, HG_PATH_CURVETO, x2, y2);
+	retval |= !_hg_path_add(path, HG_PATH_CURVETO, x3, y3);
 
 	return !retval;
 }
@@ -653,13 +637,11 @@ hg_path_rcurveto(hg_path_t *path,
 		 hg_real_t  x3,
 		 hg_real_t  y3)
 {
-	hg_bool_t retval = !hg_path_get_current_point(path, NULL, NULL);
+	hg_bool_t retval = FALSE;
 
-	if (!retval) {
-		retval |= !_hg_path_add(path, HG_PATH_RCURVETO, x1, y1);
-		retval |= !_hg_path_add(path, HG_PATH_RCURVETO, x2, y2);
-		retval |= !_hg_path_add(path, HG_PATH_RCURVETO, x3, y3);
-	}
+	retval |= !_hg_path_add(path, HG_PATH_RCURVETO, x1, y1);
+	retval |= !_hg_path_add(path, HG_PATH_RCURVETO, x2, y2);
+	retval |= !_hg_path_add(path, HG_PATH_RCURVETO, x3, y3);
 
 	return !retval;
 }
@@ -830,6 +812,8 @@ hg_path_arcto(hg_path_t *path,
 		retval |= !_hg_path_add(path, HG_PATH_CURVETO, t2x, t2y);
 		/* XXX: end */
 		retval |= !_hg_path_add(path, HG_PATH_CURVETO, t2x, t2y);
+	} else {
+		hg_error_return (HG_STATUS_FAILED, HG_e_nocurrentpoint);
 	}
 
 	return !retval;
@@ -960,8 +944,8 @@ hg_path_get_bbox(hg_path_t      *path,
 
 	if (path->length == 0) {
 		hg_debug(HG_MSGCAT_PATH, "no current point");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_nocurrentpoint);
-		return FALSE;
+
+		hg_error_return (HG_STATUS_FAILED, HG_e_nocurrentpoint);
 	}
 	memset(&priv, 0, sizeof (hg_path_bbox_private_t));
 

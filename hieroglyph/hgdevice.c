@@ -36,7 +36,6 @@
 #include "hgmem.h"
 #include "hgnull.h"
 #include "hgoperator.h"
-#include "hgpath.h"
 #include "hgreal.h"
 #include "hgdevice.h"
 
@@ -619,13 +618,7 @@ hg_device_eofill(hg_device_t *device,
 
 	retval = device->eofill(device, gstate);
 	if (retval) {
-		hg_quark_t qpath = hg_path_new(gstate->o.mem, NULL);
-
-		if (qpath == Qnil) {
-			return FALSE;
-		} else {
-			hg_gstate_set_path(gstate, qpath);
-		}
+		retval = hg_gstate_newpath(gstate);
 	}
 
 	return retval;
@@ -652,13 +645,7 @@ hg_device_fill(hg_device_t *device,
 
 	retval = device->fill(device, gstate);
 	if (retval) {
-		hg_quark_t qpath = hg_path_new(gstate->o.mem, NULL);
-
-		if (qpath == Qnil) {
-			return FALSE;
-		} else {
-			hg_gstate_set_path(gstate, qpath);
-		}
+		retval = hg_gstate_newpath(gstate);
 	}
 
 	return retval;
@@ -685,13 +672,7 @@ hg_device_stroke(hg_device_t *device,
 
 	retval = device->stroke(device, gstate);
 	if (retval) {
-		hg_quark_t qpath = hg_path_new(gstate->o.mem, NULL);
-
-		if (qpath == Qnil) {
-			return FALSE;
-		} else {
-			hg_gstate_set_path(gstate, qpath);
-		}
+		retval = hg_gstate_newpath(gstate);
 	}
 
 	return retval;

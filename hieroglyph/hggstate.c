@@ -29,6 +29,7 @@
 #include "hgarray.h"
 #include "hgint.h"
 #include "hgmem.h"
+#include "hgpath.h"
 #include "hgreal.h"
 #include "hggstate.h"
 
@@ -224,30 +225,6 @@ hg_gstate_get_ctm(hg_gstate_t *gstate,
 	hg_return_if_fail (matrix != NULL, HG_e_typecheck);
 
 	memcpy(matrix, &gstate->ctm, sizeof (hg_matrix_t));
-}
-
-/**
- * hg_gstate_set_path:
- * @gstate:
- * @qpath:
- *
- * FIXME
- */
-void
-hg_gstate_set_path(hg_gstate_t *gstate,
-		   hg_quark_t   qpath)
-{
-	hg_uint_t mem_id;
-
-	hg_return_if_fail (gstate != NULL, HG_e_typecheck);
-	hg_return_if_fail (HG_IS_QPATH (qpath), HG_e_typecheck);
-
-	mem_id = hg_quark_get_mem_id(gstate->o.self);
-
-	hg_return_if_fail (hg_quark_has_mem_id(qpath, mem_id), HG_e_VMerror);
-
-	gstate->qpath = qpath;
-	hg_mem_unref(gstate->o.mem, qpath);
 }
 
 /**
@@ -512,4 +489,485 @@ hg_gstate_set_dash(hg_gstate_t *gstate,
 	hg_mem_unlock_object(mem, qpattern);
 
 	return HG_ERROR_IS_SUCCESS0 ();
+}
+
+/* hg_path_t wrappers */
+
+/**
+ * hg_gstate_newpath:
+ * @gstate:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_bool_t
+hg_gstate_newpath(hg_gstate_t *gstate)
+{
+	hg_return_val_if_fail (gstate != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (gstate->o.type == HG_TYPE_GSTATE, FALSE, HG_e_typecheck);
+
+	gstate->qpath = hg_path_new(gstate->o.mem, NULL);
+
+	return gstate->qpath != Qnil;
+}
+
+/**
+ * hg_gstate_closepath:
+ * @gstate:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_bool_t
+hg_gstate_closepath(hg_gstate_t *gstate)
+{
+	hg_path_t *p;
+	hg_bool_t retval = FALSE;
+
+	hg_return_val_if_fail (gstate != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (gstate->o.type == HG_TYPE_GSTATE, FALSE, HG_e_typecheck);
+
+	p = HG_MEM_LOCK (gstate->o.mem, gstate->qpath);
+	if (p) {
+		retval = hg_path_close(p);
+		hg_mem_unlock_object(gstate->o.mem, gstate->qpath);
+	}
+
+	return retval;
+}
+
+/**
+ * hg_gstate_moveto:
+ * @gstate:
+ * @x:
+ * @y:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_bool_t
+hg_gstate_moveto(hg_gstate_t *gstate,
+		 hg_real_t    x,
+		 hg_real_t    y)
+{
+	hg_path_t *p;
+	hg_bool_t retval = FALSE;
+
+	hg_return_val_if_fail (gstate != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (gstate->o.type == HG_TYPE_GSTATE, FALSE, HG_e_typecheck);
+
+	if (gstate->qpath == Qnil) {
+		gstate->qpath = hg_path_new(gstate->o.mem, NULL);
+		if (gstate->qpath == Qnil)
+			hg_error_return (HG_STATUS_FAILED, HG_e_limitcheck);
+	}
+	p = HG_MEM_LOCK (gstate->o.mem, gstate->qpath);
+	if (p) {
+		retval = hg_path_moveto(p, x, y);
+		hg_mem_unlock_object(gstate->o.mem, gstate->qpath);
+	}
+
+	return retval;
+}
+
+/**
+ * hg_gstate_rmoveto:
+ * @gstate:
+ * @x:
+ * @y:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_bool_t
+hg_gstate_rmoveto(hg_gstate_t *gstate,
+		  hg_real_t    rx,
+		  hg_real_t    ry)
+{
+	hg_path_t *p;
+	hg_bool_t retval = FALSE;
+
+	hg_return_val_if_fail (gstate != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (gstate->o.type == HG_TYPE_GSTATE, FALSE, HG_e_typecheck);
+
+	p = HG_MEM_LOCK (gstate->o.mem, gstate->qpath);
+	if (p) {
+		retval = hg_path_rmoveto(p, rx, ry);
+		hg_mem_unlock_object(gstate->o.mem, gstate->qpath);
+	}
+
+	return retval;
+}
+
+/**
+ * hg_gstate_lineto:
+ * @gstate:
+ * @x:
+ * @y:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_bool_t
+hg_gstate_lineto(hg_gstate_t *gstate,
+		 hg_real_t    x,
+		 hg_real_t    y)
+{
+	hg_path_t *p;
+	hg_bool_t retval = FALSE;
+
+	hg_return_val_if_fail (gstate != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (gstate->o.type == HG_TYPE_GSTATE, FALSE, HG_e_typecheck);
+
+	p = HG_MEM_LOCK (gstate->o.mem, gstate->qpath);
+	if (p) {
+		retval = hg_path_lineto(p, x, y);
+		hg_mem_unlock_object(gstate->o.mem, gstate->qpath);
+	}
+
+	return retval;
+}
+
+/**
+ * hg_gstate_rlineto:
+ * @gstate:
+ * @x:
+ * @y:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_bool_t
+hg_gstate_rlineto(hg_gstate_t *gstate,
+		  hg_real_t    rx,
+		  hg_real_t    ry)
+{
+	hg_path_t *p;
+	hg_bool_t retval = FALSE;
+
+	hg_return_val_if_fail (gstate != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (gstate->o.type == HG_TYPE_GSTATE, FALSE, HG_e_typecheck);
+
+	p = HG_MEM_LOCK (gstate->o.mem, gstate->qpath);
+	if (p) {
+		retval = hg_path_rlineto(p, rx, ry);
+		hg_mem_unlock_object(gstate->o.mem, gstate->qpath);
+	}
+
+	return retval;
+}
+
+/**
+ * hg_gstate_curveto:
+ * @gstate:
+ * @x1:
+ * @y1:
+ * @x2:
+ * @y2:
+ * @x3:
+ * @y3:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_bool_t
+hg_gstate_curveto(hg_gstate_t *gstate,
+		  hg_real_t    x1,
+		  hg_real_t    y1,
+		  hg_real_t    x2,
+		  hg_real_t    y2,
+		  hg_real_t    x3,
+		  hg_real_t    y3)
+{
+	hg_path_t *p;
+	hg_bool_t retval = FALSE;
+
+	hg_return_val_if_fail (gstate != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (gstate->o.type == HG_TYPE_GSTATE, FALSE, HG_e_typecheck);
+
+	p = HG_MEM_LOCK (gstate->o.mem, gstate->qpath);
+	if (p) {
+		retval = hg_path_curveto(p, x1, y1, x2, y2, x3, y3);
+		hg_mem_unlock_object(gstate->o.mem, gstate->qpath);
+	}
+
+	return retval;
+}
+
+/**
+ * hg_gstate_rcurveto:
+ * @gstate:
+ * @x1:
+ * @y1:
+ * @x2:
+ * @y2:
+ * @x3:
+ * @y3:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_bool_t
+hg_gstate_rcurveto(hg_gstate_t *gstate,
+		   hg_real_t    rx1,
+		   hg_real_t    ry1,
+		   hg_real_t    rx2,
+		   hg_real_t    ry2,
+		   hg_real_t    rx3,
+		   hg_real_t    ry3)
+{
+	hg_path_t *p;
+	hg_bool_t retval = FALSE;
+
+	hg_return_val_if_fail (gstate != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (gstate->o.type == HG_TYPE_GSTATE, FALSE, HG_e_typecheck);
+
+	p = HG_MEM_LOCK (gstate->o.mem, gstate->qpath);
+	if (p) {
+		retval = hg_path_rcurveto(p, rx1, ry1, rx2, ry2, rx3, ry3);
+		hg_mem_unlock_object(gstate->o.mem, gstate->qpath);
+	}
+
+	return retval;
+}
+
+/**
+ * hg_gstate_arc:
+ * @gstate:
+ * @x:
+ * @y:
+ * @r:
+ * @angle1:
+ * @angle2:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_bool_t
+hg_gstate_arc(hg_gstate_t *gstate,
+	      hg_real_t    x,
+	      hg_real_t    y,
+	      hg_real_t    r,
+	      hg_real_t    angle1,
+	      hg_real_t    angle2)
+{
+	hg_path_t *p;
+	hg_bool_t retval = FALSE;
+
+	hg_return_val_if_fail (gstate != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (gstate->o.type == HG_TYPE_GSTATE, FALSE, HG_e_typecheck);
+
+	if (gstate->qpath == Qnil) {
+		gstate->qpath = hg_path_new(gstate->o.mem, NULL);
+		if (gstate->qpath == Qnil)
+			hg_error_return (HG_STATUS_FAILED, HG_e_limitcheck);
+	}
+	p = HG_MEM_LOCK (gstate->o.mem, gstate->qpath);
+	if (p) {
+		retval = hg_path_arc(p, x, y, r, angle1, angle2);
+		hg_mem_unlock_object(gstate->o.mem, gstate->qpath);
+	}
+
+	return retval;
+}
+
+/**
+ * hg_gstate_arcn:
+ * @gstate:
+ * @x:
+ * @y:
+ * @r:
+ * @angle1:
+ * @angle2:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_bool_t
+hg_gstate_arcn(hg_gstate_t *gstate,
+	       hg_real_t    x,
+	       hg_real_t    y,
+	       hg_real_t    r,
+	       hg_real_t    angle1,
+	       hg_real_t    angle2)
+{
+	hg_path_t *p;
+	hg_bool_t retval = FALSE;
+
+	hg_return_val_if_fail (gstate != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (gstate->o.type == HG_TYPE_GSTATE, FALSE, HG_e_typecheck);
+
+	if (gstate->qpath == Qnil) {
+		gstate->qpath = hg_path_new(gstate->o.mem, NULL);
+		if (gstate->qpath == Qnil)
+			hg_error_return (HG_STATUS_FAILED, HG_e_limitcheck);
+	}
+	p = HG_MEM_LOCK (gstate->o.mem, gstate->qpath);
+	if (p) {
+		retval = hg_path_arcn(p, x, y, r, angle1, angle2);
+		hg_mem_unlock_object(gstate->o.mem, gstate->qpath);
+	}
+
+	return retval;
+}
+
+/**
+ * hg_gstate_arcto:
+ * @gstate:
+ * @x1:
+ * @y1:
+ * @x2:
+ * @y2:
+ * @r:
+ * @ret:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_bool_t
+hg_gstate_arcto(hg_gstate_t *gstate,
+		hg_real_t    x1,
+		hg_real_t    y1,
+		hg_real_t    x2,
+		hg_real_t    y2,
+		hg_real_t    r,
+		hg_real_t    ret[4])
+{
+	hg_path_t *p;
+	hg_bool_t retval = FALSE;
+
+	hg_return_val_if_fail (gstate != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (gstate->o.type == HG_TYPE_GSTATE, FALSE, HG_e_typecheck);
+
+	p = HG_MEM_LOCK (gstate->o.mem, gstate->qpath);
+	if (p) {
+		retval = hg_path_arcto(p, x1, y1, x2, y2, r, ret);
+		hg_mem_unlock_object(gstate->o.mem, gstate->qpath);
+	}
+
+	return retval;
+}
+
+/**
+ * hg_gstate_pathbbox:
+ * @gstate:
+ * @ignore_last_moveto:
+ * @bbox:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_bool_t
+hg_gstate_pathbbox(hg_gstate_t    *gstate,
+		   hg_bool_t       ignore_last_moveto,
+		   hg_path_bbox_t *bbox)
+{
+	hg_path_t *p;
+	hg_bool_t retval = FALSE;
+
+	hg_return_val_if_fail (gstate != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (gstate->o.type == HG_TYPE_GSTATE, FALSE, HG_e_typecheck);
+
+	p = HG_MEM_LOCK (gstate->o.mem, gstate->qpath);
+	if (p) {
+		retval = hg_path_get_bbox(p,
+					  ignore_last_moveto,
+					  bbox);
+		hg_mem_unlock_object(gstate->o.mem, gstate->qpath);
+	}
+
+	return retval;
+}
+
+/**
+ * hg_gstate_initclip:
+ * @gstate:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_bool_t
+hg_gstate_initclip(hg_gstate_t *gstate)
+{
+	hg_return_val_if_fail (gstate != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (gstate->o.type == HG_TYPE_GSTATE, FALSE, HG_e_typecheck);
+
+	/* expecting the current path is properly set */
+	if (gstate->qpath == Qnil)
+		hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
+
+	gstate->qclippath = gstate->qpath;
+	gstate->qpath = hg_path_new(gstate->o.mem, NULL);
+	if (gstate->qpath == Qnil)
+		hg_error_return (HG_STATUS_FAILED, HG_e_limitcheck);
+
+	hg_error_return (HG_STATUS_SUCCESS, 0);
+}
+
+/**
+ * hg_gstate_clippath:
+ * @gstate:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_bool_t
+hg_gstate_clippath(hg_gstate_t *gstate)
+{
+	hg_quark_t q;
+
+	hg_return_val_if_fail (gstate != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (gstate->o.type == HG_TYPE_GSTATE, FALSE, HG_e_typecheck);
+
+	q = hg_object_quark_copy(gstate->o.mem, gstate->qclippath, NULL);
+	if (q == Qnil)
+		hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
+
+	gstate->qpath = q;
+
+	hg_error_return (HG_STATUS_SUCCESS, 0);
+}
+
+/**
+ * hg_gstate_get_current_point:
+ * @gstate:
+ * @x:
+ * @y:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_bool_t
+hg_gstate_get_current_point(hg_gstate_t *gstate,
+			    hg_real_t   *x,
+			    hg_real_t   *y)
+{
+	hg_path_t *p;
+	hg_bool_t retval = FALSE;
+
+	hg_return_val_if_fail (gstate != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (gstate->o.type == HG_TYPE_GSTATE, FALSE, HG_e_typecheck);
+
+	p = HG_MEM_LOCK (gstate->o.mem, gstate->qpath);
+	if (p) {
+		retval = hg_path_get_current_point(p, x, y);
+		hg_mem_unlock_object(gstate->o.mem, gstate->qpath);
+	}
+
+	return retval;
 }

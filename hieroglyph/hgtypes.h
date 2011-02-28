@@ -83,6 +83,23 @@ typedef enum _hg_type_t {
 typedef struct _hg_mem_t	hg_mem_t;
 typedef struct _hg_vm_t		hg_vm_t;
 typedef hg_int_t		hg_error_t;
+typedef struct _hg_path_bbox_t	hg_path_bbox_t;
+
+/**
+ * hg_path_bbox_t:
+ * @llx:
+ * @lly:
+ * @urx:
+ * @ury:
+ *
+ * FIXME
+ */
+struct _hg_path_bbox_t {
+	hg_real_t llx;
+	hg_real_t lly;
+	hg_real_t urx;
+	hg_real_t ury;
+};
 
 /* types of callback functions */
 typedef hg_bool_t (* hg_cb_BOOL__QUARK_t)       (hg_mem_t      *mem,

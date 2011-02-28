@@ -38,7 +38,6 @@
 #include "hgmark.h"
 #include "hgmem.h"
 #include "hgnull.h"
-#include "hgpath.h"
 #include "hgreal.h"
 #include "hgsnapshot.h"
 #include "hgversion.h"
@@ -1554,9 +1553,8 @@ DEFUNC_OPER (and)
 /* <x> <y> <r> <angle1> <angle2> arc - */
 DEFUNC_OPER (arc)
 {
-	hg_quark_t arg0, arg1, arg2, arg3, arg4, q, qg = hg_vm_get_gstate(vm);
+	hg_quark_t arg0, arg1, arg2, arg3, arg4, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
-	hg_path_t *path;
 	hg_real_t dx, dy, dr, dangle1, dangle2, dc = 2.0 * M_PI / 360;
 
 	CHECK_STACK (ostack, 5);
@@ -1613,26 +1611,11 @@ DEFUNC_OPER (arc)
 		hg_vm_set_error(vm, qself, HG_e_VMerror);
 		return FALSE;
 	}
-	q = hg_gstate_get_path(gstate);
-	if (q == Qnil) {
-		path = NULL;
-		q = hg_path_new(hg_vm_get_mem(vm), (hg_pointer_t *)&path);
-		if (q != Qnil)
-			hg_gstate_set_path(gstate, q);
-	} else {
-		path = HG_VM_LOCK (vm, q);
-	}
-	if (path == NULL) {
-		hg_vm_set_error(vm, qself, HG_e_VMerror);
+	retval = hg_gstate_arc(gstate, dx, dy, dr,
+			       dangle1 * dc,
+			       dangle2 * dc);
+	if (!retval)
 		goto error;
-	}
-	retval = hg_path_arc(path, dx, dy, dr,
-			     dangle1 * dc,
-			     dangle2 * dc);
-	if (!retval) {
-		hg_vm_set_error(vm, qself, HG_e_limitcheck);
-		goto error2;
-	}
 
 	hg_stack_drop(ostack);
 	hg_stack_drop(ostack);
@@ -1640,8 +1623,6 @@ DEFUNC_OPER (arc)
 	hg_stack_drop(ostack);
 	hg_stack_drop(ostack);
 	SET_EXPECTED_OSTACK_SIZE (-5);
-  error2:
-	HG_VM_UNLOCK (vm, q);
   error:
 	HG_VM_UNLOCK (vm, qg);
 } DEFUNC_OPER_END
@@ -1649,9 +1630,8 @@ DEFUNC_OPER (arc)
 /* <x> <y> <r> <angle1> <angle2> arcn - */
 DEFUNC_OPER (arcn)
 {
-	hg_quark_t arg0, arg1, arg2, arg3, arg4, q, qg = hg_vm_get_gstate(vm);
+	hg_quark_t arg0, arg1, arg2, arg3, arg4, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
-	hg_path_t *path;
 	hg_real_t dx, dy, dr, dangle1, dangle2, dc = 2.0 * M_PI / 360;
 
 	CHECK_STACK (ostack, 5);
@@ -1708,26 +1688,11 @@ DEFUNC_OPER (arcn)
 		hg_vm_set_error(vm, qself, HG_e_VMerror);
 		return FALSE;
 	}
-	q = hg_gstate_get_path(gstate);
-	if (q == Qnil) {
-		path = NULL;
-		q = hg_path_new(hg_vm_get_mem(vm), (hg_pointer_t *)&path);
-		if (q != Qnil)
-			hg_gstate_set_path(gstate, q);
-	} else {
-		path = HG_VM_LOCK (vm, q);
-	}
-	if (path == NULL) {
-		hg_vm_set_error(vm, qself, HG_e_VMerror);
+	retval = hg_gstate_arcn(gstate, dx, dy, dr,
+				dangle1 * dc,
+				dangle2 * dc);
+	if (!retval)
 		goto error;
-	}
-	retval = hg_path_arcn(path, dx, dy, dr,
-			      dangle1 * dc,
-			      dangle2 * dc);
-	if (!retval) {
-		hg_vm_set_error(vm, qself, HG_e_limitcheck);
-		goto error2;
-	}
 
 	hg_stack_drop(ostack);
 	hg_stack_drop(ostack);
@@ -1735,8 +1700,6 @@ DEFUNC_OPER (arcn)
 	hg_stack_drop(ostack);
 	hg_stack_drop(ostack);
 	SET_EXPECTED_OSTACK_SIZE (-5);
-  error2:
-	HG_VM_UNLOCK (vm, q);
   error:
 	HG_VM_UNLOCK (vm, qg);
 } DEFUNC_OPER_END
@@ -1744,9 +1707,8 @@ DEFUNC_OPER (arcn)
 /* <x1> <y1> <x2> <y2> <r> arct - */
 DEFUNC_OPER (arct)
 {
-	hg_quark_t arg0, arg1, arg2, arg3, arg4, q, qg = hg_vm_get_gstate(vm);
+	hg_quark_t arg0, arg1, arg2, arg3, arg4, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
-	hg_path_t *path;
 	hg_real_t dx1, dy1, dx2, dy2, dr;
 
 	CHECK_STACK (ostack, 5);
@@ -1803,21 +1765,9 @@ DEFUNC_OPER (arct)
 		hg_vm_set_error(vm, qself, HG_e_VMerror);
 		return FALSE;
 	}
-	q = hg_gstate_get_path(gstate);
-	path = HG_VM_LOCK (vm, q);
-	if (path == NULL) {
-		hg_vm_set_error(vm, qself, HG_e_VMerror);
+	retval = hg_gstate_arcto(gstate, dx1, dy1, dx2, dy2, dr, NULL);
+	if (!retval)
 		goto error;
-	}
-	if (!hg_path_get_current_point(path, NULL, NULL)) {
-		hg_vm_set_error(vm, qself, HG_e_nocurrentpoint);
-		goto error2;
-	}
-	retval = hg_path_arcto(path, dx1, dy1, dx2, dy2, dr, NULL);
-	if (!retval) {
-		hg_vm_set_error(vm, qself, HG_e_limitcheck);
-		goto error2;
-	}
 
 	hg_stack_drop(ostack);
 	hg_stack_drop(ostack);
@@ -1825,8 +1775,6 @@ DEFUNC_OPER (arct)
 	hg_stack_drop(ostack);
 	hg_stack_drop(ostack);
 	SET_EXPECTED_OSTACK_SIZE (-5);
-  error2:
-	HG_VM_UNLOCK (vm, q);
   error:
 	HG_VM_UNLOCK (vm, qg);
 } DEFUNC_OPER_END
@@ -1834,9 +1782,8 @@ DEFUNC_OPER (arct)
 /* <x1> <y1> <x2> <y2> <r> arcto <xt1> <yt1> <xt2> <yt2> */
 DEFUNC_OPER (arcto)
 {
-	hg_quark_t arg0, arg1, arg2, arg3, arg4, q, qg = hg_vm_get_gstate(vm);
+	hg_quark_t arg0, arg1, arg2, arg3, arg4, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
-	hg_path_t *path;
 	hg_real_t dx1, dy1, dx2, dy2, dr, dt[4];
 
 	CHECK_STACK (ostack, 5);
@@ -1893,21 +1840,9 @@ DEFUNC_OPER (arcto)
 		hg_vm_set_error(vm, qself, HG_e_VMerror);
 		return FALSE;
 	}
-	q = hg_gstate_get_path(gstate);
-	path = HG_VM_LOCK (vm, q);
-	if (path == NULL) {
-		hg_vm_set_error(vm, qself, HG_e_VMerror);
+	retval = hg_gstate_arcto(gstate, dx1, dy1, dx2, dy2, dr, dt);
+	if (!retval)
 		goto error;
-	}
-	if (!hg_path_get_current_point(path, NULL, NULL)) {
-		hg_vm_set_error(vm, qself, HG_e_nocurrentpoint);
-		goto error2;
-	}
-	retval = hg_path_arcto(path, dx1, dy1, dx2, dy2, dr, dt);
-	if (!retval) {
-		hg_vm_set_error(vm, qself, HG_e_limitcheck);
-		goto error2;
-	}
 
 	hg_stack_drop(ostack);
 	hg_stack_drop(ostack);
@@ -1920,8 +1855,6 @@ DEFUNC_OPER (arcto)
 	STACK_PUSH (ostack, HG_QREAL (dt[2]));
 	STACK_PUSH (ostack, HG_QREAL (dt[3]));
 	SET_EXPECTED_OSTACK_SIZE (-1);
-  error2:
-	HG_VM_UNLOCK (vm, q);
   error:
 	HG_VM_UNLOCK (vm, qg);
 } DEFUNC_OPER_END
@@ -2259,22 +2192,14 @@ DEFUNC_UNIMPLEMENTED_OPER (clip);
 /* - clippath - */
 DEFUNC_OPER (clippath)
 {
-	hg_quark_t q, qq, qg = hg_vm_get_gstate(vm);
+	hg_quark_t qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate = HG_VM_LOCK (vm, qg);
 
 	if (gstate == NULL) {
 		hg_vm_set_error(vm, qself, HG_e_VMerror);
 		return FALSE;
 	}
-	q = hg_gstate_get_clippath(gstate);
-	qq = hg_vm_quark_copy(vm, q, NULL);
-	if (qq == Qnil) {
-		hg_vm_set_error(vm, qself, HG_e_VMerror);
-		goto finalize;
-	}
-	hg_gstate_set_path(gstate, qq);
-	retval = TRUE;
-  finalize:
+	retval = hg_gstate_clippath(gstate);
 	HG_VM_UNLOCK (vm, qg);
 } DEFUNC_OPER_END
 
@@ -2314,29 +2239,15 @@ DEFUNC_OPER (closefile)
 /* - closepath - */
 DEFUNC_OPER (closepath)
 {
-	hg_quark_t q = Qnil, qg = hg_vm_get_gstate(vm);
+	hg_quark_t qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
-	hg_path_t *path;
 
 	gstate = HG_VM_LOCK (vm, qg);
 	if (gstate == NULL) {
 		hg_vm_set_error(vm, qself, HG_e_VMerror);
 		return FALSE;
 	}
-	q = hg_gstate_get_path(gstate);
-	path = HG_VM_LOCK (vm, q);
-	if (path == NULL) {
-		hg_vm_set_error(vm, qself, HG_e_VMerror);
-		goto error;
-	}
-	if (!hg_path_close(path)) {
-		hg_vm_set_error(vm, qself, HG_e_limitcheck);
-		goto error;
-	}
-	retval = TRUE;
-  error:
-	if (q != Qnil)
-		HG_VM_UNLOCK (vm, q);
+	retval = hg_gstate_closepath(gstate);
 	HG_VM_UNLOCK (vm, qg);
 } DEFUNC_OPER_END
 
@@ -2839,30 +2750,21 @@ DEFUNC_UNIMPLEMENTED_OPER (currentpagedevice);
 /* - currentpoint <x> <y> */
 DEFUNC_OPER (currentpoint)
 {
-	hg_quark_t qg = hg_vm_get_gstate(vm), qpath;
+	hg_quark_t qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate = HG_VM_LOCK (vm, qg);
-	hg_path_t *path = NULL;
 	hg_real_t x, y;
 
 	if (!gstate)
 		return FALSE;
-	qpath = hg_gstate_get_path(gstate);
-	path = HG_VM_LOCK (vm, qpath);
-	if (!path)
+	retval = hg_gstate_get_current_point(gstate, &x, &y);
+	if (!retval)
 		goto finalize;
-	if (!hg_path_get_current_point(path, &x, &y)) {
-		hg_vm_set_error(vm, qself, HG_e_nocurrentpoint);
-		goto finalize;
-	}
 
 	STACK_PUSH (ostack, HG_QREAL (x));
 	STACK_PUSH (ostack, HG_QREAL (y));
 
-	retval = TRUE;
 	SET_EXPECTED_OSTACK_SIZE (2);
   finalize:
-	if (path)
-		HG_VM_UNLOCK (vm, qpath);
 	if (gstate)
 		HG_VM_UNLOCK (vm, qg);
 } DEFUNC_OPER_END
@@ -2896,9 +2798,8 @@ DEFUNC_OPER (currentuserparams)
 /* <x1> <y1> <x2> <y2> <x3> <y3> curveto - */
 DEFUNC_OPER (curveto)
 {
-	hg_quark_t arg0, arg1, arg2, arg3, arg4, arg5, q, qg = hg_vm_get_gstate(vm);
+	hg_quark_t arg0, arg1, arg2, arg3, arg4, arg5, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
-	hg_path_t *path;
 	hg_real_t dx1, dy1, dx2, dy2, dx3, dy3;
 
 	CHECK_STACK (ostack, 6);
@@ -2964,21 +2865,9 @@ DEFUNC_OPER (curveto)
 		hg_vm_set_error(vm, qself, HG_e_VMerror);
 		return FALSE;
 	}
-	q = hg_gstate_get_path(gstate);
-	path = HG_VM_LOCK (vm, q);
-	if (path == NULL) {
-		hg_vm_set_error(vm, qself, HG_e_VMerror);
+	retval = hg_gstate_curveto(gstate, dx1, dy1, dx2, dy2, dx3, dy3);
+	if (!retval)
 		goto error;
-	}
-	if (!hg_path_get_current_point(path, NULL, NULL)) {
-		hg_vm_set_error(vm, qself, HG_e_nocurrentpoint);
-		goto error2;
-	}
-	retval = hg_path_curveto(path, dx1, dy1, dx2, dy2, dx3, dy3);
-	if (!retval) {
-		hg_vm_set_error(vm, qself, HG_e_limitcheck);
-		goto error2;
-	}
 
 	hg_stack_drop(ostack);
 	hg_stack_drop(ostack);
@@ -2987,8 +2876,6 @@ DEFUNC_OPER (curveto)
 	hg_stack_drop(ostack);
 	hg_stack_drop(ostack);
 	SET_EXPECTED_OSTACK_SIZE (-6);
-  error2:
-	HG_VM_UNLOCK (vm, q);
   error:
 	HG_VM_UNLOCK (vm, qg);
 } DEFUNC_OPER_END
@@ -4853,27 +4740,14 @@ DEFUNC_OPER (initclip)
 
 	if (hg_vm_eval_from_cstring(vm, ".currentpagedevice /PageSize get 0 0 moveto dup 0 get 0 lineto dup aload pop lineto 1 get 0 exch lineto closepath", -1,
 				    NULL, es, NULL, TRUE)) {
-		hg_quark_t qg = hg_vm_get_gstate(vm), qpath;
+		hg_quark_t qg = hg_vm_get_gstate(vm);
 		hg_gstate_t *gstate = HG_VM_LOCK (vm, qg);
 
-		if (gstate == NULL) {
-			hg_vm_set_error(vm, qself, HG_e_VMerror);
-			goto finalize;
+		if (gstate) {
+			retval = hg_gstate_initclip(gstate);
+			HG_VM_UNLOCK (vm, qg);
 		}
-		qpath = hg_gstate_get_path(gstate);
-		hg_gstate_set_clippath(gstate, qpath);
-		qpath = hg_path_new(gstate->o.mem, NULL);
-		if (qpath == Qnil) {
-			hg_vm_set_error(vm, qself, HG_e_VMerror);
-			goto e_finalize;
-		}
-		hg_gstate_set_path(gstate, qpath);
-
-		retval = TRUE;
-	  e_finalize:
-		HG_VM_UNLOCK (vm, qg);
 	}
-  finalize:
 	hg_stack_free(es);
 } DEFUNC_OPER_END
 
@@ -5104,10 +4978,9 @@ DEFUNC_OPER (length)
 /* <x> <y> lineto - */
 DEFUNC_OPER (lineto)
 {
-	hg_quark_t arg0, arg1, q, qg = hg_vm_get_gstate(vm);
+	hg_quark_t arg0, arg1, qg = hg_vm_get_gstate(vm);
 	hg_real_t dx, dy;
 	hg_gstate_t *gstate;
-	hg_path_t *path;
 
 	CHECK_STACK (ostack, 2);
 
@@ -5136,27 +5009,13 @@ DEFUNC_OPER (lineto)
 		hg_vm_set_error(vm, qself, HG_e_VMerror);
 		return FALSE;
 	}
-	q = hg_gstate_get_path(gstate);
-	path = HG_VM_LOCK (vm, q);
-	if (path == NULL) {
-		hg_vm_set_error(vm, qself, HG_e_VMerror);
+	retval = hg_gstate_lineto(gstate, dx, dy);
+	if (!retval)
 		goto error;
-	}
-	if (!hg_path_get_current_point(path, NULL, NULL)) {
-		hg_vm_set_error(vm, qself, HG_e_nocurrentpoint);
-		goto error2;
-	}
-	retval = hg_path_lineto(path, dx, dy);
-	if (!retval) {
-		hg_vm_set_error(vm, qself, HG_e_limitcheck);
-		goto error2;
-	}
 
 	hg_stack_drop(ostack);
 	hg_stack_drop(ostack);
 	SET_EXPECTED_OSTACK_SIZE (-2);
-  error2:
-	HG_VM_UNLOCK (vm, q);
   error:
 	HG_VM_UNLOCK (vm, qg);
 } DEFUNC_OPER_END
@@ -5376,10 +5235,9 @@ DEFUNC_UNIMPLEMENTED_OPER (monitor);
 /* <x> <y> moveto - */
 DEFUNC_OPER (moveto)
 {
-	hg_quark_t arg0, arg1, q, qg = hg_vm_get_gstate(vm);
+	hg_quark_t arg0, arg1, qg = hg_vm_get_gstate(vm);
 	hg_real_t dx, dy;
 	hg_gstate_t *gstate;
-	hg_path_t *path;
 
 	CHECK_STACK (ostack, 2);
 
@@ -5408,30 +5266,13 @@ DEFUNC_OPER (moveto)
 		hg_vm_set_error(vm, qself, HG_e_VMerror);
 		return FALSE;
 	}
-	q = hg_gstate_get_path(gstate);
-	if (q == Qnil) {
-		path = NULL;
-		q = hg_path_new(hg_vm_get_mem(vm), (hg_pointer_t *)&path);
-		if (q != Qnil)
-			hg_gstate_set_path(gstate, q);
-	} else {
-		path = HG_VM_LOCK (vm, q);
-	}
-	if (path == NULL) {
-		hg_vm_set_error(vm, qself, HG_e_VMerror);
+	retval = hg_gstate_moveto(gstate, dx, dy);
+	if (!retval)
 		goto error;
-	}
-	retval = hg_path_moveto(path, dx, dy);
-	if (!retval) {
-		hg_vm_set_error(vm, qself, HG_e_limitcheck);
-		goto error2;
-	}
 
 	hg_stack_drop(ostack);
 	hg_stack_drop(ostack);
 	SET_EXPECTED_OSTACK_SIZE (-2);
-  error2:
-	HG_VM_UNLOCK (vm, q);
   error:
 	HG_VM_UNLOCK (vm, qg);
 } DEFUNC_OPER_END
@@ -5594,24 +5435,17 @@ DEFUNC_OPER (neg)
 /* - newpath - */
 DEFUNC_OPER (newpath)
 {
-	hg_quark_t q, qg = hg_vm_get_gstate(vm);
+	hg_quark_t qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
 
-	q = hg_path_new(vm->mem[HG_VM_MEM_LOCAL], NULL);
-	if (q == Qnil) {
-		hg_vm_set_error(vm, qself, HG_e_VMerror);
-		return FALSE;
-	}
 	gstate = HG_VM_LOCK (vm, qg);
 	if (gstate == NULL) {
 		hg_vm_set_error(vm, qself, HG_e_VMerror);
 		return FALSE;
 	}
-	hg_gstate_set_path(gstate, q);
+	retval = hg_gstate_newpath(gstate);
 
 	HG_VM_UNLOCK (vm, qg);
-
-	retval = TRUE;
 } DEFUNC_OPER_END
 
 /* <array> noaccess <array>
@@ -5700,8 +5534,7 @@ DEFUNC_UNIMPLEMENTED_OPER (packedarray);
 /* - pathbbox <llx> <lly> <urx> <ury> */
 DEFUNC_OPER (pathbbox)
 {
-	hg_quark_t q, qg = hg_vm_get_gstate(vm);
-	hg_path_t *path = NULL;
+	hg_quark_t qg = hg_vm_get_gstate(vm);
 	hg_path_bbox_t bbox;
 	hg_gstate_t *gstate = HG_VM_LOCK (vm, qg);
 
@@ -5709,32 +5542,19 @@ DEFUNC_OPER (pathbbox)
 		hg_vm_set_error(vm, qself, HG_e_VMerror);
 		return FALSE;
 	}
-	q = hg_gstate_get_path(gstate);
-	if (q == Qnil) {
-		hg_vm_set_error(vm, qself, HG_e_nocurrentpoint);
+	retval = hg_gstate_pathbbox(gstate,
+				    hg_vm_get_language_level(vm) != HG_LANG_LEVEL_1,
+				    &bbox);
+	if (!retval)
 		goto finalize;
-	}
-	path = HG_VM_LOCK (vm, q);
-	if (path == NULL) {
-		hg_vm_set_error(vm, qself, HG_e_VMerror);
-		goto finalize;
-	}
-	if (!hg_path_get_bbox(path,
-			      hg_vm_get_language_level(vm) != HG_LANG_LEVEL_1,
-			      &bbox)) {
-		hg_vm_set_error0(vm, qself);
-		goto finalize;
-	}
+
 	STACK_PUSH (ostack, HG_QREAL (bbox.llx));
 	STACK_PUSH (ostack, HG_QREAL (bbox.lly));
 	STACK_PUSH (ostack, HG_QREAL (bbox.urx));
 	STACK_PUSH (ostack, HG_QREAL (bbox.ury));
 
-	retval = TRUE;
 	SET_EXPECTED_OSTACK_SIZE (4);
   finalize:
-	if (path)
-		HG_VM_UNLOCK (vm, q);
 	HG_VM_UNLOCK (vm, qg);
 } DEFUNC_OPER_END
 
@@ -5907,9 +5727,8 @@ DEFUNC_OPER (rcheck)
 /* <dx1> <dy1> <dx2> <dy2> <dx3> <dy3> rcurveto - */
 DEFUNC_OPER (rcurveto)
 {
-	hg_quark_t arg0, arg1, arg2, arg3, arg4, arg5, q, qg = hg_vm_get_gstate(vm);
+	hg_quark_t arg0, arg1, arg2, arg3, arg4, arg5, qg = hg_vm_get_gstate(vm);
 	hg_gstate_t *gstate;
-	hg_path_t *path;
 	hg_real_t dx1, dy1, dx2, dy2, dx3, dy3;
 
 	CHECK_STACK (ostack, 6);
@@ -5975,21 +5794,9 @@ DEFUNC_OPER (rcurveto)
 		hg_vm_set_error(vm, qself, HG_e_VMerror);
 		return FALSE;
 	}
-	q = hg_gstate_get_path(gstate);
-	path = HG_VM_LOCK (vm, q);
-	if (path == NULL) {
-		hg_vm_set_error(vm, qself, HG_e_VMerror);
+	retval = hg_gstate_rcurveto(gstate, dx1, dy1, dx2, dy2, dx3, dy3);
+	if (!retval)
 		goto error;
-	}
-	if (!hg_path_get_current_point(path, NULL, NULL)) {
-		hg_vm_set_error(vm, qself, HG_e_nocurrentpoint);
-		goto error2;
-	}
-	retval = hg_path_rcurveto(path, dx1, dy1, dx2, dy2, dx3, dy3);
-	if (!retval) {
-		hg_vm_set_error(vm, qself, HG_e_limitcheck);
-		goto error2;
-	}
 
 	hg_stack_drop(ostack);
 	hg_stack_drop(ostack);
@@ -5998,8 +5805,6 @@ DEFUNC_OPER (rcurveto)
 	hg_stack_drop(ostack);
 	hg_stack_drop(ostack);
 	SET_EXPECTED_OSTACK_SIZE (-6);
-  error2:
-	HG_VM_UNLOCK (vm, q);
   error:
 	HG_VM_UNLOCK (vm, qg);
 } DEFUNC_OPER_END
@@ -6468,10 +6273,9 @@ DEFUNC_UNIMPLEMENTED_OPER (reversepath);
 /* <dx> <dy> rlineto - */
 DEFUNC_OPER (rlineto)
 {
-	hg_quark_t arg0, arg1, q, qg = hg_vm_get_gstate(vm);
+	hg_quark_t arg0, arg1, qg = hg_vm_get_gstate(vm);
 	hg_real_t dx, dy;
 	hg_gstate_t *gstate;
-	hg_path_t *path;
 
 	CHECK_STACK (ostack, 2);
 
@@ -6500,27 +6304,13 @@ DEFUNC_OPER (rlineto)
 		hg_vm_set_error(vm, qself, HG_e_VMerror);
 		return FALSE;
 	}
-	q = hg_gstate_get_path(gstate);
-	path = HG_VM_LOCK (vm, q);
-	if (path == NULL) {
-		hg_vm_set_error(vm, qself, HG_e_VMerror);
+	retval = hg_gstate_rlineto(gstate, dx, dy);
+	if (!retval)
 		goto error;
-	}
-	if (!hg_path_get_current_point(path, NULL, NULL)) {
-		hg_vm_set_error(vm, qself, HG_e_nocurrentpoint);
-		goto error2;
-	}
-	retval = hg_path_rlineto(path, dx, dy);
-	if (!retval) {
-		hg_vm_set_error(vm, qself, HG_e_limitcheck);
-		goto error2;
-	}
 
 	hg_stack_drop(ostack);
 	hg_stack_drop(ostack);
 	SET_EXPECTED_OSTACK_SIZE (-2);
-  error2:
-	HG_VM_UNLOCK (vm, q);
   error:
 	HG_VM_UNLOCK (vm, qg);
 } DEFUNC_OPER_END
@@ -6528,10 +6318,9 @@ DEFUNC_OPER (rlineto)
 /* <dx> <dy> rmoveto - */
 DEFUNC_OPER (rmoveto)
 {
-	hg_quark_t arg0, arg1, q, qg = hg_vm_get_gstate(vm);
+	hg_quark_t arg0, arg1, qg = hg_vm_get_gstate(vm);
 	hg_real_t dx, dy;
 	hg_gstate_t *gstate;
-	hg_path_t *path;
 
 	CHECK_STACK (ostack, 2);
 
@@ -6560,27 +6349,13 @@ DEFUNC_OPER (rmoveto)
 		hg_vm_set_error(vm, qself, HG_e_VMerror);
 		return FALSE;
 	}
-	q = hg_gstate_get_path(gstate);
-	path = HG_VM_LOCK (vm, q);
-	if (path == NULL) {
-		hg_vm_set_error(vm, qself, HG_e_VMerror);
+	retval = hg_gstate_rmoveto(gstate, dx, dy);
+	if (!retval)
 		goto error;
-	}
-	if (!hg_path_get_current_point(path, NULL, NULL)) {
-		hg_vm_set_error(vm, qself, HG_e_nocurrentpoint);
-		goto error2;
-	}
-	retval = hg_path_rmoveto(path, dx, dy);
-	if (!retval) {
-		hg_vm_set_error(vm, qself, HG_e_limitcheck);
-		goto error2;
-	}
 
 	hg_stack_drop(ostack);
 	hg_stack_drop(ostack);
 	SET_EXPECTED_OSTACK_SIZE (-2);
-  error2:
-	HG_VM_UNLOCK (vm, q);
   error:
 	HG_VM_UNLOCK (vm, qg);
 } DEFUNC_OPER_END
