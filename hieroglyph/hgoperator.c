@@ -9321,8 +9321,8 @@ hg_operator_invoke(hg_quark_t  qoper,
 			hg_warning("%s operator isn't yet implemented.",
 				    __hg_operator_name_table[q]);
 		}
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
-		retval = FALSE;
+
+		hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
 	} else {
 		retval = __hg_operator_func_table[q] (vm);
 	}

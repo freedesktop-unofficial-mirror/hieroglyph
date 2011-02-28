@@ -929,26 +929,23 @@ hg_dict_add(hg_dict_t  *dict,
 		      hg_quark_get_type(qkey) == HG_TYPE_OPER) &&
 		    hg_mem_spool_get_type(hg_mem_spool_get(hg_quark_get_mem_id(qkey))) == HG_MEM_TYPE_LOCAL) {
 			hg_debug(HG_MSGCAT_DICT, "Unable to store the object allocated in the local memory into the global memory");
-			hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_invalidaccess);
 
-			return FALSE;
+			hg_error_return (HG_STATUS_FAILED, HG_e_invalidaccess);
 		}
 		if (!(hg_quark_is_simple_object(qval) ||
 		      hg_quark_get_type(qval) == HG_TYPE_OPER) &&
 		    hg_mem_spool_get_type(hg_mem_spool_get(hg_quark_get_mem_id(qval))) == HG_MEM_TYPE_LOCAL) {
 			hg_debug(HG_MSGCAT_DICT, "Unable to store the object allocated in the local memory into the global memory");
-			hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_invalidaccess);
 
-			return FALSE;
+			hg_error_return (HG_STATUS_FAILED, HG_e_invalidaccess);
 		}
 	}
 	if (dict->raise_dictfull &&
 	    hg_dict_length(dict) == hg_dict_maxlength(dict) &&
 	    hg_dict_lookup(dict, qkey) == Qnil) {
 		hg_debug(HG_MSGCAT_DICT, "no more spaces in the dict");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_dictfull);
 
-		return FALSE;
+		hg_error_return (HG_STATUS_FAILED, HG_e_dictfull);
 	}
 
 	qmasked = hg_quark_get_hash(qkey);

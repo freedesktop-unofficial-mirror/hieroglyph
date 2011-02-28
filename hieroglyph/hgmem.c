@@ -465,7 +465,8 @@ hg_mem_alloc_with_flags(hg_mem_t     *mem,
 			}
 		}
 		hg_debug(HG_MSGCAT_MEM, "Out of memory");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
+
+		hg_error_return_val (Qnil, HG_STATUS_FAILED, HG_e_VMerror);
 	}
 
 	return retval;
@@ -527,7 +528,8 @@ hg_mem_realloc(hg_mem_t     *mem,
 			}
 		}
 		hg_debug(HG_MSGCAT_MEM, "Out of memory");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
+
+		hg_error_return_val (Qnil, HG_STATUS_FAILED, HG_e_VMerror);
 	}
 
 	return retval;

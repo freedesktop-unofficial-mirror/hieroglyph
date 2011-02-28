@@ -226,7 +226,8 @@ hg_plugin_load(hg_plugin_t  *plugin,
 	} else {
 		hg_warning("Unable to load a plugin: %s",
 			   g_module_name(plugin->module));
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
+
+		hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
 	}
 
 	return retval;
@@ -259,7 +260,8 @@ hg_plugin_unload(hg_plugin_t  *plugin,
 	} else {
 		hg_warning("Unable to unload a plugin: %s",
 			   g_module_name(plugin->module));
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
+
+		hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
 	}
 
 	return retval;

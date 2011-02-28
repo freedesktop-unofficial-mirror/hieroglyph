@@ -733,8 +733,8 @@ _hg_vm_restore_mark_traverse(hg_mem_t     *mem,
 
 	if (m == NULL) {
 		hg_warning("No memory spool found: %d", id);
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
-		return FALSE;
+
+		hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
 	}
 	hg_snapshot_add_ref(snapshot, qdata);
 
@@ -2544,8 +2544,8 @@ hg_vm_set_user_params(hg_vm_t    *vm,
 
 	if (!HG_IS_QDICT (qdict)) {
 		hg_debug(HG_MSGCAT_VM, "The user params isn't a dict.");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck);
-		return FALSE;
+
+		hg_error_return (HG_STATUS_FAILED, HG_e_typecheck);
 	}
 	if (qdict != Qnil) {
 		hg_dict_t *d = _HG_VM_LOCK (vm, qdict);
@@ -2815,6 +2815,7 @@ hg_vm_set_error(hg_vm_t           *vm,
 	qerrordict = hg_vm_dstack_lookup(vm, qnerrordict);
 	if (qerrordict == Qnil) {
 		hg_critical("Unable to lookup errordict");
+
 		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
 		goto fatal_error;
 	}
@@ -3098,16 +3099,14 @@ hg_vm_array_set(hg_vm_t    *vm,
 
 	if (!HG_IS_QARRAY (qarray)) {
 		hg_debug(HG_MSGCAT_ARRAY, "Not an array");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck);
 
-		return FALSE;
+		hg_error_return (HG_STATUS_FAILED, HG_e_typecheck);
 	}
 	if (!force &&
 	    !hg_vm_quark_is_writable(vm, &qarray)) {
 		hg_debug(HG_MSGCAT_ARRAY, "No writable permission to access the array");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_invalidaccess);
 
-		return FALSE;
+		hg_error_return (HG_STATUS_FAILED, HG_e_invalidaccess);
 	}
 	a = _HG_VM_LOCK (vm, qarray);
 	if (!a)
@@ -3145,16 +3144,14 @@ hg_vm_array_get(hg_vm_t    *vm,
 
 	if (!HG_IS_QARRAY (qarray)) {
 		hg_debug(HG_MSGCAT_ARRAY, "Not an array");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck);
 
-		return Qnil;
+		hg_error_return_val (Qnil, HG_STATUS_FAILED, HG_e_typecheck);
 	}
 	if (!force &&
 	    !hg_vm_quark_is_readable(vm, &qarray)) {
 		hg_debug(HG_MSGCAT_ARRAY, "No readable permission to access the array");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_invalidaccess);
 
-		return Qnil;
+		hg_error_return_val (Qnil, HG_STATUS_FAILED, HG_e_invalidaccess);
 	}
 	a = _HG_VM_LOCK (vm, qarray);
 	if (!a)
@@ -3313,16 +3310,14 @@ hg_vm_dict_add(hg_vm_t    *vm,
 
 	if (!HG_IS_QDICT (qdict)) {
 		hg_debug(HG_MSGCAT_DICT, "Not a dict");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck);
 
-		return FALSE;
+		hg_error_return (HG_STATUS_FAILED, HG_e_typecheck);
 	}
 	if (!force &&
 	    !hg_vm_quark_is_writable(vm, &qdict)) {
 		hg_debug(HG_MSGCAT_DICT, "No writable permission to access the dict");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_invalidaccess);
 
-		return FALSE;
+		hg_error_return (HG_STATUS_FAILED, HG_e_invalidaccess);
 	}
 	d = _HG_VM_LOCK (vm, qdict);
 	if (!d)
@@ -3358,15 +3353,13 @@ hg_vm_dict_remove(hg_vm_t    *vm,
 
 	if (!HG_IS_QDICT (qdict)) {
 		hg_debug(HG_MSGCAT_DICT, "Not a dict");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck);
 
-		return FALSE;
+		hg_error_return (HG_STATUS_FAILED, HG_e_typecheck);
 	}
 	if (!hg_vm_quark_is_writable(vm, &qdict)) {
 		hg_debug(HG_MSGCAT_DICT, "No writable permission to access the dict");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_invalidaccess);
 
-		return FALSE;
+		hg_error_return (HG_STATUS_FAILED, HG_e_invalidaccess);
 	}
 	d = _HG_VM_LOCK (vm, qdict);
 	if (!d)
@@ -3404,16 +3397,14 @@ hg_vm_dict_lookup(hg_vm_t    *vm,
 
 	if (!HG_IS_QDICT (qdict)) {
 		hg_debug(HG_MSGCAT_DICT, "Not a dict");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck);
 
-		return Qnil;
+		hg_error_return_val (Qnil, HG_STATUS_FAILED, HG_e_typecheck);
 	}
 	if (check_perms &&
 	    !hg_vm_quark_is_readable(vm, &qdict)) {
 		hg_debug(HG_MSGCAT_DICT, "No readable permission to access the dict");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_invalidaccess);
 
-		return Qnil;
+		hg_error_return_val (Qnil, HG_STATUS_FAILED, HG_e_invalidaccess);
 	}
 	d = _HG_VM_LOCK (vm, qdict);
 	if (!d)
@@ -3602,8 +3593,8 @@ hg_vm_quark_to_string(hg_vm_t      *vm,
 		    default:
 			    hg_critical("Unknown simple object type: %d",
 					hg_quark_get_type(qdata));
-			    hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
-			    return Qnil;
+
+			    hg_error_return_val (Qnil, HG_STATUS_FAILED, HG_e_VMerror);
 		}
 	} else {
 		if (!hg_vm_quark_is_readable(vm, &qdata)) {
@@ -3646,8 +3637,8 @@ hg_vm_quark_to_string(hg_vm_t      *vm,
 			    default:
 				    hg_critical("Unknown complex object type: %d",
 						hg_quark_get_type(qdata));
-				    hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
-				    return Qnil;
+
+				    hg_error_return_val (Qnil, HG_STATUS_FAILED, HG_e_VMerror);
 			}
 		}
 	}
@@ -4025,8 +4016,7 @@ hg_vm_snapshot_save(hg_vm_t *vm)
 	_HG_VM_UNLOCK (vm, qgg);
 
 	if (!hg_stack_push(vm->stacks[HG_VM_STACK_GSTATE], qgg)) {
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_limitcheck);
-		return FALSE;
+		hg_error_return (HG_STATUS_FAILED, HG_e_limitcheck);
 	}
 	hg_vm_set_gstate(vm, qg);
 
@@ -4165,15 +4155,13 @@ hg_vm_string_get_cstr(hg_vm_t    *vm,
 
 	if (!HG_IS_QSTRING (qstring)) {
 		hg_debug(HG_MSGCAT_STRING, "Not a string");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck);
 
-		return NULL;
+		hg_error_return_val (NULL, HG_STATUS_FAILED, HG_e_typecheck);
 	}
 	if (!hg_vm_quark_is_readable(vm, &qstring)) {
 		hg_debug(HG_MSGCAT_STRING, "No readable permission to access the string");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_invalidaccess);
 
-		return NULL;
+		hg_error_return_val (NULL, HG_STATUS_FAILED, HG_e_invalidaccess);
 	}
 	s = _HG_VM_LOCK (vm, qstring);
 	if (!s)
@@ -4206,15 +4194,13 @@ hg_vm_string_length(hg_vm_t    *vm,
 
 	if (!HG_IS_QSTRING (qstring)) {
 		hg_debug(HG_MSGCAT_STRING, "Not a string");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_typecheck);
 
-		return 0;
+		hg_error_return_val (0, HG_STATUS_FAILED, HG_e_typecheck);
 	}
 	if (!hg_vm_quark_is_readable(vm, &qstring)) {
 		hg_debug(HG_MSGCAT_STRING, "No readable permission to access the string");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_invalidaccess);
 
-		return 0;
+		hg_error_return_val (0, HG_STATUS_FAILED, HG_e_invalidaccess);
 	}
 	s = _HG_VM_LOCK (vm, qstring);
 	if (!s)

@@ -139,13 +139,13 @@ _hg_object_file_initialize(hg_object_t *object,
 
 	if (name == NULL || name[0] == 0) {
 		hg_debug(HG_MSGCAT_FILE, "No filename to open");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_undefinedfilename);
-		return FALSE;
+
+		hg_error_return (HG_STATUS_FAILED, HG_e_undefinedfilename);
 	}
 	if (vtable == NULL || vtable->open == NULL) {
 		hg_debug(HG_MSGCAT_FILE, "No virtual functions");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
-		return FALSE;
+
+		hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
 	}
 
 	/* initialize the members first to avoid
@@ -279,8 +279,8 @@ _hg_file_io_real_stdin_open(hg_file_t    *file,
 
 	if (file->io_type != HG_FILE_IO_STDIN) {
 		hg_debug(HG_MSGCAT_FILE, "Invalid I/O request.");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
-		return FALSE;
+
+		hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
 	}
 	if ((file->mode & HG_FILE_IO_MODE_WRITE) != 0) {
 		errno = EBADF;
@@ -322,8 +322,8 @@ _hg_file_io_real_stdout_open(hg_file_t    *file,
 
 	if (file->io_type != HG_FILE_IO_STDOUT) {
 		hg_debug(HG_MSGCAT_FILE, "Invalid I/O request.");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
-		return FALSE;
+
+		hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
 	}
 	if ((file->mode & HG_FILE_IO_MODE_READ) != 0) {
 		errno = EBADF;
@@ -365,8 +365,8 @@ _hg_file_io_real_stderr_open(hg_file_t    *file,
 
 	if (file->io_type != HG_FILE_IO_STDERR) {
 		hg_debug(HG_MSGCAT_FILE, "Invalid I/O request.");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
-		return FALSE;
+
+		hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
 	}
 	if ((file->mode & HG_FILE_IO_MODE_READ) != 0) {
 		errno = EBADF;
@@ -430,8 +430,8 @@ _hg_file_io_real_file_open(hg_file_t    *file,
 
 	if (file->io_type != HG_FILE_IO_FILE) {
 		hg_debug(HG_MSGCAT_FILE, "Invalid I/O request.");
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
-		return FALSE;
+
+		hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
 	}
 	if (data == NULL) {
 		qdata = hg_mem_alloc(file->o.mem,
@@ -682,8 +682,8 @@ _hg_file_io_real_buffered_open(hg_file_t    *file,
 		    break;
 	    default:
 		    hg_debug(HG_MSGCAT_FILE, "Invalid I/O request.");
-		    hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
-		    return FALSE;
+
+		    hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
 	}
 	bd->data.fd = -1;
 	bd->data.mmapped_buffer = NULL;
@@ -885,8 +885,8 @@ _hg_file_io_real_lineedit_open(hg_file_t    *file,
 		    break;
 	    default:
 		    hg_debug(HG_MSGCAT_FILE, "Invalid I/O request.");
-		    hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
-		    return FALSE;
+
+		    hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
 	}
 	qs = hg_string_new_with_value(file->o.mem,
 				      buf, -1,
