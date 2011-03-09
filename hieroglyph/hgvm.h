@@ -233,13 +233,6 @@ hg_uint_t          hg_vm_get_current_time   (hg_vm_t                *vm);
 hg_bool_t          hg_vm_has_error          (hg_vm_t                *vm);
 void               hg_vm_clear_error        (hg_vm_t                *vm);
 void               hg_vm_reset_error        (hg_vm_t                *vm);
-#if 0
-hg_bool_t          hg_vm_set_error          (hg_vm_t                *vm,
-                                             hg_quark_t              qdata,
-                                             hg_error_reason_t       error);
-hg_bool_t          hg_vm_set_error0         (hg_vm_t                *vm,
-                                             hg_quark_t              qdata);
-#endif
 void               hg_vm_reserved_spool_dump(hg_vm_t                *vm,
                                              hg_mem_t               *mem,
                                              hg_file_t              *ofile);

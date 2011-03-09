@@ -723,19 +723,6 @@ _hg_vm_run_gc(hg_mem_t     *mem,
 }
 
 static hg_bool_t
-_hg_vm_dup_dict(hg_mem_t     *mem,
-		hg_quark_t    qkey,
-		hg_quark_t    qval,
-		hg_pointer_t  data)
-{
-	hg_dict_t *dict = data;
-
-	hg_dict_add(dict, qkey, qval, TRUE);
-
-	return TRUE;
-}
-
-static hg_bool_t
 _hg_vm_dup_stack(hg_mem_t     *mem,
 		 hg_quark_t    qdata,
 		 hg_pointer_t  data)
@@ -1811,7 +1798,6 @@ hg_vm_eval(hg_vm_t    *vm,
 	if (protect_systemdict) {
 		hg_dict_t *d, *o;
 		hg_bool_t flag = TRUE;
-		hg_quark_acl_t acl = 0;
 
 		old_systemdict = vm->qsystemdict;
 		old_state_hold_langlevel = vm->hold_lang_level;
@@ -1821,25 +1807,12 @@ hg_vm_eval(hg_vm_t    *vm,
 			hg_warning("Unable to protect systemdict.");
 			return FALSE;
 		}
-		vm->qsystemdict = hg_dict_new(o->o.mem,
-					      hg_dict_maxlength(o),
-					      o->raise_dictfull,
-					      (hg_pointer_t *)&d);
+		vm->qsystemdict = hg_dict_dup(o, (hg_pointer_t *)&d);
 		if (vm->qsystemdict == Qnil) {
 			hg_warning("Unable to duplicate systemdict.");
 			flag = FALSE;
 			goto fini_systemdict;
 		}
-		if (hg_vm_quark_is_readable(vm, &old_systemdict))
-			acl |= HG_ACL_READABLE;
-		if (hg_vm_quark_is_writable(vm, &old_systemdict))
-			acl |= HG_ACL_WRITABLE;
-		if (hg_vm_quark_is_executable(vm, &old_systemdict))
-			acl |= HG_ACL_EXECUTABLE;
-		if (hg_vm_quark_is_accessible(vm, &old_systemdict))
-			acl |= HG_ACL_ACCESSIBLE;
-		hg_vm_quark_set_acl(vm, &vm->qsystemdict, acl);
-		hg_dict_foreach(o, _hg_vm_dup_dict, d);
 		hg_vm_hold_language_level(vm, FALSE);
 		if (!hg_dict_add(d,
 				 HG_QNAME ("systemdict"),

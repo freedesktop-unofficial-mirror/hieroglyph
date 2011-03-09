@@ -848,6 +848,19 @@ _hg_dict_traverse_first_item(hg_mem_t     *mem,
 	return FALSE;
 }
 
+static hg_bool_t
+_hg_dict_traverse_dup(hg_mem_t     *mem,
+		      hg_quark_t    qkey,
+		      hg_quark_t    qval,
+		      hg_pointer_t  data)
+{
+	hg_dict_t *d = data;
+
+	hg_dict_add(d, qkey, qval, TRUE);
+
+	return TRUE;
+}
+
 /*< public >*/
 void
 _hg_dict_node_set_size(hg_usize_t size)
@@ -888,6 +901,46 @@ hg_dict_new(hg_mem_t     *mem,
 			*ret = dict;
 		else
 			hg_mem_unlock_object(mem, retval);
+	}
+
+	return retval;
+}
+
+/**
+ * hg_dict_dup:
+ * @dict:
+ * @ret:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_quark_t
+hg_dict_dup(hg_dict_t    *dict,
+	    hg_pointer_t *ret)
+{
+	hg_quark_t retval;
+	hg_dict_t *d;
+
+	hg_return_val_if_fail (dict != NULL, Qnil, HG_e_typecheck);
+	hg_return_val_if_fail (dict->o.type == HG_TYPE_DICT, Qnil, HG_e_typecheck);
+
+	retval = hg_dict_new(dict->o.mem,
+			     hg_dict_maxlength(dict),
+			     dict->raise_dictfull,
+			     (hg_pointer_t *)&d);
+	if (retval != Qnil) {
+		/* copy ACLs */
+		d->o.acl = dict->o.acl;
+		hg_quark_set_acl(&retval, d->o.acl);
+
+		/* copy nodes */
+		hg_dict_foreach(dict, _hg_dict_traverse_dup, d);
+
+		if (ret)
+			*ret = d;
+		else
+			hg_mem_unlock_object(dict->o.mem, retval);
 	}
 
 	return retval;

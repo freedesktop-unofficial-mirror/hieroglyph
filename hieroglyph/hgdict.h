@@ -64,6 +64,8 @@ hg_quark_t          hg_dict_new                   (hg_mem_t                *mem,
                                                    hg_usize_t               size,
                                                    hg_bool_t                raise_dictfull,
                                                    hg_pointer_t            *ret);
+hg_quark_t          hg_dict_dup                   (hg_dict_t               *dict,
+						   hg_pointer_t            *ret);
 hg_bool_t           hg_dict_add                   (hg_dict_t               *dict,
                                                    hg_quark_t               qkey,
                                                    hg_quark_t               qval,

@@ -3905,17 +3905,6 @@ DEFUNC_OPER (for)
 	SET_EXPECTED_STACK_SIZE (-4, 5, 0);
 } DEFUNC_OPER_END
 
-static hg_bool_t
-_hg_operator_dup_dict(hg_mem_t    *mem,
-		      hg_quark_t   qkey,
-		      hg_quark_t   qval,
-		      hg_pointer_t     data)
-{
-	hg_dict_t *dict = data;
-
-	return hg_dict_add(dict, qkey, qval, TRUE);
-}
-
 /* <array> <proc> forall -
  * <packedarray> <proc> forall -
  * <dict> <proc> forall -
@@ -3924,7 +3913,7 @@ _hg_operator_dup_dict(hg_mem_t    *mem,
 DEFUNC_OPER (forall)
 {
 	hg_quark_t arg0, arg1, q = Qnil, qd;
-	hg_dict_t *dict, *new_dict;
+	hg_dict_t *dict;
 
 	CHECK_STACK (ostack, 2);
 
@@ -3943,31 +3932,15 @@ DEFUNC_OPER (forall)
 				      HG_QNAME ("%forall_array_continue"),
 				      FALSE);
 	} else if (HG_IS_QDICT (arg0)) {
-		hg_quark_acl_t acl = 0;
-
 		dict = HG_VM_LOCK (vm, arg0);
 		if (dict == NULL)
 			return FALSE;
-		qd = hg_dict_new(dict->o.mem,
-				 hg_dict_maxlength(dict),
-				 dict->raise_dictfull,
-				 (hg_pointer_t *)&new_dict);
+		qd = hg_dict_dup(dict, NULL);
 		if (qd == Qnil) {
 			HG_VM_UNLOCK (vm, arg0);
-			HG_VM_UNLOCK (vm, qd);
 
 			hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
 		}
-		if (hg_vm_quark_is_readable(vm, &arg0))
-			acl |= HG_ACL_READABLE;
-		if (hg_vm_quark_is_writable(vm, &arg0))
-			acl |= HG_ACL_WRITABLE;
-		if (hg_vm_quark_is_executable(vm, &arg0))
-			acl |= HG_ACL_EXECUTABLE;
-		if (hg_vm_quark_is_accessible(vm, &arg0))
-			acl |= HG_ACL_ACCESSIBLE;
-		hg_vm_quark_set_acl(vm, &qd, acl);
-		hg_dict_foreach(dict, _hg_operator_dup_dict, new_dict);
 		HG_VM_UNLOCK (vm, arg0);
 
 		arg0 = qd;
@@ -3975,7 +3948,6 @@ DEFUNC_OPER (forall)
 		q = hg_vm_dict_lookup(vm, vm->qsystemdict,
 				      HG_QNAME ("%forall_dict_continue"),
 				      FALSE);
-		HG_VM_UNLOCK (vm, qd);
 	} else if (HG_IS_QSTRING (arg0)) {
 		q = hg_vm_dict_lookup(vm, vm->qsystemdict,
 				      HG_QNAME ("%forall_string_continue"),
