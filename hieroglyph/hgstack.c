@@ -226,7 +226,7 @@ _hg_stack_push(hg_stack_t *stack,
 	if (stack->vm &&
 	    !hg_quark_is_simple_object(quark) &&
 	    hg_quark_get_type(quark) != HG_TYPE_OPER) {
-		m = hg_vm_get_mem_from_quark(stack->vm, quark);
+		m = hg_vm_quark_get_mem(stack->vm, quark);
 		hg_mem_unref(m, quark);
 	}
 
@@ -458,7 +458,7 @@ hg_stack_pop(hg_stack_t *stack)
 	if (stack->vm &&
 	    !hg_quark_is_simple_object(retval) &&
 	    hg_quark_get_type(retval) != HG_TYPE_OPER) {
-		m = hg_vm_get_mem_from_quark(stack->vm, retval);
+		m = hg_vm_quark_get_mem(stack->vm, retval);
 		hg_mem_ref(m, retval);
 	}
 
