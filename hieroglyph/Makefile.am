@@ -67,6 +67,7 @@ hg_public_headers =						\
 	hgstack.h						\
 	hgstring.h						\
 	hgtypes.h						\
+	hgutils.h						\
 	hgvm.h							\
 	$(NULL)
 hg_private_headers =						\
@@ -115,6 +116,7 @@ hg_sources =							\
 	hgsnapshot.c						\
 	hgstack.c						\
 	hgstring.c						\
+	hgutils.c						\
 	hgvm.c							\
 	$(NULL)
 #

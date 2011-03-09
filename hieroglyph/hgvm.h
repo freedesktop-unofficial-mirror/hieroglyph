@@ -189,14 +189,12 @@ void               hg_vm_hold_language_level(hg_vm_t                *vm,
 hg_bool_t          hg_vm_translate          (hg_vm_t                *vm,
 					     hg_vm_trans_flags_t     flags);
 hg_bool_t          hg_vm_main_loop          (hg_vm_t                *vm);
-hg_char_t         *hg_vm_find_libfile       (hg_vm_t            *vm  HG_GNUC_UNUSED,
-                                             const hg_char_t        *filename);
 hg_bool_t          hg_vm_eval               (hg_vm_t                *vm,
-                                             hg_quark_t              qeval,
-                                             hg_stack_t             *ostack,
-                                             hg_stack_t             *estack,
-                                             hg_stack_t             *dstack,
-                                             hg_bool_t               protect_systemdict);
+					     hg_quark_t              qeval,
+					     hg_stack_t             *ostack,
+					     hg_stack_t             *estack,
+					     hg_stack_t             *dstack,
+					     hg_bool_t               protect_systemdict);
 hg_bool_t          hg_vm_eval_from_cstring  (hg_vm_t                *vm,
                                              const hg_char_t        *cstring,
                                              hg_size_t               clen,

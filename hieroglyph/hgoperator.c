@@ -40,6 +40,7 @@
 #include "hgnull.h"
 #include "hgreal.h"
 #include "hgsnapshot.h"
+#include "hgutils.h"
 #include "hgversion.h"
 #include "hgoperator.h"
 
@@ -667,7 +668,7 @@ DEFUNC_OPER (private_findlibfile)
 		return FALSE;
 	}
 
-	filename = hg_vm_find_libfile(vm, cstr);
+	filename = hg_find_libfile(cstr);
 	g_free(cstr);
 
 	if (filename) {

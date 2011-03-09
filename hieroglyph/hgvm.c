@@ -43,6 +43,7 @@
 #include "hgreal.h"
 #include "hgscanner.h"
 #include "hgsnapshot.h"
+#include "hgutils.h"
 #include "hgvm.h"
 
 #include "hgvm.proto.h"
@@ -173,39 +174,6 @@ _hg_vm_real_dict_remove(hg_mem_t     *mem,
 	_HG_VM_UNLOCK (x->vm, q);
 
 	return !x->result || x->remove_all;
-}
-
-HG_INLINE_FUNC hg_char_t *
-_hg_vm_find_file(const hg_char_t *initfile)
-{
-	const hg_char_t *env = g_getenv("HIEROGLYPH_LIB_PATH");
-	hg_char_t **paths, *filename = NULL, *basename = g_path_get_basename(initfile);
-	hg_int_t i = 0;
-
-	if (env) {
-		paths = g_strsplit(env, ":", 0);
-		if (paths) {
-			for (i = 0; paths[i] != NULL; i++) {
-				filename = g_build_filename(paths[i], basename, NULL);
-				if (g_file_test(filename, G_FILE_TEST_EXISTS))
-					break;
-				g_free(filename);
-				filename = NULL;
-			}
-			g_strfreev(paths);
-		}
-	}
-	if (!filename) {
-		filename = g_build_filename(HIEROGLYPH_LIBDIR, basename, NULL);
-		if (!g_file_test(filename, G_FILE_TEST_EXISTS)) {
-			g_free(filename);
-			filename = NULL;
-		}
-	}
-	if (basename)
-		g_free(basename);
-
-	return filename;
 }
 
 static hg_bool_t
@@ -1808,25 +1776,6 @@ hg_vm_main_loop(hg_vm_t *vm)
 }
 
 /**
- * hg_vm_find_libfile:
- * @vm:
- * @filename:
- * @error:
- *
- * FIXME
- *
- * Returns:
- */
-hg_char_t *
-hg_vm_find_libfile(hg_vm_t         *vm HG_GNUC_UNUSED,
-		   const hg_char_t *filename)
-{
-	hg_return_val_if_fail (filename != NULL, NULL, HG_e_VMerror);
-
-	return _hg_vm_find_file(filename);
-}
-
-/**
  * hg_vm_eval:
  * @vm:
  * @qeval:
@@ -2056,7 +2005,7 @@ hg_vm_eval_from_file(hg_vm_t         *vm,
 	hg_return_val_if_fail (vm != NULL, FALSE, HG_e_VMerror);
 	hg_return_val_if_fail (initfile != NULL && initfile[0] != 0, FALSE, HG_e_VMerror);
 
-	filename = _hg_vm_find_file(initfile);
+	filename = hg_find_libfile(initfile);
 	if (filename) {
 		hg_quark_t qfile;
 
