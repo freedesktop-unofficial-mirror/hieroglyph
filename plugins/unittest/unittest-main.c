@@ -47,22 +47,20 @@ DEFUNC_OPER (private_validatetestresult)
 	hg_bool_t verbose = FALSE, result = TRUE;
 	hg_int_t attrs = 0;
 	hg_char_t *cexp;
+	hg_error_reason_t e = 0;
 
 	CHECK_STACK (ostack, 1);
 
 	arg0 = hg_stack_index(ostack, 0);
 	if (!HG_IS_QDICT (arg0)) {
-		hg_vm_set_error(vm, qself, HG_e_typecheck);
-		return FALSE;
+		hg_error_return (HG_STATUS_FAILED, HG_e_typecheck);
 	}
 	if (!hg_vm_quark_is_readable(vm, &arg0)) {
-		hg_vm_set_error(vm, qself, HG_e_invalidaccess);
-		return FALSE;
+		hg_error_return (HG_STATUS_FAILED, HG_e_invalidaccess);
 	}
 	d = HG_VM_LOCK (vm, arg0);
 	if (d == NULL) {
-		hg_vm_set_error(vm, qself, HG_e_VMerror);
-		return FALSE;
+		hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
 	}
 	qverbose = hg_dict_lookup(d, HG_QNAME ("verbose"));
 	if (qverbose != Qnil && HG_IS_QBOOL (qverbose)) {
@@ -86,7 +84,7 @@ DEFUNC_OPER (private_validatetestresult)
 	qeerror = hg_dict_lookup(d, HG_QNAME ("expectederror"));
 	qerrorat = hg_dict_lookup(d, HG_QNAME ("errorat"));
 	if (qaerror == Qnil || qeerror == Qnil || qerrorat == Qnil) {
-		hg_vm_set_error(vm, qself, HG_e_typecheck);
+		e = HG_e_typecheck;
 		goto error;
 	} else if (!hg_vm_quark_compare(vm, qaerror, qeerror)) {
 		if (verbose) {
@@ -134,7 +132,7 @@ DEFUNC_OPER (private_validatetestresult)
 	if (qastack == Qnil || qestack == Qnil ||
 	    !HG_IS_QARRAY (qastack) ||
 	    !HG_IS_QARRAY (qestack)) {
-		hg_vm_set_error(vm, qself, HG_e_typecheck);
+		e = HG_e_typecheck;
 		goto error;
 	} else {
 		hg_string_t *sa, *se;
@@ -178,6 +176,8 @@ DEFUNC_OPER (private_validatetestresult)
 
 	hg_stack_drop(ostack);
 	STACK_PUSH (ostack, HG_QBOOL (result && retval));
+	if (e)
+		hg_error_return (HG_STATUS_FAILED, e);
 } DEFUNC_OPER_END
 
 static hg_bool_t

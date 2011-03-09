@@ -168,10 +168,7 @@ typedef hg_bool_t (* hg_operator_func_t) (hg_vm_t  *vm);
 	OPER_FUNC_NAME (_n_) (hg_vm_t *vm)				\
 	{								\
 		hg_warning("%s isn't yet implemented.", #_n_);		\
-		hg_vm_set_error(vm,					\
-				hg_stack_index(vm->stacks[HG_VM_STACK_ESTACK], 0), \
-				HG_e_VMerror);			\
-		return FALSE;						\
+		hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);	\
 	}
 #define DEFUNC_OPER_END					\
 		HG_STMT_END;				\
@@ -183,23 +180,21 @@ typedef hg_bool_t (* hg_operator_func_t) (hg_vm_t  *vm);
 #define CHECK_STACK(_s_,_n_)						\
 	HG_STMT_START {							\
 		if (hg_stack_depth((_s_)) < (_n_)) {			\
-			hg_vm_set_error(vm, qself, HG_e_stackunderflow); \
-			return FALSE;					\
+			hg_error_return (HG_STATUS_FAILED, HG_e_stackunderflow); \
 		}							\
 	} HG_STMT_END
 #define STACK_PUSH(_s_,_q_)						\
 	HG_STMT_START {							\
 		if (!hg_stack_push((_s_), (_q_))) {			\
 			if ((_s_) == ostack) {				\
-				hg_vm_set_error(vm, qself, HG_e_stackoverflow); \
+				hg_error_return (HG_STATUS_FAILED, HG_e_stackoverflow);	\
 			} else if ((_s_) == estack) {			\
-				hg_vm_set_error(vm, qself, HG_e_execstackoverflow); \
+				hg_error_return (HG_STATUS_FAILED, HG_e_execstackoverflow); \
 			} else if ((_s_) == dstack) {			\
-				hg_vm_set_error(vm, qself, HG_e_dictstackoverflow); \
+				hg_error_return (HG_STATUS_FAILED, HG_e_dictstackoverflow); \
 			} else {					\
-				hg_vm_set_error(vm, qself, HG_e_limitcheck);	\
+				hg_error_return (HG_STATUS_FAILED, HG_e_limitcheck); \
 			}						\
-			return FALSE;					\
 		}							\
 	} HG_STMT_END
 

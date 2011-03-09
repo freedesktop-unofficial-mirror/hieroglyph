@@ -130,12 +130,10 @@ DEFUNC_OPER (private_loadhistory)
 
 	arg0 = hg_stack_index(ostack, 0);
 	if (!HG_IS_QSTRING (arg0)) {
-		hg_vm_set_error(vm, qself, HG_e_typecheck);
-		return FALSE;
+		hg_error_return (HG_STATUS_FAILED, HG_e_typecheck);
 	}
 	s = HG_VM_LOCK (vm, arg0);
 	if (s == NULL) {
-		hg_vm_set_error(vm, qself, HG_e_VMerror);
 		return FALSE;
 	}
 	cstr = hg_string_get_cstr(s);
@@ -170,12 +168,10 @@ DEFUNC_OPER (private_savehistory)
 
 	arg0 = hg_stack_index(ostack, 0);
 	if (!HG_IS_QSTRING (arg0)) {
-		hg_vm_set_error(vm, qself, HG_e_typecheck);
-		return FALSE;
+		hg_error_return (HG_STATUS_FAILED, HG_e_typecheck);
 	}
 	s = HG_VM_LOCK (vm, arg0);
 	if (s == NULL) {
-		hg_vm_set_error(vm, qself, HG_e_VMerror);
 		return FALSE;
 	}
 	cstr = hg_string_get_cstr(s);

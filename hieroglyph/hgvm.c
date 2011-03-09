@@ -51,9 +51,9 @@
 #define HG_VM_GLOBAL_MEM_SIZE	24000000
 #define HG_VM_LOCAL_MEM_SIZE	1000000
 #define _HG_VM_LOCK(_v_,_q_)						\
-	(_hg_vm_real_lock_object((_v_),(_q_),__PRETTY_FUNCTION__))
+	(_hg_vm_quark_lock_object((_v_),(_q_),__PRETTY_FUNCTION__))
 #define _HG_VM_UNLOCK(_v_,_q_)				\
-	(_hg_vm_real_unlock_object((_v_),(_q_)))
+	(_hg_vm_quark_unlock_object((_v_),(_q_)))
 #undef HG_VM_DEBUG
 
 
@@ -86,11 +86,24 @@ hg_bool_t __hg_vm_is_initialized = FALSE;
 
 /*< private >*/
 HG_INLINE_FUNC hg_mem_t *
-_hg_vm_get_mem(hg_vm_t    *vm,
-	       hg_quark_t  quark)
+_hg_vm_get_mem(hg_vm_t *vm)
+{
+	hg_return_val_if_fail (vm != NULL, NULL, HG_e_VMerror);
+	hg_return_val_if_fail (vm->vm_state->current_mem_index < HG_VM_MEM_END, NULL, HG_e_VMerror);
+
+	return vm->mem[vm->vm_state->current_mem_index];
+}
+
+HG_INLINE_FUNC hg_mem_t *
+_hg_vm_quark_get_mem(hg_vm_t    *vm,
+		     hg_quark_t  quark)
 {
 	hg_mem_t *retval = NULL;
-	hg_int_t id = hg_quark_get_mem_id(quark);
+	hg_int_t id;
+
+	hg_return_val_if_fail (vm != NULL, NULL, HG_e_VMerror);
+
+	id = hg_quark_get_mem_id(quark);
 
 	if (vm->mem_id[HG_VM_MEM_GLOBAL] == id) {
 		retval = vm->mem[HG_VM_MEM_GLOBAL];
@@ -98,26 +111,36 @@ _hg_vm_get_mem(hg_vm_t    *vm,
 		retval = vm->mem[HG_VM_MEM_LOCAL];
 	} else {
 		hg_warning("Unknown memory spooler id: %d, quark: %lx", id, quark);
+		hg_error_return_val (NULL, HG_STATUS_FAILED, HG_e_VMerror);
 	}
 
 	return retval;
 }
 
-HG_INLINE_FUNC hg_pointer_t
-_hg_vm_real_lock_object(hg_vm_t         *vm,
-			hg_quark_t       qdata,
-			const hg_char_t *pretty_function)
+HG_INLINE_FUNC void
+_hg_vm_quark_free(hg_vm_t    *vm,
+		  hg_quark_t  qdata)
 {
-	return _hg_mem_lock_object(_hg_vm_get_mem(vm, qdata),
+	hg_mem_t *m = _hg_vm_quark_get_mem(vm, qdata);
+
+	hg_mem_free(m, qdata);
+}
+
+HG_INLINE_FUNC hg_pointer_t
+_hg_vm_quark_lock_object(hg_vm_t         *vm,
+			 hg_quark_t       qdata,
+			 const hg_char_t *pretty_function)
+{
+	return _hg_mem_lock_object(_hg_vm_quark_get_mem(vm, qdata),
 				   qdata,
 				   pretty_function);
 }
 
 HG_INLINE_FUNC void
-_hg_vm_real_unlock_object(hg_vm_t    *vm,
-			  hg_quark_t  qdata)
+_hg_vm_quark_unlock_object(hg_vm_t    *vm,
+			   hg_quark_t  qdata)
 {
-	hg_mem_unlock_object(_hg_vm_get_mem(vm, qdata),
+	hg_mem_unlock_object(_hg_vm_quark_get_mem(vm, qdata),
 			     qdata);
 }
 
@@ -206,7 +229,7 @@ _hg_vm_stack_real_dump(hg_mem_t     *mem,
 	} else {
 		hg_uint_t id;
 
-		id = hg_mem_get_id(hg_vm_get_mem_from_quark(ddata->vm, qdata));
+		id = hg_quark_get_mem_id(qdata);
 		mc = (id == ddata->vm->mem_id[HG_VM_MEM_GLOBAL] ? 'G' : id == ddata->vm->mem_id[HG_VM_MEM_LOCAL] ? 'L' : '?');
 	}
 	hg_file_append_printf(ddata->ofile, "0x%016lx|%-12s|%c| %c%c%c|%s\n",
@@ -240,199 +263,285 @@ _hg_vm_rs_real_dump(hg_quark_t   qdata,
 }
 
 static hg_bool_t
-hg_vm_stepi_in_exec_array(hg_vm_t    *vm,
-			  hg_quark_t  qparent)
+_hg_vm_translate(hg_vm_t             *vm,
+		 hg_vm_trans_flags_t  flags)
 {
-	hg_stack_t *ostack, *estack;
-	hg_quark_t qexecobj, qresult;
-	hg_file_t *file;
-	hg_bool_t retval = TRUE;
-	const hg_char_t *name;
+	hg_stack_t *estack, *ostack;
+	hg_quark_t qdata, qresult;
+	hg_int_t clock_count = 0;
+	hg_bool_t translate_block = (flags & HG_TRANS_FLAG_BLOCK);
+	hg_bool_t translate_token = (flags & HG_TRANS_FLAG_TOKEN);
+	hg_bool_t translated, block_terminated = (translate_block ? FALSE : TRUE);
 
 	ostack = vm->stacks[HG_VM_STACK_OSTACK];
 	estack = vm->stacks[HG_VM_STACK_ESTACK];
 
-	qexecobj = hg_stack_index(estack, 0);
-	if (!HG_ERROR_IS_SUCCESS0 ()) {
-		hg_vm_set_error(vm, qparent, HG_e_stackunderflow);
-		goto finalize;
+	if (hg_stack_depth(estack) == 0) {
+		hg_warning("No objects in the exec stack");
+		return TRUE;
 	}
 
-	switch (hg_quark_get_type(qexecobj)) {
-	    case HG_TYPE_EVAL_NAME:
-		    if (hg_vm_quark_is_executable(vm, &qexecobj)) {
-			    qresult = hg_vm_dstack_lookup(vm, qexecobj);
-			    if (qresult == Qnil) {
-				    hg_vm_set_error(vm, qparent,
-						    HG_e_undefined);
-				    return FALSE;
+	do {
+		translated = FALSE;
+		qdata = hg_stack_index(estack, 0);
+		if (!HG_ERROR_IS_SUCCESS0 ())
+			return FALSE;
+
+		hg_debug(HG_MSGCAT_VM, "Processing 0x%lx [%d]", qdata, clock_count);
+		clock_count++;
+
+	  evaluate:
+		switch (hg_quark_get_type(qdata)) {
+		    case HG_TYPE_REAL:
+			    if (isinf(HG_REAL (qdata)))
+				    hg_error_return (HG_STATUS_FAILED, HG_e_limitcheck);
+		    case HG_TYPE_NULL:
+		    case HG_TYPE_INT:
+		    case HG_TYPE_BOOL:
+		    case HG_TYPE_DICT:
+		    case HG_TYPE_MARK:
+		    case HG_TYPE_SNAPSHOT:
+		    case HG_TYPE_GSTATE:
+		    push_stack:
+			    if (!hg_stack_push(ostack, qdata))
+				    hg_error_return (HG_STATUS_FAILED, HG_e_stackoverflow);
+			    hg_stack_drop(estack);
+			    translated = TRUE;
+			    break;
+		    case HG_TYPE_EVAL_NAME:
+			    if (hg_vm_quark_is_executable(vm, &qdata)) {
+				    qresult = hg_vm_dstack_lookup(vm, qdata);
+				    if (qresult == Qnil)
+					    hg_error_return (HG_STATUS_FAILED, HG_e_undefined);
+
+				    /* Re-evaluate the object immediately */
+				    qdata = qresult;
+				    hg_debug(HG_MSGCAT_VM, "Re-processing 0x%lx", qdata);
+				    if (translate_block ||
+					translate_token)
+					    goto push_stack;
+				    goto evaluate;
 			    }
-			    qexecobj = qresult;
-		    } else {
-			    hg_warning("Immediately evaluated name object somehow doesn't have a exec bit turned on: %s", hg_name_lookup(qexecobj));
-		    }
-	    case HG_TYPE_NULL:
-	    case HG_TYPE_INT:
-		    goto push_stack;
-	    case HG_TYPE_REAL:
-		    if (isinf(HG_REAL (qexecobj))) {
-			    hg_vm_set_error(vm, qparent,
-					    HG_e_limitcheck);
-			    return FALSE;
-		    }
-	    case HG_TYPE_BOOL:
-	    case HG_TYPE_DICT:
-	    case HG_TYPE_MARK:
-	    case HG_TYPE_NAME:
-	    case HG_TYPE_ARRAY:
-	    case HG_TYPE_STRING:
-	    case HG_TYPE_OPER:
-	    push_stack:
-		    if (!hg_stack_push(ostack, qexecobj)) {
-			    hg_vm_set_error(vm, qparent,
-					    HG_e_stackoverflow);
-			    return FALSE;
-		    }
-		    hg_stack_drop(estack);
-		    break;
-	    case HG_TYPE_FILE:
-		    if (!hg_vm_quark_is_executable(vm, &qexecobj)) {
+			    hg_warning("Immediately evaluated name object somehow does not have an exec bit turned on: %s", hg_name_lookup(qdata));
 			    goto push_stack;
-		    } else {
-			    file = _HG_VM_LOCK (vm, qexecobj);
-			    if (file == NULL)
-				    break;
-			    hg_scanner_attach_file(vm->scanner, file);
-			    _HG_VM_UNLOCK (vm, qexecobj);
+		    case HG_TYPE_NAME:
+			    if (translate_block ||
+				translate_token)
+				    goto push_stack;
+			    if (hg_vm_quark_is_executable(vm, &qdata)) {
+				    hg_quark_t q;
 
-			    if (!hg_scanner_scan(vm->scanner, vm)) {
-				    hg_vm_set_error(vm, qparent,
-						    HG_e_syntaxerror);
-				    retval = FALSE;
-				    break;
-			    }
-			    qresult = hg_scanner_get_token(vm->scanner);
-			    hg_vm_quark_set_default_acl(vm, &qresult);
-#if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
-			    HG_STMT_START {
-				    hg_quark_t qs;
-				    hg_string_t *s;
+				    qresult = hg_vm_dstack_lookup(vm, qdata);
+				    if (qresult == Qnil)
+					    hg_error_return (HG_STATUS_FAILED, HG_e_undefined);
 
-				    qs = hg_vm_quark_to_string(vm, qresult, TRUE, (hg_pointer_t *)&s);
-				    if (qs == Qnil) {
-					    hg_warning("Unable to lookup the scanned object: %lx", qresult);
+				    if (hg_vm_quark_is_executable(vm, &qresult)) {
+					    q = hg_vm_quark_copy(vm, qresult, NULL);
+					    if (q == Qnil)
+						    hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
 				    } else {
-					    hg_char_t *cstr = hg_string_get_cstr(s);
-
-					    hg_debug(HG_MSGCAT_SCAN, "[%d] scanning... %s [%s:%c%c%c]",
-						     vm->n_nest_scan, cstr,
-						     hg_quark_get_type_name(qresult),
-						     hg_quark_is_readable(qresult) ? 'r' : '-',
-						     hg_quark_is_writable(qresult) ? 'w' : '-',
-						     hg_quark_is_executable(qresult) ? 'x' : '-');
-					    g_free(cstr);
-					    /* this is an instant object.
-					     * surely no reference to the container.
-					     * so it can be safely destroyed.
-					     */
-					    hg_string_free(s, TRUE);
+					    q = qresult;
 				    }
-			    } HG_STMT_END;
-#endif
-			    /* exception for processing the executable array */
-			    if (HG_IS_QNAME (qresult) &&
-				(name = hg_name_lookup(qresult)) != NULL) {
-				    if (!strcmp(name, "{")) {
-					    qresult = hg_vm_step_in_exec_array(vm, qparent);
-					    if (qresult == Qnil)
-						    return FALSE;
-#if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
-					    HG_STMT_START {
-						    hg_quark_t qs;
-						    hg_string_t *s;
+				    if (!hg_stack_push(estack, q))
+					    hg_error_return (HG_STATUS_FAILED, HG_e_execstackoverflow);
 
-						    qs = hg_vm_quark_to_string(vm, qresult, TRUE, (hg_pointer_t *)&s);
-						    if (qs == Qnil) {
-							    hg_warning("Unable to look up the scanned object: %lx", qresult);
+				    hg_stack_exch(estack);
+				    hg_stack_drop(estack);
+				    break;
+			    }
+			    goto push_stack;
+		    case HG_TYPE_ARRAY:
+			    if (translate_block ||
+				translate_token)
+				    goto push_stack;
+			    if (hg_vm_quark_is_executable(vm, &qdata)) {
+				    hg_array_t *a = _HG_VM_LOCK (vm, qdata);
+				    hg_error_reason_t e = 0;
+
+				    if (!a)
+					    hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
+				    if (hg_array_length(a) > 0) {
+					    hg_stack_t *s;
+
+					    qresult = hg_array_get(a, 0);
+					    if (!HG_ERROR_IS_SUCCESS0 ()) {
+						    e = HG_ERROR_GET_REASON (hg_errno);
+						    goto a_error;
+					    }
+					    if (hg_vm_quark_is_executable(vm, &qresult) &&
+						(HG_IS_QNAME (qresult) ||
+						 HG_IS_QOPER (qresult))) {
+						    e = HG_e_execstackoverflow;
+						    s = estack;
+					    } else {
+						    e = HG_e_stackoverflow;
+						    s = ostack;
+						    translated = TRUE;
+					    }
+					    if (hg_stack_push(s, qresult)) {
+						    e = 0;
+						    if (hg_array_length(a) == 1) {
+							    if (s == estack)
+								    hg_stack_exch(estack);
+							    hg_stack_drop(estack);
+							    translated = TRUE;
 						    } else {
-							    hg_char_t *cstr = hg_string_get_cstr(s);
-
-							    hg_debug(HG_MSGCAT_SCAN, "[%d] scanned result %s [%s:%c%c%c]",
-								     vm->n_nest_scan, cstr,
-								     hg_quark_get_type_name(qresult),
-								     hg_quark_is_readable(qresult) ? 'r' : '-',
-								     hg_quark_is_writable(qresult) ? 'w' : '-',
-								     hg_quark_is_executable(qresult) ? 'x' : '-');
-							    g_free(cstr);
-							    /* this is an instant object.
-							     * surely no reference to the container.
-							     * so it can be safely destroyed.
-							     */
-							    hg_string_free(s, TRUE);
+							    hg_array_remove(a, 0);
 						    }
-					    } HG_STMT_END;
+					    }
+				    } else {
+					    hg_stack_drop(estack);
+					    translated = TRUE;
+				    }
+			      a_error:
+				    _HG_VM_UNLOCK (vm, qdata);
+				    if (e != 0)
+					    hg_error_return (HG_STATUS_FAILED, e);
+				    break;
+			    }
+			    goto push_stack;
+		    case HG_TYPE_STRING:
+			    if (translate_block ||
+				translate_token)
+				    goto push_stack;
+			    if (hg_vm_quark_is_executable(vm, &qdata)) {
+				    hg_string_t *s = _HG_VM_LOCK (vm, qdata);
+
+				    if (!s)
+					    hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
+				    qresult = hg_file_new_with_string(_hg_vm_get_mem(vm),
+								      "%sfile",
+								      HG_FILE_IO_MODE_READ,
+								      s,
+								      NULL,
+								      NULL);
+				    if (qresult == Qnil)
+					    hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
+				    hg_vm_quark_set_executable(vm, &qresult, TRUE);
+				    _HG_VM_UNLOCK (vm, qdata);
+				    hg_stack_drop(estack);
+				    if (!hg_stack_push(estack, qresult))
+					    hg_error_return (HG_STATUS_FAILED, HG_e_execstackoverflow);
+				    break;
+			    }
+			    goto push_stack;
+		    case HG_TYPE_OPER:
+			    if (translate_block ||
+				translate_token)
+				    goto push_stack;
+			    if (hg_operator_invoke(qdata, vm)) {
+				    hg_stack_drop(estack);
+#ifdef HG_DEBUG
+				    if (!HG_ERROR_IS_SUCCESS0 ()) {
+					    hg_warning("status conflict in hg_errno");
+				    }
 #endif
-				    } else if (!strcmp(name, "}")) {
-					    hg_size_t i, idx = 0;
-					    hg_quark_t q;
-					    hg_array_t *a;
-
-					    idx = hg_stack_depth(ostack);
-					    qresult = hg_array_new(hg_vm_get_mem(vm),
-								   idx,
-								   (hg_pointer_t *)&a);
-					    if (qresult == Qnil) {
-						    hg_vm_set_error(vm, qparent,
-								    HG_e_VMerror);
-						    return FALSE;
-					    }
-					    hg_vm_quark_set_default_acl(vm, &qresult);
-					    hg_vm_quark_set_executable(vm, &qresult, TRUE);
-					    for (i = idx - 1; i >= 0; i--) {
-						    q = hg_stack_index(ostack, i);
-						    if (!HG_ERROR_IS_SUCCESS0 ())
-							    goto finalize;
-						    if (!hg_array_set(a, q, idx - i - 1, FALSE))
-							    goto finalize;
-					    }
-					    _HG_VM_UNLOCK (vm, qresult);
-
-					    for (i = 0; i <= idx; i++) {
-						    hg_stack_drop(ostack);
-						    if (!HG_ERROR_IS_SUCCESS0 ()) {
-							    hg_vm_set_error(vm, qparent,
-									    HG_e_stackunderflow);
-							    goto finalize;
-						    }
-					    }
-					    if (!hg_stack_push(ostack, qresult))
-						    hg_vm_set_error(vm, qparent,
-								    HG_e_stackoverflow);
-
-					    return FALSE;
+			    } else {
+				    if (HG_ERROR_IS_SUCCESS0 () && !hg_vm_has_error(vm)) {
+					    hg_critical("No error set.");
+					    hg_operator_invoke(HG_QOPER (HG_enc_private_abort), vm);
 				    }
 			    }
-			    hg_stack_push(estack, qresult);
-		    }
-		    break;
-	    default:
-		    hg_warning("Unknown object type: %d", hg_quark_get_type(qexecobj));
-		    return FALSE;
-	}
+			    translated = TRUE;
+			    break;
+		    case HG_TYPE_FILE:
+			    if (!hg_vm_quark_is_executable(vm, &qdata)) {
+				    goto push_stack;
+			    } else {
+				    hg_file_t *f = _HG_VM_LOCK (vm, qdata);
+				    const hg_char_t *name;
 
-  finalize:
-	if (!HG_ERROR_IS_SUCCESS0 ()) {
-		if (!hg_vm_has_error(vm))
-			hg_vm_set_error(vm, qexecobj, HG_e_VMerror);
-		retval = FALSE;
-	}
+				    if (!f)
+					    hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
+				    hg_scanner_attach_file(vm->scanner, f);
+				    if (!hg_scanner_scan(vm->scanner, vm)) {
+					    hg_bool_t is_eof = hg_file_is_eof(f);
 
-	return retval;
+					    _HG_VM_UNLOCK (vm, qdata);
+					    if (HG_ERROR_IS_SUCCESS0 () &&
+						is_eof &&
+						!translate_block) {
+						    hg_debug(HG_MSGCAT_VM, "EOF detected");
+						    hg_stack_drop(estack);
+
+						    return FALSE;
+					    }
+					    hg_error_return (HG_STATUS_FAILED, HG_e_syntaxerror);
+				    }
+				    _HG_VM_UNLOCK (vm, qdata);
+				    qresult = hg_scanner_get_token(vm->scanner);
+				    hg_vm_quark_set_default_acl(vm, &qresult);
+
+				    /* exception for processing the executable array */
+				    if (HG_IS_QNAME (qresult) &&
+					(name = hg_name_lookup(qresult)) != NULL) {
+					    if (!strcmp(name, "{")) {
+						    qresult = _hg_vm_translate_block(vm, flags);
+						    if (qresult == Qnil) {
+							    translated = TRUE;
+							    break;
+						    }
+						    if (!hg_stack_push(ostack, qresult))
+							    hg_error_return (HG_STATUS_FAILED, HG_e_stackoverflow);
+						    translated = TRUE;
+						    break;
+					    } else if (!strcmp(name, "}")) {
+						    hg_size_t i, idx = 0;
+						    hg_quark_t q;
+						    hg_array_t *a;
+
+						    if (!translate_block)
+							    hg_error_return (HG_STATUS_FAILED, HG_e_syntaxerror);
+
+						    idx = hg_stack_depth(ostack);
+						    qresult = hg_array_new(_hg_vm_get_mem(vm),
+									   idx,
+									   (hg_pointer_t *)&a);
+						    if (qresult == Qnil)
+							    return FALSE;
+						    hg_vm_quark_set_default_acl(vm, &qresult);
+						    hg_vm_quark_set_executable(vm, &qresult, TRUE);
+						    for (i = idx - 1; i >= 0; i--) {
+							    q = hg_stack_index(ostack, i);
+							    if (!HG_ERROR_IS_SUCCESS0 ()) {
+								    _HG_VM_UNLOCK (vm, qresult);
+								    return FALSE;
+							    }
+							    if (!hg_array_set(a, q, idx - i - 1, FALSE)) {
+								    _HG_VM_UNLOCK (vm, qresult);
+								    return FALSE;
+							    }
+						    }
+						    _HG_VM_UNLOCK (vm, qresult);
+
+						    for (i = 0; i <= idx; i++) {
+							    hg_stack_drop(ostack);
+							    if (!HG_ERROR_IS_SUCCESS0 ())
+								    return FALSE;
+						    }
+						    if (!hg_stack_push(ostack, qresult))
+							    return FALSE;
+
+						    translated = TRUE;
+						    block_terminated = TRUE;
+						    break;
+					    }
+				    }
+				    hg_stack_push(estack, qresult);
+			    }
+			    break;
+		    default:
+			    hg_warning("Unknown object type: %d", hg_quark_get_type(qdata));
+			    hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
+		}
+	} while (!(translated && block_terminated));
+
+	return HG_ERROR_IS_SUCCESS0 ();
 }
 
 static hg_quark_t
-hg_vm_step_in_exec_array(hg_vm_t    *vm,
-			 hg_quark_t  qparent)
+_hg_vm_translate_block(hg_vm_t             *vm,
+		       hg_vm_trans_flags_t  flags)
 {
 	hg_stack_t *old_ostack;
 	hg_quark_t retval = Qnil;
@@ -442,17 +551,14 @@ hg_vm_step_in_exec_array(hg_vm_t    *vm,
 	old_ostack = vm->stacks[HG_VM_STACK_OSTACK];
 	vm->stacks[HG_VM_STACK_OSTACK] = hg_vm_stack_new(vm, 65535);
 	if (vm->stacks[HG_VM_STACK_OSTACK] == NULL) {
-		/* unable to dup the correct stacks in this case */
+		/* unable to duplicate the stack */
 		vm->stacks[HG_VM_STACK_OSTACK] = old_ostack;
-		hg_vm_set_error(vm, qparent, HG_e_VMerror);
-
-		return FALSE;
+		hg_error_return_val (Qnil, HG_STATUS_FAILED, HG_e_VMerror);
 	}
 
-	while (hg_vm_stepi_in_exec_array(vm, qparent));
-	if (!hg_vm_has_error(vm)) {
-		retval = hg_stack_index(vm->stacks[HG_VM_STACK_OSTACK],
-					0);
+	_hg_vm_translate(vm, flags | HG_TRANS_FLAG_BLOCK);
+	if (HG_ERROR_IS_SUCCESS0 ()) {
+		retval = hg_stack_index(vm->stacks[HG_VM_STACK_OSTACK], 0);
 	}
 
 	hg_stack_free(vm->stacks[HG_VM_STACK_OSTACK]);
@@ -759,6 +865,123 @@ _hg_vm_restore_mark(hg_snapshot_t *snapshot,
 	return TRUE;
 }
 
+static hg_bool_t
+_hg_vm_set_error(hg_vm_t           *vm,
+		 hg_quark_t         qdata,
+		 hg_error_reason_t  error)
+{
+	hg_quark_t qerrordict, qnerrordict, qhandler, q;
+	hg_usize_t i;
+
+	hg_return_val_if_fail (vm != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (error < HG_e_END, FALSE, HG_e_VMerror);
+
+	if (vm->has_error) {
+		hg_quark_t qerrorname = HG_QNAME ("errorname");
+		hg_quark_t qcommand = HG_QNAME ("command");
+		hg_quark_t qresult_err, qresult_cmd, qwhere;
+		hg_dict_t *derror;
+		hg_string_t *where;
+		hg_char_t *scommand, *swhere;
+
+		derror = _HG_VM_LOCK (vm, vm->qerror);
+		if (derror == NULL)
+			goto fatal_error;
+		qresult_err = hg_dict_lookup(derror, qerrorname);
+		qresult_cmd = hg_dict_lookup(derror, qcommand);
+		_HG_VM_UNLOCK (vm, vm->qerror);
+
+		if (qresult_cmd == Qnil) {
+			scommand = g_strdup("-%unknown%-");
+		} else {
+			hg_string_t *s = NULL;
+
+			q = hg_vm_quark_to_string(vm,
+						  qresult_cmd,
+						  TRUE,
+						  (hg_pointer_t *)&s);
+			if (q == Qnil)
+				scommand = g_strdup("-%ENOMEM%-");
+			else
+				scommand = hg_string_get_cstr(s);
+			/* this is an instant object.
+			 * surely no reference to the container.
+			 * so it can be safely destroyed.
+			 */
+			hg_string_free(s, TRUE);
+		}
+		qwhere = hg_vm_quark_to_string(vm,
+					       qdata,
+					       TRUE,
+					       (hg_pointer_t *)&where);
+		if (qwhere == Qnil)
+			swhere = g_strdup("-%ENOMEM%-");
+		else
+			swhere = hg_string_get_cstr(where);
+		_hg_vm_quark_free(vm, qwhere);
+
+		if (qresult_err == Qnil) {
+			g_printerr("Multiple errors occurred.\n"
+				   "  previous error: unknown or this happened at %s prior to set /errorname\n"
+				   "  current error: %s at %s\n",
+				   scommand,
+				   hg_name_lookup(vm->qerror_name[error]),
+				   swhere);
+		} else {
+			g_printerr("Multiple errors occurred.\n"
+				   "  previous error: %s at %s\n"
+				   "  current error: %s at %s\n",
+				   hg_name_lookup(qresult_err),
+				   scommand,
+				   hg_name_lookup(vm->qerror_name[error]),
+				   swhere);
+		}
+		g_free(swhere);
+		g_free(scommand);
+
+		hg_operator_invoke(HG_QOPER (HG_enc_private_abort), vm);
+	}
+	for (i = 0; i < HG_VM_STACK_END; i++) {
+		hg_stack_set_validation(vm->stacks[i], FALSE);
+	}
+	qnerrordict = HG_QNAME ("errordict");
+	qerrordict = hg_vm_dstack_lookup(vm, qnerrordict);
+	if (qerrordict == Qnil) {
+		hg_critical("Unable to lookup errordict");
+
+		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
+		goto fatal_error;
+	}
+	qhandler = hg_vm_dict_lookup(vm, qerrordict, vm->qerror_name[error], FALSE);
+	if (qhandler == Qnil) {
+		hg_critical("Unable to obtain the error handler for %s",
+			    hg_name_lookup(vm->qerror_name[error]));
+		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
+		goto fatal_error;
+	}
+
+	q = hg_vm_quark_copy(vm, qhandler, NULL);
+	if (q == Qnil)
+		goto fatal_error;
+	hg_stack_push(vm->stacks[HG_VM_STACK_ESTACK], q);
+	hg_stack_push(vm->stacks[HG_VM_STACK_OSTACK], qdata);
+	vm->has_error = TRUE;
+
+	return TRUE;
+  fatal_error:
+	G_STMT_START {
+		const hg_char_t *errname = hg_name_lookup(vm->qerror_name[error]);
+
+		if (errname) {
+			hg_critical("Fatal error during recovering from /%s", errname);
+		} else {
+			hg_critical("Fatal error during recovering from the unknown error");
+		}
+
+		return hg_operator_invoke(HG_QOPER (HG_enc_private_abort), vm);
+	} G_STMT_END;
+}
+
 /*< public >*/
 /**
  * hg_vm_init:
@@ -774,7 +997,7 @@ hg_vm_init(void)
 		__hg_vm_mem = hg_mem_spool_new(HG_MEM_TYPE_MASTER,
 					       HG_VM_MEM_SIZE);
 		if (__hg_vm_mem == NULL)
-			return FALSE;
+			hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
 
 		__hg_vm_is_initialized = TRUE;
 
@@ -795,11 +1018,11 @@ hg_vm_init(void)
 			goto error;
 	}
 
-	return TRUE;
+	hg_error_return (HG_STATUS_SUCCESS, 0);
   error:
 	hg_vm_tini();
 
-	return FALSE;
+	hg_error_return (HG_STATUS_FAILED, HG_e_VMerror);
 }
 
 /**
@@ -1033,7 +1256,7 @@ hg_vm_destroy(hg_vm_t *vm)
 	hg_stack_spooler_destroy(vm->stack_spooler);
 	for (i = 0; i < HG_FILE_IO_END; i++) {
 		if (vm->qio[i] != Qnil)
-			hg_vm_mfree(vm, vm->qio[i]);
+			_hg_vm_quark_free(vm, vm->qio[i]);
 	}
 	for (i = 0; i < HG_VM_MEM_END; i++) {
 		hg_mem_spool_destroy(vm->mem[i]);
@@ -1090,69 +1313,7 @@ hg_vm_realloc(hg_vm_t      *vm,
 {
 	hg_return_val_if_fail (vm != NULL, Qnil, HG_e_VMerror);
 
-	return hg_mem_realloc(_hg_vm_get_mem(vm, qdata), qdata, size, ret);
-}
-
-/**
- * hg_vm_mfree:
- * @vm:
- * @qdata:
- *
- * FIXME
- */
-void
-hg_vm_mfree(hg_vm_t    *vm,
-	    hg_quark_t  qdata)
-{
-	hg_return_if_fail (vm != NULL, HG_e_VMerror);
-
-	if (qdata == Qnil)
-		return;
-
-	if (!hg_quark_is_simple_object(qdata) &&
-	    !HG_IS_QOPER (qdata)) {
-		hg_object_free(_hg_vm_get_mem(vm, qdata),
-			       qdata);
-	} else {
-		hg_mem_free(_hg_vm_get_mem(vm, qdata), qdata);
-	}
-}
-
-/**
- * hg_vm_lock_object:
- * @vm:
- * @qdata:
- * @pretty_function:
- * @error:
- *
- * FIXME
- *
- * Returns:
- */
-hg_pointer_t
-hg_vm_lock_object(hg_vm_t         *vm,
-		  hg_quark_t       qdata,
-		  const hg_char_t *pretty_function)
-{
-	hg_return_val_if_fail (vm != NULL, NULL, HG_e_VMerror);
-
-	return _hg_vm_real_lock_object(vm, qdata, pretty_function);
-}
-
-/**
- * hg_vm_unlock_object:
- * @vm:
- * @qdata:
- *
- * FIXME
- */
-void
-hg_vm_unlock_object(hg_vm_t    *vm,
-		    hg_quark_t  qdata)
-{
-	hg_return_if_fail (vm != NULL, HG_e_VMerror);
-
-	_hg_vm_real_unlock_object(vm, qdata);
+	return hg_mem_realloc(_hg_vm_quark_get_mem(vm, qdata), qdata, size, ret);
 }
 
 /**
@@ -1182,26 +1343,7 @@ hg_vm_set_default_acl(hg_vm_t        *vm,
 hg_mem_t *
 hg_vm_get_mem(hg_vm_t *vm)
 {
-	hg_return_val_if_fail (vm != NULL, NULL, HG_e_VMerror);
-	hg_return_val_if_fail (vm->vm_state->current_mem_index < HG_VM_MEM_END, NULL, HG_e_VMerror);
-
-	return vm->mem[vm->vm_state->current_mem_index];
-}
-
-/**
- * hg_vm_get_mem_from_quark:
- * @vm:
- * @qdata:
- *
- * FIXME
- *
- * Returns:
- */
-hg_mem_t *
-hg_vm_get_mem_from_quark(hg_vm_t    *vm,
-			 hg_quark_t  qdata)
-{
-	return _hg_vm_get_mem(vm, qdata);
+	return _hg_vm_get_mem(vm);
 }
 
 /**
@@ -1258,7 +1400,7 @@ hg_vm_get_io(hg_vm_t      *vm,
 	hg_return_val_if_fail (type < HG_FILE_IO_END, Qnil, HG_e_invalidfileaccess);
 
 	if (type == HG_FILE_IO_LINEEDIT) {
-		ret = hg_file_new_with_vtable(hg_vm_get_mem(vm),
+		ret = hg_file_new_with_vtable(_hg_vm_get_mem(vm),
 					      "%lineedit",
 					      HG_FILE_IO_MODE_READ,
 					      hg_file_get_lineedit_vtable(),
@@ -1267,7 +1409,7 @@ hg_vm_get_io(hg_vm_t      *vm,
 		if (ret != Qnil)
 			hg_vm_quark_set_acl(vm, &ret, HG_ACL_READABLE|HG_ACL_ACCESSIBLE);
 	} else if (type == HG_FILE_IO_STATEMENTEDIT) {
-		ret = hg_file_new_with_vtable(hg_vm_get_mem(vm),
+		ret = hg_file_new_with_vtable(_hg_vm_get_mem(vm),
 					      "%statementedit",
 					      HG_FILE_IO_MODE_READ,
 					      hg_file_get_lineedit_vtable(),
@@ -1338,7 +1480,7 @@ hg_vm_setup(hg_vm_t           *vm,
 
 		/* initialize I/O */
 		if (stdin == Qnil) {
-			qf = hg_file_new(hg_vm_get_mem(vm),
+			qf = hg_file_new(_hg_vm_get_mem(vm),
 					 "%stdin",
 					 HG_FILE_IO_MODE_READ,
 					 (hg_pointer_t *)&fstdin);
@@ -1348,7 +1490,7 @@ hg_vm_setup(hg_vm_t           *vm,
 		hg_vm_quark_set_acl(vm, &qf, HG_ACL_READABLE|HG_ACL_ACCESSIBLE);
 		vm->qio[HG_FILE_IO_STDIN] = qf;
 		if (stdout == Qnil) {
-			qf  = hg_file_new(hg_vm_get_mem(vm),
+			qf  = hg_file_new(_hg_vm_get_mem(vm),
 					  "%stdout",
 					  HG_FILE_IO_MODE_WRITE,
 					  (hg_pointer_t *)&fstdout);
@@ -1358,7 +1500,7 @@ hg_vm_setup(hg_vm_t           *vm,
 		hg_vm_quark_set_acl(vm, &qf, HG_ACL_WRITABLE|HG_ACL_ACCESSIBLE);
 		vm->qio[HG_FILE_IO_STDOUT] = qf;
 		if (stderr == Qnil) {
-			qf = hg_file_new(hg_vm_get_mem(vm),
+			qf = hg_file_new(_hg_vm_get_mem(vm),
 					 "%stderr",
 					 HG_FILE_IO_MODE_WRITE,
 					 NULL);
@@ -1374,7 +1516,7 @@ hg_vm_setup(hg_vm_t           *vm,
 			goto error;
 		}
 
-		vm->lineedit = hg_lineedit_new(hg_vm_get_mem(vm),
+		vm->lineedit = hg_lineedit_new(_hg_vm_get_mem(vm),
 					       hg_lineedit_get_default_vtable(),
 					       fstdin,
 					       fstdout);
@@ -1515,19 +1657,19 @@ hg_vm_finish(hg_vm_t *vm)
 	hg_return_if_fail (vm->is_initialized, HG_e_VMerror);
 
 	if (vm->qsystemdict != Qnil) {
-		hg_vm_mfree(vm, vm->qsystemdict);
+		_hg_vm_quark_free(vm, vm->qsystemdict);
 		vm->qsystemdict = Qnil;
 	}
 	if (vm->qglobaldict != Qnil) {
-		hg_vm_mfree(vm, vm->qglobaldict);
+		_hg_vm_quark_free(vm, vm->qglobaldict);
 		vm->qglobaldict = Qnil;
 	}
 	if (vm->qinternaldict != Qnil) {
-		hg_vm_mfree(vm, vm->qinternaldict);
+		_hg_vm_quark_free(vm, vm->qinternaldict);
 		vm->qinternaldict = Qnil;
 	}
 	if (vm->qgstate != Qnil) {
-		hg_vm_mfree(vm, vm->qgstate);
+		_hg_vm_quark_free(vm, vm->qgstate);
 		vm->qgstate = Qnil;
 	}
 	for (i = 0; i < HG_VM_STACK_END; i++) {
@@ -1605,350 +1747,31 @@ hg_vm_hold_language_level(hg_vm_t   *vm,
 }
 
 /**
- * hg_vm_stepi:
+ * hg_vm_translate:
  * @vm:
- * @is_proceeded:
+ * @flags:
  *
  * FIXME
  *
  * Returns:
  */
 hg_bool_t
-hg_vm_stepi(hg_vm_t   *vm,
-	    hg_bool_t *is_proceeded)
+hg_vm_translate(hg_vm_t             *vm,
+		hg_vm_trans_flags_t  flags)
 {
-	hg_stack_t *estack, *ostack;
-	hg_quark_t qexecobj, qresult;
-	hg_file_t *file;
-	hg_bool_t retval = TRUE;
-	const hg_char_t *name;
+	hg_bool_t retval;
 
 	hg_return_val_if_fail (vm != NULL, FALSE, HG_e_VMerror);
-	hg_return_val_if_fail (is_proceeded != NULL, FALSE, HG_e_VMerror);
 
-	ostack = vm->stacks[HG_VM_STACK_OSTACK];
-	estack = vm->stacks[HG_VM_STACK_ESTACK];
+	/* drop a HG_TRANS_FLAG_BLOCK from flags */
+	flags &= ~HG_TRANS_FLAG_BLOCK;
 
-	qexecobj = hg_stack_index(estack, 0);
-	*is_proceeded = FALSE;
-	if (!HG_ERROR_IS_SUCCESS0 ()) {
-		hg_vm_set_error(vm, Qnil, HG_e_stackunderflow);
-		return FALSE;
-	}
-
-  evaluate:
-	hg_debug(HG_MSGCAT_VM, "Executing %lx", qexecobj);
-#if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
-	HG_STMT_START {
-		hg_quark_t qs;
-		hg_string_t *s;
-
-		qs = hg_vm_quark_to_string(vm, qexecobj, TRUE, (hg_pointer_t *)&s);
-		if (qs == Qnil) {
-			hg_warning("Unable to look up the object being executed: %lx", qexecobj);
-		} else {
-			hg_char_t *cstr = hg_string_get_cstr(s);
-
-			hg_debug(HG_MSGCAT_VM, "executing... %s [%s:%c%c%c]",
-				 cstr, hg_quark_get_type_name(qexecobj),
-				 hg_quark_is_readable(qexecobj) ? 'r' : '-',
-				 hg_quark_is_writable(qexecobj) ? 'w' : '-',
-				 hg_quark_is_executable(qexecobj) ? 'x' : '-');
-			g_free(cstr);
-			/* this is an instant object.
-			 * surely no reference to the container.
-			 * so it can be safely destroyed.
-			 */
-			hg_string_free(s, TRUE);
-		}
-	} HG_STMT_END;
-#endif
-	switch (hg_quark_get_type(qexecobj)) {
-	    case HG_TYPE_NULL:
-	    case HG_TYPE_INT:
-		    goto push_stack;
-	    case HG_TYPE_REAL:
-		    if (isinf(HG_REAL (qexecobj))) {
-			    hg_vm_set_error(vm, qexecobj, HG_e_limitcheck);
-			    return TRUE;
-		    }
-	    case HG_TYPE_BOOL:
-	    case HG_TYPE_DICT:
-	    case HG_TYPE_MARK:
-	    case HG_TYPE_SNAPSHOT:
-	    case HG_TYPE_GSTATE:
-	    push_stack:
-		    if (!hg_stack_push(ostack, qexecobj)) {
-			    hg_vm_set_error(vm, qexecobj, HG_e_stackoverflow);
-			    return TRUE;
-		    }
-		    hg_stack_drop(estack);
-		    *is_proceeded = TRUE;
-		    break;
-	    case HG_TYPE_EVAL_NAME:
-		    if (hg_vm_quark_is_executable(vm, &qexecobj)) {
-			    qresult = hg_vm_dstack_lookup(vm, qexecobj);
-			    if (qresult == Qnil) {
-				    hg_vm_set_error(vm, qexecobj,
-						    HG_e_undefined);
-
-				    return TRUE;
-			    }
-			    qexecobj = qresult;
-			    goto evaluate;
-		    }
-		    hg_warning("Immediately evaluated name object somehow doesn't have a exec bit turned on: %s", hg_name_lookup(qexecobj));
-		    goto push_stack;
-	    case HG_TYPE_NAME:
-		    /* /foo  ... nope
-		     * foo   ... exec bit
-		     */
-		    if (hg_vm_quark_is_executable(vm, &qexecobj)) {
-			    hg_quark_t q;
-
-			    qresult = hg_vm_dstack_lookup(vm, qexecobj);
-			    if (qresult == Qnil) {
-				    hg_vm_set_error(vm, qexecobj,
-						    HG_e_undefined);
-
-				    return TRUE;
-			    }
-			    if (hg_vm_quark_is_executable(vm, &qresult)) {
-				    q = hg_vm_quark_copy(vm, qresult, NULL);
-				    if (q == Qnil) {
-					    hg_vm_set_error(vm, qexecobj,
-							    HG_e_VMerror);
-					    return TRUE;
-				    }
-			    } else {
-				    q = qresult;
-			    }
-			    if (!hg_stack_push(estack, q)) {
-				    hg_vm_set_error(vm, qexecobj,
-						    HG_e_execstackoverflow);
-
-				    return TRUE;
-			    }
-			    hg_stack_roll(estack, 2, 1);
-			    hg_stack_drop(estack);
-			    break;
-		    }
-		    goto push_stack;
-	    case HG_TYPE_ARRAY:
-		    /* [ ... ] ... nope
-		     * { ... } ... exec bit
-		     */
-		    if (hg_vm_quark_is_executable(vm, &qexecobj)) {
-			    hg_array_t *a = _HG_VM_LOCK (vm, qexecobj);
-
-			    if (a == NULL) {
-				    hg_vm_set_error(vm, qexecobj, HG_e_VMerror);
-				    return TRUE;
-			    }
-			    if (hg_array_length(a) > 0) {
-				    qresult = hg_array_get(a, 0);
-				    if (!HG_ERROR_IS_SUCCESS0 ()) {
-					    hg_vm_set_error(vm, qexecobj, HG_e_VMerror);
-					    goto a_error;
-				    }
-				    if (hg_vm_quark_is_executable(vm, &qresult) &&
-					(HG_IS_QNAME (qresult) ||
-					 HG_IS_QOPER (qresult))) {
-					    if (hg_array_length(a) == 1) {
-						    hg_stack_drop(estack);
-					    } else {
-						    hg_array_remove(a, 0);
-					    }
-					    if (!hg_stack_push(estack, qresult)) {
-						    hg_vm_set_error(vm, qexecobj,
-								    HG_e_execstackoverflow);
-						    goto a_error;
-					    }
-				    } else {
-					    if (!hg_stack_push(ostack, qresult)) {
-						    hg_vm_set_error(vm, qexecobj,
-								    HG_e_stackoverflow);
-						    goto a_error;
-					    }
-					    if (hg_array_length(a) == 1) {
-						    hg_stack_drop(estack);
-					    } else {
-						    hg_array_remove(a, 0);
-					    }
-				    }
-			    } else {
-				    hg_stack_drop(estack);
-			    }
-		      a_error:
-			    _HG_VM_UNLOCK (vm, qexecobj);
-			    break;
-		    }
-		    goto push_stack;
-	    case HG_TYPE_STRING:
-		    if (hg_vm_quark_is_executable(vm, &qexecobj)) {
-			    hg_string_t *s;
-
-			    s = _HG_VM_LOCK (vm, qexecobj);
-			    if (s == NULL)
-				    break;
-			    qresult = hg_file_new_with_string(hg_vm_get_mem(vm),
-							      "%sfile",
-							      HG_FILE_IO_MODE_READ,
-							      s,
-							      NULL,
-							      NULL);
-			    hg_vm_quark_set_executable(vm, &qresult, TRUE);
-			    _HG_VM_UNLOCK (vm, qexecobj);
-			    hg_stack_drop(estack);
-			    if (!hg_stack_push(estack, qresult)) {
-				    hg_vm_set_error(vm, qexecobj,
-						    HG_e_execstackoverflow);
-
-				    return TRUE;
-			    }
-			    break;
-		    }
-		    goto push_stack;
-	    case HG_TYPE_OPER:
-		    retval = hg_operator_invoke(qexecobj,
-						vm);
-		    if (retval) {
-			    hg_stack_drop(estack);
-#ifdef HG_DEBUG
-			    if (!HG_ERROR_IS_SUCCESS0 ()) {
-				    g_print("hg_errno wasn't cleaned up\n");
-			    }
-#endif
-		    }
-		    *is_proceeded = TRUE;
-		    break;
-	    case HG_TYPE_FILE:
-		    if (!hg_vm_quark_is_executable(vm, &qexecobj)) {
-			    goto push_stack;
-		    } else {
-			    file = _HG_VM_LOCK (vm, qexecobj);
-			    if (file == NULL)
-				    break;
-			    hg_scanner_attach_file(vm->scanner, file);
-			    if (!hg_scanner_scan(vm->scanner, vm)) {
-				    hg_bool_t is_eof = hg_file_is_eof(file);
-
-				    _HG_VM_UNLOCK (vm, qexecobj);
-				    if (HG_ERROR_IS_SUCCESS0 () && is_eof) {
-					    hg_debug(HG_MSGCAT_VM, "EOF detected");
-					    hg_stack_drop(estack);
-					    *is_proceeded = TRUE;
-					    break;
-				    }
-				    hg_vm_set_error(vm, qexecobj,
-						    HG_e_syntaxerror);
-
-				    return TRUE;
-			    }
-			    _HG_VM_UNLOCK (vm, qexecobj);
-			    qresult = hg_scanner_get_token(vm->scanner);
-			    hg_vm_quark_set_default_acl(vm, &qresult);
-#if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
-			    HG_STMT_START {
-				    hg_quark_t qs;
-				    hg_string_t *s;
-
-				    qs = hg_vm_quark_to_string(vm, qresult, TRUE, (hg_pointer_t *)&s);
-				    if (qs == Qnil) {
-					    hg_warning("Unable to look up the scanned object: %lx", qresult);
-				    } else {
-					    hg_char_t *cstr = hg_string_get_cstr(s);
-
-					    hg_debug(HG_MSGCAT_SCAN, "scanning... %s [%s:%c%c%c]",
-						     cstr, hg_quark_get_type_name(qresult),
-						     hg_quark_is_readable(qresult) ? 'r' : '-',
-						     hg_quark_is_writable(qresult) ? 'w' : '-',
-						     hg_quark_is_executable(qresult) ? 'x' : '-');
-					    g_free(cstr);
-					    /* this is an instant object.
-					     * surely no reference to the container.
-					     * so it can be safely destroyed.
-					     */
-					    hg_string_free(s, TRUE);
-				    }
-			    } HG_STMT_END;
-#endif
-			    /* exception for processing the executable array */
-			    if (HG_IS_QNAME (qresult) &&
-				(name = hg_name_lookup(qresult)) != NULL) {
-				    if (!strcmp(name, "{")) {
-					    qresult = hg_vm_step_in_exec_array(vm, qexecobj);
-					    if (qresult == Qnil)
-						    break;
-#if defined (HG_DEBUG) && defined (HG_VM_DEBUG)
-					    HG_STMT_START {
-						    hg_quark_t qs;
-						    hg_string_t *s;
-
-						    qs = hg_vm_quark_to_string(vm, qresult, TRUE, (hg_pointer_t *)&s);
-						    if (qs == Qnil) {
-							    hg_warning("Unable to look up the scanned object: %lx", qresult);
-						    } else {
-							    hg_char_t *cstr = hg_string_get_cstr(s);
-
-							    hg_debug(HG_MSGCAT_SCAN, "scanned result %s [%s:%c%c%c]",
-								     cstr,
-								     hg_quark_get_type_name(qresult),
-								     hg_quark_is_readable(qresult) ? 'r' : '-',
-								     hg_quark_is_writable(qresult) ? 'w' : '-',
-								     hg_quark_is_executable(qresult) ? 'x' : '-');
-							    g_free(cstr);
-							    /* this is an instant object.
-							     * surely no reference to the container.
-							     * so it can be safely destroyed.
-							     */
-							    hg_string_free(s, TRUE);
-						    }
-					    } HG_STMT_END;
-#endif
-					    if (!hg_stack_push(ostack, qresult)) {
-						    hg_vm_set_error(vm, qexecobj,
-								    HG_e_stackoverflow);
-					    }
-					    return TRUE;
-				    } else if (!strcmp(name, "}")) {
-					    hg_vm_set_error(vm, qexecobj, HG_e_syntaxerror);
-					    return TRUE;
-				    }
-			    }
-			    hg_stack_push(estack, qresult);
-		    }
-		    break;
-	    default:
-		    hg_warning("Unknown object type: %d", hg_quark_get_type(qexecobj));
-		    return FALSE;
-	}
+	retval = _hg_vm_translate(vm, flags);
 
 	if (!HG_ERROR_IS_SUCCESS0 ()) {
-		if (!hg_vm_has_error(vm))
-			hg_vm_set_error0(vm, qexecobj);
-		retval = FALSE;
-	}
+		hg_quark_t q = hg_stack_index(vm->stacks[HG_VM_STACK_ESTACK], 0);
 
-	return retval;
-}
-
-/**
- * hg_vm_step:
- * @vm:
- *
- * FIXME
- *
- * Returns:
- */
-hg_bool_t
-hg_vm_step(hg_vm_t *vm)
-{
-	hg_bool_t retval, is_proceeded;
-
-	while ((retval = hg_vm_stepi(vm, &is_proceeded))) {
-		if (is_proceeded)
-			break;
+		_hg_vm_set_error(vm, q, HG_ERROR_GET_REASON (hg_errno));
 	}
 
 	return retval;
@@ -1976,12 +1799,7 @@ hg_vm_main_loop(hg_vm_t *vm)
 		if (depth == 0)
 			break;
 
-		if (!hg_vm_step(vm)) {
-			if (!hg_vm_has_error(vm)) {
-				hg_critical("[BUG] detected an infinite loop in the exec stack.");
-				hg_operator_invoke(HG_QOPER (HG_enc_private_abort), vm);
-			}
-		}
+		hg_vm_translate(vm, HG_TRANS_FLAG_NONE);
 		if (vm->device && hg_device_is_pending_draw(vm->device))
 			hg_device_draw(vm->device);
 	}
@@ -2189,7 +2007,7 @@ hg_vm_eval_from_cstring(hg_vm_t         *vm,
 	memcpy(str, cstring, clen);
 	str[clen] = '\n';
 	str[clen + 1] = 0;
-	qstring = HG_QSTRING_LEN (hg_vm_get_mem(vm),
+	qstring = HG_QSTRING_LEN (_hg_vm_get_mem(vm),
 				  str, clen + 1);
 	g_free(str);
 	if (qstring == Qnil) {
@@ -2242,7 +2060,7 @@ hg_vm_eval_from_file(hg_vm_t         *vm,
 	if (filename) {
 		hg_quark_t qfile;
 
-		qfile = hg_file_new(hg_vm_get_mem(vm),
+		qfile = hg_file_new(_hg_vm_get_mem(vm),
 				    filename,
 				    HG_FILE_IO_MODE_READ,
 				    NULL);
@@ -2489,7 +2307,7 @@ hg_vm_get_user_params(hg_vm_t      *vm,
 
 	hg_return_val_if_fail (vm != NULL, Qnil, HG_e_VMerror);
 
-	retval = hg_dict_new(hg_vm_get_mem(vm),
+	retval = hg_dict_new(_hg_vm_get_mem(vm),
 			     sizeof (hg_vm_user_params_t) / sizeof (hg_int_t) + 1,
 			     hg_vm_get_language_level(vm) == HG_LANG_LEVEL_1,
 			     (hg_pointer_t *)&d);
@@ -2723,152 +2541,6 @@ hg_vm_reset_error(hg_vm_t *vm)
 }
 
 /**
- * hg_vm_set_error:
- * @vm:
- * @qdata:
- * @error:
- *
- * FIXME
- *
- * Returns:
- */
-hg_bool_t
-hg_vm_set_error(hg_vm_t           *vm,
-		hg_quark_t         qdata,
-		hg_error_reason_t  error)
-{
-	hg_quark_t qerrordict, qnerrordict, qhandler, q;
-	hg_usize_t i;
-
-	hg_return_val_if_fail (vm != NULL, FALSE, HG_e_VMerror);
-	hg_return_val_if_fail (error < HG_e_END, FALSE, HG_e_VMerror);
-
-	if (vm->has_error) {
-		hg_quark_t qerrorname = HG_QNAME ("errorname");
-		hg_quark_t qcommand = HG_QNAME ("command");
-		hg_quark_t qresult_err, qresult_cmd, qwhere;
-		hg_dict_t *derror;
-		hg_string_t *where;
-		hg_char_t *scommand, *swhere;
-
-		derror = _HG_VM_LOCK (vm, vm->qerror);
-		if (derror == NULL)
-			goto fatal_error;
-		qresult_err = hg_dict_lookup(derror, qerrorname);
-		qresult_cmd = hg_dict_lookup(derror, qcommand);
-		_HG_VM_UNLOCK (vm, vm->qerror);
-
-		if (qresult_cmd == Qnil) {
-			scommand = g_strdup("-%unknown%-");
-		} else {
-			hg_string_t *s = NULL;
-
-			q = hg_vm_quark_to_string(vm,
-						  qresult_cmd,
-						  TRUE,
-						  (hg_pointer_t *)&s);
-			if (q == Qnil)
-				scommand = g_strdup("-%ENOMEM%-");
-			else
-				scommand = hg_string_get_cstr(s);
-			/* this is an instant object.
-			 * surely no reference to the container.
-			 * so it can be safely destroyed.
-			 */
-			hg_string_free(s, TRUE);
-		}
-		qwhere = hg_vm_quark_to_string(vm,
-					       qdata,
-					       TRUE,
-					       (hg_pointer_t *)&where);
-		if (qwhere == Qnil)
-			swhere = g_strdup("-%ENOMEM%-");
-		else
-			swhere = hg_string_get_cstr(where);
-		hg_vm_mfree(vm, qwhere);
-
-		if (qresult_err == Qnil) {
-			g_printerr("Multiple errors occurred.\n"
-				   "  previous error: unknown or this happened at %s prior to set /errorname\n"
-				   "  current error: %s at %s\n",
-				   scommand,
-				   hg_name_lookup(vm->qerror_name[error]),
-				   swhere);
-		} else {
-			g_printerr("Multiple errors occurred.\n"
-				   "  previous error: %s at %s\n"
-				   "  current error: %s at %s\n",
-				   hg_name_lookup(qresult_err),
-				   scommand,
-				   hg_name_lookup(vm->qerror_name[error]),
-				   swhere);
-		}
-		g_free(swhere);
-		g_free(scommand);
-
-		hg_operator_invoke(HG_QOPER (HG_enc_private_abort), vm);
-	}
-	for (i = 0; i < HG_VM_STACK_END; i++) {
-		hg_stack_set_validation(vm->stacks[i], FALSE);
-	}
-	qnerrordict = HG_QNAME ("errordict");
-	qerrordict = hg_vm_dstack_lookup(vm, qnerrordict);
-	if (qerrordict == Qnil) {
-		hg_critical("Unable to lookup errordict");
-
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
-		goto fatal_error;
-	}
-	qhandler = hg_vm_dict_lookup(vm, qerrordict, vm->qerror_name[error], FALSE);
-	if (qhandler == Qnil) {
-		hg_critical("Unable to obtain the error handler for %s",
-			    hg_name_lookup(vm->qerror_name[error]));
-		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_VMerror);
-		goto fatal_error;
-	}
-
-	q = hg_vm_quark_copy(vm, qhandler, NULL);
-	if (q == Qnil)
-		goto fatal_error;
-	hg_stack_push(vm->stacks[HG_VM_STACK_ESTACK], q);
-	hg_stack_push(vm->stacks[HG_VM_STACK_OSTACK], qdata);
-	vm->has_error = TRUE;
-
-	return TRUE;
-  fatal_error:
-	G_STMT_START {
-		const hg_char_t *errname = hg_name_lookup(vm->qerror_name[error]);
-
-		if (errname) {
-			hg_critical("Fatal error during recovering from /%s", errname);
-		} else {
-			hg_critical("Fatal error during recovering from the unknown error");
-		}
-
-		return hg_operator_invoke(HG_QOPER (HG_enc_private_abort), vm);
-	} G_STMT_END;
-}
-
-/**
- * hg_vm_set_error0:
- * @error:
- *
- * FIXME
- *
- * Returns:
- */
-hg_bool_t
-hg_vm_set_error0(hg_vm_t    *vm,
-		 hg_quark_t  qdata)
-{
-	if (!HG_ERROR_IS_SUCCESS0 ()) {
-		return hg_vm_set_error(vm, qdata, HG_ERROR_GET_REASON (hg_errno));
-	}
-
-	return TRUE;
-}
-
-/**
  * hg_vm_reserved_spool_dump:
  * @vm:
  * @mem:
@@ -2888,7 +2560,7 @@ hg_vm_reserved_spool_dump(hg_vm_t   *vm,
 	hg_return_if_fail (ofile != NULL, HG_e_VMerror);
 
 	/* to avoid unusable result when OOM */
-	hg_mem_spool_set_resizable(hg_vm_get_mem(vm), TRUE);
+	hg_mem_spool_set_resizable(_hg_vm_get_mem(vm), TRUE);
 
 	data.vm = vm;
 	data.mem = mem;
@@ -3420,6 +3092,54 @@ hg_vm_dict_lookup(hg_vm_t    *vm,
 /* hg_quark_t */
 
 /**
+ * hg_vm_quark_get_mem:
+ * @vm:
+ * @qdata:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_mem_t *
+hg_vm_quark_get_mem(hg_vm_t    *vm,
+		    hg_quark_t  qdata)
+{
+	return _hg_vm_quark_get_mem(vm, qdata);
+}
+
+/**
+ * hg_vm_quark_lock_object:
+ * @vm:
+ * @qdata:
+ * @pretty_function:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_pointer_t
+hg_vm_quark_lock_object(hg_vm_t         *vm,
+			hg_quark_t       qdata,
+			const hg_char_t *pretty_function)
+{
+	return _hg_vm_quark_lock_object(vm, qdata, pretty_function);
+}
+
+/**
+ * hg_vm_quark_unlock_object:
+ * @vm:
+ * @qdata:
+ *
+ * FIXME
+ */
+void
+hg_vm_quark_unlock_object(hg_vm_t    *vm,
+			  hg_quark_t  qdata)
+{
+	_hg_vm_quark_unlock_object(vm, qdata);
+}
+
+/**
  * hg_vm_quark_gc_mark:
  * @vm:
  * @qdata:
@@ -3549,7 +3269,7 @@ hg_vm_quark_to_string(hg_vm_t      *vm,
 
 	hg_return_val_if_fail (vm != NULL, Qnil, HG_e_VMerror);
 
-	retval = hg_string_new(hg_vm_get_mem(vm),
+	retval = hg_string_new(_hg_vm_get_mem(vm),
 			       65535, (hg_pointer_t *)&s);
 	if (retval == Qnil)
 		return Qnil;
@@ -4119,7 +3839,7 @@ hg_vm_stack_dump(hg_vm_t    *vm,
 	hg_return_if_fail (stack != NULL, HG_e_VMerror);
 	hg_return_if_fail (output != NULL, HG_e_VMerror);
 
-	m = hg_vm_get_mem(vm);
+	m = _hg_vm_get_mem(vm);
 	/* to avoid unusable result when OOM */
 	hg_mem_spool_set_resizable(m, TRUE);
 
