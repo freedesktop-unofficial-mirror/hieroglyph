@@ -73,6 +73,7 @@ static hg_mem_vtable_t __hg_allocator_vtable = {
 	.restore_snapshot  = _hg_allocator_restore_snapshot,
 	.destroy_snapshot  = _hg_allocator_destroy_snapshot,
 };
+
 G_LOCK_DEFINE_STATIC (bitmap);
 G_LOCK_DEFINE_STATIC (allocator);
 
@@ -209,7 +210,7 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 {
 	hg_usize_t aligned_size;
 	hg_int_t page;
-	hg_uint_t i, j, idx = 0;
+	hg_uint_t i, j, idx = 0, end_idx;
 	hg_bool_t retry = FALSE;
 
 	aligned_size = HG_ALIGNED_TO (size, BLOCK_SIZE) / BLOCK_SIZE;
@@ -221,8 +222,9 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 #endif
   find_free_page:
 	idx = bitmap->last_index[page];
+	end_idx = bitmap->size[page];
   find_free_bitmap:
-	for (i = idx, j = i + 1; i < bitmap->size[page]; i++, j += 2) {
+	for (i = idx, j = i + 1; i < end_idx; i++, j += 2) {
 		if (_hg_allocator_bitmap_range_mark(bitmap,
 						    page,
 						    &j,
@@ -241,6 +243,8 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 		if (!retry) {
 			/* retry to find out a free space at the beginning again */
 			retry = TRUE;
+			/* we know no free spaces after idx */
+			end_idx = idx;
 			idx = 0;
 			goto find_free_bitmap;
 		}
@@ -738,11 +742,7 @@ _hg_allocator_lock_object(hg_allocator_data_t *data,
 {
 	hg_allocator_block_t *retval = NULL;
 
-	G_LOCK (allocator);
-
 	retval = _hg_allocator_real_lock_object(data, index_);
-
-	G_UNLOCK (allocator);
 	if (retval)
 		return hg_allocator_get_allocated_object(retval);
 
