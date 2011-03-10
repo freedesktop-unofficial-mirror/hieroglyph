@@ -39,7 +39,7 @@
 #include "hgallocator.proto.h"
 
 /* memory block size per 1 bit in the bitmap */
-#define BLOCK_SIZE		32
+#define BLOCK_SIZE		64
 
 /* finalizer table size */
 #define FINALIZER_SIZE		32
