@@ -573,7 +573,7 @@ DEFUNC_OPER (private_callinstall)
 
 static hg_quark_t
 _hg_operator_pdev_name_lookup(hg_pdev_params_name_t param,
-			      hg_pointer_t              user_data)
+			      hg_pointer_t          user_data)
 {
 	hg_vm_t *vm = (hg_vm_t *)user_data;
 
@@ -2269,10 +2269,10 @@ DEFUNC_OPER (concatmatrix)
 DEFUNC_UNIMPLEMENTED_OPER (condition);
 
 static hg_bool_t
-_hg_operator_copy_real_traverse_dict(hg_mem_t    *mem,
-				     hg_quark_t   qkey,
-				     hg_quark_t   qval,
-				     hg_pointer_t     data)
+_hg_operator_copy_real_traverse_dict(hg_mem_t     *mem,
+				     hg_quark_t    qkey,
+				     hg_quark_t    qval,
+				     hg_pointer_t  data)
 {
 	hg_dict_t *d2 = (hg_dict_t *)data;
 
