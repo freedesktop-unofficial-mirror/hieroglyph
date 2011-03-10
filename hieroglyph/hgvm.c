@@ -537,6 +537,107 @@ _hg_vm_translate_block(hg_vm_t             *vm,
 	return retval;
 }
 
+static hg_bool_t
+_hg_vm_eval(hg_vm_t    *vm,
+	    hg_quark_t  qeval,
+	    hg_bool_t   protect_systemdict)
+{
+	hg_stack_t *estack = NULL, *dstack = NULL, *old_estack = NULL, *old_dstack = NULL;
+	hg_quark_t old_systemdict = Qnil;
+	hg_bool_t retval = FALSE, old_state_hold_langlevel = FALSE;
+	hg_vm_langlevel_t lang = 0;
+
+	if (hg_quark_is_simple_object(qeval)) {
+		/* XXX */
+		return FALSE;
+	}
+	switch(hg_quark_get_type(qeval)) {
+	    case HG_TYPE_STRING:
+	    case HG_TYPE_FILE:
+		    if (!hg_vm_quark_is_executable(vm, &qeval)) {
+			    /* XXX */
+			    return FALSE;
+		    }
+		    break;
+	    default:
+		    /* XXX */
+		    return FALSE;
+	}
+
+	if (protect_systemdict) {
+		hg_dict_t *d, *o;
+		hg_bool_t flag = TRUE;
+
+		old_systemdict = vm->qsystemdict;
+		old_state_hold_langlevel = vm->hold_lang_level;
+		lang = hg_vm_get_language_level(vm);
+		o = _HG_VM_LOCK (vm, old_systemdict);
+		if (o == NULL) {
+			hg_warning("Unable to protect systemdict.");
+			return FALSE;
+		}
+		vm->qsystemdict = hg_dict_dup(o, (hg_pointer_t *)&d);
+		if (vm->qsystemdict == Qnil) {
+			hg_warning("Unable to duplicate systemdict.");
+			flag = FALSE;
+			goto fini_systemdict;
+		}
+		hg_vm_hold_language_level(vm, FALSE);
+		if (!hg_dict_add(d,
+				 HG_QNAME ("systemdict"),
+				 vm->qsystemdict,
+				 FALSE)) {
+			hg_warning("Unable to reregister systemdict");
+			flag = FALSE;
+			goto fini_systemdict;
+		}
+
+		/* save current dict stack */
+		dstack = hg_vm_stack_new(vm, vm->user_params.max_dict_stack);
+		hg_stack_foreach(vm->stacks[HG_VM_STACK_DSTACK], _hg_vm_dup_stack, dstack, TRUE);
+		old_dstack = vm->stacks[HG_VM_STACK_DSTACK];
+		g_ptr_array_add(vm->stacks_stack, old_dstack);
+		vm->stacks[HG_VM_STACK_DSTACK] = dstack;
+
+		/* save current exec stack */
+		estack = hg_vm_stack_new(vm, vm->user_params.max_exec_stack);
+		old_estack = vm->stacks[HG_VM_STACK_ESTACK];
+		g_ptr_array_add(vm->stacks_stack, old_estack);
+		vm->stacks[HG_VM_STACK_ESTACK] = estack;
+
+	  fini_systemdict:
+		_HG_VM_UNLOCK (vm, old_systemdict);
+		_HG_VM_UNLOCK (vm, vm->qsystemdict);
+
+		if (!flag)
+			goto finalize;
+	}
+
+	hg_stack_push(vm->stacks[HG_VM_STACK_ESTACK], qeval);
+	retval = hg_vm_main_loop(vm);
+
+	if (old_estack) {
+		vm->stacks[HG_VM_STACK_ESTACK] = old_estack;
+		g_ptr_array_remove(vm->stacks_stack, old_estack);
+		hg_stack_free(estack);
+	}
+	if (old_dstack) {
+		vm->stacks[HG_VM_STACK_DSTACK] = old_dstack;
+		g_ptr_array_remove(vm->stacks_stack, old_dstack);
+		hg_stack_free(dstack);
+	}
+  finalize:
+	if (protect_systemdict) {
+		vm->qsystemdict = old_systemdict;
+		if (hg_vm_get_language_level(vm) != lang) {
+			hg_vm_startjob(vm, lang, "", FALSE);
+		}
+		hg_vm_hold_language_level(vm, old_state_hold_langlevel);
+	}
+
+	return retval;
+}
+
 static hg_quark_t
 _hg_vm_quark_iterate_copy(hg_quark_t    qdata,
 			  hg_pointer_t  user_data,
@@ -1763,142 +1864,10 @@ hg_vm_main_loop(hg_vm_t *vm)
 }
 
 /**
- * hg_vm_eval:
- * @vm:
- * @qeval:
- * @ostack:
- * @estack:
- * @dstack:
- * @protect_systemdict:
- * @error:
- *
- * FIXME
- *
- * Returns:
- */
-hg_bool_t
-hg_vm_eval(hg_vm_t    *vm,
-	   hg_quark_t  qeval,
-	   hg_stack_t *ostack,
-	   hg_stack_t *estack,
-	   hg_stack_t *dstack,
-	   hg_bool_t   protect_systemdict)
-{
-	hg_stack_t *old_ostack = NULL, *old_estack = NULL, *old_dstack = NULL, *ps_dstack = NULL;
-	hg_quark_t old_systemdict = Qnil;
-	hg_bool_t retval = FALSE, old_state_hold_langlevel = FALSE;
-	hg_vm_langlevel_t lang = 0;
-
-	hg_return_val_if_fail (vm != NULL, FALSE, HG_e_VMerror);
-
-	if (hg_quark_is_simple_object(qeval)) {
-		/* XXX */
-		return FALSE;
-	}
-	if (protect_systemdict) {
-		hg_dict_t *d, *o;
-		hg_bool_t flag = TRUE;
-
-		old_systemdict = vm->qsystemdict;
-		old_state_hold_langlevel = vm->hold_lang_level;
-		lang = hg_vm_get_language_level(vm);
-		o = _HG_VM_LOCK (vm, old_systemdict);
-		if (o == NULL) {
-			hg_warning("Unable to protect systemdict.");
-			return FALSE;
-		}
-		vm->qsystemdict = hg_dict_dup(o, (hg_pointer_t *)&d);
-		if (vm->qsystemdict == Qnil) {
-			hg_warning("Unable to duplicate systemdict.");
-			flag = FALSE;
-			goto fini_systemdict;
-		}
-		hg_vm_hold_language_level(vm, FALSE);
-		if (!hg_dict_add(d,
-				 HG_QNAME ("systemdict"),
-				 vm->qsystemdict,
-				 FALSE)) {
-			hg_warning("Unable to reregister systemdict");
-			flag = FALSE;
-			goto fini_systemdict;
-		}
-
-		if (!dstack) {
-			ps_dstack = dstack = hg_vm_stack_new(vm, 65535);
-			hg_stack_foreach(vm->stacks[HG_VM_STACK_DSTACK], _hg_vm_dup_stack, ps_dstack, TRUE);
-		}
-
-	  fini_systemdict:
-		_HG_VM_UNLOCK (vm, old_systemdict);
-		_HG_VM_UNLOCK (vm, vm->qsystemdict);
-
-		if (!flag)
-			goto finalize;
-	}
-	switch(hg_quark_get_type(qeval)) {
-	    case HG_TYPE_STRING:
-	    case HG_TYPE_FILE:
-		    if (!hg_vm_quark_is_executable(vm, &qeval)) {
-			    /* XXX */
-			    return FALSE;
-		    }
-		    break;
-	    default:
-		    /* XXX */
-		    return FALSE;
-	}
-	if (ostack) {
-		old_ostack = vm->stacks[HG_VM_STACK_OSTACK];
-		g_ptr_array_add(vm->stacks_stack, old_ostack);
-		vm->stacks[HG_VM_STACK_OSTACK] = ostack;
-	}
-	if (estack) {
-		old_estack = vm->stacks[HG_VM_STACK_ESTACK];
-		g_ptr_array_add(vm->stacks_stack, old_estack);
-		vm->stacks[HG_VM_STACK_ESTACK] = estack;
-	}
-	if (dstack) {
-		old_dstack = vm->stacks[HG_VM_STACK_DSTACK];
-		g_ptr_array_add(vm->stacks_stack, old_dstack);
-		vm->stacks[HG_VM_STACK_DSTACK] = dstack;
-	}
-	hg_stack_push(vm->stacks[HG_VM_STACK_ESTACK], qeval);
-	retval = hg_vm_main_loop(vm);
-
-	if (old_ostack) {
-		vm->stacks[HG_VM_STACK_OSTACK] = old_ostack;
-		g_ptr_array_remove(vm->stacks_stack, old_ostack);
-	}
-	if (old_estack) {
-		vm->stacks[HG_VM_STACK_ESTACK] = old_estack;
-		g_ptr_array_remove(vm->stacks_stack, old_estack);
-	}
-	if (old_dstack) {
-		vm->stacks[HG_VM_STACK_DSTACK] = old_dstack;
-		g_ptr_array_remove(vm->stacks_stack, old_dstack);
-	}
-  finalize:
-	if (protect_systemdict) {
-		vm->qsystemdict = old_systemdict;
-		if (hg_vm_get_language_level(vm) != lang) {
-			hg_vm_startjob(vm, lang, "", FALSE);
-		}
-		hg_vm_hold_language_level(vm, old_state_hold_langlevel);
-		if (ps_dstack)
-			hg_stack_free(ps_dstack);
-	}
-
-	return retval;
-}
-
-/**
- * hg_vm_eval_from_cstring:
+ * hg_vm_eval_cstring:
  * @vm:
  * @cstring:
  * @clen:
- * @ostack:
- * @estack:
- * @dstack:
  * @protect_systemdict:
  *
  * FIXME
@@ -1906,13 +1875,10 @@ hg_vm_eval(hg_vm_t    *vm,
  * Returns:
  */
 hg_bool_t
-hg_vm_eval_from_cstring(hg_vm_t         *vm,
-			const hg_char_t *cstring,
-			hg_size_t        clen,
-			hg_stack_t      *ostack,
-			hg_stack_t      *estack,
-			hg_stack_t      *dstack,
-			hg_bool_t        protect_systemdict)
+hg_vm_eval_cstring(hg_vm_t         *vm,
+		   const hg_char_t *cstring,
+		   hg_size_t        clen,
+		   hg_bool_t        protect_systemdict)
 {
 	hg_quark_t qstring;
 	hg_bool_t retval = FALSE;
@@ -1936,7 +1902,7 @@ hg_vm_eval_from_cstring(hg_vm_t         *vm,
 		goto error;
 	}
 	hg_vm_quark_set_executable(vm, &qstring, TRUE);
-	retval = hg_vm_eval(vm, qstring, ostack, estack, dstack, protect_systemdict);
+	retval = _hg_vm_eval(vm, qstring, protect_systemdict);
 
 	/* Don't free the string here.
 	 * this causes a segfault in the file object
@@ -1951,12 +1917,9 @@ hg_vm_eval_from_cstring(hg_vm_t         *vm,
 }
 
 /**
- * hg_vm_eval_from_file:
+ * hg_vm_eval_file:
  * @vm:
  * @initfile:
- * @ostack:
- * @estack:
- * @dstack:
  * @protect_systemdict:
  * @error:
  *
@@ -1965,12 +1928,9 @@ hg_vm_eval_from_cstring(hg_vm_t         *vm,
  * Returns:
  */
 hg_bool_t
-hg_vm_eval_from_file(hg_vm_t         *vm,
-		     const hg_char_t *initfile,
-		     hg_stack_t      *ostack,
-		     hg_stack_t      *estack,
-		     hg_stack_t      *dstack,
-		     hg_bool_t        protect_systemdict)
+hg_vm_eval_file(hg_vm_t         *vm,
+		const hg_char_t *initfile,
+		hg_bool_t        protect_systemdict)
 {
 	hg_char_t *filename;
 	hg_bool_t retval = FALSE;
@@ -1990,7 +1950,7 @@ hg_vm_eval_from_file(hg_vm_t         *vm,
 			goto error;
 		hg_vm_quark_set_default_acl(vm, &qfile);
 		hg_vm_quark_set_executable(vm, &qfile, TRUE);
-		retval = hg_vm_eval(vm, qfile, ostack, estack, dstack, protect_systemdict);
+		retval = _hg_vm_eval(vm, qfile, protect_systemdict);
 		/* may better relying on GC
 		 * hg_vm_mfree(vm, qfile);
 		 */
@@ -2085,7 +2045,7 @@ hg_vm_startjob(hg_vm_t           *vm,
 	/* change the default memory */
 	hg_vm_use_global_mem(vm, FALSE);
 
-	retval = hg_vm_eval_from_file(vm, "hg_init.ps", NULL, NULL, NULL, FALSE);
+	retval = hg_vm_eval_file(vm, "hg_init.ps", FALSE);
 
 	/* make systemdict read-only */
 	dict = _HG_VM_LOCK (vm, vm->qsystemdict);
@@ -2114,13 +2074,13 @@ hg_vm_startjob(hg_vm_t           *vm,
 		if (!HG_ERROR_IS_SUCCESS0 ()) {
 			return FALSE;
 		}
-		hg_vm_eval_from_cstring(vm, "initgraphics", -1, NULL, NULL, NULL, FALSE);
+		hg_vm_eval_cstring(vm, "initgraphics", -1, FALSE);
 		/* XXX: initialize device */
 
 		if (initializer) {
 			hg_char_t *s = g_strdup_printf("{(%s)(r)file dup type/filetype eq{cvx exec}if}stopped{$error/newerror get{errordict/handleerror get exec 1 .quit}if}if", initializer);
 
-			retval = hg_vm_eval_from_cstring(vm, s, -1, NULL, NULL, NULL, FALSE);
+			retval = hg_vm_eval_cstring(vm, s, -1, FALSE);
 
 			g_free(s);
 
@@ -2128,7 +2088,7 @@ hg_vm_startjob(hg_vm_t           *vm,
 		}
 	}
 
-	return (retval ? hg_vm_eval_from_cstring(vm, "systemdict/.loadhistory known{(.hghistory).loadhistory}if start systemdict/.savehistory known{(.hghistory).savehistory}if", -1, NULL, NULL, NULL, FALSE) : FALSE);
+	return (retval ? hg_vm_eval_cstring(vm, "systemdict/.loadhistory known{(.hghistory).loadhistory}if start systemdict/.savehistory known{(.hghistory).savehistory}if", -1, FALSE) : FALSE);
 }
 
 /**

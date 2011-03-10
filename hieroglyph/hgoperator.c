@@ -4509,10 +4509,9 @@ DEFUNC_UNIMPLEMENTED_OPER (infill);
 /* - initclip - */
 DEFUNC_OPER (initclip)
 {
-	hg_stack_t *es = hg_vm_stack_new(vm, 256);
+	const hg_char_t ps[] = ".currentpagedevice /PageSize get 0 0 moveto dup 0 get 0 lineto dup aload pop lineto 1 get 0 exch lineto closepath";
 
-	if (hg_vm_eval_from_cstring(vm, ".currentpagedevice /PageSize get 0 0 moveto dup 0 get 0 lineto dup aload pop lineto 1 get 0 exch lineto closepath", -1,
-				    NULL, es, NULL, TRUE)) {
+	if (hg_vm_eval_cstring(vm, ps, -1, TRUE)) {
 		hg_quark_t qg = hg_vm_get_gstate(vm);
 		hg_gstate_t *gstate = HG_VM_LOCK (vm, qg);
 
@@ -4521,7 +4520,6 @@ DEFUNC_OPER (initclip)
 			HG_VM_UNLOCK (vm, qg);
 		}
 	}
-	hg_stack_free(es);
 } DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (initviewclip);

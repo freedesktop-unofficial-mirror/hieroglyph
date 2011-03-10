@@ -206,7 +206,7 @@ _unittest_load(hg_plugin_t  *plugin,
 	hg_dict_t *dict;
 	hg_bool_t is_global, retval;
 	hg_int_t i;
-	hg_stack_t *estack;
+	const hg_char_t ps[] = "{(hg_unittest.ps) runlibfile} stopped {(** Unable to initialize the unittest extension plugin: reason: /) $error /errorname get 256 string cvs .concatstring = (\n) = } if";
 
 	if (plugin->user_data != NULL) {
 		hg_warning("plugin is already loaded.");
@@ -230,10 +230,7 @@ _unittest_load(hg_plugin_t  *plugin,
 
 	hg_vm_use_global_mem(vm, is_global);
 
-	estack = hg_vm_stack_new(vm, 256);
-	retval = hg_vm_eval_from_cstring(vm, "{(hg_unittest.ps) runlibfile} stopped {(** Unable to initialize the unittest extension plugin: reason: /) $error /errorname get 256 string cvs .concatstring = (\n) = } if", -1,
-					 NULL, estack, NULL, TRUE);
-	hg_stack_free(estack);
+	retval = hg_vm_eval_cstring(vm, ps, -1, TRUE);
 
 	return retval;
 }
