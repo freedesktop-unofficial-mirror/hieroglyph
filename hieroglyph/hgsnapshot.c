@@ -29,6 +29,7 @@
 #include <glib.h>
 #include "hgmem.h"
 #include "hgmem-private.h"
+#include "hgutils.h"
 #include "hgsnapshot.h"
 
 #include "hgsnapshot.proto.h"
@@ -100,7 +101,7 @@ _hg_object_snapshot_to_cstr(hg_object_t             *object,
 {
 	hg_return_val_if_fail (object->type == HG_TYPE_SNAPSHOT, NULL, HG_e_typecheck);
 
-	return g_strdup("-save-");
+	return hg_strdup("-save-");
 }
 
 static hg_bool_t

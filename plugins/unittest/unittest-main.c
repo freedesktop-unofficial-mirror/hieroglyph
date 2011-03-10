@@ -74,7 +74,7 @@ DEFUNC_OPER (private_validatetestresult)
 	qexp = hg_dict_lookup(d, HG_QNAME ("expression"));
 	q = hg_vm_quark_to_string(vm, qexp, TRUE, (hg_pointer_t *)&sexp);
 	if (q == Qnil) {
-		cexp = g_strdup("--%unknown--");
+		cexp = hg_strdup("--%unknown--");
 	} else {
 		cexp = hg_string_get_cstr(sexp);
 	}
@@ -95,21 +95,21 @@ DEFUNC_OPER (private_validatetestresult)
 
 			qa = hg_vm_quark_to_string(vm, qaerror, TRUE, (hg_pointer_t *)&sa);
 			if (qa == Qnil) {
-				csa = g_strdup("--%unknown--");
+				csa = hg_strdup("--%unknown--");
 			} else {
 				csa = hg_string_get_cstr(sa);
 			}
 			hg_string_free(sa, TRUE);
 			qe = hg_vm_quark_to_string(vm, qeerror, TRUE, (hg_pointer_t *)&se);
 			if (qe == Qnil) {
-				cse = g_strdup("--%unknown--");
+				cse = hg_strdup("--%unknown--");
 			} else {
 				cse = hg_string_get_cstr(se);
 			}
 			hg_string_free(se, TRUE);
 			qp = hg_vm_quark_to_string(vm, qerrorat, TRUE, (hg_pointer_t *)&sp);
 			if (qp == Qnil) {
-				csp = g_strdup("--%unknown--");
+				csp = hg_strdup("--%unknown--");
 			} else {
 				csp = hg_string_get_cstr(sp);
 			}
@@ -120,9 +120,9 @@ DEFUNC_OPER (private_validatetestresult)
 			hg_file_append_printf(f, "Expression: %s - expected error is %s, but actual error was %s at %s\n",
 					      cexp, cse, csa, csp);
 			HG_VM_UNLOCK (vm, qf);
-			g_free(csa);
-			g_free(cse);
-			g_free(csp);
+			hg_free(csa);
+			hg_free(cse);
+			hg_free(csp);
 		}
 		result = FALSE;
 	}
@@ -142,14 +142,14 @@ DEFUNC_OPER (private_validatetestresult)
 
 		qa = hg_vm_quark_to_string(vm, qastack, TRUE, (hg_pointer_t *)&sa);
 		if (qa == Qnil) {
-			csa = g_strdup("--%unknown--");
+			csa = hg_strdup("--%unknown--");
 		} else {
 			csa = hg_string_get_cstr(sa);
 		}
 		hg_string_free(sa, TRUE);
 		qe = hg_vm_quark_to_string(vm, qestack, TRUE, (hg_pointer_t *)&se);
 		if (qe == Qnil) {
-			cse = g_strdup("--%unknown--");
+			cse = hg_strdup("--%unknown--");
 		} else {
 			cse = hg_string_get_cstr(se);
 		}
@@ -166,12 +166,12 @@ DEFUNC_OPER (private_validatetestresult)
 		}
 		retval = TRUE;
 
-		g_free(cse);
-		g_free(csa);
+		hg_free(cse);
+		hg_free(csa);
 	}
 
   error:
-	g_free(cexp);
+	hg_free(cexp);
 	HG_VM_UNLOCK (vm, arg0);
 
 	hg_stack_drop(ostack);

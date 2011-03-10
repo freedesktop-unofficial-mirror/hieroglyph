@@ -150,7 +150,7 @@ DEFUNC_OPER (private_loadhistory)
 
 	g_free(histfile);
 	g_free(filename);
-	g_free(cstr);
+	hg_free(cstr);
 
 	hg_stack_drop(ostack);
 	SET_EXPECTED_OSTACK_SIZE (-1);
@@ -188,7 +188,7 @@ DEFUNC_OPER (private_savehistory)
 
 	g_free(histfile);
 	g_free(filename);
-	g_free(cstr);
+	hg_free(cstr);
 
 	hg_stack_drop(ostack);
 	SET_EXPECTED_OSTACK_SIZE (-1);

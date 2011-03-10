@@ -33,6 +33,7 @@
 #include "hgmark.h"
 #include "hgnull.h"
 #include "hgreal.h"
+#include "hgutils.h"
 #include "hgarray.h"
 
 #include "hgarray.proto.h"
@@ -167,15 +168,15 @@ _hg_object_array_to_cstr(hg_object_t             *object,
 
 		p = HG_MEM_LOCK (array->o.mem, array->qname);
 		if (!HG_ERROR_IS_SUCCESS0 ())
-			return g_strdup("[FAILED]");
-		s = g_strdup(p);
+			return hg_strdup("[FAILED]");
+		s = hg_strdup(p);
 		hg_mem_unlock_object(array->o.mem, array->qname);
 
 		return s;
 	}
 
 	if (object->on_to_cstr)
-		return g_strdup("[...]");
+		return hg_strdup("[...]");
 	object->on_to_cstr = TRUE;
 
 	g_string_append_c(retval, '[');
@@ -195,14 +196,17 @@ _hg_object_array_to_cstr(hg_object_t             *object,
 			continue;
 		} else {
 			g_string_append(retval, s);
-			g_free(s);
+			hg_free(s);
 		}
 	}
 	g_string_append_c(retval, ']');
 
 	object->on_to_cstr = FALSE;
 
-	return g_string_free(retval, FALSE);
+	s = hg_strdup(retval->str);
+	g_string_free(retval, TRUE);
+
+	return s;
 }
 
 static hg_bool_t

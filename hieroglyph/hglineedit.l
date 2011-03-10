@@ -158,7 +158,7 @@ HEXDIGITS	[0-9a-fA-F]
 static hg_char_t *
 _hg_lineedit_real_get_line(hg_lineedit_t   *lineedit,
 			   const hg_char_t *prompt,
-			   hg_pointer_t         user_data)
+			   hg_pointer_t     user_data)
 {
 	GString *buf = g_string_new(NULL);
 	hg_char_t c;

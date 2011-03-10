@@ -32,6 +32,7 @@
 #include "hgerror.h"
 #include "hgmessages.h"
 #include "hgquark.h"
+#include "hgutils.h"
 #include "hgallocator.h"
 #include "hgallocator-private.h"
 
@@ -112,11 +113,11 @@ _hg_allocator_bitmap_new(hg_usize_t size)
 
 	aligned_size = HG_ALIGNED_TO (size, BLOCK_SIZE);
 	bitmap_size = HG_ALIGNED_TO (aligned_size / BLOCK_SIZE, sizeof (hg_uint_t));
-	retval = g_new0(hg_allocator_bitmap_t, 1);
+	retval = (hg_allocator_bitmap_t *)hg_malloc0(sizeof (hg_allocator_bitmap_t));
 	if (retval) {
-		retval->bitmaps = g_new0(hg_uint_t *, max_page);
-		retval->size = g_new0(gsize, max_page);
-		retval->last_index = g_new0(hg_quark_t, max_page);
+		retval->bitmaps = (hg_uint_t **)hg_malloc0(sizeof (hg_uint_t *) * max_page);
+		retval->size = (hg_usize_t *)hg_malloc0(sizeof (hg_usize_t) * max_page);
+		retval->last_index = (hg_quark_t *)hg_malloc0(sizeof (hg_quark_t) * max_page);
 		page = _hg_allocator_bitmap_get_free_page(retval);
 		if (!retval->bitmaps ||
 		    !retval->size ||
@@ -125,7 +126,7 @@ _hg_allocator_bitmap_new(hg_usize_t size)
 			_hg_allocator_bitmap_destroy(retval);
 			return NULL;
 		}
-		retval->bitmaps[page] = g_new0(hg_uint_t, bitmap_size / sizeof (hg_uint_t));
+		retval->bitmaps[page] = (hg_uint_t *)hg_malloc0(sizeof (hg_uint_t) * (bitmap_size / sizeof (hg_uint_t)));
 		retval->size[page] = bitmap_size;
 	}
 
@@ -154,12 +155,12 @@ _hg_allocator_bitmap_destroy(hg_pointer_t data)
 	if (!data)
 		return;
 	for (i = 0; i < max_page; i++) {
-		g_free(bitmap->bitmaps[i]);
+		hg_free(bitmap->bitmaps[i]);
 	}
-	g_free(bitmap->bitmaps);
-	g_free(bitmap->size);
-	g_free(bitmap->last_index);
-	g_free(bitmap);
+	hg_free(bitmap->bitmaps);
+	hg_free(bitmap->size);
+	hg_free(bitmap->last_index);
+	hg_free(bitmap);
 }
 
 HG_INLINE_FUNC hg_int_t
@@ -193,7 +194,7 @@ _hg_allocator_bitmap_add_page_to(hg_allocator_bitmap_t *bitmap,
 	aligned_size = HG_ALIGNED_TO (size, BLOCK_SIZE);
 	bitmap_size = HG_ALIGNED_TO (aligned_size / BLOCK_SIZE, sizeof (hg_uint_t));
 	if (page >= 0) {
-		bitmap->bitmaps[page] = g_new0(hg_uint_t, bitmap_size / sizeof (hg_uint_t));
+		bitmap->bitmaps[page] = (hg_uint_t *)hg_malloc0(sizeof (hg_uint_t) * (bitmap_size / sizeof (hg_uint_t)));
 		bitmap->size[page] = bitmap_size;
 	}
 
@@ -429,7 +430,7 @@ _hg_allocator_bitmap_copy(hg_allocator_bitmap_t *bitmap)
 	for (i = 0; i < max_page; i++) {
 		if (bitmap->bitmaps[i]) {
 			if (!retval->bitmaps[i]) {
-				retval->bitmaps[i] = g_new0(hg_uint_t, bitmap->size[i] / sizeof (hg_uint_t));
+				retval->bitmaps[i] = (hg_uint_t *)hg_malloc0(sizeof (hg_uint_t) * (bitmap->size[i] / sizeof (hg_uint_t)));
 				bitmap->size[i] = bitmap->size[i];
 			}
 			memcpy(retval->bitmaps[i], bitmap->bitmaps[i], bitmap->size[i]);
@@ -478,7 +479,7 @@ _hg_allocator_initialize(void)
 {
 	hg_allocator_private_t *retval;
 
-	retval = g_new0(hg_allocator_private_t, 1);
+	retval = (hg_allocator_private_t *)hg_malloc0(sizeof (hg_allocator_private_t));
 
 	return retval;
 }
@@ -495,17 +496,17 @@ _hg_allocator_finalize(hg_allocator_data_t *data)
 	priv = (hg_allocator_private_t *)data;
 	if (priv->heaps) {
 		for (i = 0; i < max_page; i++) {
-			g_free(priv->heaps[i]);
+			hg_free(priv->heaps[i]);
 		}
-		g_free(priv->heaps);
+		hg_free(priv->heaps);
 	}
 	if (priv->gc_marker)
-		free(priv->gc_marker);
+		hg_free(priv->gc_marker);
 	if (priv->finalizer)
-		free(priv->finalizer);
+		hg_free(priv->finalizer);
 	_hg_allocator_bitmap_destroy(priv->bitmap);
 
-	g_free(priv);
+	hg_free(priv);
 }
 
 static hg_bool_t
@@ -516,7 +517,7 @@ _hg_allocator_expand_heap(hg_allocator_data_t *data,
 	hg_int_t page = 0;
 
 	if (!priv->heaps) {
-		priv->heaps = g_new0(hg_pointer_t, hg_allocator_get_max_page());
+		priv->heaps = (hg_pointer_t *)hg_malloc0(sizeof (hg_pointer_t) * hg_allocator_get_max_page());
 		if (!priv->heaps)
 			return FALSE;
 	}
@@ -528,7 +529,7 @@ _hg_allocator_expand_heap(hg_allocator_data_t *data,
 		if (!priv->bitmap)
 			return FALSE;
 	}
-	priv->heaps[page] = g_malloc(priv->bitmap->size[page] * BLOCK_SIZE);
+	priv->heaps[page] = hg_malloc(priv->bitmap->size[page] * BLOCK_SIZE);
 	if (!priv->heaps[page])
 		return FALSE;
 	data->total_size = priv->bitmap->size[page] * BLOCK_SIZE;
@@ -847,7 +848,7 @@ _hg_allocator_add_gc_marker(hg_allocator_data_t *data,
 
 	priv = (hg_allocator_private_t *)data;
 
-	freespace = malloc(sizeof (hg_int_t) * priv->max_gc_marker);
+	freespace = (hg_int_t *)hg_malloc(sizeof (hg_int_t) * priv->max_gc_marker);
 	if (freespace == NULL) {
 		hg_fatal("Unrecoverable error happened.");
 		/* shouldn't be reached */
@@ -873,7 +874,7 @@ _hg_allocator_add_gc_marker(hg_allocator_data_t *data,
 				priv->max_gc_marker = GC_MARKER_SIZE;
 			else
 				priv->max_gc_marker *= 2;
-			priv->gc_marker = realloc(priv->gc_marker, sizeof (hg_gc_mark_func_t) * priv->max_gc_marker);
+			priv->gc_marker = hg_realloc(priv->gc_marker, sizeof (hg_gc_mark_func_t) * priv->max_gc_marker);
 			if (priv->gc_marker == NULL) {
 				hg_fatal("Unrecoverable error happened.");
 				/* shouldn't be reached */
@@ -888,7 +889,7 @@ _hg_allocator_add_gc_marker(hg_allocator_data_t *data,
 		retval = priv->gc_marker_count++;
 	}
   finalize:
-	free(freespace);
+	hg_free(freespace);
 
 	return retval;
 }
@@ -938,7 +939,7 @@ _hg_allocator_add_finalizer(hg_allocator_data_t *data,
 
 	priv = (hg_allocator_private_t *)data;
 
-	freespace = malloc(sizeof (hg_int_t) * priv->max_finalizer);
+	freespace = (hg_int_t *)hg_malloc(sizeof (hg_int_t) * priv->max_finalizer);
 	if (freespace == NULL) {
 		hg_fatal("Unrecoverable error happened.");
 		/* shouldn't be reached */
@@ -964,7 +965,7 @@ _hg_allocator_add_finalizer(hg_allocator_data_t *data,
 				priv->max_finalizer = FINALIZER_SIZE;
 			else
 				priv->max_finalizer *= 2;
-			priv->finalizer = realloc(priv->finalizer, sizeof (hg_finalizer_func_t) * priv->max_finalizer);
+			priv->finalizer = hg_realloc(priv->finalizer, sizeof (hg_finalizer_func_t) * priv->max_finalizer);
 			if (priv->finalizer == NULL) {
 				hg_fatal("Unrecoverable error happened.");
 				/* shouldn't be reached */
@@ -979,7 +980,7 @@ _hg_allocator_add_finalizer(hg_allocator_data_t *data,
 		retval = priv->finalizer_count++;
 	}
   finalize:
-	free(freespace);
+	hg_free(freespace);
 
 	return retval;
 }
@@ -1161,7 +1162,7 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data)
 	if (HG_ERROR_IS_SUCCESS0 ()) {
 		hg_usize_t used_size, max_size = data->total_size / BLOCK_SIZE, k = 0, l;
 		hg_uint_t i, j, max_page = hg_allocator_get_max_page();
-		hg_quark_t *failed = malloc(sizeof (hg_quark_t) * max_size);
+		hg_quark_t *failed = (hg_quark_t *)hg_malloc(sizeof (hg_quark_t) * max_size);
 		hg_allocator_block_t *block;
 
 		used_size = data->used_size - priv->slave.used_size;
@@ -1196,7 +1197,7 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data)
 								/* evaluate later. there might be a block that is referring the early blocks */
 								if (k >= max_size) {
 									max_size *= 2;
-									failed = realloc(failed, max_size);
+									failed = hg_realloc(failed, max_size);
 									if (!failed) {
 										hg_fatal("Unrecoverable error happened.");
 										/* shouldn't be reached */
@@ -1236,7 +1237,7 @@ _hg_allocator_gc_finish(hg_allocator_data_t *data)
 			}
 		}
   finalize:
-		free(failed);
+		hg_free(failed);
 	}
 
 	if (HG_ERROR_IS_SUCCESS0 ()) {
@@ -1269,13 +1270,13 @@ _hg_allocator_save_snapshot(hg_allocator_data_t *data)
 
 	G_LOCK (allocator);
 
-	snapshot = g_new0(hg_allocator_snapshot_private_t, 1);
+	snapshot = (hg_allocator_snapshot_private_t *)hg_malloc0(sizeof (hg_allocator_snapshot_private_t));
 	if (snapshot) {
 		snapshot->bitmap = _hg_allocator_bitmap_copy(priv->bitmap);
-		snapshot->heaps = g_new0(gpointer, max_page);
+		snapshot->heaps = (hg_pointer_t *)hg_malloc0(sizeof (hg_pointer_t) * max_page);
 		for (i = 0; i < max_page; i++) {
 			if (priv->heaps[i]) {
-				snapshot->heaps[i] = g_malloc(priv->bitmap->size[i] * BLOCK_SIZE);
+				snapshot->heaps[i] = hg_malloc(priv->bitmap->size[i] * BLOCK_SIZE);
 				memcpy(snapshot->heaps[i], priv->heaps[i], priv->bitmap->size[i] * BLOCK_SIZE);
 			}
 		}
@@ -1390,13 +1391,13 @@ _hg_allocator_restore_snapshot(hg_allocator_data_t          *data,
 	_hg_allocator_bitmap_destroy(priv->bitmap);
 	priv->bitmap = spriv->bitmap;
 	for (i = 0; i < max_page; i++) {
-		g_free(spriv->heaps[i]);
+		hg_free(spriv->heaps[i]);
 	}
-	g_free(spriv->heaps);
+	hg_free(spriv->heaps);
 	data->total_size = snapshot->total_size;
 	data->used_size = snapshot->used_size;
 	priv->snapshot_age = spriv->age;
-	g_free(snapshot);
+	hg_free(snapshot);
 	retval = TRUE;
 
   error:
@@ -1414,10 +1415,10 @@ _hg_allocator_destroy_snapshot(hg_allocator_data_t          *data,
 
 	_hg_allocator_bitmap_destroy(spriv->bitmap);
 	for (i = 0; i < max_page; i++) {
-		g_free(spriv->heaps[i]);
+		hg_free(spriv->heaps[i]);
 	}
-	g_free(spriv->heaps);
-	g_free(spriv);
+	hg_free(spriv->heaps);
+	hg_free(spriv);
 }
 
 /*< public >*/

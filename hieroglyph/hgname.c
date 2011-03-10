@@ -31,6 +31,7 @@
 #include "hgerror.h"
 #include "hgquark.h"
 #include "hgtypebit-private.h"
+#include "hgutils.h"
 #include "hgname.h"
 
 #include "hgname.proto.h"
@@ -59,10 +60,9 @@ _hg_name_new(const hg_char_t *string)
 	hg_return_val_if_fail (__hg_name_pool.seq_id != 0, Qnil, HG_e_VMerror);
 
 	if ((__hg_name_pool.seq_id - HG_enc_POSTSCRIPT_RESERVED_END) % HG_NAME_BLOCK_SIZE == 0)
-		__hg_name_pool.quarks = g_renew(hg_char_t *,
-						 __hg_name_pool.quarks,
-						 __hg_name_pool.seq_id - HG_enc_POSTSCRIPT_RESERVED_END + HG_NAME_BLOCK_SIZE);
-	s = g_strdup(string);
+		__hg_name_pool.quarks = (hg_char_t **)hg_realloc(__hg_name_pool.quarks,
+								 sizeof (hg_char_t *) * (__hg_name_pool.seq_id - HG_enc_POSTSCRIPT_RESERVED_END + HG_NAME_BLOCK_SIZE));
+	s = hg_strdup(string);
 	retval = g_atomic_int_exchange_and_add(&__hg_name_pool.seq_id, 1);
 	__hg_name_pool.quarks[retval - HG_enc_POSTSCRIPT_RESERVED_END] = s;
 	g_hash_table_insert(__hg_name_pool.name_spool,
@@ -81,9 +81,9 @@ void
 hg_name_init(void)
 {
 	if (g_atomic_int_exchange_and_add(&__hg_name_pool.ref_count, 1) == 0) {
-		__hg_name_pool.name_spool = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+		__hg_name_pool.name_spool = g_hash_table_new_full(g_str_hash, g_str_equal, hg_free, NULL);
 		__hg_name_pool.seq_id = HG_enc_POSTSCRIPT_RESERVED_END + 1;
-		__hg_name_pool.quarks = g_new0(hg_char_t *, HG_NAME_BLOCK_SIZE);
+		__hg_name_pool.quarks = (hg_char_t **)hg_malloc0(sizeof (hg_char_t *) * HG_NAME_BLOCK_SIZE);
 	}
 	if (!hg_encoding_init()) {
 		hg_name_tini();
@@ -106,7 +106,7 @@ hg_name_tini(void)
 	if (oldval == 1) {
 		g_hash_table_destroy(__hg_name_pool.name_spool);
 		__hg_name_pool.name_spool = NULL;
-		g_free(__hg_name_pool.quarks);
+		hg_free(__hg_name_pool.quarks);
 		__hg_name_pool.quarks = NULL;
 		hg_encoding_tini();
 	}
@@ -154,7 +154,7 @@ hg_name_new_with_string(const hg_char_t *string,
 	if (len < 0)
 		len = strlen(string);
 
-	s = g_strndup(string, len);
+	s = hg_strndup(string, len);
 	enc = hg_encoding_lookup_system_encoding(s);
 	if (enc == HG_enc_END) {
 		hg_pointer_t p = NULL;
@@ -174,7 +174,7 @@ hg_name_new_with_string(const hg_char_t *string,
 	} else {
 		retval = enc;
 	}
-	g_free(s);
+	hg_free(s);
 
 	return hg_quark_new(HG_TYPE_NAME, retval);
 }

@@ -209,7 +209,7 @@ _hg_vm_stack_real_dump(hg_mem_t     *mem,
 			      (hg_quark_is_executable(qdata) ? 'x' : '-'),
 			      q == Qnil ? "..." : cstr);
 
-	g_free(cstr);
+	hg_free(cstr);
 	/* this is an instant object.
 	 * surely no reference to the container.
 	 * so it can be safely destroyed.
@@ -948,7 +948,7 @@ _hg_vm_set_error(hg_vm_t           *vm,
 		_HG_VM_UNLOCK (vm, vm->qerror);
 
 		if (qresult_cmd == Qnil) {
-			scommand = g_strdup("-%unknown%-");
+			scommand = hg_strdup("-%unknown%-");
 		} else {
 			hg_string_t *s = NULL;
 
@@ -957,7 +957,7 @@ _hg_vm_set_error(hg_vm_t           *vm,
 						  TRUE,
 						  (hg_pointer_t *)&s);
 			if (q == Qnil)
-				scommand = g_strdup("-%ENOMEM%-");
+				scommand = hg_strdup("-%ENOMEM%-");
 			else
 				scommand = hg_string_get_cstr(s);
 			/* this is an instant object.
@@ -971,7 +971,7 @@ _hg_vm_set_error(hg_vm_t           *vm,
 					       TRUE,
 					       (hg_pointer_t *)&where);
 		if (qwhere == Qnil)
-			swhere = g_strdup("-%ENOMEM%-");
+			swhere = hg_strdup("-%ENOMEM%-");
 		else
 			swhere = hg_string_get_cstr(where);
 		_hg_vm_quark_free(vm, qwhere);
@@ -992,8 +992,8 @@ _hg_vm_set_error(hg_vm_t           *vm,
 				   hg_name_lookup(vm->qerror_name[error]),
 				   swhere);
 		}
-		g_free(swhere);
-		g_free(scommand);
+		hg_free(swhere);
+		hg_free(scommand);
 
 		hg_operator_invoke(HG_QOPER (HG_enc_private_abort), vm);
 	}
@@ -1130,9 +1130,9 @@ hg_vm_new(void)
 	g_get_current_time(&retval->initiation_time);
 
 	retval->params = g_hash_table_new_full(g_str_hash, g_str_equal,
-					       g_free, hg_vm_value_free);
+					       hg_free, hg_vm_value_free);
 	retval->plugin_table = g_hash_table_new_full(g_str_hash, g_str_equal,
-						     g_free, NULL);
+						     hg_free, NULL);
 	retval->mem[HG_VM_MEM_GLOBAL] = hg_mem_spool_new(HG_MEM_TYPE_GLOBAL,
 							 HG_VM_GLOBAL_MEM_SIZE);
 	retval->mem[HG_VM_MEM_LOCAL] = hg_mem_spool_new(HG_MEM_TYPE_LOCAL,
@@ -1891,13 +1891,13 @@ hg_vm_eval_cstring(hg_vm_t         *vm,
 		clen = strlen(cstring);
 
 	/* add \n at the end to avoid failing on scanner */
-	str = g_new0(hg_char_t, clen + 2);
+	str = (hg_char_t *)hg_malloc0(sizeof (hg_char_t) * (clen + 2));
 	memcpy(str, cstring, clen);
 	str[clen] = '\n';
 	str[clen + 1] = 0;
 	qstring = HG_QSTRING_LEN (_hg_vm_get_mem(vm),
 				  str, clen + 1);
-	g_free(str);
+	hg_free(str);
 	if (qstring == Qnil) {
 		goto error;
 	}
@@ -2078,11 +2078,11 @@ hg_vm_startjob(hg_vm_t           *vm,
 		/* XXX: initialize device */
 
 		if (initializer) {
-			hg_char_t *s = g_strdup_printf("{(%s)(r)file dup type/filetype eq{cvx exec}if}stopped{$error/newerror get{errordict/handleerror get exec 1 .quit}if}if", initializer);
+			hg_char_t *s = hg_strdup_printf("{(%s)(r)file dup type/filetype eq{cvx exec}if}stopped{$error/newerror get{errordict/handleerror get exec 1 .quit}if}if", initializer);
 
 			retval = hg_vm_eval_cstring(vm, s, -1, FALSE);
 
-			g_free(s);
+			hg_free(s);
 
 			return retval;
 		}
@@ -2489,7 +2489,7 @@ hg_vm_add_plugin(hg_vm_t         *vm,
 
 		l->data = plugin;
 		g_hash_table_insert(vm->plugin_table,
-				    g_strdup(name), l);
+				    hg_strdup(name), l);
 		vm->plugin_list = g_list_concat(vm->plugin_list, l);
 	}
 
@@ -2621,7 +2621,7 @@ hg_vm_add_param(hg_vm_t         *vm,
 	hg_return_if_fail (name != NULL, HG_e_VMerror);
 	hg_return_if_fail (value != NULL, HG_e_VMerror);
 
-	g_hash_table_insert(vm->params, g_strdup(name), value);
+	g_hash_table_insert(vm->params, hg_strdup(name), value);
 }
 
 /* hg_array_t */
@@ -2749,7 +2749,7 @@ hg_vm_dstack_lookup(hg_vm_t    *vm,
 		str = hg_string_get_cstr(s);
 		quark = hg_name_new_with_string(str, -1);
 
-		g_free(str);
+		hg_free(str);
 		_HG_VM_UNLOCK (vm, qname);
 	} else if (HG_IS_QEVALNAME (qname)) {
 		quark = hg_quark_new(HG_TYPE_NAME, qname);
@@ -2799,7 +2799,7 @@ hg_vm_dstack_remove(hg_vm_t    *vm,
 		str = hg_string_get_cstr(s);
 		quark = hg_name_new_with_string(str, -1);
 
-		g_free(str);
+		hg_free(str);
 		_HG_VM_UNLOCK (vm, qname);
 	} else {
 		quark = qname;
@@ -3212,7 +3212,7 @@ hg_vm_quark_to_string(hg_vm_t      *vm,
 						    _HG_VM_UNLOCK (vm, qdata);
 
 						    hg_string_append(s, cstr, -1);
-						    g_free(cstr);
+						    hg_free(cstr);
 						    break;
 					    }
 				    }
@@ -3231,7 +3231,7 @@ hg_vm_quark_to_string(hg_vm_t      *vm,
 						    }
 					    }
 					    hg_string_append(s, cstr, -1);
-					    g_free(cstr);
+					    hg_free(cstr);
 
 					    _HG_VM_UNLOCK (vm, qdata);
 				    }
@@ -3828,9 +3828,9 @@ hg_vm_value_free(hg_pointer_t data)
 	hg_vm_value_t *v = (hg_vm_value_t *)data;
 
 	if (v->type == HG_TYPE_STRING)
-		g_free(v->u.string);
+		hg_free(v->u.string);
 
-	g_free(v);
+	hg_free(v);
 }
 
 /**
@@ -3846,7 +3846,7 @@ hg_vm_value_boolean_new(hg_bool_t value)
 {
 	hg_vm_value_t *retval;
 
-	retval = g_new(hg_vm_value_t, 1);
+	retval = (hg_vm_value_t *)hg_malloc(sizeof (hg_vm_value_t));
 	if (retval) {
 		retval->type = HG_TYPE_BOOL;
 		retval->u.bool = value;
@@ -3868,7 +3868,7 @@ hg_vm_value_integer_new(hg_int_t value)
 {
 	hg_vm_value_t *retval;
 
-	retval = g_new(hg_vm_value_t, 1);
+	retval = (hg_vm_value_t *)hg_malloc(sizeof (hg_vm_value_t));
 	if (retval) {
 		retval->type = HG_TYPE_INT;
 		retval->u.integer = value;
@@ -3890,7 +3890,7 @@ hg_vm_value_real_new(hg_real_t value)
 {
 	hg_vm_value_t *retval;
 
-	retval = g_new(hg_vm_value_t, 1);
+	retval = (hg_vm_value_t *)hg_malloc(sizeof (hg_vm_value_t));
 	if (retval) {
 		retval->type = HG_TYPE_REAL;
 		retval->u.real = value;
@@ -3912,10 +3912,10 @@ hg_vm_value_string_new(const hg_char_t *value)
 {
 	hg_vm_value_t *retval;
 
-	retval = g_new(hg_vm_value_t, 1);
+	retval = (hg_vm_value_t *)hg_malloc(sizeof (hg_vm_value_t));
 	if (retval) {
 		retval->type = HG_TYPE_STRING;
-		retval->u.string = g_strdup(value);
+		retval->u.string = hg_strdup(value);
 	}
 
 	return retval;

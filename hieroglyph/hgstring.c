@@ -33,6 +33,7 @@
 #include "hgerror.h"
 #include "hgmem.h"
 #include "hgquark.h"
+#include "hgutils.h"
 #include "hgstring.h"
 
 #include "hgstring.proto.h"
@@ -97,7 +98,7 @@ _hg_object_string_copy(hg_object_t             *object,
 	hg_return_val_if_fail (object->type == HG_TYPE_STRING, Qnil, HG_e_typecheck);
 
 	retval = HG_QSTRING_LEN (s->o.mem, cstr, hg_string_length(s));
-	g_free(cstr);
+	hg_free(cstr);
 
 	return retval;
 }
@@ -109,12 +110,13 @@ _hg_object_string_to_cstr(hg_object_t             *object,
 {
 	GString *retval = g_string_new(NULL);
 	hg_string_t *s = (hg_string_t *)object;
-	hg_char_t *cstr = hg_string_get_cstr(s);
+	hg_char_t *cstr;
 	hg_char_t buffer[8];
 	hg_usize_t i;
 
 	hg_return_val_if_fail (object->type == HG_TYPE_STRING, NULL, HG_e_typecheck);
 
+	cstr = hg_string_get_cstr(s);
 	g_string_append_c(retval, '(');
 	for (i = 0; i < hg_string_maxlength(s); i++) {
 		if (cstr == NULL) {
@@ -146,7 +148,7 @@ _hg_object_string_to_cstr(hg_object_t             *object,
 			}
 		}
 	}
-	g_free(cstr);
+	hg_free(cstr);
 	g_string_append_c(retval, ')');
 
 	return g_string_free(retval, FALSE);
@@ -661,7 +663,7 @@ hg_string_get_cstr(hg_string_t *string)
 				    string->qstring,
 				    NULL);
 
-	retval = g_new0(hg_char_t, string->length + 1);
+	retval = (hg_char_t *)hg_malloc0(sizeof (hg_char_t) * (string->length + 1));
 	memcpy(retval, &cstr[string->offset], string->length);
 	retval[string->length] = 0;
 
@@ -747,7 +749,7 @@ hg_string_ncompare(hg_string_t *a,
 
 	retval = hg_string_ncompare_with_cstr(a, sb, length);
 
-	g_free(sb);
+	hg_free(sb);
 
 	return retval;
 }
@@ -783,7 +785,7 @@ hg_string_ncompare_with_cstr(hg_string_t     *a,
 
 	retval = memcmp(sa, b, length) == 0;
 
-	g_free(sa);
+	hg_free(sa);
 
 	return retval;
 }
@@ -812,9 +814,9 @@ hg_string_append_printf(hg_string_t     *string,
 
 	va_start(ap, format);
 
-	ret = g_strdup_vprintf(format, ap);
+	ret = hg_strdup_vprintf(format, ap);
 	retval = hg_string_append(string, ret, -1);
-	g_free(ret);
+	hg_free(ret);
 
 	va_end(ap);
 

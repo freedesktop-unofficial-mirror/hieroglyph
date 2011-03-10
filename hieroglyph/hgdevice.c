@@ -37,6 +37,7 @@
 #include "hgnull.h"
 #include "hgoperator.h"
 #include "hgreal.h"
+#include "hgutils.h"
 #include "hgdevice.h"
 
 #include "hgdevice.proto.h"
@@ -232,7 +233,7 @@ hg_device_open(hg_mem_t        *mem,
 	hg_return_val_if_fail (name != NULL, NULL, HG_e_VMerror);
 
 	basename = g_path_get_basename(name);
-	modulename = g_strdup_printf("libhgdev-%s.so", basename);
+	modulename = hg_strdup_printf("libhgdev-%s.so", basename);
 	if ((modpath = g_getenv("HIEROGLYPH_DEVICE_PATH")) != NULL) {
 		hg_char_t **path_list = g_strsplit(modpath, G_SEARCHPATH_SEPARATOR_S, -1);
 		hg_char_t *p, *path;
@@ -269,7 +270,7 @@ hg_device_open(hg_mem_t        *mem,
 		hg_warning("No such device module: %s", basename);
 	}
 
-	g_free(modulename);
+	hg_free(modulename);
 	g_free(basename);
 
 	return retval;
@@ -699,7 +700,7 @@ _hg_device_null_destroy(hg_device_t *device)
 {
 	hg_null_device_t *devnul = (hg_null_device_t *)device;
 
-	g_free(devnul);
+	hg_free(devnul);
 }
 
 static hg_bool_t
@@ -715,7 +716,7 @@ _hg_device_null_get_ctm(hg_device_t *device,
 hg_device_t *
 hg_device_null_new(hg_mem_t *mem)
 {
-	hg_null_device_t *retval = g_new0(hg_null_device_t, 1);
+	hg_null_device_t *retval = (hg_null_device_t *)hg_malloc0(sizeof (hg_null_device_t));
 
 	retval->parent.finalizer = _hg_device_null_destroy;
 	retval->parent.get_ctm = _hg_device_null_get_ctm;
@@ -723,7 +724,7 @@ hg_device_null_new(hg_mem_t *mem)
 	retval->parent.stroke = _hg_device_null_nop;
 
 	if (!_hg_device_init_page_params((hg_device_t *)retval, mem)) {
-		g_free(retval);
+		hg_free(retval);
 		return NULL;
 	}
 

@@ -669,7 +669,7 @@ DEFUNC_OPER (private_findlibfile)
 	}
 
 	filename = hg_find_libfile(cstr);
-	g_free(cstr);
+	hg_free(cstr);
 
 	if (filename) {
 		q = HG_QSTRING (hg_vm_get_mem(vm),
@@ -940,7 +940,7 @@ DEFUNC_OPER (private_write_eqeq_only)
 		      sizeof (hg_char_t), hg_string_length(s));
 	HG_VM_UNLOCK (vm, arg0);
 	hg_string_free(s, TRUE);
-	g_free(cstr);
+	hg_free(cstr);
 
 	if (!HG_ERROR_IS_SUCCESS0 ()) {
 		return FALSE;
@@ -2888,7 +2888,7 @@ DEFUNC_OPER (cvn)
 		return FALSE;
 	}
 	if (hg_vm_string_length(vm, arg0) > 127) {
-		g_free(cstr);
+		hg_free(cstr);
 		hg_error_return (HG_STATUS_FAILED, HG_e_limitcheck);
 	}
 	if (!HG_ERROR_IS_SUCCESS0 ()) {
@@ -2898,7 +2898,7 @@ DEFUNC_OPER (cvn)
 	*ret = HG_QNAME (cstr);
 	hg_vm_quark_set_executable(vm, ret,
 				   hg_vm_quark_is_executable(vm, &arg0));
-	g_free(cstr);
+	hg_free(cstr);
 
 	retval = TRUE;
 } DEFUNC_OPER_END
@@ -3014,9 +3014,9 @@ DEFUNC_OPER (cvrs)
 	}
 	if (radix == 10) {
 		if (is_real) {
-			cstr = g_strdup_printf("%f", d1);
+			cstr = hg_strdup_printf("%f", d1);
 		} else {
-			cstr = g_strdup_printf("%d", (hg_int_t)d1);
+			cstr = hg_strdup_printf("%d", (hg_int_t)d1);
 		}
 	} else {
 		const hg_char_t __radix_to_c[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -3033,8 +3033,9 @@ DEFUNC_OPER (cvrs)
 		for (i = 0; i < str->len; i++) {
 			g_string_append_c(rstr, str->str[str->len - i - 1]);
 		}
+		cstr = hg_strdup(rstr->str);
 		g_string_free(str, TRUE);
-		cstr = g_string_free(rstr, FALSE);
+		g_string_free(rstr, TRUE);
 	}
 	s = HG_VM_LOCK (vm, arg2);
 	if (s == NULL) {
@@ -3080,7 +3081,7 @@ DEFUNC_OPER (cvrs)
   error:
 	if (s)
 		HG_VM_UNLOCK (vm, arg2);
-	g_free(cstr);
+	hg_free(cstr);
 	if (e)
 		hg_error_return (HG_STATUS_FAILED, e);
 } DEFUNC_OPER_END
@@ -3382,7 +3383,7 @@ DEFUNC_OPER (eq)
 
 			if (HG_IS_QNAME (arg0) ||
 			    HG_IS_QEVALNAME (arg0)) {
-				s1 = g_strdup(HG_NAME (arg0));
+				s1 = hg_strdup(HG_NAME (arg0));
 			} else {
 				s1 = hg_vm_string_get_cstr(vm, arg0);
 				if (!HG_ERROR_IS_SUCCESS0 ()) {
@@ -3391,7 +3392,7 @@ DEFUNC_OPER (eq)
 			}
 			if (HG_IS_QNAME (arg1) ||
 			    HG_IS_QEVALNAME (arg1)) {
-				s2 = g_strdup(HG_NAME (arg1));
+				s2 = hg_strdup(HG_NAME (arg1));
 			} else {
 				s2 = hg_vm_string_get_cstr(vm, arg1);
 				if (!HG_ERROR_IS_SUCCESS0 ()) {
@@ -3401,8 +3402,8 @@ DEFUNC_OPER (eq)
 			if (s1 != NULL && s2 != NULL)
 				ret = (strcmp(s1, s2) == 0);
 		  s_error:
-			g_free(s1);
-			g_free(s2);
+			hg_free(s1);
+			hg_free(s2);
 		} else if ((HG_IS_QINT (arg0) ||
 			    HG_IS_QREAL (arg0)) &&
 			   (HG_IS_QINT (arg1) ||
@@ -3749,8 +3750,8 @@ DEFUNC_OPER (file)
 	retval = TRUE;
 	SET_EXPECTED_OSTACK_SIZE (-1);
   error:
-	g_free(filename);
-	g_free(fmode);
+	hg_free(filename);
+	hg_free(fmode);
 	if (e)
 		hg_error_return (HG_STATUS_FAILED, e);
 } DEFUNC_OPER_END
@@ -4038,8 +4039,8 @@ DEFUNC_OPER (ge)
 		q = HG_QBOOL (strcmp(cs1, cs2) >= 0);
 
 	  s_error:
-		g_free(cs1);
-		g_free(cs2);
+		hg_free(cs1);
+		hg_free(cs2);
 	} else {
 		hg_error_return (HG_STATUS_FAILED, HG_e_typecheck);
 	}
@@ -4325,8 +4326,8 @@ DEFUNC_OPER (gt)
 		q = HG_QBOOL (strcmp(cs1, cs2) > 0);
 
 	  s_error:
-		g_free(cs1);
-		g_free(cs2);
+		hg_free(cs1);
+		hg_free(cs2);
 	} else {
 		hg_error_return (HG_STATUS_FAILED, HG_e_typecheck);
 	}
@@ -4666,8 +4667,8 @@ DEFUNC_OPER (le)
 		q = HG_QBOOL (strcmp(cs1, cs2) <= 0);
 
 	  s_error:
-		g_free(cs1);
-		g_free(cs2);
+		hg_free(cs1);
+		hg_free(cs2);
 	} else {
 		hg_error_return (HG_STATUS_FAILED, HG_e_typecheck);
 	}
@@ -4908,8 +4909,8 @@ DEFUNC_OPER (lt)
 		q = HG_QBOOL (strcmp(cs1, cs2) < 0);
 
 	  s_error:
-		g_free(cs1);
-		g_free(cs2);
+		hg_free(cs1);
+		hg_free(cs2);
 	} else {
 		hg_error_return (HG_STATUS_FAILED, HG_e_typecheck);
 	}
@@ -5087,7 +5088,7 @@ DEFUNC_OPER (ne)
 
 			if (HG_IS_QNAME (arg0) ||
 			    HG_IS_QEVALNAME (arg0)) {
-				s1 = g_strdup(HG_NAME (arg0));
+				s1 = hg_strdup(HG_NAME (arg0));
 			} else {
 				s1 = hg_vm_string_get_cstr(vm, arg0);
 				if (!HG_ERROR_IS_SUCCESS0 ()) {
@@ -5096,7 +5097,7 @@ DEFUNC_OPER (ne)
 			}
 			if (HG_IS_QNAME (arg1) ||
 			    HG_IS_QEVALNAME (arg1)) {
-				s2 = g_strdup(HG_NAME (arg1));
+				s2 = hg_strdup(HG_NAME (arg1));
 			} else {
 				s2 = hg_vm_string_get_cstr(vm, arg1);
 				if (!HG_ERROR_IS_SUCCESS0 ()) {
@@ -5106,8 +5107,8 @@ DEFUNC_OPER (ne)
 			if (s1 != NULL && s2 != NULL)
 				ret = (strcmp(s1, s2) != 0);
 		  s_error:
-			g_free(s1);
-			g_free(s2);
+			hg_free(s1);
+			hg_free(s2);
 		} else if ((HG_IS_QINT (arg0) ||
 			    HG_IS_QREAL (arg0)) &&
 			   (HG_IS_QINT (arg1) ||
@@ -5331,7 +5332,7 @@ DEFUNC_OPER (print)
 	HG_VM_UNLOCK (vm, qstdout);
 	SET_EXPECTED_OSTACK_SIZE (-1);
   error:
-	g_free(cstr);
+	hg_free(cstr);
 } DEFUNC_OPER_END
 
 DEFUNC_UNIMPLEMENTED_OPER (printobject);
@@ -6284,8 +6285,8 @@ DEFUNC_OPER (search)
 
 	retval = TRUE;
   finalize:
-	g_free(cs0);
-	g_free(cs1);
+	hg_free(cs0);
+	hg_free(cs1);
 	if (s)
 		HG_VM_UNLOCK (vm, arg0);
 	if (seek)
@@ -6823,6 +6824,7 @@ DEFUNC_OPER (status)
 
 			SET_EXPECTED_OSTACK_SIZE (5 - 1);
 		}
+		hg_free(filename);
 	} else {
 		hg_error_return (HG_STATUS_FAILED, HG_e_typecheck);
 	}
@@ -7439,7 +7441,7 @@ DEFUNC_OPER (writehexstring)
 	hg_quark_t arg0, arg1;
 	hg_file_t *f;
 	hg_string_t *s;
-	hg_char_t *cstr;
+	hg_char_t *cstr = NULL;
 	hg_usize_t length, i;
 	hg_error_reason_t e = 0;
 
@@ -7478,6 +7480,7 @@ DEFUNC_OPER (writehexstring)
   error:
 	HG_VM_UNLOCK (vm, arg0);
 	HG_VM_UNLOCK (vm, arg1);
+	hg_free(cstr);
 	if (e)
 		hg_error_return (HG_STATUS_FAILED, e);
 } DEFUNC_OPER_END
@@ -7516,6 +7519,7 @@ DEFUNC_OPER (writestring)
 	cstr = hg_string_get_cstr(s);
 	hg_file_write(f, cstr,
 		      sizeof (hg_char_t), hg_string_length(s));
+	hg_free(cstr);
 	if (HG_ERROR_IS_SUCCESS0 ()) {
 		retval = TRUE;
 		hg_stack_drop(ostack);
@@ -8070,14 +8074,14 @@ hg_operator_init(void)
 {
 #define DECL_OPER(_n_)							\
 	HG_STMT_START {							\
-		__hg_operator_name_table[HG_enc_ ## _n_] = g_strdup("--" #_n_ "--"); \
+		__hg_operator_name_table[HG_enc_ ## _n_] = hg_strdup("--" #_n_ "--"); \
 		if (__hg_operator_name_table[HG_enc_ ## _n_] == NULL)	\
 			return FALSE;					\
 		__hg_operator_func_table[HG_enc_ ## _n_] = OPER_FUNC_NAME (_n_); \
 	} HG_STMT_END
 #define DECL_PRIV_OPER(_on_,_n_)						\
 	HG_STMT_START {							\
-		__hg_operator_name_table[HG_enc_ ## _n_] = g_strdup("--" #_on_ "--"); \
+		__hg_operator_name_table[HG_enc_ ## _n_] = hg_strdup("--" #_on_ "--"); \
 		if (__hg_operator_name_table[HG_enc_ ## _n_] == NULL)	\
 			return FALSE;					\
 		__hg_operator_func_table[HG_enc_ ## _n_] = OPER_FUNC_NAME (_n_); \
@@ -8479,11 +8483,11 @@ hg_operator_init(void)
 void
 hg_operator_tini(void)
 {
-#define UNDECL_OPER(_n_)					\
-	HG_STMT_START {						\
-		g_free(__hg_operator_name_table[HG_enc_ ## _n_]);	\
-		__hg_operator_name_table[HG_enc_ ## _n_] = NULL;		\
-		__hg_operator_func_table[HG_enc_ ## _n_] = NULL;		\
+#define UNDECL_OPER(_n_)						\
+	HG_STMT_START {							\
+		hg_free(__hg_operator_name_table[HG_enc_ ## _n_]);	\
+		__hg_operator_name_table[HG_enc_ ## _n_] = NULL;	\
+		__hg_operator_func_table[HG_enc_ ## _n_] = NULL;	\
 	} HG_STMT_END
 
 	UNDECL_OPER (private_abort);
@@ -8884,7 +8888,7 @@ hg_operator_tini(void)
  * Returns:
  */
 hg_quark_t
-hg_operator_add_dynamic(const hg_char_t        *string,
+hg_operator_add_dynamic(const hg_char_t    *string,
 			hg_operator_func_t  func)
 {
 	hg_quark_t n = HG_QNAME (string);
@@ -8892,7 +8896,7 @@ hg_operator_add_dynamic(const hg_char_t        *string,
 	if (hg_quark_get_value(n) < HG_enc_builtin_HIEROGLYPH_END)
 		return Qnil;
 
-	__hg_operator_name_table[hg_quark_get_value(n)] = g_strdup_printf("--%s--", string);
+	__hg_operator_name_table[hg_quark_get_value(n)] = hg_strdup_printf("--%s--", string);
 	__hg_operator_func_table[hg_quark_get_value(n)] = func;
 
 	return n;
@@ -8909,7 +8913,7 @@ hg_operator_remove_dynamic(hg_uint_t encoding)
 {
 	hg_return_if_fail (encoding >= HG_enc_builtin_HIEROGLYPH_END, HG_e_VMerror);
 
-	g_free(__hg_operator_name_table[encoding]);
+	hg_free(__hg_operator_name_table[encoding]);
 	__hg_operator_name_table[encoding] = NULL;
 	__hg_operator_func_table[encoding] = NULL;
 }

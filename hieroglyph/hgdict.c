@@ -28,6 +28,7 @@
 #include "hgerror.h"
 #include "hgmem.h"
 #include "hgstring.h"
+#include "hgutils.h"
 #include "hgdict-private.h"
 #include "hgdict.h"
 
@@ -101,7 +102,7 @@ _hg_object_dict_to_cstr(hg_object_t             *object,
 {
 	hg_return_val_if_fail (object->type == HG_TYPE_DICT, NULL, HG_e_typecheck);
 
-	return g_strdup("-dict-");
+	return hg_strdup("-dict-");
 }
 
 static hg_bool_t
@@ -285,7 +286,7 @@ _hg_object_dict_node_to_cstr(hg_object_t             *object,
 {
 	hg_return_val_if_fail (object->type == HG_TYPE_DICT_NODE, NULL, HG_e_typecheck);
 
-	return g_strdup("-dnode-");
+	return hg_strdup("-dnode-");
 }
 
 static hg_bool_t

@@ -28,9 +28,168 @@
 #ifndef __HIEROGLYPH_HGUTILS_H__
 #define __HIEROGLYPH_HGUTILS_H__
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <hieroglyph/hgtypes.h>
 
 HG_BEGIN_DECLS
+
+HG_INLINE_FUNC hg_pointer_t  hg_malloc        (hg_usize_t       size);
+HG_INLINE_FUNC hg_pointer_t  hg_malloc0       (hg_usize_t       size);
+HG_INLINE_FUNC void          hg_free          (hg_pointer_t     data);
+HG_INLINE_FUNC hg_char_t    *hg_strdup        (const hg_char_t *string);
+HG_INLINE_FUNC hg_char_t    *hg_strndup       (const hg_char_t *string,
+					       hg_usize_t       len);
+HG_INLINE_FUNC hg_char_t    *hg_strdup_printf (const hg_char_t *format,
+					       ...);
+HG_INLINE_FUNC hg_char_t    *hg_strdup_vprintf(const hg_char_t *format,
+					       va_list          args);
+
+/**
+ * hg_malloc:
+ * @size:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+HG_INLINE_FUNC hg_pointer_t
+hg_malloc(hg_usize_t size)
+{
+	return malloc(size);
+}
+
+/**
+ * hg_malloc0:
+ * @size:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+HG_INLINE_FUNC hg_pointer_t
+hg_malloc0(hg_usize_t size)
+{
+	return calloc(1, size);
+}
+
+/**
+ * hg_realloc:
+ * @data:
+ * @size:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+HG_INLINE_FUNC hg_pointer_t
+hg_realloc(hg_pointer_t data,
+	   hg_usize_t   size)
+{
+	return realloc(data, size);
+}
+
+/**
+ * hg_free:
+ * @data:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+HG_INLINE_FUNC void
+hg_free(hg_pointer_t data)
+{
+	if (data)
+		free(data);
+}
+
+/**
+ * hg_strdup:
+ * @string:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+HG_INLINE_FUNC hg_char_t *
+hg_strdup(const hg_char_t *string)
+{
+	return strdup(string);
+}
+
+/**
+ * hg_strndup:
+ * @string:
+ * @len:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+HG_INLINE_FUNC hg_char_t *
+hg_strndup(const hg_char_t *string,
+	   hg_usize_t       len)
+{
+	return strndup(string, len);
+}
+
+/**
+ * hg_strdup_printf:
+ * @format:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+HG_INLINE_FUNC hg_char_t *
+hg_strdup_printf(const hg_char_t *format,
+		 ...)
+{
+	va_list args;
+	hg_char_t *retval;
+
+	va_start(args, format);
+
+	retval = hg_strdup_vprintf(format, args);
+
+	va_end(args);
+
+	return retval;
+}
+
+/**
+ * hg_strdup_vprintf:
+ * @format:
+ * @args:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+HG_INLINE_FUNC hg_char_t *
+hg_strdup_vprintf(const hg_char_t *format,
+		  va_list          args)
+{
+	char c;
+	int size;
+	hg_char_t *retval;
+	va_list ap;
+
+	va_copy(ap, args);
+
+	size = vsnprintf(&c, 1, format, ap) + 1;
+
+	va_end(ap);
+
+	retval = hg_malloc(sizeof (hg_char_t) * size);
+	if (retval) {
+		vsprintf(retval, format, args);
+	}
+
+	return retval;
+}
 
 hg_char_t *hg_find_libfile(const hg_char_t *file);
 

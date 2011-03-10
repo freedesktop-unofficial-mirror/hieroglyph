@@ -35,6 +35,7 @@
 #include "hgint.h"
 #include "hgname.h"
 #include "hgreal.h"
+#include "hgutils.h"
 #include "hgvm.h"
 #include "hgscanner.h"
 
@@ -396,14 +397,14 @@ HEXDIGITS	[0-9a-fA-F]
 		hg_usize_t radix, len, i, index;
 		hg_char_t *s, *p;
 
-		s = g_new(hg_char_t, yyleng);
+		s = (hg_char_t *)hg_malloc(sizeof (hg_char_t) * yyleng);
 		sscanf(yytext, "%lf#%s", &fradix, s);
 		radix = fradix;
 		if (fradix > HG_MAXINT ||
 		    fradix < HG_MININT ||
 		    radix < 2 ||
 		    radix > 36) {
-			g_free(s);
+			hg_free(s);
 			REJECT;
 		}
 		len = strlen(s);
@@ -411,20 +412,20 @@ HEXDIGITS	[0-9a-fA-F]
 			p = strchr(radix_index, tolower(s[i]));
 			index = p - radix_index;
 			if (index >= radix) {
-				g_free(s);
+				hg_free(s);
 				REJECT;
 			}
 			if ((result > 0 && (result * radix) < 0) ||
 			    (result < 0 && (result * radix) > 0)) {
 				hg_debug(HG_MSGCAT_SCAN, "Digit is too big");
 				hg_errno = HG_ERROR_ (HG_STATUS_FAILED, HG_e_syntaxerror);
-				g_free(s);
+				hg_free(s);
 				yyterminate();
 			}
 			result *= radix;
 			result += index;
 		}
-		g_free(s);
+		hg_free(s);
 		scanner->result = HG_QINT (result);
 		return TRUE;
 	}

@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include "hglineedit.h"
 #include "hgmem.h"
+#include "hgutils.h"
 #include "hgfile.h"
 
 #include "hgfile.proto.h"
@@ -205,7 +206,7 @@ _hg_object_file_to_cstr(hg_object_t             *object,
 {
 	hg_return_val_if_fail (object->type == HG_TYPE_FILE, NULL, HG_e_typecheck);
 
-	return g_strdup("-file-");
+	return hg_strdup("-file-");
 }
 
 static hg_bool_t
@@ -411,7 +412,7 @@ _hg_file_io_real_file_open(hg_file_t    *file,
 	hg_file_io_data_t *data = user_data;
 	hg_quark_t qdata;
 	hg_string_t *sfilename;
-	hg_char_t *filename;
+	hg_char_t *filename = NULL;
 	struct stat st;
 	int fd;
 	hg_pointer_t buffer = NULL;
@@ -461,7 +462,7 @@ _hg_file_io_real_file_open(hg_file_t    *file,
 	if ((fd = open(filename, flags[file->mode], S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH)) == -1) {
 		goto exception;
 	}
-	g_free(filename);
+	hg_free(filename);
 	data->fd = fd;
 	if ((buffer = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0)) != MAP_FAILED) {
 		data->mmapped_buffer = buffer;
@@ -471,6 +472,7 @@ _hg_file_io_real_file_open(hg_file_t    *file,
 
 	return TRUE;
   exception:
+	hg_free(filename);
 	hg_file_set_error(__PRETTY_FUNCTION__);
 
 	return FALSE;
@@ -739,7 +741,7 @@ _hg_file_io_real_buffered_read(hg_file_t    *file,
 	    file->position == file->size)
 		bd->data.is_eof = TRUE;
 	file->position += retval;
-	g_free(cstr);
+	hg_free(cstr);
 
 	return retval;
   exception:
@@ -1374,9 +1376,9 @@ hg_file_append_vprintf(hg_file_t       *file,
 	hg_return_val_if_fail (file->o.type == HG_TYPE_FILE, -1, HG_e_typecheck);
 	hg_return_val_if_fail (format != NULL, -1, HG_e_VMerror);
 
-	buffer = g_strdup_vprintf(format, args);
+	buffer = hg_strdup_vprintf(format, args);
 	retval = hg_file_write(file, buffer, sizeof (hg_char_t), strlen(buffer));
-	g_free(buffer);
+	hg_free(buffer);
 
 	return retval;
 }
@@ -1488,7 +1490,7 @@ hg_file_set_error(const hg_char_t  *function)
 	hg_error_t e = 0;
 
 	hg_fileerrno = errno;
-	msg = g_strdup_printf("%s: %s", function, g_strerror(hg_fileerrno));
+	msg = hg_strdup_printf("%s: %s", function, g_strerror(hg_fileerrno));
 
 	switch (hg_fileerrno) {
 	    case 0:
@@ -1529,5 +1531,5 @@ hg_file_set_error(const hg_char_t  *function)
 	if (e > 0) {
 		hg_errno = HG_ERROR_ (HG_STATUS_FAILED, e);
 	}
-	g_free(msg);
+	hg_free(msg);
 }

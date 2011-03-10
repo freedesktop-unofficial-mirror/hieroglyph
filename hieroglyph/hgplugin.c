@@ -27,6 +27,7 @@
 
 #include <string.h>
 #include "hgmem.h"
+#include "hgutils.h"
 #include "hgplugin.h"
 
 #include "hgplugin.proto.h"
@@ -97,10 +98,10 @@ hg_plugin_open(hg_mem_t         *mem,
 	realname = g_path_get_basename(name);
 	switch (type) {
 	    case HG_PLUGIN_EXTENSION:
-		    modulename = g_strdup_printf("libext-%s.so", realname);
+		    modulename = hg_strdup_printf("libext-%s.so", realname);
 		    break;
 	    case HG_PLUGIN_DEVICE:
-		    modulename = g_strdup_printf("libdevice-%s.so", realname);
+		    modulename = hg_strdup_printf("libdevice-%s.so", realname);
 		    break;
 	    default:
 		    hg_warning("Unknown plugin type: %d", type);
@@ -146,7 +147,7 @@ hg_plugin_open(hg_mem_t         *mem,
 	}
   finalize:
 	g_free(realname);
-	g_free(modulename);
+	hg_free(modulename);
 
 	return retval;
 }

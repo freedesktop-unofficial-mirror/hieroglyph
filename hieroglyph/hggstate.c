@@ -31,6 +31,7 @@
 #include "hgmem.h"
 #include "hgpath.h"
 #include "hgreal.h"
+#include "hgutils.h"
 #include "hggstate.h"
 
 #include "hggstate.proto.h"
@@ -137,7 +138,7 @@ _hg_object_gstate_to_cstr(hg_object_t             *object,
 			  hg_quark_iterate_func_t  func,
 			  hg_pointer_t             user_data)
 {
-	return g_strdup("-gstate-");
+	return hg_strdup("-gstate-");
 }
 
 static hg_bool_t

@@ -38,6 +38,7 @@
 #include "hgmem.h"
 #include "hgpath.h"
 #include "hgreal.h"
+#include "hgutils.h"
 #include "hgvm.h"
 #include "hgdevice.h"
 
@@ -323,7 +324,7 @@ _hg_cairo_device_set_dash(hg_cairo_device_t *device,
 	hg_return_if_lock_fail (a, m, qdash);
 
 	len = hg_array_length(a);
-	dashes = g_new(hg_real_t, len);
+	dashes = (hg_real_t *)hg_malloc(sizeof (hg_real_t) * len);
 
 	for (i = 0; i < len; i++) {
 		q = hg_array_get(a, i);
@@ -335,7 +336,7 @@ _hg_cairo_device_set_dash(hg_cairo_device_t *device,
 	}
 	cairo_set_dash(device->cr, dashes, len, dash_offset);
 
-	g_free(dashes);
+	hg_free(dashes);
 	hg_mem_unlock_object(m, qdash);
 }
 
@@ -628,7 +629,7 @@ _hg_cairo_device_stroke(hg_device_t  *device,
 hg_device_t *
 hg_module_init(void)
 {
-	hg_cairo_device_t *retval = g_new0(hg_cairo_device_t, 1);
+	hg_cairo_device_t *retval = (hg_cairo_device_t *)hg_malloc0(sizeof (hg_cairo_device_t));
 	hg_device_t *dev = (hg_device_t *)retval;
 
 	dev->install         = _hg_cairo_device_install;
@@ -645,5 +646,5 @@ hg_module_init(void)
 void
 hg_module_finalize(hg_device_t *device)
 {
-	g_free(device);
+	hg_free(device);
 }

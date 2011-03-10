@@ -55,6 +55,7 @@
 #include <hieroglyph/hgsnapshot.h>
 #include <hieroglyph/hgstack.h>
 #include <hieroglyph/hgstring.h>
+#include <hieroglyph/hgutils.h>
 #include <hieroglyph/hgversion.h>
 #include <hieroglyph/hgvm.h>
 

@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include "hgerror.h"
 #include "hgmem.h"
+#include "hgutils.h"
 #include "hgstack.h"
 #include "hgstack-private.h"
 #include "hgvm.h"
@@ -133,7 +134,7 @@ _hg_object_stack_to_cstr(hg_object_t             *object,
 			 hg_quark_iterate_func_t  func,
 			 hg_pointer_t             user_data)
 {
-	return g_strdup("-stack-");
+	return hg_strdup("-stack-");
 }
 
 static hg_bool_t
@@ -625,7 +626,7 @@ hg_stack_foreach(hg_stack_t               *stack,
 		return;
 
 	if (is_forwarded) {
-		hg_pointer_t *p = g_new0(hg_pointer_t, stack->depth + 1);
+		hg_pointer_t *p = (hg_pointer_t *)hg_malloc0(sizeof (hg_pointer_t) * (stack->depth + 1));
 		hg_size_t i;
 
 		for (l = stack->last_stack, i = stack->depth;
@@ -636,7 +637,7 @@ hg_stack_foreach(hg_stack_t               *stack,
 			if (!func(stack->o.mem, ((hg_slist_t *)p[i])->data, data))
 				break;
 		}
-		g_free(p);
+		hg_free(p);
 	} else {
 		for (l = stack->last_stack; l != NULL; l = l->next) {
 			if (!func(stack->o.mem, l->data, data))

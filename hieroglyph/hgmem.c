@@ -29,6 +29,7 @@
 #include "hgallocator.h"
 #include "hgquark.h"
 #include "hgtypebit-private.h"
+#include "hgutils.h"
 #include "hgmem.h"
 #include "hgmem-private.h"
 
@@ -104,7 +105,7 @@ hg_mem_spool_new_with_allocator(hg_mem_vtable_t *allocator,
 	hg_return_val_if_fail (__hg_mem_id >= 0, NULL, HG_e_VMerror);
 	hg_return_val_if_fail (__hg_mem_id < HG_MAX_MEM, NULL, HG_e_VMerror);
 
-	retval = g_new0(hg_mem_t, 1);
+	retval = (hg_mem_t *)hg_malloc0(sizeof (hg_mem_t));
 	retval->allocator = allocator;
 	retval->type = type;
 	id = retval->id = __hg_mem_id++;
@@ -112,7 +113,7 @@ hg_mem_spool_new_with_allocator(hg_mem_vtable_t *allocator,
 				    HG_TYPEBIT_MEM_ID,
 				    HG_TYPEBIT_MEM_ID_END) != retval->id) {
 		hg_warning("too many memory spooler being created.");
-		g_free(retval);
+		hg_free(retval);
 
 		hg_error_return_val (NULL, HG_STATUS_FAILED, HG_e_VMerror);
 	}
@@ -157,7 +158,7 @@ hg_mem_spool_destroy(hg_pointer_t data)
 	if (mem->type == HG_MEM_TYPE_MASTER)
 		__hg_mem_master = NULL;
 
-	g_free(mem);
+	hg_free(mem);
 }
 
 /**
