@@ -14,7 +14,7 @@ LIBS =								\
 	@LDFLAGS@						\
 	$(GLIB_LIBS)						\
 	$(GMODULE_LIBS)						\
-	-lm							\
+	$(LIBM)							\
 	$(NULL)
 EXTRA_DIST =							\
 	hgversion.h.in						\

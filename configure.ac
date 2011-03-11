@@ -311,6 +311,11 @@ AM_PATH_GLIB_2_0($GLIB_REQUIRED, :,
 *** GLIB $GLIB_REQUIRED or better is required. The latest version of
 *** GLIB is always available from ftp://ftp.gtk.org/.]),
 	glib)
+dnl To avoid the unexpected errors
+_save_cflags=$CFLAGS
+CFLAGS=$(sed -e 's/\-Werror//g')
+AC_CHECK_LIBM
+CFLAGS=$_save_cflags
 
 dnl ======================================================================
 dnl options
