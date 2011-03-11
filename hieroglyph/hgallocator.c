@@ -343,7 +343,12 @@ _hg_allocator_bitmap_free(hg_allocator_bitmap_t *bitmap,
 
 	for (i = idx; i < (idx + aligned_size); i++)
 		_hg_allocator_bitmap_clear(bitmap, page, i);
-	bitmap->last_index[page] = i - 1;
+	if (bitmap->last_index[page] > (i - 1)) {
+		/* only update the last index when it points out
+		 * bigger index to reduce the search cost.
+		 */
+		bitmap->last_index[page] = i - 1;
+	}
 
 	G_UNLOCK (bitmap);
 
