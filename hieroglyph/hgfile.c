@@ -48,7 +48,7 @@ typedef struct _hg_file_io_buffered_data_t {
 
 static hg_file_vtable_t __hg_file_io_stdin_vtable = {
 	.open      = _hg_file_io_real_stdin_open,
-	.close     = _hg_file_io_real_no_close,
+	.close     = _hg_file_io_real_file_close,
 	.read      = _hg_file_io_real_file_read,
 	.write     = _hg_file_io_real_file_write,
 	.flush     = _hg_file_io_real_file_flush,
@@ -58,7 +58,7 @@ static hg_file_vtable_t __hg_file_io_stdin_vtable = {
 };
 static hg_file_vtable_t __hg_file_io_stdout_vtable = {
 	.open      = _hg_file_io_real_stdout_open,
-	.close     = _hg_file_io_real_no_close,
+	.close     = _hg_file_io_real_file_close,
 	.read      = _hg_file_io_real_file_read,
 	.write     = _hg_file_io_real_file_write,
 	.flush     = _hg_file_io_real_file_flush,
@@ -68,7 +68,7 @@ static hg_file_vtable_t __hg_file_io_stdout_vtable = {
 };
 static hg_file_vtable_t __hg_file_io_stderr_vtable = {
 	.open      = _hg_file_io_real_stderr_open,
-	.close     = _hg_file_io_real_no_close,
+	.close     = _hg_file_io_real_file_close,
 	.read      = _hg_file_io_real_file_read,
 	.write     = _hg_file_io_real_file_write,
 	.flush     = _hg_file_io_real_file_flush,
@@ -298,7 +298,9 @@ _hg_file_io_real_stdin_open(hg_file_t    *file,
 		memset(data, 0, sizeof (hg_file_io_data_t));
 		data->self = qdata;
 	}
-	data->fd = 0;
+	data->fd = dup(STDIN_FILENO);
+	if (data->fd == -1)
+		goto exception;
 	data->mmapped_buffer = NULL;
 	file->user_data = data;
 
@@ -341,7 +343,9 @@ _hg_file_io_real_stdout_open(hg_file_t    *file,
 		memset(data, 0, sizeof (hg_file_io_data_t));
 		data->self = qdata;
 	}
-	data->fd = 1;
+	data->fd = dup(STDOUT_FILENO);
+	if (data->fd == -1)
+		goto exception;
 	data->mmapped_buffer = NULL;
 	file->user_data = data;
 
@@ -384,7 +388,9 @@ _hg_file_io_real_stderr_open(hg_file_t    *file,
 		memset(data, 0, sizeof (hg_file_io_data_t));
 		data->self = qdata;
 	}
-	data->fd = 2;
+	data->fd = dup(STDERR_FILENO);
+	if (data->fd == -1)
+		goto exception;
 	data->mmapped_buffer = NULL;
 	file->user_data = data;
 
@@ -396,13 +402,6 @@ _hg_file_io_real_stderr_open(hg_file_t    *file,
 	hg_file_set_error(__PRETTY_FUNCTION__);
 
 	return FALSE;
-}
-
-static void
-_hg_file_io_real_no_close(hg_file_t    *file,
-			  hg_pointer_t  user_data)
-{
-	file->is_closed = TRUE;
 }
 
 static hg_bool_t
