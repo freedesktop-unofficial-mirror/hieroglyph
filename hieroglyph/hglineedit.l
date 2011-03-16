@@ -266,7 +266,11 @@ hg_lineedit_new(hg_mem_t                   *mem,
 	retval->qself = q;
 	retval->mem = mem;
 	retval->vtable = vtable;
+	if (infile)
+		hg_mem_lock_object(infile->o.mem, infile->o.self);
 	retval->infile = infile;
+	if (outfile)
+		hg_mem_lock_object(outfile->o.mem, outfile->o.self);
 	retval->outfile = outfile;
 
 	yylex_init(&retval->yyscanner);
@@ -454,6 +458,8 @@ hg_lineedit_set_infile(hg_lineedit_t *lineedit,
 		hg_mem_unlock_object(lineedit->infile->o.mem,
 				     lineedit->infile->o.self);
 
+	hg_mem_lock_object(infile->o.mem,
+			   infile->o.self);
 	lineedit->infile = infile;
 }
 
@@ -475,6 +481,8 @@ hg_lineedit_set_outfile(hg_lineedit_t *lineedit,
 		hg_mem_unlock_object(lineedit->outfile->o.mem,
 				     lineedit->outfile->o.self);
 
+	hg_mem_lock_object(outfile->o.mem,
+			   outfile->o.self);
 	lineedit->outfile = outfile;
 }
 
@@ -491,5 +499,12 @@ hg_lineedit_gc_mark(hg_lineedit_t  *lineedit)
 {
 	hg_return_val_if_fail (lineedit != NULL, FALSE, HG_e_VMerror);
 
-	return hg_mem_gc_mark(lineedit->mem, lineedit->qself);
+	if (!hg_mem_gc_mark(lineedit->mem, lineedit->qself))
+		return FALSE;
+	if (!hg_mem_gc_mark(lineedit->infile->o.mem, lineedit->infile->o.self))
+		return FALSE;
+	if (!hg_mem_gc_mark(lineedit->outfile->o.mem, lineedit->outfile->o.self))
+		return FALSE;
+
+	return TRUE;
 }
