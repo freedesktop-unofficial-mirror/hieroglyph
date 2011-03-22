@@ -408,8 +408,8 @@ hg_mem_spool_get_used_size(hg_mem_t *mem)
  * Returns:
  */
 hg_quark_t
-hg_mem_alloc(hg_mem_t *mem,
-	     hg_usize_t     size,
+hg_mem_alloc(hg_mem_t     *mem,
+	     hg_usize_t    size,
 	     hg_pointer_t *ret)
 {
 	return hg_mem_alloc_with_flags(mem, size,
