@@ -216,7 +216,7 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 	aligned_size = HG_ALIGNED_TO (size, BLOCK_SIZE) / BLOCK_SIZE;
 	page = bitmap->last_page;
 
-	hg_debug(HG_MSGCAT_ALLOC, "%ld blocks required", aligned_size);
+	hg_debug(HG_MSGCAT_ALLOC, "%ld blocks required (%u + %u bytes)", aligned_size, size - sizeof (hg_allocator_block_t), sizeof (hg_allocator_block_t));
 #if defined(HG_DEBUG)
 	_hg_allocator_bitmap_dump(bitmap, page);
 #endif
@@ -232,7 +232,7 @@ _hg_allocator_bitmap_alloc(hg_allocator_bitmap_t *bitmap,
 			bitmap->last_index[page] = ((i + 1) >= bitmap->size[page] ? 0 : i);
 			bitmap->last_page = page;
 
-			hg_debug(HG_MSGCAT_ALLOC, "allocated at [page: %d, index: %d]", page, i + 1);
+			hg_debug(HG_MSGCAT_ALLOC, "allocated at [page: %d, index: %d, blocks: %d]", page, i + 1, aligned_size);
 
 			return _hg_allocator_quark_build(page, i + 1);
 		} else {
