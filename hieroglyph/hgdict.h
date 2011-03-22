@@ -72,6 +72,7 @@ hg_bool_t           hg_dict_add                   (hg_dict_t               *dict
                                                    hg_bool_t                force);
 hg_bool_t           hg_dict_remove                (hg_dict_t               *dict,
                                                    hg_quark_t               qkey);
+hg_bool_t           hg_dict_clear                 (hg_dict_t               *dict);
 hg_quark_t          hg_dict_lookup                (hg_dict_t               *dict,
                                                    hg_quark_t               qkey);
 hg_usize_t          hg_dict_length                (hg_dict_t               *dict);

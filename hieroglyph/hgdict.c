@@ -1105,10 +1105,29 @@ hg_dict_remove(hg_dict_t  *dict,
 }
 
 /**
+ * hg_dict_clear:
+ * @dict:
+ *
+ * FIXME
+ *
+ * Returns:
+ */
+hg_bool_t
+hg_dict_clear(hg_dict_t *dict)
+{
+	hg_return_val_if_fail (dict != NULL, FALSE, HG_e_typecheck);
+	hg_return_val_if_fail (dict->o.type == HG_TYPE_DICT, FALSE, HG_e_typecheck);
+
+	dict->qroot = Qnil;
+	dict->length = 0;
+
+	return TRUE;
+}
+
+/**
  * hg_dict_lookup:
  * @dict:
  * @qkey:
- * @error:
  *
  * FIXME
  *
