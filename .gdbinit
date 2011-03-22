@@ -76,6 +76,10 @@ define _sethgquarkinfo
   set $_idx = ($_value & (((1 << ($_hg_v_bit_idx23-$_hg_v_bit_idx00+1)) - 1) << $_hg_v_bit_idx00)) >> $_hg_v_bit_idx00
 end
 
+define _sethgallocatorinfo
+  set $_block_size = 64
+end
+
 define hgquarkinfo
   _sethgquarkinfo $arg0
 
@@ -179,6 +183,37 @@ define hgquarkinfo
     printf "\n"
     printf "  [value]: page %d, index %d (%p)\n", $_page, $_idx, $_value
   end
+end
+
+define hggetblock
+  _sethgallocatorinfo
+  set $_heaps = $arg0
+  set $_page = $arg1
+  set $_idx = $arg2
+  set $_block = (hg_allocator_block_t *)((hg_quark_t)$_heaps[$_page] + (($_idx - 1) * $_block_size))
+  printf "(hg_allocator_block_t *) %p\n", $_block
+end
+
+define hggetobj
+  hggetblock $arg0 $arg1 $arg2
+  set $_obj = (hg_pointer_t)((hg_char_t *)($_block) + ((sizeof (hg_allocator_block_t) + (sizeof (void *)) - 1) & ~((sizeof (void *)) - 1)))
+  printf "(hg_pointer_t) %p\n", $_obj
+end
+
+define hgquarkgetblock
+  _sethgquarkinfo $arg0
+  call hg_mem_spool_get($_memid)
+  set $_mem = $
+  set $_heaps = ((hg_allocator_private_t *)$_mem->data)->heaps
+  hggetblock  $_heaps $_page $_idx
+end
+
+define hgquarkgetobj
+  _sethgquarkinfo $arg0
+  call hg_mem_spool_get($_memid)
+  set $_mem = $
+  set $_heaps = ((hg_allocator_private_t *)$_mem->data)->heaps
+  hggetobj $heaps $_page $_idx
 end
 
 define _hggetmemobj
