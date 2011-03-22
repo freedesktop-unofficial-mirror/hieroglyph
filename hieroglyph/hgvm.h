@@ -125,7 +125,6 @@ struct _hg_vm_t {
 	hg_scanner_t        *scanner;
 	hg_lineedit_t       *lineedit;
 	hg_vm_langlevel_t    language_level;
-	hg_bool_t            is_initialized:1;
 	hg_bool_t            hold_lang_level:1;
 	hg_bool_t            shutdown:1;
 	hg_bool_t            has_error:1;
@@ -175,12 +174,6 @@ hg_quark_t         hg_vm_get_io             (hg_vm_t                *vm,
 void               hg_vm_set_io             (hg_vm_t                *vm,
                                              hg_file_io_t            type,
                                              hg_quark_t              file);
-hg_bool_t          hg_vm_setup              (hg_vm_t                *vm,
-                                             hg_vm_langlevel_t       lang_level,
-                                             hg_quark_t              stdin,
-                                             hg_quark_t              stdout,
-                                             hg_quark_t              stderr);
-void               hg_vm_finish             (hg_vm_t                *vm);
 hg_vm_langlevel_t  hg_vm_get_language_level (hg_vm_t                *vm);
 hg_bool_t          hg_vm_set_language_level (hg_vm_t                *vm,
                                              hg_vm_langlevel_t       level);

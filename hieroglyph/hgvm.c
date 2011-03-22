@@ -922,6 +922,122 @@ _hg_vm_restore_mark(hg_snapshot_t *snapshot,
 }
 
 static hg_bool_t
+_hg_vm_setup(hg_vm_t           *vm,
+	     hg_vm_langlevel_t  lang_level)
+{
+	hg_dict_t *dict = NULL;
+	hg_usize_t i;
+
+	hg_return_val_if_fail (vm != NULL, FALSE, HG_e_VMerror);
+	hg_return_val_if_fail (lang_level < HG_LANG_LEVEL_END, FALSE, HG_e_VMerror);
+
+	hg_vm_use_global_mem(vm, TRUE);
+	vm->n_nest_scan = 0;
+
+	for (i = 0; i < HG_VM_MEM_END; i++) {
+		/* Even if the memory spool expansion wasn't supported in PS1,
+		 * following up on that spec here isn't a good idea because
+		 * this isn't entire clone of Adobe's and the memory management
+		 * should be totally different.
+		 * So OOM is likely happening on only hieroglyph.
+		 */
+		hg_mem_spool_set_resizable(vm->mem[i], TRUE);
+	}
+
+	hg_vm_quark_set_acl(vm, &vm->qsystemdict, HG_ACL_READABLE|HG_ACL_WRITABLE|HG_ACL_ACCESSIBLE);
+	hg_vm_quark_set_acl(vm, &vm->qinternaldict, HG_ACL_READABLE|HG_ACL_WRITABLE|HG_ACL_ACCESSIBLE);
+	hg_vm_quark_set_acl(vm, &vm->qglobaldict, HG_ACL_READABLE|HG_ACL_WRITABLE|HG_ACL_ACCESSIBLE);
+	hg_vm_quark_set_acl(vm, &vm->qerror, HG_ACL_READABLE|HG_ACL_WRITABLE|HG_ACL_ACCESSIBLE);
+
+	hg_stack_push(vm->stacks[HG_VM_STACK_DSTACK], vm->qsystemdict);
+	if (lang_level >= HG_LANG_LEVEL_2) {
+		hg_stack_push(vm->stacks[HG_VM_STACK_DSTACK],
+			      vm->qglobaldict);
+	}
+	/* userdict will be created/pushed in PostScript */
+
+	/* initialize $error */
+	dict = _HG_VM_LOCK (vm, vm->qerror);
+	if (dict) {
+		if (!hg_dict_add(dict,
+				 HG_QNAME ("newerror"),
+				 HG_QBOOL (FALSE),
+				 FALSE)) {
+			_HG_VM_UNLOCK (vm, vm->qerror);
+			goto bail;
+		}
+		if (!hg_dict_add(dict,
+				 HG_QNAME ("errorname"),
+				 HG_QNULL,
+				 FALSE)) {
+			_HG_VM_UNLOCK (vm, vm->qerror);
+			goto bail;
+		}
+		if (!hg_dict_add(dict,
+				 HG_QNAME (".stopped"),
+				 HG_QBOOL (FALSE),
+				 FALSE)) {
+			_HG_VM_UNLOCK (vm, vm->qerror);
+			goto bail;
+		}
+		_HG_VM_UNLOCK (vm, vm->qerror);
+	} else {
+		goto bail;
+	}
+
+	/* add built-in items into systemdict */
+	dict = _HG_VM_LOCK (vm, vm->qsystemdict);
+	if (dict) {
+		if (!hg_dict_add(dict,
+				 HG_QNAME ("systemdict"),
+				 vm->qsystemdict,
+				 TRUE)) {
+			_HG_VM_UNLOCK (vm, vm->qsystemdict);
+			goto bail;
+		}
+		if (!hg_dict_add(dict,
+				 HG_QNAME ("globaldict"),
+				 vm->qglobaldict,
+				 TRUE)) {
+			_HG_VM_UNLOCK (vm, vm->qsystemdict);
+			goto bail;
+		}
+		if (!hg_dict_add(dict,
+				 HG_QNAME ("$error"),
+				 vm->qerror,
+				 TRUE)) {
+			_HG_VM_UNLOCK (vm, vm->qsystemdict);
+			goto bail;
+		}
+
+		/* initialize build-in operators */
+		if (!hg_operator_register(vm, dict, lang_level)) {
+			_HG_VM_UNLOCK (vm, vm->qsystemdict);
+			goto bail;
+		}
+		_HG_VM_UNLOCK (vm, vm->qsystemdict);
+	} else {
+		goto bail;
+	}
+
+	vm->language_level = lang_level;
+
+	return TRUE;
+  bail:
+	_hg_vm_finish(vm);
+
+	return FALSE;
+}
+
+HG_INLINE_FUNC void
+_hg_vm_finish(hg_vm_t *vm)
+{
+	hg_return_if_fail (vm != NULL, HG_e_VMerror);
+
+	vm->hold_lang_level = FALSE;
+}
+
+static hg_bool_t
 _hg_vm_set_error(hg_vm_t           *vm,
 		 hg_quark_t         qdata,
 		 hg_error_reason_t  error)
@@ -1114,6 +1230,8 @@ hg_vm_new(void)
 	hg_quark_t q;
 	hg_vm_t *retval;
 	hg_usize_t i;
+	hg_mem_t *gmem, *lmem;
+	hg_file_t *fstdin = NULL, *fstdout = NULL;
 
 	q = hg_mem_alloc(__hg_vm_mem, sizeof (hg_vm_t), (hg_pointer_t *)&retval);
 	if (q == Qnil)
@@ -1124,40 +1242,8 @@ hg_vm_new(void)
 	memset(retval, 0, sizeof (hg_vm_t));
 	retval->self = q;
 
-	retval->rand_ = g_rand_new();
-	retval->rand_seed = g_rand_int(retval->rand_);
-	g_rand_set_seed(retval->rand_, retval->rand_seed);
-	g_get_current_time(&retval->initiation_time);
-
-	retval->params = g_hash_table_new_full(g_str_hash, g_str_equal,
-					       hg_free, hg_vm_value_free);
-	retval->plugin_table = g_hash_table_new_full(g_str_hash, g_str_equal,
-						     hg_free, NULL);
-	retval->mem[HG_VM_MEM_GLOBAL] = hg_mem_spool_new(HG_MEM_TYPE_GLOBAL,
-							 HG_VM_GLOBAL_MEM_SIZE);
-	retval->mem[HG_VM_MEM_LOCAL] = hg_mem_spool_new(HG_MEM_TYPE_LOCAL,
-							HG_VM_LOCAL_MEM_SIZE);
-	if (retval->mem[HG_VM_MEM_GLOBAL] == NULL ||
-	    retval->mem[HG_VM_MEM_LOCAL] == NULL)
-		goto error;
-	retval->mem_id[HG_VM_MEM_GLOBAL] = hg_mem_get_id(retval->mem[HG_VM_MEM_GLOBAL]);
-	retval->mem_id[HG_VM_MEM_LOCAL] = hg_mem_get_id(retval->mem[HG_VM_MEM_LOCAL]);
-	hg_mem_spool_set_gc_procedure(retval->mem[HG_VM_MEM_GLOBAL], _hg_vm_run_gc, retval);
-	hg_mem_spool_set_gc_procedure(retval->mem[HG_VM_MEM_LOCAL], _hg_vm_run_gc, retval);
-
-	q = hg_mem_alloc(retval->mem[HG_VM_MEM_LOCAL],
-			 sizeof (hg_vm_state_t),
-			 (hg_pointer_t *)&retval->vm_state);
-	retval->vm_state->self = q;
-	retval->vm_state->current_mem_index = HG_VM_MEM_GLOBAL;
-	retval->vm_state->n_save_objects = 0;
-
-	retval->user_params.max_op_stack = 500;
-	retval->user_params.max_exec_stack = 250;
-	retval->user_params.max_dict_stack = 20;
-	retval->user_params.max_gstate_stack = 31;
-
-	/* initialize quarks */
+	/* initialize */
+	/** initialize quarks **/
 	for (i = 0; i < HG_FILE_IO_END; i++)
 		retval->qio[i] = Qnil;
 	for (i = 0; i < HG_e_END; i++)
@@ -1173,14 +1259,102 @@ hg_vm_new(void)
 	retval->qglobaldict = Qnil;
 	retval->qinternaldict = Qnil;
 	retval->qgstate = Qnil;
+	/** memory spool **/
+	gmem = retval->mem[HG_VM_MEM_GLOBAL] = hg_mem_spool_new(HG_MEM_TYPE_GLOBAL,
+								HG_VM_GLOBAL_MEM_SIZE);
+	lmem = retval->mem[HG_VM_MEM_LOCAL] = hg_mem_spool_new(HG_MEM_TYPE_LOCAL,
+							       HG_VM_LOCAL_MEM_SIZE);
+	if (!gmem || !lmem)
+		goto bail;
+	retval->mem_id[HG_VM_MEM_GLOBAL] = hg_mem_get_id(gmem);
+	retval->mem_id[HG_VM_MEM_LOCAL] = hg_mem_get_id(lmem);
+	hg_mem_spool_set_gc_procedure(gmem, _hg_vm_run_gc, retval);
+	hg_mem_spool_set_gc_procedure(lmem, _hg_vm_run_gc, retval);
+	/** vm_state **/
+	q = hg_mem_alloc(lmem, sizeof (hg_vm_state_t),
+			 (hg_pointer_t *)&retval->vm_state);
+	if (q == Qnil)
+		goto bail;
+	retval->vm_state->self = q;
+	retval->vm_state->current_mem_index = HG_VM_MEM_GLOBAL;
+	retval->vm_state->n_save_objects = 0;
+	/** user_params **/
+	retval->user_params.max_op_stack = 500;
+	retval->user_params.max_exec_stack = 250;
+	retval->user_params.max_dict_stack = 20;
+	retval->user_params.max_gstate_stack = 31;
+	/** I/O **/
+	q = hg_file_new(gmem, "%stdin",
+			HG_FILE_IO_MODE_READ,
+			(hg_pointer_t *)&fstdin);
+	if (q == Qnil)
+		goto bail;
+	hg_vm_quark_set_acl(retval, &q,
+			    HG_ACL_READABLE|HG_ACL_ACCESSIBLE);
+	hg_vm_set_io(retval, HG_FILE_IO_STDIN, q);
 
+	q = hg_file_new(gmem, "%stdout",
+			HG_FILE_IO_MODE_WRITE,
+			(hg_pointer_t *)&fstdout);
+	if (q == Qnil)
+		goto bail;
+	hg_vm_quark_set_acl(retval, &q,
+			    HG_ACL_WRITABLE|HG_ACL_ACCESSIBLE);
+	hg_vm_set_io(retval, HG_FILE_IO_STDOUT, q);
+
+	q = hg_file_new(gmem, "%stderr",
+			HG_FILE_IO_MODE_WRITE,
+			NULL);
+	if (q == Qnil)
+		goto bail;
+	hg_vm_quark_set_acl(retval, &q,
+			    HG_ACL_WRITABLE|HG_ACL_ACCESSIBLE);
+	hg_vm_set_io(retval, HG_FILE_IO_STDERR, q);
+
+	retval->lineedit = hg_lineedit_new(gmem,
+					   hg_lineedit_get_default_vtable(),
+					   fstdin,
+					   fstdout);
+	if (!retval->lineedit)
+		goto bail;
+	/** gstate **/
+	retval->qgstate = hg_gstate_new(lmem, NULL);
+	if (retval->qgstate == Qnil)
+		goto bail;
+	hg_mem_unref(lmem, retval->qgstate);
+	/** dictionaries **/
+	retval->qsystemdict = hg_dict_new(gmem, 65535, FALSE, NULL);
+	retval->qinternaldict = hg_dict_new(gmem, 65535, FALSE, NULL);
+	retval->qglobaldict = hg_dict_new(gmem, 65535, FALSE, NULL);
+	retval->qerror = hg_dict_new(lmem, 65535, FALSE, NULL);
+	if (retval->qsystemdict == Qnil ||
+	    retval->qinternaldict == Qnil ||
+	    retval->qglobaldict == Qnil ||
+	    retval->qerror == Qnil)
+		goto bail;
+	hg_mem_unref(gmem, retval->qsystemdict);
+	hg_mem_unref(gmem, retval->qinternaldict);
+	hg_mem_unref(gmem, retval->qglobaldict);
+	hg_mem_unref(gmem, retval->qerror);
+	/** randam seed **/
+	retval->rand_ = g_rand_new();
+	retval->rand_seed = g_rand_int(retval->rand_);
+	g_rand_set_seed(retval->rand_, retval->rand_seed);
+	g_get_current_time(&retval->initiation_time);
+
+	retval->params = g_hash_table_new_full(g_str_hash, g_str_equal,
+					       hg_free, hg_vm_value_free);
+	retval->plugin_table = g_hash_table_new_full(g_str_hash, g_str_equal,
+						     hg_free, NULL);
+	/** scanner **/
 	/* XXX: we prefer not to use the global nor the local
 	 * memory spool to postpone thinking of how to deal
 	 * with the yacc instance on GC.
 	 */
 	retval->scanner = hg_scanner_new(__hg_vm_mem);
 	if (retval->scanner == NULL)
-		goto error;
+		goto bail;
+	/** stacks **/
 	retval->stack_spooler = hg_stack_spooler_new(__hg_vm_mem);
 	retval->stacks[HG_VM_STACK_OSTACK] = hg_vm_stack_new(retval,
 							     retval->user_params.max_op_stack);
@@ -1195,7 +1369,7 @@ hg_vm_new(void)
 	    retval->stacks[HG_VM_STACK_ESTACK] == NULL ||
 	    retval->stacks[HG_VM_STACK_DSTACK] == NULL ||
 	    retval->stacks[HG_VM_STACK_GSTATE] == NULL)
-		goto error;
+		goto bail;
 
 	retval->stacks_stack = g_ptr_array_new();
 
@@ -1282,8 +1456,19 @@ hg_vm_new(void)
 
 #undef DECL_PDPARAM
 
+	_HG_VM_UNLOCK (retval,
+		       retval->qio[HG_FILE_IO_STDIN]);
+	_HG_VM_UNLOCK (retval,
+		       retval->qio[HG_FILE_IO_STDOUT]);
+
 	return retval;
-  error:
+  bail:
+	if (fstdin)
+		_HG_VM_UNLOCK (retval,
+			       retval->qio[HG_FILE_IO_STDIN]);
+	if (fstdout)
+		_HG_VM_UNLOCK (retval,
+			       retval->qio[HG_FILE_IO_STDOUT]);
 	hg_vm_destroy(retval);
 
 	return NULL;
@@ -1497,250 +1682,25 @@ hg_vm_set_io(hg_vm_t      *vm,
 	hg_return_if_fail (type < HG_FILE_IO_END, HG_e_VMerror);
 	hg_return_if_fail (HG_IS_QFILE (file), HG_e_VMerror);
 
+	switch (type) {
+	    case HG_FILE_IO_FILE:
+		    break;
+	    case HG_FILE_IO_STDIN:
+	    case HG_FILE_IO_LINEEDIT:
+	    case HG_FILE_IO_STATEMENTEDIT:
+		    hg_return_if_fail (hg_vm_quark_is_readable(vm, &file), HG_e_invalidaccess);
+		    break;
+	    case HG_FILE_IO_STDOUT:
+	    case HG_FILE_IO_STDERR:
+		    hg_return_if_fail (hg_vm_quark_is_writable(vm, &file), HG_e_invalidaccess);
+		    break;
+	    default:
+		    break;
+	}
+
 	vm->qio[type] = file;
-}
-
-/**
- * hg_vm_setup:
- * @vm:
- * @lang_level:
- * @stdin:
- * @stdout:
- * @stderr:
- *
- * FIXME
- *
- * Returns:
- */
-hg_bool_t
-hg_vm_setup(hg_vm_t           *vm,
-	    hg_vm_langlevel_t  lang_level,
-	    hg_quark_t         stdin,
-	    hg_quark_t         stdout,
-	    hg_quark_t         stderr)
-{
-	hg_quark_t qf;
-	hg_dict_t *dict = NULL, *dict_error;
-	hg_file_t *fstdin, *fstdout;
-	hg_usize_t i;
-
-	hg_return_val_if_fail (vm != NULL, FALSE, HG_e_VMerror);
-	hg_return_val_if_fail (lang_level < HG_LANG_LEVEL_END, FALSE, HG_e_VMerror);
-
-	if (!vm->is_initialized) {
-		vm->is_initialized = TRUE;
-
-		hg_vm_use_global_mem(vm, TRUE);
-
-		vm->n_nest_scan = 0;
-
-		/* initialize I/O */
-		if (stdin == Qnil) {
-			qf = hg_file_new(_hg_vm_get_mem(vm),
-					 "%stdin",
-					 HG_FILE_IO_MODE_READ,
-					 (hg_pointer_t *)&fstdin);
-		} else {
-			qf = stdin;
-		}
-		hg_vm_quark_set_acl(vm, &qf, HG_ACL_READABLE|HG_ACL_ACCESSIBLE);
-		vm->qio[HG_FILE_IO_STDIN] = qf;
-		if (stdout == Qnil) {
-			qf  = hg_file_new(_hg_vm_get_mem(vm),
-					  "%stdout",
-					  HG_FILE_IO_MODE_WRITE,
-					  (hg_pointer_t *)&fstdout);
-		} else {
-			qf = stdout;
-		}
-		hg_vm_quark_set_acl(vm, &qf, HG_ACL_WRITABLE|HG_ACL_ACCESSIBLE);
-		vm->qio[HG_FILE_IO_STDOUT] = qf;
-		if (stderr == Qnil) {
-			qf = hg_file_new(_hg_vm_get_mem(vm),
-					 "%stderr",
-					 HG_FILE_IO_MODE_WRITE,
-					 NULL);
-		} else {
-			qf = stderr;
-		}
-		hg_vm_quark_set_acl(vm, &qf, HG_ACL_WRITABLE|HG_ACL_ACCESSIBLE);
-		vm->qio[HG_FILE_IO_STDERR] = qf;
-
-		if (vm->qio[HG_FILE_IO_STDIN] == Qnil ||
-		    vm->qio[HG_FILE_IO_STDOUT] == Qnil ||
-		    vm->qio[HG_FILE_IO_STDERR] == Qnil) {
-			goto error;
-		}
-
-		vm->lineedit = hg_lineedit_new(_hg_vm_get_mem(vm),
-					       hg_lineedit_get_default_vtable(),
-					       fstdin,
-					       fstdout);
-		if (vm->lineedit == NULL)
-			goto error;
-
-		vm->qgstate = hg_gstate_new(vm->mem[HG_VM_MEM_LOCAL], NULL);
-		if (vm->qgstate == Qnil)
-			goto error;
-
-		hg_mem_unref(vm->mem[HG_VM_MEM_LOCAL], vm->qgstate);
-
-		/* initialize stacks */
-		hg_stack_clear(vm->stacks[HG_VM_STACK_OSTACK]);
-		hg_stack_clear(vm->stacks[HG_VM_STACK_ESTACK]);
-		hg_stack_clear(vm->stacks[HG_VM_STACK_DSTACK]);
-		hg_stack_clear(vm->stacks[HG_VM_STACK_GSTATE]);
-
-		/* initialize dictionaries */
-		vm->qsystemdict = hg_dict_new(vm->mem[HG_VM_MEM_GLOBAL],
-					      65535,
-					      FALSE,
-					      NULL);
-		vm->qinternaldict = hg_dict_new(vm->mem[HG_VM_MEM_GLOBAL],
-						65535,
-						FALSE,
-						NULL);
-		vm->qglobaldict = hg_dict_new(vm->mem[HG_VM_MEM_GLOBAL],
-					      65535,
-					      FALSE,
-					      NULL);
-		vm->qerror = hg_dict_new(vm->mem[HG_VM_MEM_LOCAL],
-					 65535,
-					 FALSE,
-					 (hg_pointer_t *)&dict_error);
-		if (vm->qsystemdict == Qnil ||
-		    vm->qinternaldict == Qnil ||
-		    vm->qglobaldict == Qnil ||
-		    vm->qerror == Qnil)
-			goto error;
-	} else {
-		dict_error = _HG_VM_LOCK (vm, vm->qerror);
-	}
-
-	for (i = 0; i < HG_VM_MEM_END; i++) {
-		/* Even if the memory spool expansion wasn't supported in PS1,
-		 * following up on that spec here isn't a good idea because
-		 * this isn't entire clone of Adobe's and the memory management
-		 * should be totally different.
-		 * So OOM is likely happening on only hieroglyph.
-		 */
-		hg_mem_spool_set_resizable(vm->mem[i], TRUE);
-	}
-
-	hg_vm_quark_set_acl(vm, &vm->qsystemdict, HG_ACL_READABLE|HG_ACL_WRITABLE|HG_ACL_ACCESSIBLE);
-	hg_vm_quark_set_acl(vm, &vm->qinternaldict, HG_ACL_READABLE|HG_ACL_WRITABLE|HG_ACL_ACCESSIBLE);
-	hg_vm_quark_set_acl(vm, &vm->qglobaldict, HG_ACL_READABLE|HG_ACL_WRITABLE|HG_ACL_ACCESSIBLE);
-	hg_vm_quark_set_acl(vm, &vm->qerror, HG_ACL_READABLE|HG_ACL_WRITABLE|HG_ACL_ACCESSIBLE);
-
-	hg_stack_push(vm->stacks[HG_VM_STACK_DSTACK], vm->qsystemdict);
-	if (lang_level >= HG_LANG_LEVEL_2) {
-		hg_stack_push(vm->stacks[HG_VM_STACK_DSTACK],
-			      vm->qglobaldict);
-	}
-	/* userdict will be created/pushed in PostScript */
-
-	/* initialize $error */
-	if (!hg_dict_add(dict_error,
-			 HG_QNAME ("newerror"),
-			 HG_QBOOL (FALSE),
-			 FALSE))
-		goto error;
-	if (!hg_dict_add(dict_error,
-			 HG_QNAME ("errorname"),
-			 HG_QNULL,
-			 FALSE))
-		goto error;
-	if (!hg_dict_add(dict_error,
-			 HG_QNAME (".stopped"),
-			 HG_QBOOL (FALSE),
-			 FALSE))
-		goto error;
-
-	/* add built-in items into systemdict */
-	dict = _HG_VM_LOCK (vm, vm->qsystemdict);
-	if (dict == NULL)
-		goto error;
-
-	if (!hg_dict_add(dict,
-			 HG_QNAME ("systemdict"),
-			 vm->qsystemdict,
-			 TRUE))
-		goto error;
-	if (!hg_dict_add(dict,
-			 HG_QNAME ("globaldict"),
-			 vm->qglobaldict,
-			 TRUE))
-		goto error;
-	if (!hg_dict_add(dict,
-			 HG_QNAME ("$error"),
-			 vm->qerror,
-			 TRUE))
-		goto error;
-
-	/* initialize build-in operators */
-	if (!hg_operator_register(vm, dict, lang_level))
-		goto error;
-
-	_HG_VM_UNLOCK (vm, vm->qerror);
-	_HG_VM_UNLOCK (vm, vm->qsystemdict);
-
-	vm->language_level = lang_level;
-
-	return TRUE;
-  error:
-	if (dict_error)
-		_HG_VM_UNLOCK (vm, vm->qerror);
-	if (dict)
-		_HG_VM_UNLOCK (vm, vm->qsystemdict);
-
-	hg_vm_finish(vm);
-
-	return FALSE;
-}
-
-/**
- * hg_vm_finish:
- * @vm:
- *
- * FIXME
- */
-void
-hg_vm_finish(hg_vm_t *vm)
-{
-	hg_usize_t i;
-
-	hg_return_if_fail (vm != NULL, HG_e_VMerror);
-	hg_return_if_fail (vm->is_initialized, HG_e_VMerror);
-
-	if (vm->qsystemdict != Qnil) {
-		_hg_vm_quark_free(vm, vm->qsystemdict);
-		vm->qsystemdict = Qnil;
-	}
-	if (vm->qglobaldict != Qnil) {
-		_hg_vm_quark_free(vm, vm->qglobaldict);
-		vm->qglobaldict = Qnil;
-	}
-	if (vm->qinternaldict != Qnil) {
-		_hg_vm_quark_free(vm, vm->qinternaldict);
-		vm->qinternaldict = Qnil;
-	}
-	if (vm->qgstate != Qnil) {
-		_hg_vm_quark_free(vm, vm->qgstate);
-		vm->qgstate = Qnil;
-	}
-	for (i = 0; i < HG_VM_STACK_END; i++) {
-		if (vm->stacks[i])
-			hg_stack_free(vm->stacks[i]);
-	}
-	/* XXX: finalizing I/O */
-
-	if (vm->lineedit) {
-		hg_lineedit_destroy(vm->lineedit);
-		vm->lineedit = NULL;
-	}
-
-	vm->hold_lang_level = FALSE;
-	vm->is_initialized = FALSE;
+	hg_mem_unref(_hg_vm_quark_get_mem(vm, file),
+		     file);
 }
 
 /**
@@ -1775,7 +1735,7 @@ hg_vm_set_language_level(hg_vm_t           *vm,
 	hg_return_val_if_fail (vm != NULL, FALSE, HG_e_VMerror);
 	hg_return_val_if_fail (level < HG_LANG_LEVEL_END, FALSE, HG_e_VMerror);
 
-	if (vm->is_initialized && !vm->hold_lang_level) {
+	if (!vm->hold_lang_level) {
 		if (hg_vm_get_language_level(vm) >= level)
 			return FALSE;
 
@@ -2018,7 +1978,50 @@ hg_vm_startjob(hg_vm_t           *vm,
 	hg_return_val_if_fail (vm != NULL, FALSE, HG_e_VMerror);
 
 	/* initialize VM */
-	if (!hg_vm_setup(vm, lang_level, Qnil, Qnil, Qnil)) {
+	if (encapsulated) {
+		/* initialize globaldict */
+		dict = _HG_VM_LOCK (vm, vm->qglobaldict);
+		if (dict) {
+			hg_dict_clear(dict);
+			_HG_VM_UNLOCK (vm, vm->qglobaldict);
+		} else {
+			hg_warning("Unable to initialize PostScript VM");
+			return FALSE;
+		}
+		/* initialize internaldict */
+		dict = _HG_VM_LOCK (vm, vm->qinternaldict);
+		if (dict) {
+			hg_dict_clear(dict);
+			_HG_VM_UNLOCK (vm, vm->qinternaldict);
+		} else {
+			hg_warning("Unable to initialize PostScript VM");
+			return FALSE;
+		}
+		/* initialize $error */
+		dict = _HG_VM_LOCK (vm, vm->qerror);
+		if (dict) {
+			hg_dict_clear(dict);
+			_HG_VM_UNLOCK (vm, vm->qerror);
+		} else {
+			hg_warning("Unable to initialize PostScript VM");
+			return FALSE;
+		}
+		/* initialize systemdict */
+		dict = _HG_VM_LOCK (vm, vm->qsystemdict);
+		if (dict) {
+			hg_dict_clear(dict);
+			_HG_VM_UNLOCK (vm, vm->qsystemdict);
+		} else {
+			hg_warning("Unable to initialize PostScript VM");
+			return FALSE;
+		}
+		/* initialize stacks */
+		hg_stack_clear(vm->stacks[HG_VM_STACK_OSTACK]);
+		hg_stack_clear(vm->stacks[HG_VM_STACK_ESTACK]);
+		hg_stack_clear(vm->stacks[HG_VM_STACK_DSTACK]);
+		hg_stack_clear(vm->stacks[HG_VM_STACK_GSTATE]);
+	}
+	if (!_hg_vm_setup(vm, lang_level)) {
 		hg_warning("Unable to initialize PostScript VM");
 		return FALSE;
 	}
@@ -3400,13 +3403,16 @@ hg_vm_quark_is_readable(hg_vm_t    *vm,
 	if (!hg_quark_is_simple_object(*qdata) &&
 	    !HG_IS_QOPER (*qdata)) {
 		hg_object_t *o = _HG_VM_LOCK (vm, *qdata);
-		hg_quark_acl_t acl = hg_object_get_acl(o);
 
-		if (acl != -1) {
-			hg_quark_set_acl(qdata, acl);
+		if (o) {
+			hg_quark_acl_t acl = hg_object_get_acl(o);
+
+			if (acl != -1) {
+				hg_quark_set_acl(qdata, acl);
+			}
+
+			_HG_VM_UNLOCK (vm, *qdata);
 		}
-
-		_HG_VM_UNLOCK (vm, *qdata);
 	}
 
 	return hg_quark_is_readable(*qdata);
