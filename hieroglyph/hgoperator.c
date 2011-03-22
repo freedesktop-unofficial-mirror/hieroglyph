@@ -544,6 +544,7 @@ DEFUNC_OPER (private_applyparams)
 				hg_dict_add(d, qn, q, FALSE);
 		}
 	}
+	HG_VM_UNLOCK (vm, arg0);
 	g_list_free(keys);
 
 	hg_stack_drop(ostack);
