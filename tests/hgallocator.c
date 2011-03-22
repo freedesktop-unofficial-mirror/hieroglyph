@@ -103,13 +103,13 @@ TDEF (alloc)
 
 	retval = vtable->initialize();
 	fail_unless(retval != NULL, "Unable to initialize the allocator.");
-	fail_unless(vtable->expand_heap(retval, 256), "Unable to initialize the heap.");
+	fail_unless(vtable->expand_heap(retval, 320), "Unable to initialize the heap.");
 
 	t = vtable->alloc(retval, 128, 0, NULL);
 	fail_unless(t != Qnil, "Unable to allocate the memory.");
 	t2 = vtable->alloc(retval, 64, 0, NULL);
 	fail_unless(t2 != Qnil, "Unable to allocate the memory.");
-	t3 = vtable->alloc(retval, 128, 0, NULL);
+	t3 = vtable->alloc(retval, 182, 0, NULL);
 	fail_unless(t3 == Qnil, "Should be no free spaces available.");
 
 	vtable->free(retval, t);
@@ -158,7 +158,7 @@ TDEF (realloc)
 	fail_unless(p == p2, "Unexpected result to grow the space.");
 	t3 = vtable->alloc(retval, 8, 0, NULL);
 	fail_unless(t3 != Qnil, "Unable to allocate the memory.");
-	t2 = vtable->realloc(retval, t, 90, NULL);
+	t2 = vtable->realloc(retval, t, 128, NULL);
 	fail_unless(t2 != Qnil, "Unable to re-allocate the memory.");
 	fail_unless(t != t2, "Unexpected result to keep quark.");
 	p2 = vtable->lock_object(retval, t2);
