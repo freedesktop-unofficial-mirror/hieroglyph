@@ -230,13 +230,13 @@ _hg_object_dict_node_initialize(hg_object_t *object,
 	ret_nodes = va_arg(args, hg_pointer_t *);
 
 	dnode->qkey = hg_mem_alloc(object->mem,
-				   sizeof (hg_quark_t) * __hg_dict_node_size * 2,
+				   sizeof (hg_quark_t) * (__hg_dict_node_size * 2),
 				   (hg_pointer_t *)&keys);
 	dnode->qval = hg_mem_alloc(object->mem,
-				   sizeof (hg_quark_t) * __hg_dict_node_size * 2,
+				   sizeof (hg_quark_t) * (__hg_dict_node_size * 2),
 				   (hg_pointer_t *)&vals);
 	dnode->qnodes = hg_mem_alloc(object->mem,
-				     sizeof (hg_quark_t) * __hg_dict_node_size * 2 + 1,
+				     sizeof (hg_quark_t) * (__hg_dict_node_size * 2 + 1),
 				     (hg_pointer_t *)&nodes);
 	dnode->n_data = 0;
 	hg_return_val_after_eval_if_fail (dnode->qkey != Qnil &&
