@@ -28,9 +28,10 @@
 #ifndef __HIEROGLYPH_HGUTILS_H__
 #define __HIEROGLYPH_HGUTILS_H__
 
+#include <stdarg.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <hieroglyph/hgtypes.h>
 
 HG_BEGIN_DECLS
