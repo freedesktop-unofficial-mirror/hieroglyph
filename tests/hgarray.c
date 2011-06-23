@@ -69,7 +69,7 @@ TDEF (get_capsulated_size)
 
 TDEF (gc_mark)
 {
-	hg_quark_t q;
+	hg_quark_t q HG_GNUC_UNUSED;
 	hg_array_t *a;
 	hg_size_t size = 0;
 	hg_mem_t *m = hg_mem_spool_new(HG_MEM_TYPE_LOCAL, 256);

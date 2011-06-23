@@ -554,7 +554,7 @@ hg_scanner_attach_file(hg_scanner_t *scanner,
 		       hg_file_t    *file)
 {
 	YY_BUFFER_STATE yystate;
-	struct yyguts_t *yyg;
+	struct yyguts_t *yyg HG_GNUC_UNUSED;
 
 	hg_return_val_if_fail (scanner != NULL, FALSE, HG_e_VMerror);
 	hg_return_val_if_fail (file != NULL, FALSE, HG_e_VMerror);

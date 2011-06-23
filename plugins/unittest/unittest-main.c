@@ -45,7 +45,7 @@ DEFUNC_OPER (private_validatetestresult)
 	hg_string_t *sexp;
 	hg_dict_t *d;
 	hg_bool_t verbose = FALSE, result = TRUE;
-	hg_int_t attrs = 0;
+	hg_int_t attrs HG_GNUC_UNUSED = 0; /* XXX */
 	hg_char_t *cexp;
 	hg_error_reason_t e = 0;
 

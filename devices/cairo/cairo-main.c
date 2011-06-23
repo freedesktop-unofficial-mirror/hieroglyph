@@ -577,7 +577,7 @@ _hg_cairo_device_fill(hg_device_t  *device,
   finalize:
 	hg_mem_unlock_object(gstate->o.mem, qpath);
 
-	return TRUE;
+	return retval;
 }
 
 static hg_bool_t

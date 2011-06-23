@@ -135,7 +135,7 @@ _gc_func(hg_mem_t     *mem,
 
 TDEF (gc_mark)
 {
-	hg_quark_t q;
+	hg_quark_t q HG_GNUC_UNUSED;
 	hg_dict_t *d;
 	hg_size_t size = 0;
 	hg_mem_t *m = hg_mem_spool_new(HG_MEM_TYPE_LOCAL, 65535);

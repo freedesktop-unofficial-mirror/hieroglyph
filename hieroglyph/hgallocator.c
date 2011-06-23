@@ -723,7 +723,7 @@ _hg_allocator_real_lock_object(hg_allocator_data_t *data,
 {
 	hg_allocator_private_t *priv;
 	hg_allocator_block_t *retval = NULL;
-	hg_int_t old_val;
+	hg_int_t old_val HG_GNUC_UNUSED;
 	hg_int_t page;
 	hg_uint_t idx;
 
@@ -795,7 +795,7 @@ _hg_allocator_block_ref(hg_allocator_data_t *data,
 {
 	hg_allocator_private_t *priv;
 	hg_allocator_block_t *block;
-	hg_int_t old_val;
+	hg_int_t old_val HG_GNUC_UNUSED;
 
 	priv = (hg_allocator_private_t *)data;
 	block = _hg_allocator_get_internal_block(priv, qdata, FALSE);

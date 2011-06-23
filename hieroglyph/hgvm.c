@@ -75,11 +75,6 @@ typedef struct _hg_vm_stack_dump_data_t {
 	hg_stack_t *stack;
 	hg_file_t  *ofile;
 } hg_vm_stack_dump_data_t;
-typedef struct _hg_vm_rs_dump_data_t {
-	hg_vm_t   *vm;
-	hg_mem_t  *mem;
-	hg_file_t *ofile;
-} hg_vm_rs_dump_data_t;
 
 
 hg_mem_t *__hg_vm_mem = NULL;
@@ -653,10 +648,9 @@ _hg_vm_quark_iterate_to_cstr(hg_quark_t    qdata,
 {
 	hg_vm_t *vm = (hg_vm_t *)user_data;
 	hg_string_t *s = NULL;
-	hg_quark_t q;
 	hg_char_t *cstr = NULL;
 
-	q = hg_vm_quark_to_string(vm, qdata, TRUE, (hg_pointer_t *)&s);
+	hg_vm_quark_to_string(vm, qdata, TRUE, (hg_pointer_t *)&s);
 	if (s) {
 		cstr = hg_string_get_cstr(s);
 	}
@@ -2438,18 +2432,12 @@ hg_vm_reserved_spool_dump(hg_vm_t   *vm,
 			  hg_mem_t  *mem,
 			  hg_file_t *ofile)
 {
-	hg_vm_rs_dump_data_t data;
-
 	hg_return_if_fail (vm != NULL, HG_e_VMerror);
 	hg_return_if_fail (mem != NULL, HG_e_VMerror);
 	hg_return_if_fail (ofile != NULL, HG_e_VMerror);
 
 	/* to avoid unusable result when OOM */
 	hg_mem_spool_set_resizable(_hg_vm_get_mem(vm), TRUE);
-
-	data.vm = vm;
-	data.mem = mem;
-	data.ofile = ofile;
 
 	hg_file_append_printf(ofile, "Referenced blocks in %s\n",
 			      mem == vm->mem[HG_VM_MEM_GLOBAL] ? "global" :
@@ -2810,7 +2798,7 @@ hg_vm_dstack_remove(hg_vm_t    *vm,
 	dstack = vm->stacks[HG_VM_STACK_DSTACK];
 	ldata.vm = vm;
 	ldata.result = FALSE;
-	ldata.qname = qname;
+	ldata.qname = quark;
 	ldata.remove_all = remove_all;
 	hg_stack_foreach(dstack, _hg_vm_real_dict_remove, &ldata, FALSE);
 
